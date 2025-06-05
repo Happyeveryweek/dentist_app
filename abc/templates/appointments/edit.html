@@ -1,0 +1,131 @@
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-calendar-check me-2" viewBox="0 0 16 16">
+            <path d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+            <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5v8a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-8z"/>
+        </svg>
+        {{ title }}
+    </h1>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.patient_id.label(class="form-label") }}
+                        {% if form.patient_id.errors %}
+                            {{ form.patient_id(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.patient_id.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.patient_id(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.appointment_date.label(class="form-label") }}
+                        {% if form.appointment_date.errors %}
+                            {{ form.appointment_date(class="form-control is-invalid", type="datetime-local") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.appointment_date.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.appointment_date(class="form-control", type="datetime-local") }}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.treatment_type.label(class="form-label") }}
+                        {% if form.treatment_type.errors %}
+                            {{ form.treatment_type(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.treatment_type.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.treatment_type(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.notes.label(class="form-label") }}
+                        {% if form.notes.errors %}
+                            {{ form.notes(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.notes.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.notes(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.cost.label(class="form-label") }}
+                        {% if form.cost.errors %}
+                            {{ form.cost(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.cost.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.cost(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.status.label(class="form-label") }}
+                        {% if form.status.errors %}
+                            {{ form.status(class="form-control is-invalid") }}
+                            <div class="invalid-feedback">
+                                {% for error in form.status.errors %}
+                                    <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            {{ form.status(class="form-control") }}
+                        {% endif %}
+                    </div>
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('appointments') }}" class="btn btn-secondary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-lg me-1" viewBox="0 0 16 16">
+                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                            </svg>
+                            取消
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">提示</h5>
+            </div>
+            <div class="card-body">
+                <p>请修改预约信息，带 <span class="text-danger">*</span> 的字段为必填项。</p>
+                <ul>
+                    <li>选择患者</li>
+                    <li>设置预约日期</li>
+                    <li>填写治疗类型（可选）</li>
+                    <li>添加备注信息（可选）</li>
+                    <li>设置预约费用（可选）</li>
+                    <li>更新预约状态</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

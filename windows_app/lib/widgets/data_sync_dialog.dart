@@ -1,0 +1,307 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as path;
+import 'dart:io';
+
+import '../theme/app_theme.dart';
+import '../providers/database_provider.dart';
+import '../providers/settings_provider.dart';
+
+class DataSyncDialog extends StatefulWidget {
+  const DataSyncDialog({Key? key}) : super(key: key);
+
+  @override
+  State<DataSyncDialog> createState() => _DataSyncDialogState();
+}
+
+class _DataSyncDialogState extends State<DataSyncDialog> {
+  bool _isBackingUp = false;
+  bool _isRestoring = false;
+  String _backupPath = '';
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBackupPath();
+  }
+
+  Future<void> _loadBackupPath() async {
+    final settingsProvider =
+        Provider.of<SettingsProvider>(context, listen: false);
+    await settingsProvider.init();
+    setState(() {
+      _backupPath = settingsProvider.backupPath;
+    });
+  }
+
+  Future<void> _selectBackupDirectory() async {
+    try {
+      String? selectedDirectory = await FilePicker.platform.getDirectoryPath(
+        dialogTitle: '选择备份目录',
+      );
+
+      if (selectedDirectory != null) {
+        setState(() {
+          _backupPath = selectedDirectory;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = '选择目录时出错: $e';
+      });
+    }
+  }
+
+  Future<void> _backupDatabase() async {
+    if (_backupPath.isEmpty) {
+      setState(() {
+        _errorMessage = '请先选择备份目录';
+      });
+      return;
+    }
+
+    setState(() {
+      _isBackingUp = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
+      final settingsProvider =
+          Provider.of<SettingsProvider>(context, listen: false);
+
+      // 保存备份路径到设置
+      await settingsProvider.setBackupPath(_backupPath);
+
+      // 执行备份
+      await dbProvider.backupDatabase();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('数据库备份成功'),
+          backgroundColor: AppTheme.successColor,
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        _errorMessage = '备份失败: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBackingUp = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _restoreDatabase() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['db', 'sqlite', 'sqlite3', 'sql'],
+        dialogTitle: '选择备份文件',
+      );
+
+      if (result == null || result.files.isEmpty) {
+        return;
+      }
+
+      String filePath = result.files.single.path!;
+
+      // 检查文件是否存在
+      if (!await File(filePath).exists()) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('选择的文件不存在')),
+        );
+        return;
+      }
+
+      // 确认是否恢复
+      final confirmRestore = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('恢复备份'),
+          content: Text('确定要从备份文件 $filePath 恢复数据库吗？这将覆盖当前数据。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('取消'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('恢复'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmRestore == true) {
+        setState(() {
+          _isRestoring = true;
+        });
+
+        try {
+          final dbProvider =
+              Provider.of<DatabaseProvider>(context, listen: false);
+          await dbProvider.restoreDatabase(filePath);
+
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('数据库已成功从备份文件恢复'),
+              backgroundColor: AppTheme.successColor,
+            ),
+          );
+        } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('恢复失败: $e'), backgroundColor: Colors.red),
+          );
+        } finally {
+          setState(() {
+            _isRestoring = false;
+          });
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = '恢复失败: $e';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Container(
+        width: 500,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.backup,
+                  color: AppTheme.primaryColor,
+                  size: 28,
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  '数据库备份与还原',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            if (_errorMessage.isNotEmpty)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.red),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _errorMessage,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 24),
+            // 备份目录选择
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppTheme.dividerColor),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      _backupPath.isEmpty ? '未选择备份目录' : _backupPath,
+                      style: TextStyle(
+                        color: _backupPath.isEmpty
+                            ? Colors.grey
+                            : Theme.of(context).textTheme.bodyMedium?.color,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: _selectBackupDirectory,
+                  icon: const Icon(Icons.folder_open),
+                  label: const Text('选择目录'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            // 操作按钮
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('关闭'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: _isBackingUp ? null : _backupDatabase,
+                  icon: _isBackingUp
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save),
+                  label: const Text('备份'),
+                ),
+                const SizedBox(width: 12),
+                ElevatedButton.icon(
+                  onPressed: _isRestoring ? null : _restoreDatabase,
+                  icon: _isRestoring
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.restore),
+                  label: const Text('还原'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

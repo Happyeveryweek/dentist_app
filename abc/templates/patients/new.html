@@ -1,0 +1,525 @@
+{% extends "layout.html" %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-person-plus me-2" viewBox="0 0 16 16">
+            <path d="M6 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H1s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C9.516 10.68 8.289 10 6 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+            <path fill-rule="evenodd" d="M13.5 5a.5.5 0 0 1 .5.5V7h1.5a.5.5 0 0 1 0 1H14v1.5a.5.5 0 0 1-1 0V8h-1.5a.5.5 0 0 1 0-1H13V5.5a.5.5 0 0 1 .5-.5z"/>
+        </svg>
+        {{ title }}
+    </h1>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('new_patient') }}">
+                    {{ form.hidden_tag() }}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.name.label(class="form-label") }}
+                                {% if form.name.errors %}
+                                    {{ form.name(class="form-control is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.name.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.name(class="form-control", placeholder="请输入患者姓名") }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                {{ form.age.label(class="form-label") }}
+                                {% if form.age.errors %}
+                                    {{ form.age(class="form-control is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.age.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.age(class="form-control") }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                {{ form.gender.label(class="form-label") }}
+                                {% if form.gender.errors %}
+                                    {{ form.gender(class="form-control is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.gender.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.gender(class="form-control") }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.phone.label(class="form-label") }}
+                                {% if form.phone.errors %}
+                                    {{ form.phone(class="form-control is-invalid") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.phone.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.phone(class="form-control", placeholder="请输入联系电话") }}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.address.label(class="form-label") }}
+                                {{ form.address(class="form-control", placeholder="请输入地址") }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.doctor.label(class="form-label") }}
+                                {{ form.doctor(class="form-control", placeholder="请输入主治医生姓名（可选）") }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.first_visit_date.label(class="form-label") }}
+                                {% if form.first_visit_date.errors %}
+                                    {{ form.first_visit_date(class="form-control is-invalid", type="date") }}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.first_visit_date.errors %}
+                                            <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    {{ form.first_visit_date(class="form-control", type="date") }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.dental_condition.label(class="form-label") }}
+                        <div class="dental-chart-container">
+                            <div class="dental-charts-container">
+                                <!-- 牙齿图表行的容器 -->
+                                <div class="dental-chart-row mb-3">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-3">
+                                            <input type="date" class="form-control dental-chart-date" value="{{ form.first_visit_date.data|default(today, true)|string }}">
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="dental-charts-row">
+                                                <!-- 第一个十字图表 -->
+                                                <div class="dental-cross-chart">
+                                                    <div class="dental-cross-container">
+                                                        <div class="dental-quadrant top-left">
+                                                            <input type="text" class="form-control dental-area-input" data-area="chart1-top-left" placeholder="">
+                                                        </div>
+                                                        <div class="dental-quadrant top-right">
+                                                            <input type="text" class="form-control dental-area-input" data-area="chart1-top-right" placeholder="">
+                                                        </div>
+                                                        <div class="dental-quadrant bottom-left">
+                                                            <input type="text" class="form-control dental-area-input" data-area="chart1-bottom-left" placeholder="">
+                                                        </div>
+                                                        <div class="dental-quadrant bottom-right">
+                                                            <input type="text" class="form-control dental-area-input" data-area="chart1-bottom-right" placeholder="">
+                                                        </div>
+                                                        <div class="dental-cross-horizontal"></div>
+                                                        <div class="dental-cross-vertical"></div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- 第二个十字图表 -->
+                                                <div class="dental-cross-chart">
+                                                    <div class="dental-cross-container">
+                                                        <div class="dental-quadrant top-left">
+                                                            <input type="text" class="form-control dental-area-input" data-area="chart2-top-left" placeholder="">
+                                                        </div>
+                                                        <div class="dental-quadrant top-right">
+                                                            <input type="text" class="form-control dental-area-input" data-area="chart2-top-right" placeholder="">
+                                                        </div>
+                                                        <div class="dental-quadrant bottom-left">
+                                                            <input type="text" class="form-control dental-area-input" data-area="chart2-bottom-left" placeholder="">
+                                                        </div>
+                                                        <div class="dental-quadrant bottom-right">
+                                                            <input type="text" class="form-control dental-area-input" data-area="chart2-bottom-right" placeholder="">
+                                                        </div>
+                                                        <div class="dental-cross-horizontal"></div>
+                                                        <div class="dental-cross-vertical"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-1">
+                                            <button type="button" class="btn btn-sm btn-outline-danger delete-dental-row" title="删除此行">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="button" id="add-dental-chart" class="btn btn-outline-primary mb-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg me-1" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
+                                </svg>
+                                添加牙齿信息
+                            </button>
+                            
+                            <input type="hidden" name="dental_condition" id="dental_condition_input" value="{{ form.dental_condition.data or '' }}">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.treatment_items.label(class="form-label") }}
+                        {{ form.treatment_items(class="form-control", rows=3, placeholder="请输入诊疗费用项目") }}
+                    </div>
+                    
+                    <h5 class="mt-4 mb-3">复诊时间安排</h5>
+                    <div class="follow-up-visits-container">
+                    {% for follow_up_form in form.follow_up_visits %}
+                        <div class="card mb-3 follow-up-item">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        {{ follow_up_form.follow_up_date.label(class="form-label") }}
+                                        {{ follow_up_form.follow_up_date(class="form-control", type="date") }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        {{ follow_up_form.notes.label(class="form-label") }}
+                                        {{ follow_up_form.notes(class="form-control", rows=2) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    </div>
+                    
+                    <button type="button" id="add-follow-up" class="btn btn-outline-primary mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg me-1" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
+                        </svg>
+                        添加复诊时间
+                    </button>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('patients') }}" class="btn btn-outline-secondary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left me-1" viewBox="0 0 16 16">
+                                <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                            </svg>
+                            返回列表
+                        </a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">填写说明</h5>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>姓名、年龄、性别和电话为必填项</li>
+                    <li>地址和牙齿状况为选填项</li>
+                    <li>添加患者后，可以为其创建预约记录</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .dental-chart-container {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+        background-color: #f9f9f9;
+    }
+    
+    /* 十字线分隔的四个区域样式 */
+    .dental-charts-row {
+        display: flex;
+        gap: 15px;
+        justify-content: space-between;
+    }
+    
+    .dental-cross-chart {
+        margin-top: 0;
+        width: 48%;
+    }
+    
+    .dental-cross-container {
+        position: relative;
+        width: 100%;
+        height: 180px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #fff;
+    }
+    
+    .dental-quadrant {
+        position: absolute;
+        width: 48%;
+        height: 48%;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .top-left {
+        top: 0;
+        left: 0;
+    }
+    
+    .top-right {
+        top: 0;
+        right: 0;
+    }
+    
+    .bottom-left {
+        bottom: 0;
+        left: 0;
+    }
+    
+    .bottom-right {
+        bottom: 0;
+        right: 0;
+    }
+    
+    .dental-cross-horizontal {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: #007bff;
+        transform: translateY(-1px);
+    }
+    
+    .dental-cross-vertical {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 2px;
+        height: 100%;
+        background-color: #007bff;
+        transform: translateX(-1px);
+    }
+    
+    .dental-area-input {
+        width: 90%;
+        height: 90%;
+        border: none;
+        background-color: transparent;
+        resize: none;
+        padding: 2px;
+        text-align: center;
+    }
+    
+    .dental-area-input:focus {
+        outline: none;
+        box-shadow: none;
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+    
+    .dental-chart-row {
+        margin-bottom: 15px;
+        border: 1px solid #eee;
+        border-radius: 5px;
+        padding: 10px;
+        background-color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 复诊时间添加功能
+        const addFollowUpBtn = document.getElementById('add-follow-up');
+        const followUpContainer = document.querySelector('.follow-up-visits-container');
+        
+        addFollowUpBtn.addEventListener('click', function() {
+            const followUpItems = document.querySelectorAll('.follow-up-item');
+            const newIndex = followUpItems.length;
+            
+            const template = followUpItems[0].cloneNode(true);
+            template.querySelectorAll('input, textarea').forEach(input => {
+                const currentName = input.getAttribute('name');
+                if (currentName) {
+                    if (currentName.startsWith('follow_up_visits-')) {
+                        input.value = '';
+                        const newName = currentName.replace(/follow_up_visits-\d+/, `follow_up_visits-${newIndex}`);
+                        input.setAttribute('name', newName);
+                        input.id = input.id.replace(/follow_up_visits-\d+/, `follow_up_visits-${newIndex}`);
+                    }
+                }
+            });
+            
+            followUpContainer.appendChild(template);
+        });
+        
+        // 牙齿状况图表功能
+        const dentalChartsContainer = document.querySelector('.dental-charts-container');
+        const dentalConditionInput = document.getElementById('dental_condition_input');
+        const addDentalChartBtn = document.getElementById('add-dental-chart');
+        
+        // 初始化牙齿状况数据
+        let dentalData = {};
+        try {
+            if (dentalConditionInput.value) {
+                dentalData = JSON.parse(dentalConditionInput.value);
+                
+                // 填充已有数据
+                updateDentalInputsFromData();
+            }
+        } catch (e) {
+            console.error('解析牙齿状况数据失败:', e);
+        }
+        
+        // 从数据更新输入框
+        function updateDentalInputsFromData() {
+            const chartRows = document.querySelectorAll('.dental-chart-row');
+            
+            // 如果有多行数据但UI中只有一行，需要添加行
+            const dates = Object.keys(dentalData).filter(key => key.startsWith('date-'));
+            if (dates.length > chartRows.length) {
+                for (let i = chartRows.length; i < dates.length; i++) {
+                    addNewDentalChartRow();
+                }
+            }
+            
+            // 更新所有输入框
+            chartRows.forEach((row, index) => {
+                const dateKey = `date-${index}`;
+                const dateInput = row.querySelector('.dental-chart-date');
+                if (dentalData[dateKey]) {
+                    dateInput.value = dentalData[dateKey];
+                }
+                
+                row.querySelectorAll('.dental-area-input').forEach(input => {
+                    const area = input.getAttribute('data-area');
+                    const dataKey = `${area}-${index}`;
+                    if (dentalData[dataKey]) {
+                        input.value = dentalData[dataKey];
+                    }
+                });
+            });
+        }
+        
+        // 更新牙齿状况数据
+        function updateDentalData() {
+            const chartRows = document.querySelectorAll('.dental-chart-row');
+            
+            chartRows.forEach((row, index) => {
+                const dateInput = row.querySelector('.dental-chart-date');
+                dentalData[`date-${index}`] = dateInput.value;
+                
+                row.querySelectorAll('.dental-area-input').forEach(input => {
+                    const area = input.getAttribute('data-area');
+                    dentalData[`${area}-${index}`] = input.value;
+                });
+            });
+            
+            dentalConditionInput.value = JSON.stringify(dentalData);
+        }
+        
+        // 添加新的牙齿图表行
+        function addNewDentalChartRow() {
+            const chartRows = document.querySelectorAll('.dental-chart-row');
+            const lastRow = chartRows[chartRows.length - 1];
+            const newRow = lastRow.cloneNode(true);
+            const rowIndex = chartRows.length;
+            
+            // 清空新行的输入值
+            newRow.querySelector('.dental-chart-date').value = '';
+            newRow.querySelectorAll('.dental-area-input').forEach(input => {
+                input.value = '';
+                const currentArea = input.getAttribute('data-area');
+                // 保持区域标识不变，因为我们使用行索引来区分不同行的数据
+                input.setAttribute('data-area', currentArea);
+            });
+            
+            dentalChartsContainer.appendChild(newRow);
+            
+            // 为新行添加事件监听
+            addEventListenersToRow(newRow);
+            
+            return newRow;
+        }
+        
+        // 为行添加事件监听
+        function addEventListenersToRow(row) {
+            const dateInput = row.querySelector('.dental-chart-date');
+            const areaInputs = row.querySelectorAll('.dental-area-input');
+            const deleteBtn = row.querySelector('.delete-dental-row');
+            
+            dateInput.addEventListener('change', updateDentalData);
+            areaInputs.forEach(input => {
+                input.addEventListener('input', updateDentalData);
+            });
+            
+            // 添加删除按钮事件
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function() {
+                    // 检查是否只剩一行，如果是则不删除
+                    const chartRows = document.querySelectorAll('.dental-chart-row');
+                    if (chartRows.length <= 1) {
+                        alert('至少需要保留一行牙齿状况记录');
+                        return;
+                    }
+                    
+                    // 删除行
+                    row.remove();
+                    
+                    // 更新数据
+                    updateDentalData();
+                });
+            }
+        }
+        
+        // 为第一行添加事件监听
+        const firstRow = document.querySelector('.dental-chart-row');
+        if (firstRow) {
+            addEventListenersToRow(firstRow);
+        }
+        
+        // 添加牙齿图表按钮事件
+        addDentalChartBtn.addEventListener('click', function() {
+            addNewDentalChartRow();
+            updateDentalData();
+        });
+        
+        // 初始化更新一次
+        updateDentalData();
+    });
+</script>
+{% endblock %}

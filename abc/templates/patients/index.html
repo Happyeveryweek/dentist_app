@@ -1,0 +1,367 @@
+{% extends "layout.html" %}
+{% block title %}患者管理{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <h1>
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-people me-2" viewBox="0 0 16 16">
+            <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8Zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002a.274.274 0 0 1-.014.002H7.022ZM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816ZM4.92 10A5.493 5.493 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0Zm3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/>
+        </svg>
+        患者管理
+    </h1>
+    <div>
+        <button id="exportBtn" class="btn btn-success me-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-excel me-1" viewBox="0 0 16 16">
+                <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
+                <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+            </svg>
+            导出Excel
+        </button>
+        <a href="{{ url_for('new_patient') }}" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg me-1" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
+            </svg>
+            添加患者
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body py-2">
+        <form method="GET" action="{{ url_for('patients') }}" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="搜索患者信息..." value="{{ request.args.get('search', '') }}">
+                    <button class="btn btn-outline-primary" type="submit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text">开始</span>
+                            <input type="date" name="start_date" class="form-control" placeholder="开始日期" value="{{ request.args.get('start_date', '') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text">结束</span>
+                            <input type="date" name="end_date" class="form-control" placeholder="结束日期" value="{{ request.args.get('end_date', '') }}">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-primary w-100" type="submit">筛选</button>
+                    </div>
+                    {% if request.args.get('search') or request.args.get('start_date') or request.args.get('end_date') %}
+                    <div class="col-md-2">
+                        <a href="{{ url_for('patients') }}" class="btn btn-outline-secondary w-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                            </svg>
+                            清除
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if patients %}
+        <div class="table-responsive">
+            <table class="table table-hover table-sm">
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAllPatients">
+                                <label class="form-check-label" for="selectAllPatients"></label>
+                            </div>
+                        </th>
+                        <th style="width: 60px;">ID</th>
+                        <th style="width: 70px;">病历号</th>
+                        <th style="width: 80px;">姓名</th>
+                        <th style="width: 140px;">身份证号</th>
+                        <th style="width: 60px;">年龄</th>
+                        <th style="width: 60px;">性别</th>
+                        <th style="width: 100px;">电话</th>
+                        <th style="width: 90px;">主治医生</th>
+                        <th style="width: 100px;">首次就诊</th>
+                        <th style="width: 80px;">总费用</th>
+                        <th style="width: 150px; min-width: 150px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for patient in patients %}
+                    <tr>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input patient-select" type="checkbox" id="patient-{{ patient.id }}" value="{{ patient.id }}">
+                                <label class="form-check-label" for="patient-{{ patient.id }}"></label>
+                            </div>
+                        </td>
+                        <td>{{ patient.id }}</td>
+                        <td>{{ patient.medical_record_number or '未填写' }}</td>
+                        <td>{{ patient.name }}</td>
+                        <td>{{ patient.identification_number or '未填写' }}</td>
+                        <td>{{ patient.age }}</td>
+                        <td>{{ patient.gender }}</td>
+                        <td>{{ patient.phone }}</td>
+                        <td>{{ patient.doctor or '未填写' }}</td>
+                        <td>{{ patient.first_visit_date.strftime('%Y-%m-%d') }}</td>
+                        <td>¥{{ patient.total_cost }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('patient', patient_id=patient.id) }}" class="btn btn-outline-primary">查看</a>
+                                <a href="{{ url_for('edit_patient', patient_id=patient.id) }}" class="btn btn-outline-secondary">编辑</a>
+                                <button type="button" class="btn btn-outline-danger delete-btn" data-id="{{ patient.id }}" data-name="{{ patient.name }}">删除</button>
+                            </div>
+                            <form id="deleteForm{{ patient.id }}" action="{{ url_for('delete_patient', patient_id=patient.id) }}" method="POST" style="display:none;"></form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="#6c757d" class="bi bi-person-x mb-3" viewBox="0 0 16 16">
+                <path d="M6 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H1s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C9.516 10.68 8.289 10 6 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                <path d="M12.146 5.146a.5.5 0 0 1 .708 0L14 6.293l1.146-1.147a.5.5 0 0 1 .708.708L14.707 7l1.147 1.146a.5.5 0 0 1-.708.708L14 7.707l-1.146 1.147a.5.5 0 0 1-.708-.708L13.293 7l-1.147-1.146a.5.5 0 0 1 0-.708z"/>
+            </svg>
+            <h3>暂无患者记录</h3>
+            <p class="text-muted">点击"添加患者"按钮创建第一条患者记录</p>
+            <a href="{{ url_for('new_patient') }}" class="btn btn-primary mt-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-lg me-1" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
+                </svg>
+                添加患者
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-exclamation-triangle me-2" viewBox="0 0 16 16">
+                        <path d="M7.938 2.016A.13.13 0 0 1 8.002 2a.13.13 0 0 1 .063.016.146.146 0 0 1 .054.057l6.857 11.667c.036.06.035.124.002.183a.163.163 0 0 1-.054.06.116.116 0 0 1-.066.017H1.146a.115.115 0 0 1-.066-.017.163.163 0 0 1-.054-.06.176.176 0 0 1 .002-.183L7.884 2.073a.147.147 0 0 1 .054-.057zm1.044-.45a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566z"/>
+                        <path d="M7.002 12a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 5.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995z"/>
+                    </svg>
+                    确认删除
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>您确定要删除患者 <span id="patientNameToDelete" class="fw-bold"></span> 吗？</p>
+                <p class="text-danger"><small>此操作将同时删除该患者的所有预约记录，且不可恢复。</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-lg me-1" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                    </svg>
+                    取消
+                </button>
+                <button type="button" id="confirmDeleteBtn" class="btn btn-danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash me-1" viewBox="0 0 16 16">
+                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0v-6z"/>
+                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                    </svg>
+                    确认删除
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 导出确认模态框 -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="exportModalLabel">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-file-earmark-excel me-2" viewBox="0 0 16 16">
+                        <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
+                        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                    </svg>
+                    导出患者数据
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="exportForm" action="{{ url_for('export_patients') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">导出选项</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="export_option" id="exportSelected" value="selected" checked>
+                            <label class="form-check-label" for="exportSelected">
+                                导出选中的患者 (<span id="selectedCount">0</span>)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="export_option" id="exportAll" value="all">
+                            <label class="form-check-label" for="exportAll">
+                                导出全部患者 ({{ patients|length }})
+                            </label>
+                        </div>
+                    </div>
+                    <div id="selectedPatients">
+                        <!-- 这里会动态添加选中的患者ID -->
+                    </div>
+                    <input type="hidden" name="export_all" id="exportAllInput" value="false">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-lg me-1" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                    </svg>
+                    取消
+                </button>
+                <button type="button" id="confirmExportBtn" class="btn btn-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-excel me-1" viewBox="0 0 16 16">
+                        <path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.641L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/>
+                        <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5v2z"/>
+                    </svg>
+                    确认导出
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 为删除按钮添加点击事件
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取所有删除按钮
+        const deleteButtons = document.querySelectorAll('.delete-btn');
+        // 获取模态框元素
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        // 获取确认删除按钮
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        // 当前要删除的患者ID
+        let currentPatientId = null;
+        
+        // 为每个删除按钮添加点击事件
+        deleteButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                // 获取患者ID和姓名
+                currentPatientId = this.getAttribute('data-id');
+                const patientName = this.getAttribute('data-name');
+                
+                // 设置模态框中的患者姓名
+                document.getElementById('patientNameToDelete').textContent = patientName;
+                
+                // 显示模态框
+                deleteModal.show();
+            });
+        });
+        
+        // 为确认删除按钮添加点击事件
+        confirmDeleteBtn.addEventListener('click', function() {
+            if (currentPatientId) {
+                // 提交对应的删除表单
+                document.getElementById('deleteForm' + currentPatientId).submit();
+            }
+            // 隐藏模态框
+            deleteModal.hide();
+        });
+        
+        // 患者导出功能
+        const exportBtn = document.getElementById('exportBtn');
+        const exportModal = new bootstrap.Modal(document.getElementById('exportModal'));
+        const selectAllCheckbox = document.getElementById('selectAllPatients');
+        const patientCheckboxes = document.querySelectorAll('.patient-select');
+        const selectedCountSpan = document.getElementById('selectedCount');
+        const confirmExportBtn = document.getElementById('confirmExportBtn');
+        const exportForm = document.getElementById('exportForm');
+        const selectedPatientsDiv = document.getElementById('selectedPatients');
+        const exportAllInput = document.getElementById('exportAllInput');
+        const exportAllRadio = document.getElementById('exportAll');
+        const exportSelectedRadio = document.getElementById('exportSelected');
+        
+        // 更新选中患者数量
+        function updateSelectedCount() {
+            const selectedCheckboxes = document.querySelectorAll('.patient-select:checked');
+            selectedCountSpan.textContent = selectedCheckboxes.length;
+            
+            // 如果没有选中任何患者，自动切换到"导出全部"
+            if (selectedCheckboxes.length === 0) {
+                exportAllRadio.checked = true;
+                exportSelectedRadio.disabled = true;
+            } else {
+                exportSelectedRadio.disabled = false;
+            }
+        }
+        
+        // 全选/取消全选
+        selectAllCheckbox.addEventListener('change', function() {
+            const isChecked = this.checked;
+            patientCheckboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+            updateSelectedCount();
+        });
+        
+        // 单个复选框变化
+        patientCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                // 检查是否所有复选框都被选中
+                const allChecked = Array.from(patientCheckboxes).every(cb => cb.checked);
+                selectAllCheckbox.checked = allChecked;
+                
+                updateSelectedCount();
+            });
+        });
+        
+        // 导出按钮点击事件
+        exportBtn.addEventListener('click', function() {
+            updateSelectedCount();
+            exportModal.show();
+        });
+        
+        // 确认导出按钮点击事件
+        confirmExportBtn.addEventListener('click', function() {
+            // 清空之前的选择
+            selectedPatientsDiv.innerHTML = '';
+            
+            // 设置是否导出全部
+            if (exportAllRadio.checked) {
+                exportAllInput.value = 'true';
+            } else {
+                exportAllInput.value = 'false';
+                
+                // 添加选中的患者ID
+                const selectedCheckboxes = document.querySelectorAll('.patient-select:checked');
+                selectedCheckboxes.forEach(checkbox => {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'patient_ids';
+                    hiddenInput.value = checkbox.value;
+                    selectedPatientsDiv.appendChild(hiddenInput);
+                });
+            }
+            
+            // 提交表单
+            exportForm.submit();
+            
+            // 隐藏模态框
+            exportModal.hide();
+        });
+    });
+</script>
+{% endblock %}
