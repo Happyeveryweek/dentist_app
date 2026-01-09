@@ -46,15 +46,15 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Flutter](https://img.shields.io/badge/Flutter-3.7.2+-blue.svg)](https://flutter.dev/)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Android-lightgrey.svg)](https://github.com/your-username/dentist_app)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Android-lightgrey.svg)](https://github.com/Happyeveryweek/dentist_app)
 
 ### 🌟 如果这个项目对您有帮助，请给我们一个 Star！⭐
 
 **您的支持是我们持续改进的动力** 💪
 
-[![GitHub stars](https://img.shields.io/github/stars/your-username/dentist_app?style=social)](https://github.com/your-username/dentist_app/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/your-username/dentist_app?style=social)](https://github.com/your-username/dentist_app/network/members)
-[![GitHub watchers](https://img.shields.io/github/watchers/your-username/dentist_app?style=social)](https://github.com/your-username/dentist_app/watchers)
+[![GitHub stars](https://img.shields.io/github/stars/your-username/dentist_app?style=social)](https://github.com/Happyeveryweek/dentist_app/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/your-username/dentist_app?style=social)](https://github.com/Happyeveryweek/dentist_app/network/members)
+[![GitHub watchers](https://img.shields.io/github/watchers/your-username/dentist_app?style=social)](https://github.com/Happyeveryweek/dentist_app/watchers)
 
 ---
 
@@ -63,8 +63,8 @@
 - 🌟 **给项目加星** - 点击右上角的 ⭐ Star 按钮
 - 🍴 **Fork 项目** - 创建您自己的副本进行开发
 - 👀 **Watch 项目** - 获取项目更新通知
-- 🐛 **报告问题** - 在 [Issues](https://github.com/your-username/dentist_app/issues) 中反馈问题
-- 💡 **提出建议** - 在 [Discussions](https://github.com/your-username/dentist_app/discussions) 中分享想法
+- 🐛 **报告问题** - 在 [Issues](https://github.com/Happyeveryweek/dentist_app/issues) 中反馈问题
+- 💡 **提出建议** - 在 [Discussions](https://github.com/Happyeveryweek/dentist_app/discussions) 中分享想法
 - 🤝 **贡献代码** - 提交 Pull Request 参与开发
 
 ---
@@ -522,8 +522,8 @@ MIT 许可证允许您：
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Made with ❤️](https://img.shields.io/badge/Made%20with-❤️-red.svg)](https://github.com/your-username/dentist_app)
-[![GitHub contributors](https://img.shields.io/github/contributors/your-username/dentist_app.svg)](https://github.com/your-username/dentist_app/graphs/contributors)
+[![Made with ❤️](https://img.shields.io/badge/Made%20with-❤️-red.svg)](https://github.com/Happyeveryweek/dentist_app)
+[![GitHub contributors](https://img.shields.io/github/contributors/your-username/dentist_app.svg)](https://github.com/Happyeveryweek/dentist_app/graphs/contributors)
 
 **🌟 如果您喜欢这个项目，请给我们一个 Star！⭐**
 
