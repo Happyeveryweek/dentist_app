@@ -5,6 +5,7 @@ import 'package:path/path.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:dentist_app/models/database_models.dart';
+import 'package:dentist_app/utils/datetime_formatter.dart';
 
 class DatabaseUtils {
   /// 初始化空数据库
@@ -77,19 +78,17 @@ class DatabaseUtils {
         }
       }
 
-      // 尝试复制测试数据库
+      // 使用DatabaseHelper创建测试数据库
       try {
-        // 首先尝试从assets加载测试数据库
-        print('尝试从assets复制测试数据库');
-        ByteData data = await rootBundle.load(
-          'assets/databases/dental_clinic_test.db',
-        );
-        List<int> bytes = data.buffer.asUint8List(
-          data.offsetInBytes,
-          data.lengthInBytes,
-        );
-        await testDbFile.writeAsBytes(bytes, flush: true);
-        print('成功从assets复制测试数据库到: $testDbPath');
+        print('测试数据库不存在，通过DatabaseHelper自动创建');
+        
+        // 使用DatabaseHelper创建数据库
+        DatabaseHelper.setCustomDbPath(testDbPath);
+        final dbHelper = DatabaseHelper();
+        final db = await dbHelper.database;
+        await db.close();
+        
+        print('成功通过DatabaseHelper创建测试数据库: $testDbPath');
 
         // 验证文件可访问性
         if (await testDbFile.exists()) {
@@ -196,12 +195,12 @@ class DatabaseUtils {
               'address': '北京市海淀区中关村大街1号',
               'identification_number': '110101198001010001',
               'doctor': '王医生',
-              'first_visit_date': yesterday.toIso8601String(),
+              'first_visit_date': DateTimeFormatter.toDbString(yesterday),
               'dental_condition': '牙周炎',
               'treatment_items': '洗牙、根管治疗',
               'total_cost': 1200.0,
-              'created_at': yesterday.toIso8601String(),
-              'updated_at': now.toIso8601String(),
+              'created_at': DateTimeFormatter.toDbString(yesterday),
+              'updated_at': DateTimeFormatter.toDbString(now),
             });
 
             await db.insert('patients', {
@@ -213,12 +212,12 @@ class DatabaseUtils {
               'address': '北京市朝阳区建国路2号',
               'identification_number': '110101199001010002',
               'doctor': '张医生',
-              'first_visit_date': yesterday.toIso8601String(),
+              'first_visit_date': DateTimeFormatter.toDbString(yesterday),
               'dental_condition': '蛀牙',
               'treatment_items': '补牙',
               'total_cost': 500.0,
-              'created_at': yesterday.toIso8601String(),
-              'updated_at': now.toIso8601String(),
+              'created_at': DateTimeFormatter.toDbString(yesterday),
+              'updated_at': DateTimeFormatter.toDbString(now),
             });
 
             await db.insert('patients', {
@@ -230,12 +229,12 @@ class DatabaseUtils {
               'address': '北京市西城区西长安街3号',
               'identification_number': '110101200001010003',
               'doctor': '李医生',
-              'first_visit_date': now.toIso8601String(),
+              'first_visit_date': DateTimeFormatter.toDbString(now),
               'dental_condition': '牙齿矫正',
               'treatment_items': '正畸治疗',
               'total_cost': 8000.0,
-              'created_at': now.toIso8601String(),
-              'updated_at': now.toIso8601String(),
+              'created_at': DateTimeFormatter.toDbString(now),
+              'updated_at': DateTimeFormatter.toDbString(now),
             });
 
             // 测试多电话号码格式
@@ -248,61 +247,61 @@ class DatabaseUtils {
               'address': '北京市东城区东长安街4号',
               'identification_number': '110101198001010004',
               'doctor': '钱医生',
-              'first_visit_date': yesterday.toIso8601String(),
+              'first_visit_date': DateTimeFormatter.toDbString(yesterday),
               'dental_condition': '牙齿美白',
               'treatment_items': '美白治疗',
               'total_cost': 2000.0,
-              'created_at': yesterday.toIso8601String(),
-              'updated_at': now.toIso8601String(),
+              'created_at': DateTimeFormatter.toDbString(yesterday),
+              'updated_at': DateTimeFormatter.toDbString(now),
             });
 
             print('插入测试预约数据...');
             // 添加测试预约
             await db.insert('appointments', {
               'patient_id': 1,
-              'appointment_date': now.toIso8601String(),
+              'appointment_date': DateTimeFormatter.toDbString(now),
               'status': '已完成',
               'treatment_type': '洗牙',
               'notes': '常规洗牙',
               'cost': 200.0,
-              'created_at': yesterday.toIso8601String(),
-              'updated_at': yesterday.toIso8601String(),
+              'created_at': DateTimeFormatter.toDbString(yesterday),
+              'updated_at': DateTimeFormatter.toDbString(yesterday),
             });
 
             await db.insert('appointments', {
               'patient_id': 2,
-              'appointment_date': tomorrow.toIso8601String(),
+              'appointment_date': DateTimeFormatter.toDbString(tomorrow),
               'status': '已预约',
               'treatment_type': '根管治疗',
               'notes': '牙髓炎症',
               'cost': 1200.0,
-              'created_at': yesterday.toIso8601String(),
-              'updated_at': yesterday.toIso8601String(),
+              'created_at': DateTimeFormatter.toDbString(yesterday),
+              'updated_at': DateTimeFormatter.toDbString(yesterday),
             });
 
             await db.insert('appointments', {
               'patient_id': 3,
               'appointment_date':
-                  tomorrow.add(const Duration(days: 1)).toIso8601String(),
+                  DateTimeFormatter.toDbString(tomorrow.add(const Duration(days: 1))),
               'status': '已预约',
               'treatment_type': '正畸调整',
               'notes': '定期调整牙套',
               'cost': 500.0,
-              'created_at': now.toIso8601String(),
-              'updated_at': now.toIso8601String(),
+              'created_at': DateTimeFormatter.toDbString(now),
+              'updated_at': DateTimeFormatter.toDbString(now),
             });
 
             // 预约给有多电话号码的患者
             await db.insert('appointments', {
               'patient_id': 4,
               'appointment_date':
-                  tomorrow.add(const Duration(days: 2)).toIso8601String(),
+                  DateTimeFormatter.toDbString(tomorrow.add(const Duration(days: 2))),
               'status': '已预约',
               'treatment_type': '美白治疗',
               'notes': '第二次美白',
               'cost': 1500.0,
-              'created_at': now.toIso8601String(),
-              'updated_at': now.toIso8601String(),
+              'created_at': DateTimeFormatter.toDbString(now),
+              'updated_at': DateTimeFormatter.toDbString(now),
             });
 
             print('插入测试复诊记录...');
@@ -310,19 +309,19 @@ class DatabaseUtils {
             await db.insert('follow_up_visits', {
               'patient_id': 1,
               'follow_up_date':
-                  tomorrow.add(const Duration(days: 30)).toIso8601String(),
+                  DateTimeFormatter.toDbString(tomorrow.add(const Duration(days: 30))),
               'notes': '一个月后复查',
-              'created_at': now.toIso8601String(),
-              'updated_at': now.toIso8601String(),
+              'created_at': DateTimeFormatter.toDbString(now),
+              'updated_at': DateTimeFormatter.toDbString(now),
             });
 
             await db.insert('follow_up_visits', {
               'patient_id': 2,
               'follow_up_date':
-                  tomorrow.add(const Duration(days: 14)).toIso8601String(),
+                  DateTimeFormatter.toDbString(tomorrow.add(const Duration(days: 14))),
               'notes': '两周后复查根管治疗效果',
-              'created_at': now.toIso8601String(),
-              'updated_at': now.toIso8601String(),
+              'created_at': DateTimeFormatter.toDbString(now),
+              'updated_at': DateTimeFormatter.toDbString(now),
             });
           },
         );
@@ -363,10 +362,9 @@ class DatabaseUtils {
       }
 
       // 构建备份文件路径，添加时间戳
-      final timestamp = DateTime.now()
-          .toIso8601String()
+      final timestamp = DateTimeFormatter.toDbString(DateTime.now())
           .replaceAll(':', '-')
-          .replaceAll('.', '-');
+          .replaceAll(' ', '_');
       final filename = 'dental_clinic_backup_$timestamp.db';
       final destPath = join(destinationDir, filename);
 
@@ -505,6 +503,21 @@ class DatabaseUtils {
     }
   }
 
+  /// 重置默认数据库并重新初始化
+  static Future<bool> resetDefaultDatabase() async {
+    try {
+      final dbPath = await getDefaultDatabasePath();
+      final success = await resetDatabase(dbPath);
+      if (success) {
+        debugPrint('默认数据库已重置并重新初始化');
+      }
+      return success;
+    } catch (e) {
+      debugPrint('重置默认数据库失败: $e');
+      return false;
+    }
+  }
+
   /// 获取默认数据库路径
   static Future<String> getDefaultDatabasePath() async {
     try {
@@ -519,68 +532,19 @@ class DatabaseUtils {
 
       final defaultDbPath = join(dbDir, 'dental_clinic.db');
 
-      // 如果数据库不存在，创建一个空数据库
+      // 如果数据库不存在，使用DatabaseHelper创建完整的数据库
       if (!await File(defaultDbPath).exists()) {
-        final db = await openDatabase(
-          defaultDbPath,
-          version: 1,
-          onCreate: (Database db, int version) async {
-            // 创建患者表，与Windows端结构一致
-            await db.execute('''
-            CREATE TABLE patients (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              medical_record_number INTEGER,
-              name TEXT NOT NULL,
-              age INTEGER NOT NULL,
-              gender TEXT NOT NULL,
-              phone TEXT NOT NULL,
-              address TEXT,
-              email TEXT,
-              identification_number TEXT,
-              doctor TEXT,
-              first_visit_date TEXT NOT NULL,
-              dental_condition TEXT,
-              treatment_items TEXT,
-              total_cost REAL DEFAULT 0.0,
-              notes TEXT,
-              birth_date TEXT,
-              created_at TEXT NOT NULL,
-              updated_at TEXT NOT NULL
-            )
-            ''');
-
-            // 创建预约表，与Windows端结构一致
-            await db.execute('''
-            CREATE TABLE appointments (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              patient_id INTEGER NOT NULL,
-              appointment_date TEXT NOT NULL,
-              status TEXT NOT NULL,
-              treatment_type TEXT,
-              notes TEXT,
-              cost REAL DEFAULT 0.0,
-              created_at TEXT NOT NULL,
-              updated_at TEXT NOT NULL,
-              FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE
-            )
-            ''');
-
-            // 创建复诊表，与Windows端结构一致
-            await db.execute('''
-            CREATE TABLE follow_up_visits (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              patient_id INTEGER NOT NULL,
-              follow_up_date TEXT NOT NULL,
-              notes TEXT,
-              created_at TEXT NOT NULL,
-              updated_at TEXT NOT NULL,
-              FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE
-            )
-            ''');
-          },
-        );
-
+        print('默认数据库不存在，创建新的数据库: $defaultDbPath');
+        
+        // 设置自定义数据库路径
+        DatabaseHelper.setCustomDbPath(defaultDbPath);
+        
+        // 通过DatabaseHelper创建数据库，这会自动创建所有表和默认用户
+        final dbHelper = DatabaseHelper();
+        final db = await dbHelper.database;
         await db.close();
+        
+        print('✅ 默认数据库创建完成，包含所有表和默认用户');
       }
 
       return defaultDbPath;
@@ -603,10 +567,9 @@ class DatabaseUtils {
       final List<Map<String, dynamic>> patients = await db.query('patients');
 
       // 构建备份文件路径，添加时间戳
-      final timestamp = DateTime.now()
-          .toIso8601String()
+      final timestamp = DateTimeFormatter.toDbString(DateTime.now())
           .replaceAll(':', '-')
-          .replaceAll('.', '-');
+          .replaceAll(' ', '_');
       final filename = 'patients_backup_$timestamp.db';
       final destPath = join(destinationDir, filename);
 

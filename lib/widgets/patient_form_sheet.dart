@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:dentist_app/providers/database_provider.dart';
+import 'package:dentist_app/providers/patient_provider.dart';
+import 'package:dentist_app/providers/user_provider.dart';
 import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/theme/app_theme.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app/widgets/modern_date_picker.dart';
+import 'package:dentist_app/widgets/stateful_text_field.dart';
 
 class PatientFormSheet extends StatefulWidget {
   final Patient? patient;
@@ -47,6 +51,9 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
 
   // 添加一个实例变量来跟踪当前显示的牙齿记录索引
   int _currentDentalRecordIndex = 0;
+  
+  // 跟踪展开状态的Map
+  Map<String, bool> _expandedStates = {};
 
   @override
   void initState() {
@@ -79,6 +86,9 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
       print('初始化新患者表单');
       _phoneController.text = '';
 
+      // 设置主治医生字段的默认值为当前登录用户的医生姓名
+      _setDefaultDoctorName();
+
       // 初始化一个空的牙齿记录
       print('创建新的牙齿记录...');
       final currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -91,17 +101,17 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
             'chart1-top-right': '',
             'chart1-bottom-left': '',
             'chart1-bottom-right': '',
-            'chart1-note': '请在此输入图表1的备注',
+            'chart1-note': '',
             'chart2-top-left': '',
             'chart2-top-right': '',
             'chart2-bottom-left': '',
             'chart2-bottom-right': '',
-            'chart2-note': '请在此输入图表2的备注',
+            'chart2-note': '',
             'chart3-top-left': '',
             'chart3-top-right': '',
             'chart3-bottom-left': '',
             'chart3-bottom-right': '',
-            'chart3-note': '请在此输入图表3的备注',
+            'chart3-note': '',
           },
         ];
 
@@ -154,7 +164,7 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
       final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
       // 获取最大病历号，而不是患者总数
       final maxMedicalRecordNumber =
-          await dbProvider.getMaxMedicalRecordNumber();
+          await Provider.of<PatientProvider>(context, listen: false).getMaxMedicalRecordNumber();
 
       print('获取到最大病历号: $maxMedicalRecordNumber');
 
@@ -173,6 +183,24 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
         });
         print('出错，设置默认病历号为: 1');
       }
+    }
+  }
+
+  /// 设置主治医生字段的默认值
+  void _setDefaultDoctorName() {
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final currentUser = userProvider.currentUser;
+      
+      if (currentUser != null && currentUser.doctor != null && currentUser.doctor!.isNotEmpty) {
+        _doctorController.text = currentUser.doctor!;
+        print('设置患者主治医生默认值: ${currentUser.doctor}');
+      } else {
+        print('当前用户未设置医生姓名，主治医生字段保持为空');
+      }
+    } catch (e) {
+      print('设置患者主治医生默认值失败: $e');
+      // 如果获取失败，保持字段为空
     }
   }
 
@@ -361,8 +389,8 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
         return;
       }
 
-      // 根据索引构建记录
-      _dentalRecords = [];
+      // 根据索引构建记录，并收集日期信息用于排序
+      List<Map<String, dynamic>> tempRecords = [];
       for (int i in indices) {
         Map<String, dynamic> record = {
           'date':
@@ -382,15 +410,29 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
               condition['$chartPrefix-bottom-left-$i'] ?? '';
           record['$chartPrefix-bottom-right'] =
               condition['$chartPrefix-bottom-right-$i'] ?? '';
-          record['$chartPrefix-note'] =
-              condition['$chartPrefix-note-$i'] ?? '请在此输入图表$chartNum的备注';
+          
+          // 处理备注字段：如果是默认提示文本，转换为空字符串
+          String noteValue = condition['$chartPrefix-note-$i'] ?? '';
+          String defaultText = '请在此输入图表$chartNum的备注';
+          if (noteValue == defaultText) {
+            noteValue = '';
+          }
+          record['$chartPrefix-note'] = noteValue;
         }
 
         print('构建的记录 $i: $record');
-        _dentalRecords.add(record);
+        tempRecords.add(record);
       }
 
-      print('最终设置的牙齿记录: $_dentalRecords');
+      // 按日期倒序排序（最新的在前）
+      tempRecords.sort((a, b) {
+        String dateA = a['date'] ?? '';
+        String dateB = b['date'] ?? '';
+        return dateB.compareTo(dateA);
+      });
+      
+      _dentalRecords = tempRecords;
+      print('最终设置的牙齿记录（已按日期倒序排序）: $_dentalRecords');
     } catch (e) {
       print('解析牙齿状况数据失败: $e');
       // 创建默认的空记录
@@ -413,7 +455,7 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
       record['$chartPrefix-top-right'] = '';
       record['$chartPrefix-bottom-left'] = '';
       record['$chartPrefix-bottom-right'] = '';
-      record['$chartPrefix-note'] = '请在此输入图表$i的备注';
+      record['$chartPrefix-note'] = ''; // 改为空字符串，不使用默认提示文本
     }
 
     return record;
@@ -424,43 +466,36 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
     final currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
     setState(() {
-      _dentalRecords.add({
+      // 在列表开头插入新记录（最新的在前）
+      _dentalRecords.insert(0, {
         'date': currentDate,
         'chart1-top-left': '',
         'chart1-top-right': '',
         'chart1-bottom-left': '',
         'chart1-bottom-right': '',
-        'chart1-note': '请在此输入图表1的备注',
+        'chart1-note': '',
         'chart2-top-left': '',
         'chart2-top-right': '',
         'chart2-bottom-left': '',
         'chart2-bottom-right': '',
-        'chart2-note': '请在此输入图表2的备注',
+        'chart2-note': '',
         'chart3-top-left': '',
         'chart3-top-right': '',
         'chart3-bottom-left': '',
         'chart3-bottom-right': '',
-        'chart3-note': '请在此输入图表3的备注',
+        'chart3-note': '',
       });
+      
+      // 切换到新添加的记录（索引0）
+      _currentDentalRecordIndex = 0;
 
-      print('新记录已添加:');
+      print('新记录已添加到列表开头:');
       print('当前记录总数: ${_dentalRecords.length}');
       print('新记录数据:');
-      print('  日期: ${_dentalRecords.last['date']}');
-      print('  图表1-备注: ${_dentalRecords.last['chart1-note']}');
-      print('  图表2-备注: ${_dentalRecords.last['chart2-note']}');
-      print('  图表3-备注: ${_dentalRecords.last['chart3-note']}');
-    });
-
-    // 确保UI更新并滚动到新添加的记录
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
+      print('  日期: ${_dentalRecords.first['date']}');
+      print('  图表1-备注: ${_dentalRecords.first['chart1-note']}');
+      print('  图表2-备注: ${_dentalRecords.first['chart2-note']}');
+      print('  图表3-备注: ${_dentalRecords.first['chart3-note']}');
     });
   }
 
@@ -574,20 +609,14 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
     }
 
     if (!isPhoneValid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
-      );
+      // 电话号码验证失败通过回调通知父组件，不再显示黑色提示条
+      widget.onSaved(false, errorMessage);
       return;
     }
 
     if (!_formKey.currentState!.validate()) {
-      // 如果验证失败，显示错误提示
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('请检查输入信息是否正确'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // 如果验证失败，通过回调通知父组件，不再显示黑色提示条
+      widget.onSaved(false, '请检查输入信息是否正确');
       return;
     }
 
@@ -680,13 +709,13 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
         if (widget.patient?.id != null) {
           // 编辑现有患者 - 确保使用ID来确定是更新模式
           print('更新现有患者 - ID: ${patient.id}');
-          final result = await dbProvider.updatePatient(patient);
+          final result = await Provider.of<PatientProvider>(context, listen: false).updatePatient(patient);
           message = '患者信息更新成功！';
           success = result;
         } else {
           // 添加新患者
           print('添加新患者');
-          final id = await dbProvider.addPatient(patient);
+          final id = await Provider.of<PatientProvider>(context, listen: false).addPatient(patient);
           message = '患者添加成功！';
           success = id > 0;
         }
@@ -701,12 +730,8 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
         // 调用回调通知父组件
         widget.onSaved(success, message);
 
-        // 如果操作成功，关闭表单
+        // 如果操作成功，关闭表单（不再显示黑色的SnackBar，由父组件的SuccessToastManager显示绿色提示）
         if (success && mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(message)));
-
           // 延迟关闭表单，确保用户能看到成功消息
           Future.delayed(const Duration(milliseconds: 1000), () {
             if (mounted) {
@@ -720,9 +745,7 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
           setState(() {
             _isLoading = false;
           });
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('数据库操作失败: $dbError')));
+          // 数据库错误也通过回调通知父组件，不再显示黑色提示条
         }
         widget.onSaved(false, '数据库操作失败: $dbError');
       }
@@ -733,9 +756,7 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('保存失败: $e')));
+        // 所有错误都通过回调通知父组件，不再显示黑色提示条
       }
       widget.onSaved(false, '保存失败: $e');
     }
@@ -879,11 +900,15 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
                         icon: const Icon(Icons.edit_calendar),
                         color: Colors.blue,
                         onPressed: () async {
-                          final pickedDate = await showDatePicker(
+                          final pickedDate = await showDialog<DateTime>(
                             context: context,
-                            initialDate: _firstVisitDate,
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
+                            builder: (BuildContext context) {
+                              return ModernDatePickerDialog(
+                                initialDate: _firstVisitDate,
+                                firstDate: DateTime(2000),
+                                lastDate: DateTime(2100),
+                              );
+                            },
                           );
                           if (pickedDate != null) {
                             setState(() {
@@ -1610,13 +1635,17 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
                         ),
                       ),
                       onPressed: () async {
-                        final pickedDate = await showDatePicker(
+                        final pickedDate = await showDialog<DateTime>(
                           context: context,
-                          initialDate:
-                              DateTime.tryParse(record['date']) ??
-                              DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
+                          builder: (BuildContext context) {
+                            return ModernDatePickerDialog(
+                              initialDate:
+                                  DateTime.tryParse(record['date']) ??
+                                  DateTime.now(),
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+                          },
                         );
                         if (pickedDate != null) {
                           setState(() {
@@ -1661,10 +1690,8 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 三个图表
-                _buildDentalChartSimplified('图表1', record, index),
-                _buildDentalChartSimplified('图表2', record, index),
-                _buildDentalChartSimplified('图表3', record, index),
+                // 智能显示图表 - 可展开/折叠空图表
+                ..._buildSmartDentalCharts(record, index),
               ],
             ),
           ),
@@ -1673,33 +1700,54 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
     );
   }
 
+  // 智能构建牙齿图表 - 始终按顺序显示所有图表
+  List<Widget> _buildSmartDentalCharts(Map<String, dynamic> record, int index) {
+    List<Widget> result = [];
+    
+    // 按顺序显示所有图表，不根据内容动态改变位置
+    for (int i = 1; i <= 3; i++) {
+      String title = '图表$i';
+      Widget chart = _buildDentalChartSimplified(title, record, index);
+      result.add(chart);
+    }
+    
+    return result;
+  }
+
+  // 检查记录中的图表是否有内容
+  bool _hasChartContentInRecord(String title, Map<String, dynamic> record) {
+    final chartPrefix = "chart${title.substring(2, 3)}";
+    
+    final topLeft = record['$chartPrefix-top-left']?.toString() ?? '';
+    final topRight = record['$chartPrefix-top-right']?.toString() ?? '';
+    final bottomLeft = record['$chartPrefix-bottom-left']?.toString() ?? '';
+    final bottomRight = record['$chartPrefix-bottom-right']?.toString() ?? '';
+    final note = record['$chartPrefix-note']?.toString() ?? '';
+    
+    // 过滤掉默认提示文本
+    String noteValue = note;
+    if (noteValue.startsWith('请在此输入') && noteValue.endsWith('的备注')) {
+      noteValue = '';
+    }
+    
+    return topLeft.trim().isNotEmpty || 
+           topRight.trim().isNotEmpty || 
+           bottomLeft.trim().isNotEmpty || 
+           bottomRight.trim().isNotEmpty || 
+           noteValue.trim().isNotEmpty;
+  }
+
   // 简化版的牙齿图表 - 减小备注高度
+  // 移动端十字图表 - 基于Windows端设计，适配移动端屏幕
   Widget _buildDentalChartSimplified(
     String title,
     Map<String, dynamic> record,
     int recordIndex,
   ) {
-    final chartPrefix = title.toLowerCase().replaceAll(' ', '');
     final actualPrefix = "chart${title.substring(2, 3)}"; // 从"图表1"提取为"chart1"
 
-    // 打印当前图表的数据以便调试
-    print('构建图表 $title (索引: $recordIndex)');
-    print('图表前缀: $actualPrefix');
-    print('图表数据: ${record.map((k, v) => MapEntry(k, v))}');
-
-    // 正确提取与此图表相关的数据
-    Map<String, dynamic> chartData = {
-      'top-left': record['$actualPrefix-top-left'] ?? '',
-      'top-right': record['$actualPrefix-top-right'] ?? '',
-      'bottom-left': record['$actualPrefix-bottom-left'] ?? '',
-      'bottom-right': record['$actualPrefix-bottom-right'] ?? '',
-      'note': record['$actualPrefix-note'] ?? '',
-    };
-
-    print('正确提取的图表数据: $chartData');
-
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -1716,7 +1764,7 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
         children: [
           // 标题栏
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
               color: Colors.blue.shade50,
               borderRadius: const BorderRadius.only(
@@ -1735,14 +1783,14 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
                   child: Icon(
                     _getChartIcon(title),
                     color: Colors.blue.shade700,
-                    size: 18,
+                    size: 16,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: Colors.blue.shade800,
                   ),
@@ -1751,199 +1799,161 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
             ),
           ),
 
-          const SizedBox(height: 12),
-
-          // 牙齿区域表格
+          // 十字图表区域 - 适配移动端
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // 上排标题
-                Row(
-                  children: [
-                    const SizedBox(width: 60),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          '左侧',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade600,
-                          ),
+                // 十字图表
+                Container(
+                  height: 120, // 适合移动端的高度
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Stack(
+                    children: [
+                      // 十字线 - 横线
+                      Center(
+                        child: Container(
+                          width: double.infinity,
+                          height: 2,
+                          color: Colors.blue.shade400,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          '右侧',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade600,
-                          ),
+                      // 十字线 - 竖线
+                      Center(
+                        child: Container(
+                          width: 2,
+                          height: 80,
+                          color: Colors.blue.shade400,
                         ),
                       ),
-                    ),
-                  ],
-                ),
 
-                const SizedBox(height: 8),
+                      // 四个象限的输入框
+                      Column(
+                        children: [
+                          // 上排 - 左上和右上
+                          Expanded(
+                            child: Row(
+                              children: [
+                                // 左上象限 (患者右上)
+                                Expanded(
+                                  child: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 6, top: 15),
+                                    child: _buildCrossInputField(
+                                      record['$actualPrefix-top-left'] ?? '',
+                                      (value) {
+                                        setState(() {
+                                          _dentalRecords[recordIndex]['$actualPrefix-top-left'] = value;
+                                        });
+                                      },
+                                      TextAlign.right,
+                                      'cross-$recordIndex-$actualPrefix-top-left',
+                                    ),
+                                  ),
+                                ),
+                                // 右上象限 (患者左上)
+                                Expanded(
+                                  child: Container(
+                                    alignment: Alignment.centerLeft,
+                                    padding: const EdgeInsets.only(left: 6, top: 15),
+                                    child: _buildCrossInputField(
+                                      record['$actualPrefix-top-right'] ?? '',
+                                      (value) {
+                                        setState(() {
+                                          _dentalRecords[recordIndex]['$actualPrefix-top-right'] = value;
+                                        });
+                                      },
+                                      TextAlign.left,
+                                      'cross-$recordIndex-$actualPrefix-top-right',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
 
-                // 上排
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 60,
-                      child: Text(
-                        '上排',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.blue.shade700,
-                        ),
+                          // 下排 - 左下和右下
+                          Expanded(
+                            child: Row(
+                              children: [
+                                // 左下象限 (患者右下)
+                                Expanded(
+                                  child: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 6, bottom: 15),
+                                    child: _buildCrossInputField(
+                                      record['$actualPrefix-bottom-left'] ?? '',
+                                      (value) {
+                                        setState(() {
+                                          _dentalRecords[recordIndex]['$actualPrefix-bottom-left'] = value;
+                                        });
+                                      },
+                                      TextAlign.right,
+                                      'cross-$recordIndex-$actualPrefix-bottom-left',
+                                    ),
+                                  ),
+                                ),
+                                // 右下象限 (患者左下)
+                                Expanded(
+                                  child: Container(
+                                    alignment: Alignment.centerLeft,
+                                    padding: const EdgeInsets.only(left: 6, bottom: 15),
+                                    child: _buildCrossInputField(
+                                      record['$actualPrefix-bottom-right'] ?? '',
+                                      (value) {
+                                        setState(() {
+                                          _dentalRecords[recordIndex]['$actualPrefix-bottom-right'] = value;
+                                        });
+                                      },
+                                      TextAlign.left,
+                                      'cross-$recordIndex-$actualPrefix-bottom-right',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    // 左上
-                    Expanded(
-                      child: _buildInputCell(
-                        Icons.arrow_upward,
-                        Colors.blue,
-                        chartData['top-left'],
-                        (value) {
-                          setState(() {
-                            _dentalRecords[recordIndex]['$actualPrefix-top-left'] =
-                                value;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    // 右上
-                    Expanded(
-                      child: _buildInputCell(
-                        Icons.arrow_upward,
-                        Colors.red,
-                        chartData['top-right'],
-                        (value) {
-                          setState(() {
-                            _dentalRecords[recordIndex]['$actualPrefix-top-right'] =
-                                value;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 12),
 
-                // 下排
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 60,
-                      child: Text(
-                        '下排',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.green.shade700,
-                        ),
-                      ),
-                    ),
-                    // 左下
-                    Expanded(
-                      child: _buildInputCell(
-                        Icons.arrow_downward,
-                        Colors.green,
-                        chartData['bottom-left'],
-                        (value) {
-                          setState(() {
-                            _dentalRecords[recordIndex]['$actualPrefix-bottom-left'] =
-                                value;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    // 右下
-                    Expanded(
-                      child: _buildInputCell(
-                        Icons.arrow_downward,
-                        Colors.orange,
-                        chartData['bottom-right'],
-                        (value) {
-                          setState(() {
-                            _dentalRecords[recordIndex]['$actualPrefix-bottom-right'] =
-                                value;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // 备注 - 减小高度
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.edit_note, color: Colors.amber[800], size: 18),
-                    const SizedBox(width: 8),
-                    Text(
-                      '备注信息',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.amber[800],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
+                // 备注输入框 - 位于十字图下方
                 Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(8),
-                    color: Colors.grey.shade50,
-                  ),
-                  child: TextField(
-                    decoration: const InputDecoration(
-                      hintText: '请在此输入备注信息...',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      StatefulTextField(
+                        key: ValueKey('note-$recordIndex-$actualPrefix'),
+                        initialValue: record['$actualPrefix-note'] ?? '',
+                        onChanged: (value) {
+                          setState(() {
+                            _dentalRecords[recordIndex]['$actualPrefix-note'] = value;
+                          });
+                        },
+                        style: const TextStyle(fontSize: 14),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          contentPadding: EdgeInsets.all(2),
+                          isDense: true,
+                          filled: false,
+                        ),
+                        maxLines: 1,
                       ),
-                    ),
-                    controller: TextEditingController(text: chartData['note']),
-                    maxLines: 2, // 减小为2行
-                    onChanged: (value) {
-                      setState(() {
-                        _dentalRecords[recordIndex]['$actualPrefix-note'] =
-                            value;
-                      });
-                    },
-                    onTap: () {
-                      final defaultText = '请在此输入图表${title.substring(2, 3)}的备注';
-                      if (chartData['note'] == defaultText) {
-                        setState(() {
-                          _dentalRecords[recordIndex]['$actualPrefix-note'] =
-                              '';
-                        });
-                      }
-                    },
+                      const SizedBox(height: 8),
+                      Container(
+                        height: 2,
+                        color: const Color(0xFF42A5F5), // 蓝色横线，和十字图一样的颜色和粗细
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1972,7 +1982,41 @@ class _PatientFormSheetState extends State<PatientFormSheet> {
     }
   }
 
-  // 构建输入单元格
+  // 构建十字图表输入框 - 使用有状态组件彻底解决删除问题
+  Widget _buildCrossInputField(
+    String value,
+    Function(String) onChanged,
+    TextAlign textAlign,
+    String keyString,
+  ) {
+    return SizedBox(
+      width: 120, // 增加宽度以容纳更多文字
+      child: StatefulTextField(
+        key: ValueKey(keyString),
+        initialValue: value,
+        onChanged: onChanged,
+        textAlign: textAlign,
+        style: const TextStyle(
+          fontSize: 13,
+          color: Colors.black87,
+          fontWeight: FontWeight.w500,
+        ),
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          contentPadding: EdgeInsets.all(2),
+          isDense: true,
+          filled: false,
+        ),
+        maxLines: 1,
+      ),
+    );
+  }
+
+  // 构建输入单元格 - 保留原有方法以防其他地方使用
   Widget _buildInputCell(
     IconData icon,
     Color iconColor,

@@ -5,15 +5,25 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
 import 'package:dentist_app/providers/database_provider.dart';
+
+import 'package:dentist_app/providers/patient_image_provider.dart';
+import 'package:dentist_app/providers/patient_provider.dart';
+import 'package:dentist_app/providers/medical_record_provider.dart';
 import 'package:dentist_app/models/database_models.dart';
+import 'package:dentist_app/models/patient_material.dart';
+import 'package:dentist_app/models/material_image.dart';
+import 'package:dentist_app/models/patient_medical_record.dart';
 import 'package:dentist_app/widgets/app_card.dart';
-import 'package:dentist_app/screens/appointment_detail_screen.dart';
-import 'package:dentist_app/screens/appointments_screen.dart';
+import 'package:dentist_app/widgets/patient_image_viewer.dart';
+
 import 'package:dentist_app/screens/patients_screen.dart';
+import 'package:dentist_app/screens/medical_record_detail_screen.dart';
 import 'package:dentist_app/utils/toast_util.dart';
 import 'package:dentist_app/widgets/patient_form_sheet.dart';
+import 'package:dentist_app/widgets/success_toast.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:dentist_app/utils/permission_utils.dart';
 
 class PatientDetailScreen extends StatefulWidget {
   final Patient patient;
@@ -25,15 +35,21 @@ class PatientDetailScreen extends StatefulWidget {
 }
 
 class _PatientDetailScreenState extends State<PatientDetailScreen> {
-  List<Appointment> _appointments = [];
-  bool _isLoading = true;
   List<String> _phoneNumbers = [];
   Patient? _freshPatient;
+  bool _isLoading = true;
+  
+  // 病历记录相关状态
+  List<PatientMedicalRecord>? _cachedMedicalRecords;
+  bool _medicalRecordsLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    _loadPatientData();
+    // 使用 addPostFrameCallback 避免在构建过程中调用状态更新
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadPatientData();
+    });
   }
 
   Future<void> _loadPatientData() async {
@@ -43,13 +59,23 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
           context,
           listen: false,
         );
+        final imageProvider = Provider.of<PatientImageProvider>(
+          context,
+          listen: false,
+        );
 
-        // 清除可能的缓存
-        await dbProvider.forceRefreshPatients();
+        // 清除可能的缓存 - 避免在构建过程中触发状态更新
+        // await Provider.of<PatientProvider>(context, listen: false).forceRefreshPatients();
+        
+        // 强制刷新图片数据缓存
+        if (imageProvider.hasCachedData(widget.patient.id!)) {
+          print('清除患者图片缓存，强制重新获取最新数据');
+          imageProvider.clearPatientCache(widget.patient.id!);
+        }
 
         try {
           print('强制重新获取患者数据 ID: ${widget.patient.id}');
-          final freshPatient = await dbProvider.getPatientById(
+          final freshPatient = await Provider.of<PatientProvider>(context, listen: false).getPatientById(
             widget.patient.id!,
           );
 
@@ -60,15 +86,18 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
               _initPhoneNumbers(freshPatient);
             });
 
-            // 加载预约
-            _loadAppointments();
+
+            
+            // 强制重新获取图片数据
+            print('开始强制重新获取患者图片数据');
+            await imageProvider.getPatientImages(widget.patient.id!);
+            
             print('成功更新患者数据: ${freshPatient.toMap()}');
           } else {
             if (mounted) {
               print('获取最新患者数据失败，使用缓存数据');
               // 使用传入的数据初始化
               _initPhoneNumbers(widget.patient);
-              _loadAppointments();
             }
           }
         } catch (dbError) {
@@ -76,14 +105,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
           // 使用传入的数据初始化
           if (mounted) {
             _initPhoneNumbers(widget.patient);
-            _loadAppointments();
           }
         }
       } else {
         // 如果没有ID，使用传入的数据初始化
         if (mounted) {
           _initPhoneNumbers(widget.patient);
-          _loadAppointments();
         }
       }
     } catch (e) {
@@ -91,7 +118,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       // 使用传入的数据初始化
       if (mounted) {
         _initPhoneNumbers(widget.patient);
-        _loadAppointments();
       }
     }
   }
@@ -186,29 +212,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     }
   }
 
-  Future<void> _loadAppointments() async {
-    setState(() {
-      _isLoading = true;
-    });
 
-    try {
-      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      final patientId = _freshPatient?.id ?? widget.patient.id!;
-      final appointments = await dbProvider.getAppointmentsByPatientId(
-        patientId,
-      );
-
-      setState(() {
-        _appointments = appointments;
-        _isLoading = false;
-      });
-    } catch (e) {
-      print('加载患者预约数据错误: $e');
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
 
   Patient get _currentPatient => _freshPatient ?? widget.patient;
 
@@ -247,9 +251,19 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.edit, color: AppTheme.primaryColor),
-              onPressed: () async {
+            PermissionWrapper(
+              module: 'patients',
+              action: 'edit',
+              recordDoctor: _currentPatient.doctor,
+              onPermissionDenied: () {
+                PermissionUtils.showPermissionDeniedMessage(
+                  context,
+                  customMessage: '您只能编辑自己负责的患者',
+                );
+              },
+              child: IconButton(
+                icon: const Icon(Icons.edit, color: AppTheme.primaryColor),
+                onPressed: () async {
                 // 确保使用包含原始电话号码格式的患者对象
                 final patientToEdit = _currentPatient;
                 // 打印详细日志用于诊断
@@ -297,7 +311,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                                 if (isSuccess) {
                                   _loadPatientData();
                                   if (mounted) {
-                                    ToastUtil.showSuccess(context, "患者信息已更新");
+                                    // 使用公共组件的成功提示
+                                    SuccessToastManager.show(context, message: "患者信息已更新");
                                   }
                                 }
                               },
@@ -333,7 +348,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                             if (isSuccess) {
                               _loadPatientData();
                               if (mounted) {
-                                ToastUtil.showSuccess(context, "患者信息已更新");
+                                // 使用公共组件的成功提示
+                                SuccessToastManager.show(context, message: "患者信息已更新");
                               }
                             }
                           },
@@ -341,6 +357,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                   ),
                 );
               },
+            ),
             ),
           ],
         ),
@@ -556,186 +573,138 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                AppCard(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            '预约记录',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textColor,
-                            ),
-                          ),
-                          TextButton.icon(
-                            onPressed:
-                                () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder:
-                                        (context) => const AppointmentsScreen(
-                                          initialFilterStatus: 'scheduled',
-                                        ),
-                                  ),
+                // 患者图片查看器
+                Consumer<PatientImageProvider>(
+                  builder: (context, imageProvider, child) {
+                    // 检查是否有错误
+                    final error = imageProvider.getError(_currentPatient.id!);
+                    if (error != null) {
+                      return Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Colors.red[400],
+                                size: 32,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '加载图片失败',
+                                style: TextStyle(
+                                  color: Colors.red[600],
+                                  fontWeight: FontWeight.bold,
                                 ),
-                            icon: const Icon(Icons.add, size: 16),
-                            label: const Text('新增预约'),
-                            style: TextButton.styleFrom(
-                              foregroundColor: AppTheme.primaryColor,
-                            ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                error,
+                                style: TextStyle(
+                                  color: Colors.red[500],
+                                  fontSize: 12,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              ElevatedButton(
+                                onPressed: () => imageProvider.refreshPatientData(_currentPatient.id!),
+                                child: const Text('重试'),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const Divider(height: 24),
-                      if (_isLoading)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: CircularProgressIndicator(),
-                          ),
-                        )
-                      else if (_appointments.isEmpty)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16.0),
-                            child: Text('暂无预约记录'),
-                          ),
-                        )
-                      else
-                        Column(
-                          children:
-                              _appointments.map((appointment) {
-                                Color statusColor;
-                                String statusText;
-                                switch (appointment.status) {
-                                  case 'scheduled':
-                                    statusColor = AppTheme.primaryColor;
-                                    statusText = '已预约';
-                                    break;
-                                  case 'completed':
-                                    statusColor = AppTheme.successColor;
-                                    statusText = '已完成';
-                                    break;
-                                  case 'cancelled':
-                                    statusColor = AppTheme.errorColor;
-                                    statusText = '已取消';
-                                    break;
-                                  default:
-                                    statusColor = AppTheme.secondaryText;
-                                    statusText = '未知状态';
-                                }
+                        ),
+                      );
+                    }
 
-                                return Container(
-                                  margin: const EdgeInsets.only(bottom: 16),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color:
-                                        appointment.status == 'completed'
-                                            ? Colors.green.withOpacity(0.05)
-                                            : appointment.status == 'cancelled'
-                                            ? Colors.red.withOpacity(0.05)
-                                            : Colors.blue.withOpacity(0.05),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: statusColor.withOpacity(0.5),
-                                      width: 1,
+                    return Consumer<PatientImageProvider>(
+                      builder: (context, imageProvider, child) {
+                        // 检查是否有缓存数据
+                        if (imageProvider.hasCachedData(_currentPatient.id!)) {
+                          final materials = imageProvider.getCachedMaterials(_currentPatient.id!);
+                          final images = imageProvider.getCachedImages(_currentPatient.id!);
+                          return PatientImageViewer(
+                            materials: materials,
+                            images: images,
+                          );
+                        }
+                        
+                        // 如果没有缓存数据，触发加载（只触发一次）
+                        if (!imageProvider.isLoading(_currentPatient.id!) && 
+                            !imageProvider.hasCachedData(_currentPatient.id!)) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            imageProvider.getPatientImages(_currentPatient.id!);
+                          });
+                        }
+                        
+                        if (imageProvider.isLoading(_currentPatient.id!)) {
+                          return const Card(
+                            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            ),
+                          );
+                        }
+                        
+                        final error = imageProvider.getError(_currentPatient.id!);
+                        if (error != null) {
+                          return Card(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: Colors.red[600],
+                                    size: 24,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '加载图片失败',
+                                    style: TextStyle(
+                                      color: Colors.red[600],
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            DateFormat(
-                                              'yyyy年MM月dd日 HH:mm',
-                                            ).format(
-                                              appointment.appointmentDate,
-                                            ),
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: statusColor.withOpacity(
-                                                0.1,
-                                              ),
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            child: Text(
-                                              statusText,
-                                              style: TextStyle(
-                                                color: statusColor,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      if (appointment.treatmentType != null &&
-                                          appointment
-                                              .treatmentType!
-                                              .isNotEmpty) ...[
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          '治疗类型: ${appointment.treatmentType}',
-                                          style: const TextStyle(fontSize: 14),
-                                        ),
-                                      ],
-                                      if (appointment.notes != null &&
-                                          appointment.notes!.isNotEmpty) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '备注: ${appointment.notes}',
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            color: AppTheme.secondaryText,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                      const SizedBox(height: 8),
-                                      Align(
-                                        alignment: Alignment.centerRight,
-                                        child: TextButton(
-                                          onPressed:
-                                              () => Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder:
-                                                      (context) =>
-                                                          AppointmentDetailScreen(
-                                                            appointment:
-                                                                appointment,
-                                                          ),
-                                                ),
-                                              ),
-                                          child: const Text('查看详情'),
-                                        ),
-                                      ),
-                                    ],
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    error,
+                                    style: TextStyle(
+                                      color: Colors.red[500],
+                                      fontSize: 12,
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
-                                );
-                              }).toList(),
-                        ),
-                    ],
-                  ),
+                                  const SizedBox(height: 8),
+                                  ElevatedButton(
+                                    onPressed: () => imageProvider.refreshPatientData(_currentPatient.id!),
+                                    child: const Text('重试'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                        
+                        return PatientImageViewer(
+                          materials: [],
+                          images: [],
+                        );
+                      },
+                    );
+                  },
                 ),
+
+                const SizedBox(height: 16),
+
+                // 病历记录查看器
+                _buildMedicalRecordsSection(),
+
               ],
             ),
           ),
@@ -773,6 +742,339 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         ),
       );
     }
+  }
+
+  // 病历记录部分
+  Widget _buildMedicalRecordsSection() {
+    if (_currentPatient.id == null) {
+      return const SizedBox.shrink();
+    }
+
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.medical_information,
+                    color: AppTheme.primaryColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '病历记录',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textColor,
+                    ),
+                  ),
+                ],
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.refresh,
+                  color: AppTheme.primaryColor,
+                  size: 20,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _cachedMedicalRecords = null;
+                    _medicalRecordsLoaded = false;
+                  });
+                },
+                tooltip: '刷新病历记录',
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+          _buildMedicalRecordsDisplay(),
+        ],
+      ),
+    );
+  }
+
+
+
+  // 异步加载病历记录
+  void _loadMedicalRecordsAsync() async {
+    if (_currentPatient.id == null || !mounted) return;
+
+    try {
+      // 先设置加载状态
+      if (mounted) {
+        setState(() {
+          _medicalRecordsLoaded = true; // 标记为已尝试加载
+        });
+      }
+
+      final medicalRecordProvider = Provider.of<MedicalRecordProvider>(context, listen: false);
+      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
+      
+      // 确保数据库已初始化
+      if (!dbProvider.isInitialized) {
+        print('数据库未初始化，无法加载病历记录');
+        return;
+      }
+      
+      // 确保provider已初始化
+      if (!medicalRecordProvider.initialized) {
+        await medicalRecordProvider.initializeFromDatabase(dbProvider);
+      }
+      
+      // 像患者提供者一样，直接调用简单的查询方法
+      final records = await medicalRecordProvider.getPatientMedicalRecordsSimple(_currentPatient.id!);
+      
+      if (mounted) {
+        setState(() {
+          _cachedMedicalRecords = records;
+        });
+      }
+    } catch (e) {
+      print('加载病历记录失败: $e');
+      // 错误状态已经通过_medicalRecordsLoaded = true设置
+    }
+  }
+
+  // 显示病历记录
+  Widget _buildMedicalRecordsDisplay() {
+    // 如果还没有加载过，触发加载
+    if (!_medicalRecordsLoaded) {
+      // 使用addPostFrameCallback避免在build过程中调用setState
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _loadMedicalRecordsAsync();
+      });
+      
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 12),
+              Text(
+                '正在加载病历记录...',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final records = _cachedMedicalRecords;
+
+    // 如果加载完成但records为null，说明加载失败
+    if (records == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Icon(
+                Icons.error_outline,
+                color: Colors.red[400],
+                size: 48,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '加载病历记录失败',
+                style: TextStyle(
+                  color: Colors.red[600],
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _cachedMedicalRecords = null;
+                    _medicalRecordsLoaded = false;
+                  });
+                },
+                child: const Text('重试'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 如果记录为空
+    if (records.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Icon(
+                Icons.description_outlined,
+                color: Colors.grey[400],
+                size: 48,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '暂无病历记录',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '该患者还没有创建病历记录',
+                style: TextStyle(
+                  color: Colors.grey[500],
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: records.map((record) => _buildMedicalRecordCard(record)).toList(),
+    );
+  }
+
+  // 病历记录卡片
+  Widget _buildMedicalRecordCard(PatientMedicalRecord record) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () => _viewMedicalRecordDetails(record),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      record.recordNumber,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textColor,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      DateFormat('MM-dd').format(record.recordDate),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.primaryColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (record.chiefComplaint.isNotEmpty) ...[
+                Text(
+                  '主诉: ${record.chiefComplaint}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+              ],
+              if (record.diagnosis.isNotEmpty) ...[
+                Text(
+                  '诊断: ${record.diagnosis}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[700],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+              ],
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '医生: ${record.doctorName.isNotEmpty ? record.doctorName : '未知'}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.visibility,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '查看详情',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 查看病历详情
+  void _viewMedicalRecordDetails(PatientMedicalRecord record) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MedicalRecordDetailScreen(
+          patient: _currentPatient,
+          record: record,
+        ),
+      ),
+    );
   }
 
   Widget _buildInfoRow(
@@ -968,7 +1270,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         print('备注内容 $key: ${dentalData[key] ?? "空值"}');
       }
 
-      // 使用SplayTreeMap确保按照索引顺序排序显示
+      // 收集所有记录并按日期排序
       Map<String, Map<String, String>> groupedData = {};
       Set<String> allIndexes = {};
 
@@ -1037,14 +1339,38 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         }
       }
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children:
-            groupedData.entries.map((entry) {
-              String index = entry.key;
-              Map<String, String> data = entry.value;
-
-              return Container(
+      // 过滤出有内容的日期记录，并按日期倒序排序（最新的在前）
+      List<Widget> dateRecords = [];
+      
+      // 将记录转换为列表并按日期排序
+      List<MapEntry<String, Map<String, String>>> sortedEntries = groupedData.entries.toList();
+      sortedEntries.sort((a, b) {
+        String dateA = a.value['date'] ?? '';
+        String dateB = b.value['date'] ?? '';
+        // 倒序排序，最新日期在前
+        return dateB.compareTo(dateA);
+      });
+      
+      for (var entry in sortedEntries) {
+        String index = entry.key;
+        Map<String, String> data = entry.value;
+        
+        // 检查该日期是否有任何图表内容
+        bool hasAnyContent = false;
+        for (int i = 1; i <= 3; i++) {
+          if (_hasChartContent('图表$i', data)) {
+            hasAnyContent = true;
+            break;
+          }
+        }
+        
+        // 只有当该日期有内容时才添加到显示列表
+        if (hasAnyContent) {
+          if (dateRecords.isNotEmpty) {
+            dateRecords.add(const SizedBox(height: 16)); // 日期记录之间的间距
+          }
+          
+          dateRecords.add(Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -1113,27 +1439,63 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                       ),
                     ),
 
-                    // 图表内容
+                    // 图表内容 - 只显示有内容的图表
                     Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 图表1
-                          _buildDentalChartInfo('图表1', data),
-                          const SizedBox(height: 16),
-                          // 图表2
-                          _buildDentalChartInfo('图表2', data),
-                          const SizedBox(height: 16),
-                          // 图表3
-                          _buildDentalChartInfo('图表3', data),
-                        ],
+                        children: _buildNonEmptyDentalCharts(data),
                       ),
                     ),
                   ],
                 ),
-              );
-            }).toList(),
+              ));
+        }
+      }
+      
+      // 如果没有任何日期有内容，显示提示信息
+      if (dateRecords.isEmpty) {
+        dateRecords.add(
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.medical_services_outlined,
+                  color: Colors.grey.shade400,
+                  size: 48,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '暂无牙齿状况记录',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '请在编辑患者信息时添加牙齿状况',
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+      
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: dateRecords,
       );
     } catch (e) {
       print('解析牙齿状况数据错误: $e');
@@ -1141,7 +1503,83 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     }
   }
 
-  // 辅助方法：构建单个牙齿图表的信息显示
+  // 构建非空的牙齿图表列表
+  List<Widget> _buildNonEmptyDentalCharts(Map<String, String> data) {
+    List<Widget> charts = [];
+    
+    // 检查并添加有内容的图表
+    for (int i = 1; i <= 3; i++) {
+      String title = '图表$i';
+      if (_hasChartContent(title, data)) {
+        if (charts.isNotEmpty) {
+          charts.add(const SizedBox(height: 16)); // 添加间距
+        }
+        charts.add(_buildDentalChartInfo(title, data));
+      }
+    }
+    
+    // 如果没有任何图表有内容，显示提示信息
+    if (charts.isEmpty) {
+      charts.add(
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Colors.grey.shade600,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '该日期暂无牙齿状况记录',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    return charts;
+  }
+
+  // 检查图表是否有内容（包括四个象限和备注）
+  bool _hasChartContent(String title, Map<String, String> data) {
+    final chartPrefix = "chart${title.substring(2, 3)}"; // 从"图表1"提取为"chart1"
+    
+    // 检查四个象限是否有内容
+    final topLeft = data['$chartPrefix-top-left'] ?? '';
+    final topRight = data['$chartPrefix-top-right'] ?? '';
+    final bottomLeft = data['$chartPrefix-bottom-left'] ?? '';
+    final bottomRight = data['$chartPrefix-bottom-right'] ?? '';
+    
+    // 检查备注是否有有效内容
+    String noteValue = data['$chartPrefix-note'] ?? '';
+    // 过滤掉默认提示文本
+    if (noteValue.startsWith('请在此输入') && noteValue.endsWith('的备注')) {
+      noteValue = '';
+    }
+    
+    // 只要有任何一个字段有内容就显示该图表
+    return topLeft.trim().isNotEmpty || 
+           topRight.trim().isNotEmpty || 
+           bottomLeft.trim().isNotEmpty || 
+           bottomRight.trim().isNotEmpty || 
+           noteValue.trim().isNotEmpty;
+  }
+
+  // 辅助方法：构建单个牙齿图表的信息显示 - 十字图表版本
   Widget _buildDentalChartInfo(String title, Map<String, String> data) {
     final chartPrefix = "chart${title.substring(2, 3)}"; // 从"图表1"提取为"chart1"
 
@@ -1150,6 +1588,22 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     // 检查备注是否为提示文本，避免显示
     if (noteValue.startsWith('请在此输入') && noteValue.endsWith('的备注')) {
       noteValue = '';
+    }
+
+    // 检查四个象限是否有内容
+    final topLeft = data['$chartPrefix-top-left'] ?? '';
+    final topRight = data['$chartPrefix-top-right'] ?? '';
+    final bottomLeft = data['$chartPrefix-bottom-left'] ?? '';
+    final bottomRight = data['$chartPrefix-bottom-right'] ?? '';
+    
+    final hasChartData = topLeft.trim().isNotEmpty || 
+                        topRight.trim().isNotEmpty || 
+                        bottomLeft.trim().isNotEmpty || 
+                        bottomRight.trim().isNotEmpty;
+
+    // 如果只有备注没有图表数据，使用紧凑显示
+    if (!hasChartData && noteValue.trim().isNotEmpty) {
+      return _buildCompactNoteOnlyChart(title, noteValue);
     }
 
     return Container(
@@ -1178,87 +1632,202 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
           ),
           const SizedBox(height: 12),
 
-          // 上排
-          Row(
-            children: [
-              const SizedBox(
-                width: 80,
-                child: Text(
-                  '上排:',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-              ),
-              Expanded(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '左: ${data['$chartPrefix-top-right'] ?? ''}',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        '右: ${data['$chartPrefix-top-left'] ?? ''}',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // 下排
-          Row(
-            children: [
-              const SizedBox(
-                width: 80,
-                child: Text(
-                  '下排:',
-                  style: TextStyle(fontWeight: FontWeight.w500),
-                ),
-              ),
-              Expanded(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '左: ${data['$chartPrefix-bottom-right'] ?? ''}',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        '右: ${data['$chartPrefix-bottom-left'] ?? ''}',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // 备注
-          if (noteValue.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // 十字图表显示 - 只读版本
+          Container(
+            height: 100, // 适合移动端的高度
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Stack(
               children: [
-                const SizedBox(
-                  width: 80,
-                  child: Text(
-                    '备注:',
-                    style: TextStyle(fontWeight: FontWeight.w500),
+                // 十字线 - 横线
+                Center(
+                  child: Container(
+                    width: double.infinity,
+                    height: 2,
+                    color: Colors.blue.shade300,
                   ),
                 ),
-                Expanded(
-                  child: Text(noteValue, style: const TextStyle(fontSize: 14)),
+                // 十字线 - 竖线
+                Center(
+                  child: Container(
+                    width: 2,
+                    height: 60,
+                    color: Colors.blue.shade300,
+                  ),
+                ),
+
+                // 四个象限的文本显示
+                Column(
+                  children: [
+                    // 上排 - 左上和右上
+                    Expanded(
+                      child: Row(
+                        children: [
+                          // 左上象限 (患者右上)
+                          Expanded(
+                            child: Container(
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 6, top: 12),
+                              child: _buildQuadrantText(data['$chartPrefix-top-left'] ?? ''),
+                            ),
+                          ),
+                          // 右上象限 (患者左上)
+                          Expanded(
+                            child: Container(
+                              alignment: Alignment.centerLeft,
+                              padding: const EdgeInsets.only(left: 6, top: 12),
+                              child: _buildQuadrantText(data['$chartPrefix-top-right'] ?? ''),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // 下排 - 左下和右下
+                    Expanded(
+                      child: Row(
+                        children: [
+                          // 左下象限 (患者右下)
+                          Expanded(
+                            child: Container(
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 6, bottom: 12),
+                              child: _buildQuadrantText(data['$chartPrefix-bottom-left'] ?? ''),
+                            ),
+                          ),
+                          // 右下象限 (患者左下)
+                          Expanded(
+                            child: Container(
+                              alignment: Alignment.centerLeft,
+                              padding: const EdgeInsets.only(left: 6, bottom: 12),
+                              child: _buildQuadrantText(data['$chartPrefix-bottom-right'] ?? ''),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
+          ),
+
+          // 备注显示区域 - 位于十字图下方
+          if (noteValue.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.amber.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.note_alt, size: 14, color: Colors.amber.shade700),
+                      const SizedBox(width: 6),
+                      Text(
+                        '备注',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.amber.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    noteValue,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
           ],
+        ],
+      ),
+    );
+  }
+
+  // 构建象限文本，空内容时显示占位符
+  Widget _buildQuadrantText(String text) {
+    if (text.trim().isEmpty) {
+      return Text(
+        '·', // 使用小点作为空内容占位符
+        style: TextStyle(
+          fontSize: 13,
+          color: Colors.grey.shade300,
+          fontWeight: FontWeight.w300,
+        ),
+      );
+    }
+    
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+      ),
+    );
+  }
+
+  // 构建仅有备注的紧凑图表显示
+  Widget _buildCompactNoteOnlyChart(String title, String noteValue) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.amber.shade200),
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.amber.shade50,
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade100,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(
+              _getChartIcon(title),
+              color: Colors.amber.shade700,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.amber.shade800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  noteValue,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.note_alt,
+            size: 16,
+            color: Colors.amber.shade600,
+          ),
         ],
       ),
     );

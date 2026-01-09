@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-// 全局样式变量 - 现代苹果风格设计
+// 全局样式变量 - 现代牙科诊疗系统设计
 class AppTheme {
-  // 主要配色 - 更鲜明的色彩
-  static const Color primaryColor = Color(0xFF2196F3);
-  static const Color secondaryColor = Color(0xFF4CAF50);
-  static const Color accentColor = Color(0xFF03A9F4);
-  static const Color tertiaryColor = Color(0xFFFF375F); // 新增红色作为第三色
+  // 主要配色 - 医疗专业配色
+  static const Color primaryColor = Color(0xFF2E7DB8); // 医疗蓝
+  static const Color secondaryColor = Color(0xFF4CAF50); // 健康绿
+  static const Color accentColor = Color(0xFF00BCD4); // 清新青色
+  static const Color tertiaryColor = Color(0xFFFF5722); // 警示橙色
 
   // 中性色 - 更加精致
   static const Color backgroundColor = Color(0xFFF5F5F7); // 更明亮的背景
@@ -99,11 +99,42 @@ class AppTheme {
   static final ButtonStyle primaryButtonStyle = ElevatedButton.styleFrom(
     backgroundColor: primaryColor,
     foregroundColor: Colors.white,
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+    elevation: 2,
+    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(borderRadius),
     ),
-    elevation: 0,
+  );
+
+  // 渐变定义
+  static const LinearGradient primaryGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [primaryColor, secondaryColor],
+  );
+
+  static const LinearGradient dangerGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [errorColor, Color(0xFFFF6B6B)],
+  );
+
+  static const LinearGradient successGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [successColor, Color(0xFF66BB6A)],
+  );
+
+  static const LinearGradient warningGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [warningColor, Color(0xFFFFB74D)],
+  );
+
+  static const LinearGradient infoGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [infoColor, Color(0xFFFFCC80)],
   );
 
   static final ButtonStyle secondaryButtonStyle = ElevatedButton.styleFrom(
@@ -213,7 +244,7 @@ class AppTheme {
       titleTextStyle: titleStyle.copyWith(fontSize: 18),
       iconTheme: const IconThemeData(color: primaryText),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: cardBackground,
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -302,7 +333,7 @@ class AppTheme {
       ),
       iconTheme: const IconThemeData(color: darkPrimaryText),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: darkCardBackground,
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -397,7 +428,7 @@ class AppTheme {
       ),
       iconTheme: IconThemeData(color: greyPrimaryText),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: greyCardBackground,
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -497,7 +528,7 @@ class AppTheme {
       titleTextStyle: titleStyle.copyWith(color: purplePrimaryText),
       iconTheme: IconThemeData(color: purplePrimaryText),
     ),
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: purpleCardBackground,
       titleTextStyle: TextStyle(
         color: purplePrimaryText,

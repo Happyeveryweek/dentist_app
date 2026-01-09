@@ -3,15 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:excel/excel.dart';
+import 'package:excel/excel.dart' as excel;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/rendering.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import '../providers/database_provider.dart';
+import '../providers/patient_provider.dart';
 import '../models/patient.dart';
 import '../theme/app_theme.dart';
+import '../widgets/dental_icons.dart';
 
 class PatientExportDialog extends StatefulWidget {
   final String? searchQuery;
@@ -48,122 +50,96 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final isPurpleTheme =
-        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
+    final isPurpleTheme = Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
+    final textColor = isPurpleTheme ? AppTheme.purplePrimaryText : DentalColors.onSurface;
+    final secondaryTextColor = isPurpleTheme ? AppTheme.purpleSecondaryText : (isDarkMode ? Colors.grey[400] : Colors.black54);
+    final accentColor = isPurpleTheme ? AppTheme.purpleColor : Theme.of(context).primaryColor;
 
-    final textColor = isPurpleTheme ? AppTheme.purplePrimaryText : null;
-
-    final secondaryTextColor = isPurpleTheme
-        ? AppTheme.purpleSecondaryText
-        : isDarkMode
-            ? Colors.grey[400]
-            : Colors.grey[700];
-
-    final accentColor =
-        isPurpleTheme ? AppTheme.purpleColor : Theme.of(context).primaryColor;
-
-    return AlertDialog(
-      title: Text('导出患者数据到Excel', style: TextStyle(color: textColor)),
-      content: SizedBox(
-        width: 500,
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        width: 520,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('选择导出选项：', style: TextStyle(color: textColor)),
-            const SizedBox(height: 16),
-
-            // 导出选项
-            CheckboxListTile(
-              title: Text('导出所有患者数据', style: TextStyle(color: textColor)),
-              subtitle: Text(
-                '勾选后将导出全部患者，不勾选将仅导出当前筛选和搜索结果',
-                style: TextStyle(color: secondaryTextColor),
-              ),
-              value: _includeAllPatients,
-              onChanged: _isExporting
-                  ? null
-                  : (value) {
-                      setState(() {
-                        _includeAllPatients = value ?? true;
-                      });
-                    },
-              activeColor: accentColor,
-            ),
-
-            CheckboxListTile(
-              title: Text('包含牙齿状况图表', style: TextStyle(color: textColor)),
-              subtitle: Text(
-                '勾选后将添加牙齿状况图表为文本格式',
-                style: TextStyle(color: secondaryTextColor),
-              ),
-              value: _includeDentalCondition,
-              onChanged: _isExporting
-                  ? null
-                  : (value) {
-                      setState(() {
-                        _includeDentalCondition = value ?? true;
-                      });
-                    },
-              activeColor: accentColor,
-            ),
-
-            const SizedBox(height: 16),
-            Divider(
-              color: isPurpleTheme
-                  ? AppTheme.purpleDividerColor
-                  : isDarkMode
-                      ? Colors.grey[800]
-                      : Colors.grey[300],
-            ),
-
-            // 导出状态显示
-            if (_isExporting || _statusMessage.isNotEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  Text(
-                    '导出状态: $_statusMessage',
-                    style: TextStyle(
-                      color: _hasError ? Colors.red : textColor,
-                      fontWeight:
-                          _exportSuccess || _hasError ? FontWeight.bold : null,
-                    ),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [accentColor.withOpacity(0.9), accentColor.withOpacity(0.7)]),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [BoxShadow(color: accentColor.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3))],
                   ),
-                  if (_exportSuccess && _exportPath.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        '文件已保存至: $_exportPath',
-                        style: TextStyle(color: textColor),
-                      ),
-                    ),
-                ],
-              ),
+                  child: const Icon(Icons.file_download_outlined, color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 12),
+                const Text('导出患者数据到Excel', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                const Spacer(),
+                IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints()),
+              ],
+            ),
+
+            const SizedBox(height: 4),
+            Divider(color: Colors.black.withOpacity(0.06)),
+
+            const SizedBox(height: 8),
+            Text('选择导出选项', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor)),
+            const SizedBox(height: 10),
+
+            Container(
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.black.withOpacity(0.06))),
+              child: Column(children: [
+                SwitchListTile.adaptive(
+                  title: const Text('导出所有患者数据'),
+                  subtitle: Text('勾选后导出全部患者；不勾选仅导出当前筛选/搜索结果', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                  value: _includeAllPatients,
+                  onChanged: _isExporting ? null : (v) => setState(() => _includeAllPatients = v),
+                  activeColor: accentColor,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+                Divider(height: 1, color: Colors.black.withOpacity(0.06)),
+                SwitchListTile.adaptive(
+                  title: const Text('包含牙齿状况图表'),
+                  subtitle: Text('以文本格式附加牙齿状况信息', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                  value: _includeDentalCondition,
+                  onChanged: _isExporting ? null : (v) => setState(() => _includeDentalCondition = v),
+                  activeColor: accentColor,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+              ]),
+            ),
+
+            const SizedBox(height: 12),
+            if (_isExporting || _statusMessage.isNotEmpty) ...[
+              Row(children: [
+                Icon(_hasError ? Icons.error_outline : Icons.info_outline, size: 18, color: _hasError ? Colors.red : accentColor),
+                const SizedBox(width: 8),
+                Expanded(child: Text('$_statusMessage', style: TextStyle(color: _hasError ? Colors.red : textColor))),
+              ]),
+              if (_exportSuccess && _exportPath.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6.0),
+                  child: Text('文件已保存至: $_exportPath', style: TextStyle(color: secondaryTextColor)),
+                ),
+            ],
+
+            const SizedBox(height: 12),
+            Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('关闭')),
+              const SizedBox(width: 8),
+              if (!_exportSuccess)
+                ElevatedButton(
+                  onPressed: _isExporting ? null : _exportPatientData,
+                  style: ElevatedButton.styleFrom(backgroundColor: accentColor),
+                  child: Text(_isExporting ? '导出中...' : '开始导出'),
+                ),
+            ]),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-          style: TextButton.styleFrom(
-            foregroundColor: accentColor,
-          ),
-          child: const Text('关闭'),
-        ),
-        if (!_exportSuccess)
-          ElevatedButton(
-            onPressed: _isExporting ? null : _exportPatientData,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: accentColor,
-              disabledBackgroundColor: accentColor.withOpacity(0.5),
-            ),
-            child: _isExporting ? const Text('导出中...') : const Text('开始导出'),
-          ),
-      ],
     );
   }
 
@@ -196,22 +172,22 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
         return;
       }
 
-      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-
       // 2. 获取要导出的患者数据
       setState(() {
         _statusMessage = '正在获取患者数据...';
       });
 
+      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
+
       List<Patient> patients;
       if (_includeAllPatients) {
-        patients = await dbProvider.getAllPatients();
+        patients = await patientProvider.getAllPatients();
         print('获取到所有患者数据: ${patients.length}条记录');
       } else {
         // 使用搜索条件获取筛选后的患者数据
         if (widget.searchQuery != null && widget.searchQuery!.isNotEmpty) {
           // 有搜索词时使用搜索功能
-          patients = await dbProvider.searchPatients(
+          patients = await patientProvider.searchPatients(
             widget.searchQuery!,
             sortField: widget.sortField,
             sortAscending: widget.sortAscending,
@@ -222,7 +198,7 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
           print('使用搜索条件获取患者数据: ${patients.length}条记录');
         } else {
           // 无搜索词但有日期或排序筛选
-          var result = await dbProvider.getPatientsPage(
+          var result = await patientProvider.getPatientsPage(
             page: 1,
             pageSize: 5000, // 使用大数值以获取所有结果
             sortField: widget.sortField,
@@ -248,8 +224,8 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
         _statusMessage = '创建Excel文件...';
       });
 
-      final excel = Excel.createExcel();
-      final sheet = excel['患者信息'];
+      final excelFile = excel.Excel.createExcel();
+      final sheet = excelFile['患者信息'];
 
       // 添加表头
       _addExcelHeader(sheet);
@@ -285,7 +261,7 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
       final filePath = '$selectedDirectory${Platform.pathSeparator}$fileName';
 
       // 保存文件
-      final fileBytes = excel.encode();
+      final fileBytes = excelFile.encode();
       if (fileBytes != null) {
         final file = File(filePath);
         await file.writeAsBytes(fileBytes);
@@ -312,7 +288,7 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
   }
 
   // 添加Excel表头
-  void _addExcelHeader(Sheet sheet) {
+  void _addExcelHeader(excel.Sheet sheet) {
     final headers = [
       '病历号',
       '姓名',
@@ -333,46 +309,46 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
     // 添加标题行
     for (var i = 0; i < headers.length; i++) {
       sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
-          .value = TextCellValue(headers[i]);
+          .cell(excel.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0))
+          .value = excel.TextCellValue(headers[i]);
     }
 
     // 设置表头样式
     for (var i = 0; i < headers.length; i++) {
       var cell =
-          sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
-      cell.cellStyle = CellStyle(
+          sheet.cell(excel.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+      cell.cellStyle = excel.CellStyle(
         bold: true,
-        horizontalAlign: HorizontalAlign.Center,
+        horizontalAlign: excel.HorizontalAlign.Center,
       );
     }
   }
 
   // 将患者数据添加到Excel
   Future<void> _addPatientToExcel(
-      Sheet sheet, Patient patient, int rowIndex) async {
+      excel.Sheet sheet, Patient patient, int rowIndex) async {
     // 设置基本患者信息
     var columnIndex = 0;
 
     // 病历号 (放到第一列)
     sheet
-        .cell(CellIndex.indexByColumnRow(
+        .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = TextCellValue(patient.medical_record_number?.toString() ?? '');
+        .value = excel.TextCellValue(patient.medical_record_number?.toString() ?? '');
 
     // 基本信息
     sheet
-        .cell(CellIndex.indexByColumnRow(
+        .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = TextCellValue(patient.name);
+        .value = excel.TextCellValue(patient.name);
     sheet
-        .cell(CellIndex.indexByColumnRow(
+        .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = TextCellValue(patient.gender);
+        .value = excel.TextCellValue(patient.gender);
     sheet
-        .cell(CellIndex.indexByColumnRow(
+        .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = IntCellValue(patient.age);
+        .value = excel.IntCellValue(patient.age);
 
     // 分开处理主电话和备用电话
     List<String> phones = patient.phoneList;
@@ -383,13 +359,13 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
     mainPhone = mainPhone.replaceAll('\n', '').replaceAll('\r', '');
 
     // 使用StringCellValue明确指示为字符串类型
-    var mainPhoneCell = sheet.cell(CellIndex.indexByColumnRow(
+    var mainPhoneCell = sheet.cell(excel.CellIndex.indexByColumnRow(
         columnIndex: columnIndex++, rowIndex: rowIndex));
     // 确保是TextCellValue类型，而不是其他类型
-    mainPhoneCell.value = TextCellValue(mainPhone);
+    mainPhoneCell.value = excel.TextCellValue(mainPhone);
     // 设置居中显示
-    mainPhoneCell.cellStyle = CellStyle(
-      horizontalAlign: HorizontalAlign.Center,
+    mainPhoneCell.cellStyle = excel.CellStyle(
+      horizontalAlign: excel.HorizontalAlign.Center,
     );
 
     // 备用电话号码 - 同样不添加任何特殊字符
@@ -398,47 +374,47 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
     backupPhone = backupPhone.replaceAll('\n', '').replaceAll('\r', '');
 
     // 使用StringCellValue明确指示为字符串类型
-    var backupCell = sheet.cell(CellIndex.indexByColumnRow(
+    var backupCell = sheet.cell(excel.CellIndex.indexByColumnRow(
         columnIndex: columnIndex++, rowIndex: rowIndex));
     // 确保是TextCellValue类型，而不是其他类型
-    backupCell.value = TextCellValue(backupPhone);
+    backupCell.value = excel.TextCellValue(backupPhone);
     // 设置居中显示
-    backupCell.cellStyle = CellStyle(
-      horizontalAlign: HorizontalAlign.Center,
+    backupCell.cellStyle = excel.CellStyle(
+      horizontalAlign: excel.HorizontalAlign.Center,
     );
 
     sheet
-        .cell(CellIndex.indexByColumnRow(
+        .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = TextCellValue(patient.address?.toString() ?? '');
+        .value = excel.TextCellValue(patient.address?.toString() ?? '');
     sheet
-        .cell(CellIndex.indexByColumnRow(
+        .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = TextCellValue(patient.identification_number?.toString() ?? '');
+        .value = excel.TextCellValue(patient.identification_number?.toString() ?? '');
     sheet
-        .cell(CellIndex.indexByColumnRow(
+        .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = TextCellValue(patient.doctor?.toString() ?? '');
+        .value = excel.TextCellValue(patient.doctor?.toString() ?? '');
 
     // 日期格式化
     sheet
-            .cell(CellIndex.indexByColumnRow(
+            .cell(excel.CellIndex.indexByColumnRow(
                 columnIndex: columnIndex++, rowIndex: rowIndex))
             .value =
-        TextCellValue(
+        excel.TextCellValue(
             DateFormat('yyyy-MM-dd').format(patient.first_visit_date));
 
     // 金额格式化
     sheet
-        .cell(CellIndex.indexByColumnRow(
+        .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = DoubleCellValue(patient.total_cost ?? 0.0);
+        .value = excel.DoubleCellValue(patient.total_cost ?? 0.0);
 
     // 治疗项目
     sheet
-        .cell(CellIndex.indexByColumnRow(
+        .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = TextCellValue(patient.treatment_items?.toString() ?? '');
+        .value = excel.TextCellValue(patient.treatment_items?.toString() ?? '');
 
     // 牙齿状况 - 格式化为易读的文本
     if (patient.dental_condition != null &&
@@ -449,21 +425,21 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
           _formatDentalCondition(patient.dentalCharts);
 
       sheet
-          .cell(CellIndex.indexByColumnRow(
+          .cell(excel.CellIndex.indexByColumnRow(
               columnIndex: columnIndex++, rowIndex: rowIndex))
-          .value = TextCellValue(formattedDentalCondition);
+          .value = excel.TextCellValue(formattedDentalCondition);
     } else {
       sheet
-          .cell(CellIndex.indexByColumnRow(
+          .cell(excel.CellIndex.indexByColumnRow(
               columnIndex: columnIndex++, rowIndex: rowIndex))
-          .value = TextCellValue('无牙齿状况记录');
+          .value = excel.TextCellValue('无牙齿状况记录');
     }
 
     // 添加原始牙齿状况JSON数据
     sheet
-        .cell(CellIndex.indexByColumnRow(
+        .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = TextCellValue(patient.dental_condition ?? '');
+        .value = excel.TextCellValue(patient.dental_condition ?? '');
   }
 
   // 将牙齿状况的JSON格式化为易读的文本格式

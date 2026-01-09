@@ -5,9 +5,13 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
 import 'package:dentist_app/providers/database_provider.dart';
+import 'package:dentist_app/providers/appointments_provider.dart';
+import 'package:dentist_app/providers/patient_provider.dart';
 import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/widgets/app_card.dart';
+import 'package:dentist_app/widgets/appointment_form_sheet.dart';
 import 'package:dentist_app/utils/toast_util.dart';
+import 'package:dentist_app/utils/permission_utils.dart';
 
 // 牙位映射表 - 从医生视角看患者牙齿
 final Map<String, String> positionMap = {
@@ -30,6 +34,7 @@ class AppointmentDetailScreen extends StatefulWidget {
 class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   Patient? _patient;
   bool _isLoading = true;
+  bool _dataUpdated = false; // 标记数据是否已更新
 
   @override
   void initState() {
@@ -44,7 +49,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
 
     try {
       final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      final patient = await dbProvider.getPatientById(
+      final patient = await Provider.of<PatientProvider>(context, listen: false).getPatientById(
         widget.appointment.patientId,
       );
 
@@ -62,18 +67,72 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: const Text('预约详情'),
-        centerTitle: true,
-        backgroundColor: AppTheme.cardBackground,
+    return WillPopScope(
+      onWillPop: () async {
+        // 只有在数据更新时才返回true，否则返回null
+        Navigator.of(context).pop(_dataUpdated ? true : null);
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        appBar: AppBar(
+          title: const Text('预约详情'),
+          centerTitle: true,
+          backgroundColor: AppTheme.cardBackground,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              // 只有在数据更新时才返回true，否则返回null
+              Navigator.of(context).pop(_dataUpdated ? true : null);
+            },
+          ),
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: AppTheme.errorColor),
-            onPressed: _showDeleteConfirmation,
-            tooltip: '删除预约',
+          // 编辑按钮
+          FutureBuilder<String?>(
+            future: _getAppointmentPatientDoctor(),
+            builder: (context, snapshot) {
+              final patientDoctor = snapshot.data;
+              return PermissionWrapper(
+                module: 'appointments',
+                action: 'edit',
+                recordDoctor: patientDoctor,
+                onPermissionDenied: () {
+                  PermissionUtils.showPermissionDeniedMessage(
+                    context,
+                    customMessage: '您只能编辑自己负责患者的预约',
+                  );
+                },
+                child: IconButton(
+                  icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryColor),
+                  onPressed: _showEditAppointment,
+                  tooltip: '编辑预约',
+                ),
+              );
+            },
+          ),
+          // 删除按钮
+          FutureBuilder<String?>(
+            future: _getAppointmentPatientDoctor(),
+            builder: (context, snapshot) {
+              final patientDoctor = snapshot.data;
+              return PermissionWrapper(
+                module: 'appointments',
+                action: 'delete',
+                recordDoctor: patientDoctor,
+                onPermissionDenied: () {
+                  PermissionUtils.showPermissionDeniedMessage(
+                    context,
+                    customMessage: '您只能删除自己负责患者的预约',
+                  );
+                },
+                child: IconButton(
+                  icon: const Icon(Icons.delete_outline, color: AppTheme.errorColor),
+                  onPressed: _showDeleteConfirmation,
+                  tooltip: '删除预约',
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -93,6 +152,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                   ],
                 ),
               ),
+      ),
     );
   }
 
@@ -235,18 +295,25 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
 
-                  // 遍历每组牙位数据
-                  for (
-                    int i = 0;
-                    i < (treatmentData['teethData'] as List).length;
-                    i++
-                  )
-                    if (_hasTeethData(treatmentData['teethData'][i])) ...[
-                      if (i > 0) const SizedBox(height: 8),
-                      _buildTeethDataRow(treatmentData['teethData'][i], i + 1),
+                  // 两个牙位图并排显示
+                  Row(
+                    children: [
+                      if ((treatmentData['teethData'] as List).isNotEmpty &&
+                          _hasTeethData(treatmentData['teethData'][0]))
+                        Expanded(
+                          child: _buildTeethDataRow(treatmentData['teethData'][0], 1),
+                        ),
+                      if ((treatmentData['teethData'] as List).length > 1 &&
+                          _hasTeethData(treatmentData['teethData'][1])) ...[
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildTeethDataRow(treatmentData['teethData'][1], 2),
+                        ),
+                      ],
                     ],
+                  ),
                 ],
               ),
             ),
@@ -257,27 +324,26 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
               treatmentData['treatments'] is List &&
               (treatmentData['treatments'] as List).isNotEmpty) ...[
             const SizedBox(height: 8),
-            Container(
-              margin: const EdgeInsets.only(left: 26),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.withOpacity(0.2)),
-              ),
-              child: Column(
+            Padding(
+              padding: const EdgeInsets.only(left: 26),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    '治疗项目:',
-                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    (treatmentData['treatments'] as List).join('、'),
-                    style: const TextStyle(
+                    '治疗项目: ',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
                       fontSize: 14,
-                      color: AppTheme.textColor,
+                      color: AppTheme.secondaryTextColor,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      (treatmentData['treatments'] as List).join('、'),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.textColor,
+                      ),
                     ),
                   ),
                 ],
@@ -300,42 +366,136 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     );
   }
 
-  // 构建单组牙位数据行
+  // 构建单组牙位数据行 - 使用十字图显示
   Widget _buildTeethDataRow(Map<String, dynamic> teethData, int groupNumber) {
-    final List<Widget> positionTexts = [];
-
-    // 遍历各个牙位
-    for (final entry in teethData.entries) {
-      final String position = entry.key;
-      final String value = entry.value?.toString() ?? '';
-
-      // 如果有值，则添加到显示列表
-      if (value.isNotEmpty && positionMap.containsKey(position)) {
-        positionTexts.add(
-          Text(
-            '${positionMap[position]}: $value',
-            style: const TextStyle(fontSize: 13, height: 1.5),
-          ),
-        );
-      }
+    // 检查是否有数据
+    if (!_hasTeethData(teethData)) {
+      return const SizedBox.shrink();
     }
 
-    if (positionTexts.isEmpty) return const SizedBox.shrink();
-
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          '牙位组 $groupNumber:',
+          '牙位 $groupNumber',
           style: const TextStyle(
             fontSize: 12,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.bold,
             color: Colors.blue,
           ),
         ),
-        const SizedBox(height: 2),
-        Wrap(spacing: 12, children: positionTexts),
+        const SizedBox(height: 8),
+        _buildTeethCrossWidget(teethData),
       ],
+    );
+  }
+
+  // 构建十字图组件
+  Widget _buildTeethCrossWidget(Map<String, dynamic> teethData) {
+    return Container(
+      height: 100,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final height = constraints.maxHeight;
+          final centerX = width / 2;
+          final centerY = height / 2;
+          
+          return CustomPaint(
+            painter: _TeethCrossPainter(),
+            child: Stack(
+              children: [
+                // 右上象限（topLeft - 从医生视角看患者的右上）
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  width: centerX - 2,
+                  height: centerY - 2,
+                  child: Container(
+                    alignment: Alignment.bottomRight,
+                    padding: const EdgeInsets.only(right: 2, bottom: 1),
+                    child: Text(
+                      teethData['topLeft']?.toString() ?? '',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.primaryText,
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                ),
+                // 左上象限（topRight - 从医生视角看患者的左上）
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  width: centerX - 2,
+                  height: centerY - 2,
+                  child: Container(
+                    alignment: Alignment.bottomLeft,
+                    padding: const EdgeInsets.only(left: 2, bottom: 1),
+                    child: Text(
+                      teethData['topRight']?.toString() ?? '',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.primaryText,
+                      ),
+                      textAlign: TextAlign.left,
+                    ),
+                  ),
+                ),
+                // 右下象限（bottomLeft - 从医生视角看患者的右下）
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  width: centerX - 2,
+                  height: centerY - 2,
+                  child: Container(
+                    alignment: Alignment.topRight,
+                    padding: const EdgeInsets.only(right: 2, top: 1),
+                    child: Text(
+                      teethData['bottomLeft']?.toString() ?? '',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.primaryText,
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                ),
+                // 左下象限（bottomRight - 从医生视角看患者的左下）
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  width: centerX - 2,
+                  height: centerY - 2,
+                  child: Container(
+                    alignment: Alignment.topLeft,
+                    padding: const EdgeInsets.only(left: 2, top: 1),
+                    child: Text(
+                      teethData['bottomRight']?.toString() ?? '',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.primaryText,
+                      ),
+                      textAlign: TextAlign.left,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -523,6 +683,38 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     );
   }
 
+  Future<void> _showEditAppointment() async {
+    // 导航到编辑预约页面
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          resizeToAvoidBottomInset: true,
+          body: SafeArea(
+            child: AppointmentFormSheet(
+              appointment: widget.appointment,
+              onSaved: (isSuccess, message) {
+                if (isSuccess) {
+                  // 刷新页面数据
+                  _loadPatientData();
+                  ToastUtil.showSuccess(context, message);
+                  // 标记数据已更新
+                  setState(() {
+                    _dataUpdated = true;
+                  });
+                  Navigator.of(context).pop(true);
+                } else {
+                  ToastUtil.showError(context, message);
+                  Navigator.of(context).pop(false);
+                }
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showDeleteConfirmation() {
     showDialog(
       context: context,
@@ -562,8 +754,8 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     }
 
     try {
-      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      await dbProvider.deleteAppointment(widget.appointment.id!);
+      final appointmentsProvider = Provider.of<AppointmentsProvider>(context, listen: false);
+      await appointmentsProvider.deleteAppointment(widget.appointment.id!);
 
       // 返回上一页并通知更新
       if (!mounted) return;
@@ -709,41 +901,118 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (status != '已预约' && status != 'scheduled')
-                  _buildActionButton(
-                    '设为已预约',
-                    AppTheme.infoColor,
-                    Icons.schedule,
-                    () => _changeAppointmentStatus('scheduled'),
-                  ),
-                if (status != '已完成' && status != 'completed')
-                  _buildActionButton(
-                    '设为已完成',
-                    AppTheme.successColor,
-                    Icons.check_circle_outline,
-                    () => _changeAppointmentStatus('completed'),
-                  ),
-                if (status != '已取消' && status != 'cancelled')
-                  _buildActionButton(
-                    '设为已取消',
-                    AppTheme.errorColor,
-                    Icons.cancel_outlined,
-                    () => _changeAppointmentStatus('cancelled'),
-                  ),
-                if (status != '未到诊' &&
-                    status != 'missed' &&
-                    status != 'no_show')
-                  _buildActionButton(
-                    '设为未到诊',
-                    Colors.orange,
-                    Icons.unpublished_outlined,
-                    () => _changeAppointmentStatus('missed'),
-                  ),
-              ],
+            FutureBuilder<String?>(
+              future: _getAppointmentPatientDoctor(),
+              builder: (context, snapshot) {
+                final patientDoctor = snapshot.data;
+                
+                // 收集所有需要显示的按钮
+                final List<Widget> buttons = [];
+                
+                if (status != '已预约' && status != 'scheduled') {
+                  buttons.add(
+                    PermissionWrapper(
+                      module: 'appointments',
+                      action: 'edit',
+                      recordDoctor: patientDoctor,
+                      onPermissionDenied: () {
+                        PermissionUtils.showPermissionDeniedMessage(
+                          context,
+                          customMessage: '您只能修改自己负责患者的预约',
+                        );
+                      },
+                      child: _buildActionButton(
+                        '已预约',
+                        AppTheme.infoColor,
+                        Icons.schedule,
+                        () => _changeAppointmentStatus('scheduled'),
+                      ),
+                    ),
+                  );
+                }
+                
+                if (status != '已完成' && status != 'completed') {
+                  buttons.add(
+                    PermissionWrapper(
+                      module: 'appointments',
+                      action: 'edit',
+                      recordDoctor: patientDoctor,
+                      onPermissionDenied: () {
+                        PermissionUtils.showPermissionDeniedMessage(
+                          context,
+                          customMessage: '您只能修改自己负责患者的预约',
+                        );
+                      },
+                      child: _buildActionButton(
+                        '已完成',
+                        AppTheme.successColor,
+                        Icons.check_circle_outline,
+                        () => _changeAppointmentStatus('completed'),
+                      ),
+                    ),
+                  );
+                }
+                
+                if (status != '已取消' && status != 'cancelled') {
+                  buttons.add(
+                    PermissionWrapper(
+                      module: 'appointments',
+                      action: 'edit',
+                      recordDoctor: patientDoctor,
+                      onPermissionDenied: () {
+                        PermissionUtils.showPermissionDeniedMessage(
+                          context,
+                          customMessage: '您只能修改自己负责患者的预约',
+                        );
+                      },
+                      child: _buildActionButton(
+                        '已取消',
+                        AppTheme.errorColor,
+                        Icons.cancel_outlined,
+                        () => _changeAppointmentStatus('cancelled'),
+                      ),
+                    ),
+                  );
+                }
+                
+                if (status != '未到诊' && status != 'missed' && status != 'no_show') {
+                  buttons.add(
+                    PermissionWrapper(
+                      module: 'appointments',
+                      action: 'edit',
+                      recordDoctor: patientDoctor,
+                      onPermissionDenied: () {
+                        PermissionUtils.showPermissionDeniedMessage(
+                          context,
+                          customMessage: '您只能修改自己负责患者的预约',
+                        );
+                      },
+                      child: _buildActionButton(
+                        '未到诊',
+                        Colors.orange,
+                        Icons.unpublished_outlined,
+                        () => _changeAppointmentStatus('missed'),
+                      ),
+                    ),
+                  );
+                }
+                
+                // 使用 Row 和 Expanded 平均分配宽度
+                return Row(
+                  children: buttons.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final button = entry.value;
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.only(
+                          right: index < buttons.length - 1 ? 8 : 0,
+                        ),
+                        child: button,
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
           ],
         ),
@@ -762,7 +1031,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         decoration: BoxDecoration(
           color: color.withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
@@ -770,15 +1039,21 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 16, color: color),
             const SizedBox(width: 4),
-            Text(
-              text,
-              style: TextStyle(
-                color: color,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+            Flexible(
+              child: Text(
+                text,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
             ),
           ],
@@ -787,22 +1062,46 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     );
   }
 
+  /// 获取预约关联患者的医生字段，用于权限检查
+  Future<String?> _getAppointmentPatientDoctor() async {
+    try {
+      if (_patient != null) {
+        return _patient!.doctor;
+      }
+      
+      // 如果患者数据还没加载，尝试获取
+      if (widget.appointment.patientId != null) {
+        final patientProvider = Provider.of<PatientProvider>(context, listen: false);
+        final patient = await patientProvider.getPatientById(widget.appointment.patientId);
+        return patient?.doctor;
+      }
+      
+      return null;
+    } catch (e) {
+      print('获取预约患者医生信息失败: $e');
+      return null;
+    }
+  }
+
   // 修改预约状态
   Future<void> _changeAppointmentStatus(String newStatus) async {
     try {
-      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
+      final appointmentsProvider = Provider.of<AppointmentsProvider>(context, listen: false);
 
       // 创建更新后的预约对象
       final updatedAppointment = widget.appointment.copyWith(status: newStatus);
 
       // 更新预约状态
-      await dbProvider.updateAppointment(updatedAppointment);
+      await appointmentsProvider.updateAppointment(updatedAppointment);
 
       // 显示成功提示
       if (!mounted) return;
       ToastUtil.showSuccess(context, '预约状态已更新');
 
-      // 返回上一页并通知更新
+      // 标记数据已更新并返回上一页
+      setState(() {
+        _dataUpdated = true;
+      });
       Navigator.of(context).pop(true); // 返回true表示数据已修改，需要刷新
     } catch (e) {
       print('更新预约状态错误: $e');
@@ -810,4 +1109,34 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
       ToastUtil.showError(context, '更新预约状态失败: $e');
     }
   }
+}
+
+// 十字画笔 - 用于绘制牙位十字图
+class _TeethCrossPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.blue.shade600
+      ..strokeWidth = 2.0;
+
+    final centerX = size.width / 2;
+    final centerY = size.height / 2;
+
+    // 绘制水平线 - 占据整个宽度
+    canvas.drawLine(
+      Offset(0, centerY),
+      Offset(size.width, centerY),
+      paint,
+    );
+
+    // 绘制垂直线 - 占据整个高度
+    canvas.drawLine(
+      Offset(centerX, 0),
+      Offset(centerX, size.height),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

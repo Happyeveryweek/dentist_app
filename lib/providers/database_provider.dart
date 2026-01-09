@@ -1,24 +1,34 @@
 import 'package:flutter/foundation.dart';
-import 'package:dentist_app/models/database_models.dart';
+import '../models/database_models.dart';
+import '../models/schemas/table_schema.dart';
+import '../models/schemas/mysql_schema.dart';
+import '../models/schemas/sqlite_schema.dart';
+// 患者相关模型已迁移到 PatientProvider
+import '../models/material_image.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
-import 'package:dentist_app/models/database_config.dart';
-import 'package:dentist_app/utils/database_utils.dart';
-import 'package:dentist_app/utils/pinyin_util.dart'; // 导入拼音工具类
+import '../models/database_config.dart';
+import '../models/sync_config.dart';
+import '../utils/database_utils.dart';
+import '../utils/pinyin_util.dart'; // 导入拼音工具类
+import '../utils/datetime_formatter.dart';
+import '../utils/sync_manager.dart' as sync_manager;
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:mysql1/mysql1.dart' as mysql;
+import 'package:mysql1/mysql1.dart';
 import 'package:excel/excel.dart';
+import 'dart:async'; // 添加Timer支持
+import 'mysql_connection_pool.dart';
 
 // 数据库提供者，用于管理应用程序与数据库的交互
 class DatabaseProvider extends ChangeNotifier {
   final DatabaseHelper _dbHelper = DatabaseHelper();
-  String _dbType = 'sqlite'; // 默认使用sqlite
+  String _dbType = ''; // 初始化前不设置默认值，避免误导
   String _dbPath = '';
   late DatabaseConfig _dbConfig;
   bool _initialized = false;
@@ -31,19 +41,76 @@ class DatabaseProvider extends ChangeNotifier {
   bool get dashboardNeedsRefresh => _dashboardNeedsRefresh;
 
   // 缓存数据
-  List<Patient>? _cachedPatients;
-  List<Appointment>? _cachedAppointments;
   List<String>? _cachedDoctors;
 
   // 数据源具体实现
-  late SqliteDataSource _sqliteDataSource;
-  late MySqlDataSource _mysqlDataSource;
+  SqliteDataSource? _sqliteDataSource;
+  MySqlDataSource? _mysqlDataSource;
 
   // MySQL连接配置
-  mysql.MySqlConnection? _mysqlConnection;
+  MySqlConnection? _mysqlConnection;
+  
+  // MySQL连接池
+  MySQLConnectionPool? _connectionPool;
+  
+  // 连接状态监控
+  bool _isConnected = false;
+  bool _isReconnecting = false;
+  Timer? _connectionHealthTimer;
+  Timer? _reconnectTimer;
+  int _reconnectAttempts = 0;
+  static const int _maxReconnectAttempts = 5; // 增加到5次重连尝试
+  static const Duration _healthCheckInterval = Duration(seconds: 30); // 更频繁的健康检查
+  static const Duration _reconnectDelay = Duration(seconds: 1); // 初始重连延迟
+
+  // 获取连接状态
+  bool get isConnected => _isConnected;
+  bool get isReconnecting => _isReconnecting;
+  bool get hasConnectionIssues => !_isConnected && _dbType == 'mysql';
+  
+  // 获取连接状态描述
+  String get connectionStatusText {
+    if (_dbType != 'mysql') return '本地数据库';
+    if (_isReconnecting) return '正在重连...';
+    if (_isConnected) return '已连接';
+    return '连接断开';
+  }
+  
+  // 获取连接状态图标
+  String get connectionStatusIcon {
+    if (_dbType != 'mysql') return '💾';
+    if (_isReconnecting) return '🔄';
+    if (_isConnected) return '✅';
+    return '❌';
+  }
 
   // 获取数据库类型
-  String get dbType => _dbType;
+  String get dbType => _dbType.isEmpty ? 'initializing' : _dbType;
+  
+  // 获取MySQL连接池
+  MySQLConnectionPool? get connectionPool => _connectionPool;
+  
+  // 获取配置文件中设置的数据库类型（不受自动切换影响）
+  String get configDbType => _dbConfig.dbType;
+  
+  // 获取当前实际使用的数据库类型描述
+  String get currentDbTypeDescription {
+    if (_isAutoSwitchedToSQLite && _dbConfig.dbType == 'mysql') {
+      return 'SQLite (MySQL连接失败时自动切换)';
+    }
+    return _dbType == 'mysql' ? 'MySQL' : 'SQLite';
+  }
+  
+  // 用于记录之前的数据库类型
+  String _previousDbType = 'sqlite';
+  String get previousDbType => _previousDbType;
+  set previousDbType(String value) {
+    _previousDbType = value;
+  }
+  
+  // 标记是否是自动切换到SQLite（MySQL连接失败时）
+  bool _isAutoSwitchedToSQLite = false;
+  bool get isAutoSwitchedToSQLite => _isAutoSwitchedToSQLite;
 
   // 获取数据库路径
   String get dbPath => _dbPath;
@@ -59,17 +126,456 @@ class DatabaseProvider extends ChangeNotifier {
 
   // 构造函数
   DatabaseProvider() {
-    _sqliteDataSource = SqliteDataSource(this);
-    _mysqlDataSource = MySqlDataSource(this);
+    // 延迟初始化数据源，避免循环依赖
+  }
+
+  // 启动连接健康监控
+  void _startConnectionHealthMonitoring() {
+    if (_dbType == 'mysql' && _connectionHealthTimer == null) {
+      print('启动MySQL连接健康监控，检查间隔: $_healthCheckInterval');
+      _connectionHealthTimer = Timer.periodic(_healthCheckInterval, (timer) {
+        _checkConnectionHealth();
+      });
+      
+      // 添加更频繁的快速检查（用于检测连接丢失）
+      Timer.periodic(const Duration(seconds: 30), (timer) {
+        if (_dbType == 'mysql' && !_isReconnecting) {
+          _quickConnectionCheck();
+        }
+      });
+    }
+  }
+
+  // 停止连接健康监控
+  void _stopConnectionHealthMonitoring() {
+    _connectionHealthTimer?.cancel();
+    _connectionHealthTimer = null;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+  }
+
+  // 检查连接健康状态
+  Future<void> _checkConnectionHealth() async {
+    if (_dbType != 'mysql' || _isReconnecting) return;
+    
+    try {
+      print('🔍 检查MySQL连接健康状态...');
+      final isHealthy = await _testConnectionHealth();
+      
+      if (!isHealthy && !_isReconnecting) {
+        print('⚠️ 检测到连接异常，启动自动重连...');
+        _isConnected = false;
+        notifyListeners();
+        _startAutoReconnect();
+      } else if (isHealthy && !_isConnected) {
+        print('✅ 连接已恢复');
+        _isConnected = true;
+        _reconnectAttempts = 0;
+        notifyListeners();
+        _markDataNeedsRefresh(); // 连接恢复后刷新数据
+      }
+    } catch (e) {
+      print('❌ 连接健康检查失败: $e');
+      if (!_isReconnecting) {
+        _startAutoReconnect();
+      }
+    }
+  }
+
+  // 快速连接检查（轻量级检查，用于频繁检测）
+  Future<void> _quickConnectionCheck() async {
+    if (_dbType != 'mysql' || _isReconnecting || _mysqlConnection == null) return;
+    
+    try {
+      // 使用更快的超时时间进行快速检查
+      final results = await _mysqlConnection!.query('SELECT 1').timeout(
+        const Duration(seconds: 2), // 进一步减少快速检查超时时间
+        onTimeout: () {
+          throw TimeoutException('快速连接检查超时', const Duration(seconds: 2));
+        },
+      );
+      
+      if (results.isNotEmpty && !_isConnected) {
+        print('✅ 快速检查发现连接已恢复');
+        _isConnected = true;
+        _reconnectAttempts = 0;
+        notifyListeners();
+      }
+    } catch (e) {
+      // 快速检查失败，但不立即重连，等待完整检查
+      if (_isConnected) {
+        print('⚠️ 快速检查发现连接可能丢失: $e');
+        _isConnected = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  // 测试连接健康状态
+  Future<bool> _testConnectionHealth() async {
+    if (_mysqlConnection == null) return false;
+    
+    try {
+      // 使用简单的查询测试连接，增加超时时间以提高稳定性
+      final results = await _mysqlConnection!.query('SELECT 1').timeout(
+        const Duration(seconds: 5), // 增加超时时间以提高稳定性
+        onTimeout: () {
+          throw TimeoutException('连接测试超时', const Duration(seconds: 5));
+        },
+      );
+      
+      if (results.isNotEmpty) {
+        _isConnected = true;
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('连接健康测试失败: $e');
+      _isConnected = false;
+      return false;
+    }
+  }
+
+  // 测试MySQL连接（初始化时使用）
+  Future<bool> _testMySQLConnection() async {
+    try {
+      print('正在测试MySQL连接...');
+      String host = _dbConfig.mysql.host;
+      final port = int.parse(_dbConfig.mysql.port);
+      final database = _dbConfig.mysql.database;
+      final username = _dbConfig.mysql.username;
+      final password = _dbConfig.mysql.password;
+
+      // 在Android模拟器上自动转换localhost为10.0.2.2
+      if (Platform.isAndroid && (host == 'localhost' || host == '127.0.0.1')) {
+        host = '10.0.2.2';
+        print('Android模拟器检测到localhost，自动转换为10.0.2.2');
+      }
+
+      // 先快速测试Socket连接（1秒超时）- 快速失败
+      try {
+        print('快速测试Socket连接: $host:$port');
+        final socket = await Socket.connect(
+          host,
+          port,
+          timeout: const Duration(seconds: 1), // 快速Socket检测，1秒超时
+        );
+        socket.destroy();
+        print('Socket连接测试成功');
+      } catch (e) {
+        print('Socket连接测试失败（快速失败）: $e');
+        return false; // Socket连接失败，直接返回false，不再尝试MySQL连接
+      }
+
+      final settings = ConnectionSettings(
+        host: host,
+        port: port,
+        user: username,
+        password: password,
+        db: database,
+        timeout: const Duration(seconds: 2), // MySQL连接超时2秒（快速失败）
+      );
+      
+      final connection = await MySqlConnection.connect(settings);
+      final results = await connection.query('SELECT 1');
+      await connection.close();
+      
+      return results.isNotEmpty;
+    } catch (e) {
+      print('MySQL连接测试失败: $e');
+      return false;
+    }
+  }
+
+  // 检查并执行数据同步
+  Future<void> _checkAndSyncData() async {
+    try {
+      final syncConfig = await SyncConfig.loadSyncConfig();
+      if (!syncConfig.syncEnabled) {
+        print('数据同步已禁用');
+        return;
+      }
+
+      final lastSyncStr = syncConfig.lastSyncTime;
+      final syncIntervalDays = syncConfig.syncIntervalDays;
+      final now = DateTime.now();
+      
+      if (lastSyncStr.isEmpty) {
+        print('从未进行过数据同步，需要执行首次同步');
+      } else {
+        try {
+          final lastSync = DateTimeFormatter.fromDbString(lastSyncStr);
+          if (now.difference(lastSync).inDays >= syncIntervalDays) {
+            print('需要执行数据同步，上次同步时间: $lastSync');
+          } else {
+            print('距离上次同步不足$syncIntervalDays天，跳过同步');
+            return;
+          }
+        } catch (e) {
+          print('解析上次同步时间失败，执行同步: $e');
+        }
+      }
+      
+      final syncResult = await sync_manager.SyncManager.checkAndSync();
+    } catch (e) {
+      print('检查数据同步时出错: $e');
+    }
+  }
+
+  // 强制数据同步（供外部调用）
+  Future<bool> forceDataSync() async {
+    try {
+      print('DatabaseProvider: 开始执行强制数据同步...');
+      print('DatabaseProvider: 当前数据源类型: $_dbType');
+      
+      if (_dbType != 'mysql') {
+        print('DatabaseProvider: 当前不是MySQL模式，无法进行数据同步');
+        return false;
+      }
+
+      print('DatabaseProvider: 调用SyncManager.forceSync()...');
+      final result = await sync_manager.SyncManager.forceSync();
+      print('DatabaseProvider: 同步结果: $result');
+      return result;
+    } catch (e) {
+      print('DatabaseProvider: 强制数据同步失败: $e');
+      return false;
+    }
+  }
+
+  // 启动自动重连（指数退避机制）
+  void _startAutoReconnect() {
+    if (_isReconnecting) {
+      print('重连已在进行中');
+      return;
+    }
+
+    _isReconnecting = true;
+    _reconnectAttempts++;
+    
+    // 指数退避延迟：1, 2, 4, 8, 16, 32秒
+    final backoffDelay = Duration(seconds: (1 << (_reconnectAttempts - 1)).clamp(1, 32));
+    print('🔄 开始第 $_reconnectAttempts 次重连尝试，延迟 ${backoffDelay.inSeconds} 秒...');
+    notifyListeners();
+
+    _reconnectTimer = Timer(backoffDelay, () async {
+      await _performReconnect();
+    });
+  }
+
+  // 执行重连
+  Future<void> _performReconnect() async {
+    try {
+      print('🔄 正在重连MySQL数据库...');
+      
+      // 关闭旧连接
+      if (_mysqlConnection != null) {
+        try {
+          await _mysqlConnection!.close();
+        } catch (e) {
+          print('关闭旧连接时出错: $e');
+        }
+        _mysqlConnection = null;
+      }
+
+      // 重新初始化连接（自动重连时允许多次重试）
+      await _initMySQLConnection(isStartup: false);
+      
+      // 测试新连接
+      final isHealthy = await _testConnectionHealth();
+      if (isHealthy) {
+        print('✅ 重连成功！');
+        _isConnected = true;
+        _isReconnecting = false;
+        _reconnectAttempts = 0;
+        
+        // 通知所有监听器连接已恢复
+        notifyListeners();
+        
+        // 标记需要刷新数据
+        _markDataNeedsRefresh();
+      } else {
+        throw Exception('重连后连接测试失败');
+      }
+    } catch (e) {
+      print('❌ 重连失败: $e');
+      _isConnected = false;
+      
+      if (_reconnectAttempts < _maxReconnectAttempts) {
+        print('🔄 将在 $_reconnectDelay 后重试...');
+        _isReconnecting = false; // 重置状态以便下次重连
+        _startAutoReconnect();
+      } else {
+        print('❌ 已达到最大重连次数，停止重连');
+        _isReconnecting = false;
+        notifyListeners();
+      }
+    }
+  }
+
+  // 标记数据需要刷新
+  void _markDataNeedsRefresh() {
+    _dashboardNeedsRefresh = true;
+    // 通知其他Provider数据需要刷新
+    notifyListeners();
+  }
+
+  // 手动重连（供UI调用）
+  Future<bool> manualReconnect() async {
+    if (_dbType != 'mysql') return true;
+    
+    print('🔄 手动重连MySQL数据库...');
+    _reconnectAttempts = 0;
+    _startAutoReconnect();
+    
+    // 等待重连完成
+    while (_isReconnecting) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+    
+    return _isConnected;
+  }
+
+  // 强制重连（应用恢复时使用）
+  Future<bool> forceReconnect() async {
+    if (_dbType != 'mysql') return true;
+    
+    print('🔄 强制重连MySQL数据库（应用恢复）...');
+    
+    // 设置重连状态
+    _isReconnecting = true;
+    notifyListeners();
+    
+    try {
+      // 强制关闭现有连接
+      if (_mysqlConnection != null) {
+        try {
+          await _mysqlConnection!.close();
+          print('🔄 已关闭旧的MySQL连接');
+        } catch (e) {
+          print('⚠️ 关闭旧连接时出错: $e');
+        }
+        _mysqlConnection = null;
+      }
+      
+      _isConnected = false;
+      _reconnectAttempts = 0;
+      
+      // 重新建立连接（强制重连时允许多次重试）
+      await _initMySQLConnection(isStartup: false);
+      
+      // 重置重连状态
+      _isReconnecting = false;
+      notifyListeners();
+      
+      return _isConnected;
+    } catch (e) {
+      print('❌ 强制重连失败: $e');
+      _isConnected = false;
+      _isReconnecting = false; // 确保重置状态
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // 检查并确保连接可用
+  Future<bool> ensureConnection() async {
+    if (_dbType != 'mysql') return true;
+    
+    if (_isConnected && await _testConnectionHealth()) {
+      return true;
+    }
+    
+    if (!_isReconnecting) {
+      _startAutoReconnect();
+    }
+    
+    // 等待重连完成
+    while (_isReconnecting) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+    
+    return _isConnected;
+  }
+
+  // 应用恢复时强制检查连接状态 - 始终创建新连接
+  Future<bool> checkConnectionOnAppResume() async {
+    if (_dbType != 'mysql') return true;
+    
+    print('🔄 应用恢复，强制重新建立MySQL连接（防止socket超时）...');
+    
+    try {
+      // 强制关闭旧连接（不管它是否还有效）
+      if (_mysqlConnection != null) {
+        try {
+          await _mysqlConnection!.close();
+          print('🔄 已关闭旧的MySQL连接');
+        } catch (e) {
+          print('⚠️ 关闭旧连接时出错: $e');
+        }
+        _mysqlConnection = null;
+      }
+      
+      _isConnected = false;
+      _reconnectAttempts = 0;
+      
+      // 重新初始化连接（应用恢复时允许多次重试）
+      await _initMySQLConnection(isStartup: false);
+      
+      if (_isConnected) {
+        print('✅ 应用恢复重连成功（新socket连接）');
+        _markDataNeedsRefresh();
+        return true;
+      } else {
+        print('❌ 应用恢复重连失败');
+        return false;
+      }
+      
+    } catch (e) {
+      print('❌ 应用恢复时重连失败: $e');
+      _isConnected = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // 智能连接检查（用于操作前的连接验证）
+  Future<bool> smartConnectionCheck() async {
+    if (_dbType != 'mysql') return true;
+    
+    // 如果已知连接正常，直接返回
+    if (_isConnected && !_isReconnecting) {
+      return true;
+    }
+    
+    // 如果正在重连，等待重连完成
+    if (_isReconnecting) {
+      print('⏳ 等待重连完成...');
+      int waitCount = 0;
+      while (_isReconnecting && waitCount < 50) { // 最多等待5秒
+        await Future.delayed(const Duration(milliseconds: 100));
+        waitCount++;
+      }
+      return _isConnected;
+    }
+    
+    // 执行连接检查
+    return await ensureConnection();
   }
 
   // 获取当前活跃的数据源
   DataSource get _activeDataSource {
     switch (_dbType) {
       case 'sqlite':
-        return _sqliteDataSource;
+        if (_sqliteDataSource == null) {
+          _sqliteDataSource = SqliteDataSource(this);
+        }
+        return _sqliteDataSource!;
       case 'mysql':
-        return _mysqlDataSource;
+        if (_mysqlDataSource == null) {
+          _mysqlDataSource = MySqlDataSource(this);
+        }
+        return _mysqlDataSource!;
       default:
         throw Exception('不支持的数据库类型: $_dbType');
     }
@@ -82,6 +588,21 @@ class DatabaseProvider extends ChangeNotifier {
   void resetDatabaseChanged() {
     _databaseChanged = false;
     _shouldNavigateToDashboard = false;
+  }
+  
+  // 重置自动切换状态（用于下次启动时重新尝试MySQL）
+  void resetAutoSwitchState() {
+    _isAutoSwitchedToSQLite = false;
+    // 不重置_dbType，让它从配置文件重新加载
+  }
+  
+  // 检查是否应该使用配置文件中的数据源类型
+  bool _shouldUseConfigDbType() {
+    // 如果是自动切换到SQLite的，但配置文件中是MySQL，则应该重新尝试MySQL
+    if (_isAutoSwitchedToSQLite && _dbConfig.dbType == 'mysql') {
+      return true;
+    }
+    return false;
   }
 
   // 强制设置数据库变更标志
@@ -101,23 +622,9 @@ class DatabaseProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 局部刷新患者数据，不触发全局导航或任何页面重建
-  void refreshPatientsData() {
-    print('局部刷新患者数据');
-    // 仅清除患者缓存
-    _cachedPatients = null;
-    // 不需要调用notifyListeners，避免任何监听器被触发导致页面重建
-  }
+  // 患者数据刷新操作已迁移到 PatientProvider
 
-  // 局部刷新预约数据，不触发全局导航但通知监听器
-  void refreshAppointmentsData() {
-    print('局部刷新预约数据');
-    // 清除预约缓存
-    _cachedAppointments = null;
-    // 通知监听器刷新UI
-    notifyListeners();
-    print('已通知监听器刷新预约数据');
-  }
+
 
   // 重置仪表盘刷新标志
   void resetDashboardRefreshFlag() {
@@ -134,17 +641,31 @@ class DatabaseProvider extends ChangeNotifier {
 
     try {
       print('开始初始化数据库...');
+      print('当前工作目录: ${Directory.current.path}');
+      
       // 加载配置
+      print('开始加载数据库配置...');
       _dbConfig = await DatabaseConfig.loadConfig();
+      
+      // 始终使用配置文件中的数据源类型，忽略之前的自动切换状态
       _dbType = _dbConfig.dbType;
       print('数据库类型: $_dbType');
+      print('数据库配置: $_dbConfig');
+      
+      // 重置自动切换状态，确保每次启动都重新尝试配置文件中的数据源
+      resetAutoSwitchState();
+
+      // 初始化SQLite数据源（始终初始化SQLite作为备份）
+      _sqliteDataSource = SqliteDataSource(this);
 
       // 如果是SQLite，确保路径存在
       if (_dbType == 'sqlite') {
+        print('初始化SQLite数据库...');
         if (_dbConfig.sqlite.path.isEmpty) {
           // 设置默认路径
           print('SQLite路径为空，设置默认路径');
           _dbConfig.sqlite.path = await DatabaseUtils.getDefaultDatabasePath();
+          print('设置的默认路径: ${_dbConfig.sqlite.path}');
           await _dbConfig.saveConfig();
         } else if (!File(_dbConfig.sqlite.path).existsSync()) {
           print('SQLite路径不存在: ${_dbConfig.sqlite.path}');
@@ -159,12 +680,169 @@ class DatabaseProvider extends ChangeNotifier {
         // 设置数据库路径
         _dbPath = _dbConfig.sqlite.path;
         print('SQLite数据库路径: $_dbPath');
-        DatabaseHelper.setCustomDbPath(_dbPath);
-      }
-      // 如果是MySQL，设置连接参数
-      else if (_dbType == 'mysql') {
-        print('配置MySQL连接参数...');
 
+        // 初始化SQLite数据库
+        try {
+          print('开始初始化DatabaseHelper...');
+          await _dbHelper.database;
+          print('SQLite数据库初始化成功');
+        } catch (e) {
+          print('SQLite数据库初始化失败: $e');
+          print('错误堆栈: ${StackTrace.current}');
+          throw Exception('SQLite数据库初始化失败: $e');
+        }
+      } else if (_dbType == 'mysql') {
+        // 测试MySQL连接
+        final canConnect = await _testMySQLConnection();
+        bool shouldSwitchToSQLite = false;
+        
+        if (canConnect) {
+          // 初始化MySQL连接（启动时快速失败）
+          try {
+            await _initMySQLConnection(isStartup: true);
+            // 启动连接健康监控
+            _startConnectionHealthMonitoring();
+            print('MySQL数据库初始化成功');
+          } catch (e) {
+            shouldSwitchToSQLite = true;
+          }
+        } else {
+          shouldSwitchToSQLite = true;
+        }
+        
+        // 统一处理切换到SQLite的逻辑
+        if (shouldSwitchToSQLite) {
+          print('MySQL连接失败，自动切换到SQLite数据库');
+          
+          // 标记为自动切换到SQLite
+          _isAutoSwitchedToSQLite = true;
+          
+          // 记录之前的数据库类型（保留配置中的MySQL设置）
+          _previousDbType = 'mysql'; // 始终记录为mysql，不修改配置文件
+          
+          // 切换到SQLite（仅运行时切换，不保存到配置）
+          _dbType = 'sqlite';
+          // 注意：不修改 _dbConfig.dbType，保持配置文件中的mysql设置
+          
+          // 初始化SQLite
+          await _initSQLiteWithNotification();
+          
+          // 只在第一次切换时设置标志，避免重复通知
+          if (!_databaseChanged) {
+            _databaseChanged = true;
+            _shouldNavigateToDashboard = true;
+          }
+        }
+      }
+
+      // 测试数据库连接
+      try {
+        print('开始测试数据库连接...');
+        if (_dbType == 'sqlite') {
+          final db = await _dbHelper.database;
+          print('获取到数据库实例: ${db.path}');
+          await db.rawQuery('SELECT 1');
+          print('数据库连接测试成功');
+        } else if (_dbType == 'mysql') {
+          final results = await _mysqlConnection!.query('SELECT 1');
+          if (results.isNotEmpty) {
+            print('数据库连接测试成功');
+          } else {
+            throw Exception('数据库连接测试失败: 查询返回空结果');
+          }
+        }
+      } catch (e) {
+        print('数据库连接测试失败: $e');
+        print('错误堆栈: ${StackTrace.current}');
+        throw Exception('数据库连接测试失败: $e');
+      }
+
+      _initialized = true;
+      print('数据库初始化完成，_initialized = $_initialized');
+      
+      // 通知所有监听器数据库已初始化
+      notifyListeners();
+      
+      // 仅在需要时延迟通知，避免重复触发
+      if (_databaseChanged) {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (_initialized && _databaseChanged) {
+            print('延迟通知数据库切换完成');
+            notifyListeners();
+          }
+        });
+      }
+      
+      // 初始化完成后，确保所有Provider都能获取到数据库实例
+      await _initializeAllProviders();
+      
+    } catch (e) {
+      debugPrint('初始化数据库错误: $e');
+      print('错误堆栈: ${StackTrace.current}');
+      _initialized = false;
+      throw Exception('数据库初始化失败: $e');
+    }
+  }
+
+  // 初始化SQLite并显示通知
+  Future<void> _initSQLiteWithNotification() async {
+    try {
+      print('初始化SQLite数据库（带通知）...');
+      
+      // 设置数据库路径
+      if (_dbConfig.sqlite.path.isEmpty) {
+        _dbConfig.sqlite.path = await DatabaseUtils.getDefaultDatabasePath();
+        await _dbConfig.saveConfig();
+      }
+      _dbPath = _dbConfig.sqlite.path;
+      
+      // 确保目录存在
+      final dbDir = Directory(path.dirname(_dbPath));
+      if (!dbDir.existsSync()) {
+        await dbDir.create(recursive: true);
+      }
+      
+      // 初始化SQLite数据库
+      await _dbHelper.database;
+      print('SQLite数据库初始化成功');
+      
+    } catch (e) {
+      print('SQLite数据库初始化失败: $e');
+      throw Exception('SQLite数据库初始化失败: $e');
+    }
+  }
+
+  // 初始化所有Provider
+  Future<void> _initializeAllProviders() async {
+    try {
+      print('开始初始化所有Provider...');
+      
+      // 延迟执行以确保BuildContext可用
+      Future.delayed(const Duration(milliseconds: 500), () async {
+        try {
+          // 通知所有Provider数据库已就绪
+          notifyListeners();
+          print('所有Provider将通过监听器获取数据库实例');
+        } catch (e) {
+          print('初始化Provider时出错: $e');
+        }
+      });
+      
+    } catch (e) {
+      print('初始化Provider时出错: $e');
+    }
+  }
+
+  // 初始化MySQL连接
+  Future<void> _initMySQLConnection({bool isStartup = true}) async {
+    // 启动时快速失败（只尝试1次），应用恢复时可以多次重试
+    final maxRetries = isStartup ? 1 : 3;
+    const retryDelay = Duration(seconds: 1); // 减少重试延迟
+    
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        print('配置MySQL连接参数... 尝试第 $attempt/$maxRetries 次');
+        
         // 检查并转换localhost为10.0.2.2（如果在Android平台）
         if (Platform.isAndroid &&
             (_dbConfig.mysql.host == 'localhost' ||
@@ -177,326 +855,145 @@ class DatabaseProvider extends ChangeNotifier {
           print('已自动更新配置文件中的MySQL主机为10.0.2.2');
         }
 
-        _dbPath =
-            '${_dbConfig.mysql.host}:${_dbConfig.mysql.port}/${_dbConfig.mysql.database}';
-        try {
-          await _initMySQLConnection();
-        } catch (e) {
-          print('MySQL连接失败，回退到SQLite: $e');
-          _dbType = 'sqlite';
-          _dbConfig.dbType = 'sqlite';
-          await _dbConfig.saveConfig();
-          _dbPath = _dbConfig.sqlite.path;
-          DatabaseHelper.setCustomDbPath(_dbPath);
-        }
-      }
+        final host = _dbConfig.mysql.host;
+        final port = _dbConfig.mysql.port;
+        final database = _dbConfig.mysql.database;
+        final username = _dbConfig.mysql.username;
+        final password = _dbConfig.mysql.password;
 
-      // 初始化数据库
-      print('获取数据库实例...');
-      try {
-        if (_dbType == 'sqlite') {
-          final db = await _dbHelper.database;
-          _dbPath = await _dbHelper.getDatabasePath();
-          print('数据库路径确认: $_dbPath');
+        print('MySQL连接参数: $host:$port/$database, 用户: $username');
 
-          // 检查数据库是否正常工作
-          try {
-            print('测试数据库连接...');
-            await db.rawQuery('SELECT 1');
-            print('数据库连接测试成功');
-          } catch (e) {
-            print('数据库连接测试失败: $e');
-            throw Exception('数据库连接测试失败: $e');
-          }
-        }
-      } catch (e) {
-        print('获取数据库实例失败: $e');
-
-        // 尝试重新创建数据库
-        print('尝试重新创建数据库...');
-        await _dbHelper.closeDatabase();
-
-        // 如果是SQLite，尝试重置数据库路径
-        if (_dbType == 'sqlite') {
-          _dbConfig.sqlite.path = await DatabaseUtils.getDefaultDatabasePath();
-          await _dbConfig.saveConfig();
-          _dbPath = _dbConfig.sqlite.path;
-          DatabaseHelper.setCustomDbPath(_dbPath);
-        }
-
-        // 重新尝试获取数据库实例
-        if (_dbType == 'sqlite') {
-          final db = await _dbHelper.database;
-          _dbPath = await _dbHelper.getDatabasePath();
-          print('重试后数据库路径确认: $_dbPath');
-
-          // 再次测试连接
-          await db.rawQuery('SELECT 1');
-        }
-        print('重试后数据库连接测试成功');
-      }
-
-      _initialized = true;
-      print('数据库初始化完成');
-      notifyListeners();
-    } catch (e) {
-      debugPrint('初始化数据库错误: $e');
-      _initialized = false;
-      throw Exception('数据库初始化失败: $e');
-    }
-  }
-
-  // 初始化MySQL连接
-  Future<void> _initMySQLConnection() async {
-    try {
-      print('初始化MySQL连接...');
-
-      // 首先关闭已有连接
-      if (_mysqlConnection != null) {
-        await _mysqlConnection!.close();
-        _mysqlConnection = null;
-      }
-
-      // 检查配置
-      if (_dbConfig.mysql.host.isEmpty) {
-        throw Exception('MySQL主机名为空');
-      }
-
-      // 确保使用配置中的主机名，而不是硬编码的localhost
-      String host = _dbConfig.mysql.host;
-      String port =
-          _dbConfig.mysql.port.isEmpty ? '3306' : _dbConfig.mysql.port;
-
-      // 检查并转换localhost为10.0.2.2（如果在Android平台）
-      if (Platform.isAndroid && (host == 'localhost' || host == '127.0.0.1')) {
-        print('Android连接检测到localhost，自动转换为10.0.2.2');
-        host = '10.0.2.2';
-
-        // 记录但不自动保存，因为这可能只是临时连接测试
-        print('注意：配置中的主机名保持不变，仅在当前连接中使用10.0.2.2');
-      }
-
-      // 对于Android模拟器，如果使用10.0.2.2，记录下来
-      if (host == "10.0.2.2") {
-        print('使用Android模拟器特殊主机: 10.0.2.2 (模拟器中的localhost)');
-      }
-
-      // 创建新连接设置
-      final settings = mysql.ConnectionSettings(
+        // 设置连接参数 - 启动时快速失败，应用恢复时允许更长时间
+      final connectionTimeout = isStartup ? const Duration(seconds: 2) : const Duration(seconds: 10);
+      final settings = ConnectionSettings(
         host: host,
         port: int.parse(port),
-        user: _dbConfig.mysql.username,
-        password: _dbConfig.mysql.password,
-        db: _dbConfig.mysql.database,
-        timeout: const Duration(seconds: 20), // 增加超时时间到20秒
+        user: username,
+        password: password,
+        db: database,
+        timeout: connectionTimeout, // 启动时2秒，应用恢复时10秒
+        useSSL: false, // 显式禁用SSL以减少连接开销
+        useCompression: false, // 禁用压缩以提高响应速度
       );
 
-      // 先测试Socket连接
-      print('测试Socket连接到MySQL: $host:$port');
-      try {
-        final socket = await Socket.connect(
-          host,
-          int.parse(port),
-          timeout: const Duration(seconds: 15),
-          sourceAddress: InternetAddress.anyIPv4, // 指定使用IPv4地址
-        );
-        print('Socket连接成功，销毁临时Socket');
-        socket.destroy();
-      } catch (socketError) {
-        print('Socket连接测试失败: $socketError');
-        throw Exception('无法连接到MySQL服务器: $socketError');
-      }
-
-      // 尝试连接
-      print('准备连接到MySQL: $host:$port/${_dbConfig.mysql.database}');
-
-      try {
-        _mysqlConnection = await mysql.MySqlConnection.connect(settings);
-      } catch (e) {
-        print('MySQL连接错误: $e');
-        if (e.toString().contains('SocketException')) {
-          throw Exception('无法连接到MySQL服务器，请检查主机名和端口是否正确');
-        } else if (e.toString().contains('Access denied')) {
-          throw Exception('MySQL访问被拒绝，请检查用户名和密码是否正确');
-        } else if (e.toString().contains('Unknown database')) {
-          throw Exception('数据库不存在，请检查数据库名称是否正确');
-        } else {
-          throw Exception('MySQL连接失败: $e');
-        }
-      }
-
-      // 测试连接
-      try {
-        final results = await _mysqlConnection!.query('SELECT 1');
-        if (results.isNotEmpty) {
-          print('MySQL连接测试成功');
-        } else {
-          throw Exception('MySQL连接测试失败: 查询返回空结果');
-        }
-      } catch (e) {
-        print('MySQL查询测试错误: $e');
-        throw Exception('MySQL连接成功但查询测试失败: $e');
-      }
-    } catch (e) {
-      print('MySQL连接错误: $e');
-      _mysqlConnection = null;
-      throw Exception('MySQL连接失败: $e');
-    }
-  }
-
-  // 切换数据库类型
-  Future<void> switchDatabaseType(
-    String type, {
-    String? path, // 可选的SQLite路径
-  }) async {
-    final oldType = _dbType;
-    print('切换数据库类型到 $type，当前类型: $oldType');
-
-    try {
-      // 强制清除所有缓存
-      _cachedPatients = null;
-      _cachedAppointments = null;
-      _cachedDoctors = null;
-
-      _dbType = type;
-      _dbConfig.dbType = type; // 确保配置也更新
-
-      // 修改标记方式，只刷新仪表盘，不自动导航
-      _dashboardNeedsRefresh = true;
-      // 不设置全局变更标志，避免导航到仪表盘
-      // _databaseChanged = true;
-
-      if (type == 'sqlite') {
-        if (path != null) {
-          _dbConfig.sqlite.path = path;
-        }
-        await _dbConfig.saveConfig();
-
-        // 关闭MySQL连接
-        if (_mysqlConnection != null) {
-          await _mysqlConnection!.close();
-          _mysqlConnection = null;
+        // 先测试Socket连接
+        try {
+          print('测试Socket连接到MySQL: $host:$port');
+          // 启动时快速失败（1秒），应用恢复时允许更长时间（3秒）
+          final socketTimeout = isStartup ? const Duration(seconds: 1) : const Duration(seconds: 3);
+          final socket = await Socket.connect(
+            host,
+            int.parse(port),
+            timeout: socketTimeout,
+            sourceAddress: InternetAddress.anyIPv4,
+          );
+          print('Socket连接成功，销毁临时Socket');
+          socket.destroy();
+        } catch (socketError) {
+          print('Socket连接测试失败: $socketError');
+          if (attempt < maxRetries) {
+            print('等待 ${retryDelay.inSeconds} 秒后重试...');
+            await Future.delayed(retryDelay);
+            continue;
+          }
+          throw Exception('无法连接到MySQL服务器: $socketError');
         }
 
-        // 关闭当前数据库连接
-        await _dbHelper.closeDatabase();
-
-        // 设置新的数据库路径
-        DatabaseHelper.setCustomDbPath(_dbConfig.sqlite.path);
-
-        // 重新初始化数据库
-        await _dbHelper.database;
-        _dbPath = await _dbHelper.getDatabasePath();
-      } else if (type == 'mysql') {
-        // 确保配置已保存
-        await _dbConfig.saveConfig();
-
-        // 先关闭当前SQLite数据库连接
-        await _dbHelper.closeDatabase();
-
-        // 直接使用当前已有配置，不要重新加载
-        String host = _dbConfig.mysql.host;
-        String port = _dbConfig.mysql.port;
-        String database = _dbConfig.mysql.database;
-        String username = _dbConfig.mysql.username;
-        String password = _dbConfig.mysql.password;
-
-        // 确认配置已正确加载
-        print('使用MySQL配置: $host:$port/$database');
-
-        // 重新初始化MySQL连接
-        _dbPath = '$host:$port/$database';
+        // 尝试连接
+        print('准备连接到MySQL: $host:$port/$database');
 
         try {
-          // 直接使用当前配置值初始化连接
-          await _initMySQLConnectionWithParams(
-            host,
-            port,
-            database,
-            username,
-            password,
-          );
+          _mysqlConnection = await MySqlConnection.connect(settings);
+          
+          // 设置会话字符编码，确保中文字符正确显示
+          await _mysqlConnection!.query("SET NAMES 'utf8mb4'");
+          await _mysqlConnection!.query("SET CHARACTER SET utf8mb4");
+          await _mysqlConnection!.query("SET character_set_connection=utf8mb4");
+          
+          // 设置连接保持参数
+          await _mysqlConnection!.query("SET wait_timeout = 28800"); // 8小时
+          await _mysqlConnection!.query("SET interactive_timeout = 28800"); // 8小时
+          print('MySQL字符编码和连接超时已设置');
+        } catch (e) {
+          print('MySQL连接错误: $e');
+          if (attempt < maxRetries) {
+            print('等待 ${retryDelay.inSeconds} 秒后重试...');
+            await Future.delayed(retryDelay);
+            continue;
+          }
+          
+          if (e.toString().contains('SocketException')) {
+            throw Exception('无法连接到MySQL服务器，请检查主机名和端口是否正确');
+          } else if (e.toString().contains('Access denied')) {
+            throw Exception('MySQL访问被拒绝，请检查用户名和密码是否正确');
+          } else if (e.toString().contains('Unknown database')) {
+            throw Exception('数据库不存在，请检查数据库名称是否正确');
+          } else {
+            throw Exception('MySQL连接失败: $e');
+          }
+        }
 
-          // MySQL切换成功后，测试一下连接和查询
-          print('测试MySQL连接...');
-          try {
-            var testResult = await _mysqlConnection!.query(
-              'SELECT COUNT(*) as count FROM patients',
-            );
-            print('MySQL测试查询结果: ${testResult.length} 行');
-            if (testResult.isNotEmpty) {
-              var count = testResult.first['count'];
-              print('患者总数: $count');
+        // 测试连接
+        try {
+          final results = await _mysqlConnection!.query('SELECT 1');
+          if (results.isNotEmpty) {
+            print('MySQL连接测试成功');
+            _isConnected = true;
+            break; // 连接成功，退出重试循环
+          } else {
+            if (attempt < maxRetries) {
+              print('连接测试失败，重试中...');
+              continue;
             }
-          } catch (testError) {
-            print('MySQL测试查询错误: $testError');
+            throw Exception('MySQL连接测试失败: 查询返回空结果');
           }
         } catch (e) {
-          print('连接到MySQL失败: $e');
-          throw Exception('无法连接到MySQL服务器，请检查网络或配置');
-        }
-      }
-
-      // 强制清除所有缓存，确保下次查询时重新获取数据
-      _forceInvalidateCache();
-
-      print('进行一些测试查询确保数据库连接正常工作...');
-      try {
-        int count = await getPatientCount();
-        print('数据源切换后的患者总数: $count');
-
-        if (count > 0) {
-          // 尝试获取第一个患者以测试数据库
-          List<Patient> patients = await getAllPatients();
-          if (patients.isNotEmpty) {
-            print('成功获取第一个患者: ${patients.first.name}');
+          print('MySQL查询测试错误: $e');
+          if (attempt < maxRetries) {
+            print('等待 ${retryDelay.inSeconds} 秒后重试...');
+            await Future.delayed(retryDelay);
+            continue;
           }
+          throw Exception('MySQL连接成功但查询测试失败: $e');
         }
+        
       } catch (e) {
-        print('测试查询失败: $e');
-      }
-
-      // 连续发送多次通知，确保所有监听者都更新
-      print('发送多次通知以刷新UI');
-      notifyListeners();
-    } catch (e) {
-      print('切换数据库类型错误: $e');
-
-      // 如果是MySQL切换失败，回退到SQLite
-      if (type == 'mysql') {
-        print('切换到MySQL失败，回退到SQLite');
-
-        // 重置数据库类型
-        _dbType = 'sqlite';
-        _dbConfig.dbType = 'sqlite';
-        await _dbConfig.saveConfig();
-
-        // 重新初始化SQLite
-        DatabaseHelper.setCustomDbPath(_dbConfig.sqlite.path);
-        try {
-          await _dbHelper.database;
-          _dbPath = await _dbHelper.getDatabasePath();
-        } catch (sqliteError) {
-          print('回退到SQLite时出错: $sqliteError');
+        print('MySQL连接尝试 $attempt/$maxRetries 失败: $e');
+        if (attempt == maxRetries) {
+          _mysqlConnection = null;
+          throw Exception('MySQL连接失败: $e');
         }
+        await Future.delayed(retryDelay);
       }
-
-      // 通知UI更新
-      _forceInvalidateCache();
-      notifyListeners();
-
-      // 重新抛出异常，让调用者知道发生了错误
-      throw Exception('切换数据库类型失败: $e');
+    }
+    
+    if (_isConnected) {
+      // 设置数据库路径为MySQL连接信息
+      _dbPath = '${_dbConfig.mysql.host}:${_dbConfig.mysql.port}/${_dbConfig.mysql.database}';
+      print('MySQL数据库路径已设置: $_dbPath');
+      
+      // 初始化MySQL连接池
+      try {
+        _connectionPool = MySQLConnectionPool();
+        await _connectionPool!.initialize(_dbConfig);
+        print('MySQL连接池初始化成功');
+      } catch (e) {
+        print('MySQL连接池初始化失败: $e');
+        // 连接池初始化失败不影响单连接模式的使用
+      }
+      
+      // 启动连接健康监控
+      _startConnectionHealthMonitoring();
     }
   }
+
+
 
   // 强制使所有缓存失效并重建
   void _forceInvalidateCache() {
     print('强制清除所有缓存数据');
-    // 清空所有缓存数据
-    _cachedPatients = null;
-    _cachedAppointments = null;
-    _cachedDoctors = null;
+          // 清空所有缓存数据
+      _cachedDoctors = null;
 
     // 其他可能的缓存数据
     // 修改为仅标记仪表盘需要刷新，不设置全局变更标志
@@ -512,9 +1009,7 @@ class DatabaseProvider extends ChangeNotifier {
           // 执行一些简单查询以确保数据库连接正常
           await db.rawQuery('SELECT 1');
 
-          // 主动触发缓存更新
-          getAllPatients().then((_) => print('患者数据缓存已更新'));
-          getAllAppointments().then((_) => print('预约数据缓存已更新'));
+          // 患者数据缓存更新已迁移到 PatientProvider
 
           // 再次通知监听者
           notifyListeners();
@@ -531,232 +1026,131 @@ class DatabaseProvider extends ChangeNotifier {
     String? where,
     List<dynamic>? whereArgs,
   }) async {
-    try {
-      // 确保MySQL连接可用
-      if (_mysqlConnection == null) {
-        await _initMySQLConnection();
-        if (_mysqlConnection == null) {
-          throw Exception('MySQL连接不可用');
-        }
-      }
-
-      // 构建查询语句
-      String query;
-      if (where != null && whereArgs != null) {
-        // 替换?为实际参数值
-        String processedWhere = where;
-        for (var arg in whereArgs) {
-          if (arg is String) {
-            processedWhere = processedWhere.replaceFirst('?', "'$arg'");
-          } else {
-            processedWhere = processedWhere.replaceFirst('?', arg.toString());
+    const maxQueryRetries = 3;
+    
+    for (int attempt = 1; attempt <= maxQueryRetries; attempt++) {
+      try {
+        // 确保MySQL连接可用
+        if (_mysqlConnection == null || !_isConnected) {
+          print('MySQL连接不可用，尝试重新连接...');
+          await _initMySQLConnection(isStartup: false);
+          if (_mysqlConnection == null) {
+            if (attempt < maxQueryRetries) {
+              await Future.delayed(Duration(seconds: attempt));
+              continue;
+            }
+            throw Exception('MySQL连接不可用');
           }
         }
-        query = 'SELECT * FROM $table WHERE $processedWhere';
-      } else {
-        query = 'SELECT * FROM $table';
-      }
 
-      print('执行MySQL查询: $query');
-      final results = await _mysqlConnection!.query(query);
-
-      print('MySQL查询结果行数: ${results.length}');
-
-      // 将结果转换为Map列表
-      final List<Map<String, dynamic>> resultList = [];
-      for (var row in results) {
-        // 直接创建一个新的Map，不再依赖字段名映射
-        final Map<String, dynamic> rowMap = {};
-
-        // 打印所有字段名称和值，帮助调试
-        print('MySQL行数据字段: ${row.fields.keys.join(", ")}');
-
-        // 对于患者表，执行精确的字段映射
-        if (table == 'patients') {
-          print('处理患者表数据...');
-
-          // ID字段
-          rowMap['id'] = _getSafeValue(row, 'id');
-
-          // 病历号
-          rowMap['medical_record_number'] = _getSafeValue(
-            row,
-            'medical_record_number',
-          );
-
-          // 姓名
-          rowMap['name'] = _getSafeValue(row, 'name')?.toString() ?? '';
-
-          // 姓名拼音
-          rowMap['name_pinyin'] = _getSafeValue(row, 'name_pinyin')?.toString();
-
-          // 年龄 - 确保是整数
-          if (_getSafeValue(row, 'age') != null) {
-            try {
-              rowMap['age'] =
-                  _getSafeValue(row, 'age') is int
-                      ? _getSafeValue(row, 'age')
-                      : int.parse(_getSafeValue(row, 'age').toString());
-            } catch (e) {
-              print('年龄转换错误: $e');
-              rowMap['age'] = 0;
-            }
-          } else {
-            rowMap['age'] = 0;
+        // 在每次查询前发送心跳包以保持连接活跃
+        try {
+          await _mysqlConnection!.query('SELECT 1').timeout(const Duration(seconds: 3));
+        } catch (e) {
+          print('心跳检测失败，标记连接为不可用');
+          _isConnected = false;
+          if (attempt < maxQueryRetries) {
+            await Future.delayed(Duration(seconds: attempt));
+            continue;
           }
+          throw Exception('MySQL连接心跳检测失败');
+        }
 
-          // 性别 - 标准化为'男'或'女'
-          var gender =
-              _getSafeValue(row, 'gender')?.toString().trim().toLowerCase() ??
-              '';
-          if (gender == 'male' ||
-              gender == '1' ||
-              gender == 'm' ||
-              gender == '男') {
-            rowMap['gender'] = '男';
-          } else if (gender == 'female' ||
-              gender == '0' ||
-              gender == 'f' ||
-              gender == '女') {
-            rowMap['gender'] = '女';
+        // 构建查询语句
+        String query;
+        if (where != null && whereArgs != null) {
+          // 使用参数化查询防止SQL注入
+          if (whereArgs.isNotEmpty) {
+            query = 'SELECT * FROM $table WHERE $where';
           } else {
-            rowMap['gender'] = gender;
+            query = 'SELECT * FROM $table WHERE $where';
           }
-
-          // 电话号码 - 处理JSON格式
-          var phone = _getSafeValue(row, 'phone')?.toString() ?? '';
-          if (phone.startsWith('[') && phone.endsWith(']')) {
-            try {
-              var phones = jsonDecode(phone);
-              if (phones is List && phones.isNotEmpty) {
-                rowMap['phone'] = phones.join(',');
-              } else {
-                rowMap['phone'] = '';
-              }
-            } catch (e) {
-              print('解析电话JSON错误: $e');
-              rowMap['phone'] = phone;
-            }
-          } else {
-            rowMap['phone'] = phone;
-          }
-
-          // 地址
-          rowMap['address'] = _getSafeValue(row, 'address')?.toString();
-
-          // 地址拼音
-          rowMap['address_pinyin'] =
-              _getSafeValue(row, 'address_pinyin')?.toString();
-
-          // 身份证号
-          rowMap['identification_number'] =
-              _getSafeValue(row, 'identification_number')?.toString();
-
-          // 医生
-          rowMap['doctor'] = _getSafeValue(row, 'doctor')?.toString();
-
-          // 初诊日期
-          var firstVisitDate = _getSafeValue(row, 'first_visit_date');
-          if (firstVisitDate is DateTime) {
-            rowMap['first_visit_date'] = firstVisitDate.toIso8601String();
-          } else if (firstVisitDate != null) {
-            try {
-              // 尝试解析日期字符串
-              var date = DateTime.parse(firstVisitDate.toString());
-              rowMap['first_visit_date'] = date.toIso8601String();
-            } catch (e) {
-              print('解析初诊日期错误: $e');
-              rowMap['first_visit_date'] = DateTime.now().toIso8601String();
-            }
-          } else {
-            rowMap['first_visit_date'] = DateTime.now().toIso8601String();
-          }
-
-          // 牙齿状况
-          rowMap['dental_condition'] =
-              _getSafeValue(row, 'dental_condition')?.toString();
-
-          // 治疗项目
-          rowMap['treatment_items'] =
-              _getSafeValue(row, 'treatment_items')?.toString();
-
-          // 总费用
-          var totalCost = _getSafeValue(row, 'total_cost');
-          if (totalCost != null) {
-            try {
-              rowMap['total_cost'] =
-                  totalCost is double
-                      ? totalCost
-                      : double.parse(totalCost.toString());
-            } catch (e) {
-              print('费用转换错误: $e');
-              rowMap['total_cost'] = 0.0;
-            }
-          } else {
-            rowMap['total_cost'] = 0.0;
-          }
-
-          // 创建和更新时间
-          _processDateField(row, rowMap, 'created_at');
-          _processDateField(row, rowMap, 'updated_at');
-
-          // 打印最终映射结果
-          print('映射后的患者数据: $rowMap');
         } else {
-          // 其他表的通用处理
-          for (var field in row.fields.keys) {
-            // 转换驼峰命名为下划线格式
-            String key = field;
-            if (key.contains(RegExp(r'[A-Z]'))) {
-              key = key.replaceAllMapped(
-                RegExp(r'([A-Z])'),
-                (match) => '_${match.group(1)!.toLowerCase()}',
-              );
-            }
+          query = 'SELECT * FROM $table';
+        }
 
+        print('执行MySQL查询: $query (尝试 $attempt/$maxQueryRetries)');
+        
+        Results results;
+        if (where != null && whereArgs != null && whereArgs.isNotEmpty) {
+          // 使用参数化查询
+          results = await _mysqlConnection!.query(query, whereArgs).timeout(
+            const Duration(seconds: 30), // 增加查询超时时间
+          );
+        } else {
+          results = await _mysqlConnection!.query(query).timeout(
+            const Duration(seconds: 30),
+          );
+        }
+
+        print('MySQL查询结果行数: ${results.length}');
+
+        // 将结果转换为Map列表
+        final List<Map<String, dynamic>> resultList = [];
+        for (var row in results) {
+          final Map<String, dynamic> rowMap = {};
+
+          // 优化的字段处理逻辑
+          for (var field in row.fields.keys) {
+            // 使用原始字段名，避免不必要的转换
+            String key = field;
             var value = row[field];
 
-            // 处理特殊类型
+            // 简化的类型处理
             if (value is DateTime) {
-              rowMap[key] = value.toIso8601String();
-            } else if (key.endsWith('_date') || key.endsWith('_at')) {
-              // 日期字段处理
-              if (value != null) {
-                try {
-                  rowMap[key] =
-                      DateTime.parse(value.toString()).toIso8601String();
-                } catch (e) {
-                  rowMap[key] = value?.toString();
-                }
+              // 如果MySQL返回的是UTC时间，转换为本地时间
+              final localDateTime = value.isUtc ? value.toLocal() : value;
+              rowMap[key] = DateTimeFormatter.toDbString(localDateTime);
+            } else if (value is Blob) {
+              // 只转换必要的Blob字段
+              try {
+                final bytes = value.toBytes();
+                rowMap[key] = bytes.isNotEmpty ? utf8.decode(bytes, allowMalformed: true) : '';
+              } catch (e) {
+                rowMap[key] = '';
+              }
+            } else if (value is Uint8List) {
+              try {
+                rowMap[key] = value.isNotEmpty ? utf8.decode(value, allowMalformed: true) : '';
+              } catch (e) {
+                rowMap[key] = '';
               }
             } else {
               rowMap[key] = value;
             }
           }
+
+          resultList.add(rowMap);
         }
 
-        resultList.add(rowMap);
-      }
-
-      print('MySQL查询已转换为 ${resultList.length} 行数据');
-      return resultList;
-    } catch (e) {
-      print('MySQL查询错误: $e');
-      // 尝试重新连接
-      try {
-        if (_mysqlConnection != null) {
-          await _mysqlConnection!.close();
+        return resultList;
+        
+      } catch (e) {
+        print('MySQL查询错误 (尝试 $attempt/$maxQueryRetries): $e');
+        
+        if (attempt < maxQueryRetries) {
+          print('等待 ${attempt} 秒后重试查询...');
+          await Future.delayed(Duration(seconds: attempt));
+          
+          // 尝试重新连接
+          try {
+            if (_mysqlConnection != null) {
+              await _mysqlConnection!.close();
+            }
+            _mysqlConnection = null;
+            await _initMySQLConnection(isStartup: false);
+          } catch (reconnectError) {
+            print('重连失败: $reconnectError');
+          }
+          
+          continue;
         }
-        _mysqlConnection = null;
-        await _initMySQLConnection();
-
-        // 重试查询一次
-        return await _queryMySQLData(table, where: where, whereArgs: whereArgs);
-      } catch (reconnectError) {
-        print('MySQL重连失败: $reconnectError');
-        throw Exception('MySQL查询失败: $e，重连失败: $reconnectError');
+        
+        throw Exception('MySQL查询失败: $e');
       }
     }
+    
+    throw Exception('MySQL查询重试次数已用完');
   }
 
   // 安全获取MySQL结果中的值
@@ -789,706 +1183,44 @@ class DatabaseProvider extends ChangeNotifier {
   ) {
     var dateValue = _getSafeValue(row, fieldName);
     if (dateValue is DateTime) {
-      rowMap[fieldName] = dateValue.toIso8601String();
+      // 如果MySQL返回的是UTC时间，转换为本地时间
+      final localDateTime = dateValue.isUtc ? dateValue.toLocal() : dateValue;
+      rowMap[fieldName] = DateTimeFormatter.toDbString(localDateTime);
     } else if (dateValue != null) {
       try {
-        var date = DateTime.parse(dateValue.toString());
-        rowMap[fieldName] = date.toIso8601String();
+        var date = DateTimeFormatter.fromDbString(dateValue.toString());
+        rowMap[fieldName] = DateTimeFormatter.toDbString(date);
       } catch (e) {
         print('解析$fieldName错误: $e');
-        rowMap[fieldName] = DateTime.now().toIso8601String();
+        rowMap[fieldName] = DateTimeFormatter.nowDbString();
       }
     } else {
-      rowMap[fieldName] = DateTime.now().toIso8601String();
+      rowMap[fieldName] = DateTimeFormatter.nowDbString();
     }
   }
 
-  // 将ISO日期字符串转换为MySQL兼容的格式
-  String _formatDateForMySQL(String isoDateString) {
+  // 将日期字符串转换为MySQL兼容的格式
+  String _formatDateForMySQL(String dateString) {
     try {
-      // 解析ISO 8601格式的日期字符串
-      final date = DateTime.parse(isoDateString);
-
-      // 确保使用本地时间
-      final localDate = date.toLocal();
-
-      // 格式化为MySQL兼容的格式 (YYYY-MM-DD HH:MM:SS)
-      return DateFormat('yyyy-MM-dd HH:mm:ss').format(localDate);
+      // 使用统一的时间格式工具解析和转换
+      final date = DateTimeFormatter.fromDbString(dateString);
+      return DateTimeFormatter.toDbString(date);
     } catch (e) {
       print('日期格式转换错误: $e，使用当前时间');
-      return DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now().toLocal());
+      return DateTimeFormatter.nowDbString();
     }
   }
 
-  // 患者相关操作
-  // 获取所有患者
-  Future<List<Patient>> getAllPatients() async {
-    try {
-      if (_cachedPatients != null) {
-        return _cachedPatients!;
-      }
+  
 
-      final patients = await _activeDataSource.getAllPatients();
-      _cachedPatients = patients;
-      return patients;
-    } catch (e) {
-      print('获取所有患者错误: $e');
-      return [];
-    }
-  }
 
-  // 获取患者总数
-  Future<int> getPatientCount() async {
-    try {
-      print('正在获取患者总数...');
-      if (_dbType == 'sqlite') {
-        final db = await _dbHelper.database;
-        if (db != null) {
-          final result = await db.rawQuery(
-            'SELECT COUNT(*) as count FROM patients',
-          );
-          final count = Sqflite.firstIntValue(result) ?? 0;
-          print('SQLite数据库中的患者总数: $count');
-          return count;
-        }
-      } else if (_dbType == 'mysql') {
-        final conn = await _mysqlConnection;
-        if (conn != null) {
-          final results = await conn.query(
-            'SELECT COUNT(*) as count FROM patients',
-          );
-          if (results.isNotEmpty) {
-            final count = results.first.fields['count'] as int;
-            print('MySQL数据库中的患者总数: $count');
-            return count;
-          }
-        }
-      }
 
-      // 如果无法获取数据，默认返回0，显示病历号为1
-      print('无法获取患者数量，使用默认值0');
-      return 0;
-    } catch (e) {
-      print('获取患者总数错误: $e');
-      return 0;
-    }
-  }
 
-  // 获取最大病历号
-  Future<int> getMaxMedicalRecordNumber() async {
-    try {
-      print('正在获取最大病历号...');
-      if (_dbType == 'sqlite') {
-        final db = await _dbHelper.database;
-        if (db != null) {
-          final result = await db.rawQuery(
-            'SELECT MAX(medical_record_number) as max_id FROM patients',
-          );
-          final maxId = Sqflite.firstIntValue(result) ?? 0;
-          print('SQLite数据库中的最大病历号: $maxId');
-          return maxId;
-        }
-      } else if (_dbType == 'mysql') {
-        final conn = await _mysqlConnection;
-        if (conn != null) {
-          final results = await conn.query(
-            'SELECT MAX(medical_record_number) as max_id FROM patients',
-          );
-          if (results.isNotEmpty) {
-            final maxId = results.first.fields['max_id'] as int? ?? 0;
-            print('MySQL数据库中的最大病历号: $maxId');
-            return maxId;
-          }
-        }
-      }
-
-      // 如果无法获取数据，默认返回0，新病历号为1
-      print('无法获取最大病历号，使用默认值0');
-      return 0;
-    } catch (e) {
-      print('获取最大病历号错误: $e');
-      return 0;
-    }
-  }
-
-  // 备份整个SQLite数据库文件
-  Future<bool> backupDatabase(String destinationPath) async {
-    try {
-      print('开始备份SQLite数据库到: $destinationPath');
-
-      // 确认当前是SQLite数据库类型
-      if (_dbType != 'sqlite') {
-        print('错误：只能备份SQLite数据库');
-        return false;
-      }
-
-      // 获取SQLite数据库文件路径
-      final db = await _dbHelper.database;
-      await db.close(); // 首先关闭数据库连接以确保所有写入已完成
-
-      final dbPath = _dbHelper.databasePath;
-      if (dbPath == null || dbPath.isEmpty) {
-        print('错误：无法获取SQLite数据库路径');
-        // 尝试获取默认路径
-        final defaultPath = await _dbHelper.getDatabasePath();
-        if (defaultPath.isEmpty) {
-          return false;
-        }
-        print('使用默认路径: $defaultPath');
-
-        // 复制数据库文件
-        final sourceFile = File(defaultPath);
-        if (!await sourceFile.exists()) {
-          print('错误：源数据库文件不存在');
-          return false;
-        }
-
-        await sourceFile.copy(destinationPath);
-        print('数据库文件已备份到: $destinationPath');
-      } else {
-        print('源数据库路径: $dbPath');
-
-        // 复制数据库文件
-        final sourceFile = File(dbPath);
-        if (!await sourceFile.exists()) {
-          print('错误：源数据库文件不存在');
-          return false;
-        }
-
-        await sourceFile.copy(destinationPath);
-        print('数据库文件已备份到: $destinationPath');
-      }
-
-      // 创建目标目录（如果不存在）
-      final dir = File(destinationPath).parent;
-      if (!await dir.exists()) {
-        await dir.create(recursive: true);
-      }
-
-      // 重新打开数据库
-      await _dbHelper.reopenDatabase();
-
-      return true;
-    } catch (e) {
-      print('备份数据库错误: $e');
-      // 确保重新打开数据库
-      try {
-        // 使用数据库实例来重新打开数据库
-        final db = await _dbHelper.database;
-        print('数据库已重新打开');
-      } catch (reopenError) {
-        print('重新打开数据库错误: $reopenError');
-      }
-      return false;
-    }
-  }
-
-  // 从备份文件恢复SQLite数据库
-  Future<bool> restoreDatabaseFromBackup(String backupPath) async {
-    try {
-      print('开始从备份恢复SQLite数据库: $backupPath');
-
-      // 确认当前是SQLite数据库类型
-      if (_dbType != 'sqlite') {
-        print('错误：只能恢复到SQLite数据库');
-        return false;
-      }
-
-      // 检查备份文件是否存在
-      final backupFile = File(backupPath);
-      if (!await backupFile.exists()) {
-        print('错误：备份文件不存在');
-        return false;
-      }
-
-      // 获取SQLite数据库文件路径
-      final db = await _dbHelper.database;
-      await db.close(); // 首先关闭数据库连接
-
-      final dbPath = _dbHelper.databasePath;
-      if (dbPath == null || dbPath.isEmpty) {
-        print('错误：无法获取SQLite数据库路径');
-        // 尝试获取默认路径
-        final defaultPath = await _dbHelper.getDatabasePath();
-        if (defaultPath.isEmpty) {
-          return false;
-        }
-        print('使用默认路径: $defaultPath');
-
-        // 复制备份文件到数据库位置
-        await backupFile.copy(defaultPath);
-        print('备份文件已恢复到数据库');
-      } else {
-        print('目标数据库路径: $dbPath');
-
-        // 复制备份文件到数据库位置
-        await backupFile.copy(dbPath);
-        print('备份文件已恢复到数据库');
-      }
-
-      // 重新打开数据库
-      await _dbHelper.reopenDatabase();
-
-      // 清除缓存
-      _cachedPatients = null;
-      _cachedAppointments = null;
-      _cachedDoctors = null;
-
-      // 设置仪表盘需要刷新标志，但不会触发导航
-      _dashboardNeedsRefresh = true;
-
-      print('数据库已从备份恢复');
-      return true;
-    } catch (e) {
-      print('恢复数据库错误: $e');
-      // 确保重新打开数据库
-      try {
-        // 使用数据库实例来重新打开数据库
-        final db = await _dbHelper.database;
-        print('数据库已重新打开');
-      } catch (reopenError) {
-        print('重新打开数据库错误: $reopenError');
-      }
-      return false;
-    }
-  }
-
-  // 仅导出患者表到指定目录
-  Future<String> exportPatientsTable(String destinationDir) async {
-    try {
-      // 检查数据库类型，只允许导出SQLite数据库
-      if (_dbType != 'sqlite') {
-        throw Exception('目前只支持导出SQLite数据库患者表');
-      }
-
-      print('开始导出患者表数据');
-
-      // 获取当前数据库文件路径
-      final dbPath = _dbPath;
-      if (dbPath.isEmpty) {
-        throw Exception('找不到当前数据库路径');
-      }
-
-      // 使用数据库工具类导出患者表
-      final exportPath = await DatabaseUtils.exportPatientsTable(
-        dbPath,
-        destinationDir,
-      );
-
-      if (exportPath.isEmpty) {
-        throw Exception('导出过程中发生错误');
-      }
-
-      print('患者表已成功导出到: $exportPath');
-      return exportPath;
-    } catch (e) {
-      print('导出患者表错误: $e');
-      throw Exception('患者表导出失败: $e');
-    }
-  }
-
-  // 使用SAF保存患者数据备份
-  Future<String> savePatientBackupWithSaf(
-    String jsonData,
-    String fileName,
-  ) async {
-    try {
-      // 请求权限
-      var status = await Permission.storage.request();
-      if (!status.isGranted) {
-        throw Exception('需要存储权限才能备份患者数据');
-      }
-
-      // 将JSON数据写入临时文件
-      final directory = await getTemporaryDirectory();
-      final tempFile = File('${directory.path}/$fileName');
-      await tempFile.writeAsString(jsonData);
-
-      // 使用SAF让用户选择保存位置
-      const mimeType = 'application/json';
-
-      final params = SaveFileDialogParams(
-        sourceFilePath: tempFile.path,
-        fileName: fileName,
-        mimeTypesFilter: [mimeType],
-      );
-
-      final filePath = await FlutterFileDialog.saveFile(params: params);
-
-      // 删除临时文件
-      await tempFile.delete();
-
-      if (filePath == null) {
-        throw Exception('用户取消了备份操作');
-      }
-
-      return '患者数据已备份到: $filePath';
-    } catch (e) {
-      print('SAF备份患者数据错误: $e');
-      throw Exception('备份患者数据失败：$e');
-    }
-  }
-
-  // 恢复出厂设置（重置数据库）
-  Future<bool> resetToFactorySettings() async {
-    try {
-      // 执行重置
-      final success = await DatabaseUtils.resetDatabase(_dbPath);
-
-      if (success) {
-        // 重新初始化数据库
-        await initDatabase();
-        notifyListeners();
-        return true;
-      } else {
-        throw Exception('重置失败');
-      }
-    } catch (e) {
-      debugPrint('重置数据库错误: $e');
-      rethrow;
-    }
-  }
-
-  // 添加患者
-  Future<int> addPatient(Patient patient) async {
-    try {
-      final id = await _activeDataSource.addPatient(patient);
-
-      // 清除缓存
-      _cachedPatients = null;
-      // 设置仪表盘需要刷新标志
-      _dashboardNeedsRefresh = true;
-      print('患者数据已添加，缓存已清除，仪表盘需要刷新');
-
-      return id;
-    } catch (e) {
-      print('添加患者错误: $e');
-      rethrow;
-    }
-  }
-
-  // 更新患者
-  Future<bool> updatePatient(Patient patient) async {
-    try {
-      print('开始更新患者数据: ${patient.toMap()}');
-
-      // 生成更新时间
-      patient.updatedAt = DateTime.now();
-
-      final success = await _activeDataSource.updatePatient(patient);
-
-      // 清除缓存
-      if (success) {
-        _cachedPatients = null;
-        _dashboardNeedsRefresh = true;
-      }
-
-      return success;
-    } catch (e) {
-      print('更新患者错误: $e');
-      return false;
-    }
-  }
-
-  // 删除患者
-  Future<int> deletePatient(int id) async {
-    try {
-      print('开始删除患者ID $id 及其关联预约');
-
-      // 1. 先获取该患者的所有预约
-      final appointments = await getAppointmentsByPatientId(id);
-      print('找到患者关联的预约记录: ${appointments.length}条');
-
-      // 2. 删除该患者的所有预约
-      int appointmentsDeleted = 0;
-      for (var appointment in appointments) {
-        if (appointment.id != null) {
-          try {
-            final result = await deleteAppointment(appointment.id!);
-            appointmentsDeleted += result;
-            print('已删除预约 ID: ${appointment.id}');
-          } catch (e) {
-            print('删除患者相关预约时出错 ID: ${appointment.id}, 错误: $e');
-            // 继续尝试删除其他预约，不中断流程
-          }
-        }
-      }
-      print('成功删除关联预约: $appointmentsDeleted条');
-
-      // 3. 删除患者
-      final result = await _activeDataSource.deletePatient(id);
-
-      // 4. 清除缓存
-      _cachedPatients = null;
-      _cachedAppointments = null;
-      _dashboardNeedsRefresh = true;
-
-      return result;
-    } catch (e) {
-      print('删除患者错误: $e');
-      rethrow;
-    }
-  }
-
-  // 根据ID获取患者
-  Future<Patient?> getPatientById(int id) async {
-    try {
-      return await _activeDataSource.getPatientById(id);
-    } catch (e) {
-      print('获取患者数据异常: $e');
-      return null;
-    }
-  }
-
-  // 获取患者的所有预约
-  Future<List<Appointment>> getPatientAppointments(int patientId) async {
-    final db = await _dbHelper.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'appointments',
-      where: 'patient_id = ?',
-      whereArgs: [patientId],
-    );
-
-    return List.generate(maps.length, (i) {
-      return Appointment.fromMap(maps[i]);
-    });
-  }
-
-  // 根据患者ID获取预约
-  Future<List<Appointment>> getAppointmentsByPatientId(int patientId) async {
-    try {
-      List<Map<String, dynamic>> maps;
-
-      if (_dbType == 'sqlite') {
-        final db = await _dbHelper.database;
-        maps = await db.query(
-          'appointments',
-          where: 'patient_id = ?',
-          whereArgs: [patientId],
-        );
-      } else if (_dbType == 'mysql') {
-        // 使用MySQL查询
-        maps = await _queryMySQLData(
-          'appointments',
-          where: 'patient_id = ?',
-          whereArgs: [patientId],
-        );
-      } else {
-        throw Exception('不支持的数据库类型: $_dbType');
-      }
-
-      return List.generate(maps.length, (i) {
-        return Appointment.fromMap(maps[i]);
-      });
-    } catch (e) {
-      print('获取患者预约错误: $e');
-      return [];
-    }
-  }
-
-  // 复诊相关操作
-  // 获取所有复诊
-  Future<List<FollowUpVisit>> getAllFollowUpVisits() async {
-    final db = await _dbHelper.database;
-    final List<Map<String, dynamic>> maps = await db.query('follow_up_visits');
-    return List.generate(maps.length, (i) {
-      return FollowUpVisit.fromMap(maps[i]);
-    });
-  }
-
-  // 添加复诊
-  Future<int> addFollowUpVisit(FollowUpVisit followUpVisit) async {
-    final db = await _dbHelper.database;
-    int id = await db.insert('follow_up_visits', followUpVisit.toMap());
-    notifyListeners();
-    return id;
-  }
-
-  // 更新复诊
-  Future<int> updateFollowUpVisit(FollowUpVisit followUpVisit) async {
-    final db = await _dbHelper.database;
-    int result = await db.update(
-      'follow_up_visits',
-      followUpVisit.toMap(),
-      where: 'id = ?',
-      whereArgs: [followUpVisit.id],
-    );
-    notifyListeners();
-    return result;
-  }
-
-  // 删除复诊
-  Future<int> deleteFollowUpVisit(int id) async {
-    final db = await _dbHelper.database;
-    int result = await db.delete(
-      'follow_up_visits',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    notifyListeners();
-    return result;
-  }
-
-  // 获取患者的所有复诊
-  Future<List<FollowUpVisit>> getPatientFollowUpVisits(int patientId) async {
-    final db = await _dbHelper.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'follow_up_visits',
-      where: 'patient_id = ?',
-      whereArgs: [patientId],
-    );
-
-    return List.generate(maps.length, (i) {
-      return FollowUpVisit.fromMap(maps[i]);
-    });
-  }
 
   // 数据库配置相关操作
-  // 导出数据库
-  Future<String> exportDatabase() async {
-    try {
-      final dbPath = await _dbHelper.getDatabasePath();
-      final directory = await getApplicationDocumentsDirectory();
-      final exportPath = '${directory.path}/dental_clinic_export.db';
 
-      // 复制数据库文件
-      File dbFile = File(dbPath);
-      await dbFile.copy(exportPath);
 
-      return exportPath;
-    } catch (e) {
-      print('导出数据库错误: $e');
-      return '';
-    }
-  }
 
-  // 导入数据库
-  Future<bool> importDatabase(String path) async {
-    try {
-      final dbPath = await _dbHelper.getDatabasePath();
-
-      // 复制导入的数据库文件到应用数据库位置
-      File importFile = File(path);
-      await importFile.copy(dbPath);
-
-      // 重新初始化数据库
-      await initDatabase();
-
-      return true;
-    } catch (e) {
-      print('导入数据库错误: $e');
-      return false;
-    }
-  }
-
-  // 测试MySQL连接，但不切换数据库类型
-  Future<bool> testMySQLConnection(
-    String host,
-    String port,
-    String database,
-    String username,
-    String password,
-  ) async {
-    try {
-      print('测试MySQL连接...');
-
-      // 检查并转换localhost为10.0.2.2（如果在Android平台）
-      String effectiveHost = host;
-      if (Platform.isAndroid && (host == 'localhost' || host == '127.0.0.1')) {
-        print('Android连接检测到localhost参数，自动转换为10.0.2.2');
-        effectiveHost = '10.0.2.2';
-      }
-
-      // 先测试Socket连接
-      print('测试Socket连接到MySQL: $effectiveHost:$port');
-      try {
-        final socket = await Socket.connect(
-          effectiveHost,
-          int.parse(port),
-          timeout: const Duration(seconds: 15),
-          sourceAddress: InternetAddress.anyIPv4, // 指定使用IPv4地址
-        );
-        print('Socket连接成功，销毁临时Socket');
-        socket.destroy();
-      } catch (socketError) {
-        print('Socket连接测试失败: $socketError');
-        throw Exception('无法连接到MySQL服务器: $socketError');
-      }
-
-      // 创建临时连接设置
-      final settings = mysql.ConnectionSettings(
-        host: effectiveHost,
-        port: int.parse(port),
-        user: username,
-        password: password,
-        db: database,
-        timeout: const Duration(seconds: 20), // 增加超时时间，与正式连接保持一致
-      );
-
-      // 尝试连接
-      print('尝试连接到MySQL: $effectiveHost:$port/$database (用户名: $username)');
-
-      mysql.MySqlConnection? connection;
-
-      // 增加重试机制
-      int retryCount = 0;
-      const maxRetries = 2;
-
-      while (retryCount <= maxRetries) {
-        try {
-          print('连接尝试 ${retryCount + 1}/$maxRetries');
-          connection = await mysql.MySqlConnection.connect(settings);
-          break; // 连接成功，跳出循环
-        } catch (e) {
-          retryCount++;
-          print('MySQL连接错误(尝试 $retryCount): $e');
-
-          if (retryCount > maxRetries) {
-            // 所有重试都失败
-            if (e.toString().contains('SocketException')) {
-              throw Exception('无法连接到MySQL服务器，请检查主机名和端口是否正确，以及网络连接是否稳定');
-            } else if (e.toString().contains('Access denied')) {
-              throw Exception('MySQL访问被拒绝，请检查用户名和密码是否正确');
-            } else if (e.toString().contains('Unknown database')) {
-              throw Exception('数据库不存在，请检查数据库名称是否正确');
-            } else {
-              throw Exception('MySQL连接失败: $e');
-            }
-          }
-
-          // 等待一段时间后重试
-          await Future.delayed(const Duration(seconds: 1));
-        }
-      }
-
-      if (connection == null) {
-        throw Exception('无法建立MySQL连接，请检查网络连接或服务器状态');
-      }
-
-      // 测试连接
-      try {
-        final results = await connection.query('SELECT 1');
-        if (results.isNotEmpty) {
-          print('MySQL连接测试成功');
-          // 关闭连接
-          await connection.close();
-          return true;
-        } else {
-          throw Exception('MySQL连接测试失败: 查询返回空结果');
-        }
-      } catch (e) {
-        print('MySQL查询测试错误: $e');
-        // 关闭连接
-        if (connection != null) {
-          await connection.close();
-        }
-        throw Exception('MySQL连接成功但查询测试失败: $e');
-      }
-    } catch (e) {
-      print('MySQL连接测试错误: $e');
-      return false;
-    }
-  }
 
   // 使用参数初始化MySQL连接
   Future<void> _initMySQLConnectionWithParams(
@@ -1546,7 +1278,7 @@ class DatabaseProvider extends ChangeNotifier {
       }
 
       // 创建新连接设置
-      final settings = mysql.ConnectionSettings(
+      final settings = ConnectionSettings(
         host: effectiveHost, // 使用可能转换后的主机名
         port: int.parse(port),
         user: username,
@@ -1559,7 +1291,13 @@ class DatabaseProvider extends ChangeNotifier {
       print('准备连接到MySQL: $effectiveHost:$port/$database');
 
       try {
-        _mysqlConnection = await mysql.MySqlConnection.connect(settings);
+        _mysqlConnection = await MySqlConnection.connect(settings);
+        
+        // 设置会话字符编码，确保中文字符正确显示
+        await _mysqlConnection!.query("SET NAMES 'utf8mb4'");
+        await _mysqlConnection!.query("SET CHARACTER SET utf8mb4");
+        await _mysqlConnection!.query("SET character_set_connection=utf8mb4");
+        print('MySQL字符编码已设置为utf8mb4');
       } catch (e) {
         print('MySQL连接错误: $e');
         if (e.toString().contains('SocketException')) {
@@ -1607,8 +1345,6 @@ class DatabaseProvider extends ChangeNotifier {
       }
 
       // 清除缓存
-      _cachedPatients = null;
-      _cachedAppointments = null;
       _cachedDoctors = null;
 
       print('所有数据库连接已关闭');
@@ -1617,840 +1353,82 @@ class DatabaseProvider extends ChangeNotifier {
     }
   }
 
-  // 分页获取患者
-  Future<List<Patient>> getPatientsPage(
-    int page,
-    int pageSize, {
-    String? sortField,
-    bool? ascending,
-  }) async {
-    if (!_initialized) await initDatabase();
-    return await _activeDataSource.getPatientsPage(
-      page,
-      pageSize,
-      sortField: sortField,
-      ascending: ascending,
-    );
+
+
+  // 获取SQLite数据库实例（供其他Provider使用）
+  Future<Database?> get sqliteDatabase async {
+    if (_dbType == 'sqlite' && _initialized) {
+      return await _dbHelper.database;
+    }
+    return null;
   }
 
-  // 导出患者信息到Excel文件
-  Future<String> exportPatientsToExcel(String filePath) async {
-    try {
-      print('开始导出患者数据到Excel');
+  // 获取MySQL连接（供其他Provider使用）
+  MySqlConnection? get mysqlConnection {
+    if (_dbType == 'mysql' && _initialized) {
+      return _mysqlConnection;
+    }
+    return null;
+  }
 
-      // 获取所有患者数据
-      final patients = await getAllPatients();
-      if (patients.isEmpty) {
-        throw Exception('没有患者数据可导出');
+  // 创建MySQL数据库表
+  Future<void> _createMySQLTables() async {
+    try {
+      if (_mysqlConnection == null) {
+        throw Exception('MySQL连接未建立');
       }
 
-      // 创建Excel文件
-      final excel = Excel.createExcel();
-      final sheet = excel['患者信息'];
+      print('开始创建MySQL数据库表...');
 
-      // 设置表头
-      final headers = [
-        '姓名',
-        '性别',
-        '年龄',
-        '主电话号',
-        '备用电话号',
-        '地址',
-        '身份证号',
-        '病历号',
-        '医生',
-        '初诊日期',
-        '总费用',
-        '牙齿状况',
+      // 使用新的表结构系统创建所有表
+      final tableNames = [
+        'patients',
+        'appointments',
+        'financial_records',
+        'financial_items',
+        'materials',
+        'purchase_records',
+        'purchase_items',
+        'patient_materials',
+        'material_images',
+        'users',
+        'patient_medical_records',
+        'medical_record_items',
+        'medical_record_templates',
       ];
 
-      // 设置表头样式
-      for (var i = 0; i < headers.length; i++) {
-        final cell = sheet.cell(
-          CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0),
-        );
-        cell.value = TextCellValue(headers[i]);
-        cell.cellStyle = CellStyle(
-          bold: true,
-          horizontalAlign: HorizontalAlign.Center,
-        );
-      }
-
-      // 填充数据
-      for (var i = 0; i < patients.length; i++) {
-        final patient = patients[i];
-        final rowIndex = i + 1;
-
-        sheet
-            .cell(
-              CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: rowIndex),
-            )
-            .value = TextCellValue(patient.name);
-        sheet
-            .cell(
-              CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: rowIndex),
-            )
-            .value = TextCellValue(patient.gender);
-        sheet
-            .cell(
-              CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: rowIndex),
-            )
-            .value = IntCellValue(patient.age);
-
-        // 处理电话号码 - 分为主电话号和备用电话号两列
-        String mainPhone = '';
-        String backupPhone = '';
-
-        print('处理患者[${patient.name}]的电话: ${patient.phone}');
-
-        try {
-          if (patient.phone.contains(",")) {
-            // 可能是JSON格式，尝试解析
-            if (patient.phone.startsWith('[') && patient.phone.endsWith(']')) {
-              List<dynamic> phones = jsonDecode(patient.phone);
-              if (phones.isNotEmpty) {
-                mainPhone = phones[0].toString();
-                if (phones.length > 1) {
-                  backupPhone = phones[1].toString();
-                }
-                print('成功解析JSON电话: 主号=$mainPhone, 备用=$backupPhone');
-              }
-            } else {
-              // 可能是逗号分隔的格式
-              List<String> phones = patient.phone.split(',');
-              if (phones.isNotEmpty) {
-                mainPhone = phones[0].trim();
-                if (phones.length > 1) {
-                  backupPhone = phones[1].trim();
-                }
-                print('成功解析逗号分隔电话: 主号=$mainPhone, 备用=$backupPhone');
-              }
-            }
-          } else {
-            // 单个电话号码
-            mainPhone = patient.phone;
-            print('单个电话号码: $mainPhone');
-          }
-        } catch (e) {
-          print('解析电话号码失败: $e, 使用原始值');
-          mainPhone = patient.phone; // 如果解析失败，将整个字段作为主电话
+      for (final tableName in tableNames) {
+        final schema = TableSchemaFactory.getSchema(tableName, DatabaseType.mysql);
+        
+        // 创建表
+        await _mysqlConnection!.query(schema.createTableSql);
+        
+        // 创建索引
+        for (final indexSql in schema.indexDefinitions) {
+          await _mysqlConnection!.query(indexSql);
         }
-
-        // 主电话号
-        sheet
-            .cell(
-              CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: rowIndex),
-            )
-            .value = TextCellValue(mainPhone);
-
-        // 备用电话号
-        sheet
-            .cell(
-              CellIndex.indexByColumnRow(columnIndex: 4, rowIndex: rowIndex),
-            )
-            .value = TextCellValue(backupPhone);
-
-        // 地址
-        sheet
-            .cell(
-              CellIndex.indexByColumnRow(columnIndex: 5, rowIndex: rowIndex),
-            )
-            .value = TextCellValue(patient.address ?? '');
-
-        // 身份证号
-        sheet
-            .cell(
-              CellIndex.indexByColumnRow(columnIndex: 6, rowIndex: rowIndex),
-            )
-            .value = TextCellValue(patient.identificationNumber ?? '');
-
-        // 病历号
-        sheet
-            .cell(
-              CellIndex.indexByColumnRow(columnIndex: 7, rowIndex: rowIndex),
-            )
-            .value = patient.medicalRecordNumber != null
-                ? IntCellValue(patient.medicalRecordNumber!)
-                : TextCellValue('');
-
-        // 医生
-        sheet
-            .cell(
-              CellIndex.indexByColumnRow(columnIndex: 8, rowIndex: rowIndex),
-            )
-            .value = TextCellValue(patient.doctor ?? '');
-
-        // 初诊日期
-        sheet
-            .cell(
-              CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: rowIndex),
-            )
-            .value = TextCellValue(
-          DateFormat('yyyy-MM-dd').format(patient.firstVisitDate),
-        );
-
-        // 总费用
-        sheet
-            .cell(
-              CellIndex.indexByColumnRow(columnIndex: 10, rowIndex: rowIndex),
-            )
-            .value = DoubleCellValue(patient.totalCost);
-
-        // 牙齿状况
-        String dentalData = '';
-        if (patient.dentalCondition != null &&
-            patient.dentalCondition!.isNotEmpty) {
-          try {
-            if (patient.dentalCondition!.startsWith('{') ||
-                patient.dentalCondition!.startsWith('[')) {
-              // 尝试解析JSON格式
-              Map<String, dynamic> dentalJson = jsonDecode(
-                patient.dentalCondition!,
-              );
-              dentalData = convertDentalJsonToText(dentalJson);
-              print('解析JSON牙齿状况数据成功');
-            } else {
-              // 使用普通格式化
-              dentalData = formatDentalCondition(patient.dentalCondition!);
-              print('使用普通格式化处理牙齿状况数据');
-            }
-          } catch (e) {
-            print('处理牙齿状况失败: $e, 使用原始数据');
-            dentalData = patient.dentalCondition!;
-          }
-        }
-
-        sheet
-            .cell(
-              CellIndex.indexByColumnRow(columnIndex: 11, rowIndex: rowIndex),
-            )
-            .value = TextCellValue(dentalData);
+        
+        print('成功创建MySQL表: ${schema.tableName}');
       }
 
-      // 自动调整列宽
-      for (var i = 0; i < headers.length; i++) {
-        sheet.setColumnAutoFit(i);
-      }
-
-      // 保存Excel文件
-      final bytes = excel.encode();
-      if (bytes != null) {
-        final file = File(filePath);
-        await file.writeAsBytes(bytes);
-        print('Excel文件已保存到: $filePath');
-        return filePath;
-      } else {
-        throw Exception('Excel编码失败');
-      }
+      print('MySQL数据库表创建完成');
     } catch (e) {
-      print('导出Excel文件错误: $e');
-      throw Exception('导出Excel文件错误: $e');
+      print('创建MySQL表错误: $e');
+      rethrow;
     }
   }
 
-  // 将牙齿状况JSON转换为易读文本
-  String convertDentalJsonToText(Map<String, dynamic> jsonData) {
-    StringBuffer buffer = StringBuffer();
-
-    // 处理日期
-    if (jsonData.containsKey('date-0')) {
-      buffer.writeln('检查日期: ${jsonData['date-0']}');
-    }
-
-    // 处理图表1
-    buffer.writeln('\n图表1');
-    if (jsonData.containsKey('chart1-top-left-0')) {
-      buffer.writeln('左上: ${jsonData['chart1-top-left-0']}');
-    }
-    if (jsonData.containsKey('chart1-top-right-0')) {
-      buffer.writeln('右上: ${jsonData['chart1-top-right-0']}');
-    }
-    if (jsonData.containsKey('chart1-bottom-left-0')) {
-      buffer.writeln('左下: ${jsonData['chart1-bottom-left-0']}');
-    }
-    if (jsonData.containsKey('chart1-bottom-right-0')) {
-      buffer.writeln('右下: ${jsonData['chart1-bottom-right-0']}');
-    }
-
-    // 处理图表2
-    buffer.writeln('\n图表2');
-    if (jsonData.containsKey('chart2-top-left-0')) {
-      buffer.writeln('左上: ${jsonData['chart2-top-left-0']}');
-    }
-    if (jsonData.containsKey('chart2-top-right-0')) {
-      buffer.writeln('右上: ${jsonData['chart2-top-right-0']}');
-    }
-    if (jsonData.containsKey('chart2-bottom-left-0')) {
-      buffer.writeln('左下: ${jsonData['chart2-bottom-left-0']}');
-    }
-    if (jsonData.containsKey('chart2-bottom-right-0')) {
-      buffer.writeln('右下: ${jsonData['chart2-bottom-right-0']}');
-    }
-
-    return buffer.toString();
-  }
-
-  // 格式化牙齿状况信息，使其更易读
-  String formatDentalCondition(String dentalCondition) {
-    if (dentalCondition.isEmpty) return '';
-
-    try {
-      // 分行处理
-      List<String> lines = dentalCondition.split('\n');
-      List<String> formattedLines = [];
-
-      // 日期行处理
-      for (int i = 0; i < lines.length; i++) {
-        String line = lines[i].trim();
-
-        // 提取日期
-        if (line.startsWith('日期:')) {
-          String date = line.substring(3).trim();
-          formattedLines.add('检查日期: $date');
-          continue;
-        }
-
-        // 处理图表行
-        if (line.startsWith('图表')) {
-          String chartName = line.substring(0, line.length - 1); // 去掉末尾冒号
-          formattedLines.add('\n$chartName');
-
-          // 收集该图表下的所有数据
-          List<String> chartData = [];
-          int j = i + 1;
-          while (j < lines.length &&
-              lines[j].trim().isNotEmpty &&
-              !lines[j].trim().startsWith('图表')) {
-            String dataLine = lines[j].trim();
-
-            // 格式化每个位置的数据
-            if (dataLine.startsWith('左上:')) {
-              String value = dataLine.substring(3).trim();
-              chartData.add('左上: $value');
-            } else if (dataLine.startsWith('右上:')) {
-              String value = dataLine.substring(3).trim();
-              chartData.add('右上: $value');
-            } else if (dataLine.startsWith('左下:')) {
-              String value = dataLine.substring(3).trim();
-              chartData.add('左下: $value');
-            } else if (dataLine.startsWith('右下:')) {
-              String value = dataLine.substring(3).trim();
-              chartData.add('右下: $value');
-            } else {
-              chartData.add(dataLine);
-            }
-            j++;
-          }
-
-          // 将图表数据添加到格式化行中
-          formattedLines.addAll(chartData);
-          i = j - 1; // 更新循环索引
-        } else if (line.isNotEmpty) {
-          // 其他内容直接添加
-          formattedLines.add(line);
-        }
-      }
-
-      // 合并所有行
-      return formattedLines.join('\n');
-    } catch (e) {
-      print('格式化牙齿状况失败: $e');
-      return dentalCondition; // 如果格式化失败，返回原始字符串
-    }
-  }
-
-  // 强制刷新患者数据缓存
-  Future<void> forceRefreshPatients() async {
-    print('强制刷新患者数据缓存');
-    _cachedPatients = null;
-
-    // 清除数据源缓存
-    try {
-      if (_dbType == 'sqlite') {
-        // 测试SQLite连接
-        try {
-          print('确保SQLite连接正常');
-          final db = await _dbHelper.database;
-          final dbIsOk = await db.rawQuery('SELECT 1');
-          print('SQLite连接测试结果: $dbIsOk');
-        } catch (e) {
-          print('SQLite连接测试失败: $e');
-        }
-      } else if (_dbType == 'mysql') {
-        // 刷新MySQL连接
-        try {
-          if (_mysqlConnection != null) {
-            // 如果当前连接可能已经关闭或超时，尝试关闭并重新连接
-            await _mysqlConnection!.close();
-            _mysqlConnection = null;
-          }
-          await _initMySQLConnection();
-          print('已刷新MySQL连接');
-        } catch (e) {
-          print('刷新MySQL连接失败: $e');
-        }
-      }
-    } catch (e) {
-      print('刷新患者数据缓存错误: $e');
-    }
-  }
-
-  // 预约相关操作
-  // 获取所有预约
-  Future<List<Appointment>> getAllAppointments() async {
-    try {
-      // 如果有缓存，直接返回
-      if (_cachedAppointments != null) {
-        return _cachedAppointments!;
-      }
-
-      // 根据数据源类型获取数据
-      if (_dbType == 'sqlite') {
-        final db = await _dbHelper.database;
-        final maps = await db.query('appointments');
-        _cachedAppointments = List.generate(maps.length, (i) {
-          return Appointment.fromMap(maps[i]);
-        });
-      } else if (_dbType == 'mysql') {
-        // 确保MySQL连接可用
-        if (_mysqlConnection == null) {
-          await _initMySQLConnection();
-          if (_mysqlConnection == null) {
-            throw Exception('MySQL连接不可用');
-          }
-        }
-
-        final results = await _mysqlConnection!.query(
-          'SELECT * FROM appointments',
-        );
-
-        // 将MySQL结果转换为Appointment对象
-        _cachedAppointments = [];
-        for (var row in results) {
-          try {
-            final map = <String, dynamic>{};
-            for (var field in row.fields.keys) {
-              // 特殊处理日期字段，确保它们被正确处理
-              if (field == 'appointment_date' ||
-                  field == 'created_at' ||
-                  field == 'updated_at') {
-                // 如果是日期类型，先转换为字符串格式
-                if (row[field] is DateTime) {
-                  // 转换为ISO 8601格式字符串
-                  map[field] = (row[field] as DateTime).toIso8601String();
-                } else {
-                  map[field] = row[field]?.toString();
-                }
-              } else {
-                map[field] = row[field];
-              }
-            }
-            print('处理预约记录: $map');
-            _cachedAppointments!.add(Appointment.fromMap(map));
-          } catch (e) {
-            print('转换MySQL预约数据错误: $e');
-            print('错误数据: ${row.fields}');
-          }
-        }
-      }
-
-      return _cachedAppointments!;
-    } catch (e) {
-      print('获取预约数据错误: $e');
-      return [];
-    }
-  }
-
-  // 获取预约总数
-  Future<int> getAppointmentCount() async {
-    try {
-      if (_dbType == 'sqlite') {
-        final db = await _dbHelper.database;
-        final count =
-            Sqflite.firstIntValue(
-              await db.rawQuery('SELECT COUNT(*) FROM appointments'),
-            ) ??
-            0;
-        print('SQLite预约计数查询结果: $count');
-        return count;
-      } else if (_dbType == 'mysql') {
-        print('使用MySQL查询预约总数');
-        // 确保MySQL连接可用
-        if (_mysqlConnection == null) {
-          await _initMySQLConnection();
-          if (_mysqlConnection == null) {
-            throw Exception('MySQL连接不可用');
-          }
-        }
-
-        final results = await _mysqlConnection!.query(
-          'SELECT COUNT(*) AS count FROM appointments',
-        );
-        if (results.isEmpty) {
-          print('警告：MySQL预约计数查询返回空结果');
-          return 0;
-        }
-
-        final count = results.first['count'] as int;
-        print('MySQL预约计数查询结果: $count');
-        return count;
-      } else {
-        throw Exception('不支持的数据库类型: $_dbType');
-      }
-    } catch (e) {
-      print('获取预约数量错误: $e');
-      return 0;
-    }
-  }
-
-  // 获取今日预约
-  Future<List<Appointment>> getTodayAppointments() async {
-    try {
-      final now = DateTime.now();
-      final today =
-          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-
-      List<Map<String, dynamic>> maps;
-
-      if (_dbType == 'sqlite') {
-        final db = await _dbHelper.database;
-        maps = await db.rawQuery(
-          "SELECT * FROM appointments WHERE appointment_date LIKE '$today%'",
-        );
-      } else if (_dbType == 'mysql') {
-        // MySQL的日期比较语法有所不同
-        maps = await _queryMySQLData(
-          'appointments',
-          where: "DATE(appointment_date) = ?",
-          whereArgs: [today],
-        );
-      } else {
-        throw Exception('不支持的数据库类型: $_dbType');
-      }
-
-      return List.generate(maps.length, (i) {
-        return Appointment.fromMap(maps[i]);
-      });
-    } catch (e) {
-      print('获取今日预约错误: $e');
-      return [];
-    }
-  }
-
-  // 添加预约
-  Future<int> addAppointment(Appointment appointment) async {
-    int id = 0;
-
-    try {
-      if (_dbType == 'sqlite') {
-        // SQLite方式添加预约
-        final db = await _dbHelper.database;
-        id = await db.insert('appointments', appointment.toMap());
-        print('SQLite添加预约成功，ID: $id');
-      } else if (_dbType == 'mysql') {
-        // MySQL方式添加预约
-        print('使用MySQL添加预约...');
-
-        // 确保MySQL连接可用
-        if (_mysqlConnection == null) {
-          await _initMySQLConnection();
-          if (_mysqlConnection == null) {
-            throw Exception('MySQL连接不可用');
-          }
-        }
-
-        // 准备数据并排除id字段（让MySQL自动生成）
-        final data = appointment.toMap();
-        if (data['id'] == null) {
-          data.remove('id');
-        }
-
-        // 打印SQL语句和数据（调试用）
-        print('准备插入MySQL预约数据: $data');
-
-        // 转换日期字段
-        String appointmentDate = _formatDateForMySQL(data['appointment_date']);
-        String createdAt = _formatDateForMySQL(data['created_at']);
-        String updatedAt = _formatDateForMySQL(data['updated_at']);
-
-        print(
-          '转换后的日期：appointment_date=$appointmentDate, created_at=$createdAt, updated_at=$updatedAt',
-        );
-
-        // 执行MySQL插入
-        var result = await _mysqlConnection!.query(
-          'INSERT INTO appointments (patient_id, appointment_date, status, treatment_type, notes, cost, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [
-            data['patient_id'],
-            appointmentDate, // 使用转换后的日期格式
-            data['status'],
-            data['treatment_type'],
-            data['notes'],
-            data['cost'],
-            createdAt, // 使用转换后的日期格式
-            updatedAt, // 使用转换后的日期格式
-          ],
-        );
-
-        // 获取插入的ID
-        try {
-          if (result.insertId != null) {
-            // 尝试将insertId转换为int
-            id = int.parse(result.insertId.toString());
-          }
-        } catch (e) {
-          print('获取MySQL插入ID错误: $e，使用默认ID 0');
-        }
-
-        print('MySQL添加预约成功，ID: $id');
-      } else {
-        throw Exception('不支持的数据库类型: $_dbType');
-      }
-
-      // 清除预约缓存
-      _cachedAppointments = null;
-      // 设置仪表盘需要刷新标志
-      _dashboardNeedsRefresh = true;
-      print('预约数据已添加，缓存已清除，仪表盘需要刷新');
-
-      return id;
-    } catch (e) {
-      print('添加预约错误: $e');
-      rethrow; // 重新抛出异常让调用者知道发生了错误
-    }
-  }
-
-  // 更新预约
-  Future<int> updateAppointment(Appointment appointment) async {
-    if (appointment.id == null) {
-      throw Exception('更新预约需要有效的ID');
-    }
-
-    int result = 0;
-
-    try {
-      if (_dbType == 'sqlite') {
-        // SQLite方式更新预约
-        final db = await _dbHelper.database;
-        result = await db.update(
-          'appointments',
-          appointment.toMap(),
-          where: 'id = ?',
-          whereArgs: [appointment.id],
-        );
-        print('SQLite更新预约成功，ID: ${appointment.id}, 影响行数: $result');
-      } else if (_dbType == 'mysql') {
-        // MySQL方式更新预约
-        print('使用MySQL更新预约...');
-
-        // 确保MySQL连接可用
-        if (_mysqlConnection == null) {
-          await _initMySQLConnection();
-          if (_mysqlConnection == null) {
-            throw Exception('MySQL连接不可用');
-          }
-        }
-
-        // 准备数据
-        final data = appointment.toMap();
-
-        // 打印SQL参数（调试用）
-        print('准备更新MySQL预约，ID: ${appointment.id}, 数据: $data');
-
-        // 转换日期字段
-        String appointmentDate = _formatDateForMySQL(data['appointment_date']);
-        String updatedAt = _formatDateForMySQL(data['updated_at']);
-
-        print(
-          '转换后的日期：appointment_date=$appointmentDate, updated_at=$updatedAt',
-        );
-
-        // 执行MySQL更新
-        var response = await _mysqlConnection!.query(
-          'UPDATE appointments SET patient_id = ?, appointment_date = ?, status = ?, treatment_type = ?, notes = ?, cost = ?, updated_at = ? WHERE id = ?',
-          [
-            data['patient_id'],
-            appointmentDate, // 使用转换后的日期格式
-            data['status'],
-            data['treatment_type'],
-            data['notes'],
-            data['cost'],
-            updatedAt, // 使用转换后的日期格式
-            appointment.id,
-          ],
-        );
-
-        try {
-          result = response.affectedRows ?? 0;
-        } catch (e) {
-          print('获取MySQL影响行数错误: $e，假设成功更新1行');
-          result = 1; // 假设成功更新了一行
-        }
-
-        print('MySQL更新预约成功，ID: ${appointment.id}, 影响行数: $result');
-      } else {
-        throw Exception('不支持的数据库类型: $_dbType');
-      }
-
-      // 清除预约缓存
-      _cachedAppointments = null;
-      // 设置仪表盘需要刷新标志
-      _dashboardNeedsRefresh = true;
-      print('预约数据已更新，缓存已清除，仪表盘需要刷新');
-
-      return result;
-    } catch (e) {
-      print('更新预约错误: $e');
-      rethrow; // 重新抛出异常让调用者知道发生了错误
-    }
-  }
-
-  // 删除预约
-  Future<int> deleteAppointment(int id) async {
-    int result = 0;
-
-    try {
-      if (_dbType == 'sqlite') {
-        // SQLite方式删除预约
-        final db = await _dbHelper.database;
-        result = await db.delete(
-          'appointments',
-          where: 'id = ?',
-          whereArgs: [id],
-        );
-        print('SQLite删除预约成功，ID: $id, 影响行数: $result');
-      } else if (_dbType == 'mysql') {
-        // MySQL方式删除预约
-        print('使用MySQL删除预约，ID: $id...');
-
-        // 确保MySQL连接可用
-        if (_mysqlConnection == null) {
-          await _initMySQLConnection();
-          if (_mysqlConnection == null) {
-            throw Exception('MySQL连接不可用');
-          }
-        }
-
-        // 执行MySQL删除
-        var response = await _mysqlConnection!.query(
-          'DELETE FROM appointments WHERE id = ?',
-          [id],
-        );
-
-        try {
-          result = response.affectedRows ?? 0;
-        } catch (e) {
-          print('获取MySQL影响行数错误: $e，假设成功删除1行');
-          result = 1; // 假设成功删除了一行
-        }
-
-        print('MySQL删除预约成功，ID: $id, 影响行数: $result');
-      } else {
-        throw Exception('不支持的数据库类型: $_dbType');
-      }
-
-      // 清除预约缓存
-      _cachedAppointments = null;
-      // 设置仪表盘需要刷新标志
-      _dashboardNeedsRefresh = true;
-      print('预约数据已删除，缓存已清除，仪表盘需要刷新');
-
-      return result;
-    } catch (e) {
-      print('删除预约错误: $e');
-      rethrow; // 重新抛出异常让调用者知道发生了错误
-    }
-  }
-
-  // 根据查询条件搜索患者
-  Future<List<Patient>> searchPatients(String query) async {
-    if (!_initialized) await initDatabase();
-    return await _activeDataSource.searchPatients(query);
-  }
-
-  // 获取某个患者不在页面中显示的其他预约列表
-  Future<List<Appointment>> getOtherAppointmentsForPatient(
-    int patientId,
-  ) async {
-    try {
-      List<Map<String, dynamic>> maps;
-
-      if (_dbType == 'sqlite') {
-        final db = await _dbHelper.database;
-        maps = await db.query(
-          'appointments',
-          where: 'patient_id != ?',
-          whereArgs: [patientId],
-        );
-      } else if (_dbType == 'mysql') {
-        // 使用MySQL查询
-        maps = await _queryMySQLData(
-          'appointments',
-          where: 'patient_id != ?',
-          whereArgs: [patientId],
-        );
-      } else {
-        throw Exception('不支持的数据库类型: $_dbType');
-      }
-
-      return List.generate(maps.length, (i) {
-        return Appointment.fromMap(maps[i]);
-      });
-    } catch (e) {
-      print('获取患者预约错误: $e');
-      return [];
-    }
-  }
-
-  // 获取最后一位患者
-  Future<Patient?> getLastPatient() async {
-    try {
-      if (_dbType == 'sqlite') {
-        final db = await _dbHelper.database;
-        if (db != null) {
-          final List<Map<String, dynamic>> maps = await db.query(
-            'patients',
-            orderBy: 'medical_record_number DESC',
-            limit: 1,
-          );
-          if (maps.isNotEmpty) {
-            return Patient.fromMap(maps.first);
-          }
-        }
-      } else if (_dbType == 'mysql') {
-        final conn = await _mysqlConnection;
-        if (conn != null) {
-          final results = await conn.query(
-            'SELECT * FROM patients ORDER BY medical_record_number DESC LIMIT 1',
-          );
-          if (results.isNotEmpty) {
-            return Patient.fromMap(results.first.fields);
-          }
-        }
-      }
-      return null;
-    } catch (e) {
-      print('获取最后一位患者错误: $e');
-      return null;
-    }
+  // 销毁资源
+  @override
+  void dispose() {
+    _stopConnectionHealthMonitoring();
+    _mysqlConnection?.close();
+    super.dispose();
   }
 }
 
 // 抽象数据源接口
 abstract class DataSource {
-  Future<int> addPatient(Patient patient);
-  Future<bool> updatePatient(Patient patient);
-  Future<int> deletePatient(int id);
-  Future<Patient?> getPatientById(int id);
-  Future<List<Patient>> getAllPatients();
-  Future<List<Patient>> getPatientsPage(
-    int page,
-    int pageSize, {
-    String? sortField,
-    bool? ascending,
-  });
-  Future<List<Patient>> searchPatients(String query);
-  Future<int> getPatientCount();
   // 其他数据库操作方法...
 }
 
@@ -2462,218 +1440,8 @@ class SqliteDataSource implements DataSource {
 
   Future<Database> get _database async => await _provider._dbHelper.database;
 
-  @override
-  Future<int> addPatient(Patient patient) async {
-    final db = await _database;
-
-    // 自动生成拼音
-    patient.namePinyin = PinyinUtil.toPinyin(patient.name);
-    patient.nameInitials = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null && patient.address!.isNotEmpty) {
-      patient.addressPinyin = PinyinUtil.toPinyin(patient.address!);
-    }
-
-    // 确保更新时间是最新的
-    patient.updatedAt = DateTime.now();
-
-    print('添加患者 - 名称拼音: ${patient.namePinyin}');
-    print('添加患者 - 姓名首字母: ${patient.nameInitials}');
-    print('添加患者 - 地址拼音: ${patient.addressPinyin}');
-
-    return await db.insert('patients', patient.toMap());
-  }
-
-  @override
-  Future<bool> updatePatient(Patient patient) async {
-    final db = await _database;
-
-    // 自动更新拼音
-    patient.namePinyin = PinyinUtil.toPinyin(patient.name);
-    patient.nameInitials = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null && patient.address!.isNotEmpty) {
-      patient.addressPinyin = PinyinUtil.toPinyin(patient.address!);
-    }
-
-    // 更新修改时间
-    patient.updatedAt = DateTime.now();
-
-    print('更新患者 - 名称拼音: ${patient.namePinyin}');
-    print('更新患者 - 姓名首字母: ${patient.nameInitials}');
-    print('更新患者 - 地址拼音: ${patient.addressPinyin}');
-
-    final rowsAffected = await db.update(
-      'patients',
-      patient.toMap(),
-      where: 'id = ?',
-      whereArgs: [patient.id],
-    );
-    print('SQLite更新患者结果: 影响了 $rowsAffected 行');
-    return rowsAffected > 0;
-  }
-
-  @override
-  Future<int> deletePatient(int id) async {
-    final db = await _database;
-    try {
-      // 使用事务确保原子性
-      return await db.transaction((txn) async {
-        // 删除患者 - 此时调用此方法时，关联预约已经在DatabaseProvider中被删除
-        final result = await txn.delete(
-          'patients',
-          where: 'id = ?',
-          whereArgs: [id],
-        );
-        print('SQLite删除患者结果: 影响了 $result 行');
-        return result;
-      });
-    } catch (e) {
-      print('SQLite删除患者错误: $e');
-      rethrow;
-    }
-  }
-
-  @override
-  Future<Patient?> getPatientById(int id) async {
-    final db = await _database;
-    final maps = await db.query('patients', where: 'id = ?', whereArgs: [id]);
-
-    if (maps.isNotEmpty) {
-      return Patient.fromMap(maps.first);
-    }
-    return null;
-  }
-
-  @override
-  Future<List<Patient>> getAllPatients() async {
-    final db = await _database;
-    final maps = await db.query('patients', orderBy: 'name');
-    return List.generate(maps.length, (i) => Patient.fromMap(maps[i]));
-  }
-
-  @override
-  Future<List<Patient>> getPatientsPage(
-    int page,
-    int pageSize, {
-    String? sortField,
-    bool? ascending,
-  }) async {
-    final db = await _database;
-    final offset = (page - 1) * pageSize;
-
-    String orderBy = 'updated_at DESC';
-
-    // 基于排序字段和排序方向设置orderBy
-    if (sortField != null) {
-      switch (sortField) {
-        case 'age':
-          orderBy = 'age ${ascending == true ? 'ASC' : 'DESC'}';
-          break;
-        case 'medical_record':
-          orderBy =
-              'medical_record_number ${ascending == true ? 'ASC' : 'DESC'}';
-          break;
-        case 'updated':
-          orderBy = 'updated_at ${ascending == true ? 'ASC' : 'DESC'}';
-          break;
-        case 'name':
-          orderBy = 'name ${ascending == true ? 'ASC' : 'DESC'}';
-          break;
-        default:
-          orderBy = 'updated_at DESC';
-      }
-    }
-
-    final maps = await db.query(
-      'patients',
-      limit: pageSize,
-      offset: offset,
-      orderBy: orderBy,
-    );
-    print('SQLite分页查询获取到 ${maps.length} 条患者数据，排序: $orderBy');
-
-    List<Patient> patients = [];
-    for (var map in maps) {
-      try {
-        Patient patient = Patient.fromMap(map);
-        patients.add(patient);
-      } catch (e) {
-        print('转换患者对象错误: $e, 数据: $map');
-      }
-    }
-
-    return patients;
-  }
-
-  @override
-  Future<List<Patient>> searchPatients(String query) async {
-    if (query.isEmpty) {
-      return await getAllPatients();
-    }
-
-    final db = await _database;
-    final lowercaseQuery = query.toLowerCase();
-
-    // 为拼音搜索创建另一个不带空格的查询条件
-    final noSpaceQuery = lowercaseQuery.replaceAll(' ', '');
-
-    // 构建搜索SQL - 增加对拼音搜索的支持，包括无空格的情况和首字母搜索
-    final where = '''
-      name LIKE ? OR 
-      phone LIKE ? OR
-      address LIKE ? OR
-      identification_number LIKE ? OR
-      (name_pinyin IS NOT NULL AND (name_pinyin LIKE ? OR name_pinyin LIKE ? OR replace(name_pinyin, ' ', '') LIKE ?)) OR
-      (address_pinyin IS NOT NULL AND (address_pinyin LIKE ? OR address_pinyin LIKE ? OR replace(address_pinyin, ' ', '') LIKE ?)) OR
-      (name_initials IS NOT NULL AND name_initials LIKE ?) OR
-      (cast(medical_record_number as TEXT) LIKE ?)
-    ''';
-
-    // 为每个搜索条件添加模糊匹配参数
-    final whereArgs = [
-      '%$lowercaseQuery%', // name
-      '%$lowercaseQuery%', // phone
-      '%$lowercaseQuery%', // address
-      '%$lowercaseQuery%', // identification_number
-      '%$lowercaseQuery%', // name_pinyin
-      '%$noSpaceQuery%', // name_pinyin (无空格)
-      '%$lowercaseQuery%', // name_pinyin 中移除空格后匹配
-      '%$lowercaseQuery%', // address_pinyin
-      '%$noSpaceQuery%', // address_pinyin (无空格)
-      '%$lowercaseQuery%', // address_pinyin 中移除空格后匹配
-      '%$lowercaseQuery%', // name_initials
-      '%$lowercaseQuery%', // medical_record_number
-    ];
-
-    final maps = await db.query('patients', where: where, whereArgs: whereArgs);
-    print('SQLite搜索查询获取到 ${maps.length} 条患者数据');
-
-    List<Patient> patients = [];
-    for (var map in maps) {
-      try {
-        Patient patient = Patient.fromMap(map);
-        patients.add(patient);
-      } catch (e) {
-        print('转换患者对象错误: $e, 数据: $map');
-      }
-    }
-
-    // 添加结果去重逻辑
-    Map<int?, Patient> uniquePatients = {};
-    for (var patient in patients) {
-      if (patient.id != null) {
-        uniquePatients[patient.id] = patient;
-      }
-    }
-
-    return uniquePatients.values.toList();
-  }
-
-  @override
-  Future<int> getPatientCount() async {
-    final db = await _database;
-    final result = await db.rawQuery('SELECT COUNT(*) FROM patients');
-    return Sqflite.firstIntValue(result) ?? 0;
-  }
+ 
+ 
 }
 
 // MySQL实现
@@ -2682,9 +1450,9 @@ class MySqlDataSource implements DataSource {
 
   MySqlDataSource(this._provider);
 
-  mysql.MySqlConnection? get _connection => _provider._mysqlConnection;
+  MySqlConnection? get _connection => _provider._mysqlConnection;
 
-  Future<mysql.MySqlConnection> get _ensuredConnection async {
+  Future<MySqlConnection> get _ensuredConnection async {
     if (_connection == null) {
       await _provider._initMySQLConnection();
       if (_provider._mysqlConnection == null) {
@@ -2695,13 +1463,13 @@ class MySqlDataSource implements DataSource {
   }
 
   // MySQL专用方法 - 格式化日期
-  String _formatDateForMySQL(String isoDate) {
+  String _formatDateForMySQL(String dateString) {
     try {
-      final date = DateTime.parse(isoDate);
-      return DateFormat('yyyy-MM-dd HH:mm:ss').format(date);
+      final date = DateTimeFormatter.fromDbString(dateString);
+      return DateTimeFormatter.toDbString(date);
     } catch (e) {
       print('日期格式化错误: $e');
-      return DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now());
+      return DateTimeFormatter.nowDbString();
     }
   }
 
@@ -2715,698 +1483,6 @@ class MySqlDataSource implements DataSource {
     }
   }
 
-  // 处理电话号码字段，确保正确的JSON格式
-  String _processPhoneField(String phoneValue, {int maxLength = 100}) {
-    print('处理MySQL电话号码: $phoneValue');
 
-    // 检查是否为空
-    if (phoneValue.isEmpty) {
-      return phoneValue;
-    }
 
-    // 如果不包含特殊字符，可能是单个电话号码，直接返回
-    if (!phoneValue.contains('[') &&
-        !phoneValue.contains('"') &&
-        !phoneValue.contains('\\') &&
-        !phoneValue.contains(',')) {
-      print('检测到单个电话号码，直接使用: $phoneValue');
-      return phoneValue;
-    }
-
-    // 特殊模式检测 - 捕获特定的错误模式 ["[\"999\"","\"000\"]"]
-    if (phoneValue.contains(r'[\"') && phoneValue.contains(r'\"]')) {
-      try {
-        print('检测到特殊错误格式: $phoneValue');
-        List<String> extractedPhones = [];
-
-        // 尝试先解码外层JSON
-        try {
-          List<dynamic> outerList = jsonDecode(phoneValue);
-          for (var item in outerList) {
-            String str = item.toString();
-            // 提取实际电话号码 (去除所有引号、括号和转义符)
-            str =
-                str
-                    .replaceAll(r'\"', '')
-                    .replaceAll(r'\\', '')
-                    .replaceAll(r'[', '')
-                    .replaceAll(r']', '')
-                    .replaceAll('"', '')
-                    .trim();
-            if (str.isNotEmpty) {
-              extractedPhones.add(str);
-            }
-          }
-        } catch (jsonError) {
-          print('解析外层JSON失败，尝试直接提取数字: $jsonError');
-          // 使用正则表达式直接提取电话号码
-          RegExp digitPattern = RegExp(r'\d+');
-          Iterable<Match> matches = digitPattern.allMatches(phoneValue);
-          for (Match match in matches) {
-            String phone = match.group(0) ?? '';
-            if (phone.length >= 3) {
-              // 确保它是电话号码，而不是随机数字
-              extractedPhones.add(phone);
-            }
-          }
-        }
-
-        // 如果只提取出一个电话号码，直接返回该号码
-        if (extractedPhones.length == 1) {
-          print('从特殊格式中提取出单个电话号码: ${extractedPhones[0]}');
-          return extractedPhones[0];
-        }
-
-        // 如果成功提取了多个电话，重新编码为JSON并返回
-        if (extractedPhones.isNotEmpty) {
-          String result = jsonEncode(extractedPhones);
-          print('修复特殊错误格式后: $result');
-          return result;
-        }
-      } catch (e) {
-        print('修复特殊错误格式失败: $e');
-        // 继续使用其他方法处理
-      }
-    }
-
-    // 处理特殊情况：["[\"999\"","\"000\"]"]格式，这是典型的双重JSON编码问题
-    if (phoneValue.contains(r'\"') && phoneValue.contains(r'[\"')) {
-      try {
-        // 首先解码外层JSON
-        List<dynamic> outerList = jsonDecode(phoneValue);
-        List<String> cleanPhones = [];
-
-        // 处理每一项
-        for (var item in outerList) {
-          String str = item.toString();
-          // 去除引号和转义符号
-          str = str.replaceAll(r'\"', '').replaceAll(r'\\', '');
-          if (str.isNotEmpty) {
-            cleanPhones.add(str);
-          }
-        }
-
-        // 如果只有一个电话号码，直接返回
-        if (cleanPhones.length == 1) {
-          print('从双重编码中提取出单个电话号码: ${cleanPhones[0]}');
-          return cleanPhones[0];
-        }
-
-        // 有多个电话号码，重新编码为JSON格式
-        String result = jsonEncode(cleanPhones);
-        print('修复双重编码后的多个电话号码: $result');
-        return result;
-      } catch (e) {
-        print('修复双重编码失败: $e');
-        // 继续尝试其他方法处理
-      }
-    }
-
-    // 处理普通的JSON格式
-    if (phoneValue.startsWith('[') && phoneValue.endsWith(']')) {
-      try {
-        // 尝试解析JSON
-        List<dynamic> phoneList = jsonDecode(phoneValue);
-
-        // 如果只有一个电话号码，直接返回该电话号码字符串，不使用JSON格式
-        if (phoneList.length == 1) {
-          String singlePhone = phoneList[0].toString();
-          print('JSON中只有一个电话号码，直接返回: $singlePhone');
-          return singlePhone;
-        }
-
-        // 有多个电话号码，确保格式正确
-        List<String> cleanPhones = phoneList.map((p) => p.toString()).toList();
-        String result = jsonEncode(cleanPhones);
-
-        // 检查长度限制
-        if (result.length > maxLength) {
-          // 如果太长，尝试只保留第一个电话号码
-          print('JSON格式电话号码过长，截断为第一个号码');
-          return cleanPhones[0];
-        }
-
-        print('处理后的多个电话号码: $result');
-        return result;
-      } catch (e) {
-        print('处理JSON电话号码错误: $e');
-
-        // 解析错误时，尝试提取数字
-        try {
-          // 去除JSON格式符号
-          String content = phoneValue
-              .replaceAll('[', '')
-              .replaceAll(']', '')
-              .replaceAll('"', '')
-              .replaceAll('\\', '');
-
-          // 按逗号分割
-          List<String> parts =
-              content
-                  .split(',')
-                  .map((p) => p.trim())
-                  .where((p) => p.isNotEmpty)
-                  .toList();
-
-          if (parts.length == 1) {
-            // 只有一个电话号码
-            print('解析后获得单个电话号码: ${parts[0]}');
-            return parts[0];
-          } else if (parts.length > 1) {
-            // 多个电话号码
-            String result = jsonEncode(parts);
-            print('解析后获得多个电话号码: $result');
-            return result;
-          }
-        } catch (parseError) {
-          print('提取电话号码失败: $parseError');
-        }
-
-        // 如果其他处理都失败，尝试直接返回原始值
-        if (phoneValue.length > maxLength) {
-          return phoneValue.substring(0, maxLength);
-        }
-        return phoneValue;
-      }
-    }
-
-    // 处理逗号分隔的电话号码
-    if (phoneValue.contains(',')) {
-      List<String> phones =
-          phoneValue
-              .split(',')
-              .map((p) => p.trim())
-              .where((p) => p.isNotEmpty)
-              .toList();
-
-      if (phones.length == 1) {
-        // 只有一个有效的电话号码
-        print('从逗号分隔格式中提取出单个电话号码: ${phones[0]}');
-        return phones[0];
-      } else if (phones.length > 1) {
-        // 有多个电话号码
-        String result = jsonEncode(phones);
-        print('从逗号分隔格式中获得多个电话号码: $result');
-        return result;
-      }
-    }
-
-    // 如果所有处理都失败，返回原始值
-    return phoneValue;
-  }
-
-  // 准备MySQL患者数据
-  Map<String, dynamic> _prepareMySQLPatientData(Patient patient) {
-    final map = patient.toMap();
-
-    // 移除id字段，MySQL会自动生成
-    if (map['id'] == null) {
-      map.remove('id');
-    }
-
-    // 处理性别字段 - 直接使用中文格式存储，不再转换为英文
-    if (map['gender'] != '男' && map['gender'] != '女') {
-      // 如果不是标准的"男"或"女"，尝试规范化
-      String gender = map['gender']?.toString().toLowerCase() ?? '';
-      if (gender == 'male' || gender == '1' || gender == 'm') {
-        map['gender'] = '男';
-      } else if (gender == 'female' || gender == '0' || gender == 'f') {
-        map['gender'] = '女';
-      } else {
-        // 默认设置为男
-        map['gender'] = '男';
-      }
-    }
-
-    // 处理日期字段
-    map['first_visit_date'] = _formatDateForMySQL(map['first_visit_date']);
-    map['created_at'] = _formatDateForMySQL(map['created_at']);
-    map['updated_at'] = _formatDateForMySQL(map['updated_at']);
-
-    // 处理电话号码字段 - 确保不会发生双重编码
-    if (map.containsKey('phone') && map['phone'] != null) {
-      // 警告：此处跟踪一下phone的状态用于调试
-      print('原始phone字段数据: ${map['phone']}');
-
-      String rawPhone = map['phone'].toString();
-
-      // 如果不包含特殊字符，可能是单个电话号码，直接使用
-      if (!rawPhone.contains('[') &&
-          !rawPhone.contains('"') &&
-          !rawPhone.contains('\\') &&
-          !rawPhone.contains(',')) {
-        print('单个电话号码，直接使用: $rawPhone');
-        map['phone'] = rawPhone;
-      }
-      // 检查是否已经是JSON字符串
-      else if (rawPhone.startsWith('[') && rawPhone.endsWith(']')) {
-        try {
-          // 尝试解析，确保是有效的JSON
-          List<dynamic> phoneList = jsonDecode(rawPhone);
-
-          // 如果只有一个电话号码，直接使用该电话号码
-          if (phoneList.length == 1) {
-            map['phone'] = phoneList[0].toString();
-            print('JSON中只有一个电话号码，提取为字符串: ${map['phone']}');
-          } else {
-            // 多个电话号码，重新编码为JSON
-            map['phone'] = jsonEncode(phoneList);
-            print('多个电话号码，使用JSON格式: ${map['phone']}');
-          }
-        } catch (e) {
-          // 如果解析失败，说明可能不是有效的JSON，使用_processPhoneField处理
-          map['phone'] = _processPhoneField(rawPhone);
-          print('处理无效JSON或普通电话字符串: ${map['phone']}');
-        }
-      } else {
-        // 不是JSON格式，可能是单个电话号码或逗号分隔的多个电话号码
-        map['phone'] = _processPhoneField(rawPhone);
-        print('处理非JSON格式的电话号码: ${map['phone']}');
-      }
-    }
-
-    return map;
-  }
-
-  @override
-  Future<int> addPatient(Patient patient) async {
-    // 自动生成拼音
-    patient.namePinyin = PinyinUtil.toPinyin(patient.name);
-    patient.nameInitials = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null && patient.address!.isNotEmpty) {
-      patient.addressPinyin = PinyinUtil.toPinyin(patient.address!);
-    }
-
-    // 确保更新时间是最新的
-    patient.updatedAt = DateTime.now();
-
-    print('添加患者 - 名称拼音: ${patient.namePinyin}');
-    print('添加患者 - 姓名首字母: ${patient.nameInitials}');
-    print('添加患者 - 地址拼音: ${patient.addressPinyin}');
-
-    // 确保连接可用
-    final conn = await _ensuredConnection;
-
-    // 准备数据
-    final data = _prepareMySQLPatientData(patient);
-    print('准备MySQL患者数据: $data');
-
-    // 构建插入语句
-    final fields = data.keys.join(', ');
-    final placeholders = List.filled(data.keys.length, '?').join(', ');
-    final values = data.values.toList();
-
-    // 执行插入
-    final result = await conn.query(
-      'INSERT INTO patients ($fields) VALUES ($placeholders)',
-      values,
-    );
-
-    // 获取插入ID
-    try {
-      if (result.insertId != null) {
-        return int.parse(result.insertId.toString());
-      }
-    } catch (e) {
-      print('解析MySQL插入ID错误: $e');
-    }
-
-    return 0;
-  }
-
-  @override
-  Future<bool> updatePatient(Patient patient) async {
-    // 自动更新拼音
-    patient.namePinyin = PinyinUtil.toPinyin(patient.name);
-    patient.nameInitials = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null && patient.address!.isNotEmpty) {
-      patient.addressPinyin = PinyinUtil.toPinyin(patient.address!);
-    }
-
-    patient.updatedAt = DateTime.now();
-
-    print('更新患者 - 名称拼音: ${patient.namePinyin}');
-    print('更新患者 - 姓名首字母: ${patient.nameInitials}');
-    print('更新患者 - 地址拼音: ${patient.addressPinyin}');
-
-    // 确保连接可用
-    final conn = await _ensuredConnection;
-
-    // 准备数据
-    final data = _prepareMySQLPatientData(patient);
-    final id = patient.id;
-    data.remove('id'); // 从更新数据中移除ID
-
-    print('准备MySQL更新数据: $data');
-
-    try {
-      // 构建SET子句
-      final setClause = data.keys.map((key) => '$key = ?').join(', ');
-      final params = [...data.values, id];
-
-      // 执行更新
-      final result = await conn.query(
-        'UPDATE patients SET $setClause WHERE id = ?',
-        params,
-      );
-
-      print('MySQL更新患者结果: 影响了 ${result.affectedRows} 行');
-      return result.affectedRows! > 0;
-    } catch (e) {
-      print('MySQL更新错误: $e，尝试使用基本字段');
-
-      // 备用方案：使用最基本字段
-      try {
-        final basicResult = await conn.query(
-          'UPDATE patients SET name = ?, age = ?, gender = ?, phone = ?, '
-          'address = ?, doctor = ?, name_pinyin = ?, address_pinyin = ?, updated_at = ? WHERE id = ?',
-          [
-            data['name'],
-            data['age'],
-            data['gender'],
-            data['phone'],
-            data['address'],
-            data['doctor'],
-            data['name_pinyin'],
-            data['address_pinyin'],
-            data['updated_at'],
-            id,
-          ],
-        );
-
-        print('MySQL基本字段更新: 影响了 ${basicResult.affectedRows} 行');
-        return basicResult.affectedRows! > 0;
-      } catch (basicError) {
-        print('MySQL基本更新也失败: $basicError');
-        return false;
-      }
-    }
-  }
-
-  @override
-  Future<int> deletePatient(int id) async {
-    try {
-      // 确保连接可用
-      final conn = await _ensuredConnection;
-
-      // 执行删除 - 此时调用此方法时，关联预约已经在DatabaseProvider中被删除
-      final result = await conn.query('DELETE FROM patients WHERE id = ?', [
-        id,
-      ]);
-      print('MySQL删除患者结果: 影响了 ${result.affectedRows} 行');
-
-      return result.affectedRows ?? 0;
-    } catch (e) {
-      print('MySQL删除患者错误: $e');
-      rethrow;
-    }
-  }
-
-  @override
-  Future<Patient?> getPatientById(int id) async {
-    // 确保连接可用
-    final conn = await _ensuredConnection;
-
-    // 执行查询
-    final results = await conn.query('SELECT * FROM patients WHERE id = ?', [
-      id,
-    ]);
-
-    if (results.isEmpty) {
-      return null;
-    }
-
-    try {
-      // 将结果转换为Map
-      final row = results.first;
-      final map = <String, dynamic>{};
-
-      // 处理所有字段
-      for (var field in row.fields.keys) {
-        map[field] = _getSafeValue(row, field);
-      }
-
-      // 特殊处理性别 - 转换为中文格式
-      if (map.containsKey('gender')) {
-        String genderValue = map['gender'].toString().toLowerCase();
-        if (genderValue == 'male') {
-          map['gender'] = '男';
-        } else if (genderValue == 'female') {
-          map['gender'] = '女';
-        }
-      }
-
-      // 创建患者对象
-      return Patient.fromMap(map);
-    } catch (e) {
-      print('转换MySQL患者数据错误: $e');
-      return null;
-    }
-  }
-
-  @override
-  Future<List<Patient>> getAllPatients() async {
-    // 确保连接可用
-    final conn = await _ensuredConnection;
-
-    // 执行查询
-    final results = await conn.query('SELECT * FROM patients ORDER BY name');
-
-    return _convertMySQLResultsToPatients(results);
-  }
-
-  @override
-  Future<List<Patient>> getPatientsPage(
-    int page,
-    int pageSize, {
-    String? sortField,
-    bool? ascending,
-  }) async {
-    // 确保连接可用
-    final conn = await _ensuredConnection;
-    final offset = (page - 1) * pageSize;
-
-    // 根据排序字段和方向构建排序SQL
-    String orderBy = 'updated_at DESC';
-
-    if (sortField != null) {
-      switch (sortField) {
-        case 'age':
-          orderBy = 'age ${ascending == true ? 'ASC' : 'DESC'}';
-          break;
-        case 'medical_record':
-          orderBy =
-              'medical_record_number ${ascending == true ? 'ASC' : 'DESC'}';
-          break;
-        case 'updated':
-          orderBy = 'updated_at ${ascending == true ? 'ASC' : 'DESC'}';
-          break;
-        case 'name':
-          orderBy = 'name ${ascending == true ? 'ASC' : 'DESC'}';
-          break;
-        default:
-          orderBy = 'updated_at DESC';
-      }
-    }
-
-    // 执行查询
-    try {
-      final results = await conn.query(
-        'SELECT * FROM patients ORDER BY $orderBy LIMIT ? OFFSET ?',
-        [pageSize, offset],
-      );
-      print('MySQL分页查询获取到 ${results.length} 条患者数据，排序: $orderBy');
-
-      List<Patient> patients = [];
-      for (var row in results) {
-        try {
-          // 构建Map
-          final map = <String, dynamic>{};
-
-          for (var field in row.fields.keys) {
-            map[field] = _getSafeValue(row, field);
-
-            // 记录主要字段
-            if (['id', 'name', 'age', 'gender', 'phone'].contains(field)) {
-              print('  $field = ${map[field]}');
-            }
-          }
-
-          // 特殊处理性别 - 转换为中文格式
-          if (map.containsKey('gender')) {
-            String genderValue = map['gender'].toString().toLowerCase();
-            if (genderValue == 'male') {
-              map['gender'] = '男';
-            } else if (genderValue == 'female') {
-              map['gender'] = '女';
-            }
-          }
-
-          // 创建患者对象
-          final patient = Patient.fromMap(map);
-          patients.add(patient);
-        } catch (e) {
-          print('转换MySQL行数据错误: $e');
-        }
-      }
-
-      return patients;
-    } catch (e) {
-      print('MySQL分页查询错误: $e');
-      rethrow;
-    }
-  }
-
-  @override
-  Future<List<Patient>> searchPatients(String query) async {
-    if (query.isEmpty) {
-      return await getAllPatients();
-    }
-
-    // 确保连接可用
-    final conn = await _ensuredConnection;
-
-    // 构建模糊搜索参数
-    final searchPattern = '%$query%';
-
-    // 为拼音搜索创建无空格版本
-    final noSpaceQuery = query.replaceAll(' ', '');
-    final noSpacePattern = '%$noSpaceQuery%';
-
-    // 执行查询 - 添加对拼音字段的支持并优化查询，支持无空格拼音
-    final results = await conn.query(
-      '''
-      SELECT * FROM patients 
-      WHERE name LIKE ? 
-      OR phone LIKE ? 
-      OR (address IS NOT NULL AND address LIKE ?) 
-      OR (identification_number IS NOT NULL AND identification_number LIKE ?) 
-      OR (name_pinyin IS NOT NULL AND (name_pinyin LIKE ? OR name_pinyin LIKE ? OR REPLACE(name_pinyin, ' ', '') LIKE ?)) 
-      OR (address_pinyin IS NOT NULL AND (address_pinyin LIKE ? OR address_pinyin LIKE ? OR REPLACE(address_pinyin, ' ', '') LIKE ?))
-      OR (name_initials IS NOT NULL AND name_initials LIKE ?)
-      OR (medical_record_number IS NOT NULL AND CAST(medical_record_number AS CHAR) LIKE ?)
-      
-      -- 添加精确匹配的结果（会排在前面）
-      UNION ALL
-      
-      SELECT * FROM patients 
-      WHERE name = ? 
-      OR phone = ? 
-      OR address = ? 
-      OR identification_number = ? 
-      OR name_pinyin = ? 
-      OR address_pinyin = ?
-      OR name_initials = ?
-      OR CAST(medical_record_number AS CHAR) = ?
-      
-      ORDER BY
-      CASE 
-        WHEN name = ? THEN 0
-        WHEN phone = ? THEN 1
-        WHEN medical_record_number = ? THEN 2
-        ELSE 10
-      END
-      ''',
-      [
-        // 模糊匹配参数
-        searchPattern, // name
-        searchPattern, // phone
-        searchPattern, // address
-        searchPattern, // identification_number
-        searchPattern, // name_pinyin
-        noSpacePattern, // name_pinyin 无空格
-        searchPattern, // name_pinyin 中的空格替换为空字符串后匹配
-        searchPattern, // address_pinyin
-        noSpacePattern, // address_pinyin 无空格
-        searchPattern, // address_pinyin 中的空格替换为空字符串后匹配
-        searchPattern, // name_initials
-        searchPattern, // medical_record_number
-        // 精确匹配参数
-        query, // name
-        query, // phone
-        query, // address
-        query, // identification_number
-        query, // name_pinyin
-        query, // address_pinyin
-        query, // name_initials
-        query, // medical_record_number
-        // 排序优先级参数
-        query, // name (优先级0)
-        query, // phone (优先级1)
-        query, // medical_record_number (优先级2)
-      ],
-    );
-
-    // 转换并去重患者数据
-    List<Patient> patients = _convertMySQLResultsToPatients(results);
-
-    // 添加结果去重逻辑
-    Map<int?, Patient> uniquePatients = {};
-    for (var patient in patients) {
-      if (patient.id != null) {
-        uniquePatients[patient.id] = patient;
-      }
-    }
-
-    return uniquePatients.values.toList();
-  }
-
-  @override
-  Future<int> getPatientCount() async {
-    // 确保连接可用
-    final conn = await _ensuredConnection;
-
-    // 执行查询
-    final results = await conn.query('SELECT COUNT(*) AS count FROM patients');
-
-    if (results.isNotEmpty) {
-      final row = results.first;
-      try {
-        return int.parse(row['count'].toString());
-      } catch (e) {
-        print('解析MySQL患者计数错误: $e');
-      }
-    }
-
-    return 0;
-  }
-
-  // 辅助方法：转换MySQL结果为患者列表
-  List<Patient> _convertMySQLResultsToPatients(mysql.Results results) {
-    final patients = <Patient>[];
-
-    for (var row in results) {
-      try {
-        // 构建Map
-        final map = <String, dynamic>{};
-
-        for (var field in row.fields.keys) {
-          map[field] = _getSafeValue(row, field);
-
-          // 记录主要字段
-          if (['id', 'name', 'age', 'gender', 'phone'].contains(field)) {
-            print('  $field = ${map[field]}');
-          }
-        }
-
-        // 特殊处理性别 - 转换为中文格式
-        if (map.containsKey('gender')) {
-          String genderValue = map['gender'].toString().toLowerCase();
-          if (genderValue == 'male') {
-            map['gender'] = '男';
-          } else if (genderValue == 'female') {
-            map['gender'] = '女';
-          }
-        }
-
-        // 创建患者对象
-        final patient = Patient.fromMap(map);
-        patients.add(patient);
-      } catch (e) {
-        print('转换MySQL行数据错误: $e');
-      }
-    }
-
-    return patients;
-  }
 }

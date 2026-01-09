@@ -43,3 +43,19 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Database files - should not be committed to version control
+*.db
+*.sqlite
+*.sqlite3
+**/data/*.db
+**/databases/*.db
+windows_app/data/
+backups/*.db
+backups/*.sql
+
+# Configuration files with sensitive data
+config/database_settings.json
+.kiro/settings/
+**/config/encryption.key
+**/config/encryption.iv

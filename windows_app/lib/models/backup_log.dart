@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/app_paths.dart';
+
+import '../utils/datetime_formatter.dart';
 
 class BackupLog {
   final DateTime backupDate;
@@ -19,7 +22,7 @@ class BackupLog {
 
   Map<String, dynamic> toJson() {
     return {
-      'backupDate': backupDate.toIso8601String(),
+      'backupDate': DateTimeFormatter.toDbString(backupDate),
       'backupPath': backupPath,
       'success': success,
       'errorMessage': errorMessage,
@@ -28,7 +31,7 @@ class BackupLog {
 
   factory BackupLog.fromJson(Map<String, dynamic> json) {
     return BackupLog(
-      backupDate: DateTime.parse(json['backupDate']),
+      backupDate: DateTimeFormatter.fromDbString(json['backupDate']),
       backupPath: json['backupPath'],
       success: json['success'],
       errorMessage: json['errorMessage'],
@@ -36,8 +39,15 @@ class BackupLog {
   }
 
   static Future<String> getLogFilePath() async {
-    final directory = await getApplicationDocumentsDirectory();
-    return path.join(directory.path, 'backup_logs.json');
+    try {
+      // 使用应用数据目录
+      return AppPaths.backupLogPath;
+    } catch (e) {
+      // 如果AppPaths未初始化，回退到文档目录
+      print('AppPaths未初始化，使用文档目录: $e');
+      final directory = await getApplicationDocumentsDirectory();
+      return path.join(directory.path, 'backup_logs.json');
+    }
   }
 
   static Future<List<BackupLog>> getLogs() async {

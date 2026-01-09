@@ -1,11 +1,13 @@
 import 'package:intl/intl.dart';
 import 'patient.dart';
+import '../utils/datetime_formatter.dart';
 
 class Appointment {
   final int? id;
   final int? patient_id;
   Patient? patient; // 不再为final，允许后续设置
   final DateTime appointment_date;
+  final String? appointment_time; // 预约时间
   final String status; // scheduled, completed, cancelled
   final String? treatment_type;
   final String? notes;
@@ -18,6 +20,7 @@ class Appointment {
     required this.patient_id,
     this.patient,
     required this.appointment_date,
+    this.appointment_time, // 预约时间
     required this.status,
     this.treatment_type,
     this.notes,
@@ -33,6 +36,7 @@ class Appointment {
       id: map['id'],
       patient_id: map['patient_id'],
       appointment_date: _parseDateTime(map['appointment_date']),
+      appointment_time: map['appointment_time'], // 预约时间
       status: map['status'] ?? '',
       treatment_type: map['treatment_type'],
       notes: map['notes'],
@@ -46,23 +50,23 @@ class Appointment {
 
   // 将Appointment对象转换为Map
   Map<String, dynamic> toMap() {
-    final DateFormat dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
-
     return {
       if (id != null) 'id': id,
       'patient_id': patient_id,
-      'appointment_date': dateFormat.format(appointment_date),
+      'appointment_date': DateTimeFormatter.toDbString(appointment_date),
+      'appointment_time': appointment_time ?? _extractTimeFromDateTime(appointment_date), // 确保总是有时间值
       'status': status,
       if (treatment_type != null) 'treatment_type': treatment_type,
       if (notes != null) 'notes': notes,
       if (cost != null) 'cost': cost,
-      'created_at': created_at != null
-          ? dateFormat.format(created_at!)
-          : dateFormat.format(DateTime.now()),
-      'updated_at': updated_at != null
-          ? dateFormat.format(updated_at!)
-          : dateFormat.format(DateTime.now()),
+      'created_at': DateTimeFormatter.toDbString(created_at),
+      'updated_at': DateTimeFormatter.toDbString(updated_at),
     };
+  }
+
+  // 辅助方法：从DateTime中提取时间字符串 (HH:MM:SS)
+  String _extractTimeFromDateTime(DateTime dateTime) {
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
   }
 
   // 创建具有新属性的Appointment副本
@@ -71,6 +75,7 @@ class Appointment {
     int? patient_id,
     Patient? patient,
     DateTime? appointment_date,
+    String? appointment_time, // 预约时间
     String? status,
     String? treatment_type,
     String? notes,
@@ -83,6 +88,7 @@ class Appointment {
       patient_id: patient_id ?? this.patient_id,
       patient: patient ?? this.patient,
       appointment_date: appointment_date ?? this.appointment_date,
+      appointment_time: appointment_time ?? this.appointment_time, // 预约时间
       status: status ?? this.status,
       treatment_type: treatment_type ?? this.treatment_type,
       notes: notes ?? this.notes,
@@ -99,25 +105,9 @@ class Appointment {
       return dateTime;
     }
 
-    // 如果是字符串，尝试解析
+    // 如果是字符串，使用统一的时间格式解析
     if (dateTime is String) {
-      try {
-        // 首先尝试解析标准格式
-        return DateFormat('yyyy-MM-dd HH:mm:ss').parse(dateTime);
-      } catch (e) {
-        // 尝试解析ISO格式
-        try {
-          return DateTime.parse(dateTime);
-        } catch (e) {
-          // 尝试其他常见格式
-          try {
-            return DateFormat('yyyy-MM-dd').parse(dateTime);
-          } catch (e) {
-            print('日期解析错误: $e，使用当前时间');
-            return DateTime.now();
-          }
-        }
-      }
+      return DateTimeFormatter.fromDbString(dateTime);
     }
 
     // 如果无法解析，返回当前时间

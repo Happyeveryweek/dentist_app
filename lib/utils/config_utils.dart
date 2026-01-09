@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+import 'datetime_formatter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:crypto/crypto.dart';
@@ -41,7 +42,7 @@ class ConfigUtils {
     } catch (e) {
       print('获取或创建密钥错误: $e');
       // 如果出错，生成一个临时密钥（不会保存）
-      final bytes = utf8.encode(DateTime.now().toIso8601String());
+      final bytes = utf8.encode(DateTimeFormatter.nowDbString());
       return base64.encode(sha256.convert(bytes).bytes);
     }
   }

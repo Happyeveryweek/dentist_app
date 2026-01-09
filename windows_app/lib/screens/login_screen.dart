@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui';
 import 'package:crypto/crypto.dart';
 import 'package:intl/intl.dart';
 import 'package:mysql1/mysql1.dart';
 import 'dart:math' as math;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/app_theme.dart';
 import '../providers/database_provider.dart';
+import '../providers/user_provider.dart';
 import '../screens/home_screen.dart';
 import '../models/user.dart';
 
@@ -28,16 +32,11 @@ class _LoginScreenState extends State<LoginScreen>
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
+  bool _rememberPassword = false;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-
-  // 添加波浪动画控制器
-  late AnimationController _waveAnimationController;
-
-  // 添加浮动效果控制器
-  late AnimationController _floatingAnimationController;
 
   @override
   void initState() {
@@ -61,19 +60,48 @@ class _LoginScreenState extends State<LoginScreen>
       curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
     ));
 
-    // 初始化波浪动画控制器
-    _waveAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    )..repeat();
-
-    // 初始化浮动效果控制器
-    _floatingAnimationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
-
     _animationController.forward();
+    
+    // 加载保存的登录信息
+    _loadSavedCredentials();
+  }
+  
+  // 加载保存的登录凭证
+  Future<void> _loadSavedCredentials() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedUsername = prefs.getString('saved_username');
+      final savedPassword = prefs.getString('saved_password');
+      final rememberPassword = prefs.getBool('remember_password') ?? false;
+      
+      if (rememberPassword && savedUsername != null && savedPassword != null) {
+        setState(() {
+          _usernameController.text = savedUsername;
+          _passwordController.text = savedPassword;
+          _rememberPassword = true;
+        });
+      }
+    } catch (e) {
+      print('加载保存的登录信息失败: $e');
+    }
+  }
+  
+  // 保存登录凭证
+  Future<void> _saveCredentials(String username, String password) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_rememberPassword) {
+        await prefs.setString('saved_username', username);
+        await prefs.setString('saved_password', password);
+        await prefs.setBool('remember_password', true);
+      } else {
+        await prefs.remove('saved_username');
+        await prefs.remove('saved_password');
+        await prefs.setBool('remember_password', false);
+      }
+    } catch (e) {
+      print('保存登录信息失败: $e');
+    }
   }
 
   @override
@@ -81,8 +109,6 @@ class _LoginScreenState extends State<LoginScreen>
     _usernameController.dispose();
     _passwordController.dispose();
     _animationController.dispose();
-    _waveAnimationController.dispose();
-    _floatingAnimationController.dispose();
     super.dispose();
   }
 
@@ -128,8 +154,29 @@ class _LoginScreenState extends State<LoginScreen>
       }
 
       if (loginSuccess) {
-        // 登录成功，导航到首页
+        // 保存登录凭证（如果勾选了记住密码）
+        await _saveCredentials(username, password);
+        
+        // 登录成功，加载用户权限并导航到首页
         if (!mounted) return;
+        
+        // 获取UserProvider并加载权限
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        final currentUser = await dbProvider.getCurrentUser();
+        
+        if (currentUser != null) {
+          try {
+            // 加载用户权限到UserProvider
+            await userProvider.loadUserPermissions(currentUser);
+            print('用户权限加载成功: ${currentUser.username}');
+          } catch (e) {
+            print('用户权限加载失败: $e');
+            // 权限加载失败不阻止登录，使用默认权限
+            // 确保用户仍然设置在UserProvider中
+            userProvider.setCurrentUser(currentUser);
+          }
+        }
+        
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -173,6 +220,8 @@ class _LoginScreenState extends State<LoginScreen>
             email TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
             role TEXT NOT NULL,
+            doctor TEXT,
+            avatar TEXT DEFAULT 'avatar_1',
             created_at DATETIME NOT NULL
           )
         ''');
@@ -184,6 +233,8 @@ class _LoginScreenState extends State<LoginScreen>
           'email': 'admin@example.com',
           'password': hashedPassword,
           'role': 'admin',
+          'doctor': '系统管理员',
+          'avatar': 'avatar_5', // 使用管理员头像
           'created_at':
               DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
         });
@@ -209,6 +260,8 @@ class _LoginScreenState extends State<LoginScreen>
             `email` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
             `password` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
             `role` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+            `doctor` varchar(100) COLLATE utf8mb4_unicode_ci,
+            `avatar` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'avatar_1',
             `created_at` datetime NOT NULL,
             PRIMARY KEY (`id`) USING BTREE,
             UNIQUE KEY `username` (`username`) USING BTREE,
@@ -219,12 +272,14 @@ class _LoginScreenState extends State<LoginScreen>
         // 添加默认管理员用户
         final hashedPassword = _hashPassword('123456');
         await conn.query(
-            'INSERT INTO users (username, email, password, role, created_at) VALUES (?, ?, ?, ?, ?)',
+            'INSERT INTO users (username, email, password, role, doctor, avatar, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [
               'admin',
               'admin@example.com',
               hashedPassword,
               'admin',
+              '系统管理员',
+              'avatar_5', // 使用管理员头像
               DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())
             ]);
 
@@ -262,6 +317,10 @@ class _LoginScreenState extends State<LoginScreen>
       // 登录成功，设置当前用户
       final user = User.fromMap(result.first);
       dbProvider.setCurrentUser(user);
+      
+      // 同时设置到UserProvider
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      userProvider.setCurrentUser(user);
 
       return true;
     }
@@ -299,17 +358,23 @@ class _LoginScreenState extends State<LoginScreen>
       final map = <String, dynamic>{};
       for (var field in row.fields.keys) {
         var value = row[field];
-        if (value is Blob) {
-          map[field] = String.fromCharCodes(value.toBytes());
+        // 对于doctor字段，直接使用原始值，避免乱码
+        if (field == 'doctor') {
+          map[field] = value?.toString() ?? '';
         } else if (field == 'created_at' && value is DateTime) {
           map[field] = DateFormat('yyyy-MM-dd HH:mm:ss').format(value);
         } else {
+          // 其他字段保持原样
           map[field] = value;
         }
       }
 
       final user = User.fromMap(map);
       dbProvider.setCurrentUser(user);
+      
+      // 同时设置到UserProvider
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      userProvider.setCurrentUser(user);
 
       return true;
     }
@@ -320,413 +385,467 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final isSmallScreen = size.height < 700;
+    final isTinyScreen = size.height < 600;
 
     return Scaffold(
       body: Stack(
         children: [
-          // 渐变背景，使用多种颜色实现更丰富的效果
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF1E88E5), // 蓝色
-                  Color(0xFF00ACC1), // 青色
-                  Color(0xFF00897B), // 蓝绿色
-                  Color(0xFF00695C), // 深青色
-                ],
-                stops: [0.0, 0.3, 0.7, 1.0],
-              ),
+          // AI设计的背景图片
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/home.jpg',
+              fit: BoxFit.cover,
+              filterQuality: FilterQuality.none,
+              isAntiAlias: false,
+              repeat: ImageRepeat.noRepeat,
             ),
           ),
-
-          // 添加圆形渐变光斑效果
-          Positioned(
-            top: -size.height * 0.15,
-            left: -size.width * 0.1,
-            child: Container(
-              width: size.width * 0.6,
-              height: size.width * 0.6,
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.white.withOpacity(0.15),
-                    Colors.white.withOpacity(0.05),
-                    Colors.white.withOpacity(0.0),
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-
-          Positioned(
-            bottom: -size.height * 0.1,
-            right: -size.width * 0.1,
-            child: Container(
-              width: size.width * 0.5,
-              height: size.width * 0.5,
-              decoration: BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    Colors.white.withOpacity(0.1),
-                    Colors.white.withOpacity(0.03),
-                    Colors.white.withOpacity(0.0),
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-
-          // 动态波浪效果
-          AnimatedBuilder(
-            animation: _waveAnimationController,
-            builder: (context, child) {
-              return CustomPaint(
-                size: Size(size.width, size.height),
-                painter: EnhancedWavePainter(
-                  animation: _waveAnimationController.value,
-                ),
-              );
-            },
-          ),
-
-          // 添加牙科图标装饰元素
-          Positioned(
-            top: size.height * 0.15,
-            right: size.width * 0.2,
-            child: Opacity(
-              opacity: 0.06,
-              child: Transform.rotate(
-                angle: -math.pi / 12,
-                child: const Icon(
-                  Icons.medical_services_outlined,
-                  size: 150,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-
-          Positioned(
-            bottom: size.height * 0.2,
-            left: size.width * 0.15,
-            child: Opacity(
-              opacity: 0.06,
-              child: Transform.rotate(
-                angle: math.pi / 10,
-                child: const Icon(
-                  Icons.healing_outlined,
-                  size: 120,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-
-          // 动态浮动气泡效果
-          ...List.generate(30, (index) {
-            final random = (index * 7) % 100 / 100;
-            final bubbleSize = 6.0 + (index % 5) * 4.0;
-            return AnimatedBuilder(
-              animation: _floatingAnimationController,
-              builder: (context, child) {
-                final yOffset = math.sin(
-                        _floatingAnimationController.value * math.pi * 2 +
-                            index) *
-                    15.0;
-                return Positioned(
-                  top: size.height * (0.1 + random * 0.8) + yOffset,
-                  left: size.width * ((index % 6) * 0.2 + random * 0.1),
-                  child: Container(
-                    width: bubbleSize,
-                    height: bubbleSize,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1 + random * 0.1),
-                      borderRadius: BorderRadius.circular(bubbleSize),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.white.withOpacity(0.05),
-                          blurRadius: 2,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          }),
 
           // 主要登录内容
           Center(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SlideTransition(
-                    position: _slideAnimation,
-                    child: Container(
-                      width: size.width > 600 ? 500 : size.width * 0.9,
-                      padding: const EdgeInsets.all(32.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20.0),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 15,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Logo和标题
-                          Container(
-                            width: 100,
-                            height: 100,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              gradient: RadialGradient(
-                                colors: [
-                                  AppTheme.primaryColor.withOpacity(0.2),
-                                  AppTheme.primaryColor.withOpacity(0.05),
-                                ],
-                                stops: const [0.4, 1.0],
-                              ),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.primaryColor.withOpacity(0.1),
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
-                                ),
-                              ],
+            child: Padding(
+              padding: EdgeInsets.all(isSmallScreen ? 16.0 : 32.0),
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20.0),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
+                      child: Container(
+                        width: size.width > 600 ? 500 : size.width * 0.9,
+                        constraints: BoxConstraints(
+                          maxHeight: size.height * 0.95,
+                        ),
+                        padding: EdgeInsets.all(isSmallScreen ? 20.0 : 32.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.25),
+                          borderRadius: BorderRadius.circular(20.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
                             ),
-                            child: const Icon(
-                              Icons.medical_services,
-                              size: 60,
-                              color: AppTheme.primaryColor,
-                            ),
+                          ],
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.25),
+                            width: 1.0,
                           ),
-                          const SizedBox(height: 24),
-                          const Text(
-                            '牙科诊所管理系统',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryText,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            '请登录以继续使用',
-                            style: TextStyle(
-                              color: AppTheme.secondaryText,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 40),
-
-                          // 登录表单
-                          Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // 用户名
-                                TextFormField(
-                                  controller: _usernameController,
-                                  decoration: InputDecoration(
-                                    labelText: '用户名',
-                                    hintText: '请输入用户名',
-                                    prefixIcon: const Icon(Icons.person),
-                                    filled: true,
-                                    fillColor: Colors.grey.shade50,
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                        color: Colors.grey.shade200,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(
-                                        color: AppTheme.primaryColor,
-                                        width: 2,
-                                      ),
-                                    ),
+                        ),
+                        child: SingleChildScrollView(
+                          physics: const ClampingScrollPhysics(),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // 现代医疗风格Logo
+                              Container(
+                                width: 120,
+                                height: 120,
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      const Color(0xFF2196F3).withOpacity(0.15),
+                                      const Color(0xFF03DAC6).withOpacity(0.1),
+                                      const Color(0xFF00BCD4).withOpacity(0.05),
+                                    ],
                                   ),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return '请输入用户名';
-                                    }
-                                    return null;
-                                  },
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: const Color(0xFF2196F3).withOpacity(0.2),
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF2196F3).withOpacity(0.15),
+                                      blurRadius: 20,
+                                      spreadRadius: 0,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 20),
-
-                                // 密码
-                                TextFormField(
-                                  controller: _passwordController,
-                                  obscureText: _obscurePassword,
-                                  decoration: InputDecoration(
-                                    labelText: '密码',
-                                    hintText: '请输入密码',
-                                    prefixIcon: const Icon(Icons.lock),
-                                    filled: true,
-                                    fillColor: Colors.grey.shade50,
-                                    suffixIcon: IconButton(
-                                      icon: Icon(
-                                        _obscurePassword
-                                            ? Icons.visibility_off
-                                            : Icons.visibility,
+                                child: Stack(
+                                  children: [
+                                    // 主医疗图标
+                                    Center(
+                                      child: Icon(
+                                        Icons.medical_services_rounded,
+                                        size: 50,
+                                        color: const Color(0xFF2196F3),
                                       ),
-                                      onPressed: () {
-                                        setState(() {
-                                          _obscurePassword = !_obscurePassword;
-                                        });
+                                    ),
+                                    // 装饰性十字符号
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        width: 16,
+                                        height: 16,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF03DAC6),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(
+                                          Icons.add,
+                                          size: 10,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                    // 装饰性心跳线
+                                    Positioned(
+                                      bottom: 12,
+                                      left: 12,
+                                      child: Icon(
+                                        Icons.favorite,
+                                        size: 12,
+                                        color: const Color(0xFFE91E63).withOpacity(0.7),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              const Text(
+                                '牙科诊所管理系统',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.primaryText,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                '请登录以继续使用',
+                                style: TextStyle(
+                                  color: AppTheme.secondaryText,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 40),
+
+                              // 登录表单
+                              Form(
+                                key: _formKey,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    // 用户名
+                                    TextFormField(
+                                      controller: _usernameController,
+                                      decoration: InputDecoration(
+                                        labelText: '用户名',
+                                        hintText: '请输入用户名',
+                                        prefixIcon: Container(
+                                          margin: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF2196F3).withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(
+                                            Icons.person_rounded,
+                                            color: Color(0xFF2196F3),
+                                          ),
+                                        ),
+                                        filled: true,
+                                        fillColor: const Color(0xFFF8FCFF),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(
+                                            color: const Color(0xFF2196F3).withOpacity(0.2),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: const BorderSide(
+                                            color: Color(0xFF2196F3),
+                                            width: 2.5,
+                                          ),
+                                        ),
+                                        labelStyle: const TextStyle(
+                                          color: Color(0xFF2196F3),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return '请输入用户名';
+                                        }
+                                        return null;
                                       },
                                     ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide.none,
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: BorderSide(
-                                        color: Colors.grey.shade200,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      borderSide: const BorderSide(
-                                        color: AppTheme.primaryColor,
-                                        width: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return '请输入密码';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: 8),
+                                    const SizedBox(height: 20),
 
-                                // 错误消息
-                                if (_errorMessage != null)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 8.0, horizontal: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.shade50,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: Colors.red.shade200,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.error_outline,
-                                          color: Colors.red.shade400,
-                                          size: 16,
+                                    // 密码
+                                    TextFormField(
+                                      controller: _passwordController,
+                                      obscureText: _obscurePassword,
+                                      decoration: InputDecoration(
+                                        labelText: '密码',
+                                        hintText: '请输入密码',
+                                        prefixIcon: Container(
+                                          margin: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF03DAC6).withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(
+                                            Icons.lock_rounded,
+                                            color: Color(0xFF03DAC6),
+                                          ),
                                         ),
-                                        SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            _errorMessage!,
+                                        filled: true,
+                                        fillColor: const Color(0xFFF0FFFE),
+                                        suffixIcon: Container(
+                                          margin: const EdgeInsets.only(right: 8),
+                                          child: IconButton(
+                                            icon: Icon(
+                                              _obscurePassword
+                                                  ? Icons.visibility_off_rounded
+                                                  : Icons.visibility_rounded,
+                                              color: const Color(0xFF03DAC6),
+                                            ),
+                                            onPressed: () {
+                                              setState(() {
+                                                _obscurePassword = !_obscurePassword;
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide.none,
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: BorderSide(
+                                            color: const Color(0xFF03DAC6).withOpacity(0.2),
+                                            width: 1.5,
+                                          ),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(16),
+                                          borderSide: const BorderSide(
+                                            color: Color(0xFF03DAC6),
+                                            width: 2.5,
+                                          ),
+                                        ),
+                                        labelStyle: const TextStyle(
+                                          color: Color(0xFF03DAC6),
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return '请输入密码';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+
+                                    // 记住密码复选框
+                                    Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: Checkbox(
+                                            value: _rememberPassword,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _rememberPassword = value ?? false;
+                                              });
+                                            },
+                                            activeColor: const Color(0xFF2196F3),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        GestureDetector(
+                                          onTap: () {
+                                            setState(() {
+                                              _rememberPassword = !_rememberPassword;
+                                            });
+                                          },
+                                          child: const Text(
+                                            '记住密码',
                                             style: TextStyle(
-                                              color: Colors.red.shade700,
+                                              color: Color(0xFF2196F3),
                                               fontSize: 14,
+                                              fontWeight: FontWeight.w500,
                                             ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ),
+                                    const SizedBox(height: 8),
 
-                                const SizedBox(height: 24),
-
-                                // 登录按钮
-                                ElevatedButton(
-                                  onPressed: _isLoading ? null : _login,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppTheme.primaryColor,
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16.0,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 2,
-                                  ),
-                                  child: _isLoading
-                                      ? const SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : const Text(
-                                          '登录',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
+                                    // 错误消息
+                                    if (_errorMessage != null)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 8.0, horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade50,
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: Colors.red.shade200,
                                           ),
                                         ),
-                                ),
-
-                                const SizedBox(height: 20),
-
-                                // 提示信息
-                                Container(
-                                  padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.info_outline,
-                                        size: 16,
-                                        color: Colors.blue.shade700,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        '初始用户名: admin，密码: 123456',
-                                        style: TextStyle(
-                                          color: Colors.blue.shade700,
-                                          fontSize: 14,
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.error_outline,
+                                              color: Colors.red.shade400,
+                                              size: 16,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                _errorMessage!,
+                                                style: TextStyle(
+                                                  color: Colors.red.shade700,
+                                                  fontSize: 14,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ],
-                                  ),
+
+                                    const SizedBox(height: 24),
+
+                                    // 现代医疗风格登录按钮
+                                    Container(
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(16),
+                                        gradient: const LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            Color(0xFF2196F3),
+                                            Color(0xFF03DAC6),
+                                            Color(0xFF00BCD4),
+                                          ],
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF2196F3).withOpacity(0.3),
+                                            blurRadius: 15,
+                                            offset: const Offset(0, 8),
+                                          ),
+                                        ],
+                                      ),
+                                      child: ElevatedButton(
+                                        onPressed: _isLoading ? null : _login,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.transparent,
+                                          foregroundColor: Colors.white,
+                                          shadowColor: Colors.transparent,
+                                          padding: const EdgeInsets.symmetric(
+                                            vertical: 18.0,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          elevation: 0,
+                                        ),
+                                        child: _isLoading
+                                            ? const SizedBox(
+                                                width: 26,
+                                                height: 26,
+                                                child: CircularProgressIndicator(
+                                                  color: Colors.white,
+                                                  strokeWidth: 3,
+                                                ),
+                                              )
+                                            : Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  const Icon(
+                                                    Icons.login_rounded,
+                                                    size: 20,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  const Text(
+                                                    '登录',
+                                                    style: TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight: FontWeight.bold,
+                                                      letterSpacing: 1.0,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 20),
+
+                                    // 现代医疗风格提示信息
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            const Color(0xFF2196F3).withOpacity(0.08),
+                                            const Color(0xFF03DAC6).withOpacity(0.05),
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: const Color(0xFF2196F3).withOpacity(0.2),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF2196F3).withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: const Icon(
+                                              Icons.info_outline_rounded,
+                                              size: 16,
+                                              color: Color(0xFF2196F3),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          const Text(
+                                            '初始用户名: admin，密码: 123456',
+                                            style: TextStyle(
+                                              color: Color(0xFF2196F3),
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -738,134 +857,4 @@ class _LoginScreenState extends State<LoginScreen>
       ),
     );
   }
-}
-
-// 增强版波浪绘制器
-class EnhancedWavePainter extends CustomPainter {
-  final double animation;
-
-  EnhancedWavePainter({required this.animation});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final width = size.width;
-    final height = size.height;
-
-    // 绘制多层波浪效果
-    _drawWave(canvas, size, height * 0.75, 0.06, animation, 25.0, 10.0);
-    _drawWave(canvas, size, height * 0.8, 0.08, animation + 0.25, 20.0, 15.0);
-    _drawWave(canvas, size, height * 0.85, 0.1, animation + 0.5, 15.0, 10.0);
-
-    // 添加水平光线效果
-    final paint4 = Paint()
-      ..color = Colors.white.withOpacity(0.04)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    for (int i = 0; i < 5; i++) {
-      double y = height * (0.3 + i * 0.1);
-      double amplitude = 6.0 - i * 1.0;
-
-      final path4 = Path();
-      path4.moveTo(0, y);
-
-      for (int j = 0; j < width.toInt(); j += 20) {
-        double x = j.toDouble();
-        double yOffset =
-            math.sin((x / width * 6 * math.pi) + animation * math.pi * 2 + i) *
-                amplitude;
-        path4.lineTo(x, y + yOffset);
-      }
-
-      canvas.drawPath(path4, paint4);
-    }
-  }
-
-  // 辅助方法：绘制单层波浪
-  void _drawWave(Canvas canvas, Size size, double baseHeight, double opacity,
-      double phaseShift, double amplitude1, double amplitude2) {
-    final width = size.width;
-    final height = size.height;
-
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(opacity)
-      ..style = PaintingStyle.fill;
-
-    final path = Path();
-    path.moveTo(0, baseHeight);
-
-    for (int i = 0; i < width.toInt(); i += 5) {
-      double x = i.toDouble();
-      double y = baseHeight +
-          math.sin((x / width * 2 * math.pi) + phaseShift * 2 * math.pi) *
-              amplitude1 +
-          math.sin((x / width * 4 * math.pi) + phaseShift * 2 * math.pi) *
-              amplitude2;
-      path.lineTo(x, y);
-    }
-
-    path.lineTo(width, baseHeight);
-    path.lineTo(width, height);
-    path.lineTo(0, height);
-    path.close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant EnhancedWavePainter oldDelegate) => true;
-}
-
-// 原有的波浪绘制器
-class WavePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.1)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 5.0;
-
-    final path = Path();
-    final width = size.width;
-    final height = size.height;
-
-    path.moveTo(0, height * 0.7);
-
-    // 第一条波浪曲线
-    for (int i = 0; i < 5; i++) {
-      if (i % 2 == 0) {
-        path.quadraticBezierTo(width * (0.2 + i * 0.2), height * 0.6,
-            width * (0.4 + i * 0.2), height * 0.7);
-      } else {
-        path.quadraticBezierTo(width * (0.2 + i * 0.2), height * 0.8,
-            width * (0.4 + i * 0.2), height * 0.7);
-      }
-    }
-
-    canvas.drawPath(path, paint);
-
-    // 第二条波浪曲线
-    final path2 = Path();
-    final paint2 = Paint()
-      ..color = Colors.white.withOpacity(0.08)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 8.0;
-
-    path2.moveTo(0, height * 0.65);
-
-    for (int i = 0; i < 6; i++) {
-      if (i % 2 == 0) {
-        path2.quadraticBezierTo(width * (0.15 + i * 0.15), height * 0.55,
-            width * (0.3 + i * 0.15), height * 0.65);
-      } else {
-        path2.quadraticBezierTo(width * (0.15 + i * 0.15), height * 0.75,
-            width * (0.3 + i * 0.15), height * 0.65);
-      }
-    }
-
-    canvas.drawPath(path2, paint2);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

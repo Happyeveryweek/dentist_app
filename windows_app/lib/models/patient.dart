@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 import 'dart:convert';
+import 'package:mysql1/mysql1.dart'; // 添加MySQL导入以支持Blob类型
+import '../utils/datetime_formatter.dart';
 
 // 患者模型
 class Patient {
@@ -19,6 +21,7 @@ class Patient {
   final String? treatment_items;
   final DateTime first_visit_date;
   final double total_cost;
+  final String? medical_history; // 病史信息
   final DateTime created_at; // 添加创建时间字段
   final DateTime updated_at; // 添加更新时间字段
 
@@ -39,6 +42,7 @@ class Patient {
     this.treatment_items,
     required this.first_visit_date,
     this.total_cost = 0.0,
+    this.medical_history, // 病史信息
     DateTime? created_at, // 添加创建时间参数
     DateTime? updated_at, // 添加更新时间参数
   })  : created_at = created_at ?? DateTime.now(), // 如果未提供，则使用当前时间
@@ -46,6 +50,27 @@ class Patient {
 
   // 从Map构造Patient对象
   factory Patient.fromMap(Map<String, dynamic> map) {
+    // 辅助方法：安全转换字符串，处理BLOB类型
+    String? safeStringFromField(dynamic field) {
+      if (field == null) return null;
+      if (field is String) return field;
+      if (field is Blob) {
+        try {
+          return String.fromCharCodes(field.toBytes());
+        } catch (e) {
+          print('Patient.fromMap: Blob转换失败: $e');
+          return '';
+        }
+      }
+      // 安全地转换为字符串，避免递归调用
+      try {
+        return field.toString();
+      } catch (e) {
+        print('Patient.fromMap: 字段转换失败: $e');
+        return '';
+      }
+    }
+
     // 处理创建时间和更新时间
     DateTime createdAt = DateTime.now();
     if (map['created_at'] != null) {
@@ -53,7 +78,7 @@ class Patient {
         if (map['created_at'] is DateTime) {
           createdAt = map['created_at'];
         } else {
-          createdAt = DateTime.parse(map['created_at']);
+          createdAt = DateTimeFormatter.fromDbString(map['created_at'].toString());
         }
       } catch (e) {
         print('解析created_at错误: ${map['created_at']}');
@@ -66,7 +91,7 @@ class Patient {
         if (map['updated_at'] is DateTime) {
           updatedAt = map['updated_at'];
         } else {
-          updatedAt = DateTime.parse(map['updated_at']);
+          updatedAt = DateTimeFormatter.fromDbString(map['updated_at'].toString());
         }
       } catch (e) {
         print('解析updated_at错误: ${map['updated_at']}');
@@ -75,23 +100,26 @@ class Patient {
 
     return Patient(
       id: map['id'],
-      name: map['name'],
-      name_pinyin: map['name_pinyin'],
-      name_initials: map['name_initials'],
-      age: map['age'],
-      gender: map['gender'],
-      phone: map['phone'],
+      name: safeStringFromField(map['name']) ?? '',
+      name_pinyin: safeStringFromField(map['name_pinyin']),
+      name_initials: safeStringFromField(map['name_initials']),
+      age: map['age'] ?? 0,
+      gender: safeStringFromField(map['gender']) ?? '',
+      phone: map['phone'] ?? '',
       medical_record_number: map['medical_record_number'],
-      address: map['address'],
-      address_pinyin: map['address_pinyin'],
-      identification_number: map['identification_number'],
-      doctor: map['doctor'],
-      dental_condition: map['dental_condition'],
-      treatment_items: map['treatment_items'],
+      address: safeStringFromField(map['address']),
+      address_pinyin: safeStringFromField(map['address_pinyin']),
+      identification_number: safeStringFromField(map['identification_number']),
+      doctor: safeStringFromField(map['doctor']),
+      dental_condition: safeStringFromField(map['dental_condition']),
+      treatment_items: safeStringFromField(map['treatment_items']),
       first_visit_date: map['first_visit_date'] is DateTime
           ? map['first_visit_date']
-          : DateTime.parse(map['first_visit_date']),
+          : map['first_visit_date'] != null 
+              ? DateTimeFormatter.fromDbString(safeStringFromField(map['first_visit_date']) ?? DateTimeFormatter.nowDbString())
+              : DateTime.now(),
       total_cost: map['total_cost']?.toDouble() ?? 0.0,
+      medical_history: safeStringFromField(map['medical_history']), // 病史信息
       created_at: createdAt, // 设置创建时间
       updated_at: updatedAt, // 设置更新时间
     );
@@ -114,11 +142,11 @@ class Patient {
       'doctor': doctor,
       'dental_condition': dental_condition,
       'treatment_items': treatment_items,
-      'first_visit_date':
-          DateFormat('yyyy-MM-dd HH:mm:ss').format(first_visit_date),
+      'first_visit_date': DateTimeFormatter.toDbString(first_visit_date),
       'total_cost': total_cost,
-      'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(created_at),
-      'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(updated_at),
+      'medical_history': medical_history, // 病史信息
+      'created_at': DateTimeFormatter.toDbString(created_at),
+      'updated_at': DateTimeFormatter.toDbString(updated_at),
     };
   }
 
@@ -140,6 +168,7 @@ class Patient {
     String? treatment_items,
     DateTime? first_visit_date,
     double? total_cost,
+    String? medical_history, // 病史信息
     DateTime? created_at, // 添加创建时间参数
     DateTime? updated_at, // 添加更新时间参数
   }) {
@@ -162,6 +191,7 @@ class Patient {
       treatment_items: treatment_items ?? this.treatment_items,
       first_visit_date: first_visit_date ?? this.first_visit_date,
       total_cost: total_cost ?? this.total_cost,
+      medical_history: medical_history ?? this.medical_history, // 病史信息
       created_at: created_at ?? this.created_at, // 设置创建时间
       updated_at: updated_at ?? this.updated_at, // 设置更新时间
     );

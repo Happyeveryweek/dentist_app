@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/providers/database_provider.dart';
+import 'package:dentist_app/providers/appointments_provider.dart';
+import 'package:dentist_app/providers/patient_provider.dart';
+import 'package:dentist_app/providers/user_provider.dart';
 import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/widgets/appointment_form_sheet.dart';
 import 'package:dentist_app/screens/appointment_detail_screen.dart';
 import 'dart:convert';
 import 'package:dentist_app/utils/toast_util.dart';
-
-// 牙位映射表 - 从医生视角看患者牙齿
-final Map<String, String> positionMap = {
-  'topLeft': '右上',
-  'topRight': '左上',
-  'bottomLeft': '右下',
-  'bottomRight': '左下',
-};
+import 'package:dentist_app/widgets/success_toast.dart'; // 添加新的公共组件导入
+import 'package:dentist_app/widgets/modern_date_picker.dart'; // 添加新的公共日期时间选择器
+import 'package:dentist_app/utils/pinyin_util.dart'; // 添加拼音工具类
+import 'package:dentist_app/utils/permission_utils.dart'; // 添加权限工具类导入
 
 class AppointmentsScreen extends StatefulWidget {
   final String? initialFilterStatus;
@@ -36,6 +36,11 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
   bool _showCalendar = false;
+  bool _isInitialLoad = true;
+
+  // 新增：用于日期范围筛选
+  DateTime? _startDate;
+  DateTime? _endDate;
 
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
@@ -55,14 +60,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    // 检查Provider是否有变更
-    final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-
-    // 如果是初始化后的依赖变更，考虑重新加载数据
-    if (!_isLoading && dbProvider.isInitialized) {
-      print('AppointmentsScreen 依赖已变更，检查是否需要重新加载数据');
-      _loadAppointments();
+    // 逻辑简化，避免循环加载
+    if (_isInitialLoad) {
+      _isInitialLoad = false;
     }
   }
 
@@ -73,19 +73,72 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     super.dispose();
   }
 
-  Future<void> _loadAppointments() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _loadAppointments({bool isRefresh = false}) async {
+    print('_loadAppointments 被调用，isRefresh: $isRefresh'); // 调试输出
+    
+    // 只有在手动刷新时才显示提示并重置筛选
+    if (isRefresh) {
+      if (!mounted) return;
+      setState(() {
+        _searchQuery = '';
+        _filterStatus = '全部';
+        _startDate = null;
+        _endDate = null;
+        _searchController.clear();
+      });
+    }
 
     try {
       final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      final appointments = await dbProvider.getAllAppointments();
+      
+      final appointmentsProvider = Provider.of<AppointmentsProvider>(context, listen: false);
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      
+      if (!appointmentsProvider.initialized) {
+        // 只有在初始化时才显示加载动画
+        setState(() {
+          _isLoading = true;
+        });
+        await appointmentsProvider.initializeFromDatabase(dbProvider, userProvider: userProvider);
+      }
+      
+      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
+      if (!patientProvider.initialized) {
+        // 只有在初始化时才显示加载动画
+        setState(() {
+          _isLoading = true;
+        });
+        await patientProvider.initializeFromDatabase(dbProvider, userProvider: userProvider);
+      }
+      
+      // 如果是刷新操作，强制清除缓存并显示加载动画
+      if (isRefresh) {
+        setState(() {
+          _isLoading = true;
+        });
+        appointmentsProvider.forceRefreshAppointments();
+        patientProvider.forceRefreshPatients();
+      }
+      
+      final appointments = await appointmentsProvider.getAllAppointments();
+      
+      // 批量获取所有患者信息（使用缓存）
+      final allPatients = await patientProvider.getAllPatients();
+      final patientMap = {for (var p in allPatients) p.id: p};
+      
+      // 快速关联患者信息
+      final List<Appointment> appointmentsWithPatients = appointments.map((appointment) {
+        if (appointment.patientId != null) {
+          final patient = patientMap[appointment.patientId];
+          if (patient != null) {
+            return appointment.copyWith(patientName: patient.name);
+          }
+        }
+        return appointment;
+      }).toList();
 
-      // 创建以日期为键的映射
       Map<DateTime, List<Appointment>> appointmentMap = {};
-      for (var appointment in appointments) {
-        // 获取日期部分（不含时间）
+      for (var appointment in appointmentsWithPatients) {
         final dateOnly = DateTime(
           appointment.appointmentDate.year,
           appointment.appointmentDate.month,
@@ -98,23 +151,36 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         appointmentMap[dateOnly]!.add(appointment);
       }
 
-      setState(() {
-        _appointments = appointments;
-        _appointmentsByDay = appointmentMap;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _appointments = appointmentsWithPatients;
+          _appointmentsByDay = appointmentMap;
+          _isLoading = false;
+        });
+        if (isRefresh && mounted) {
+          print('显示刷新成功提示'); // 调试输出
+          SuccessToastManager.show(
+            context,
+            message: '刷新成功',
+          );
+        }
+      }
     } catch (e) {
       print('加载预约数据错误: $e');
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (isRefresh && mounted) {
+          SuccessToastManager.showError(context, message: '刷新失败: $e');
+        }
+      }
     }
   }
 
   List<Appointment> get _filteredAppointments {
     List<Appointment> filtered = _appointments;
 
-    // 按状态筛选
     if (_filterStatus != '全部') {
       String status;
       switch (_filterStatus) {
@@ -135,42 +201,57 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
       }
 
       if (status.isNotEmpty) {
-        filtered =
-            filtered
-                .where(
-                  (appointment) =>
-                      appointment.status == status ||
-                      // 特殊处理未到诊，可能是missed或no_show
-                      (status == 'no_show' &&
-                          (appointment.status == 'missed' ||
-                              appointment.status == '未到诊')),
-                )
-                .toList();
+        filtered = filtered.where((appointment) =>
+              appointment.status == status ||
+              (status == 'no_show' && (appointment.status == 'missed' || appointment.status == '未到诊'))
+        ).toList();
       }
     }
 
-    // 按搜索关键词筛选
-    if (_searchQuery.isNotEmpty) {
-      filtered =
-          filtered.where((appointment) {
-            // 这里需要获取患者信息进行搜索，但为了简化，我们只搜索预约ID和日期
-            return appointment.id.toString().contains(_searchQuery) ||
-                DateFormat(
-                  'yyyy-MM-dd',
-                ).format(appointment.appointmentDate).contains(_searchQuery) ||
-                (appointment.treatmentType ?? '').toLowerCase().contains(
-                  _searchQuery.toLowerCase(),
-                );
-          }).toList();
+    if (_startDate != null && _endDate != null) {
+      final endDateEndOfDay = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, 23, 59, 59);
+      filtered = filtered.where((appointment) {
+        return !appointment.appointmentDate.isBefore(_startDate!) && !appointment.appointmentDate.isAfter(endDateEndOfDay);
+      }).toList();
     }
 
-    // 按日期排序（最近的在前）
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered.where((appointment) {
+        final patientName = appointment.patientName ?? '';
+        final treatmentType = appointment.treatmentType ?? '';
+        final query = _searchQuery.toLowerCase();
+        
+        // 支持多种搜索方式
+        bool nameMatch = patientName.toLowerCase().contains(query);
+        bool treatmentMatch = treatmentType.toLowerCase().contains(query);
+        
+        // 拼音搜索支持
+        bool pinyinMatch = false;
+        bool initialsMatch = false;
+        
+        if (patientName.isNotEmpty) {
+          try {
+            // 获取完整拼音（无空格）
+            final pinyin = PinyinUtil.toPinyin(patientName, separator: '').toLowerCase();
+            // 获取拼音首字母
+            final initials = PinyinUtil.getInitials(patientName).toLowerCase();
+            
+            pinyinMatch = pinyin.contains(query);
+            initialsMatch = initials.contains(query);
+          } catch (e) {
+            print('拼音搜索错误: $e');
+          }
+        }
+        
+        return nameMatch || treatmentMatch || pinyinMatch || initialsMatch;
+      }).toList();
+    }
+
     filtered.sort((a, b) => b.appointmentDate.compareTo(a.appointmentDate));
 
     return filtered;
   }
 
-  // 获取选中日期的预约
   List<Appointment> get _selectedDayAppointments {
     final dateOnly = DateTime(
       _selectedDay.year,
@@ -181,72 +262,113 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     return _appointmentsByDay[dateOnly] ?? [];
   }
 
-  // 按照时间排序获取今天的预约
   List<Appointment> get _todayAppointments {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
     final appointments = _appointmentsByDay[today] ?? [];
 
-    // 按时间排序
     appointments.sort((a, b) => a.appointmentDate.compareTo(b.appointmentDate));
 
     return appointments;
   }
 
-  // 格式化治疗类型显示
-  String _formatTreatmentType(String? treatmentType) {
-    if (treatmentType == null || treatmentType.isEmpty) {
+  String _formatTreatmentType(dynamic treatmentType) {
+    if (treatmentType == null) {
       return '常规复诊';
     }
 
-    try {
-      // 尝试解析JSON
-      final data = json.decode(treatmentType);
-      final List<String> displayParts = [];
-
-      // 处理牙位信息
-      if (data.containsKey('teethData') &&
-          data['teethData'] is List &&
-          (data['teethData'] as List).isNotEmpty) {
-        for (var i = 0; i < (data['teethData'] as List).length; i++) {
-          final teethData = data['teethData'][i];
-          final List<String> positions = [];
-
-          // 获取各个牙位的值
-          teethData.forEach((key, value) {
-            if (value != null && value.toString().isNotEmpty) {
-              // 使用牙位映射表转换位置名称
-              if (positionMap.containsKey(key)) {
-                positions.add('${positionMap[key]} $value');
-              }
-            }
-          });
-
-          if (positions.isNotEmpty) {
-            displayParts.add('牙位${i + 1}: ${positions.join('，')}');
-          }
-        }
-      }
-
-      // 处理治疗项目
-      if (data.containsKey('treatments') &&
-          data['treatments'] is List &&
-          (data['treatments'] as List).isNotEmpty) {
-        final treatments = (data['treatments'] as List).join('、');
-        if (displayParts.isNotEmpty) {
-          displayParts.add('- $treatments');
-        } else {
-          displayParts.add(treatments);
-        }
-      }
-
-      // 返回格式化后的显示文本
-      return displayParts.isEmpty ? '常规复诊' : displayParts.join(' ');
-    } catch (e) {
-      print('解析治疗类型JSON失败: $e');
-      return treatmentType; // 如果解析失败，直接返回原始字符串
+    if (treatmentType is int) {
+      return '治疗项目 $treatmentType';
     }
+
+    if (treatmentType is String) {
+      if (treatmentType.isEmpty) {
+        return '常规复诊';
+      }
+
+      try {
+        final data = json.decode(treatmentType);
+        
+        if (data is Map && data.containsKey('treatments') &&
+            data['treatments'] is List &&
+            (data['treatments'] as List).isNotEmpty) {
+          final treatments = (data['treatments'] as List);
+          return treatments.join('、');
+        }
+        
+        return '常规复诊';
+      } catch (e) {
+        print('解析治疗类型JSON失败: $e');
+        return treatmentType;
+      }
+    }
+
+    return treatmentType.toString();
+  }
+
+  Color _getPatientAvatarColor(String patientName) {
+    if (patientName.isEmpty) {
+      return AppTheme.primaryColor;
+    }
+    
+    final int colorSeed = patientName.hashCode;
+    final colors = [
+      AppTheme.primaryColor,
+      AppTheme.secondaryColor,
+      AppTheme.accentColor,
+      AppTheme.infoColor,
+      AppTheme.successColor,
+      AppTheme.warningColor,
+    ];
+    return colors[colorSeed % colors.length];
+  }
+
+  Widget _buildAppointmentsHeader() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '预约管理',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 1,
+            color: AppTheme.primaryColor.withOpacity(0.1),
+          ),
+          const SizedBox(height: 12),
+          TabBar(
+            controller: _tabController,
+            indicatorColor: AppTheme.primaryColor,
+            labelColor: AppTheme.primaryColor,
+            unselectedLabelColor: AppTheme.secondaryText,
+            tabs: const [Tab(text: '全部预约'), Tab(text: '今日预约')],
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -254,81 +376,70 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('预约管理'),
-        centerTitle: true,
-        backgroundColor: AppTheme.cardBackground,
+        backgroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              _showCalendar ? Icons.list : Icons.calendar_month,
-              color: AppTheme.primaryColor,
-            ),
-            onPressed: () {
-              setState(() {
-                _showCalendar = !_showCalendar;
-              });
-            },
-            tooltip: _showCalendar ? '列表视图' : '日历视图',
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadAppointments,
-            tooltip: '刷新预约',
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.primaryColor,
-          unselectedLabelColor: AppTheme.secondaryText,
-          tabs: const [Tab(text: '全部预约'), Tab(text: '今日预约')],
-        ),
+        toolbarHeight: 0,
       ),
-      body:
-          _isLoading
-              ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppTheme.primaryColor,
+      body: Column(
+        children: [
+          _buildAppointmentsHeader(),
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppTheme.primaryColor,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      '加载预约数据中...',
-                      style: TextStyle(color: AppTheme.secondaryText),
+                      SizedBox(height: 16),
+                      Text(
+                        '加载预约数据中...',
+                        style: TextStyle(color: AppTheme.secondaryText),
+                      ),
+                    ],
+                  ),
+                )
+                : Column(
+                  children: [
+                    _buildSearchAndFilterBar(),
+                    Expanded(
+                      child: _showCalendar
+                          ? _buildCalendarView()
+                          : TabBarView(
+                              controller: _tabController,
+                              children: [
+                                RefreshIndicator(
+                                  onRefresh: () => _loadAppointments(isRefresh: true),
+                                  child: _buildAllAppointmentsView(),
+                                ),
+                                RefreshIndicator(
+                                  onRefresh: () => _loadAppointments(isRefresh: true),
+                                  child: _buildTodayAppointmentsView(),
+                                ),
+                              ],
+                            ),
                     ),
                   ],
                 ),
-              )
-              : Column(
-                children: [
-                  _buildSearchAndFilterBar(),
-                  Expanded(
-                    child:
-                        _showCalendar
-                            ? _buildCalendarView()
-                            : TabBarView(
-                              controller: _tabController,
-                              children: [
-                                _buildAllAppointmentsView(),
-                                _buildTodayAppointmentsView(),
-                              ],
-                            ),
-                  ),
-                ],
-              ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showAppointmentDialog(context);
-        },
-        backgroundColor: AppTheme.secondaryColor,
-        tooltip: '添加预约',
-        heroTag: 'appointment_add_button',
-        child: const Icon(Icons.add),
+          ),
+        ],
+      ),
+      floatingActionButton: PermissionWrapper(
+        module: 'appointments',
+        action: 'create',
+        hideWhenDenied: true,
+        child: FloatingActionButton(
+          onPressed: () {
+            _showAppointmentDialog(context);
+          },
+          backgroundColor: AppTheme.secondaryColor,
+          tooltip: '添加预约',
+          heroTag: 'appointment_add_button',
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
@@ -336,7 +447,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   Widget _buildCalendarView() {
     return Column(
       children: [
-        // 日历视图
         Card(
           margin: const EdgeInsets.all(8),
           elevation: 0,
@@ -401,7 +511,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
           ),
         ),
 
-        // 预约列表标题
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Row(
@@ -426,775 +535,388 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
           ),
         ),
 
-        // 预约列表
         Expanded(
           child:
               _selectedDayAppointments.isEmpty
-                  ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.event_busy,
-                          size: 64,
-                          color: AppTheme.lightText.withOpacity(0.5),
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          '当天无预约',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: AppTheme.secondaryText,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed:
-                              () => _showAppointmentDialog(
-                                context,
-                                initialDate: _selectedDay,
-                              ),
-                          icon: const Icon(Icons.add),
-                          label: const Text('添加预约'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppTheme.smallBorderRadius,
+                  ? SingleChildScrollView(
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.event_busy,
+                              size: 48,
+                              color: AppTheme.lightText.withOpacity(0.5),
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              '当天无预约',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: AppTheme.secondaryText,
                               ),
                             ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
+                            const SizedBox(height: 16),
+                            PermissionWrapper(
+                              module: 'appointments',
+                              action: 'create',
+                              hideWhenDenied: true,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  _showAppointmentDialog(context, initialDate: _selectedDay);
+                                },
+                                icon: const Icon(Icons.add, size: 18),
+                                label: const Text('添加预约'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppTheme.borderRadius,
+                                    ),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 10,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
-                    ),
-                  )
+                      ),
+                    )
                   : ListView.builder(
-                    padding: const EdgeInsets.all(8),
-                    itemCount: _selectedDayAppointments.length,
-                    itemBuilder: (context, index) {
-                      return _buildAppointmentCard(
-                        _selectedDayAppointments[index],
-                      );
-                    },
-                  ),
+                      itemCount: _selectedDayAppointments.length,
+                      itemBuilder: (context, index) {
+                        final appointment = _selectedDayAppointments[index];
+                        return _buildAppointmentCard(appointment);
+                      },
+                    ),
         ),
       ],
     );
   }
 
-  Widget _buildAllAppointmentsView() {
-    return _filteredAppointments.isEmpty
-        ? _buildEmptyState()
-        : RefreshIndicator(
-          onRefresh: _loadAppointments,
-          color: AppTheme.primaryColor,
-          child: ListView.builder(
-            padding: const EdgeInsets.all(AppTheme.padding),
-            itemCount: _filteredAppointments.length,
-            itemBuilder: (context, index) {
-              final appointment = _filteredAppointments[index];
-              return _buildAppointmentCard(appointment);
-            },
+  Widget _buildSearchAndFilterBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: CupertinoSearchTextField(
+              controller: _searchController,
+              placeholder: '搜索患者姓名或治疗项目',
+              style: const TextStyle(color: AppTheme.primaryText, fontSize: 14),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+            ),
           ),
-        );
+          const SizedBox(width: 8),
+          CupertinoButton(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            color: AppTheme.primaryColor.withOpacity(0.1),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.filter_list_alt,
+                  color: AppTheme.primaryColor,
+                  size: 18,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '筛选',
+                  style: TextStyle(color: AppTheme.primaryColor, fontSize: 14),
+                ),
+              ],
+            ),
+            onPressed: _showFilterDialog,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAllAppointmentsView() {
+    final appointments = _filteredAppointments;
+
+    if (appointments.isEmpty) {
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.search_off,
+                  size: 64,
+                  color: AppTheme.lightText.withOpacity(0.5),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  '没有找到符合条件的预约',
+                  style: TextStyle(fontSize: 16, color: AppTheme.secondaryText),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: appointments.length,
+      itemBuilder: (context, index) {
+        final appointment = appointments[index];
+        return _buildAppointmentCard(appointment);
+      },
+    );
   }
 
   Widget _buildTodayAppointmentsView() {
-    return _todayAppointments.isEmpty
-        ? Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.event_available,
-                size: 64,
-                color: AppTheme.lightText.withOpacity(0.5),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                '今日无预约',
-                style: TextStyle(fontSize: 16, color: AppTheme.secondaryText),
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => _showAppointmentDialog(context),
-                icon: const Icon(Icons.add),
-                label: const Text('添加今日预约'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppTheme.smallBorderRadius,
-                    ),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        )
-        : ListView.builder(
-          padding: const EdgeInsets.all(AppTheme.padding),
-          itemCount: _todayAppointments.length,
-          itemBuilder: (context, index) {
-            final appointment = _todayAppointments[index];
-            return _buildAppointmentCard(appointment);
-          },
-        );
-  }
+    final appointments = _todayAppointments;
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.event_note,
-            size: 64,
-            color: AppTheme.lightText.withOpacity(0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _searchQuery.isEmpty ? '暂无预约数据' : '未找到符合"$_searchQuery"的预约',
-            style: const TextStyle(fontSize: 16, color: AppTheme.secondaryText),
-          ),
-          const SizedBox(height: 16),
-          if (_searchQuery.isNotEmpty)
-            TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _searchQuery = '';
-                  _searchController.clear();
-                });
-              },
-              icon: const Icon(Icons.clear),
-              label: const Text('清除搜索'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppTheme.primaryColor,
-              ),
-            )
-          else
-            ElevatedButton.icon(
-              onPressed: () => _showAppointmentDialog(context),
-              icon: const Icon(Icons.add),
-              label: const Text('添加首个预约'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(
-                    AppTheme.smallBorderRadius,
-                  ),
+    if (appointments.isEmpty) {
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: SizedBox(
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.today,
+                  size: 64,
+                  color: AppTheme.lightText.withOpacity(0.5),
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
+                const SizedBox(height: 16),
+                const Text(
+                  '今日无预约',
+                  style: TextStyle(fontSize: 16, color: AppTheme.secondaryText),
                 ),
-              ),
+              ],
             ),
-        ],
-      ),
-    );
-  }
+          ),
+        ),
+      );
+    }
 
-  Widget _buildSearchAndFilterBar() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBackground,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: '搜索预约ID、日期或治疗类型',
-              prefixIcon: const Icon(
-                Icons.search,
-                color: AppTheme.secondaryText,
-              ),
-              suffixIcon:
-                  _searchQuery.isNotEmpty
-                      ? IconButton(
-                        icon: const Icon(
-                          Icons.clear,
-                          color: AppTheme.secondaryText,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _searchQuery = '';
-                            _searchController.clear();
-                          });
-                        },
-                      )
-                      : null,
-              filled: true,
-              fillColor: AppTheme.backgroundColor,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppTheme.smallBorderRadius),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 12,
-                horizontal: 16,
-              ),
-              hintStyle: const TextStyle(
-                color: AppTheme.lightText,
-                fontSize: 14,
-              ),
-            ),
-            style: const TextStyle(color: AppTheme.primaryText, fontSize: 14),
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value;
-              });
-            },
-          ),
-          const SizedBox(height: 12),
-          _buildHorizontalFilterChips(),
-        ],
-      ),
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: appointments.length,
+      itemBuilder: (context, index) {
+        final appointment = appointments[index];
+        return _buildAppointmentCard(appointment);
+      },
     );
-  }
-
-  Widget _buildHorizontalFilterChips() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          const SizedBox(width: 16),
-          FilterChip(
-            label: const Text('全部'),
-            selected: _filterStatus == '全部',
-            onSelected: (_) => _onStatusFilterSelected('全部'),
-          ),
-          const SizedBox(width: 8),
-          FilterChip(
-            label: const Text('已预约'),
-            selected: _filterStatus == '已预约',
-            onSelected: (_) => _onStatusFilterSelected('已预约'),
-          ),
-          const SizedBox(width: 8),
-          FilterChip(
-            label: const Text('已完成'),
-            selected: _filterStatus == '已完成',
-            onSelected: (_) => _onStatusFilterSelected('已完成'),
-          ),
-          const SizedBox(width: 8),
-          FilterChip(
-            label: const Text('已取消'),
-            selected: _filterStatus == '已取消',
-            onSelected: (_) => _onStatusFilterSelected('已取消'),
-          ),
-          const SizedBox(width: 8),
-          FilterChip(
-            label: const Text('未到诊'),
-            selected: _filterStatus == '未到诊',
-            onSelected: (_) => _onStatusFilterSelected('未到诊'),
-          ),
-          const SizedBox(width: 16),
-        ],
-      ),
-    );
-  }
-
-  void _onStatusFilterSelected(String status) {
-    setState(() {
-      _filterStatus = status;
-    });
   }
 
   Widget _buildAppointmentCard(Appointment appointment) {
-    return FutureBuilder<Patient?>(
-      future: Provider.of<DatabaseProvider>(
-        context,
-        listen: false,
-      ).getPatientById(appointment.patientId),
-      builder: (context, snapshot) {
-        final patient = snapshot.data;
-        final statusInfo = _getStatusInfo(appointment.status);
+    final statusInfo = _getStatusInfo(appointment.status);
+    final patientName = appointment.patientName ?? '未知患者';
+    final avatarColor = _getPatientAvatarColor(patientName);
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: AppTheme.cardBackground,
-            borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) =>
-                            AppointmentDetailScreen(appointment: appointment),
-                  ),
-                ).then((_) => _loadAppointments());
-              },
-              child: Column(
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      elevation: 1,
+      shadowColor: AppTheme.lightText.withOpacity(0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+      ),
+      child: InkWell(
+        onTap: () async {
+          final result = await Navigator.push(
+            context,
+            CupertinoPageRoute(
+              builder: (context) => AppointmentDetailScreen(appointment: appointment),
+            ),
+          );
+          
+          print('预约详情返回值: $result'); // 调试输出
+          
+          // 只有在数据更新时才刷新（静默刷新，不显示提示）
+          if (result == true && mounted) {
+            print('触发刷新'); // 调试输出
+            _loadAppointments(isRefresh: false);
+          }
+        },
+        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 顶部时间栏
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusInfo.color.withOpacity(0.1),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(AppTheme.borderRadius),
-                        topRight: Radius.circular(AppTheme.borderRadius),
+                  CircleAvatar(
+                    backgroundColor: avatarColor.withOpacity(0.2),
+                    child: Text(
+                      patientName.isNotEmpty ? patientName.substring(0, 1) : '?',
+                      style: TextStyle(
+                        color: avatarColor,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.event,
-                              size: 18,
-                              color: statusInfo.color,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              DateFormat(
-                                'yyyy年MM月dd日',
-                              ).format(appointment.appointmentDate),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: AppTheme.primaryText,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Icon(
-                              Icons.access_time,
-                              size: 18,
-                              color: statusInfo.color,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              DateFormat(
-                                'HH:mm',
-                              ).format(appointment.appointmentDate),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: AppTheme.primaryText,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusInfo.color.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: statusInfo.color.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                statusInfo.icon,
-                                size: 14,
-                                color: statusInfo.color,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                statusInfo.text,
-                                style: TextStyle(
-                                  color: statusInfo.color,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
                   ),
-
-                  // 内容区域
-                  Padding(
-                    padding: const EdgeInsets.all(16),
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // 患者信息
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 24,
-                              backgroundColor: AppTheme.primaryColor
-                                  .withOpacity(0.1),
-                              child: Text(
-                                patient?.name.isNotEmpty == true
-                                    ? patient!.name.substring(0, 1)
-                                    : "?",
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.primaryColor,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    patient?.name ?? '加载中...',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppTheme.primaryText,
-                                    ),
-                                  ),
-                                  if (patient != null) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${patient.gender} | ${patient.age}岁 | ${_getDisplayPhone(patient.phone)}',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: AppTheme.secondaryText,
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: const BoxDecoration(
-                                color: AppTheme.backgroundColor,
-                                shape: BoxShape.circle,
-                              ),
-                              child: IconButton(
-                                icon: const Icon(Icons.chevron_right),
-                                iconSize: 20,
-                                color: AppTheme.secondaryText,
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => AppointmentDetailScreen(
-                                            appointment: appointment,
-                                          ),
-                                    ),
-                                  ).then((_) => _loadAppointments());
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // 预约详情
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppTheme.backgroundColor,
-                            borderRadius: BorderRadius.circular(
-                              AppTheme.smallBorderRadius,
-                            ),
+                        Text(
+                          patientName,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: AppTheme.primaryText,
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildDetailItem(
-                                icon: Icons.medical_services_outlined,
-                                title: '治疗类型',
-                                value: _formatTreatmentType(
-                                  appointment.treatmentType,
-                                ),
-                                color: AppTheme.secondaryColor,
-                              ),
-                              const Divider(height: 16),
-                              _buildDetailItem(
-                                icon: Icons.event_note_outlined,
-                                title: '预约备注',
-                                value:
-                                    appointment.notes?.isNotEmpty == true
-                                        ? appointment.notes!
-                                        : '无备注',
-                                color: AppTheme.accentColor,
-                              ),
-                            ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${DateFormat('yyyy-MM-dd').format(appointment.appointmentDate)} ${DateFormat.Hm().format(appointment.appointmentDate)}',
+                          style: const TextStyle(
+                            color: AppTheme.secondaryText,
+                            fontSize: 13,
                           ),
                         ),
                       ],
                     ),
                   ),
-
-                  // 底部操作区
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: const BoxDecoration(
-                      color: AppTheme.backgroundColor,
-                      borderRadius: BorderRadius.only(
-                        bottomLeft: Radius.circular(AppTheme.borderRadius),
-                        bottomRight: Radius.circular(AppTheme.borderRadius),
-                      ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusInfo.color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // 预约ID
+                        Icon(statusInfo.icon, color: statusInfo.color, size: 14),
+                        const SizedBox(width: 4),
                         Text(
-                          '预约 #${appointment.id}',
-                          style: const TextStyle(
+                          statusInfo.text,
+                          style: TextStyle(
+                            color: statusInfo.color,
                             fontSize: 12,
-                            color: AppTheme.lightText,
+                            fontWeight: FontWeight.w500,
                           ),
-                        ),
-
-                        // 操作按钮
-                        Row(
-                          children: [
-                            _buildActionButton(
-                              icon: Icons.edit_outlined,
-                              label: '编辑',
-                              color: AppTheme.primaryColor,
-                              onTap:
-                                  () => _showAppointmentDialog(
-                                    context,
-                                    editAppointment: appointment,
-                                  ),
-                            ),
-                            const SizedBox(width: 8),
-                            if (appointment.status == 'scheduled')
-                              _buildActionButton(
-                                icon: Icons.check_circle_outline,
-                                label: '完成',
-                                color: AppTheme.successColor,
-                                onTap:
-                                    () => _changeAppointmentStatus(
-                                      appointment,
-                                      'completed',
-                                    ),
-                              ),
-                            const SizedBox(width: 8),
-                            if (appointment.status == 'scheduled')
-                              _buildActionButton(
-                                icon: Icons.cancel_outlined,
-                                label: '取消',
-                                color: AppTheme.errorColor,
-                                onTap:
-                                    () => _changeAppointmentStatus(
-                                      appointment,
-                                      'cancelled',
-                                    ),
-                              ),
-                            const SizedBox(width: 8),
-                            _buildActionButton(
-                              icon: Icons.delete_outline,
-                              label: '删除',
-                              color: AppTheme.errorColor,
-                              onTap: () => _showDeleteConfirmation(appointment),
-                            ),
-                          ],
                         ),
                       ],
                     ),
                   ),
                 ],
               ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDetailItem({
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(icon, size: 16, color: color),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.secondaryText,
-                ),
+              const SizedBox(height: 12),
+              const Divider(height: 1, color: AppTheme.dividerColor),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.medical_services_outlined,
+                    color: AppTheme.secondaryText,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _formatTreatmentType(appointment.treatmentType),
+                      style: const TextStyle(
+                        color: AppTheme.primaryText,
+                        fontSize: 14,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.primaryText,
+              if (appointment.notes != null && appointment.notes!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.notes_outlined,
+                      color: AppTheme.secondaryText,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        appointment.notes!,
+                        style: const TextStyle(
+                          color: AppTheme.secondaryText,
+                          fontSize: 13,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
+              ],
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  FutureBuilder<String?>(
+                    future: _getAppointmentPatientDoctor(appointment),
+                    builder: (context, snapshot) {
+                      final patientDoctor = snapshot.data;
+                      return PermissionWrapper(
+                        module: 'appointments',
+                        action: 'edit',
+                        recordDoctor: patientDoctor,
+                        onPermissionDenied: () {
+                          PermissionUtils.showPermissionDeniedMessage(
+                            context,
+                            customMessage: '您只能编辑自己负责患者的预约',
+                          );
+                        },
+                        child: IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () => _showAppointmentDialog(context, appointment: appointment),
+                        ),
+                      );
+                    },
+                  ),
+                  FutureBuilder<String?>(
+                    future: _getAppointmentPatientDoctor(appointment),
+                    builder: (context, snapshot) {
+                      final patientDoctor = snapshot.data;
+                      return PermissionWrapper(
+                        module: 'appointments',
+                        action: 'delete',
+                        recordDoctor: patientDoctor,
+                        onPermissionDenied: () {
+                          PermissionUtils.showPermissionDeniedMessage(
+                            context,
+                            customMessage: '您只能删除自己负责患者的预约',
+                          );
+                        },
+                        child: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _showDeleteConfirmation(appointment),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppTheme.smallBorderRadius),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          border: Border.all(color: color.withOpacity(0.3), width: 1),
-          borderRadius: BorderRadius.circular(AppTheme.smallBorderRadius),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: color,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
         ),
       ),
     );
   }
 
-  // 显示预约表单对话框
-  void _showAppointmentDialog(
-    BuildContext context, {
-    Appointment? editAppointment,
-    DateTime? initialDate,
-  }) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (dialogContext) => AppointmentFormSheet(
-            appointment: editAppointment,
-            initialDate: initialDate,
-            onSaved: (isSuccess, message) {
-              if (isSuccess) {
-                // 使用局部刷新方法，只刷新预约列表，不影响其他页面
-                Provider.of<DatabaseProvider>(
-                  context,
-                  listen: false,
-                ).refreshAppointmentsData();
 
-                // 主动触发当前页面刷新
-                _loadAppointments();
-
-                // 使用自定义Toast显示成功消息
-                ToastUtil.showSuccess(context, message);
-              } else {
-                ToastUtil.showError(context, message);
-              }
-            },
-          ),
-    );
-  }
-
-  // 修改预约状态
-  Future<void> _changeAppointmentStatus(
-    Appointment appointment,
-    String newStatus,
-  ) async {
-    final updated = appointment.copyWith(status: newStatus);
-
-    try {
-      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      await dbProvider.updateAppointment(updated);
-
-      // 刷新数据
-      _loadAppointments();
-
-      // 不再立即强制刷新仪表盘
-      // dbProvider.forceDataChanged();
-
-      // 显示提示
-      if (!mounted) return;
-      ToastUtil.showSuccess(context, '预约状态已更新');
-    } catch (e) {
-      print('更新预约状态错误: $e');
-
-      // 显示错误提示
-      if (!mounted) return;
-      ToastUtil.showError(context, '更新预约状态失败: $e');
-    }
-  }
-
-  // 获取状态信息
   _StatusInfo _getStatusInfo(String status) {
     switch (status) {
       case 'scheduled':
@@ -1202,7 +924,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         return _StatusInfo(
           text: '已预约',
           color: AppTheme.infoColor,
-          icon: Icons.schedule,
+          icon: Icons.event_available,
         );
       case 'completed':
       case '已完成':
@@ -1223,86 +945,292 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
       case '未到诊':
         return _StatusInfo(
           text: '未到诊',
-          color: Colors.orange,
-          icon: Icons.unpublished_outlined,
+          color: AppTheme.warningColor,
+          icon: Icons.hourglass_empty,
         );
       default:
         return _StatusInfo(
-          text: status, // 显示原始状态
+          text: '未知',
           color: AppTheme.secondaryText,
           icon: Icons.help_outline,
         );
     }
   }
 
-  // 从JSON格式中获取显示电话号码
-  String _getDisplayPhone(String phone) {
-    if (phone.startsWith('[') && phone.endsWith(']')) {
-      try {
-        List<dynamic> phones = jsonDecode(phone);
-        if (phones.isNotEmpty) {
-          return phones[0].toString();
-        }
-      } catch (e) {
-        print('解析电话号码JSON失败: $e');
-      }
-    }
-    return phone;
+  void _showAppointmentDialog(BuildContext context, {DateTime? initialDate, Appointment? appointment}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          resizeToAvoidBottomInset: true,
+          body: SafeArea(
+            child: AppointmentFormSheet(
+              onSaved: (isSuccess, message) {
+                if (isSuccess) {
+                  _loadAppointments(isRefresh: true);
+                  SuccessToastManager.show(context, message: message);
+                } else {
+                  SuccessToastManager.showError(context, message: message);
+                }
+              },
+              initialDate: initialDate ?? appointment?.appointmentDate,
+              appointment: appointment,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
-  void _showDeleteConfirmation(Appointment appointment) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('确认删除'),
-            content: const Text('确定要删除这个预约吗？此操作无法撤销。'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('取消'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.secondaryText,
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // 先关闭对话框
-                  _deleteAppointment(appointment); // 再执行删除操作
-                },
-                child: const Text('确认删除'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.errorColor,
-                ),
-              ),
-            ],
-          ),
+  Future<void> _showDeleteConfirmation(Appointment appointment) async {
+    final patientName = appointment.patientName ?? '未知患者';
+    final appointmentInfo =
+        '患者: $patientName\n日期: ${DateFormat('yyyy-MM-dd HH:mm').format(appointment.appointmentDate)}';
+
+    final confirmed = await ModernDeleteDialogManager.showAppointmentDelete(
+      context,
+      appointmentInfo: appointmentInfo,
     );
+    
+    if (confirmed == true) {
+      _deleteAppointment(appointment);
+    }
   }
 
   Future<void> _deleteAppointment(Appointment appointment) async {
     if (appointment.id == null) {
       if (!mounted) return;
-      ToastUtil.showError(context, '无法删除：预约ID无效');
+      SuccessToastManager.showError(context, message: '无法删除：预约ID无效');
       return;
     }
 
     try {
-      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      await dbProvider.deleteAppointment(appointment.id!);
+      final appointmentsProvider = Provider.of<AppointmentsProvider>(context, listen: false);
+      await appointmentsProvider.deleteAppointment(appointment.id!);
 
-      // 刷新数据
-      _loadAppointments();
+      _loadAppointments(isRefresh: true);
 
-      // 显示提示
       if (!mounted) return;
-      ToastUtil.showSuccess(context, '预约已删除');
+      SuccessToastManager.show(context, message: '预约已删除');
     } catch (e) {
       print('删除预约错误: $e');
 
-      // 显示错误提示
       if (!mounted) return;
-      ToastUtil.showError(context, '删除预约失败: $e');
+      SuccessToastManager.showError(context, message: '删除预约失败: $e');
+    }
+  }
+
+  void _showFilterDialog() {
+    DateTime? tempStartDate = _startDate;
+    DateTime? tempEndDate = _endDate;
+    String tempFilterStatus = _filterStatus;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.6,
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: AppTheme.backgroundColor,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '筛选预约',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryText,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: AppTheme.secondaryText),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  const Text('日期范围', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final picked = await showDialog<DateTime>(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return ModernDatePickerDialog(
+                                  initialDate: tempStartDate ?? DateTime.now(),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                  title: '选择开始日期',
+                                );
+                              },
+                            );
+                            if (picked != null) {
+                              setModalState(() {
+                                tempStartDate = picked;
+                              });
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppTheme.dividerColor),
+                              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                            ),
+                            child: Text(
+                              tempStartDate != null
+                                  ? DateFormat('yyyy-MM-dd').format(tempStartDate!)
+                                  : '开始日期',
+                              style: const TextStyle(color: AppTheme.primaryText),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8.0),
+                        child: Text('至'),
+                      ),
+                      Expanded(
+                        child: InkWell(
+                          onTap: () async {
+                            final picked = await showDialog<DateTime>(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return ModernDatePickerDialog(
+                                  initialDate: tempEndDate ?? DateTime.now(),
+                                  firstDate: tempStartDate ?? DateTime(2020),
+                                  lastDate: DateTime(2030),
+                                  title: '选择结束日期',
+                                );
+                              },
+                            );
+                            if (picked != null) {
+                              setModalState(() {
+                                tempEndDate = picked;
+                              });
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppTheme.dividerColor),
+                              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                            ),
+                            child: Text(
+                              tempEndDate != null
+                                  ? DateFormat('yyyy-MM-dd').format(tempEndDate!)
+                                  : '结束日期',
+                              style: const TextStyle(color: AppTheme.primaryText),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  const Text('预约状态', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: ['全部', '已预约', '已完成', '已取消', '未到诊'].map((status) {
+                      return ChoiceChip(
+                        label: Text(status),
+                        selected: tempFilterStatus == status,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setModalState(() {
+                              tempFilterStatus = status;
+                            });
+                          }
+                        },
+                        selectedColor: AppTheme.primaryColor,
+                        labelStyle: TextStyle(
+                          color: tempFilterStatus == status ? Colors.white : AppTheme.primaryText,
+                        ),
+                        backgroundColor: AppTheme.cardBackground,
+                      );
+                    }).toList(),
+                  ),
+                  const Spacer(),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setModalState(() {
+                              tempStartDate = null;
+                              tempEndDate = null;
+                              tempFilterStatus = '全部';
+                            });
+                          },
+                          child: const Text('重置'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppTheme.primaryText,
+                            side: const BorderSide(color: AppTheme.dividerColor),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _startDate = tempStartDate;
+                              _endDate = tempEndDate;
+                              _filterStatus = tempFilterStatus;
+                            });
+                            Navigator.pop(context);
+                          },
+                          child: const Text('应用筛选'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  /// 获取预约关联患者的医生字段，用于权限检查
+  Future<String?> _getAppointmentPatientDoctor(Appointment appointment) async {
+    try {
+      if (appointment.patientId == null) return null;
+      
+      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
+      final patient = await patientProvider.getPatientById(appointment.patientId);
+      
+      return patient?.doctor;
+    } catch (e) {
+      print('获取预约患者医生信息失败: $e');
+      return null;
     }
   }
 }

@@ -7,6 +7,7 @@ import 'dart:io';
 import '../theme/app_theme.dart';
 import '../providers/database_provider.dart';
 import '../providers/settings_provider.dart';
+import 'success_toast.dart';
 
 class DataSyncDialog extends StatefulWidget {
   const DataSyncDialog({Key? key}) : super(key: key);
@@ -79,12 +80,8 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
       await dbProvider.backupDatabase();
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('数据库备份成功'),
-          backgroundColor: AppTheme.successColor,
-        ),
-      );
+      // 使用公用成功提示组件
+      SuccessToastManager.show(context, message: '数据库备份成功');
     } catch (e) {
       setState(() {
         _errorMessage = '备份失败: $e';
@@ -152,12 +149,8 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
           await dbProvider.restoreDatabase(filePath);
 
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('数据库已成功从备份文件恢复'),
-              backgroundColor: AppTheme.successColor,
-            ),
-          );
+          // 使用公用成功提示组件
+          SuccessToastManager.show(context, message: '数据库已成功从备份文件恢复');
         } catch (e) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(

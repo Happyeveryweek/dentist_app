@@ -19,9 +19,35 @@ class AppState extends ChangeNotifier {
     if (navigatorKey.currentContext != null) {
       ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
         SnackBar(
-          content: Text(message),
-          backgroundColor: isError ? Colors.red : Colors.green,
-          duration: Duration(seconds: isError ? 5 : 3),
+          content: Row(
+            children: [
+              Icon(
+                isError ? Icons.error_outline : Icons.check_circle_outline,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: isError ? Colors.red.shade500 : Colors.green.shade600,
+          duration: Duration(seconds: isError ? 4 : 2),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: const EdgeInsets.all(16),
+          elevation: 2,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         ),
       );
     }
@@ -82,5 +108,35 @@ class AppState extends ChangeNotifier {
       _activePageIndex = value;
       notifyListeners();
     }
+  }
+
+  // MySQL连接状态管理
+  bool _isMySQLConnected = false;
+  bool get isMySQLConnected => _isMySQLConnected;
+  
+  // 受影响的MySQL模块列表
+  List<String> _affectedMySQLModules = [];
+  List<String> get affectedMySQLModules => _affectedMySQLModules;
+
+  // 模块名称映射（英文 -> 中文）
+  static const Map<String, String> _moduleNameMap = {
+    'financial': '财务管理',
+    'materials': '材料管理',
+    'purchase': '采购管理',
+  };
+
+  // 获取中文模块名称列表
+  List<String> getAffectedModulesInChinese() {
+    return _affectedMySQLModules
+        .map((module) => _moduleNameMap[module] ?? module)
+        .toList();
+  }
+
+  // 设置MySQL连接状态
+  void setMySQLConnectionStatus(bool isConnected, {List<String>? affectedModules}) {
+    _isMySQLConnected = isConnected;
+    _affectedMySQLModules = affectedModules ?? [];
+    notifyListeners();
+    print('AppState: MySQL连接状态已更新 - 已连接: $_isMySQLConnected, 受影响模块: $_affectedMySQLModules');
   }
 }

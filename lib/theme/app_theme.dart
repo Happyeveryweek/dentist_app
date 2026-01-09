@@ -156,7 +156,7 @@ class AppTheme {
       elevation: 0,
       centerTitle: true,
     ),
-    tabBarTheme: const TabBarTheme(
+    tabBarTheme: const TabBarThemeData(
       labelColor: accentColor,
       unselectedLabelColor: secondaryText,
       indicatorColor: accentColor,
@@ -193,7 +193,7 @@ class AppTheme {
         borderSide: const BorderSide(color: primaryColor),
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: cardBackground,
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -220,7 +220,7 @@ class AppTheme {
       elevation: 0,
       centerTitle: true,
     ),
-    tabBarTheme: const TabBarTheme(
+    tabBarTheme: const TabBarThemeData(
       labelColor: primaryColor,
       unselectedLabelColor: darkSecondaryText,
       indicatorColor: primaryColor,
@@ -266,7 +266,7 @@ class AppTheme {
         borderSide: const BorderSide(color: primaryColor),
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: darkCardBackground,
       elevation: 0,
       shape: RoundedRectangleBorder(

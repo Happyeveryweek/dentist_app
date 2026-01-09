@@ -4,6 +4,11 @@ import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart'; // Added for kDebugMode
+import 'schemas/table_schema.dart';
+import 'schemas/mysql_schema.dart';
+import 'schemas/sqlite_schema.dart';
+import '../utils/datetime_formatter.dart';
 
 // 数据库助手类
 class DatabaseHelper {
@@ -64,10 +69,53 @@ class DatabaseHelper {
     print('打开数据库: $dbPath');
     return await openDatabase(
       dbPath,
-      version: 1,
+      version: 2,
       onCreate: _createDb,
       onOpen: _onOpen,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  // 数据库升级
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      print('数据库从版本1升级到版本2');
+      await _upgradeUsersTable(db);
+      await _upgradePatientsTable(db);
+    }
+  }
+
+  Future<void> _upgradeUsersTable(Database db) async {
+    try {
+      final result = await db.rawQuery("PRAGMA table_info(users)");
+      final columns = result.map((e) => e['name'] as String).toList();
+      
+      if (!columns.contains('updated_at')) {
+        await db.execute('ALTER TABLE users ADD COLUMN updated_at TEXT');
+        print('users表添加updated_at列');
+      }
+      
+      if (!columns.contains('avatar')) {
+        await db.execute("ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT 'avatar_1'");
+        print('users表添加avatar列');
+      }
+    } catch (e) {
+      print('升级users表失败: $e');
+    }
+  }
+
+  Future<void> _upgradePatientsTable(Database db) async {
+    try {
+      final result = await db.rawQuery("PRAGMA table_info(patients)");
+      final columns = result.map((e) => e['name'] as String).toList();
+      
+      if (!columns.contains('name_initials')) {
+        await db.execute('ALTER TABLE patients ADD COLUMN name_initials VARCHAR(200)');
+        print('patients表添加name_initials列');
+      }
+    } catch (e) {
+      print('升级patients表失败: $e');
+    }
   }
 
   // 数据库打开回调
@@ -103,57 +151,106 @@ class DatabaseHelper {
   // 创建数据库表
   Future<void> _createDb(Database db, int version) async {
     try {
-      // 创建患者表 - 确保与数据库结构一致
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS patients (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          medical_record_number INTEGER,
-          name TEXT NOT NULL,
-          age INTEGER NOT NULL,
-          gender TEXT NOT NULL,
-          phone TEXT NOT NULL,
-          address TEXT,
-          identification_number TEXT,
-          doctor TEXT,
-          first_visit_date TEXT NOT NULL,
-          dental_condition TEXT,
-          treatment_items TEXT,
-          total_cost REAL DEFAULT 0.0,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL
-        )
-      ''');
+      // 使用SQLite表结构创建所有表
+      final tableNames = [
+        'patients',
+        'appointments', 
+        'financial_records',
+        'financial_items',
+        'materials',
+        'purchase_records',
+        'purchase_items',
+        'patient_materials',
+        'material_images',
+        'users',
+        'patient_medical_records',
+        'medical_record_items',
+        'medical_record_templates',
+      ];
 
-      // 创建预约表 - 确保与models.py完全一致
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS appointments (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          patient_id INTEGER NOT NULL,
-          appointment_date TEXT NOT NULL,
-          status TEXT NOT NULL,
-          treatment_type TEXT,
-          notes TEXT,
-          cost REAL DEFAULT 0.0,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE
-        )
-      ''');
-
-      // 创建复诊记录表 - 确保与models.py完全一致
-      await db.execute('''
-        CREATE TABLE IF NOT EXISTS follow_up_visits (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          patient_id INTEGER NOT NULL,
-          follow_up_date TEXT NOT NULL,
-          notes TEXT,
-          created_at TEXT NOT NULL,
-          updated_at TEXT NOT NULL,
-          FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE
-        )
-      ''');
+      for (final tableName in tableNames) {
+        final schema = TableSchemaFactory.getSchema(tableName, DatabaseType.sqlite);
+        
+        // 创建表
+        await db.execute(schema.createTableSql);
+        
+        // 创建索引
+        for (final indexSql in schema.indexDefinitions) {
+          await db.execute(indexSql);
+        }
+        
+        print('成功创建表: ${schema.tableName}');
+      }
+      
+      // 创建默认管理员用户
+      await _createDefaultUser(db);
+      
     } catch (e) {
       print('创建表错误: $e');
+    }
+  }
+  
+  // 创建默认用户
+  Future<void> _createDefaultUser(Database db) async {
+    try {
+      // 检查是否已存在用户
+      final existingUsers = await db.query('users', limit: 1);
+      
+      if (existingUsers.isEmpty) {
+        // 创建默认管理员用户
+        final now = DateTime.now();
+        final defaultUser = {
+          'username': 'admin',
+          'email': 'admin@dental.com',
+          'password': '123456', // 简单密码，生产环境应该使用加密
+          'role': 'admin',
+          'doctor': '系统管理员',
+          'avatar': 'avatar_1',
+          'module_permissions': jsonEncode({
+            'patients': true,
+            'appointments': true,
+            'financial': true,
+            'materials': true,
+            'purchase': true,
+            'reports': true,
+            'settings': true,
+          }),
+          'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(now),
+          'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(now),
+        };
+        
+        await db.insert('users', defaultUser);
+        print('✅ 已创建默认管理员用户: admin/123456');
+        
+        // 可选：创建一个普通员工用户作为示例
+        final staffUser = {
+          'username': 'staff',
+          'email': 'staff@dental.com',
+          'password': '123456',
+          'role': 'staff',
+          'doctor': '普通员工',
+          'avatar': 'avatar_2',
+          'module_permissions': jsonEncode({
+            'patients': true,
+            'appointments': true,
+            'financial': false,
+            'materials': true,
+            'purchase': false,
+            'reports': false,
+            'settings': false,
+          }),
+          'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(now),
+          'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(now),
+        };
+        
+        await db.insert('users', staffUser);
+        print('✅ 已创建默认员工用户: staff/123456');
+        
+      } else {
+        print('ℹ️ 用户表已存在数据，跳过创建默认用户');
+      }
+    } catch (e) {
+      print('❌ 创建默认用户失败: $e');
     }
   }
 
@@ -193,6 +290,8 @@ class User {
   final String email;
   final String password;
   final String role;
+  final String? doctor;
+  final String? avatar;
   final DateTime createdAt;
 
   User({
@@ -201,28 +300,44 @@ class User {
     required this.email,
     required this.password,
     this.role = 'staff',
+    this.doctor,
+    this.avatar = 'avatar_1',
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
+    final DateFormat dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
     return {
       'id': id,
       'username': username,
       'email': email,
       'password': password,
       'role': role,
-      'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(createdAt),
+      'doctor': doctor,
+      'avatar': avatar,
+      'created_at': dateFormat.format(createdAt),
     };
   }
 
   factory User.fromMap(Map<String, dynamic> map) {
+    DateTime parseCreatedAt(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is DateTime) return value;
+      if (value is String) {
+        return DateTimeFormatter.fromDbString(value);
+      }
+      return DateTime.now();
+    }
+
     return User(
       id: map['id'],
       username: map['username'],
       email: map['email'],
       password: map['password'],
       role: map['role'],
-      createdAt: DateTime.parse(map['created_at']),
+      doctor: map['doctor'],
+      avatar: map['avatar'],
+      createdAt: parseCreatedAt(map['created_at']),
     );
   }
 }
@@ -272,7 +387,10 @@ class Patient {
        updatedAt = updatedAt ?? DateTime.now();
 
   factory Patient.fromMap(Map<String, dynamic> map) {
-    print('Patient.fromMap 调用，原始数据: $map');
+    // 减少日志输出，只在调试模式下显示
+    // if (kDebugMode) {
+    //   print('Patient.fromMap 调用，原始数据: $map');
+    // }
 
     // 处理字符串字段，确保Blob类型正确转换为String
     String safeStringFromField(dynamic field) {
@@ -283,7 +401,9 @@ class Patient {
         try {
           return utf8.decode(field is Uint8List ? field : (field as dynamic));
         } catch (e) {
-          print('转换Blob为字符串失败: $e');
+          if (kDebugMode) {
+            print('转换Blob为字符串失败: $e');
+          }
           return '';
         }
       }
@@ -291,18 +411,21 @@ class Patient {
       return field.toString();
     }
 
-    // 处理日期字段
+    // 处理日期字段 - 使用统一格式
     DateTime dateFromField(dynamic field) {
       if (field == null) return DateTime.now();
       if (field is DateTime) return field;
 
       try {
         if (field is String) {
-          return DateTime.parse(field);
+          // 只使用统一的标准格式 YYYY-MM-DD HH:MM:SS
+          return DateTimeFormatter.fromDbString(field);
         }
         return DateTime.now();
       } catch (e) {
-        print('日期解析错误: $e，使用当前日期');
+        if (kDebugMode) {
+          print('日期解析错误: $e，使用当前日期');
+        }
         return DateTime.now();
       }
     }
@@ -327,7 +450,9 @@ class Patient {
       try {
         return int.parse(value.toString());
       } catch (e) {
-        print('转换int字段 $key 错误: $e，使用默认值 $defaultValue');
+        if (kDebugMode) {
+          print('转换int字段 $key 错误: $e，使用默认值 $defaultValue');
+        }
         return defaultValue;
       }
     }
@@ -346,20 +471,24 @@ class Patient {
       try {
         return double.parse(value.toString());
       } catch (e) {
-        print('转换double字段 $key 错误: $e，使用默认值 $defaultValue');
+        if (kDebugMode) {
+          print('转换double字段 $key 错误: $e，使用默认值 $defaultValue');
+        }
         return defaultValue;
       }
     }
 
-    // 检查主要字段是否有效
-    print('检查必要字段:');
-    print('  id: ${map['id']}');
-    print('  name: ${map['name']}');
-    print('  age: ${map['age']}');
-    print('  gender: ${map['gender']}');
-    print('  phone: ${map['phone']}');
-    print('  doctor: ${map['doctor']}');
-    print('  address: ${map['address']}');
+    // 检查主要字段是否有效 - 减少日志输出
+    // if (kDebugMode) {
+    //   print('检查必要字段:');
+    //   print('  id: ${map['id']}');
+    //   print('  name: ${map['name']}');
+    //   print('  age: ${map['age']}');
+    //   print('  gender: ${map['age']}');
+    //   print('  phone: ${map['phone']}');
+    //   print('  doctor: ${map['doctor']}');
+    //   print('  address: ${map['address']}');
+    // }
 
     // 特殊处理年龄字段 - 在某些情况下，年龄字段可能存储在gender或者其他字段中
     int ageValue = 0;
@@ -368,7 +497,9 @@ class Patient {
         // 尝试直接从age字段获取
         ageValue = getIntField(map, 'age');
       } catch (e) {
-        print('解析年龄字段错误: $e');
+        if (kDebugMode) {
+          print('解析年龄字段错误: $e');
+        }
       }
     }
 
@@ -378,9 +509,13 @@ class Patient {
       if (genderValue is int || int.tryParse(genderValue.toString()) != null) {
         try {
           ageValue = getIntField(map, 'gender');
-          print('从gender字段中提取年龄值: $ageValue');
+          if (kDebugMode) {
+            print('从gender字段中提取年龄值: $ageValue');
+          }
         } catch (e) {
-          print('从gender提取年龄错误: $e');
+          if (kDebugMode) {
+            print('从gender提取年龄错误: $e');
+          }
         }
       }
     }
@@ -404,14 +539,20 @@ class Patient {
       } else if (map.containsKey('phone') && map['phone'] != null) {
         // 如果gender不是有效的性别值，检查phone字段是否包含性别信息
         var phoneValue = map['phone'].toString().toLowerCase();
-        if (phoneValue == '男' || phoneValue == 'male' || phoneValue == 'm') {
+        if (phoneValue == '男' ||
+            phoneValue == 'male' ||
+            phoneValue == 'm') {
           genderValue = '男';
-          print('从phone字段中提取性别: 男');
+          if (kDebugMode) {
+            print('从phone字段中提取性别: 男');
+          }
         } else if (phoneValue == '女' ||
             phoneValue == 'female' ||
             phoneValue == 'f') {
           genderValue = '女';
-          print('从phone字段中提取性别: 女');
+          if (kDebugMode) {
+            print('从phone字段中提取性别: 女');
+          }
         }
       }
     }
@@ -429,7 +570,9 @@ class Patient {
         // phone字段存储的是性别信息，尝试从其他字段获取电话
         if (map.containsKey('doctor') && map['doctor'] != null) {
           phoneValue = map['doctor'].toString();
-          print('从doctor字段中提取电话: $phoneValue');
+          if (kDebugMode) {
+            print('从doctor字段中提取电话: $phoneValue');
+          }
         }
       } else {
         // 正常处理电话
@@ -443,7 +586,9 @@ class Patient {
               phoneValue = phones.join(',');
             }
           } catch (e) {
-            print('解析电话JSON错误: $e');
+            if (kDebugMode) {
+              print('解析电话JSON错误: $e');
+            }
           }
         }
       }
@@ -463,7 +608,9 @@ class Patient {
         // doctor字段可能存储了电话号码，电话字段为空，则交换它们
         phoneValue = doctorValue;
         doctorValue = '';
-        print('doctor字段可能存储了电话号码，已调整');
+        if (kDebugMode) {
+          print('doctor字段可能存储了电话号码，已调整');
+        }
       }
     }
 
@@ -504,9 +651,13 @@ class Patient {
           // 确保是有效的JSON格式，但不要重新编码，直接使用原始字符串
           // 避免重复编码导致格式问题
           phoneValue = phone;
-          print('Patient.toMap: 检测到有效的JSON格式电话号码，直接使用');
+          if (kDebugMode) {
+            print('Patient.toMap: 检测到有效的JSON格式电话号码，直接使用');
+          }
         } catch (e) {
-          print('Patient.toMap: JSON格式无效，需要修复: $e');
+          if (kDebugMode) {
+            print('Patient.toMap: JSON格式无效，需要修复: $e');
+          }
 
           // 特殊处理双重编码情况
           if (phone.contains(r'\"') && phone.contains(r'[\"')) {
@@ -533,9 +684,13 @@ class Patient {
 
               // 生成正确格式的JSON
               phoneValue = jsonEncode(cleanPhones);
-              print('Patient.toMap: 修复了双重编码的电话号码: $phoneValue');
+              if (kDebugMode) {
+                print('Patient.toMap: 修复了双重编码的电话号码: $phoneValue');
+              }
             } catch (e) {
-              print('Patient.toMap: 尝试修复双重编码失败: $e');
+              if (kDebugMode) {
+                print('Patient.toMap: 尝试修复双重编码失败: $e');
+              }
 
               // 解析失败，尝试使用正则表达式提取电话号码
               final RegExp phonePattern = RegExp(r'\d+');
@@ -552,7 +707,9 @@ class Patient {
 
               if (extractedPhones.isNotEmpty) {
                 phoneValue = jsonEncode(extractedPhones);
-                print('Patient.toMap: 通过正则表达式提取的电话号码: $phoneValue');
+                if (kDebugMode) {
+                  print('Patient.toMap: 通过正则表达式提取的电话号码: $phoneValue');
+                }
               } else {
                 // 无法提取，使用原始值
                 phoneValue = phone;
@@ -571,10 +728,14 @@ class Patient {
               // 尝试修复后再解析
               final List<dynamic> fixedPhones = jsonDecode(cleanedPhone);
               phoneValue = jsonEncode(fixedPhones);
-              print('Patient.toMap: 修复后的JSON格式: $phoneValue');
+              if (kDebugMode) {
+                print('Patient.toMap: 修复后的JSON格式: $phoneValue');
+              }
             } catch (fixError) {
               // 如果仍然失败，回退到简单处理
-              print('Patient.toMap: JSON修复失败: $fixError，使用简单分隔');
+              if (kDebugMode) {
+                print('Patient.toMap: JSON修复失败: $fixError，使用简单分隔');
+              }
               // 去除JSON符号，分割后重新编码
               String content = phone
                   .replaceAll('[', '')
@@ -588,7 +749,9 @@ class Patient {
                       .where((e) => e.isNotEmpty)
                       .toList();
               phoneValue = jsonEncode(phoneList);
-              print('Patient.toMap: 手动分割重组后的电话号码: $phoneValue');
+              if (kDebugMode) {
+                print('Patient.toMap: 手动分割重组后的电话号码: $phoneValue');
+              }
             }
           }
         }
@@ -596,15 +759,21 @@ class Patient {
         // 逗号分隔的多个电话号码
         final phones = phone.split(',').map((p) => p.trim()).toList();
         phoneValue = jsonEncode(phones);
-        print('Patient.toMap: 多个电话号码已编码为JSON: $phoneValue');
+        if (kDebugMode) {
+          print('Patient.toMap: 多个电话号码已编码为JSON: $phoneValue');
+        }
       } else {
         // 单个电话号码 - 不需要JSON编码
-        print('Patient.toMap: 单个电话号码: $phone');
+        if (kDebugMode) {
+          print('Patient.toMap: 单个电话号码: $phone');
+        }
       }
 
       // 最后检查电话数据长度以防止DB错误
       if (phoneValue.length > 255) {
-        print('电话号码数据过长(${phoneValue.length}字符)，截断为255字符');
+        if (kDebugMode) {
+          print('电话号码数据过长(${phoneValue.length}字符)，截断为255字符');
+        }
         // 简单截断或者只保留第一个电话号码
         try {
           final List<dynamic> phones = jsonDecode(phoneValue);
@@ -616,29 +785,35 @@ class Patient {
         } catch (e) {
           phoneValue = phoneValue.substring(0, 254);
         }
-        print('截断后的电话号码: $phoneValue');
+        if (kDebugMode) {
+          print('截断后的电话号码: $phoneValue');
+        }
       }
     } catch (e) {
-      print('处理电话号码错误: $e');
+      if (kDebugMode) {
+        print('处理电话号码错误: $e');
+      }
     }
 
-    // 创建仅包含SQLite数据库支持的字段
+    // 创建包含所有字段的Map
     return {
       'id': id,
       'medical_record_number': medicalRecordNumber,
       'name': name,
+      'name_pinyin': namePinyin,
       'age': age,
       'gender': gender,
       'phone': phoneValue,
       'address': address,
+      'address_pinyin': addressPinyin,
       'identification_number': identificationNumber,
       'doctor': doctor,
-      'first_visit_date': firstVisitDate.toIso8601String(),
+      'first_visit_date': DateFormat('yyyy-MM-dd HH:mm:ss').format(firstVisitDate),
       'dental_condition': dentalCondition,
       'treatment_items': treatmentItems,
       'total_cost': totalCost,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(createdAt),
+      'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(updatedAt),
     };
   }
 
@@ -692,13 +867,15 @@ class Patient {
 
   // 添加调试方法，输出电话号码格式信息
   void debugPhoneFormat() {
-    print('Patient.debugPhoneFormat: $phone (${phone.runtimeType})');
-    if (phone.startsWith('[') && phone.endsWith(']')) {
-      print('Patient.debugPhoneFormat: JSON格式');
-    } else if (phone.contains(',')) {
-      print('Patient.debugPhoneFormat: 逗号分隔格式');
-    } else {
-      print('Patient.debugPhoneFormat: 单个电话号码格式');
+    if (kDebugMode) {
+      print('Patient.debugPhoneFormat: $phone (${phone.runtimeType})');
+      if (phone.startsWith('[') && phone.endsWith(']')) {
+        print('Patient.debugPhoneFormat: JSON格式');
+      } else if (phone.contains(',')) {
+        print('Patient.debugPhoneFormat: 逗号分隔格式');
+      } else {
+        print('Patient.debugPhoneFormat: 单个电话号码格式');
+      }
     }
   }
 }
@@ -722,7 +899,7 @@ class Appointment {
     this.id,
     required this.patientId,
     required this.appointmentDate,
-    this.status = '已预约',
+    this.status = 'scheduled',
     this.treatmentType,
     this.notes,
     this.cost = 0.0,
@@ -733,17 +910,13 @@ class Appointment {
        updatedAt = updatedAt ?? DateTime.now();
 
   factory Appointment.fromMap(Map<String, dynamic> map) {
-    // 通用的日期解析辅助函数
+    // 通用的日期解析辅助函数 - 使用统一格式
     DateTime parseDateTime(dynamic value) {
       if (value == null) return DateTime.now();
       if (value is DateTime) return value;
       if (value is String) {
-        try {
-          return DateTime.parse(value);
-        } catch (e) {
-          print('日期解析错误: $e，值: $value');
-          return DateTime.now();
-        }
+        // 只使用统一的标准格式 YYYY-MM-DD HH:MM:SS
+        return DateTimeFormatter.fromDbString(value);
       }
       print('不支持的日期类型: ${value.runtimeType}，值: $value');
       return DateTime.now();
@@ -767,16 +940,17 @@ class Appointment {
   }
 
   Map<String, dynamic> toMap() {
+    final DateFormat dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
     return {
       'id': id,
       'patient_id': patientId,
-      'appointment_date': appointmentDate.toIso8601String(),
+      'appointment_date': dateFormat.format(appointmentDate),
       'status': status,
       'treatment_type': treatmentType,
       'notes': notes,
       'cost': cost,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'created_at': dateFormat.format(createdAt),
+      'updated_at': dateFormat.format(updatedAt),
     };
   }
 
@@ -808,58 +982,4 @@ class Appointment {
   }
 }
 
-// 复诊记录模型
-class FollowUpVisit {
-  int? id;
-  int patientId;
-  DateTime followUpDate;
-  String? notes;
-  DateTime createdAt;
-  DateTime updatedAt;
 
-  // 非数据库字段，用于UI显示
-  String? patientName;
-
-  FollowUpVisit({
-    this.id,
-    required this.patientId,
-    required this.followUpDate,
-    this.notes,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    this.patientName,
-  }) : createdAt = createdAt ?? DateTime.now(),
-       updatedAt = updatedAt ?? DateTime.now();
-
-  factory FollowUpVisit.fromMap(Map<String, dynamic> map) {
-    return FollowUpVisit(
-      id: map['id'],
-      patientId: map['patient_id'],
-      followUpDate:
-          map['follow_up_date'] != null
-              ? DateTime.parse(map['follow_up_date'])
-              : DateTime.now(),
-      notes: map['notes'],
-      createdAt:
-          map['created_at'] != null
-              ? DateTime.parse(map['created_at'])
-              : DateTime.now(),
-      updatedAt:
-          map['updated_at'] != null
-              ? DateTime.parse(map['updated_at'])
-              : DateTime.now(),
-      patientName: map['patient_name'],
-    );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'patient_id': patientId,
-      'follow_up_date': followUpDate.toIso8601String(),
-      'notes': notes,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
-    };
-  }
-}

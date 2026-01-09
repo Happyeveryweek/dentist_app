@@ -1,19 +1,29 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-import 'package:dentist_app/theme/app_theme.dart';
-import 'package:dentist_app/providers/database_provider.dart';
-import 'package:dentist_app/providers/settings_provider.dart';
-import 'package:dentist_app/providers/app_state.dart';
-import 'package:dentist_app/screens/dashboard_screen.dart';
-import 'package:dentist_app/screens/patients_screen.dart';
-import 'package:dentist_app/screens/appointments_screen.dart';
-import 'package:dentist_app/screens/settings_screen.dart';
-// import 'package:dentist_app/screens/splash_screen.dart';
-// import 'package:dentist_app/screens/error_screen.dart';
+import 'theme/app_theme.dart';
+import 'providers/database_provider.dart';
+import 'providers/settings_provider.dart';
+import 'providers/app_state.dart';
+import 'providers/financial_provider.dart';
+import 'providers/material_provider.dart';
+import 'providers/purchase_provider.dart';
+import 'providers/user_provider.dart';
+import 'providers/patient_provider.dart';
+import 'providers/patient_image_provider.dart';
+import 'providers/medical_record_provider.dart';
+import 'providers/appointments_provider.dart';
+import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/settings_screen.dart';
+import 'models/sync_config.dart';
+import 'utils/notification_helper.dart';
+import 'utils/app_lifecycle_manager.dart';
+import 'utils/connection_manager.dart';
 
 // 临时声明的加载和错误页面
 class SplashScreen extends StatelessWidget {
@@ -59,54 +69,77 @@ class ErrorScreen extends StatelessWidget {
   }
 }
 
-void main() async {
-  // 确保Flutter绑定初始化
-  WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
+// 主应用类，集成增强的生命周期管理
+class MyApp extends StatefulWidget {
+  final DatabaseProvider databaseProvider;
+  final SettingsProvider settingsProvider;
+  final AppState appState;
 
-  // 初始化中文日期格式
-  await initializeDateFormatting('zh_CN', null);
+  const MyApp({
+    Key? key,
+    required this.databaseProvider,
+    required this.settingsProvider,
+    required this.appState,
+  }) : super(key: key);
 
-  // 初始化数据库提供者
-  final databaseProvider = DatabaseProvider();
-  await databaseProvider.initDatabase();
-
-  // 初始化设置提供者
-  final settingsProvider = SettingsProvider();
-  await settingsProvider.init();
-
-  // 创建应用状态
-  final appState = AppState();
-
-  // 运行应用
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: databaseProvider),
-        ChangeNotifierProvider.value(value: settingsProvider),
-        ChangeNotifierProvider.value(value: appState),
-      ],
-      child: MyApp(),
-    ),
-  );
+  @override
+  State<MyApp> createState() => _MyAppState();
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class _MyAppState extends State<MyApp> {
+  bool _connectionManagerStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // 监听数据库提供者的初始化状态
+    widget.databaseProvider.addListener(_onDatabaseProviderChanged);
+    
+    print('🚀 应用启动完成，等待数据库初始化后启动连接管理器');
+  }
+
+  @override
+  void dispose() {
+    widget.databaseProvider.removeListener(_onDatabaseProviderChanged);
+    // 停止连接管理器
+    ConnectionManager.instance.stopMonitoring();
+    super.dispose();
+  }
+
+  /// 监听数据库提供者状态变化
+  void _onDatabaseProviderChanged() {
+    // 只有在数据库初始化完成且连接管理器还未启动时才启动
+    if (widget.databaseProvider.isInitialized && !_connectionManagerStarted) {
+      _connectionManagerStarted = true;
+      
+      print('📊 数据库初始化完成，最终数据库类型: ${widget.databaseProvider.dbType}');
+      
+      // 延迟启动连接管理器，确保数据库类型已经确定
+      Future.delayed(const Duration(milliseconds: 100), () {
+        final finalDbType = widget.databaseProvider.dbType;
+        print('🔧 延迟启动连接管理器，确认数据库类型: $finalDbType');
+        
+        // 根据最终确定的数据库类型启动连接管理器
+        ConnectionManager.instance.startMonitoring(widget.databaseProvider);
+        
+        if (finalDbType == 'mysql') {
+          print('🌐 MySQL模式：连接管理器已启动');
+        } else {
+          print('📱 SQLite模式：连接管理器已启动（无网络监控）');
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
 
-    // 使用refreshCounter作为key，强制重建整个应用
-    return KeyedSubtree(
-      key: ValueKey('app_rebuild_${appState.refreshCounter}'),
-      child: Consumer<SettingsProvider>(
-        builder: (context, settings, _) {
-          return MaterialApp(
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, _) {
+        return AppLifecycleManager(
+          child: MaterialApp(
             navigatorKey: appState.navigatorKey,
             debugShowCheckedModeBanner: false,
             title: '牙科诊所管理系统',
@@ -120,279 +153,208 @@ class MyApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            home: FutureBuilder<void>(
-              // 移除对DatabaseProvider的监听，直接获取引用
-              future:
-                  Provider.of<DatabaseProvider>(
-                    context,
-                    listen: false,
-                  ).initDatabase(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SplashScreen();
-                } else if (snapshot.hasError) {
-                  return ErrorScreen(error: snapshot.error.toString());
-                } else {
-                  return Builder(
-                    builder: (context) {
-                      // 创建一个全局key用于访问首页状态
-                      final GlobalKey<_MainScreenState> mainScreenKey =
-                          GlobalKey<_MainScreenState>();
-
-                      return MainScreen(
-                        key: mainScreenKey,
-                        onDataChanged: () {
-                          // 当数据变更时，强制刷新仪表盘
-                          if (mainScreenKey.currentState != null) {
-                            mainScreenKey.currentState!.refreshDashboard();
-                          }
-                        },
-                      );
-                    },
-                  );
-                }
-              },
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class MainScreen extends StatefulWidget {
-  final int initialIndex;
-  final Function() onDataChanged;
-
-  const MainScreen({
-    Key? key,
-    this.initialIndex = 0,
-    required this.onDataChanged,
-  }) : super(key: key);
-
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen>
-    with SingleTickerProviderStateMixin {
-  late int _selectedIndex;
-  late AnimationController _animationController;
-
-  // 页面实例
-  late List<Widget> _pages;
-
-  // 添加一个标志，用于跟踪数据库是否已变更
-  bool _needsRebuild = false;
-
-  // 保存对DatabaseProvider的引用
-  DatabaseProvider? _dbProvider;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedIndex = widget.initialIndex;
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-
-    // 启动动画控制器，确保初次进入时内容可见
-    _animationController.value = 1.0; // 直接设置为1，跳过动画
-
-    // 初始化页面
-    _initPages();
-
-    // 不再需要检查数据库状态
-    // 让各个页面自行管理自己的刷新
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    // 在这里获取Provider引用，以便在dispose中安全使用
-    if (_dbProvider == null) {
-      _dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      // 不再添加自动监听
-      // _dbProvider?.addListener(_checkDatabaseChanges);
-    }
-  }
-
-  // 检查数据库变更
-  void _checkDatabaseChanges() {
-    if (!mounted) return;
-
-    final dbProvider = _dbProvider;
-    if (dbProvider == null) return;
-
-    // 只在必要时重置刷新标志
-    // 不再处理任何刷新逻辑或重建页面
-    // 让各个页面自己负责它们自己的刷新
-    print('检测到数据库变更标志，但不进行任何刷新操作');
-
-    // 重置所有刷新标志
-    dbProvider.resetDatabaseChanged();
-  }
-
-  // 创建特定索引的页面
-  Widget _createPage(int index) {
-    print('创建新的页面实例：index=$index');
-
-    // 对于仪表盘，创建一个能够调用刷新方法的实例
-    if (index == 0) {
-      // 重新创建仪表盘实例，确保数据刷新
-      return DashboardScreen(key: UniqueKey());
-    }
-
-    // 其他页面正常创建
-    return [
-      const DashboardScreen(key: Key('dashboard')),
-      const PatientsScreen(key: Key('patients')),
-      const AppointmentsScreen(key: Key('appointments')),
-      const SettingsScreen(key: Key('settings')),
-    ][index];
-  }
-
-  // 初始化页面
-  void _initPages() {
-    print('初始化页面实例');
-    _pages = [_createPage(0), _createPage(1), _createPage(2), _createPage(3)];
-  }
-
-  // 仅重建当前页面，而不是所有页面 - 保留但不使用
-  void _rebuildCurrentPage() {
-    print('仅重建当前页面: $_selectedIndex');
-    setState(() {
-      // 只重建当前选中的页面
-      _pages[_selectedIndex] = _createPage(_selectedIndex);
-      _needsRebuild = false;
-    });
-
-    // 播放动画效果，但动画效果更轻微
-    _animationController.reset();
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    // 已移除监听器，无需再此处移除
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  // 底部导航项
-  final List<BottomNavigationBarItem> _navItems = [
-    const BottomNavigationBarItem(
-      icon: Icon(Icons.dashboard_outlined),
-      activeIcon: Icon(Icons.dashboard),
-      label: '仪表盘',
-    ),
-    const BottomNavigationBarItem(
-      icon: Icon(Icons.people_outline),
-      activeIcon: Icon(Icons.people),
-      label: '患者管理',
-    ),
-    const BottomNavigationBarItem(
-      icon: Icon(Icons.calendar_month_outlined),
-      activeIcon: Icon(Icons.calendar_month),
-      label: '预约管理',
-    ),
-    const BottomNavigationBarItem(
-      icon: Icon(Icons.settings_outlined),
-      activeIcon: Icon(Icons.settings),
-      label: '系统设置',
-    ),
-  ];
-
-  // 导航项点击处理
-  void onItemTapped(int index) {
-    // 如果选择的已经是当前页面，则不做任何改变
-    if (_selectedIndex == index) {
-      // 如果点击的是仪表盘，尝试刷新仪表盘数据
-      if (index == 0) {
-        print('点击仪表盘导航项，强制刷新仪表盘数据');
-        _pages[0] = _createPage(0); // 重建仪表盘页面
-        setState(() {}); // 触发UI更新
-      }
-      return;
-    }
-
-    // 如果要切换到仪表盘，确保创建一个新的实例
-    if (index == 0) {
-      _pages[0] = _createPage(0); // 切换到仪表盘前重建仪表盘页面
-    }
-
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    // 播放动画
-    _animationController.reset();
-    _animationController.forward();
-  }
-
-  void refreshDashboard() {
-    if (_selectedIndex == 0) {
-      // 如果当前在仪表盘页面，则刷新
-      if (_animationController.isAnimating == false) {
-        // 通知仪表盘页面刷新数据
-        setState(() {
-          // 强制重建页面
-          _animationController.reset();
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // 检查数据库变更，如果需要重建页面，先重新初始化
-    if (_needsRebuild) {
-      print('数据库已变更，重新初始化页面');
-      _initPages();
-      setState(() {
-        _needsRebuild = false;
-      });
-    }
-
-    // 不再使用Consumer监听数据库变更
-    return Scaffold(
-      body: FadeTransition(
-        opacity: CurvedAnimation(
-          parent: _animationController,
-          curve: Curves.easeIn,
-          reverseCurve: Curves.easeOut,
-        ),
-        child: IndexedStack(index: _selectedIndex, children: _pages),
-      ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          items: _navItems,
-          currentIndex: _selectedIndex,
-          onTap: onItemTapped,
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: AppTheme.primaryColor,
-          unselectedItemColor: AppTheme.secondaryText,
-          backgroundColor: AppTheme.cardBackground,
-          elevation: 8,
-          selectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 12,
+            // 添加命名路由
+            initialRoute: '/',
+            routes: {
+              '/': (context) => const LoginScreen(), // 直接显示登录页面，不等待数据库初始化
+              '/home': (context) => const HomeScreen(),
+              '/login': (context) => const LoginScreen(),
+              '/settings': (context) => const SettingsScreen(),
+            },
+            // 移除home属性，使用initialRoute和routes
           ),
-          unselectedLabelStyle: const TextStyle(fontSize: 11),
-          showUnselectedLabels: true,
-        ),
-      ),
+        );
+      },
     );
   }
+}
+
+void main() async {
+  // 确保Flutter绑定初始化
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // 初始化中文日期格式
+  await initializeDateFormatting('zh_CN', null);
+
+  // 检查并执行自动同步
+  Future<void> _checkAndPerformAutoSync(DatabaseProvider dbProvider, SettingsProvider settingsProvider) async {
+    try {
+      // 检查是否启用自动同步
+      final syncConfig = await SyncConfig.loadSyncConfig();
+      if (!syncConfig.syncEnabled) {
+        print('自动同步已禁用，跳过启动时同步检查');
+        return;
+      }
+
+      // 检查数据源类型
+      if (dbProvider.dbType != 'mysql') {
+        print('当前数据源不是MySQL，跳过启动时同步检查');
+        return;
+      }
+
+      print('检测到MySQL数据源且启用自动同步，检查是否需要执行启动时同步...');
+
+      // 检查是否需要同步
+      if (syncConfig.shouldSync()) {
+        print('需要执行启动时同步，开始同步数据...');
+        
+        // 执行同步
+        final syncResult = await dbProvider.forceDataSync();
+        if (syncResult) {
+          print('启动时自动同步成功完成');
+        } else {
+          print('启动时自动同步失败');
+        }
+      } else {
+        print('距离上次同步时间不足，跳过启动时同步');
+      }
+    } catch (e) {
+      print('检查启动时自动同步时出错: $e');
+    }
+  }
+
+  // 在后台异步初始化数据库和自动同步
+  Future<void> _initializeDatabaseInBackground(DatabaseProvider dbProvider, SettingsProvider settingsProvider) async {
+    try {
+      print('🔄 开始在后台初始化数据库...');
+      await dbProvider.initDatabase();
+      print('✅ 数据库初始化完成');
+      
+      // 数据库初始化完成后，执行自动同步检查
+      await _checkAndPerformAutoSync(dbProvider, settingsProvider);
+    } catch (e) {
+      print('❌ 后台数据库初始化失败: $e');
+      // 不抛出异常，让应用继续运行，错误将在登录界面处理
+    }
+  }
+
+  // 初始化数据库提供者（异步执行，不阻塞UI）
+  final databaseProvider = DatabaseProvider();
+  
+  // 立即初始化设置提供者（不依赖数据库）
+  final settingsProvider = SettingsProvider();
+  await settingsProvider.init();
+
+  // 在后台异步初始化数据库和自动同步
+  unawaited(_initializeDatabaseInBackground(databaseProvider, settingsProvider));
+
+  // 创建应用状态
+  final appState = AppState();
+
+  // 运行应用
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: databaseProvider),
+        ChangeNotifierProvider.value(value: settingsProvider),
+        ChangeNotifierProvider.value(value: appState),
+        // UserProvider must come first since other providers depend on it
+        ChangeNotifierProxyProvider<DatabaseProvider, UserProvider>(
+          create: (_) => UserProvider(),
+          update: (_, dbProvider, userProvider) {
+            userProvider ??= UserProvider();
+            if (dbProvider.isInitialized && !userProvider.initialized) {
+              userProvider.initializeFromDatabase(dbProvider);
+            }
+            return userProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider2<DatabaseProvider, UserProvider, AppointmentsProvider>(
+          create: (_) => AppointmentsProvider(),
+          update: (_, dbProvider, userProvider, appointmentsProvider) {
+            appointmentsProvider ??= AppointmentsProvider();
+            if (dbProvider.isInitialized && !appointmentsProvider.initialized) {
+              appointmentsProvider.initializeFromDatabase(dbProvider);
+            }
+            // 设置用户提供者用于权限控制
+            if (userProvider != null) {
+              appointmentsProvider.setUserProvider(userProvider);
+            }
+            return appointmentsProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider2<DatabaseProvider, UserProvider, FinancialProvider>(
+          create: (_) => FinancialProvider(),
+          update: (_, dbProvider, userProvider, financialProvider) {
+            financialProvider ??= FinancialProvider();
+            if (dbProvider.isInitialized && !financialProvider.initialized) {
+              financialProvider.initializeFromDatabase(dbProvider);
+            }
+            // 设置用户提供者用于权限控制
+            if (userProvider != null) {
+              financialProvider.setUserProvider(userProvider);
+            }
+            return financialProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider2<DatabaseProvider, UserProvider, PatientProvider>(
+          create: (_) => PatientProvider(),
+          update: (_, dbProvider, userProvider, patientProvider) {
+            patientProvider ??= PatientProvider();
+            if (dbProvider.isInitialized && !patientProvider.initialized) {
+              patientProvider.initializeFromDatabase(dbProvider);
+            }
+            // 设置用户提供者用于权限控制
+            if (userProvider != null) {
+              patientProvider.setUserProvider(userProvider);
+            }
+            return patientProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider<DatabaseProvider, MaterialProvider>(
+          create: (_) => MaterialProvider(),
+          update: (_, dbProvider, materialProvider) {
+            materialProvider ??= MaterialProvider();
+            if (dbProvider.isInitialized && !materialProvider.initialized) {
+              materialProvider.initializeFromDatabase(dbProvider);
+            }
+            return materialProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider2<DatabaseProvider, UserProvider, PurchaseProvider>(
+          create: (_) => PurchaseProvider(),
+          update: (_, dbProvider, userProvider, purchaseProvider) {
+            purchaseProvider ??= PurchaseProvider();
+            if (dbProvider.isInitialized && !purchaseProvider.initialized) {
+              purchaseProvider.initializeFromDatabase(dbProvider);
+            }
+            // 设置用户提供者用于权限控制
+            if (userProvider != null && userProvider.initialized) {
+              purchaseProvider.setUserProvider(userProvider);
+            }
+            return purchaseProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider<DatabaseProvider, PatientImageProvider>(
+          create: (_) => PatientImageProvider(databaseProvider),
+          update: (_, dbProvider, imageProvider) {
+            imageProvider ??= PatientImageProvider(dbProvider);
+            if (dbProvider.isInitialized && !imageProvider.initialized) {
+              imageProvider.initializeFromDatabase(dbProvider);
+            }
+            return imageProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider<DatabaseProvider, MedicalRecordProvider>(
+          create: (_) => MedicalRecordProvider(),
+          update: (_, dbProvider, medicalRecordProvider) {
+            medicalRecordProvider ??= MedicalRecordProvider();
+            if (dbProvider.isInitialized && !medicalRecordProvider.initialized) {
+              medicalRecordProvider.initializeFromDatabase(dbProvider);
+            }
+            return medicalRecordProvider;
+          },
+        ),
+      ],
+      child: MyApp(
+        databaseProvider: databaseProvider,
+        settingsProvider: settingsProvider,
+        appState: appState,
+      ),
+    ),
+  );
 }

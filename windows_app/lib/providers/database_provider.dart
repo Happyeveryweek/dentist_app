@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:convert'; // 添加这个导入以获取jsonEncode
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
@@ -16,44 +16,55 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 import 'package:file_picker/file_picker.dart';
+import '../utils/datetime_formatter.dart';
 
-import '../models/patient.dart';
-import '../models/appointment.dart';
-import '../models/follow_up.dart';
+
+
+// 移除随访记录相关导入
 import '../models/user.dart';
-import '../providers/settings_provider.dart';
+
+import '../models/material_image.dart';
+// 移除对SettingsProvider的引用，避免循环依赖
 import '../utils/pinyin_util.dart';
 import 'package:dentist_app_windows/models/backup_log.dart';
+import 'patient_provider.dart';
+import '../utils/app_paths.dart';
+import '../models/database_structure_log.dart';
+import '../models/schemas/table_schema.dart';
+import '../models/schemas/mysql_schema.dart';
+import '../models/schemas/sqlite_schema.dart';
+
 
 class DatabaseProvider extends ChangeNotifier {
   static const String DB_NAME = 'dentist_clinic.db';
-  static const int DB_VERSION = 1;
+  static const int DB_VERSION = 3;
 
   // 数据库实例
   Database? _database;
   MySqlConnection? _mysqlConnection;
 
-  // MySQL连接参数
-  String _mysqlHost = 'localhost';
-  String _mysqlPort = '3306';
-  String _mysqlDatabase = 'dentist_db';
-  String _mysqlUsername = 'root';
-  String _mysqlPassword = '';
+  // MySQL连接参数 - 已移动到SettingsProvider
+  // 请使用SettingsProvider中的MySQL设置
 
   // 数据源类型
   String _dataSourceType = 'sqlite';
 
   // 刷新标志
-  bool _patientsNeedRefresh = false;
-  bool _appointmentsNeedRefresh = false;
   bool _dashboardNeedRefresh = false;
-  bool _followUpsNeedRefresh = false;
 
   // 数据库路径
   String? _sqliteDbPath;
   String? _customSqliteDbPath;
+  String? _databasePath; // 添加缺失的字段
   Map<String, dynamic>? _mysqlSettings; // MySQL连接设置
   Map<String, dynamic>? _lastMySQLSettings; // 用于临时存储MySQL设置
+  
+  // MySQL连接参数 - 用于内部操作
+  String _mysqlHost = 'localhost';
+  String _mysqlPort = '3306';
+  String _mysqlDatabase = 'dentist_db';
+  String _mysqlUsername = 'root';
+  String _mysqlPassword = '';
 
   // Getters
   Database? get database => _database;
@@ -61,10 +72,7 @@ class DatabaseProvider extends ChangeNotifier {
   MySqlConnection? get mysqlConnection => _mysqlConnection;
   String get dataSourceType => _dataSourceType;
 
-  bool get patientsNeedRefresh => _patientsNeedRefresh;
-  bool get appointmentsNeedRefresh => _appointmentsNeedRefresh;
   bool get dashboardNeedRefresh => _dashboardNeedRefresh;
-  bool get followUpsNeedRefresh => _followUpsNeedRefresh;
 
   // 当前用户信息
   User? _currentUser;
@@ -107,9 +115,16 @@ class DatabaseProvider extends ChangeNotifier {
           dbPath = customPath;
           _customSqliteDbPath = customPath;
         } else {
-          final dbDir = await getDatabasesPath();
-          dbPath = path.join(dbDir, DB_NAME);
-          print('默认路径: $dbPath');
+          try {
+            // 使用应用数据目录
+            dbPath = AppPaths.databasePath;
+            print('使用应用数据目录: $dbPath');
+          } catch (e) {
+            print('AppPaths未初始化，使用默认路径: $e');
+            final dbDir = await getDatabasesPath();
+            dbPath = path.join(dbDir, DB_NAME);
+            print('默认路径: $dbPath');
+          }
         }
 
         print('使用自定义SQLite数据库路径: $dbPath');
@@ -122,40 +137,51 @@ class DatabaseProvider extends ChangeNotifier {
         );
         print('SQLite数据库初始化完成，路径: ${_database!.path}');
       } else if (_dataSourceType == 'mysql') {
+        // 检查是否已经有有效的MySQL连接
         if (_mysqlConnection != null) {
-          await _mysqlConnection!.close();
-          _mysqlConnection = null;
+          try {
+            // 测试现有连接是否仍然有效
+            await _mysqlConnection!.query('SELECT 1');
+            print('现有MySQL连接仍然有效，无需重新初始化');
+            // 数据库初始化完成，表结构检测由SettingsProvider统一管理
+            _markAllDataForRefresh();
+            notifyListeners();
+            print('数据库初始化完成（使用现有连接）');
+            return;
+          } catch (e) {
+            print('现有MySQL连接已失效，需要重新建立: $e');
+            // 关闭失效的连接
+            try {
+              await _mysqlConnection!.close();
+            } catch (closeError) {
+              print('关闭失效MySQL连接时出错: $closeError');
+            }
+            _mysqlConnection = null;
+          }
         }
 
-        // 使用提供的设置或默认值
-        final host = mysqlSettings?['host'] ?? _mysqlHost;
-        final port =
-            int.tryParse(mysqlSettings?['port']?.toString() ?? _mysqlPort) ??
-                3306;
-        final database = mysqlSettings?['database'] ?? _mysqlDatabase;
-        final username = mysqlSettings?['username'] ?? _mysqlUsername;
-        final password = mysqlSettings?['password'] ?? _mysqlPassword;
+        // 使用提供的设置
+        if (mysqlSettings == null) {
+          throw Exception('MySQL设置不能为空，请先配置MySQL连接参数');
+        }
+        
+        final host = mysqlSettings['host'];
+        final port = int.tryParse(mysqlSettings['port']?.toString() ?? '3306') ?? 3306;
+        final database = mysqlSettings['database'];
+        final username = mysqlSettings['username'];
+        final password = mysqlSettings['password'];
+        
+        // 验证必要的参数
+        if (host == null || host.isEmpty || 
+            database == null || database.isEmpty || 
+            username == null || username.isEmpty) {
+          throw Exception('MySQL连接参数不完整，请检查host、database和username设置');
+        }
 
         print('MySQL连接参数: $host:$port/$database 用户:$username');
 
-        // 保存MySQL设置到成员变量
-        _mysqlSettings = {
-          'host': host,
-          'port': port,
-          'database': database,
-          'username': username,
-          'password': password,
-        };
-
-        // 同时更新单独的字段，确保一致性
-        _mysqlHost = host;
-        _mysqlPort = port.toString();
-        _mysqlDatabase = database;
-        _mysqlUsername = username;
-        _mysqlPassword = password;
-
-        print('已保存MySQL连接参数到_mysqlSettings和各个字段中');
-        print('MySQL设置: $_mysqlSettings');
+        // MySQL设置已移动到SettingsProvider，不再需要保存到内部变量
+        print('使用SettingsProvider中的MySQL设置进行连接');
 
         try {
           print('正在连接MySQL数据库...');
@@ -168,12 +194,24 @@ class DatabaseProvider extends ChangeNotifier {
               password: password,
             ),
           );
+          // 强制设置会话字符集，防止客户端/服务端协商导致的乱码
+          try {
+            await _mysqlConnection!.query("SET NAMES 'utf8mb4'");
+            await _mysqlConnection!.query("SET character_set_connection = 'utf8mb4'");
+            await _mysqlConnection!.query("SET character_set_results = 'utf8mb4'");
+          } catch (e) {
+            print('设置MySQL会话字符集失败: $e');
+          }
+
           print('MySQL数据库连接成功');
 
           // 验证连接是否正常
           try {
             final results = await _mysqlConnection!.query('SELECT 1');
             print('MySQL连接测试: ${results.isNotEmpty ? '成功' : '失败'}');
+            
+            // 连接成功后，创建MySQL表结构
+            await _createMySQLTables();
           } catch (e) {
             print('MySQL连接测试失败: $e');
             throw Exception('MySQL连接测试失败: $e');
@@ -184,10 +222,14 @@ class DatabaseProvider extends ChangeNotifier {
         }
       }
 
+      // 数据库初始化完成，表结构检测由SettingsProvider统一管理
       // 标记所有数据需要刷新
       _markAllDataForRefresh();
       notifyListeners();
       print('数据库初始化完成');
+      
+      // 在数据库初始化完成后，可以在这里添加自动表结构检测的逻辑
+      // 但为了避免循环依赖，这里暂时不直接调用SettingsProvider
     } catch (e) {
       print('初始化数据库时出错: $e');
       rethrow;
@@ -206,15 +248,42 @@ class DatabaseProvider extends ChangeNotifier {
       dbPath = _customSqliteDbPath!;
       print('使用自定义SQLite数据库路径: $dbPath');
 
-      // 确保数据库文件存在
+      // 如果指定的数据库文件不存在，创建它
       if (!await File(dbPath).exists()) {
-        throw Exception('指定的SQLite数据库文件不存在: $dbPath');
+        print('指定的SQLite数据库文件不存在，将创建新文件: $dbPath');
+        // 确保目录存在
+        final dbDir = Directory(path.dirname(dbPath));
+        if (!await dbDir.exists()) {
+          await dbDir.create(recursive: true);
+          print('创建数据库目录: ${dbDir.path}');
+        }
       }
     } else {
       // 使用默认路径
-      final documentsDirectory = await getApplicationDocumentsDirectory();
-      dbPath = path.join(documentsDirectory.path, DB_NAME);
-      print('使用默认SQLite数据库路径: $dbPath');
+      try {
+        // 优先使用应用数据目录
+        dbPath = AppPaths.databasePath;
+        print('使用应用数据目录: $dbPath');
+      } catch (e) {
+        print('AppPaths未初始化，尝试文档目录: $e');
+        try {
+          final documentsDirectory = await getApplicationDocumentsDirectory();
+          dbPath = path.join(documentsDirectory.path, DB_NAME);
+          print('使用文档目录: $dbPath');
+        } catch (e2) {
+          print('获取文档目录失败: $e2，使用当前目录');
+          // 如果获取文档目录失败，使用当前目录
+          dbPath = path.join(Directory.current.path, DB_NAME);
+          print('使用当前目录作为数据库路径: $dbPath');
+        }
+      }
+    }
+
+    // 确保数据库目录存在
+    final dbDir = Directory(path.dirname(dbPath));
+    if (!await dbDir.exists()) {
+      await dbDir.create(recursive: true);
+      print('创建数据库目录: ${dbDir.path}');
     }
 
     // 打开数据库
@@ -228,224 +297,314 @@ class DatabaseProvider extends ChangeNotifier {
     );
   }
 
+  // 确保SQLite数据库可用的方法（紧急情况使用）
+  Future<void> ensureSQLiteDatabase() async {
+    try {
+      print('确保SQLite数据库可用...');
+      
+      if (_database == null) {
+        _database = await initSQLiteDatabase();
+        print('SQLite数据库初始化成功');
+      } else {
+        // 测试现有数据库连接
+        try {
+          await _database!.query('SELECT 1');
+          print('现有SQLite数据库连接正常');
+        } catch (e) {
+          print('现有SQLite数据库连接异常，重新初始化: $e');
+          try {
+            await _database!.close();
+          } catch (_) {}
+          _database = await initSQLiteDatabase();
+          print('SQLite数据库重新初始化成功');
+        }
+      }
+      
+      // 确保基本表结构存在
+      await _ensureBasicTables();
+      
+    } catch (e) {
+      print('确保SQLite数据库可用失败: $e');
+      rethrow;
+    }
+  }
+
+  // 确保基本表结构存在
+  Future<void> _ensureBasicTables() async {
+    if (_database == null) return;
+    
+    try {
+      // 检查users表是否存在
+      final tables = await _database!.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='users'"
+      );
+      
+      if (tables.isEmpty) {
+        print('users表不存在，创建基本表结构...');
+        await _createDatabase(_database!, DB_VERSION);
+      } else {
+        print('基本表结构已存在');
+      }
+    } catch (e) {
+      print('检查基本表结构时出错: $e');
+      // 如果检查失败，尝试创建表结构
+      try {
+        await _createDatabase(_database!, DB_VERSION);
+      } catch (createError) {
+        print('创建基本表结构失败: $createError');
+      }
+    }
+  }
+
   // 初始化MySQL连接
-  Future<MySqlConnection> initMySQLConnection() async {
-    // 从设置中获取MySQL配置
+  Future<MySqlConnection> initMySQLConnection({Map<String, dynamic>? mysqlSettings}) async {
+    // 使用传入的MySQL设置
+    if (mysqlSettings == null) {
+      throw Exception('MySQL设置不能为空，请先配置MySQL连接参数');
+    }
+    
     final settings = ConnectionSettings(
-      host: _mysqlHost,
-      port: int.parse(_mysqlPort),
-      user: _mysqlUsername,
-      password: _mysqlPassword,
-      db: _mysqlDatabase,
+      host: mysqlSettings['host'],
+              port: int.tryParse(mysqlSettings['port']?.toString() ?? '3306') ?? 3306,
+      user: mysqlSettings['username'],
+      password: mysqlSettings['password'],
+      db: mysqlSettings['database'],
     );
 
-    // 建立连接
-    final connection = await MySqlConnection.connect(settings);
+    // 使用3秒连接超时，快速失败以支持降级
+    final connection = await MySqlConnection.connect(settings).timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => throw TimeoutException('MySQL连接超时，请检查网络和服务器配置'),
+    );
 
-    // 确保必要的表存在
-    await _createMySQLTables(connection);
+    // 确保必要的表存在 - 现在由新的Schema架构统一管理
+    // await _createMySQLTables(connection);
 
     return connection;
   }
 
-  // 在MySQL中创建必要的表
-  Future<void> _createMySQLTables(MySqlConnection connection) async {
-    // 创建患者表
-    await connection.query('''
-    CREATE TABLE IF NOT EXISTS `patients` (
-      `id` int(11) NOT NULL AUTO_INCREMENT,
-      `medical_record_number` int(11) DEFAULT NULL,
-      `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
-      `name_pinyin` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-      `age` int(11) DEFAULT NULL,
-      `gender` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL,
-      `phone` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-      `identification_number` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-      `doctor` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-      `address` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-      `address_pinyin` varchar(400) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-      `first_visit_date` datetime NOT NULL,
-      `dental_condition` text COLLATE utf8mb4_unicode_ci,
-      `treatment_items` mediumtext COLLATE utf8mb4_unicode_ci,
-      `total_cost` float DEFAULT NULL,
-      `created_at` datetime NOT NULL,
-      `updated_at` datetime NOT NULL,
-      PRIMARY KEY (`id`) USING BTREE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC
-    ''');
-
-    // 创建预约表
-    await connection.query('''
-    CREATE TABLE IF NOT EXISTS `appointments` (
-      `id` int(11) NOT NULL AUTO_INCREMENT,
-      `patient_id` int(11) NOT NULL,
-      `appointment_date` datetime NOT NULL,
-      `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'scheduled',
-      `treatment_type` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-      `notes` text COLLATE utf8mb4_unicode_ci,
-      `cost` float DEFAULT NULL,
-      `created_at` datetime NOT NULL,
-      `updated_at` datetime NOT NULL,
-      PRIMARY KEY (`id`) USING BTREE,
-      KEY `patient_id` (`patient_id`) USING BTREE,
-      CONSTRAINT `appointments_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC
-    ''');
-
-    // 创建随访表
-    await connection.query('''
-    CREATE TABLE IF NOT EXISTS `follow_up_visits` (
-      `id` int(11) NOT NULL AUTO_INCREMENT,
-      `patient_id` int(11) NOT NULL,
-      `follow_up_date` datetime NOT NULL,
-      `notes` text,
-      `created_at` datetime NOT NULL,
-      `updated_at` datetime NOT NULL,
-      PRIMARY KEY (`id`) USING BTREE,
-      KEY `patient_id` (`patient_id`) USING BTREE,
-      CONSTRAINT `follow_up_visits_ibfk_1` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=latin1 ROW_FORMAT=DYNAMIC
-    ''');
-
-    // 创建用户表
-    await connection.query('''
-    CREATE TABLE IF NOT EXISTS `users` (
-      `id` int(11) NOT NULL AUTO_INCREMENT,
-      `username` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-      `email` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
-      `password` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
-      `role` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-      `created_at` datetime NOT NULL,
-      PRIMARY KEY (`id`) USING BTREE,
-      UNIQUE KEY `username` (`username`) USING BTREE,
-      UNIQUE KEY `email` (`email`) USING BTREE
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC
-    ''');
-
-    // 检查是否已存在admin用户
-    final Results results = await connection.query(
-        'SELECT COUNT(*) as count FROM users WHERE username = ?', ['admin']);
-    final int count = results.first['count'] as int;
-
-    if (count == 0) {
-      // 添加默认admin用户
-      var bytes = utf8.encode('123456');
-      var digest = md5.convert(bytes);
-      final hashedPassword = digest.toString();
-
-      await connection.query(
-          'INSERT INTO users (username, email, password, role, created_at) VALUES (?, ?, ?, ?, ?)',
-          [
-            'admin',
-            'admin@example.com',
-            hashedPassword,
-            'admin',
-            DateTime.now()
-          ]);
-
-      print('MySQL创建默认admin用户，密码：123456');
+  /// 初始化MySQL连接（不改变当前数据源类型）
+  Future<void> initializeMySQLConnection(Map<String, dynamic> mysqlSettings) async {
+    try {
+      print('初始化MySQL连接...');
+      
+      if (_mysqlConnection != null) {
+        try {
+          // 测试现有连接（5秒超时）
+          await _mysqlConnection!.query('SELECT 1').timeout(
+            const Duration(seconds: 5),
+            onTimeout: () => throw TimeoutException('MySQL连接验证超时'),
+          );
+          print('现有MySQL连接可用');
+          return;
+        } catch (e) {
+          print('现有MySQL连接失效，重新建立连接');
+          try {
+            await _mysqlConnection!.close();
+          } catch (_) {}
+          _mysqlConnection = null;
+        }
+      }
+      
+      // 使用3秒连接超时，快速失败以支持降级
+      _mysqlConnection = await MySqlConnection.connect(
+        ConnectionSettings(
+          host: mysqlSettings['host'],
+          port: mysqlSettings['port'],
+          db: mysqlSettings['database'],
+          user: mysqlSettings['username'],
+          password: mysqlSettings['password'],
+        ),
+      ).timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => throw TimeoutException('MySQL连接超时，请检查网络和服务器配置'),
+      );
+      
+      // 设置字符集
+      await _mysqlConnection!.query("SET NAMES 'utf8mb4'");
+      await _mysqlConnection!.query("SET character_set_connection = 'utf8mb4'");
+      await _mysqlConnection!.query("SET character_set_results = 'utf8mb4'");
+      
+      print('MySQL连接初始化成功');
+    } catch (e) {
+      print('初始化MySQL连接失败: $e');
+      rethrow;
     }
   }
 
+  // 确保所有必要的表都存在
+  Future<void> _ensureTablesExist() async {
+    if (_database == null) return;
+    
+    print('检查并确保所有必要的表都存在...');
+    
+    try {
+
+      
+      // 财务相关表由FinancialProvider负责创建
+      
+      print('所有必要的表检查完成');
+    } catch (e) {
+      print('检查表存在性时出错: $e');
+    }
+  }
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
   // 创建SQLite数据库表
   Future<void> _createDatabase(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS patients (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        medical_record_number INTEGER,
-        name TEXT NOT NULL,
-        name_pinyin TEXT,
-        age INTEGER,
-        gender TEXT NOT NULL,
-        phone TEXT,
-        identification_number TEXT,
-        doctor TEXT,
-        address TEXT,
-        address_pinyin TEXT,
-        first_visit_date TEXT NOT NULL,
-        dental_condition TEXT,
-        treatment_items TEXT,
-        total_cost REAL,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      )
-    ''');
+    print('使用新的分离式架构创建SQLite数据库表...');
+    
+    try {
+      // 使用新的Schema架构创建所有表
+      final tableNames = [
+        'patients',
+        'appointments',
+        'financial_records',
+        'financial_items',
+        'materials',
+        'material_images',
+        'patient_materials',
+        'purchase_records',
+        'purchase_items',
+        'users',
+        'database_structure_logs',
+        'patient_medical_records',
+        'medical_record_templates',
+      ];
 
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS appointments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        patient_id INTEGER NOT NULL,
-        appointment_date TEXT NOT NULL,
-        status TEXT NOT NULL DEFAULT 'scheduled',
-        treatment_type TEXT,
-        notes TEXT,
-        cost REAL,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE
-      )
-    ''');
+      for (final tableName in tableNames) {
+        try {
+          final schema = TableSchemaFactory.getSchema(tableName, DatabaseType.sqlite);
+          
+          // 创建表
+          await db.execute(schema.createTableSql);
+          print('成功创建表: $tableName');
+          
+          // 创建索引（如果有的话）
+          for (final indexSql in schema.indexDefinitions) {
+            if (!indexSql.contains('PRIMARY KEY')) {
+              await db.execute(indexSql);
+              print('成功创建索引: $tableName - ${indexSql.substring(0, 50)}...');
+            }
+          }
+        } catch (e) {
+          print('创建表 $tableName 时出错: $e');
+        }
+      }
 
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS follow_up_visits (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        patient_id INTEGER NOT NULL,
-        follow_up_date TEXT NOT NULL,
-        notes TEXT,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE
-      )
-    ''');
+      // 添加默认管理员用户
+      try {
+        final DateFormat dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
+        final hashedPassword = _hashPassword('123456');
+        
+        final now = dateFormat.format(DateTime.now());
+        await db.insert('users', {
+          'username': 'admin',
+          'email': 'admin@example.com',
+          'password': hashedPassword,
+          'role': 'admin',
+          'doctor': '系统管理员',
+          'avatar': 'avatar_5',
+          'created_at': now,
+          'updated_at': now,
+        });
+        
+        print('成功创建默认管理员用户: admin/123456');
+      } catch (e) {
+        print('创建默认管理员用户时出错: $e');
+      }
+      
+      print('SQLite数据库表创建完成');
+    } catch (e) {
+      print('使用新架构创建数据库表时出错: $e');
+      rethrow;
+    }
+  }
 
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL UNIQUE,
-        email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        role TEXT NOT NULL,
-        created_at TEXT NOT NULL
-      )
-    ''');
+  // 创建MySQL数据库表
+  Future<void> _createMySQLTables() async {
+    if (_mysqlConnection == null) {
+      print('MySQL连接未建立，无法创建表');
+      return;
+    }
+    
+    print('使用新的分离式架构创建MySQL数据库表...');
+    
+    try {
+      final tableNames = [
+        'patients',
+        'appointments',
+        'financial_records',
+        'financial_items',
+        'materials',
+        'material_images',
+        'patient_materials',
+        'purchase_records',
+        'purchase_items',
+        'users',
+        'database_structure_logs',
+        'patient_medical_records',
+        'medical_record_templates',
+      ];
 
-    // 创建索引
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_patient_id ON appointments (patient_id)',
-    );
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_appointment_date ON appointments (appointment_date)',
-    );
-    await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_follow_up_patient_id ON follow_up_visits (patient_id)',
-    );
-
-    // 检查是否已有admin用户
-    final List<Map<String, dynamic>> adminUsers = await db.query(
-      'users',
-      where: 'username = ?',
-      whereArgs: ['admin'],
-      limit: 1,
-    );
-
-    // 如果没有admin用户，则创建一个
-    if (adminUsers.isEmpty) {
-      // 添加默认admin用户
-      var bytes = utf8.encode('123456');
-      var digest = md5.convert(bytes);
-      final hashedPassword = digest.toString();
-
-      await db.insert('users', {
-        'username': 'admin',
-        'email': 'admin@example.com',
-        'password': hashedPassword,
-        'role': 'admin',
-        'created_at': DateTime.now().toIso8601String(),
-      });
-
-      print('SQLite创建默认admin用户，密码：123456');
-    } else {
-      print('SQLite已存在admin用户，跳过创建');
+      for (final tableName in tableNames) {
+        try {
+          final schema = TableSchemaFactory.getSchema(tableName, DatabaseType.mysql);
+          
+          // 创建表
+          await _mysqlConnection!.query(schema.createTableSql);
+          print('成功创建MySQL表: $tableName');
+          
+          // 创建索引（如果有的话）
+          for (final indexSql in schema.indexDefinitions) {
+            if (!indexSql.contains('PRIMARY KEY')) {
+              try {
+                // 提取索引名称
+                final indexNameMatch = RegExp(r'CREATE (?:UNIQUE )?INDEX (\w+)').firstMatch(indexSql);
+                final indexName = indexNameMatch?.group(1) ?? 'unknown';
+                
+                // 检查索引是否已存在
+                final checkResult = await _mysqlConnection!.query(
+                  "SELECT COUNT(*) as count FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?",
+                  [tableName, indexName]
+                );
+                
+                final indexExists = checkResult.first['count'] > 0;
+                
+                if (!indexExists) {
+                  await _mysqlConnection!.query(indexSql);
+                  final displayText = indexSql.length > 50 ? '${indexSql.substring(0, 50)}...' : indexSql;
+                  print('成功创建MySQL索引: $tableName - $displayText');
+                } else {
+                  final displayText = indexSql.length > 50 ? '${indexSql.substring(0, 50)}...' : indexSql;
+                  print('MySQL索引已存在，跳过创建: $tableName - $displayText');
+                }
+              } catch (e) {
+                final displayText = indexSql.length > 50 ? '${indexSql.substring(0, 50)}...' : indexSql;
+                print('创建MySQL索引失败: $tableName - $displayText 错误: $e');
+              }
+            }
+          }
+        } catch (e) {
+          print('创建MySQL表 $tableName 时出错: $e');
+        }
+      }
+      
+      print('MySQL数据库表创建完成');
+    } catch (e) {
+      print('使用新架构创建MySQL数据库表时出错: $e');
+      rethrow;
     }
   }
 
@@ -462,22 +621,43 @@ class DatabaseProvider extends ChangeNotifier {
       // 添加新表或修改表结构的逻辑
       print('执行数据库升级操作...');
 
-      // 示例：添加随访表
-      if (oldVersion < 1) {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS follow_ups (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            patient_id INTEGER NOT NULL,
-            follow_up_date DATETIME NOT NULL,
-            notes TEXT,
-            status TEXT NOT NULL,
-            created_at DATETIME,
-            updated_at DATETIME,
-            FOREIGN KEY (patient_id) REFERENCES patients (id) ON DELETE CASCADE
-          )
-        ''');
-        print('已创建随访表');
+      // 随访表已移除
+
+      // 财务和材料采购表由相应的Provider负责创建
+      if (oldVersion < 2) {
+        print('财务和材料采购表由FinancialProvider和MaterialProvider负责创建...');
       }
+      
+      // 版本3：材料表升级由MaterialProvider负责
+      if (oldVersion < 3) {
+        print('版本3材料表升级由MaterialProvider负责...');
+      }
+    }
+  }
+
+  // 重置数据库（删除现有数据库文件，重新创建）
+  Future<void> resetDatabase() async {
+    print('正在重置数据库...');
+    
+    try {
+      // 关闭现有连接
+      await closeDatabase();
+      
+      // 删除数据库文件
+      if (_sqliteDbPath != null) {
+        final dbFile = File(_sqliteDbPath!);
+        if (await dbFile.exists()) {
+          await dbFile.delete();
+          print('已删除数据库文件: $_sqliteDbPath');
+        }
+      }
+      
+      // 重新初始化数据库
+      await initDatabase();
+      print('数据库重置完成');
+    } catch (e) {
+      print('重置数据库时出错: $e');
+      rethrow;
     }
   }
 
@@ -511,63 +691,44 @@ class DatabaseProvider extends ChangeNotifier {
     }
   }
 
+  // 密码哈希方法
+  String _hashPassword(String password) {
+    var bytes = utf8.encode(password);
+    var digest = md5.convert(bytes);
+    return digest.toString();
+  }
+
   // 标记刷新
-  void markPatientsNeedRefresh() {
-    _patientsNeedRefresh = true;
-    notifyListeners();
-  }
-
-  void markAppointmentsNeedRefresh() {
-    _appointmentsNeedRefresh = true;
-    notifyListeners();
-  }
-
   void markDashboardNeedRefresh() {
     _dashboardNeedRefresh = true;
     notifyListeners();
   }
 
-  void markFollowUpsNeedRefresh() {
-    _followUpsNeedRefresh = true;
-    notifyListeners();
-  }
-
   // 重置刷新标志
-  void resetPatientsRefreshFlag() {
-    _patientsNeedRefresh = false;
-  }
 
-  void resetAppointmentsRefreshFlag() {
-    _appointmentsNeedRefresh = false;
-  }
+
 
   void resetDashboardRefreshFlag() {
     _dashboardNeedRefresh = false;
   }
 
-  void resetFollowUpsRefreshFlag() {
-    _followUpsNeedRefresh = false;
-  }
-
   // 数据库备份方法
-  Future<String> backupDatabase() async {
+  Future<String> backupDatabase({
+    String? backupPath,
+    Function(String)? onLogSuccess,
+    Function(String)? onLogFailure,
+    String? backupDataSource, // 新增：指定备份数据源
+  }) async {
     try {
-      // 创建备份目录
-      final directory = await getApplicationDocumentsDirectory();
-      final backupDir = Directory('${directory.path}/backups');
-      if (!await backupDir.exists()) {
-        await backupDir.create(recursive: true);
-      }
-
-      // 从SettingsProvider获取用户指定的备份目录
-      final settingsProvider = SettingsProvider();
-      await settingsProvider.init();
-      final userBackupPath = settingsProvider.backupPath;
+      // 使用传入的备份路径
+      final userBackupPath = backupPath ?? '';
 
       if (userBackupPath.isEmpty) {
         final errorMsg = '请设置备份路径';
         // 记录备份失败日志
-        await _logBackupFailure(errorMsg);
+        if (onLogFailure != null) {
+          onLogFailure(errorMsg);
+        }
         throw Exception(errorMsg);
       }
 
@@ -581,72 +742,46 @@ class DatabaseProvider extends ChangeNotifier {
         } catch (dirError) {
           final errorMsg = '无法创建备份目录: $dirError';
           // 记录备份失败日志
-          await _logBackupFailure(errorMsg);
+          if (onLogFailure != null) {
+            onLogFailure(errorMsg);
+        }
           throw Exception(errorMsg);
         }
       }
 
-      String backupPath;
-      // 根据数据源类型选择备份方法
-      if (dataSourceType == 'mysql') {
-        // 使用MySQL专用的备份方法
-        backupPath = await backupMySQLDatabase();
+      String finalBackupPath;
+      
+      // 根据备份数据源设置选择备份方法
+      final targetDataSource = backupDataSource ?? _dataSourceType;
+      
+      if (targetDataSource == 'mysql') {
+        // 直接使用MySQL备份方法，不检查当前数据源
+        finalBackupPath = await backupMySQLDatabase(backupPath: userBackupPath);
       } else {
-        // 使用SQLite专用的备份方法
-        backupPath = await backupSQLiteDatabase();
+        // 直接使用SQLite备份方法，不检查当前数据源
+        finalBackupPath = await backupSQLiteDatabase(backupPath: userBackupPath);
       }
 
       // 备份成功，记录备份日志
-      await _logBackupSuccess(backupPath);
+      if (onLogSuccess != null) {
+        onLogSuccess(finalBackupPath);
+      }
 
-      // 更新上次备份日期 - 使用当天日期的零点时间，避免时间部分造成的计算误差
-      final now = DateTime.now();
-      final todayDate = DateTime(now.year, now.month, now.day);
-      await settingsProvider.updateLastBackupDate(todayDate);
-      print('已更新最后备份日期: ${todayDate.toIso8601String()}');
+      // 备份完成，返回备份路径
+      print('数据库备份完成: $finalBackupPath (数据源: $targetDataSource)');
 
-      return backupPath;
+      return finalBackupPath;
     } catch (e) {
       print('执行数据库备份时出错: $e');
       rethrow;
     }
   }
 
-  // 记录备份成功日志
-  Future<void> _logBackupSuccess(String backupPath) async {
-    try {
-      final log = BackupLog(
-        backupDate: DateTime.now(),
-        backupPath: backupPath,
-        success: true,
-      );
-
-      await BackupLog.addLog(log);
-      print('已记录备份成功日志');
-    } catch (e) {
-      print('记录备份成功日志出错: $e');
-    }
-  }
-
-  // 记录备份失败日志
-  Future<void> _logBackupFailure(String errorMessage) async {
-    try {
-      final log = BackupLog(
-        backupDate: DateTime.now(),
-        backupPath: '',
-        success: false,
-        errorMessage: errorMessage,
-      );
-
-      await BackupLog.addLog(log);
-      print('已记录备份失败日志: $errorMessage');
-    } catch (e) {
-      print('记录备份失败日志出错: $e');
-    }
-  }
+  // 备份日志记录已移动到SettingsProvider
+  // 请使用SettingsProvider中的相关方法记录备份操作
 
   // SQLite数据库备份方法 - 使用文件复制
-  Future<String> backupSQLiteDatabase() async {
+  Future<String> backupSQLiteDatabase({String? backupPath}) async {
     try {
       // 确保数据库连接已初始化
       if (_database == null) {
@@ -658,8 +793,14 @@ class DatabaseProvider extends ChangeNotifier {
       if (_customSqliteDbPath != null && _customSqliteDbPath!.isNotEmpty) {
         dbPath = _customSqliteDbPath!;
       } else {
-        final dbDir = await getDatabasesPath();
-        dbPath = path.join(dbDir, DB_NAME);
+        try {
+          // 使用应用数据目录
+          dbPath = AppPaths.databasePath;
+        } catch (e) {
+          print('AppPaths未初始化，使用默认路径: $e');
+          final dbDir = await getDatabasesPath();
+          dbPath = path.join(dbDir, DB_NAME);
+        }
       }
 
       // 确保数据库文件存在
@@ -667,10 +808,8 @@ class DatabaseProvider extends ChangeNotifier {
         throw Exception('数据库文件不存在: $dbPath');
       }
 
-      // 从SettingsProvider获取用户指定的备份目录
-      final settingsProvider = SettingsProvider();
-      await settingsProvider.init();
-      final userBackupPath = settingsProvider.backupPath;
+      // 使用传入的备份路径
+      final userBackupPath = backupPath ?? '';
 
       if (userBackupPath.isEmpty) {
         throw Exception('未设置备份目录');
@@ -683,7 +822,7 @@ class DatabaseProvider extends ChangeNotifier {
       }
 
       // 生成备份文件名
-      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
+      final timestamp = DateTimeFormatter.nowDbString().replaceAll(':', '-');
       final backupFilePath =
           path.join(userBackupPath, 'sqlite_backup_$timestamp.db');
 
@@ -715,8 +854,14 @@ class DatabaseProvider extends ChangeNotifier {
           if (_customSqliteDbPath != null && _customSqliteDbPath!.isNotEmpty) {
             dbPath = _customSqliteDbPath!;
           } else {
-            final dbDir = await getDatabasesPath();
-            dbPath = path.join(dbDir, DB_NAME);
+            try {
+              // 使用应用数据目录
+              dbPath = AppPaths.databasePath;
+            } catch (e) {
+              print('AppPaths未初始化，使用默认路径: $e');
+              final dbDir = await getDatabasesPath();
+              dbPath = path.join(dbDir, DB_NAME);
+            }
           }
 
           // 重新打开数据库连接
@@ -771,7 +916,7 @@ class DatabaseProvider extends ChangeNotifier {
               // 处理 DateTime 字符串
               if (value is String && value.contains('T')) {
                 try {
-                  return DateTime.parse(value);
+                  return DateTimeFormatter.fromDbString(value);
                 } catch (e) {
                   return value;
                 }
@@ -806,7 +951,7 @@ class DatabaseProvider extends ChangeNotifier {
             processedRecord.forEach((key, value) {
               if (value is String && value.contains('T')) {
                 try {
-                  processedRecord[key] = DateTime.parse(value);
+                  processedRecord[key] = DateTimeFormatter.fromDbString(value);
                 } catch (e) {
                   // 如果解析失败，保持原值
                 }
@@ -826,11 +971,12 @@ class DatabaseProvider extends ChangeNotifier {
   }
 
   // 检查MySQL表是否存在
-  Future<bool> _checkTableExists(String tableName) async {
+  Future<bool> _checkTableExists(String tableName, {String? databaseName}) async {
     try {
+      final dbName = databaseName ?? 'dentist_db'; // 默认数据库名
       final result = await _mysqlConnection!.query(
           'SELECT 1 FROM information_schema.tables WHERE table_schema = ? AND table_name = ?',
-          [_mysqlDatabase, tableName]);
+          [dbName, tableName]);
       return result.isNotEmpty;
     } catch (e) {
       print('检查表是否存在时出错: $e');
@@ -892,8 +1038,14 @@ class DatabaseProvider extends ChangeNotifier {
       if (_customSqliteDbPath != null && _customSqliteDbPath!.isNotEmpty) {
         dbPath = _customSqliteDbPath!;
       } else {
-        final dbDir = await getDatabasesPath();
-        dbPath = path.join(dbDir, DB_NAME);
+        try {
+          // 使用应用数据目录
+          dbPath = AppPaths.databasePath;
+        } catch (e) {
+          print('AppPaths未初始化，使用默认路径: $e');
+          final dbDir = await getDatabasesPath();
+          dbPath = path.join(dbDir, DB_NAME);
+        }
       }
 
       // 复制备份文件到数据库位置
@@ -1013,15 +1165,19 @@ class DatabaseProvider extends ChangeNotifier {
   }
 
   // 按照正确的顺序执行SQL语句
-  Future<void> _executeMySQLImport(String sqlContent) async {
-    // 重新建立连接
+  Future<void> _executeMySQLImport(String sqlContent, {Map<String, dynamic>? mysqlSettings}) async {
+    // 使用传入的MySQL设置重新建立连接
+    if (mysqlSettings == null) {
+      throw Exception('MySQL设置不能为空，请先配置MySQL连接参数');
+    }
+    
     _mysqlConnection = await MySqlConnection.connect(
       ConnectionSettings(
-        host: _mysqlHost,
-        port: int.tryParse(_mysqlPort) ?? 3306,
-        db: _mysqlDatabase,
-        user: _mysqlUsername,
-        password: _mysqlPassword,
+        host: mysqlSettings['host'],
+        port: int.tryParse(mysqlSettings['port']?.toString() ?? '3306') ?? 3306,
+        db: mysqlSettings['database'],
+        user: mysqlSettings['username'],
+        password: mysqlSettings['password'],
       ),
     );
 
@@ -1058,7 +1214,11 @@ class DatabaseProvider extends ChangeNotifier {
     }
 
     // 处理牙齿状况的数据格式
-    sqlContent = _processDentalConditionFormat(sqlContent);
+    final patientProvider = PatientProvider(
+      mysqlConnection: _mysqlConnection,
+      dataSourceType: _dataSourceType,
+    );
+    sqlContent = patientProvider.processDentalConditionFormat(sqlContent);
 
     // 分割SQL语句
     final statements = _splitSqlStatements(sqlContent);
@@ -1072,8 +1232,6 @@ class DatabaseProvider extends ChangeNotifier {
     Map<String, List<String>> insertStatementsByTable = {
       'users': [],
       'patients': [],
-      'appointments': [],
-      'follow_up_visits': [],
     };
     List<String> otherStatements = [];
 
@@ -1081,8 +1239,6 @@ class DatabaseProvider extends ChangeNotifier {
     final tableOrder = [
       'users',
       'patients',
-      'appointments',
-      'follow_up_visits'
     ];
 
     // 分类语句
@@ -1244,13 +1400,13 @@ class DatabaseProvider extends ChangeNotifier {
             DateTime? dateTime;
             if (dateStr.contains('T')) {
               // ISO 8601格式
-              dateTime = DateTime.parse(dateStr);
+              dateTime = DateTimeFormatter.fromDbString(dateStr);
             } else if (dateStr.contains(' ')) {
               // MySQL datetime格式
-              dateTime = DateTime.parse(dateStr.replaceAll(' ', 'T'));
+              dateTime = DateTimeFormatter.fromDbString(dateStr);
             } else {
               // 仅日期格式
-              dateTime = DateTime.parse(dateStr + 'T00:00:00');
+              dateTime = DateTimeFormatter.fromDbString(dateStr + ' 00:00:00');
             }
 
             if (dateTime != null) {
@@ -1273,237 +1429,9 @@ class DatabaseProvider extends ChangeNotifier {
     });
   }
 
-  // 处理牙齿状况的数据格式
-  String _processDentalConditionFormat(String sqlContent) {
-    // 处理所有INSERT语句中的二进制数据，不仅仅是patients表
-    final regex = RegExp(r'INSERT INTO `(\w+)`.*VALUES.*', multiLine: true);
 
-    return sqlContent.replaceAllMapped(regex, (match) {
-      String statement = match.group(0) ?? '';
-      String tableName = match.group(1) ?? '';
 
-      // 处理常见的二进制字段
-      if (tableName == 'patients') {
-        // 处理患者表中的特定字段
-        statement = _processBinaryDentalCondition(statement);
-        statement = _processTreatmentItems(statement);
-        statement = _processTotalCost(statement);
-      }
 
-      // 处理所有表中的任何可能的二进制数据格式
-      statement = _processAnyBinaryField(statement);
-
-      return statement;
-    });
-  }
-
-  // 处理任何表中的二进制数据字段
-  String _processAnyBinaryField(String sqlStatement) {
-    // 正则表达式匹配任何字段后的X'...'格式的十六进制数据
-    RegExp binaryRegex = RegExp(r"', X'([0-9A-Fa-f]+)'");
-
-    return sqlStatement.replaceAllMapped(binaryRegex, (match) {
-      String fullMatch = match.group(0) ?? '';
-      String hexString = match.group(1) ?? '';
-
-      // 尝试将十六进制转换回文本
-      try {
-        List<int> bytes = [];
-        for (int i = 0; i < hexString.length; i += 2) {
-          if (i + 1 < hexString.length) {
-            String hex = hexString.substring(i, i + 2);
-            bytes.add(int.parse(hex, radix: 16));
-          }
-        }
-
-        // 尝试解码为UTF-8文本
-        String textValue = utf8.decode(bytes);
-        textValue = textValue.replaceAll("'", "''");
-
-        return "', '$textValue'";
-      } catch (e) {
-        print('处理通用二进制数据时出错: $e');
-        return fullMatch; // 如果解码失败，保留原格式
-      }
-    });
-  }
-
-  // 处理二进制格式的dental_condition字段
-  String _processBinaryDentalCondition(String sqlStatement) {
-    // 正则表达式匹配dental_condition后面的X'...'格式的二进制数据
-    RegExp binaryRegex = RegExp(r"dental_condition', X'([0-9A-Fa-f]+)'");
-
-    return sqlStatement.replaceAllMapped(binaryRegex, (match) {
-      String hexString = match.group(1) ?? '';
-
-      try {
-        // 将十六进制字符串转换为字节列表
-        List<int> bytes = [];
-        for (int i = 0; i < hexString.length; i += 2) {
-          if (i + 1 < hexString.length) {
-            String hex = hexString.substring(i, i + 2);
-            bytes.add(int.parse(hex, radix: 16));
-          }
-        }
-
-        // 解码为UTF-8字符串
-        String jsonString = utf8.decode(bytes);
-
-        // 对JSON字符串进行转义，以便在SQL语句中安全使用
-        jsonString = jsonString.replaceAll("'", "''");
-
-        // 返回为普通字符串形式
-        return "dental_condition', '$jsonString'";
-      } catch (e) {
-        print('处理二进制牙齿状况数据时出错: $e');
-        return match.group(0) ?? '';
-      }
-    });
-  }
-
-  // 处理treatment_items字段的二进制数据
-  String _processTreatmentItems(String sqlStatement) {
-    // 匹配treatment_items后面的X'...'格式
-    RegExp binaryRegex = RegExp(r"treatment_items', X'([0-9A-Fa-f]+)'");
-
-    return sqlStatement.replaceAllMapped(binaryRegex, (match) {
-      String hexString = match.group(1) ?? '';
-
-      try {
-        // 将十六进制字符串转换为字节列表
-        List<int> bytes = [];
-        for (int i = 0; i < hexString.length; i += 2) {
-          if (i + 1 < hexString.length) {
-            String hex = hexString.substring(i, i + 2);
-            bytes.add(int.parse(hex, radix: 16));
-          }
-        }
-
-        // 解码为UTF-8字符串
-        String textValue = utf8.decode(bytes);
-
-        // 对字符串进行转义
-        textValue = textValue.replaceAll("'", "''");
-
-        // 返回为普通字符串形式
-        return "treatment_items', '$textValue'";
-      } catch (e) {
-        print('处理treatment_items字段时出错: $e');
-        return match.group(0) ?? '';
-      }
-    });
-  }
-
-  // 处理total_cost字段确保格式正确
-  String _processTotalCost(String sqlStatement) {
-    // 匹配total_cost后面的浮点数格式并替换为整数格式
-    RegExp floatRegex = RegExp(r"total_cost', (\d+)\.0");
-
-    return sqlStatement.replaceAllMapped(floatRegex, (match) {
-      String numValue = match.group(1) ?? '0';
-      return "total_cost', $numValue";
-    });
-  }
-
-  // 获取数据库实例
-  Future<Database?> getDatabase() async {
-    if (_database != null) {
-      return _database;
-    }
-
-    if (_dataSourceType == 'sqlite') {
-      if (_database == null) {
-        _database = await initSQLiteDatabase();
-      }
-      return _database;
-    }
-    return null;
-  }
-
-  // 删除患者
-  Future<void> deletePatient(int patientId) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    if (_dataSourceType == 'sqlite') {
-      try {
-        // 首先删除与该患者关联的所有预约
-        await _database!.delete(
-          'appointments',
-          where: 'patient_id = ?',
-          whereArgs: [patientId],
-        );
-
-        // 然后删除患者
-        await _database!.delete(
-          'patients',
-          where: 'id = ?',
-          whereArgs: [patientId],
-        );
-
-        // 更新刷新标记
-        _patientsNeedRefresh = true;
-        _appointmentsNeedRefresh = true;
-        _dashboardNeedRefresh = true; // 确保仪表盘刷新
-        notifyListeners(); // 通知监听者数据已更改
-      } catch (e) {
-        print('删除患者时出错: $e');
-        throw Exception('删除患者失败: $e');
-      }
-    } else {
-      try {
-        print('开始删除MySQL患者ID: $patientId');
-
-        // 禁用外键约束检查，以便我们可以按顺序删除
-        await _mysqlConnection!.query('SET FOREIGN_KEY_CHECKS = 0');
-
-        // 1. 首先删除随访记录
-        print('删除与患者相关的随访记录...');
-        final followUpResult = await _mysqlConnection!.query(
-          'DELETE FROM follow_up_visits WHERE patient_id = ?',
-          [patientId],
-        );
-        print('已删除${followUpResult.affectedRows}条随访记录');
-
-        // 2. 删除预约记录
-        print('删除与患者相关的预约记录...');
-        final apptResult = await _mysqlConnection!.query(
-          'DELETE FROM appointments WHERE patient_id = ?',
-          [patientId],
-        );
-        print('已删除${apptResult.affectedRows}条预约记录');
-
-        // 3. 最后删除患者记录
-        print('删除患者记录...');
-        final patientResult = await _mysqlConnection!.query(
-          'DELETE FROM patients WHERE id = ?',
-          [patientId],
-        );
-        print('已删除${patientResult.affectedRows}条患者记录');
-
-        // 恢复外键约束检查
-        await _mysqlConnection!.query('SET FOREIGN_KEY_CHECKS = 1');
-
-        // 更新刷新标记
-        _patientsNeedRefresh = true;
-        _appointmentsNeedRefresh = true;
-        _dashboardNeedRefresh = true; // 确保仪表盘刷新
-        notifyListeners(); // 通知监听者数据已更改
-
-        print('患者删除完成');
-      } catch (e) {
-        print('MySQL删除患者时出错: $e');
-        // 确保恢复外键约束检查
-        try {
-          await _mysqlConnection!.query('SET FOREIGN_KEY_CHECKS = 1');
-        } catch (e2) {
-          print('恢复外键约束检查时出错: $e2');
-        }
-        throw Exception('删除患者失败: $e');
-      }
-    }
-  }
 
   // 设置数据源类型
   Future<void> setDataSourceType(
@@ -1515,6 +1443,35 @@ class DatabaseProvider extends ChangeNotifier {
     print('当前数据源类型: $_dataSourceType');
 
     try {
+      // 如果切换到相同的数据源类型，检查是否需要重新初始化
+      if (_dataSourceType == type) {
+        print('数据源类型未改变，检查连接状态...');
+        
+        if (type == 'sqlite') {
+          // 检查SQLite连接是否有效
+          if (_database != null) {
+            try {
+              await _database!.query('SELECT 1');
+              print('SQLite连接仍然有效，无需重新初始化');
+              return;
+            } catch (e) {
+              print('SQLite连接已失效，需要重新初始化: $e');
+            }
+          }
+        } else if (type == 'mysql') {
+          // 检查MySQL连接是否有效
+          if (_mysqlConnection != null) {
+            try {
+              await _mysqlConnection!.query('SELECT 1');
+              print('MySQL连接仍然有效，无需重新初始化');
+              return;
+            } catch (e) {
+              print('MySQL连接已失效，需要重新初始化: $e');
+            }
+          }
+        }
+      }
+
       // 如果切换到SQLite，检查是否有自定义数据库路径
       if (type == 'sqlite') {
         // 从设置中获取SQLite路径
@@ -1524,8 +1481,15 @@ class DatabaseProvider extends ChangeNotifier {
         // 如果自定义路径为空，使用默认路径
         if (sqliteDbPath == null || sqliteDbPath.isEmpty) {
           print('使用默认SQLite路径');
-          final dbPath = await getDatabasesPath();
-          sqliteDbPath = path.join(dbPath, DB_NAME);
+          try {
+            // 使用应用数据目录
+            sqliteDbPath = AppPaths.databasePath;
+            print('使用应用数据目录: $sqliteDbPath');
+          } catch (e) {
+            print('AppPaths未初始化，使用系统默认路径: $e');
+            final dbPath = await getDatabasesPath();
+            sqliteDbPath = path.join(dbPath, DB_NAME);
+          }
         }
 
         // 确保自定义路径不为空
@@ -1539,7 +1503,10 @@ class DatabaseProvider extends ChangeNotifier {
 
       // 关闭现有数据库连接
       print('关闭现有数据库连接...');
-      await closeDatabase();
+      if (_dataSourceType != type) {
+        // 只有在真正切换数据源类型时才关闭连接
+        await closeDatabase();
+      }
 
       // 更新数据源类型
       _dataSourceType = type;
@@ -1569,8 +1536,14 @@ class DatabaseProvider extends ChangeNotifier {
       // 初始化新数据源连接
       print('初始化新数据源连接...');
       if (type == 'sqlite') {
-        print('使用自定义SQLite路径初始化数据库: $_customSqliteDbPath');
-        await initDatabase(customPath: _customSqliteDbPath);
+        try {
+          print('使用自定义SQLite路径初始化数据库: $_customSqliteDbPath');
+          await initDatabase(customPath: _customSqliteDbPath);
+        } catch (e) {
+          print('常规SQLite初始化失败，尝试紧急初始化: $e');
+          // 如果常规初始化失败，尝试紧急初始化
+          await ensureSQLiteDatabase();
+        }
       } else if (type == 'mysql') {
         await initDatabase(mysqlSettings: mysqlSettings);
       }
@@ -1586,24 +1559,7 @@ class DatabaseProvider extends ChangeNotifier {
     }
   }
 
-  // 设置MySQL连接参数
-  void setMySQLConnectionParams({
-    required String host,
-    required String port,
-    required String database,
-    required String username,
-    required String password,
-  }) {
-    _mysqlHost = host;
-    _mysqlPort = port;
-    _mysqlDatabase = database;
-    _mysqlUsername = username;
-    _mysqlPassword = password;
 
-    if (_dataSourceType == 'mysql' && _mysqlConnection != null) {
-      closeDatabase();
-    }
-  }
 
   // 测试MySQL连接
   Future<bool> testMySQLConnection({
@@ -1680,2217 +1636,37 @@ class DatabaseProvider extends ChangeNotifier {
     }
   }
 
-  // =================== 患者相关方法 ===================
-
-  // 获取所有患者
-  Future<List<Patient>> getAllPatients() async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    // 标记已刷新
-    _patientsNeedRefresh = false;
-
-    // 获取当前用户信息，用于过滤数据
-    User? currentUser = _currentUser;
-    bool isAdmin = currentUser?.role == 'admin';
-    String? doctorName = currentUser?.doctor;
-
-    if (_dataSourceType == 'sqlite') {
-      try {
-        List<Map<String, dynamic>> maps;
-
-        // 如果用户不是管理员且有医生姓名，则只查询该医生的患者
-        if (!isAdmin && doctorName != null && doctorName.isNotEmpty) {
-          print('根据医生权限过滤患者: $doctorName');
-          maps = await _database!.query(
-            'patients',
-            where: 'doctor = ?',
-            whereArgs: [doctorName],
-          );
-        } else {
-          // 管理员可查看所有患者
-          maps = await _database!.query('patients');
-        }
-
-        return List.generate(maps.length, (i) {
-          return Patient.fromMap(maps[i]);
-        });
-      } catch (e) {
-        print('获取患者时出错: $e');
-        return [];
-      }
-    } else {
-      // MySQL数据获取
-      try {
-        print('从MySQL获取患者数据');
-
-        Results results;
-
-        // 如果用户不是管理员且有医生姓名，则只查询该医生的患者
-        if (!isAdmin && doctorName != null && doctorName.isNotEmpty) {
-          print('MySQL根据医生权限过滤患者: $doctorName');
-          results = await _mysqlConnection!
-              .query('SELECT * FROM patients WHERE doctor = ?', [doctorName]);
-        } else {
-          // 管理员可查看所有患者
-          results = await _mysqlConnection!.query('SELECT * FROM patients');
-        }
-
-        List<Patient> patients = [];
-        for (var row in results) {
-          final Map<String, dynamic> map = {};
-          for (var field in row.fields.keys) {
-            var value = row[field];
-            // 处理Blob类型，将其转换为字符串
-            if (value is Blob) {
-              final blobString = String.fromCharCodes(value.toBytes());
-              map[field] = blobString;
-
-              // 创建预览字符串用于日志
-              final previewString = blobString.length > 20
-                  ? '${blobString.substring(0, 20)}...'
-                  : blobString;
-              print('将Blob字段 $field 转换为字符串: $previewString');
-            } else {
-              map[field] = value;
-            }
-          }
-
-          // 确保first_visit_date字段是DateTime类型
-          if (map['first_visit_date'] != null &&
-              map['first_visit_date'] is String) {
-            try {
-              map['first_visit_date'] = DateTime.parse(map['first_visit_date']);
-            } catch (e) {
-              print('解析first_visit_date失败: $e, 使用当前日期');
-              map['first_visit_date'] = DateTime.now();
-            }
-          }
-
-          patients.add(Patient.fromMap(map));
-        }
-
-        print('成功构建${patients.length}个患者对象');
-        return patients;
-      } catch (e) {
-        print('获取所有患者时出错: $e, 堆栈: ${StackTrace.current}');
-        return [];
-      }
-    }
+  // 标记所有数据需要刷新
+  void _markAllDataForRefresh() {
+    markDashboardNeedRefresh();
   }
 
-  // 根据ID获取患者
-  Future<Patient?> getPatient(int id) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    // 获取当前用户信息，用于权限验证
-    User? currentUser = _currentUser;
-    bool isAdmin = currentUser?.role == 'admin';
-    String? doctorName = currentUser?.doctor;
-
-    if (_dataSourceType == 'sqlite') {
-      try {
-        // 尝试使用Windows应用的表结构
-        List<Map<String, dynamic>> maps;
-
-        if (isAdmin) {
-          // 管理员可以查看任何患者
-          maps = await _database!.query(
-            'patients',
-            where: 'id = ?',
-            whereArgs: [id],
-          );
-        } else {
-          // 医生只能查看自己的患者
-          maps = await _database!.query(
-            'patients',
-            where: 'id = ? AND doctor = ?',
-            whereArgs: [id, doctorName],
-          );
-        }
-
-        if (maps.isNotEmpty) {
-          return Patient.fromMap(maps.first);
-        }
-
-        // 如果没有找到，尝试使用Android应用的表结构
-        List<Map<String, dynamic>> androidMaps;
-
-        if (isAdmin) {
-          androidMaps = await _database!.query(
-            'Patient', // Android使用的表名
-            where: 'id = ?',
-            whereArgs: [id],
-          );
-        } else {
-          androidMaps = await _database!.query(
-            'Patient', // Android使用的表名
-            where: 'id = ? AND doctor = ?',
-            whereArgs: [id, doctorName],
-          );
-        }
-
-        if (androidMaps.isEmpty) {
-          return null;
-        }
-
-        // 转换为Windows应用期望的结构
-        final Map<String, dynamic> convertedMap =
-            _convertAndroidPatientToMap(androidMaps.first);
-        return Patient.fromMap(convertedMap);
-      } catch (e) {
-        print('获取患者时出错: $e');
-        return null;
-      }
-    } else {
-      // MySQL查询
-      Results results;
-
-      if (isAdmin) {
-        // 管理员可以查看任何患者
-        results = await _mysqlConnection!
-            .query('SELECT * FROM patients WHERE id = ?', [id]);
-      } else {
-        // 医生只能查看自己的患者
-        results = await _mysqlConnection!.query(
-            'SELECT * FROM patients WHERE id = ? AND doctor = ?',
-            [id, doctorName]);
-      }
-
-      if (results.isEmpty) {
-        return null;
-      }
-
-      final row = results.first;
-      final Map<String, dynamic> map = {};
-      for (var field in row.fields.keys) {
-        var value = row[field];
-        // 处理Blob类型，将其转换为字符串
-        if (value is Blob) {
-          // 将Blob转换为字符串
-          final blobString = String.fromCharCodes(value.toBytes());
-          map[field] = blobString;
-          print(
-              '将Blob字段 $field 转换为字符串: ${map[field].substring(0, min(20, (map[field] as String).length))}...');
-        } else {
-          map[field] = value;
-        }
-      }
-
-      return Patient.fromMap(map);
-    }
-  }
-
-  // 将Android应用的患者数据转换为Windows应用期望的格式
-  Map<String, dynamic> _convertAndroidPatientToMap(
-      Map<String, dynamic> androidMap) {
-    // 打印转换前的Map结构，帮助调试
-    print('Android患者Map结构: $androidMap');
-
-    // 创建一个新的Map以保存转换后的数据
-    final Map<String, dynamic> windowsMap = {
-      'id': androidMap['id'],
-      'name': androidMap['name'] ?? '',
-      'age': androidMap['age'] ?? 0,
-      'gender': androidMap['gender'] ?? '',
-      'phone': androidMap['phoneNumber'] ?? '', // Android中可能是phoneNumber
-      'medical_record_number': androidMap['medicalRecordNumber'], // 字段名转换
-      'address': androidMap['address'],
-      'identification_number': androidMap['identificationNumber'], // 字段名转换
-      'doctor': androidMap['doctor'],
-      'dental_condition': androidMap['dentalCondition'], // 字段名转换
-      'treatment_items': androidMap['treatmentItems'], // 字段名转换
-      'total_cost': androidMap['totalCost']?.toDouble() ?? 0.0, // 字段名转换
-    };
-
-    // 处理日期字段
-    if (androidMap['registrationDate'] != null) {
-      windowsMap['first_visit_date'] =
-          androidMap['registrationDate']; // 注意Android使用registrationDate
-    } else if (androidMap['firstVisitDate'] != null) {
-      windowsMap['first_visit_date'] =
-          androidMap['firstVisitDate']; // 有些Android应用可能使用firstVisitDate
-    } else {
-      windowsMap['first_visit_date'] = DateTime.now().toIso8601String();
-    }
-
-    return windowsMap;
-  }
-
-  // 搜索患者 - 包含姓名、电话、备注等信息的模糊搜索
-  Future<List<Patient>> searchPatients(
-    String query, {
-    String? sortField,
-    bool sortAscending = false,
-    DateTime? startDate,
-    DateTime? endDate,
-    String dateFilterType = 'first_visit_date',
-    Map<String, String>? advancedCriteria,
-  }) async {
-    try {
-      final db = await database;
-      // 检查数据库连接状态
-      if (db == null) {
-        return [];
-      }
-
-      List<Patient> patients = [];
-
-      // 是否是高级搜索
-      bool isAdvancedSearch =
-          advancedCriteria != null && advancedCriteria.isNotEmpty;
-
-      if (isAdvancedSearch) {
-        // 处理多条件高级搜索
-        String nameQuery = advancedCriteria['name'] ?? '';
-        String addressQuery = advancedCriteria['address'] ?? '';
-        String phoneQuery = advancedCriteria['phone'] ?? '';
-        String doctorQuery = advancedCriteria['doctor'] ?? '';
-        String medicalRecordQuery = advancedCriteria['medical_record'] ?? '';
-
-        // 生成带空格和不带空格的搜索词，以提高拼音搜索的准确性
-        String nameQueryNoSpace = nameQuery.replaceAll(' ', '');
-        String addressQueryNoSpace = addressQuery.replaceAll(' ', '');
-
-        // 构建SQL查询
-        String sql = '''
-          SELECT * FROM patients WHERE 1=1
-        ''';
-
-        List<dynamic> arguments = [];
-
-        // 添加名称搜索条件 - 支持姓名、姓名拼音和姓名首字母搜索
-        if (nameQuery.isNotEmpty) {
-          sql += '''
-            AND (
-              name LIKE ? OR 
-              name_pinyin LIKE ? OR 
-              REPLACE(name_pinyin, ' ', '') LIKE ? OR
-              name_initials LIKE ?
-            )
-          ''';
-          arguments.add('%$nameQuery%'); // 原始姓名查询
-          arguments.add('%$nameQuery%'); // 拼音带空格匹配
-          arguments.add('%$nameQueryNoSpace%'); // 数据库中删除空格后匹配无空格输入
-          arguments.add('%$nameQuery%'); // 首字母匹配
-        }
-
-        // 添加地址搜索条件 - 支持地址和地址拼音搜索
-        if (addressQuery.isNotEmpty) {
-          sql += '''
-            AND (
-              address LIKE ? OR 
-              address_pinyin LIKE ? OR
-              REPLACE(address_pinyin, ' ', '') LIKE ?
-            )
-          ''';
-          arguments.add('%$addressQuery%'); // 原始地址查询
-          arguments.add('%$addressQuery%'); // 拼音带空格匹配
-          arguments.add('%$addressQueryNoSpace%'); // 数据库中删除空格后匹配无空格输入
-        }
-
-        // 添加电话搜索条件
-        if (phoneQuery.isNotEmpty) {
-          sql += ' AND phone LIKE ?';
-          arguments.add('%$phoneQuery%');
-        }
-
-        // 添加医生搜索条件
-        if (doctorQuery.isNotEmpty) {
-          sql += ' AND doctor LIKE ?';
-          arguments.add('%$doctorQuery%');
-        }
-
-        // 添加病历号搜索条件
-        if (medicalRecordQuery.isNotEmpty) {
-          sql += ' AND medical_record_number LIKE ?';
-          arguments.add('%$medicalRecordQuery%');
-        }
-
-        // 添加日期过滤
-        if (startDate != null) {
-          sql += ' AND $dateFilterType >= ?';
-          arguments.add(startDate.toIso8601String());
-        }
-        if (endDate != null) {
-          sql += ' AND $dateFilterType <= ?';
-          arguments.add(endDate.toIso8601String());
-        }
-
-        // 添加排序
-        sql +=
-            ' ORDER BY ${sortField ?? 'updated_at'} ${sortAscending ? 'ASC' : 'DESC'}, id DESC';
-
-        final List<Map<String, dynamic>> results =
-            await db.rawQuery(sql, arguments);
-        patients = results.map((data) => Patient.fromMap(data)).toList();
-      } else {
-        // 使用传统的模糊搜索
-        // 处理查询字符串，生成无空格版本用于拼音搜索
-        String queryNoSpace = query.replaceAll(' ', '');
-
-        // 更改查询方式，确保拼音和首字母搜索能正常工作
-        final List<Map<String, dynamic>> results = await db.rawQuery(
-          '''
-          SELECT * FROM patients 
-          WHERE medical_record_number LIKE ? 
-          OR name LIKE ? 
-          OR (name_pinyin IS NOT NULL AND name_pinyin LIKE ?)
-          OR (name_pinyin IS NOT NULL AND REPLACE(name_pinyin, ' ', '') LIKE ?)
-          OR (name_initials IS NOT NULL AND name_initials LIKE ?)
-          OR phone LIKE ? 
-          OR address LIKE ?
-          OR (address_pinyin IS NOT NULL AND address_pinyin LIKE ?)
-          OR (address_pinyin IS NOT NULL AND REPLACE(address_pinyin, ' ', '') LIKE ?)
-          ${startDate != null ? 'AND $dateFilterType >= ?' : ''}
-          ${endDate != null ? 'AND $dateFilterType <= ?' : ''}
-          ORDER BY ${sortField ?? 'updated_at'} ${sortAscending ? 'ASC' : 'DESC'}, id DESC
-          ''',
-          [
-            '%$query%', // 病历号
-            '%$query%', // 姓名
-            '%$query%', // 姓名拼音带空格
-            '%$queryNoSpace%', // 删除数据库中拼音空格后匹配无空格输入
-            '%$query%', // 姓名首字母
-            '%$query%', // 电话
-            '%$query%', // 地址
-            '%$query%', // 地址拼音带空格
-            '%$queryNoSpace%', // 删除数据库中拼音空格后匹配无空格输入
-            if (startDate != null) startDate.toIso8601String(),
-            if (endDate != null) endDate.toIso8601String(),
-          ],
-        );
-        patients = results.map((data) => Patient.fromMap(data)).toList();
-      }
-
-      // 返回搜索结果
-      return patients;
-    } catch (e) {
-      print('搜索患者时出错: $e');
-      return [];
-    }
-  }
-
-  // 获取患者分页数据
-  Future<Map<String, dynamic>> getPatientsPage({
-    required int page,
-    required int pageSize,
-    String? searchQuery,
-    String? sortField,
-    bool sortAscending = false,
-    DateTime? startDate,
-    DateTime? endDate,
-    String dateFilterType = 'first_visit_date',
-  }) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    // 获取当前用户信息，用于过滤数据
-    User? currentUser = _currentUser;
-    bool isAdmin = currentUser?.role == 'admin';
-    String? doctorName = currentUser?.doctor;
-
-    print(
-        '获取患者分页数据: 页码=$page, 每页数量=$pageSize, 排序字段=$sortField, 升序=$sortAscending');
-
-    final offset = (page - 1) * pageSize;
-    List<Patient> patients = [];
-    int totalCount = 0;
-
-    if (_dataSourceType == 'sqlite') {
-      try {
-        // 获取所有表名
-        final tables = await _getTableNames();
-
-        // 尝试不同可能的表名
-        final possiblePatientTables = [
-          'Patient',
-          'patient',
-          'patients',
-          'Patients'
-        ];
-        String? actualTableName;
-
-        for (var tableName in possiblePatientTables) {
-          if (tables.contains(tableName)) {
-            actualTableName = tableName;
-            break;
-          }
-        }
-
-        if (actualTableName == null) {
-          print('未找到患者表');
-          return {
-            'patients': [],
-            'totalCount': 0,
-            'totalPages': 0,
-            'currentPage': page,
-          };
-        }
-
-        print('使用表 $actualTableName 获取患者数据');
-
-        // 处理搜索和排序
-        String whereClause = '';
-        List<dynamic> whereArgs = [];
-
-        if (searchQuery != null && searchQuery.isNotEmpty) {
-          // 根据表名调整字段名
-          if (actualTableName.toLowerCase() == 'patients' ||
-              actualTableName.toLowerCase() == 'patient') {
-            // 为拼音搜索创建无空格版本
-            String queryNoSpace = searchQuery.replaceAll(' ', '');
-
-            whereClause = '''
-            name LIKE ? 
-            OR phone LIKE ? 
-            OR address LIKE ? 
-            OR identification_number LIKE ? 
-            OR (name_pinyin IS NOT NULL AND (name_pinyin LIKE ? OR REPLACE(name_pinyin, ' ', '') LIKE ?))
-            OR (name_initials IS NOT NULL AND name_initials LIKE ?)
-            OR (address_pinyin IS NOT NULL AND (address_pinyin LIKE ? OR REPLACE(address_pinyin, ' ', '') LIKE ?))
-            ''';
-
-            whereArgs = [
-              '%$searchQuery%', // 姓名
-              '%$searchQuery%', // 电话
-              '%$searchQuery%', // 地址
-              '%$searchQuery%', // 身份证号
-              '%$searchQuery%', // 姓名拼音带空格
-              '%$queryNoSpace%', // 姓名拼音无空格
-              '%$searchQuery%', // 姓名首字母
-              '%$searchQuery%', // 地址拼音带空格
-              '%$queryNoSpace%', // 地址拼音无空格
-            ];
-          } else {
-            whereClause =
-                'name LIKE ? OR phoneNumber LIKE ? OR address LIKE ? OR identificationNumber LIKE ?';
-            whereArgs = [
-              '%$searchQuery%',
-              '%$searchQuery%',
-              '%$searchQuery%',
-              '%$searchQuery%'
-            ];
-          }
-        }
-
-        // 添加日期过滤条件
-        if (startDate != null && endDate != null) {
-          String startDateStr = DateFormat('yyyy-MM-dd').format(startDate);
-          String endDateStr = DateFormat('yyyy-MM-dd')
-              .format(endDate.add(const Duration(days: 1)));
-
-          // 根据筛选类型和表名选择日期字段
-          String dateField;
-          if (dateFilterType == 'first_visit_date') {
-            dateField = actualTableName.toLowerCase() == 'patients'
-                ? 'first_visit_date'
-                : 'firstVisitDate';
-          } else if (dateFilterType == 'updated_at') {
-            dateField = 'updated_at';
-          } else {
-            dateField = 'updated_at'; // 默认使用updated_at
-          }
-
-          if (whereClause.isNotEmpty) {
-            whereClause += ' AND ';
-          }
-
-          whereClause += '$dateField BETWEEN ? AND ?';
-          whereArgs.add(startDateStr);
-          whereArgs.add(endDateStr);
-        }
-
-        // 添加医生权限过滤
-        if (!isAdmin && doctorName != null && doctorName.isNotEmpty) {
-          if (whereClause.isNotEmpty) {
-            whereClause += ' AND ';
-          }
-          whereClause += 'doctor = ?';
-          whereArgs.add(doctorName);
-        }
-
-        // 获取总数
-        final countResult = await _database!.rawQuery(
-          'SELECT COUNT(*) as count FROM $actualTableName${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}',
-          whereArgs,
-        );
-        totalCount = countResult.first['count'] as int;
-
-        // 处理排序
-        String orderBy = 'updated_at DESC'; // 默认排序
-
-        if (sortField != null && sortField.isNotEmpty) {
-          // 根据表名和字段名调整排序字段
-          String fieldName = sortField;
-
-          switch (sortField) {
-            case 'updated_at':
-              fieldName = 'updated_at'; // 直接使用updated_at字段
-              break;
-            case 'first_visit_date':
-              fieldName = actualTableName.toLowerCase() == 'patients'
-                  ? 'first_visit_date'
-                  : 'firstVisitDate';
-              break;
-            case 'name':
-              fieldName = 'name'; // 名称字段在不同表中通常是一致的
-              break;
-            case 'age':
-              fieldName = 'age';
-              break;
-            case 'medical_record_number':
-              // 确保以数字形式排序病历号
-              fieldName = 'CAST(medical_record_number AS INTEGER)';
-              break;
-          }
-
-          orderBy = '$fieldName ${sortAscending ? 'ASC' : 'DESC'}';
-        }
-
-        print('最终查询排序条件: $orderBy');
-
-        // 执行查询
-        final List<Map<String, dynamic>> maps = await _database!.rawQuery(
-          'SELECT * FROM $actualTableName${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''} ORDER BY $orderBy LIMIT $pageSize OFFSET $offset',
-          whereArgs,
-        );
-
-        print('查询返回 ${maps.length} 条记录');
-
-        // 转换为Patient对象
-        patients = maps.map((map) => Patient.fromMap(map)).toList();
-
-        // 输出患者排序信息
-        if (patients.isNotEmpty) {
-          print(
-              '第一个患者: id=${patients[0].id}, name=${patients[0].name}, updated_at=${patients[0].updated_at}');
-          if (patients.length > 1) {
-            print(
-                '第二个患者: id=${patients[1].id}, name=${patients[1].name}, updated_at=${patients[1].updated_at}');
-          }
-        }
-      } catch (e) {
-        print('获取患者分页数据时出错: $e');
-        rethrow;
-      }
-    } else if (_dataSourceType == 'mysql') {
-      // MySQL查询
-      try {
-        print('从MySQL获取患者数据');
-        // 处理搜索和排序
-        String whereClause = '';
-        List<dynamic> whereArgs = [];
-
-        if (searchQuery != null && searchQuery.isNotEmpty) {
-          // 为拼音搜索创建无空格版本
-          String queryNoSpace = searchQuery.replaceAll(' ', '');
-
-          whereClause = '''
-          name LIKE ? 
-          OR phone LIKE ? 
-          OR address LIKE ? 
-          OR identification_number LIKE ? 
-          OR (name_pinyin IS NOT NULL AND (name_pinyin LIKE ? OR REPLACE(name_pinyin, ' ', '') LIKE ?))
-          OR (name_initials IS NOT NULL AND name_initials LIKE ?)
-          OR (address_pinyin IS NOT NULL AND (address_pinyin LIKE ? OR REPLACE(address_pinyin, ' ', '') LIKE ?))
-          ''';
-
-          whereArgs = [
-            '%$searchQuery%', // 姓名
-            '%$searchQuery%', // 电话
-            '%$searchQuery%', // 地址
-            '%$searchQuery%', // 身份证号
-            '%$searchQuery%', // 姓名拼音带空格
-            '%$queryNoSpace%', // 姓名拼音无空格
-            '%$searchQuery%', // 姓名首字母
-            '%$searchQuery%', // 地址拼音带空格
-            '%$queryNoSpace%', // 地址拼音无空格
-          ];
-        }
-
-        // 添加日期过滤条件
-        if (startDate != null && endDate != null) {
-          String startDateStr = DateFormat('yyyy-MM-dd').format(startDate);
-          String endDateStr = DateFormat('yyyy-MM-dd')
-              .format(endDate.add(const Duration(days: 1)));
-
-          if (whereClause.isNotEmpty) {
-            whereClause += ' AND ';
-          }
-
-          whereClause += '$dateFilterType BETWEEN ? AND ?';
-          whereArgs.add(startDateStr);
-          whereArgs.add(endDateStr);
-        }
-
-        // 添加医生权限过滤
-        if (!isAdmin && doctorName != null && doctorName.isNotEmpty) {
-          if (whereClause.isNotEmpty) {
-            whereClause += ' AND ';
-          }
-          whereClause += 'doctor = ?';
-          whereArgs.add(doctorName);
-        }
-
-        // 获取总数
-        final countResults = await _mysqlConnection!.query(
-          'SELECT COUNT(*) as count FROM patients${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}',
-          whereArgs,
-        );
-        totalCount = countResults.first['count'] as int;
-
-        // 处理排序
-        String orderBy = 'updated_at DESC'; // 默认排序
-
-        if (sortField != null && sortField.isNotEmpty) {
-          // 确保在MySQL中使用下划线形式的列名
-          String mysqlSortField = sortField;
-          if (sortField == 'medicalRecordNumber') {
-            mysqlSortField = 'medical_record_number';
-          } else if (sortField == 'firstVisitDate') {
-            mysqlSortField = 'first_visit_date';
-          }
-
-          // 对病历号进行数值排序
-          if (mysqlSortField == 'medical_record_number') {
-            mysqlSortField = 'CAST(medical_record_number AS SIGNED)';
-          }
-
-          orderBy = '$mysqlSortField ${sortAscending ? 'ASC' : 'DESC'}';
-        }
-
-        print('MySQL查询排序条件: $orderBy');
-
-        // 执行分页查询
-        final results = await _mysqlConnection!.query(
-          'SELECT * FROM patients${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''} ORDER BY $orderBy LIMIT ? OFFSET ?',
-          [...whereArgs, pageSize, offset],
-        );
-
-        print('MySQL查询返回 ${results.length} 条记录');
-
-        // 转换为Patient对象
-        for (var row in results) {
-          final map = <String, dynamic>{};
-          for (var field in row.fields.keys) {
-            var value = row[field];
-            if (value is Blob) {
-              // 将Blob转换为字符串
-              map[field] = String.fromCharCodes(value.toBytes());
-            } else {
-              map[field] = value;
-            }
-          }
-          patients.add(Patient.fromMap(map));
-        }
-
-        // 输出患者排序信息
-        if (patients.isNotEmpty) {
-          print(
-              'MySQL第一个患者: id=${patients[0].id}, name=${patients[0].name}, updated_at=${patients[0].updated_at}');
-          if (patients.length > 1) {
-            print(
-                'MySQL第二个患者: id=${patients[1].id}, name=${patients[1].name}, updated_at=${patients[1].updated_at}');
-          }
-        }
-      } catch (e) {
-        print('获取MySQL患者分页数据时出错: $e');
-        rethrow;
-      }
-    }
-
-    // 返回数据
-    return {
-      'patients': patients,
-      'totalCount': totalCount,
-      'totalPages': (totalCount / pageSize).ceil(),
-      'currentPage': page,
-    };
-  }
-
-  // 获取患者的预约
-  Future<List<Appointment>> getAppointmentsByPatient(int patientId) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
+  // 获取数据库实例
+  Future<Database?> getDatabase() async {
+    if (_database != null) {
+      return _database;
     }
 
     if (_dataSourceType == 'sqlite') {
-      try {
-        // 获取所有表名
-        final tables = await _getTableNames();
-        if (!tables.contains('appointments')) {
-          print('未找到预约表appointments');
-          return [];
-        }
-
-        // 使用正确的表名和字段名
-        final List<Map<String, dynamic>> maps = await _database!.query(
-          'appointments',
-          where: 'patient_id = ?',
-          whereArgs: [patientId],
-          orderBy: 'appointment_date DESC',
-        );
-
-        // 获取预约关联的患者信息
-        List<Appointment> appointments = [];
-        for (var map in maps) {
-          final appointment = Appointment.fromMap(map);
-
-          // 尝试获取关联的患者信息
-          try {
-            final patient = await getPatient(patientId);
-            if (patient != null) {
-              appointments.add(appointment.copyWith(patient: patient));
-            } else {
-              appointments.add(appointment);
-            }
-          } catch (e) {
-            print('获取预约关联的患者时出错: $e');
-            appointments.add(appointment);
-          }
-        }
-
-        return appointments;
-      } catch (e) {
-        print('获取患者预约时出错: $e');
-        return [];
+      if (_database == null) {
+        _database = await initSQLiteDatabase();
       }
-    } else {
-      // MySQL查询患者预约
-      final results = await _mysqlConnection!.query(
-          'SELECT * FROM appointments WHERE patient_id = ?', [patientId]);
-
-      return results.map((row) {
-        final Map<String, dynamic> map = {};
-        for (var field in row.fields.keys) {
-          map[field] = row[field];
-        }
-        return Appointment.fromMap(map);
-      }).toList();
+      return _database;
     }
+    return null;
   }
 
-  // 根据日期获取预约
-  Future<List<Appointment>> getAppointmentsByDate(DateTime date) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
+  
 
-    try {
-      final DateTime startOfDay = DateTime(date.year, date.month, date.day);
-      final DateTime endOfDay =
-          DateTime(date.year, date.month, date.day, 23, 59, 59);
 
-      // 格式化日期为字符串
-      final String formattedStartDate = _formatDateTime(startOfDay);
-      final String formattedEndDate = _formatDateTime(endOfDay);
-
-      // 用于MySQL的日期格式
-      final String mysqlFormattedDate = DateFormat('yyyy-MM-dd').format(date);
-
-      List<Appointment> appointments = [];
-
-      if (_dataSourceType == 'sqlite') {
-        // SQLite版本 - 使用字符串比较
-        final db = await database;
-        final result = await db!.rawQuery('''
-          SELECT a.*, p.name, p.gender, p.phone
-          FROM appointments a
-          LEFT JOIN patients p ON a.patient_id = p.id
-          WHERE a.appointment_date BETWEEN ? AND ?
-          ORDER BY a.appointment_date
-        ''', [formattedStartDate, formattedEndDate]);
-
-        appointments = result.map((e) => Appointment.fromMap(e)).toList();
-      } else if (_dataSourceType == 'mysql') {
-        try {
-          final conn = await mysqlConnection;
-
-          // MySQL版本 - 使用DATE()函数提取日期部分
-          final results = await conn!.query('''
-            SELECT a.*
-            FROM appointments a
-            WHERE DATE(a.appointment_date) = ?
-            ORDER BY a.appointment_date
-          ''', [mysqlFormattedDate]);
-
-          print('MySQL日期查询结果: ${results.length} 条记录, 日期: $mysqlFormattedDate');
-
-          // 专门为MySQL处理结果
-          for (var row in results) {
-            try {
-              // 创建一个映射以使用Appointment.fromMap构造函数
-              final map = <String, dynamic>{};
-
-              // 从MySQL行中提取字段值
-              for (var field in row.fields.keys) {
-                var value = row[field];
-
-                // 处理BLOB字段
-                if (value is Blob) {
-                  final blobString = String.fromCharCodes(value.toBytes());
-                  print(
-                      '将Blob字段 $field 转换为字符串: ${blobString.substring(0, math.min(30, blobString.length))}...');
-                  map[field] = blobString;
-                } else {
-                  // 其他字段直接放入map
-                  map[field] = value;
-                }
-              }
-
-              // 创建预约对象
-              final appointment = Appointment.fromMap(map);
-
-              // 如果有患者ID，尝试获取患者信息
-              if (appointment.patient_id != null) {
-                try {
-                  final patient = await getPatient(appointment.patient_id!);
-                  if (patient != null) {
-                    appointment.patient = patient;
-                  }
-                } catch (e) {
-                  print('获取预约关联的患者信息出错: $e');
-                }
-              }
-
-              appointments.add(appointment);
-            } catch (e) {
-              print('处理MySQL预约数据时出错: $e');
-            }
-          }
-        } catch (e) {
-          print('MySQL查询今日预约出错: $e');
-          rethrow;
-        }
-      }
-
-      // 添加患者信息到每个预约
-      for (var appointment in appointments) {
-        if (appointment.patient_id != null && appointment.patient == null) {
-          try {
-            final patient = await getPatient(appointment.patient_id!);
-            if (patient != null) {
-              appointment.patient = patient;
-            }
-          } catch (e) {
-            print('获取预约患者信息出错: $e');
-          }
-        }
-      }
-
-      return appointments;
-    } catch (e) {
-      print('获取预约出错: $e');
-      rethrow;
-    }
-  }
-
-  // 处理MySQL查询结果的辅助方法
-  Future<List<Appointment>> _processAppointmentResults(dynamic results) async {
-    List<Appointment> appointments = [];
-    for (var row in results) {
-      final Map<String, dynamic> map = {};
-      for (var field in row.fields.keys) {
-        map[field] = row[field];
-      }
-
-      final appointment = Appointment.fromMap(map);
-      print(
-          '处理预约ID: ${appointment.id}, 日期: ${appointment.appointment_date}, 患者ID: ${appointment.patient_id}');
-
-      // 尝试获取关联的患者信息
-      if (appointment.patient_id != null) {
-        try {
-          final patient = await getPatient(appointment.patient_id!);
-          if (patient != null) {
-            appointments.add(appointment.copyWith(patient: patient));
-            print('成功关联患者: ${patient.name}');
-          } else {
-            appointments.add(appointment);
-            print('未找到对应患者');
-          }
-        } catch (e) {
-          print('获取预约关联的患者时出错: $e');
-          appointments.add(appointment);
-        }
-      } else {
-        appointments.add(appointment);
-        print('预约没有患者ID');
-      }
-    }
-
-    print('最终返回 ${appointments.length} 条预约');
-    return appointments;
-  }
-
-  // 获取所有预约
-  Future<List<Appointment>> getAllAppointments() async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    if (_dataSourceType == 'sqlite') {
-      try {
-        // 获取所有表名
-        final tables = await _getTableNames();
-        if (!tables.contains('appointments')) {
-          print('未找到预约表appointments');
-          return [];
-        }
-
-        // 使用正确的表名
-        final List<Map<String, dynamic>> maps =
-            await _database!.query('appointments');
-
-        // 获取预约关联的患者信息
-        List<Appointment> appointments = [];
-        for (var map in maps) {
-          final appointment = Appointment.fromMap(map);
-
-          // 尝试获取关联的患者信息
-          if (appointment.patient_id != null) {
-            try {
-              final patient = await getPatient(appointment.patient_id!);
-              if (patient != null) {
-                appointments.add(appointment.copyWith(patient: patient));
-              } else {
-                appointments.add(appointment);
-              }
-            } catch (e) {
-              print('获取预约关联的患者时出错: $e');
-              appointments.add(appointment);
-            }
-          } else {
-            appointments.add(appointment);
-          }
-        }
-
-        return appointments;
-      } catch (e) {
-        print('获取所有预约时出错: $e');
-        return [];
-      }
-    } else {
-      // MySQL获取所有预约
-      try {
-        final results = await _mysqlConnection!.query('''
-          SELECT a.*
-          FROM appointments a
-          ORDER BY a.appointment_date DESC
-        ''');
-
-        List<Appointment> appointments = [];
-
-        // 专门为MySQL处理结果
-        for (var row in results) {
-          try {
-            // 创建一个映射以使用Appointment.fromMap构造函数
-            final map = <String, dynamic>{};
-
-            // 从MySQL行中提取字段值
-            for (var field in row.fields.keys) {
-              var value = row[field];
-
-              // 处理BLOB字段
-              if (value is Blob) {
-                final blobString = String.fromCharCodes(value.toBytes());
-                print(
-                    '将Blob字段 $field 转换为字符串: ${blobString.substring(0, math.min(30, blobString.length))}...');
-                map[field] = blobString;
-              } else {
-                // 其他字段直接放入map
-                map[field] = value;
-              }
-            }
-
-            // 创建预约对象
-            final appointment = Appointment.fromMap(map);
-
-            // 如果有患者ID，尝试获取患者信息
-            if (appointment.patient_id != null) {
-              try {
-                final patient = await getPatient(appointment.patient_id!);
-                if (patient != null) {
-                  appointment.patient = patient;
-                }
-              } catch (e) {
-                print('获取预约关联的患者信息出错: $e');
-              }
-            }
-
-            appointments.add(appointment);
-          } catch (e) {
-            print('处理MySQL预约数据时出错: $e');
-          }
-        }
-
-        return appointments;
-      } catch (e) {
-        print('MySQL获取所有预约时出错: $e');
-        return [];
-      }
-    }
-  }
-
-  // 将Android应用的预约数据转换为Windows应用期望的格式
-  Map<String, dynamic> _convertAndroidAppointmentToMap(
-      Map<String, dynamic> androidMap) {
-    // 打印转换前的Map结构，帮助调试
-    print('Android预约Map结构: $androidMap');
-
-    // 创建一个新的Map以保存转换后的数据
-    final Map<String, dynamic> windowsMap = {
-      'id': androidMap['id'],
-      'patient_id':
-          androidMap['patientId'] ?? androidMap['patient_id'], // 适配不同表结构
-      'treatment_type':
-          androidMap['treatmentType'] ?? androidMap['appointmentType'] ?? '',
-      'status': androidMap['status'] ?? '已预约',
-      'notes': androidMap['description'] ?? androidMap['notes'],
-      'cost': androidMap['cost']?.toDouble() ?? 0.0,
-    };
-
-    // 处理日期字段
-    if (androidMap['appointmentDate'] != null) {
-      windowsMap['appointment_date'] = androidMap['appointmentDate'];
-    } else if (androidMap['appointment_date'] != null) {
-      windowsMap['appointment_date'] = androidMap['appointment_date'];
-    } else {
-      windowsMap['appointment_date'] = DateTime.now().toIso8601String();
-    }
-
-    return windowsMap;
-  }
-
-  // =================== 随访相关方法 ===================
-
-  // 获取患者的随访记录
-  Future<List<dynamic>> getPatientFollowUps(int patientId) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    if (_dataSourceType == 'sqlite') {
-      final List<Map<String, dynamic>> maps = await _database!.query(
-        'follow_ups',
-        where: 'patient_id = ?',
-        whereArgs: [patientId],
-        orderBy: 'follow_up_date DESC',
-      );
-
-      return maps;
-    } else {
-      // MySQL查询 - 简化返回空列表
-      return [];
-    }
-  }
-
-  // 添加随访记录
-  Future<int> addFollowUp(dynamic followUp) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    if (_dataSourceType == 'sqlite') {
-      final id = await _database!.insert(
-        'follow_ups',
-        followUp.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-
-      return id;
-    } else {
-      // MySQL添加 - 简化版本
-      return 0;
-    }
-  }
-
-  // 更新随访记录
-  Future<int> updateFollowUp(dynamic followUp) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    if (_dataSourceType == 'sqlite') {
-      final result = await _database!.update(
-        'follow_ups',
-        followUp.toMap(),
-        where: 'id = ?',
-        whereArgs: [followUp.id],
-      );
-
-      return result;
-    } else {
-      // MySQL更新 - 简化版本
-      return 0;
-    }
-  }
-
-  // 删除随访记录
-  Future<int> deleteFollowUp(int id) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    if (_dataSourceType == 'sqlite') {
-      final result = await _database!.delete(
-        'follow_ups',
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-
-      return result;
-    } else {
-      // MySQL删除
-      final result = await _mysqlConnection!
-          .query('DELETE FROM follow_ups WHERE id = ?', [id]);
-
-      return result.affectedRows ?? 0;
-    }
-  }
-
-  // 数据同步功能 - 为了与安卓端保持一致
-  Future<String> exportDatabase() async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    // 导出数据库实现...
-    throw UnimplementedError('数据导出功能尚未实现');
-  }
-
-  Future<void> importDatabase(String importFilePath) async {
-    try {
-      // 关闭当前数据库连接
-      await closeDatabase();
-
-      // 获取应用数据库文件路径
-      final documentsDirectory = await getApplicationDocumentsDirectory();
-      final dbPath = path.join(documentsDirectory.path, DB_NAME);
-
-      // 检查导入文件是否存在
-      final importFile = File(importFilePath);
-      if (!await importFile.exists()) {
-        throw Exception('导入文件不存在');
-      }
-
-      // 删除当前数据库文件
-      final dbFile = File(dbPath);
-      if (await dbFile.exists()) {
-        await dbFile.delete();
-      }
-
-      // 复制导入文件到数据库位置
-      await importFile.copy(dbPath);
-
-      // 重新初始化数据库连接
-      await initDatabase();
-
-      // 标记所有页面需要刷新
-      markPatientsNeedRefresh();
-      markAppointmentsNeedRefresh();
-      markDashboardNeedRefresh();
-      markFollowUpsNeedRefresh();
-
-      print('数据库已从导入文件恢复: $importFilePath');
-    } catch (e) {
-      print('导入数据库错误: $e');
-      rethrow;
-    }
-  }
-
-  // 自动备份功能
-  Future<void> performAutoBackup(String backupDir) async {
-    try {
-      final backupPath = await backupDatabase();
-      print('自动备份已完成: $backupPath');
-
-      // 删除旧备份 (保留最近10个备份)
-      await _cleanupOldBackups(backupDir, 10);
-    } catch (e) {
-      print('自动备份失败: $e');
-      rethrow;
-    }
-  }
-
-  // 清理旧备份文件
-  Future<void> _cleanupOldBackups(String backupDir, int keepCount) async {
-    try {
-      final directory = Directory(backupDir);
-      if (!await directory.exists()) return;
-
-      // 获取所有备份文件
-      final files = await directory
-          .list()
-          .where((entity) => entity is File && entity.path.endsWith('.db'))
-          .toList();
-
-      // 按修改时间排序
-      files.sort((a, b) {
-        return File(
-          b.path,
-        ).lastModifiedSync().compareTo(File(a.path).lastModifiedSync());
-      });
-
-      // 删除旧文件
-      if (files.length > keepCount) {
-        for (int i = keepCount; i < files.length; i++) {
-          await File(files[i].path).delete();
-          print('删除旧备份文件: ${files[i].path}');
-        }
-      }
-    } catch (e) {
-      print('清理旧备份失败: $e');
-    }
-  }
-
-  // 添加患者
-  Future<int> addPatient(Patient patient) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    // 明确设置创建时间和更新时间
-    final Map<String, dynamic> patientMap = patient.toMap();
-    final now = DateTime.now();
-    final nowStr = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
-    patientMap['created_at'] = nowStr;
-    patientMap['updated_at'] = nowStr;
-
-    // 自动生成拼音字段 - 无论之前是否有值
-    patientMap['name_pinyin'] = PinyinUtil.toPinyin(patient.name);
-    patientMap['name_initials'] = PinyinUtil.getInitials(patient.name);
-    print('生成姓名拼音: ${patientMap['name_pinyin']}');
-    print('生成姓名首字母: ${patientMap['name_initials']}');
-
-    if (patient.address != null) {
-      patientMap['address_pinyin'] = PinyinUtil.toPinyin(patient.address!);
-      print('生成地址拼音: ${patientMap['address_pinyin']}');
-    }
-
-    print('添加患者: ${patient.name}, 设置更新时间为: $nowStr');
-
-    if (dataSourceType == 'sqlite') {
-      try {
-        final id = await _database!.insert('patients', patientMap);
-
-        // 标记患者数据需要刷新
-        _patientsNeedRefresh = true;
-        notifyListeners();
-
-        return id;
-      } catch (e) {
-        print('添加患者时出错: $e');
-        rethrow;
-      }
-    } else {
-      try {
-        final result = await _mysqlConnection!.query(
-          'INSERT INTO patients (name, name_pinyin, age, gender, phone, medical_record_number, address, address_pinyin, identification_number, doctor, dental_condition, treatment_items, first_visit_date, total_cost, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [
-            patientMap['name'],
-            patientMap['name_pinyin'],
-            patientMap['age'],
-            patientMap['gender'],
-            patientMap['phone'],
-            patientMap['medical_record_number'],
-            patientMap['address'],
-            patientMap['address_pinyin'],
-            patientMap['identification_number'],
-            patientMap['doctor'],
-            patientMap['dental_condition'],
-            patientMap['treatment_items'],
-            patientMap['first_visit_date'],
-            patientMap['total_cost'],
-            patientMap['created_at'],
-            patientMap['updated_at'],
-          ],
-        );
-
-        // 标记患者数据需要刷新
-        _patientsNeedRefresh = true;
-        notifyListeners();
-
-        return result.insertId ?? 0;
-      } catch (e) {
-        print('添加患者(MySQL)时出错: $e');
-        rethrow;
-      }
-    }
-  }
-
-  // 更新患者
-  Future<int> updatePatient(Patient patient) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    if (patient.id == null) {
-      throw Exception('更新患者时必须提供ID');
-    }
-
-    // 明确设置更新时间为当前时间
-    final Map<String, dynamic> patientMap = patient.toMap();
-    final now = DateTime.now();
-    patientMap['updated_at'] = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
-
-    // 自动更新拼音字段 - 无论拼音字段是否为空，只要有姓名和地址信息就更新
-    patientMap['name_pinyin'] = PinyinUtil.toPinyin(patient.name);
-    patientMap['name_initials'] = PinyinUtil.getInitials(patient.name);
-    print('更新姓名拼音: ${patientMap['name_pinyin']}');
-    print('更新姓名首字母: ${patientMap['name_initials']}');
-
-    if (patient.address != null) {
-      patientMap['address_pinyin'] = PinyinUtil.toPinyin(patient.address!);
-      print('更新地址拼音: ${patientMap['address_pinyin']}');
-    }
-
-    print('更新患者ID: ${patient.id}, 设置更新时间为: ${patientMap['updated_at']}');
-
-    if (dataSourceType == 'sqlite') {
-      try {
-        final result = await _database!.update(
-          'patients',
-          patientMap,
-          where: 'id = ?',
-          whereArgs: [patient.id],
-        );
-
-        // 标记患者数据需要刷新
-        _patientsNeedRefresh = true;
-        notifyListeners();
-
-        return result;
-      } catch (e) {
-        print('更新患者数据时出错: $e');
-        rethrow;
-      }
-    } else {
-      try {
-        final result = await _mysqlConnection!.query(
-          'UPDATE patients SET name = ?, name_pinyin = ?, age = ?, gender = ?, phone = ?, medical_record_number = ?, address = ?, address_pinyin = ?, identification_number = ?, doctor = ?, dental_condition = ?, treatment_items = ?, first_visit_date = ?, total_cost = ?, updated_at = ? WHERE id = ?',
-          [
-            patientMap['name'],
-            patientMap['name_pinyin'],
-            patientMap['age'],
-            patientMap['gender'],
-            patientMap['phone'],
-            patientMap['medical_record_number'],
-            patientMap['address'],
-            patientMap['address_pinyin'],
-            patientMap['identification_number'],
-            patientMap['doctor'],
-            patientMap['dental_condition'],
-            patientMap['treatment_items'],
-            patientMap['first_visit_date'],
-            patientMap['total_cost'],
-            patientMap['updated_at'],
-            patient.id,
-          ],
-        );
-
-        // 标记患者数据需要刷新
-        _patientsNeedRefresh = true;
-        notifyListeners();
-
-        return result.affectedRows ?? 0;
-      } catch (e) {
-        print('更新患者数据(MySQL)时出错: $e');
-        rethrow;
-      }
-    }
-  }
-
-  // 添加预约
-  Future<int> addAppointment(Appointment appointment) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    if (_dataSourceType == 'sqlite') {
-      try {
-        // 转换Appointment对象为符合数据库结构的Map
-        Map<String, dynamic> appointmentMap = {
-          'patient_id': appointment.patient_id,
-          'appointment_date': _formatDateTime(appointment.appointment_date),
-          'status': appointment.status,
-          'treatment_type': appointment.treatment_type,
-          'notes': appointment.notes,
-          'cost': appointment.cost,
-          'created_at': _formatDateTime(DateTime.now()),
-          'updated_at': _formatDateTime(DateTime.now()),
-        };
-
-        // 插入数据
-        int id = await _database!.insert('appointments', appointmentMap);
-
-        // 标记预约数据需要刷新
-        _appointmentsNeedRefresh = true;
-        _dashboardNeedRefresh = true;
-        notifyListeners(); // 通知监听者数据已更改
-
-        return id;
-      } catch (e) {
-        print('添加预约时出错: $e');
-        throw Exception('添加预约失败: $e');
-      }
-    } else {
-      // MySQL添加预约
-      try {
-        // 转换Appointment对象为符合数据库结构的Map
-        Map<String, dynamic> appointmentMap = {
-          'patient_id': appointment.patient_id,
-          'appointment_date': _formatDateTime(appointment.appointment_date),
-          'status': appointment.status,
-          'treatment_type': appointment.treatment_type,
-          'notes': appointment.notes,
-          'cost': appointment.cost,
-          'created_at': _formatDateTime(DateTime.now()),
-          'updated_at': _formatDateTime(DateTime.now()),
-        };
-
-        final result = await _mysqlConnection!.query(
-          'INSERT INTO appointments (patient_id, appointment_date, status, treatment_type, notes, cost, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [
-            appointmentMap['patient_id'],
-            appointmentMap['appointment_date'],
-            appointmentMap['status'],
-            appointmentMap['treatment_type'],
-            appointmentMap['notes'],
-            appointmentMap['cost'],
-            appointmentMap['created_at'],
-            appointmentMap['updated_at'],
-          ],
-        );
-
-        // 标记预约数据需要刷新
-        _appointmentsNeedRefresh = true;
-        _dashboardNeedRefresh = true;
-        notifyListeners(); // 通知监听者数据已更改
-
-        return result.insertId!;
-      } catch (e) {
-        print('MySQL添加预约时出错: $e');
-        throw Exception('添加预约失败: $e');
-      }
-    }
-  }
-
-  // 更新预约
-  Future<int> updateAppointment(Appointment appointment) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    if (appointment.id == null) {
-      throw Exception('更新预约时必须提供ID');
-    }
-
-    if (_dataSourceType == 'sqlite') {
-      try {
-        // 转换Appointment对象为符合数据库结构的Map
-        Map<String, dynamic> appointmentMap = {
-          'patient_id': appointment.patient_id,
-          'appointment_date': _formatDateTime(appointment.appointment_date),
-          'status': appointment.status,
-          'treatment_type': appointment.treatment_type,
-          'notes': appointment.notes,
-          'cost': appointment.cost,
-          'updated_at': _formatDateTime(DateTime.now()),
-        };
-
-        // 更新数据
-        int count = await _database!.update(
-          'appointments',
-          appointmentMap,
-          where: 'id = ?',
-          whereArgs: [appointment.id],
-        );
-
-        // 标记预约数据需要刷新
-        _appointmentsNeedRefresh = true;
-        _dashboardNeedRefresh = true;
-        notifyListeners(); // 通知监听者数据已更改
-
-        return count;
-      } catch (e) {
-        print('更新预约时出错: $e');
-        throw Exception('更新预约失败: $e');
-      }
-    } else {
-      // MySQL更新预约
-      try {
-        // 转换Appointment对象为符合数据库结构的Map
-        Map<String, dynamic> appointmentMap = {
-          'patient_id': appointment.patient_id,
-          'appointment_date': _formatDateTime(appointment.appointment_date),
-          'status': appointment.status,
-          'treatment_type': appointment.treatment_type,
-          'notes': appointment.notes,
-          'cost': appointment.cost,
-          'updated_at': _formatDateTime(DateTime.now()),
-        };
-
-        final result = await _mysqlConnection!.query(
-          'UPDATE appointments SET patient_id = ?, appointment_date = ?, status = ?, treatment_type = ?, notes = ?, cost = ?, updated_at = ? WHERE id = ?',
-          [
-            appointmentMap['patient_id'],
-            appointmentMap['appointment_date'],
-            appointmentMap['status'],
-            appointmentMap['treatment_type'],
-            appointmentMap['notes'],
-            appointmentMap['cost'],
-            appointmentMap['updated_at'],
-            appointment.id,
-          ],
-        );
-
-        // 标记预约数据需要刷新
-        _appointmentsNeedRefresh = true;
-        _dashboardNeedRefresh = true;
-        notifyListeners(); // 通知监听者数据已更改
-
-        return result.affectedRows ?? 0;
-      } catch (e) {
-        print('MySQL更新预约时出错: $e');
-        throw Exception('更新预约失败: $e');
-      }
-    }
-  }
-
-  // 删除预约
-  Future<void> deleteAppointment(int appointmentId) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    if (_dataSourceType == 'sqlite') {
-      try {
-        await _database!.delete(
-          'appointments',
-          where: 'id = ?',
-          whereArgs: [appointmentId],
-        );
-
-        // 更新刷新标记
-        _appointmentsNeedRefresh = true;
-        _dashboardNeedRefresh = true;
-        notifyListeners(); // 通知监听者数据已更改
-      } catch (e) {
-        print('删除预约时出错: $e');
-        throw Exception('删除预约失败: $e');
-      }
-    } else {
-      try {
-        await _mysqlConnection!.query(
-          'DELETE FROM appointments WHERE id = ?',
-          [appointmentId],
-        );
-
-        // 更新刷新标记
-        _appointmentsNeedRefresh = true;
-        _dashboardNeedRefresh = true;
-        notifyListeners(); // 通知监听者数据已更改
-      } catch (e) {
-        print('MySQL删除预约时出错: $e');
-        throw Exception('删除预约失败: $e');
-      }
-    }
-  }
-
-  // 获取预约总数
-  Future<int> getAppointmentCount({String? doctorName}) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    try {
-      String whereClause = '';
-      List<dynamic> whereArgs = [];
-
-      // 按医生过滤
-      if (doctorName != null && doctorName.isNotEmpty) {
-        whereClause = 'doctor = ?';
-        whereArgs = [doctorName];
-      }
-
-      if (_dataSourceType == 'sqlite') {
-        final countResult = await _database!.rawQuery(
-          'SELECT COUNT(*) as count FROM appointments${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}',
-          whereArgs,
-        );
-        return countResult.first['count'] as int;
-      } else {
-        final conn = await _getMySQLConnection();
-        final result = await conn.query(
-          'SELECT COUNT(*) as count FROM appointments${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}',
-          whereArgs,
-        );
-        await conn.close();
-        return result.first['count'] as int;
-      }
-    } catch (e) {
-      print('获取预约数量时出错: $e');
-      return 0;
-    }
-  }
-
-  // 获取已完成预约数量
-  Future<int> getCompletedAppointmentCount({String? doctorName}) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    try {
-      // 修改SQL查询，支持所有可能的"已完成"状态值
-      String whereClause =
-          "(status = 'completed' OR status = '已完成' OR status = 'Completed')";
-      List<dynamic> whereArgs = [];
-
-      // 按医生过滤
-      if (doctorName != null && doctorName.isNotEmpty) {
-        whereClause += ' AND doctor = ?';
-        whereArgs.add(doctorName);
-      }
-
-      print('执行已完成预约查询: $whereClause, 参数: $whereArgs');
-
-      if (_dataSourceType == 'sqlite') {
-        final countResult = await _database!.rawQuery(
-          'SELECT COUNT(*) as count FROM appointments WHERE $whereClause',
-          whereArgs,
-        );
-        final count = countResult.first['count'] as int;
-        print('查询到已完成预约数量: $count');
-        return count;
-      } else {
-        final conn = await _getMySQLConnection();
-        final result = await conn.query(
-          'SELECT COUNT(*) as count FROM appointments WHERE $whereClause',
-          whereArgs,
-        );
-        await conn.close();
-        final count = result.first['count'] as int;
-        print('查询到已完成预约数量: $count');
-        return count;
-      }
-    } catch (e) {
-      print('获取已完成预约数量时出错: $e');
-      return 0;
-    }
-  }
-
-  // 获取患者统计数据
-  Future<int> getPatientCount({String? doctorName}) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    try {
-      String whereClause = '';
-      List<dynamic> whereArgs = [];
-
-      // 按医生过滤
-      if (doctorName != null && doctorName.isNotEmpty) {
-        whereClause = 'doctor = ?';
-        whereArgs = [doctorName];
-      }
-
-      if (_dataSourceType == 'sqlite') {
-        final countResult = await _database!.rawQuery(
-          'SELECT COUNT(*) as count FROM patients${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}',
-          whereArgs,
-        );
-        return countResult.first['count'] as int;
-      } else {
-        final conn = await _getMySQLConnection();
-        final result = await conn.query(
-          'SELECT COUNT(*) as count FROM patients${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}',
-          whereArgs,
-        );
-        await conn.close();
-        return result.first['count'] as int;
-      }
-    } catch (e) {
-      print('获取患者数量时出错: $e');
-      return 0;
-    }
-  }
-
-  // 获取今日预约
-  Future<List<Appointment>> getTodayAppointments({String? doctorName}) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    try {
-      // 获取今天的日期，格式化为 YYYY-MM-DD
-      final today = DateTime.now();
-      final dateString =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-
-      List<Appointment> appointments = [];
-
-      if (_dataSourceType == 'sqlite') {
-        String query = '''
-          SELECT a.*, p.name as patient_name, p.doctor, p.gender, p.age, p.phone, p.first_visit_date
-          FROM appointments a 
-          JOIN patients p ON a.patient_id = p.id 
-          WHERE date(a.appointment_date) = date(?) 
-        ''';
-
-        List<dynamic> args = [dateString];
-
-        // 如果提供了医生名称，添加过滤条件
-        if (doctorName != null && doctorName.isNotEmpty) {
-          query += 'AND p.doctor = ? ';
-          args.add(doctorName);
-        }
-
-        query += 'ORDER BY a.appointment_date ASC';
-
-        final results = await _database!.rawQuery(query, args);
-        appointments = results.map((row) {
-          // 创建带有患者信息的Appointment对象
-          final appointment = Appointment.fromMap(row);
-          appointment.patient = Patient(
-            id: row['patient_id'] as int,
-            name: row['patient_name'] as String,
-            gender: row['gender'] as String,
-            age: row['age'] as int,
-            phone: row['phone'],
-            first_visit_date: _parseDateTime(row['first_visit_date']),
-            doctor: row['doctor'] as String?,
-          );
-          return appointment;
-        }).toList();
-      } else {
-        // 为MySQL实现相同的查询
-        final conn = await _getMySQLConnection();
-        String query = '''
-          SELECT a.*, p.name as patient_name, p.doctor, p.gender, p.age, p.phone, p.first_visit_date
-          FROM appointments a 
-          JOIN patients p ON a.patient_id = p.id 
-          WHERE DATE(a.appointment_date) = DATE(?) 
-        ''';
-
-        List<dynamic> args = [dateString];
-
-        // 如果提供了医生名称，添加过滤条件
-        if (doctorName != null && doctorName.isNotEmpty) {
-          query += 'AND p.doctor = ? ';
-          args.add(doctorName);
-        }
-
-        query += 'ORDER BY a.appointment_date ASC';
-
-        final results = await conn.query(query, args);
-        for (var row in results) {
-          final Map<String, dynamic> appointmentMap = {};
-          for (var entry in row.fields.entries) {
-            appointmentMap[entry.key] = entry.value;
-          }
-
-          final appointment = Appointment.fromMap(appointmentMap);
-          appointment.patient = Patient(
-            id: row['patient_id'] as int,
-            name: row['patient_name'] as String,
-            gender: row['gender'] as String,
-            age: row['age'] as int,
-            phone: row['phone'],
-            first_visit_date: _parseDateTime(row['first_visit_date']),
-            doctor: row['doctor'] as String?,
-          );
-          appointments.add(appointment);
-        }
-        await conn.close();
-      }
-
-      return appointments;
-    } catch (e) {
-      print('获取今日预约时出错: $e');
-      return [];
-    }
-  }
-
-  // 获取最近添加的患者
-  Future<List<Patient>> getRecentPatients(
-      {int limit = 5, String? doctorName}) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    try {
-      String whereClause = '';
-      List<dynamic> whereArgs = [];
-
-      // 按医生过滤
-      if (doctorName != null && doctorName.isNotEmpty) {
-        whereClause = 'WHERE doctor = ?';
-        whereArgs = [doctorName];
-      }
-
-      if (_dataSourceType == 'sqlite') {
-        final List<Map<String, dynamic>> maps = await _database!.rawQuery(
-          'SELECT * FROM patients $whereClause ORDER BY updated_at DESC LIMIT ?',
-          [...whereArgs, limit],
-        );
-
-        return maps.map((map) => Patient.fromMap(map)).toList();
-      } else {
-        final conn = await _getMySQLConnection();
-        final results = await conn.query(
-          'SELECT * FROM patients $whereClause ORDER BY updated_at DESC LIMIT ?',
-          [...whereArgs, limit],
-        );
-        await conn.close();
-
-        // 转换为Patient对象
-        final List<Map<String, dynamic>> maps = [];
-        for (var row in results) {
-          maps.add({
-            for (var entry in row.fields.entries) entry.key: entry.value,
-          });
-        }
-
-        return maps.map((map) => Patient.fromMap(map)).toList();
-      }
-    } catch (e) {
-      print('获取最近患者时出错: $e');
-      return [];
-    }
-  }
-
-  // MySQL连接帮助方法
-  Future<MySqlConnection> _getMySQLConnection() async {
-    final settingsProvider = SettingsProvider();
-    await settingsProvider.init();
-
-    final String host = settingsProvider.mysqlHost;
-    final int port = int.tryParse(settingsProvider.mysqlPort) ?? 3306;
-    final String database = settingsProvider.mysqlDatabase;
-    final String username = settingsProvider.mysqlUsername;
-    final String password = settingsProvider.mysqlPassword;
-
-    final settings = ConnectionSettings(
-      host: host,
-      port: port,
-      user: username,
-      password: password,
-      db: database,
-    );
-
-    return await MySqlConnection.connect(settings);
-  }
-
-  // 保存上次MySQL设置的方法
-  Future<void> _saveLastMySQLSettings() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      Map<String, dynamic> settings = {
-        'host': _mysqlHost,
-        'port': _mysqlPort,
-        'database': _mysqlDatabase,
-        'username': _mysqlUsername,
-        'password': _mysqlPassword,
-      };
-
-      await prefs.setString('last_mysql_settings', jsonEncode(settings));
-      _lastMySQLSettings = settings;
-    } catch (e) {
-      print('保存MySQL设置失败: $e');
-    }
-  }
-
-  // =================== 用户相关方法 ===================
-
-  // 获取所有用户
-  Future<List<User>> getAllUsers() async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    try {
-      List<User> users = [];
-
-      if (_dataSourceType == 'sqlite') {
-        final db = await database;
-        final result =
-            await db!.rawQuery('SELECT * FROM users ORDER BY username');
-        users = result.map((e) => User.fromMap(e)).toList();
-      } else if (_dataSourceType == 'mysql') {
-        try {
-          final conn = await mysqlConnection;
-          final results =
-              await conn!.query('SELECT * FROM users ORDER BY username');
-
-          print('MySQL查询用户数据: ${results.length} 个用户');
-
-          for (var row in results) {
-            try {
-              final map = <String, dynamic>{};
-              for (var field in row.fields.keys) {
-                var value = row[field];
-                if (value is Blob) {
-                  final blobString = String.fromCharCodes(value.toBytes());
-                  print(
-                      '将用户Blob字段 $field 转换为字符串: ${blobString.substring(0, math.min(30, blobString.length))}...');
-                  map[field] = blobString;
-                } else {
-                  // 其他字段直接放入map
-                  map[field] = value;
-                }
-              }
-              users.add(User.fromMap(map));
-            } catch (e) {
-              print('处理MySQL用户数据时出错: $e');
-            }
-          }
-        } catch (e) {
-          print('MySQL查询用户列表出错: $e');
-          rethrow;
-        }
-      }
-
-      return users;
-    } catch (e) {
-      print('获取所有用户出错: $e');
-      return [];
-    }
-  }
-
-  // 添加用户 - 使用本地时间而非UTC
-  Future<void> addUser(String username, String password, String role,
-      {String? email, String? doctor}) async {
-    try {
-      // 使用SHA-256加密密码，与登录时使用的加密方法一致
-      var bytes = utf8.encode(password);
-      var digest = sha256.convert(bytes);
-      final hashedPassword = digest.toString();
-
-      final now = DateTime.now(); // 使用本地时间
-      final timestamp = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
-
-      if (_dataSourceType == 'mysql' && _mysqlConnection != null) {
-        await _mysqlConnection!.query(
-          'INSERT INTO users (username, password, role, email, doctor, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-          [
-            username,
-            hashedPassword,
-            role,
-            email ?? '',
-            doctor ?? '',
-            timestamp
-          ],
-        );
-      } else {
-        await _database!.insert(
-          'users',
-          {
-            'username': username,
-            'password': hashedPassword,
-            'role': role,
-            'email': email ?? '',
-            'doctor': doctor,
-            'created_at': timestamp,
-          },
-        );
-      }
-    } catch (e) {
-      if (_dataSourceType == 'mysql') {
-        print('MySQL添加用户时出错: $e');
-      } else {
-        print('SQLite添加用户时出错: $e');
-      }
-      rethrow;
-    }
-  }
-
-  // 更新用户信息 - 使用本地时间而非UTC
-  Future<void> updateUser(
-      int id, String username, String? password, String role,
-      {String? email, String? doctor}) async {
-    try {
-      final now = DateTime.now(); // 使用本地时间
-
-      // 构建更新数据
-      Map<String, dynamic> userData = {
-        'username': username,
-        'role': role,
-        'email': email ?? '',
-      };
-
-      // 如果提供了医生姓名，则更新医生字段
-      if (doctor != null) {
-        userData['doctor'] = doctor;
-      }
-
-      // 如果提供了新密码，则更新密码
-      if (password != null && password.isNotEmpty) {
-        // 使用SHA-256加密密码，与登录时使用的加密方法一致
-        var bytes = utf8.encode(password);
-        var digest = sha256.convert(bytes);
-        userData['password'] = digest.toString();
-      }
-
-      if (_dataSourceType == 'mysql' && _mysqlConnection != null) {
-        String query = 'UPDATE users SET ';
-        List<String> setParts = [];
-        List<dynamic> params = [];
-
-        userData.forEach((key, value) {
-          setParts.add('$key = ?');
-          params.add(value);
-        });
-
-        query += setParts.join(', ');
-        query += ' WHERE id = ?';
-        params.add(id);
-
-        await _mysqlConnection!.query(query, params);
-      } else {
-        await _database!.update(
-          'users',
-          userData,
-          where: 'id = ?',
-          whereArgs: [id],
-        );
-      }
-    } catch (e) {
-      print('更新用户信息时出错: $e');
-      rethrow;
-    }
-  }
-
-  // 更新用户密码
-  Future<int> updateUserPassword(int userId, String newPassword) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    // 使用MD5加密密码，确保与登录验证一致
-    var bytes = utf8.encode(newPassword);
-    var digest = md5.convert(bytes);
-    String hashedPassword = digest.toString();
-
-    print('更新用户密码，使用MD5加密: $hashedPassword');
-
-    if (_dataSourceType == 'sqlite') {
-      try {
-        // 更新密码
-        Map<String, dynamic> passwordMap = {
-          'password': hashedPassword,
-        };
-
-        int count = await _database!.update(
-          'users',
-          passwordMap,
-          where: 'id = ?',
-          whereArgs: [userId],
-        );
-        print('SQLite更新用户密码成功，影响行数: $count');
-        return count;
-      } catch (e) {
-        print('更新用户密码时出错: $e');
-        throw Exception('更新用户密码失败: $e');
-      }
-    } else {
-      // MySQL更新密码
-      try {
-        Results results = await _mysqlConnection!.query(
-          'UPDATE users SET password = ? WHERE id = ?',
-          [hashedPassword, userId],
-        );
-        print('MySQL更新用户密码成功，影响行数: ${results.affectedRows}');
-        return results.affectedRows ?? 0;
-      } catch (e) {
-        print('MySQL更新用户密码时出错: $e');
-        throw Exception('更新用户密码失败: $e');
-      }
-    }
-  }
-
-  // 删除用户
-  Future<int> deleteUser(int userId) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    if (_dataSourceType == 'sqlite') {
-      try {
-        int count = await _database!.delete(
-          'users',
-          where: 'id = ?',
-          whereArgs: [userId],
-        );
-        print('SQLite删除用户成功，影响行数: $count');
-        return count;
-      } catch (e) {
-        print('删除用户时出错: $e');
-        throw Exception('删除用户失败: $e');
-      }
-    } else {
-      // MySQL删除用户
-      try {
-        Results results = await _mysqlConnection!.query(
-          'DELETE FROM users WHERE id = ?',
-          [userId],
-        );
-        print('MySQL删除用户成功，影响行数: ${results.affectedRows}');
-        return results.affectedRows ?? 0;
-      } catch (e) {
-        print('MySQL删除用户时出错: $e');
-        throw Exception('删除用户失败: $e');
-      }
-    }
-  }
-
-  // 从SQL文件恢复数据库
-  Future<void> restoreFromSqlFile(String sqlFilePath) async {
-    try {
-      // 读取SQL文件内容
-      final file = File(sqlFilePath);
-      String sqlContent = await file.readAsString();
-
-      // 替换牙齿状况的十六进制格式为JSON字符串格式
-      sqlContent = _processDentalConditionFormat(sqlContent);
-
-      // 分割SQL语句
-      List<String> statements = _splitSqlStatements(sqlContent);
-
-      print('共有 ${statements.length} 条SQL语句需要执行');
-
-      // 逐条执行SQL语句
-      for (var statement in statements) {
-        // 跳过空语句和注释
-        statement = statement.trim();
-        if (statement.isEmpty || statement.startsWith('--')) {
-          continue;
-        }
-
-        try {
-          await _mysqlConnection!.query(statement);
-        } catch (e) {
-          print('执行SQL语句时出错: $e');
-          print('问题语句: $statement');
-          // 继续执行其他语句
-        }
-      }
-
-      print('数据库已从 $sqlFilePath 恢复');
-    } catch (e) {
-      print('恢复数据库时出错: $e');
-      rethrow;
-    }
-  }
+  // MySQL数据库还原方法
+  // 注意：此方法执行实际的数据库还原操作，设置管理由SettingsProvider负责
 
   // 添加新的方法来处理MySQL备份还原
-  Future<void> restoreFromMySQLDump(String dumpFilePath) async {
+  Future<void> restoreFromMySQLDump(String dumpFilePath, {
+    Map<String, dynamic>? mysqlSettings,
+    Function(String)? onLogOperation,
+  }) async {
     print('开始恢复MySQL数据库...');
 
     // 检查数据源类型
@@ -3898,36 +1674,25 @@ class DatabaseProvider extends ChangeNotifier {
       throw Exception('当前数据源不是MySQL');
     }
 
-    // 确保MySQL设置已初始化，如果未初始化，尝试从设置中获取
-    Map<String, dynamic> mysqlSettings;
-    if (_mysqlSettings == null) {
-      print('MySQL设置未初始化，尝试使用连接参数');
-
-      // 使用已保存的连接参数
-      mysqlSettings = {
-        'host': _mysqlHost,
-        'port': int.tryParse(_mysqlPort) ?? 3306,
-        'database': _mysqlDatabase,
-        'username': _mysqlUsername,
-        'password': _mysqlPassword,
-      };
-
-      // 验证参数
-      if (mysqlSettings['host'] == null ||
-          mysqlSettings['host'].toString().isEmpty ||
-          mysqlSettings['database'] == null ||
-          mysqlSettings['database'].toString().isEmpty) {
-        throw Exception('MySQL连接参数不完整，请在设置中配置MySQL连接');
-      }
-
-      print(
-          '使用已保存的MySQL连接参数: ${mysqlSettings.toString().replaceAll(mysqlSettings['password'], '******')}');
-    } else {
-      // 使用已初始化的MySQL设置
-      mysqlSettings = Map<String, dynamic>.from(_mysqlSettings!);
-      print(
-          'MySQL设置已初始化: ${mysqlSettings.toString().replaceAll(mysqlSettings['password'], '******')}');
+    // 记录还原操作开始
+    if (onLogOperation != null) {
+      onLogOperation('MySQL还原开始: $dumpFilePath');
     }
+
+    // 验证MySQL设置参数
+    if (mysqlSettings == null) {
+      throw Exception('MySQL设置不能为空，请先配置MySQL连接参数');
+    }
+    
+    // 验证参数
+    if (mysqlSettings['host'] == null ||
+        mysqlSettings['host'].toString().isEmpty ||
+        mysqlSettings['database'] == null ||
+        mysqlSettings['database'].toString().isEmpty) {
+      throw Exception('MySQL连接参数不完整，请检查host和database设置');
+    }
+    
+    print('使用传入的MySQL设置进行还原');
 
     try {
       print('当前工作目录: ${Directory.current.path}');
@@ -3942,8 +1707,8 @@ class DatabaseProvider extends ChangeNotifier {
       try {
         print('开始直接方法执行SQL还原...');
 
-        // 获取mysql.exe的路径
-        final mysqlPath = _getMySQLToolPath('mysql.exe');
+        // 使用AppPaths获取mysql.exe的路径
+        final mysqlPath = AppPaths.mysqlExePath;
         print('MySQL工具路径: $mysqlPath');
 
         // 构建命令行参数 - 直接命令行方式
@@ -3987,8 +1752,8 @@ class DatabaseProvider extends ChangeNotifier {
       try {
         print('尝试使用临时配置文件方式执行...');
 
-        // 获取mysql.exe的路径
-        final mysqlPath = _getMySQLToolPath('mysql.exe');
+        // 使用AppPaths获取mysql.exe的路径
+        final mysqlPath = AppPaths.mysqlExePath;
         print('MySQL工具路径: $mysqlPath');
 
         // 创建临时配置文件
@@ -4053,8 +1818,8 @@ default-character-set=utf8mb4
       try {
         print('尝试使用批处理方式执行...');
 
-        // 获取mysql.exe的路径
-        final mysqlPath = _getMySQLToolPath('mysql.exe');
+        // 使用AppPaths获取mysql.exe的路径
+        final mysqlPath = AppPaths.mysqlExePath;
         print('MySQL工具路径: $mysqlPath');
 
         // 创建临时批处理文件
@@ -4182,119 +1947,20 @@ if %ERRORLEVEL% NEQ 0 (
       if (successCount == 0 && failCount > 0) {
         throw Exception('所有SQL语句执行失败，可能存在格式或编码问题');
       }
+
+      // 记录还原操作完成
+      if (onLogOperation != null) {
+        final success = successCount > 0;
+        onLogOperation('MySQL还原完成: ${success ? '成功' : '部分失败'}');
+      }
     } catch (e) {
       print('执行MySQL还原时出错: $e');
       rethrow;
     }
   }
 
-  // 添加备份MySQL数据库的方法
-  Future<String> backupMySQLDatabase() async {
-    print('开始MySQL备份过程...');
-
-    // 检查数据源类型
-    if (_dataSourceType != 'mysql') {
-      throw Exception('当前数据源不是MySQL，无法执行MySQL备份');
-    }
-
-    // 确保MySQL设置已初始化，如果未初始化，尝试从设置中获取
-    Map<String, dynamic> mysqlSettings;
-    if (_mysqlSettings == null) {
-      print('MySQL设置未初始化，尝试使用连接参数');
-
-      // 使用已保存的连接参数
-      mysqlSettings = {
-        'host': _mysqlHost,
-        'port': int.tryParse(_mysqlPort) ?? 3306,
-        'database': _mysqlDatabase,
-        'username': _mysqlUsername,
-        'password': _mysqlPassword,
-      };
-
-      // 验证参数
-      if (mysqlSettings['host'] == null ||
-          mysqlSettings['host'].toString().isEmpty ||
-          mysqlSettings['database'] == null ||
-          mysqlSettings['database'].toString().isEmpty) {
-        throw Exception('MySQL连接参数不完整，请在设置中配置MySQL连接');
-      }
-
-      print(
-          '使用已保存的MySQL连接参数: ${mysqlSettings.toString().replaceAll(mysqlSettings['password'], '******')}');
-    } else {
-      // 使用已初始化的MySQL设置
-      mysqlSettings = Map<String, dynamic>.from(_mysqlSettings!);
-      print(
-          'MySQL设置已初始化: ${mysqlSettings.toString().replaceAll(mysqlSettings['password'], '******')}');
-    }
-
-    print('当前工作目录: ${Directory.current.path}');
-
-    // 构建mysqldump工具路径
-    final toolPath = _getMySQLToolPath('mysqldump.exe');
-    print('使用mysqldump工具: $toolPath');
-
-    // 从SettingsProvider获取用户指定的备份目录
-    final settingsProvider = SettingsProvider();
-    await settingsProvider.init();
-    final userBackupPath = settingsProvider.backupPath;
-    print('备份目录: $userBackupPath');
-
-    if (userBackupPath.isEmpty) {
-      throw Exception('未设置备份目录');
-    }
-
-    // 确保备份目录存在
-    final backupDir = Directory(userBackupPath);
-    if (!await backupDir.exists()) {
-      print('创建备份目录: ${backupDir.path}');
-      await backupDir.create(recursive: true);
-    }
-
-    // 生成备份文件名
-    final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
-    final backupFileName = 'backup_$timestamp.sql';
-    final backupPath = path.join(userBackupPath, backupFileName);
-    print('备份文件路径: $backupPath');
-
-    // 构建命令参数列表
-    final List<String> args = [
-      '-h${mysqlSettings['host']}',
-      '-P${mysqlSettings['port']}',
-      '-u${mysqlSettings['username']}',
-      '-p${mysqlSettings['password']}',
-      '--default-character-set=utf8mb4',
-      mysqlSettings['database'],
-      '--result-file=$backupPath' // 直接指定输出文件
-    ];
-
-    print(
-        '执行mysqldump命令: $toolPath ${args.join(' ').replaceAll(mysqlSettings['password'], '******')}');
-
-    try {
-      // 使用Process.run执行mysqldump命令
-      final result = await Process.run(
-        toolPath,
-        args,
-        stdoutEncoding: const SystemEncoding(),
-        stderrEncoding: const SystemEncoding(),
-      );
-
-      print('mysqldump命令执行结果: exitCode=${result.exitCode}');
-      print('标准输出: ${result.stdout}');
-
-      if (result.exitCode != 0) {
-        print('备份失败，错误输出: ${result.stderr}');
-        throw Exception('备份失败: ${result.stderr}');
-      }
-
-      print('MySQL备份已保存到: $backupPath');
-      return backupPath;
-    } catch (e) {
-      print('执行备份命令时出错: $e');
-      throw Exception('备份失败: $e');
-    }
-  }
+  // MySQL备份功能已移动到SettingsProvider
+  // 请使用SettingsProvider.backupMySQLDatabase()方法
 
   // 辅助方法：格式化SQL值
   String _formatValue(dynamic value) {
@@ -4303,20 +1969,13 @@ if %ERRORLEVEL% NEQ 0 (
     if (value is DateTime) {
       // 确保DateTime值使用UTC格式
       final utcDate = value.toUtc();
-      return "'${utcDate.toIso8601String().replaceAll('T', ' ').split('.')[0]}'";
+      return "'${DateTimeFormatter.toDbString(value)}'";
     }
     if (value is bool) return value ? '1' : '0';
     return "'${value.toString().replaceAll("'", "''")}'";
   }
 
-  // 标记所有数据需要刷新
-  void _markAllDataForRefresh() {
-    print('标记数据需要刷新...');
-    markPatientsNeedRefresh();
-    markAppointmentsNeedRefresh();
-    markDashboardNeedRefresh();
-    markFollowUpsNeedRefresh();
-  }
+
 
   // 获取MySQL工具路径
   String _getMySQLToolPath(String toolName) {
@@ -4352,115 +2011,142 @@ if %ERRORLEVEL% NEQ 0 (
     ];
 
     print('尝试以下可能的路径:');
-    for (int i = 0; i < min(10, possiblePaths.length); i++) {
+    for (int i = 0; i < math.min(10, possiblePaths.length); i++) {
       print('- ${possiblePaths[i]}');
     }
-    if (possiblePaths.length > 10) {
-      print('...及其他 ${possiblePaths.length - 10} 个路径');
-    }
 
-    // 首先检查具体路径
-    for (final toolPath in possiblePaths) {
+    // 检查每个路径
+    for (final possiblePath in possiblePaths) {
       try {
-        if (File(toolPath).existsSync()) {
-          print('找到MySQL工具: $toolPath');
-          return toolPath;
+        final file = File(possiblePath);
+        if (file.existsSync()) {
+          print('找到MySQL工具: $possiblePath');
+          return possiblePath;
         }
       } catch (e) {
         print('检查路径时出错: $e');
       }
     }
 
-    // 搜索应用程序目录及其子目录
-    print('在应用程序目录及其子目录中搜索...');
-    try {
-      final directories = [
-        path.dirname(Platform.resolvedExecutable),
-        Directory.current.path,
-        path.dirname(Directory.current.path),
-        'C:\\Program Files\\牙医诊所管理系统',
-        'C:\\Program Files (x86)\\牙医诊所管理系统',
-      ];
-
-      for (final dir in directories) {
-        final foundPath = _findFileRecursively(dir, toolName, maxDepth: 4);
-        if (foundPath != null) {
-          print('通过递归搜索找到MySQL工具: $foundPath');
-          return foundPath;
-        }
-      }
-    } catch (e) {
-      print('递归搜索时出错: $e');
-    }
-
-    // 尝试创建tools目录并测试权限
-    final appDir = path.dirname(Platform.resolvedExecutable);
-    final toolsDir = path.join(appDir, 'tools');
-
-    print('应用程序目录: $appDir');
-    try {
-      print('应用程序目录内容:');
-      Directory(appDir).listSync().forEach((entity) {
-        print('- ${entity.path}');
-      });
-    } catch (e) {
-      print('无法列出应用程序目录内容: $e');
-    }
-
-    try {
-      if (Directory(toolsDir).existsSync()) {
-        print('tools目录存在，目录内容:');
-        Directory(toolsDir).listSync().forEach((entity) {
-          print('- ${entity.path}');
-        });
-      } else {
-        print('tools目录不存在: $toolsDir，尝试创建...');
-        try {
-          Directory(toolsDir).createSync();
-          print('成功创建tools目录');
-
-          // 测试写入权限
-          final testFile = File(path.join(toolsDir, 'test.tmp'));
-          testFile.writeAsStringSync('测试写入权限');
-          print('成功写入测试文件');
-          testFile.deleteSync();
-          print('成功删除测试文件');
-        } catch (e) {
-          print('无法创建或测试tools目录: $e');
-        }
-      }
-    } catch (e) {
-      print('测试tools目录权限时出错: $e');
-    }
-
-    // 如果找不到工具，尝试使用命令名
-    print('未找到MySQL工具，将尝试直接使用命令名: $toolName');
-    return toolName;
+    // 如果都找不到，返回默认路径
+    final defaultPath = path.join(path.dirname(Platform.resolvedExecutable), 'tools', toolName);
+    print('未找到MySQL工具，使用默认路径: $defaultPath');
+    return defaultPath;
   }
 
-  // 递归查找文件
-  String? _findFileRecursively(String directory, String fileName,
-      {int maxDepth = 3, int currentDepth = 0}) {
-    if (currentDepth > maxDepth) return null;
+  // 备份MySQL数据库
+  Future<String> backupMySQLDatabase({String? backupPath}) async {
+    print('开始MySQL备份过程...');
 
-    try {
-      final dir = Directory(directory);
-      if (!dir.existsSync()) return null;
+    // 不再检查数据源类型，直接根据备份数据源设置执行
 
-      for (var entity in dir.listSync()) {
-        if (entity is File && path.basename(entity.path) == fileName) {
-          return entity.path;
-        } else if (entity is Directory) {
-          final result = _findFileRecursively(entity.path, fileName,
-              maxDepth: maxDepth, currentDepth: currentDepth + 1);
-          if (result != null) return result;
-        }
+    // 确保MySQL设置已初始化，如果未初始化，尝试从设置中获取
+    Map<String, dynamic> mysqlSettings;
+    if (_mysqlSettings == null) {
+      print('MySQL设置未初始化，尝试使用连接参数');
+
+      // 使用已保存的连接参数
+      mysqlSettings = {
+        'host': _mysqlHost,
+        'port': int.tryParse(_mysqlPort) ?? 3306,
+        'database': _mysqlDatabase,
+        'username': _mysqlUsername,
+        'password': _mysqlPassword,
+      };
+
+      // 验证参数
+      if (mysqlSettings['host'] == null ||
+          mysqlSettings['host'].toString().isEmpty ||
+          mysqlSettings['database'] == null ||
+          mysqlSettings['database'].toString().isEmpty) {
+        throw Exception('MySQL连接参数不完整，请在设置中配置MySQL连接');
       }
-    } catch (e) {
-      print('在目录 $directory 中搜索时出错: $e');
+
+      print(
+          '使用已保存的MySQL连接参数: ${mysqlSettings.toString().replaceAll(mysqlSettings['password'], '******')}');
+    } else {
+      // 使用已初始化的MySQL设置
+      mysqlSettings = Map<String, dynamic>.from(_mysqlSettings!);
+      print(
+          'MySQL设置已初始化: ${mysqlSettings.toString().replaceAll(mysqlSettings['password'], '******')}');
     }
 
-    return null;
+    print('当前工作目录: ${Directory.current.path}');
+
+    // 使用AppPaths获取mysqldump工具路径
+    final toolPath = AppPaths.mysqldumpExePath;
+    print('使用mysqldump工具: $toolPath');
+
+    // 使用传入的备份路径或默认路径
+    String userBackupPath = backupPath ?? '';
+    if (userBackupPath.isEmpty) {
+      // 如果用户没有设置备份路径，使用默认路径
+      try {
+        // 使用应用数据目录下的备份文件夹作为默认路径
+        userBackupPath = AppPaths.defaultBackupDirectory;
+        print('用户未设置备份路径，使用默认应用数据目录: $userBackupPath');
+      } catch (e) {
+        print('AppPaths未初始化，使用系统默认路径: $e');
+        final dbDir = await getDatabasesPath();
+        userBackupPath = path.join(dbDir, 'backups');
+        print('使用系统默认备份路径: $userBackupPath');
+      }
+    } else {
+      print('使用用户设置的备份路径: $userBackupPath');
+    }
+
+    print('备份目录: $userBackupPath');
+
+    // 确保备份目录存在
+    final backupDir = Directory(userBackupPath);
+    if (!await backupDir.exists()) {
+      print('创建备份目录: ${backupDir.path}');
+      await backupDir.create(recursive: true);
+    }
+
+    // 生成备份文件名
+    final timestamp = DateTimeFormatter.nowDbString().replaceAll(':', '-');
+    final backupFileName = 'backup_$timestamp.sql';
+    final finalBackupPath = path.join(userBackupPath, backupFileName);
+    print('备份文件路径: $finalBackupPath');
+
+    // 构建命令参数列表
+    final List<String> args = [
+      '-h${mysqlSettings['host']}',
+      '-P${mysqlSettings['port']}',
+      '-u${mysqlSettings['username']}',
+      '-p${mysqlSettings['password']}',
+      '--default-character-set=utf8mb4',
+      mysqlSettings['database'],
+      '--result-file=$finalBackupPath' // 直接指定输出文件
+    ];
+
+    print(
+        '执行mysqldump命令: $toolPath ${args.join(' ').replaceAll(mysqlSettings['password'], '******')}');
+
+    try {
+      // 使用Process.run执行mysqldump命令
+      final result = await Process.run(
+        toolPath,
+        args,
+        stdoutEncoding: const SystemEncoding(),
+        stderrEncoding: const SystemEncoding(),
+      );
+
+      print('mysqldump命令执行结果: exitCode=${result.exitCode}');
+      print('标准输出: ${result.stdout}');
+
+      if (result.exitCode != 0) {
+        print('备份失败，错误输出: ${result.stderr}');
+        throw Exception('备份失败: ${result.stderr}');
+      }
+
+      print('MySQL备份已保存到: $finalBackupPath');
+      return finalBackupPath;
+    } catch (e) {
+      print('执行备份命令时出错: $e');
+      throw Exception('备份失败: $e');
+    }
   }
 
   // 将MySQL结果行转换为Map
@@ -4482,176 +2168,7 @@ if %ERRORLEVEL% NEQ 0 (
     return map;
   }
 
-  // 在database_provider.dart中添加以下方法
-  Future<void> updateAllPatientsPinyin() async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
 
-    List<Patient> patients = await getAllPatients();
-    int updatedCount = 0;
-
-    for (var patient in patients) {
-      Map<String, dynamic> patientMap = patient.toMap();
-
-      // 更新拼音和首字母字段
-      patientMap['name_pinyin'] = PinyinUtil.toPinyin(patient.name);
-      patientMap['name_initials'] = PinyinUtil.getInitials(patient.name);
-
-      if (patient.address != null && patient.address!.isNotEmpty) {
-        patientMap['address_pinyin'] = PinyinUtil.toPinyin(patient.address!);
-      }
-
-      try {
-        if (dataSourceType == 'sqlite') {
-          await _database!.update(
-            'patients',
-            {
-              'name_pinyin': patientMap['name_pinyin'],
-              'name_initials': patientMap['name_initials'],
-              'address_pinyin': patientMap['address_pinyin'],
-            },
-            where: 'id = ?',
-            whereArgs: [patient.id],
-          );
-          updatedCount++;
-        } else {
-          await _mysqlConnection!.query(
-            'UPDATE patients SET name_pinyin = ?, name_initials = ?, address_pinyin = ? WHERE id = ?',
-            [
-              patientMap['name_pinyin'],
-              patientMap['name_initials'],
-              patientMap['address_pinyin'],
-              patient.id,
-            ],
-          );
-          updatedCount++;
-        }
-      } catch (e) {
-        print('更新患者拼音数据时出错: $e');
-      }
-    }
-
-    print('已更新 $updatedCount/${patients.length} 位患者的拼音和首字母数据');
-
-    // 标记患者数据需要刷新
-    _patientsNeedRefresh = true;
-    notifyListeners();
-  }
-
-  // 检查病历号是否已存在
-  Future<bool> checkMedicalRecordExists(int medicalRecordNumber,
-      [int? excludePatientId]) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    try {
-      if (_dataSourceType == 'sqlite') {
-        final db = await database;
-
-        // 构建查询条件
-        String whereClause = 'medical_record_number = ?';
-        List<dynamic> whereArgs = [medicalRecordNumber];
-
-        // 如果是编辑模式，排除当前患者
-        if (excludePatientId != null) {
-          whereClause += ' AND id != ?';
-          whereArgs.add(excludePatientId);
-        }
-
-        final result = await db!.query(
-          'patients',
-          where: whereClause,
-          whereArgs: whereArgs,
-          limit: 1,
-        );
-
-        return result.isNotEmpty;
-      } else if (_dataSourceType == 'mysql') {
-        final conn = await mysqlConnection;
-
-        // 构建查询条件
-        String whereClause = 'medical_record_number = ?';
-        List<dynamic> whereArgs = [medicalRecordNumber];
-
-        // 如果是编辑模式，排除当前患者
-        if (excludePatientId != null) {
-          whereClause += ' AND id != ?';
-          whereArgs.add(excludePatientId);
-        }
-
-        final results = await conn!.query(
-          'SELECT id FROM patients WHERE $whereClause LIMIT 1',
-          whereArgs,
-        );
-
-        return results.isNotEmpty;
-      }
-
-      return false;
-    } catch (e) {
-      print('检查病历号存在性时出错: $e');
-      return false;
-    }
-  }
-
-  // 检查姓名是否已存在
-  Future<bool> checkPatientNameExists(String name,
-      [int? excludePatientId]) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    try {
-      if (_dataSourceType == 'sqlite') {
-        final db = await database;
-
-        // 构建查询条件
-        String whereClause = 'name = ?';
-        List<dynamic> whereArgs = [name];
-
-        // 如果是编辑模式，排除当前患者
-        if (excludePatientId != null) {
-          whereClause += ' AND id != ?';
-          whereArgs.add(excludePatientId);
-        }
-
-        final result = await db!.query(
-          'patients',
-          where: whereClause,
-          whereArgs: whereArgs,
-          limit: 1,
-        );
-
-        return result.isNotEmpty;
-      } else if (_dataSourceType == 'mysql') {
-        final conn = await mysqlConnection;
-
-        // 构建查询条件
-        String whereClause = 'name = ?';
-        List<dynamic> whereArgs = [name];
-
-        // 如果是编辑模式，排除当前患者
-        if (excludePatientId != null) {
-          whereClause += ' AND id != ?';
-          whereArgs.add(excludePatientId);
-        }
-
-        final results = await conn!.query(
-          'SELECT id FROM patients WHERE $whereClause LIMIT 1',
-          whereArgs,
-        );
-
-        return results.isNotEmpty;
-      }
-
-      return false;
-    } catch (e) {
-      print('检查患者姓名存在性时出错: $e');
-      return false;
-    }
-  }
 
   // 辅助方法：日期时间格式化
   String _formatDateTime(DateTime dateTime) {
@@ -4688,7 +2205,7 @@ if %ERRORLEVEL% NEQ 0 (
         return dateTime;
       } else if (dateTime is String) {
         try {
-          return DateTime.parse(dateTime);
+          return DateTimeFormatter.fromDbString(dateTime);
         } catch (e) {
           // 尝试使用不同格式解析
           try {
@@ -4714,85 +2231,10 @@ if %ERRORLEVEL% NEQ 0 (
     }
   }
 
-  // 获取特定医生的所有预约
-  Future<List<Appointment>> getAppointmentsByDoctor(String doctorName) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
+  /// 获取数据库文件路径
+  String get databasePath => _databasePath ?? _sqliteDbPath ?? '';
 
-    try {
-      List<Appointment> appointments = [];
+  
 
-      if (_dataSourceType == 'sqlite') {
-        // SQLite查询
-        final results = await _database!.rawQuery('''
-          SELECT a.*, p.name as patient_name, p.gender, p.age, p.phone, p.doctor, p.first_visit_date
-          FROM appointments a
-          JOIN patients p ON a.patient_id = p.id
-          WHERE p.doctor = ?
-          ORDER BY a.appointment_date DESC
-        ''', [doctorName]);
 
-        for (var appointmentMap in results) {
-          final appointment = Appointment.fromMap(appointmentMap);
-
-          // 创建患者对象
-          appointment.patient = Patient(
-            id: appointmentMap['patient_id'] as int,
-            name: appointmentMap['patient_name'] as String,
-            gender: appointmentMap['gender'] as String,
-            age: appointmentMap['age'] as int,
-            phone: appointmentMap['phone'] as String?,
-            doctor: appointmentMap['doctor'] as String?,
-            first_visit_date:
-                _parseDateTime(appointmentMap['first_visit_date']),
-          );
-
-          appointments.add(appointment);
-        }
-      } else {
-        // MySQL查询
-        final conn = await _getMySQLConnection();
-        final results = await conn.query('''
-          SELECT a.*, p.name as patient_name, p.gender, p.age, p.phone, p.doctor, p.first_visit_date
-          FROM appointments a
-          JOIN patients p ON a.patient_id = p.id
-          WHERE p.doctor = ?
-          ORDER BY a.appointment_date DESC
-        ''', [doctorName]);
-
-        for (var row in results) {
-          // 将结果转换为Map
-          final Map<String, dynamic> appointmentMap = {};
-          for (var entry in row.fields.entries) {
-            appointmentMap[entry.key] = entry.value;
-          }
-
-          // 创建预约对象
-          final appointment = Appointment.fromMap(appointmentMap);
-
-          // 创建患者对象
-          appointment.patient = Patient(
-            id: appointmentMap['patient_id'] as int,
-            name: appointmentMap['patient_name'] as String,
-            gender: appointmentMap['gender'] as String,
-            age: appointmentMap['age'] as int,
-            phone: appointmentMap['phone'] as String?,
-            doctor: appointmentMap['doctor'] as String?,
-            first_visit_date:
-                _parseDateTime(appointmentMap['first_visit_date']),
-          );
-
-          appointments.add(appointment);
-        }
-
-        await conn.close();
-      }
-
-      return appointments;
-    } catch (e) {
-      print('获取医生预约时出错: $e');
-      return [];
-    }
-  }
 }

@@ -1,4 +1,4 @@
-import 'package:dentist_app/utils/config_utils.dart';
+import '../utils/config_utils.dart';
 
 // 数据库配置模型
 class DatabaseConfig {

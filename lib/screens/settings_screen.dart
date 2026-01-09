@@ -10,6 +10,7 @@ import 'package:dentist_app/models/database_config.dart';
 import 'package:dentist_app/providers/database_provider.dart';
 import 'package:dentist_app/providers/app_state.dart';
 import 'package:dentist_app/providers/settings_provider.dart';
+import 'package:dentist_app/providers/patient_provider.dart';
 import 'package:dentist_app/utils/database_utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_selector/file_selector.dart';
@@ -17,9 +18,16 @@ import 'package:path/path.dart' as path;
 import 'package:mysql1/mysql1.dart';
 import 'package:dentist_app/utils/config_utils.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../utils/datetime_formatter.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:cross_file/cross_file.dart';
 import 'package:flutter/foundation.dart';
+import 'package:dentist_app/widgets/success_toast.dart';
+import 'sync_logs_screen.dart';
+import '../models/sync_config.dart';
+import '../utils/schema_validator.dart';
+import '../models/database_models.dart';
+import '../utils/toast_util.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -38,10 +46,12 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool _isEditingMysql = false;
 
   // 数据库提供者
-  late DatabaseProvider dbProvider;
+  DatabaseProvider? dbProvider;
+  
+  // 数据库设置管理器
+  late DatabaseSettingsManager _dbSettingsManager;
 
-  // 测试数据库路径
-  String _testDbPath = '';
+  // 移除测试数据库路径变量
 
   // MySQL配置控制器
   final TextEditingController _hostController = TextEditingController(
@@ -68,7 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
 
     // 初始化_dbConfig以防止late错误
     _dbConfig = DatabaseConfig(
@@ -77,10 +87,15 @@ class _SettingsScreenState extends State<SettingsScreen>
       mysql: MySqlConfig(),
     );
 
+    // 初始化数据库设置管理器
+    _dbSettingsManager = DatabaseSettingsManager();
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // 获取数据库提供者
       dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      _loadSettings();
+      if (dbProvider != null) {
+        _loadSettings();
+      }
     });
   }
 
@@ -104,8 +119,11 @@ class _SettingsScreenState extends State<SettingsScreen>
     });
 
     try {
-      // 加载数据库配置
-      _dbConfig = await DatabaseConfig.loadConfig();
+      // 使用数据库设置管理器加载配置
+      await _dbSettingsManager.initDatabaseConfig();
+      
+      // 获取配置
+      _dbConfig = _dbSettingsManager.dbConfig;
       print(
         '已加载数据库配置: 类型=${_dbConfig.dbType}, SQLite路径=${_dbConfig.sqlite.path}',
       );
@@ -115,8 +133,8 @@ class _SettingsScreenState extends State<SettingsScreen>
 
       // 更新UI状态
       setState(() {
-        _selectedDbType = _dbConfig.dbType;
-        _dbPath = _dbConfig.dbType == 'sqlite' ? _dbConfig.sqlite.path : '';
+        _selectedDbType = _dbSettingsManager.dbType;
+        _dbPath = _dbSettingsManager.dbPath;
         _showMysqlConfig = _selectedDbType == 'mysql';
         _isEditingMysql = false; // 加载时重置编辑模式
 
@@ -132,16 +150,19 @@ class _SettingsScreenState extends State<SettingsScreen>
       if (!mounted) return;
 
       // 从数据库提供者获取当前路径
-      final providerDbType = dbProvider.dbType;
-      final providerDbPath = dbProvider.dbPath;
+      if (dbProvider == null) return;
+      final providerDbType = dbProvider!.dbType;
+      final providerDbPath = dbProvider!.dbPath;
       print('从Provider获取数据库信息: 类型=$providerDbType, 路径=$providerDbPath');
 
       setState(() {
         _selectedDbType = providerDbType;
-        // 只有当Provider的路径不为空且不是缓存路径时才更新
-        if (providerDbPath.isNotEmpty && !_isUsingCachePath(providerDbPath)) {
+        // 优先使用Provider的实际路径
+        if (providerDbPath.isNotEmpty) {
           _dbPath = providerDbPath;
-          print('已更新显示路径: $_dbPath');
+          print('已更新显示路径: $_dbPath (来自Provider)');
+        } else {
+          print('Provider路径为空，保持当前路径: $_dbPath');
         }
         _isLoading = false;
       });
@@ -168,14 +189,90 @@ class _SettingsScreenState extends State<SettingsScreen>
     // 如果选择的类型与当前类型相同，无需操作
     if (dbType == _selectedDbType) return;
 
+    // 显示确认对话框
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('切换数据源类型'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('确定要切换到 ${dbType == 'sqlite' ? 'SQLite本地数据库' : 'MySQL远程数据库'} 吗？'),
+            const SizedBox(height: 12),
+            if (dbType == 'mysql') ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange.shade700, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        '选择MySQL后需要配置连接信息并保存后才能生效',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        '切换到SQLite后将立即生效',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+            ),
+            child: const Text('确认切换'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     setState(() {
       _isLoading = true;
     });
 
     try {
       if (dbType == 'sqlite') {
-        // SQLite是默认类型，直接切换
-        await dbProvider.switchDatabaseType('sqlite');
+        // SQLite切换，确认后立即生效
+        if (dbProvider == null) return;
+        // 使用数据库设置管理器更新配置
+        await _dbSettingsManager.switchDatabaseType('sqlite');
 
         // 更新UI状态
         setState(() {
@@ -188,13 +285,124 @@ class _SettingsScreenState extends State<SettingsScreen>
         _dbConfig.dbType = 'sqlite';
         await _dbConfig.saveConfig();
 
-        _showSnackBar('已切换到SQLite数据库', isSuccess: true);
+        // 显示成功提示
+        if (mounted) {
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 成功图标
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.check_circle,
+                        size: 48,
+                        color: Colors.green.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // 标题
+                    const Text(
+                      'SQLite数据库已激活',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    // 描述
+                    const Text(
+                      '系统已切换到SQLite数据库模式',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF666666),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // 提示信息
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue.shade100),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.blue.shade700,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'SQLite数据库已自动加载，无需重启应用',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF1976D2),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // 确认按钮
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          '确定',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
       } else if (dbType == 'mysql') {
-        // 对于MySQL，显示配置界面并更新选中状态
+        // 对于MySQL，只显示配置界面，不立即切换
         setState(() {
           _showMysqlConfig = true;
-          _selectedDbType = 'mysql'; // 立即更新UI选中状态
-          _isEditingMysql = false; // 默认不进入编辑模式
+          _selectedDbType = 'mysql'; // 更新UI选中状态
+          _isEditingMysql = true; // 进入编辑模式，提示用户需要配置
           _mysqlTestSuccess = false; // 重置连接测试状态
         });
 
@@ -204,6 +412,9 @@ class _SettingsScreenState extends State<SettingsScreen>
         _databaseController.text = _dbConfig.mysql.database;
         _usernameController.text = _dbConfig.mysql.username;
         _passwordController.text = _dbConfig.mysql.password;
+
+        // 显示提示信息
+        _showSnackBar('请配置MySQL连接信息并保存后生效', isSuccess: true, duration: 4);
       }
     } catch (e) {
       _showSnackBar('切换数据库类型失败: $e', isSuccess: false);
@@ -254,10 +465,10 @@ class _SettingsScreenState extends State<SettingsScreen>
       );
 
       if (file != null) {
-        final path = file.path;
+        final filePath = file.path;
 
         // 检查文件是否存在
-        final fileObj = File(path);
+        final fileObj = File(filePath);
         if (!(await fileObj.exists())) {
           if (!mounted) return;
           _showSnackBar('所选文件不存在', isSuccess: false);
@@ -266,19 +477,185 @@ class _SettingsScreenState extends State<SettingsScreen>
 
         // 更新配置
         _dbConfig.dbType = 'sqlite';
-        _dbConfig.sqlite.path = path;
+        _dbConfig.sqlite.path = filePath;
         await _dbConfig.saveConfig();
 
         // 切换数据库
-        await dbProvider.switchDatabaseType('sqlite', path: path);
+        if (dbProvider == null) return;
+        await _dbSettingsManager.switchDatabaseType('sqlite', path: filePath);
 
         setState(() {
-          _dbPath = path;
+          _dbPath = filePath;
         });
 
         // 显示成功提示
         if (!mounted) return;
-        _showSnackBar('自定义数据库路径已设置', isSuccess: true);
+        final fileName = path.basename(filePath);
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 成功图标
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.check_circle,
+                      size: 48,
+                      color: Colors.green.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // 标题
+                  const Text(
+                    'SQLite配置已保存',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  
+                  // 描述
+                  Text(
+                    '自定义数据库路径已成功设置',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF666666),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // 数据库路径卡片
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '数据库文件',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF333333),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.storage,
+                              size: 16,
+                              color: Colors.blue.shade600,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                fileName,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF333333),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          filePath,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                            fontFamily: 'monospace',
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // 提示信息
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.shade100),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.blue.shade700,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            '数据库已自动加载，无需重启应用',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF1976D2),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // 确认按钮
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        '确定',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
       }
     } catch (e) {
       print('选择自定义数据库路径错误: $e');
@@ -502,65 +879,227 @@ class _SettingsScreenState extends State<SettingsScreen>
           if (mounted) {
             final shouldLoadNow = await showDialog<bool>(
               context: context,
+              barrierDismissible: false,
               builder:
-                  (context) => AlertDialog(
-                    title: const Text('数据库配置已更新'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('数据库路径已更新为: $fileName'),
-                        const SizedBox(height: 12),
-                        const Text(
-                          '您可以选择立即加载新数据库，或稍后重启应用时自动加载。',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF666666),
+                  (context) => Dialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 成功图标
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade50,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.check_circle,
+                              size: 48,
+                              color: Colors.green.shade600,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.shade50,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.amber.shade200),
+                          const SizedBox(height: 16),
+                          
+                          // 标题
+                          const Text(
+                            'SQLite配置已保存',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A1A1A),
+                            ),
                           ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                color: Colors.amber.shade800,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 8),
-                              const Expanded(
-                                child: Text(
-                                  '注意: 加载大型数据库可能需要一些时间。',
+                          const SizedBox(height: 8),
+                          
+                          // 描述
+                          Text(
+                            '数据库路径已更新为: $fileName',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF666666),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          
+                          // 数据库路径卡片
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  '数据库文件信息',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF333333),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.storage,
+                                      size: 16,
+                                      color: Colors.blue.shade600,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        fileName,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF333333),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  filePath,
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Color(0xFF7A5800),
+                                    color: Colors.grey.shade600,
+                                    fontFamily: 'monospace',
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          
+                          // 提示信息
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.blue.shade100),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  color: Colors.blue.shade700,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    '您可以选择立即加载新数据库，或稍后重启应用时自动加载。',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF1976D2),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          
+                          // 警告信息
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.amber.shade200),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: Colors.amber.shade800,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    '注意: 加载大型数据库可能需要一些时间',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF7A5800),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          
+                          // 按钮组
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              // 稍后加载按钮
+                              Expanded(
+                                child: TextButton(
+                                  onPressed: () => Navigator.of(context).pop(false),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      side: BorderSide(color: Colors.grey.shade300),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '稍后加载',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              
+                              // 立即加载按钮
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () => Navigator.of(context).pop(true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryColor,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: const Text(
+                                    '立即加载',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('稍后加载'),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                        ),
-                        child: const Text('立即加载'),
-                      ),
-                    ],
                   ),
             );
 
@@ -573,7 +1112,8 @@ class _SettingsScreenState extends State<SettingsScreen>
 
               try {
                 // 切换数据库
-                await dbProvider.switchDatabaseType('sqlite', path: filePath);
+                if (dbProvider == null) return;
+                await _dbSettingsManager.switchDatabaseType('sqlite', path: filePath);
                 print('数据库已切换');
 
                 // 更新状态和通知监听器
@@ -583,7 +1123,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   });
 
                   // 强制数据库提供者通知所有监听器数据源已更改
-                  dbProvider.forceDataChanged(navigateToDashboard: true);
+                  dbProvider!.forceDataChanged(navigateToDashboard: true);
                   _showSnackBar('数据库已切换: $fileName', isSuccess: true);
                 }
               } catch (e) {
@@ -684,97 +1224,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
-  // 加载测试数据库
-  Future<void> _loadTestDatabase() async {
-    try {
-      // 显示确认对话框
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder:
-            (context) => AlertDialog(
-              title: const Text('加载测试数据库'),
-              content: const Text('这将复制测试数据库到应用文档目录并切换到测试数据库。确定要继续吗？'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('取消'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  child: const Text('确定'),
-                ),
-              ],
-            ),
-      );
-
-      if (confirm != true) return;
-
-      // 显示加载进度对话框
-      if (!mounted) return;
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('正在加载测试数据库...'),
-              ],
-            ),
-          );
-        },
-      );
-
-      // 复制测试数据库
-      final testDbPath = await DatabaseUtils.copyTestDatabaseToDocuments();
-
-      // 关闭进度对话框
-      if (!mounted) return;
-      Navigator.of(context).pop();
-
-      if (testDbPath.isNotEmpty) {
-        // 更新配置
-        _dbConfig.dbType = 'sqlite';
-        _dbConfig.sqlite.path = testDbPath;
-        await _dbConfig.saveConfig();
-
-        // 切换数据库
-        await dbProvider.switchDatabaseType('sqlite', path: testDbPath);
-
-        setState(() {
-          _selectedDbType = 'sqlite';
-          _dbPath = testDbPath; // 立即更新本地路径变量
-          _showMysqlConfig = false;
-        });
-
-        // 强制数据库提供者通知所有监听器数据源已更改
-        dbProvider.forceDataChanged(navigateToDashboard: true);
-        print('测试数据库路径已更新: $_dbPath');
-
-        // 显示成功提示
-        if (!mounted) return;
-        _showSnackBar('测试数据库已加载', isSuccess: true);
-      } else {
-        // 显示错误提示
-        if (!mounted) return;
-        _showSnackBar('加载测试数据库失败', isSuccess: false);
-      }
-    } catch (e) {
-      print('加载测试数据库错误: $e');
-
-      // 关闭可能存在的进度对话框
-      if (!mounted) return;
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-
-      // 显示错误提示
-      _showSnackBar('加载测试数据库失败: ${e.toString()}', isSuccess: false);
-    }
-  }
+  // 移除加载测试数据库方法
 
   Future<void> _testMySqlConnection() async {
     try {
@@ -802,40 +1252,30 @@ class _SettingsScreenState extends State<SettingsScreen>
         return;
       }
 
-      // 如果是Android模拟器使用的localhost，转换为10.0.2.2
-      String effectiveHost = host;
-      if (Platform.isAndroid && (host == 'localhost' || host == '127.0.0.1')) {
-        effectiveHost = '10.0.2.2';
-        print('Android模拟器检测到，将localhost转换为10.0.2.2');
-      }
-
-      print('测试MySQL连接: $effectiveHost:$port/$database (用户: $username)');
-
-      // 使用mysql1包测试连接
-      final settings = ConnectionSettings(
-        host: effectiveHost,
-        port: port,
-        user: username,
-        password: password,
-        db: database,
+      // 使用数据库设置管理器测试MySQL连接
+      final success = await _dbSettingsManager.testMySQLConnection(
+        host,
+        port.toString(),
+        database,
+        username,
+        password,
       );
-
-      final conn = await MySqlConnection.connect(settings);
-
-      // 测试简单查询
-      final results = await conn.query('SELECT 1 as test');
-      await conn.close();
-
-      final value = results.first['test'];
-      print('连接成功，查询结果: $value');
 
       if (!mounted) return;
 
-      _showSnackBar('MySQL连接测试成功', isSuccess: true);
-      setState(() {
-        _mysqlTestSuccess = true;
-        _isLoading = false;
-      });
+      if (success) {
+        _showSnackBar('MySQL连接测试成功', isSuccess: true);
+        setState(() {
+          _mysqlTestSuccess = true;
+          _isLoading = false;
+        });
+      } else {
+        _showSnackBar('MySQL连接测试失败', isSuccess: false);
+        setState(() {
+          _mysqlTestSuccess = false;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       print('MySQL连接测试失败: $e');
 
@@ -903,96 +1343,166 @@ class _SettingsScreenState extends State<SettingsScreen>
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('系统设置'),
-        centerTitle: true,
-        backgroundColor: AppTheme.cardBackground,
+        backgroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.help_outline),
-            onPressed: () {
-              // 帮助说明
-              showDialog(
-                context: context,
-                builder:
-                    (context) => AlertDialog(
-                      title: const Text('关于设置'),
-                      content: const SingleChildScrollView(
-                        child: Text(
-                          '在此页面，您可以配置系统的数据源和其他系统设置。\n\n'
-                          '数据源：您可以选择使用SQLite本地数据库或MySQL远程数据库。\n\n'
-                          '备份与恢复：提供数据备份和恢复功能，保护您的重要数据。\n\n'
-                          '系统设置：配置其它系统参数和用户偏好设置。',
-                        ),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('了解'),
-                        ),
-                      ],
-                    ),
-              );
-            },
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppTheme.primaryColor,
-          labelColor: AppTheme.primaryColor,
-          unselectedLabelColor: AppTheme.secondaryText,
-          tabs: const [
-            Tab(icon: Icon(Icons.storage), text: '数据源'),
-            Tab(icon: Icon(Icons.backup), text: '备份恢复'),
-            Tab(icon: Icon(Icons.settings), text: '系统设置'),
-          ],
-        ),
+        toolbarHeight: 0,
       ),
-      body:
-          _isLoading
-              ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+      body: Column(
+        children: [
+          _buildSettingsHeader(),
+          Expanded(
+            child: _isLoading
+                ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(
+                        '加载设置...',
+                        style: TextStyle(color: AppTheme.secondaryText),
+                      ),
+                    ],
+                  ),
+                )
+                : TabBarView(
+                  controller: _tabController,
                   children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(
-                      '加载设置...',
-                      style: TextStyle(color: AppTheme.secondaryText),
-                    ),
+                    _buildDatabaseSourceTab(),
+                    _buildBackupRestoreTab(),
+                    _buildSyncConfigTab(),
+                    _buildSystemSettingsTab(),
                   ],
                 ),
-              )
-              : TabBarView(
-                controller: _tabController,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsHeader() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
                 children: [
-                  _buildDatabaseSourceTab(),
-                  _buildBackupRestoreTab(),
-                  _buildSystemSettingsTab(),
+                  Container(
+                    width: 4,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade600,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '系统设置',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ],
               ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.logout),
+                    onPressed: _showLogoutDialog,
+                    tooltip: '退出登录',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.help_outline),
+                    onPressed: () {
+                      // 帮助说明
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('关于设置'),
+                          content: const SingleChildScrollView(
+                            child: Text(
+                              '在此页面，您可以配置系统的数据源和其他系统设置。\n\n'
+                              '数据源：您可以选择使用SQLite本地数据库或MySQL远程数据库。\n\n'
+                              '备份与恢复：提供数据备份和恢复功能，保护您的重要数据。\n\n'
+                              '系统设置：配置其它系统参数和用户偏好设置。',
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('了解'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 1,
+            color: Colors.orange.shade100,
+          ),
+          const SizedBox(height: 12),
+          TabBar(
+            controller: _tabController,
+            indicatorColor: Colors.orange.shade600,
+            labelColor: Colors.orange.shade600,
+            unselectedLabelColor: AppTheme.secondaryText,
+            tabs: const [
+              Tab(icon: Icon(Icons.storage), text: '数据源'),
+              Tab(icon: Icon(Icons.backup), text: '备份恢复'),
+              Tab(icon: Icon(Icons.sync), text: '同步配置'),
+              Tab(icon: Icon(Icons.settings), text: '系统设置'),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
   // 获取用于显示的数据库路径
   String _getDisplayDbPath() {
-    // 首先优先使用_dbPath实例变量（这是用户最新选择的路径）
-    if (_dbPath.isNotEmpty) {
-      return _dbPath;
+    // 首先检查当前选择的数据库类型
+    if (_selectedDbType == 'mysql') {
+      // 如果是MySQL，显示连接信息而不是文件路径
+      return '${_dbConfig.mysql.host}:${_dbConfig.mysql.port}/${_dbConfig.mysql.database}';
     }
 
-    // 其次检查数据库提供者的当前路径
+    // 对于SQLite，优先从数据库提供者获取当前实际使用的路径
     try {
-      if (dbProvider.isInitialized && dbProvider.dbPath.isNotEmpty) {
-        return dbProvider.dbPath;
+      if (dbProvider != null && 
+          dbProvider!.isInitialized && 
+          dbProvider!.dbType == 'sqlite' && 
+          dbProvider!.dbPath.isNotEmpty) {
+        print('从Provider获取SQLite显示路径: ${dbProvider!.dbPath}');
+        return dbProvider!.dbPath;
       }
     } catch (e) {
       print('从数据库提供者获取路径错误: $e');
     }
 
-    // 最后检查配置文件中的路径
+    // 其次使用_dbPath实例变量（这是用户最新选择的路径）
+    if (_selectedDbType == 'sqlite' && _dbPath.isNotEmpty && !_dbPath.contains(':')) {
+      print('使用本地SQLite路径变量: $_dbPath');
+      return _dbPath;
+    }
+
+    // 最后检查配置文件中的SQLite路径
     try {
-      if (_dbConfig.dbType == 'sqlite' && _dbConfig.sqlite.path.isNotEmpty) {
+      if (_selectedDbType == 'sqlite' && _dbConfig.sqlite.path.isNotEmpty) {
+        print('从配置获取SQLite显示路径: ${_dbConfig.sqlite.path}');
         return _dbConfig.sqlite.path;
       }
     } catch (e) {
@@ -1244,17 +1754,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                           const SizedBox(height: 8),
 
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton.icon(
-                                  onPressed: _loadTestDatabase,
-                                  icon: const Icon(Icons.science),
-                                  label: const Text('加载测试数据库'),
-                                ),
-                              ),
-                            ],
-                          ),
+                          // 移除加载测试数据库按钮
                         ],
                       )
                     else
@@ -1837,8 +2337,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                                     );
 
                                 // 执行备份
-                                final success = await dbProvider.backupDatabase(
+                                final success = await _dbSettingsManager.backupDatabase(
                                   backupPath,
+                                  dbProvider?.dbPath ?? '',
                                 );
 
                                 // 隐藏加载指示器 - 使用SettingsScreen的setState
@@ -1973,6 +2474,112 @@ class _SettingsScreenState extends State<SettingsScreen>
                         onChanged: (value) {
                           settingsProvider.updateAppointmentReminder(value);
                         },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // 账户管理卡片
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '账户管理',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // 当前用户信息
+                      Consumer<AppState>(
+                        builder: (context, appState, _) {
+                          final currentUser = appState.currentUser;
+                          if (currentUser != null) {
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 20,
+                                    backgroundColor: AppTheme.primaryColor,
+                                    child: Text(
+                                      currentUser.username.isNotEmpty 
+                                          ? currentUser.username[0].toUpperCase()
+                                          : 'U',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          currentUser.username,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          '角色: ${currentUser.role}',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // 退出登录按钮
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _showLogoutDialog,
+                          icon: const Icon(Icons.logout, color: Colors.white),
+                          label: const Text(
+                            '退出登录',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade600,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -2170,56 +2777,227 @@ class _SettingsScreenState extends State<SettingsScreen>
         _isEditingMysql = false; // 保存后退出编辑模式
       });
 
-      // 显示重启应用的提示对话框
+      // 显示现代化的重启应用提示对话框
       if (!mounted) return;
 
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder:
-            (context) => AlertDialog(
-              title: const Text('MySQL配置已保存'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('MySQL连接配置已成功保存，但需要重启应用才能生效。'),
-                  const SizedBox(height: 16),
-                  if (effectiveHost != host)
-                    Text(
-                      '注意: localhost已自动转换为$effectiveHost以支持Android设备连接',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
-                      ),
-                    ),
+        builder: (context) => Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white,
+                  Colors.grey.shade50,
                 ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _showSnackBar(
-                      '配置已保存，请重启应用以应用MySQL配置',
-                      isSuccess: true,
-                      duration: 5,
-                    );
-                  },
-                  child: const Text('稍后重启'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    // 使用退出应用功能
-                    Navigator.of(context).pop();
-                    appState.exitApp();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 成功图标
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppTheme.primaryColor.withOpacity(0.1),
                   ),
-                  child: const Text('立即重启'),
+                  child: Icon(
+                    Icons.check_circle,
+                    size: 48,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // 标题
+                const Text(
+                  'MySQL配置已保存',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // 描述
+                Text(
+                  'MySQL连接配置已成功保存',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                
+                // 详细信息卡片
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.grey.shade200,
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.storage, size: 20, color: Colors.grey.shade600),
+                          const SizedBox(width: 8),
+                          const Text(
+                            '连接信息',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '主机: $effectiveHost',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      Text(
+                        '端口: $port',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      Text(
+                        '数据库: $database',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      Text(
+                        '用户名: $username',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                if (effectiveHost != host) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.blue.shade200,
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 20, color: Colors.blue.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'localhost已自动转换为$effectiveHost以支持Android设备连接',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.blue.shade800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                
+                const SizedBox(height: 20),
+                
+                // 提示信息
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.restart_alt, size: 20, color: Colors.orange.shade700),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          '需要重启应用以应用新的MySQL配置',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // 按钮
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // 稍后重启按钮
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _showSnackBar(
+                            '配置已保存，请重启应用以应用MySQL配置',
+                            isSuccess: true,
+                            duration: 5,
+                          );
+                        },
+                        icon: const Icon(Icons.schedule, size: 20),
+                        label: const Text('稍后重启'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    
+                    // 立即重启按钮
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          appState.exitApp();
+                        },
+                        icon: const Icon(Icons.restart_alt, size: 20),
+                        label: const Text('立即重启'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
+          ),
+        ),
       );
     } catch (e) {
       print('保存MySQL配置错误: $e');
@@ -2257,9 +3035,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   // 从备份恢复数据库
   void _restoreDatabaseFromBackup() async {
     // 首先检查数据库类型
-    if (dbProvider.dbType != 'sqlite') {
+    if (dbProvider == null || dbProvider!.dbType != 'sqlite') {
       _showSnackBar(
-        '当前数据库类型为 ${dbProvider.dbType}，仅支持还原到SQLite数据库',
+        '当前数据库类型为 ${dbProvider?.dbType ?? "未知"}，仅支持还原到SQLite数据库',
         isSuccess: false,
       );
       return;
@@ -2335,8 +3113,9 @@ class _SettingsScreenState extends State<SettingsScreen>
             return;
           }
 
-          final bool success = await dbProvider.restoreDatabaseFromBackup(
+          final bool success = await _dbSettingsManager.restoreDatabaseFromBackup(
             backupPath,
+            dbProvider?.dbPath ?? '',
           );
 
           // 完成后检查挂载状态
@@ -2593,9 +3372,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                                       listen: false,
                                     );
 
+                                // 先获取患者数据
+                                final patients = await Provider.of<PatientProvider>(context, listen: false).getAllPatients();
+                                if (patients.isEmpty) {
+                                  throw Exception('没有患者数据可导出');
+                                }
+
+                                // 将患者数据转换为Map格式
+                                final List<Map<String, dynamic>> patientsData = patients.map((patient) => patient.toMap()).toList();
+
                                 // 执行Excel导出
-                                final excelPath = await dbProvider
-                                    .exportPatientsToExcel(exportPath);
+                                final excelPath = await _dbSettingsManager.exportPatientsToExcel(exportPath, patientsData);
 
                                 // 隐藏加载指示器 - 使用SettingsScreen的setState
                                 if (this.mounted) {
@@ -2849,4 +3636,259 @@ class _SettingsScreenState extends State<SettingsScreen>
       ),
     );
   }
+
+  // 显示退出登录对话框
+  void _showLogoutDialog() {
+    // 获取当前用户信息
+    final appState = Provider.of<AppState>(context, listen: false);
+    final currentUser = appState.currentUser;
+    
+    // 使用公共组件显示退出登录对话框
+    LogoutConfirmDialogManager.show(
+      context,
+      username: currentUser?.username,
+    ).then((confirmed) {
+      if (confirmed == true) {
+        _performLogout();
+      }
+    });
+  }
+
+  // 执行退出登录
+  void _performLogout() async {
+    try {
+      // 获取应用状态管理器
+      final appState = Provider.of<AppState>(context, listen: false);
+      
+      // 清除登录状态
+      appState.logout();
+      
+      // 显示退出成功消息
+      if (mounted) {
+        _showSnackBar('已成功退出登录', isSuccess: true);
+      }
+      
+      // 延迟一下再跳转，让用户看到成功消息
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // 导航到登录页面
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/login',
+          (route) => false, // 清除所有路由历史
+        );
+      }
+    } catch (e) {
+      print('退出登录错误: $e');
+      if (mounted) {
+        _showSnackBar('退出登录失败: $e', isSuccess: false);
+      }
+    }
+  }
+
+  // 构建同步配置标签页
+  Widget _buildSyncConfigTab() {
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return FutureBuilder<SyncConfig>(
+          future: SyncConfig.loadSyncConfig(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final config = snapshot.data ?? SyncConfig();
+
+            return Consumer<DatabaseProvider>(
+              builder: (context, provider, child) {
+                return Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '数据同步配置',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      
+                      // 同步开关
+                      SwitchListTile(
+                        title: const Text('启用自动同步'),
+                        subtitle: const Text('定期从MySQL同步数据到本地'),
+                        value: config.syncEnabled,
+                        onChanged: (value) async {
+                          config.syncEnabled = value;
+                          await SyncConfig.saveSyncConfig(config);
+                          setState(() {});
+                        },
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // 同步间隔设置
+                      ListTile(
+                        title: const Text('同步间隔'),
+                        subtitle: const Text('设置自动同步的时间间隔'),
+                        trailing: DropdownButton<int>(
+                          value: config.syncIntervalDays,
+                          items: const [
+                            DropdownMenuItem(value: 1, child: Text('1天')),
+                            DropdownMenuItem(value: 3, child: Text('3天')),
+                            DropdownMenuItem(value: 7, child: Text('7天')),
+                            DropdownMenuItem(value: 14, child: Text('14天')),
+                            DropdownMenuItem(value: 30, child: Text('30天')),
+                          ],
+                          onChanged: (value) async {
+                            if (value != null) {
+                              config.syncIntervalDays = value;
+                              await SyncConfig.saveSyncConfig(config);
+                              setState(() {});
+                            }
+                          },
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // 上次同步时间
+                      ListTile(
+                        title: const Text('上次同步时间'),
+                        subtitle: Text(
+                          config.lastSyncTime.isEmpty 
+                              ? '从未同步' 
+                              : _formatLastSyncTime(config.lastSyncTime),
+                        ),
+                        leading: const Icon(Icons.access_time),
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // 手动同步按钮
+                      ElevatedButton.icon(
+                        onPressed: provider.isConnected && provider.dbType == 'mysql'
+                            ? () async {
+                                // 保存当前context的引用
+                                final currentContext = context;
+                                
+                                try {
+                                  // 显示同步开始提示
+                                  if (mounted) {
+                                    ToastUtil.showInfo(currentContext, '数据同步已启动');
+                                  }
+                                  
+                                  // 执行同步
+                                  final success = await provider.forceDataSync();
+                                  
+                                  // 显示同步结果
+                                  if (mounted) {
+                                    if (success) {
+                                      ToastUtil.showSuccess(currentContext, '数据同步完成');
+                                    } else {
+                                      ToastUtil.showError(currentContext, '数据同步失败');
+                                    }
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    ToastUtil.showError(currentContext, '同步失败: $e');
+                                  }
+                                }
+                              }
+                            : null,
+                        icon: const Icon(Icons.sync),
+                        label: const Text('立即同步'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          minimumSize: const Size(double.infinity, 48),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: () async {
+                          // 保存当前context的引用
+                          final currentContext = context;
+                          
+                          final shouldReset = await showDialog<bool>(
+                            context: currentContext,
+                            builder: (dialogContext) => AlertDialog(
+                              title: const Text('重置数据库'),
+                              content: const Text('确定要重置数据库吗？这将删除所有本地数据并从服务器重新同步。'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(dialogContext, false),
+                                  child: const Text('取消'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(dialogContext, true),
+                                  child: const Text('确定'),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (shouldReset == true && mounted) {
+                            try {
+                              await DatabaseUtils.resetDefaultDatabase();
+                              if (mounted) {
+                                ToastUtil.showSuccess(currentContext, '数据库已重置，请重新同步数据');
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ToastUtil.showError(currentContext, '重置数据库失败: $e');
+                              }
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text('重置数据库'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          minimumSize: const Size(double.infinity, 40),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // 查看日志按钮
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SyncLogsScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.history),
+                        label: const Text('查看同步日志'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          minimumSize: const Size(double.infinity, 48),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _formatLastSyncTime(String lastSyncTime) {
+    try {
+      final dateTime = DateTimeFormatter.fromDbString(lastSyncTime);
+      return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} '
+             '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return '时间格式错误';
+    }
+  }
+
+
 }

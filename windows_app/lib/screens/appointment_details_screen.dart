@@ -7,7 +7,10 @@ import '../theme/app_theme.dart';
 import '../models/appointment.dart';
 import '../models/patient.dart';
 import '../providers/database_provider.dart';
+import '../providers/appointment_provider.dart';
+import '../providers/patient_provider.dart';
 import '../providers/app_state.dart';
+import '../widgets/dental_icons.dart';
 import './patient_detail_screen.dart';
 
 // 牙位映射表 - 从医生视角看患者牙齿
@@ -34,7 +37,7 @@ class CrossPainter extends CustomPainter {
     );
 
     // 绘制垂直线 - 高度约为三个字符高度
-    double verticalHeight = 40; // 减小至约等于三个字符高度
+    double verticalHeight = 40; // 恢复原先高度，避免文字溢出
     double startY = size.height / 2 - verticalHeight / 2;
     double endY = size.height / 2 + verticalHeight / 2;
 
@@ -63,8 +66,8 @@ class TeethCrossWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 120, // 减小总体高度
-      width: 180, // 调整总体宽度
+      height: 120, // 恢复原始尺寸
+      width: 180,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -83,7 +86,7 @@ class TeethCrossWidget extends StatelessWidget {
   }
 
   Widget _buildCross() {
-    // 使用固定尺寸而非LayoutBuilder，避免潜在的布局计算问题
+    // 使用固定尺寸而非LayoutBuilder，避免潜在的布局计算问题（恢复原值）
     final double width = 170.0;
     final double height = 90.0;
     final double centerX = width / 2;
@@ -202,10 +205,11 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
+      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
+      final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
 
       // 获取预约详情
-      final appointments = await dbProvider.getAllAppointments();
+      final appointments = await appointmentProvider.getAllAppointments();
       final appointment = appointments.firstWhere(
         (a) => a.id == widget.appointmentId,
         orElse: () => throw Exception('预约不存在'),
@@ -213,7 +217,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
 
       // 获取患者信息
       final patient = appointment.patientId != null
-          ? await dbProvider.getPatient(appointment.patientId!)
+          ? await patientProvider.getPatient(appointment.patientId!)
           : null;
 
       // 解析treatment_type字段，获取牙齿情况和治疗项目
@@ -268,7 +272,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
   void _changeAppointmentStatus(String newStatus) async {
     if (_appointment == null) return;
 
-    final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
+    final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
     final appState = Provider.of<AppState>(context, listen: false);
 
     try {
@@ -286,9 +290,9 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
         updated_at: DateTime.now(),
       );
 
-      // 更新预约状态
+      // 添加防重复提交保护
       await appState.showLoading(
-        dbProvider.updateAppointment(updatedAppointment),
+        appointmentProvider.updateAppointment(updatedAppointment),
         message: '正在更新状态...',
       );
 
@@ -311,14 +315,53 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isLoading
-            ? '预约详情'
-            : '预约: ${DateFormat('MM/dd HH:mm').format(_appointment!.appointmentDate)}'),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient: DentalColors.primaryGradient,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.event_note_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              _isLoading
+                  ? '预约详情'
+                  : '预约: ${DateFormat('MM/dd HH:mm').format(_appointment!.appointmentDate)}',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: DentalColors.onSurface,
+        elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: '刷新',
-            onPressed: _loadAppointmentData,
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: DentalColors.info.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: DentalColors.info.withOpacity(0.3),
+              ),
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.refresh_rounded,
+                color: DentalColors.info,
+              ),
+              tooltip: '刷新',
+              onPressed: _loadAppointmentData,
+            ),
           ),
         ],
       ),
@@ -341,22 +384,72 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
   }
 
   Widget _buildAppointmentCard() {
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            DentalColors.background.withOpacity(0.5),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: DentalColors.primary.withOpacity(0.1),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 8,
+            spreadRadius: 1,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(
+          color: DentalColors.primary.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: _patient?.gender == '女'
-                      ? const Color(0xFFF48FB1)
-                      : Color(int.parse(
-                          _appointment!.statusColor.replaceAll('#', '0xff'))),
-                  child: const Icon(Icons.event_note, color: Colors.white),
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        DentalColors.primary,
+                        DentalColors.secondary,
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: DentalColors.primary.withOpacity(0.3),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.event_note_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 20),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -365,46 +458,60 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                         DateFormat('yyyy年MM月dd日 EEEE', 'zh_CN')
                             .format(_appointment!.appointmentDate),
                         style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                            fontSize: 20, fontWeight: FontWeight.bold),
                       ),
+                      const SizedBox(height: 4),
                       Text(
                         '时间: ${DateFormat('HH:mm').format(_appointment!.appointmentDate)}',
-                        style:
-                            const TextStyle(fontSize: 16, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: DentalColors.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Color(int.parse(
-                            _appointment!.statusColor.replaceAll('#', '0xff')))
-                        .withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Color(int.parse(
-                          _appointment!.statusColor.replaceAll('#', '0xff'))),
-                      width: 1,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(int.parse(_appointment!.statusColor.replaceAll('#', '0xff'))).withOpacity(0.1),
+                        Color(int.parse(_appointment!.statusColor.replaceAll('#', '0xff'))).withOpacity(0.2),
+                      ],
                     ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Color(int.parse(_appointment!.statusColor.replaceAll('#', '0xff'))),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(int.parse(_appointment!.statusColor.replaceAll('#', '0xff'))).withOpacity(0.2),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Text(
                     _appointment!.statusDisplay,
                     style: TextStyle(
-                      color: Color(int.parse(
-                          _appointment!.statusColor.replaceAll('#', '0xff'))),
+                      color: Color(int.parse(_appointment!.statusColor.replaceAll('#', '0xff'))),
                       fontWeight: FontWeight.bold,
+                      fontSize: 15,
                     ),
                   ),
                 ),
               ],
             ),
-            const Divider(height: 32),
+            const Divider(height: 32, thickness: 1, color: DentalColors.divider),
 
             // 牙齿情况
             _buildTeethConditionSection(),
-            const Divider(height: 24),
+            const Divider(height: 24, thickness: 1, color: DentalColors.divider),
 
             // 治疗项目
             _buildTreatmentItemsSection(),
@@ -420,35 +527,75 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
               _buildInfoRow('费用', '¥${_appointment!.cost!.toStringAsFixed(2)}'),
             ],
 
-            const SizedBox(height: 16),
-            const Text(
-              '更新预约状态',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            const SizedBox(height: 12),
+            // 精简：更新预约状态
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: DentalColors.divider.withOpacity(0.5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.update_rounded, size: 16, color: Colors.orange),
+                      const SizedBox(width: 6),
+                      Text(
+                        '更新预约状态',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: DentalColors.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildStatusButton('已预约', Colors.blue),
+                      _buildStatusButton('已完成', Colors.green),
+                      _buildStatusButton('已取消', Colors.red),
+                      _buildStatusButton('未到诊', Colors.orange),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _buildStatusButton('已预约', Colors.blue),
-                _buildStatusButton('已完成', Colors.green),
-                _buildStatusButton('已取消', Colors.red),
-                _buildStatusButton('未到诊', Colors.orange),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '创建于: ${_appointment!.createdAt != null ? DateFormat('yyyy-MM-dd HH:mm').format(_appointment!.createdAt!) : '未知'}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                Text(
-                  '上次更新: ${_appointment!.updatedAt != null ? DateFormat('yyyy-MM-dd HH:mm').format(_appointment!.updatedAt!) : '未知'}',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
+            const SizedBox(height: 12),
+            // 精简：创建/更新时间
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.schedule_rounded, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        '创建于: ${_appointment!.createdAt != null ? DateFormat('yyyy-MM-dd HH:mm').format(_appointment!.createdAt!) : '未知'}',
+                        style: TextStyle(fontSize: 12, color: DentalColors.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const Icon(Icons.update_rounded, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        '上次更新: ${_appointment!.updatedAt != null ? DateFormat('yyyy-MM-dd HH:mm').format(_appointment!.updatedAt!) : '未知'}',
+                        style: TextStyle(fontSize: 12, color: DentalColors.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -458,54 +605,125 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
 
   // 牙齿情况区域
   Widget _buildTeethConditionSection() {
-    return Card(
-      elevation: 1.0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            DentalColors.background.withOpacity(0.3),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: DentalColors.primary.withOpacity(0.08),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: DentalColors.primary.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Text(
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: DentalColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    DentalIcons.tooth,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
                   '牙位情况',
                   style: TextStyle(
-                    fontSize: 18.0,
+                    fontSize: 20.0,
                     fontWeight: FontWeight.bold,
+                    color: DentalColors.onSurface,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Tooltip(
                   message: '从医生视角看患者：显示的是患者的实际牙位（右上、左上、右下、左下）',
-                  child: Icon(Icons.info_outline,
-                      size: 16, color: Colors.grey[600]),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: DentalColors.info.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.info_outline_rounded,
+                      size: 18,
+                      color: DentalColors.info,
+                    ),
+                  ),
                 ),
               ],
             ),
             // 添加牙位方向提示信息
             Container(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              padding: const EdgeInsets.all(8),
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    DentalColors.info.withOpacity(0.1),
+                    DentalColors.info.withOpacity(0.2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: DentalColors.info.withOpacity(0.3),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: DentalColors.info.withOpacity(0.1),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
-                  const SizedBox(width: 8),
-                  const Expanded(
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 18,
+                    color: DentalColors.info,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
                     child: Text(
                       '注意：十字图中位置对应患者的实际牙位',
-                      style: TextStyle(fontSize: 12, color: Colors.blue),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: DentalColors.info,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 8.0),
+            const SizedBox(height: 16.0),
             // 使用牙位交叉组件显示 - 两个十字并排显示
             if (_teethData.isNotEmpty)
               Row(
@@ -618,25 +836,44 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
       );
     }
 
-    return Card(
-      elevation: 1.0,
-      margin: const EdgeInsets.only(bottom: 16.0),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: DentalColors.divider.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.only(bottom: 12.0),
-              child: Text(
-                '治疗项目',
-                style: TextStyle(
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.bold,
+            Row(
+              children: [
+                const Icon(
+                  Icons.medical_services_rounded,
+                  size: 18,
+                  color: Colors.green,
                 ),
-              ),
+                const SizedBox(width: 8),
+                Text(
+                  '治疗项目',
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.w600,
+                    color: DentalColors.onSurface,
+                  ),
+                ),
+              ],
             ),
-            treatmentContent,
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.all(0),
+              child: treatmentContent,
+            ),
           ],
         ),
       ),
@@ -644,72 +881,172 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
   }
 
   Widget _buildPatientCard() {
-    return Card(
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: DentalColors.divider.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '患者信息',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: _patient!.gender == '女'
-                      ? Color(0xFFF48FB1)
-                      : AppTheme.primaryColor,
-                  child: Text(
-                    _patient!.name.substring(0, 1),
-                    style: const TextStyle(color: Colors.white),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: DentalColors.primary.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: DentalColors.primary.withOpacity(0.2)),
+                  ),
+                  child: Icon(
+                    Icons.person_rounded,
+                    color: DentalColors.primary,
+                    size: 18,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 8),
+                Text(
+                  '患者信息',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: DentalColors.onSurface,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: _patient!.gender == '女'
+                        ? const Color(0xFFFCE4EC)
+                        : const Color(0xFFE3F2FD),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      _patient!.name.substring(0, 1),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: _patient!.gender == '女'
+                            ? Colors.pink.shade600
+                            : Colors.blue.shade600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         _patient!.name,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: DentalColors.onSurface,
+                        ),
                       ),
-                      Text(
-                        '${_patient!.age}岁 | ${_patient!.gender} | ${_patient!.phone}',
-                        style:
-                            const TextStyle(fontSize: 14, color: Colors.grey),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          // 基本信息chip
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: DentalColors.info.withOpacity(0.5)),
+                            ),
+                            child: Text(
+                              '${_patient!.age}岁 | ${_patient!.gender} | ${_patient!.phone}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: DentalColors.info,
+                              ),
+                            ),
+                          ),
+                          // 病历号紧随其后同一行展示
+                          if (_patient!.medical_record_number != null)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: DentalColors.primary.withOpacity(0.5)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.badge_rounded, size: 14, color: DentalColors.primary),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '病历号 ${_patient!.medical_record_number}',
+                                    style: TextStyle(fontSize: 12, color: DentalColors.primary, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          // 地址同一行展示（过长会在Wrap中换行）
+                          if (_patient!.address != null && _patient!.address!.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: DentalColors.onSurfaceVariant.withOpacity(0.5)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.location_on_outlined, size: 14, color: DentalColors.onSurfaceVariant),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    _patient!.address!,
+                                    style: TextStyle(fontSize: 12, color: DentalColors.onSurfaceVariant, fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.info_outline),
+                  icon: Icon(
+                    Icons.info_outline_rounded,
+                    color: DentalColors.primary,
+                  ),
                   tooltip: '查看患者详情',
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) =>
-                            PatientDetailScreen(patientId: _patient!.id!),
+                            PatientDetailScreen(patient: _patient!),
                       ),
                     );
                   },
                 ),
               ],
             ),
-            if (_patient!.medical_record_number != null ||
-                _patient!.identification_number != null ||
-                _patient!.address != null) ...[
-              const Divider(height: 32),
-              if (_patient!.medical_record_number != null)
-                _buildInfoRow(
-                    '病历号', _patient!.medical_record_number.toString()),
-              if (_patient!.identification_number != null)
-                _buildInfoRow('身份证号', _patient!.identification_number!),
-              if (_patient!.address != null)
-                _buildInfoRow('地址', _patient!.address!),
-            ],
+            // 去掉下方额外信息区域，患者信息仅保留一行紧凑显示
           ],
         ),
       ),
@@ -739,17 +1076,17 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(right: 8, bottom: 8),
+      margin: const EdgeInsets.only(right: 6, bottom: 6),
       child: InkWell(
         onTap: isCurrentStatus ? null : () => _changeAppointmentStatus(status),
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: isCurrentStatus ? color : color.withOpacity(0.1),
+            color: isCurrentStatus ? color : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: color,
+              color: color.withOpacity(isCurrentStatus ? 1.0 : 0.6),
               width: 1,
             ),
           ),
@@ -757,7 +1094,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
             statusText,
             style: TextStyle(
               color: isCurrentStatus ? Colors.white : color,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w600,
               fontSize: 14,
             ),
           ),
@@ -767,19 +1104,64 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
   }
 
   Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: DentalColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: DentalColors.divider.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: DentalColors.primary.withOpacity(0.05),
+            blurRadius: 8,
+            spreadRadius: 1,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              '$label:',
-              style: const TextStyle(fontWeight: FontWeight.bold),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: DentalColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.info_outline_rounded,
+              size: 16,
+              color: DentalColors.primary,
             ),
           ),
-          Expanded(child: Text(value)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: DentalColors.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: DentalColors.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

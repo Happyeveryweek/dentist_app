@@ -1,23 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:ui';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'dart:io';
+import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'theme/app_theme.dart';
 import 'providers/database_provider.dart';
 import 'providers/settings_provider.dart';
+import 'utils/datetime_formatter.dart';
 import 'providers/app_state.dart';
-import 'screens/dashboard_screen.dart';
+import 'providers/material_provider.dart';
+import 'providers/purchase_provider.dart';
+import 'providers/financial_provider.dart';
+import 'providers/user_provider.dart'; // Added import for UserProvider
+import 'providers/appointment_provider.dart';
+import 'providers/patient_provider.dart'; // Added import for PatientProvider
+import 'providers/medical_record_provider.dart'; // Added import for MedicalRecordProvider
+import 'screens/modern_dashboard_screen.dart';
 import 'screens/patients_screen.dart';
 import 'screens/appointments_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'utils/app_paths.dart';
+import 'utils/log_manager.dart';
+import 'services/medical_template_service.dart';
+
+
 
 // 加载页面
 class SplashScreen extends StatelessWidget {
@@ -68,38 +84,155 @@ void main() async {
   // 确保Flutter绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 设置Windows应用窗口
-  if (Platform.isWindows) {
-    await windowManager.ensureInitialized();
-    WindowOptions windowOptions = WindowOptions(
-      title: '牙医诊所管理系统',
-      titleBarStyle: TitleBarStyle.normal,
-      windowButtonVisibility: true,
-    );
-    await windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-    });
+  // 设置全局错误处理
+  FlutterError.onError = (FlutterErrorDetails details) {
+    print('🔴 Flutter UI错误: ${details.exceptionAsString()}');
+    print('🔴 堆栈: ${details.stack}');
+  };
+
+  // 捕获所有异步错误
+  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    print('🔴 异步错误: $error');
+    print('🔴 堆栈: $stack');
+    return true; // 已处理
+  };
+
+  try {
+    print('🟢 main(): 应用启动开始');
+    
+    // 初始化应用路径管理
+    try {
+      print('🟢 main(): 初始化应用路径...');
+      await AppPaths.initialize();
+      await AppPaths.initializeAllDirectories();
+      print('✅ 应用路径初始化完成');
+      print('✅ 应用信息: ${AppPaths.appInfo}');
+      
+      // 初始化日志管理器
+      await LogManager.initialize();
+      print('✅ 日志管理器初始化完成');
+      
+      // 初始化医疗模板服务（如果没有模板数据则创建默认模板）
+      try {
+        final hasTemplateData = await MedicalTemplateService.hasTemplateData();
+        if (!hasTemplateData) {
+          print('🟢 main(): 初始化默认医疗模板...');
+          await MedicalTemplateService.initializeDefaultTemplates();
+          print('✅ 默认医疗模板初始化完成');
+        } else {
+          print('✅ 医疗模板数据已存在，跳过初始化');
+        }
+      } catch (e) {
+        print('⚠️ 医疗模板初始化失败: $e');
+        // 继续，不阻止应用启动
+      }
+    } catch (e, stackTrace) {
+      print('🔴 应用路径初始化失败: $e');
+      print('🔴 堆栈: $stackTrace');
+      rethrow;
+    }
+
+    // 设置Windows应用窗口
+    if (Platform.isWindows) {
+      try {
+        print('🟢 main(): 初始化Windows窗口...');
+        await windowManager.ensureInitialized();
+        WindowOptions windowOptions = WindowOptions(
+          title: '牙医诊所管理系统',
+          titleBarStyle: TitleBarStyle.normal,
+          windowButtonVisibility: true,
+        );
+        await windowManager.waitUntilReadyToShow(windowOptions, () async {
+          await windowManager.show();
+          await windowManager.focus();
+        });
+        print('✅ Windows窗口初始化成功');
+      } catch (e, stackTrace) {
+        print('⚠️ Windows窗口初始化失败: $e');
+        print('⚠️ 堆栈: $stackTrace');
+        // 继续运行，窗口初始化失败不应该阻止应用启动
+      }
+    }
+
+    // 初始化intl日期格式
+    try {
+      print('🟢 main(): 初始化日期格式...');
+      Intl.defaultLocale = 'zh_CN';
+      await initializeDateFormatting('zh_CN', null);
+      print('✅ 日期格式初始化成功');
+    } catch (e, stackTrace) {
+      print('⚠️ 日期格式初始化失败: $e');
+      print('⚠️ 堆栈: $stackTrace');
+    }
+
+    // 在Windows和Linux平台上初始化sqflite
+    if (Platform.isWindows || Platform.isLinux) {
+      try {
+        print('🟢 main(): 初始化数据库工厂...');
+        // 初始化FFI
+        sqfliteFfiInit();
+        // 设置全局databaseFactory为databaseFactoryFfi
+        databaseFactory = databaseFactoryFfi;
+        print('✅ 数据库工厂初始化成功: $databaseFactory');
+      } catch (e, stackTrace) {
+        print('🔴 数据库工厂初始化失败: $e');
+        print('🔴 堆栈: $stackTrace');
+        rethrow;
+      }
+    }
+
+    // 确保所有平台都正确设置了数据库工厂
+    print('✅ 当前数据库工厂: $databaseFactory');
+
+    print('🟢 main(): 准备启动应用...');
+    runApp(const DentistApp());
+  } catch (e, stackTrace) {
+    print('🔴 应用启动失败: $e');
+    print('🔴 堆栈: $stackTrace');
+    // 显示错误应用
+    runApp(ErrorApp(error: '应用启动失败:\n\n$e\n\n堆栈:\n$stackTrace'));
   }
-
-  // 初始化intl日期格式
-  Intl.defaultLocale = 'zh_CN';
-  await initializeDateFormatting('zh_CN', null);
-
-  // 在Windows和Linux平台上初始化sqflite
-  if (Platform.isWindows || Platform.isLinux) {
-    // 初始化FFI
-    sqfliteFfiInit();
-    // 设置全局databaseFactory为databaseFactoryFfi
-    databaseFactory = databaseFactoryFfi;
-    print("已设置databaseFactory = databaseFactoryFfi");
-  }
-
-  // 确保所有平台都正确设置了数据库工厂
-  print("当前数据库工厂: $databaseFactory");
-
-  runApp(const DentistApp());
 }
+
+// 错误应用 - 当main()出现未捕获的异常时显示
+class ErrorApp extends StatelessWidget {
+  final String error;
+
+  const ErrorApp({Key? key, required this.error}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        backgroundColor: Colors.red.shade50,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                const SizedBox(height: 20),
+                const Text('应用启动失败', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: SelectableText(
+                      error,
+                      style: const TextStyle(fontSize: 14, color: Colors.black87),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
 
 class DentistApp extends StatelessWidget {
   const DentistApp({Key? key}) : super(key: key);
@@ -110,11 +243,154 @@ class DentistApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AppState()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
-        ChangeNotifierProxyProvider<SettingsProvider, DatabaseProvider>(
-          create: (_) => DatabaseProvider(),
-          update: (_, settings, db) {
-            db ??= DatabaseProvider();
-            return db;
+        ChangeNotifierProvider(create: (_) => DatabaseProvider()),
+        ChangeNotifierProxyProvider<DatabaseProvider, UserProvider>(
+          create: (_) => UserProvider(),
+          update: (_, dbProvider, userProvider) {
+            userProvider ??= UserProvider();
+            
+            // 获取设置提供者以获取模块配置
+            final settings = Provider.of<SettingsProvider>(_, listen: false);
+            final dataSourceMode = settings.dataSourceMode ?? 'global';
+            final moduleDataSources = settings.moduleDataSources ?? {};
+            
+            // 智能初始化：根据配置模式决定数据源类型
+            userProvider.initializeFromDatabase(
+              dbProvider,
+              moduleDataSources: moduleDataSources,
+              dataSourceMode: dataSourceMode,
+            );
+            
+            return userProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider2<DatabaseProvider, UserProvider, FinancialProvider>(
+          create: (_) => FinancialProvider(),
+          update: (_, dbProvider, userProvider, financialProvider) {
+            financialProvider ??= FinancialProvider();
+            
+            // 获取设置提供者以获取模块配置
+            final settings = Provider.of<SettingsProvider>(_, listen: false);
+            final dataSourceMode = settings.dataSourceMode ?? 'global';
+            final moduleDataSources = settings.moduleDataSources ?? {};
+            
+            // 使用initializeFromDatabase方法，传递模块配置和用户权限提供者
+            financialProvider.initializeFromDatabase(
+              dbProvider,
+              moduleDataSources: moduleDataSources,
+              dataSourceMode: dataSourceMode,
+              userProvider: userProvider,
+            );
+            
+            return financialProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider<DatabaseProvider, MaterialProvider>(
+          create: (_) => MaterialProvider(),
+          update: (_, dbProvider, materialProvider) {
+            materialProvider ??= MaterialProvider();
+            
+            // 获取设置提供者以获取模块配置
+            final settings = Provider.of<SettingsProvider>(_, listen: false);
+            final dataSourceMode = settings.dataSourceMode ?? 'global';
+            final moduleDataSources = settings.moduleDataSources ?? {};
+            
+            // 智能初始化：根据配置模式决定数据源类型
+            materialProvider.initializeFromDatabase(
+              dbProvider,
+              moduleDataSources: moduleDataSources,
+              dataSourceMode: dataSourceMode,
+            );
+            
+            return materialProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider2<DatabaseProvider, UserProvider, PurchaseProvider>(
+          create: (_) => PurchaseProvider(),
+          update: (_, dbProvider, userProvider, purchaseProvider) {
+            purchaseProvider ??= PurchaseProvider();
+            
+            // 获取设置提供者以获取模块配置
+            final settings = Provider.of<SettingsProvider>(_, listen: false);
+            final dataSourceMode = settings.dataSourceMode ?? 'global';
+            final moduleDataSources = settings.moduleDataSources ?? {};
+            
+            // 使用initializeFromDatabase方法，传递模块配置和用户权限提供者
+            purchaseProvider.initializeFromDatabase(
+              dbProvider,
+              moduleDataSources: moduleDataSources,
+              dataSourceMode: dataSourceMode,
+              userProvider: userProvider,
+            );
+            
+            return purchaseProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider2<DatabaseProvider, UserProvider, PatientProvider>(
+          create: (_) => PatientProvider(),
+          update: (_, dbProvider, userProvider, patientProvider) {
+            patientProvider ??= PatientProvider();
+            
+            // 设置当前用户信息
+            if (userProvider.currentUser != null) {
+              patientProvider.setCurrentUser(userProvider.currentUser!);
+            }
+            
+            // 获取设置提供者以获取模块配置
+            final settings = Provider.of<SettingsProvider>(_, listen: false);
+            final dataSourceMode = settings.dataSourceMode ?? 'global';
+            final moduleDataSources = settings.moduleDataSources ?? {};
+            
+            // 智能初始化：根据配置模式决定数据源类型
+            patientProvider.initializeFromDatabase(
+              dbProvider,
+              moduleDataSources: moduleDataSources,
+              dataSourceMode: dataSourceMode,
+            );
+            
+            return patientProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider2<DatabaseProvider, PatientProvider, AppointmentProvider>(
+          create: (_) => AppointmentProvider(),
+          update: (_, dbProvider, patientProvider, appointmentProvider) {
+            appointmentProvider ??= AppointmentProvider();
+            
+            // 获取设置提供者以获取模块配置
+            final settings = Provider.of<SettingsProvider>(_, listen: false);
+            final dataSourceMode = settings.dataSourceMode ?? 'global';
+            final moduleDataSources = settings.moduleDataSources ?? {};
+            
+            // 智能初始化：根据配置模式决定数据源类型，并传递PatientProvider
+            appointmentProvider.initializeFromDatabase(
+              dbProvider,
+              moduleDataSources: moduleDataSources,
+              dataSourceMode: dataSourceMode,
+              patientProvider: patientProvider,
+            );
+            
+            return appointmentProvider;
+          },
+        ),
+        ChangeNotifierProxyProvider2<DatabaseProvider, UserProvider, MedicalRecordProvider>(
+          create: (_) => MedicalRecordProvider(),
+          update: (_, dbProvider, userProvider, medicalRecordProvider) {
+            medicalRecordProvider ??= MedicalRecordProvider();
+            
+            // 获取设置提供者以获取模块配置
+            final settings = Provider.of<SettingsProvider>(_, listen: false);
+            final dataSourceMode = settings.dataSourceMode ?? 'global';
+            final moduleDataSources = settings.moduleDataSources ?? {};
+            
+            // 立即同步初始化数据源
+            medicalRecordProvider.initializeFromDatabaseSync(
+              dbProvider,
+              moduleDataSources: moduleDataSources,
+              dataSourceMode: dataSourceMode,
+              userProvider: userProvider,
+            );
+            
+            return medicalRecordProvider;
           },
         ),
       ],
@@ -136,20 +412,31 @@ class _AppWithProvidersState extends State<AppWithProviders> {
   @override
   void initState() {
     super.initState();
+    print('🟢 AppWithProviders initState: 开始初始化Provider');
     _initializeProviders();
   }
 
   Future<void> _initializeProviders() async {
     final settings = Provider.of<SettingsProvider>(context, listen: false);
     final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
+    final appState = Provider.of<AppState>(context, listen: false);
 
     try {
       // 初始化设置
       await settings.init();
 
-      // 设置数据源类型
+      // 设置数据源类型 - 确保有默认值
       String dataSourceType = settings.dataSourceType;
+      if (dataSourceType.isEmpty) {
+        print('数据源类型为空，使用默认SQLite');
+        dataSourceType = 'sqlite';
+        await settings.setDataSourceType('sqlite');
+      }
       print('初始化数据源类型: $dataSourceType');
+
+      // 检查数据源模式
+      final dataSourceMode = settings.dataSourceMode ?? 'global';
+      print('数据源模式: $dataSourceMode');
 
       if (dataSourceType == 'sqlite') {
         // 如果是SQLite，检查是否有自定义数据库路径
@@ -161,6 +448,8 @@ class _AppWithProvidersState extends State<AppWithProviders> {
           dataSourceType,
           customSqlitePath: sqliteDbPath,
         );
+        // 设置MySQL连接状态为未连接
+        appState.setMySQLConnectionStatus(false);
       } else if (dataSourceType == 'mysql') {
         // 如果是MySQL，设置连接参数
         Map<String, dynamic> mysqlSettings = {
@@ -173,37 +462,152 @@ class _AppWithProvidersState extends State<AppWithProviders> {
 
         print('MySQL设置: $mysqlSettings');
 
-        // 初始化MySQL连接
-        await dbProvider.setDataSourceType(
-          dataSourceType,
-          mysqlSettings: mysqlSettings,
-        );
+        try {
+          // 尝试初始化MySQL连接
+          await dbProvider.setDataSourceType(
+            dataSourceType,
+            mysqlSettings: mysqlSettings,
+          );
+          // MySQL连接成功
+          appState.setMySQLConnectionStatus(true);
+        } catch (mysqlError) {
+          print('MySQL连接失败，自动回退到SQLite: $mysqlError');
+          // 自动回退到SQLite
+          await dbProvider.setDataSourceType('sqlite');
+          // 更新设置中的数据源类型
+          await settings.setDataSourceType('sqlite');
+          // 更新MySQL连接状态
+          appState.setMySQLConnectionStatus(false);
+        }
       } else {
         print('未知的数据源类型，使用默认SQLite');
-        // 默认使用SQLite
+        // 默认使用SQLite，并确保设置被保存
         await dbProvider.setDataSourceType('sqlite');
+        await settings.setDataSourceType('sqlite');
+        // 设置MySQL连接状态为未连接
+        appState.setMySQLConnectionStatus(false);
+      }
+
+      // 如果是模块化模式，检查是否需要额外初始化MySQL连接
+      if (dataSourceMode == 'modular') {
+        final moduleDataSources = settings.moduleDataSources ?? {};
+        final affectedModules = moduleDataSources.entries
+            .where((entry) => entry.value == 'mysql')
+            .map((entry) => entry.key)
+            .toList();
+        final hasMySQLModules = affectedModules.isNotEmpty;
+        
+        if (hasMySQLModules && dataSourceType != 'mysql') {
+          print('检测到模块化模式中有MySQL模块，初始化MySQL连接...');
+          
+          // 初始化MySQL连接
+          Map<String, dynamic> mysqlSettings = {
+            'host': settings.mysqlHost ?? 'localhost',
+            'port': int.tryParse(settings.mysqlPort ?? '3306') ?? 3306,
+            'database': settings.mysqlDatabase ?? 'dentist_db',
+            'username': settings.mysqlUsername ?? 'root',
+            'password': settings.mysqlPassword ?? '',
+          };
+
+          print('MySQL设置: $mysqlSettings');
+
+          // 初始化MySQL连接（不改变当前数据源类型）
+          try {
+            // 添加5秒的主级超时保险，防止长时间等待
+            await dbProvider.initializeMySQLConnection(mysqlSettings).timeout(
+              const Duration(seconds: 5),
+              onTimeout: () {
+                print('MySQL连接初始化超时，自动降级到SQLite');
+                throw TimeoutException('MySQL连接超时');
+              },
+            );
+            // MySQL连接成功
+            appState.setMySQLConnectionStatus(true, affectedModules: affectedModules);
+          } catch (mysqlError) {
+            print('模块化模式下MySQL连接失败: $mysqlError');
+            // 更新MySQL连接状态，传递受影响的模块列表
+            appState.setMySQLConnectionStatus(false, affectedModules: affectedModules);
+            
+            // 当MySQL连接失败时，临时将受影响的模块数据源切换到SQLite（仅运行时，不保存）
+            print('临时将受影响的模块数据源切换到SQLite（仅运行时）...');
+            final temporaryModuleDataSources = Map<String, String>.from(settings.moduleDataSources);
+            for (final module in affectedModules) {
+              temporaryModuleDataSources[module] = 'sqlite';
+              print('⏸️ 临时切换 $module 模块到SQLite（不保存设置）');
+            }
+            
+            // 更新各个Provider的模块数据源配置（仅运行时）
+            if (affectedModules.contains('purchase')) {
+              final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
+              purchaseProvider.updateModuleDataSources(temporaryModuleDataSources);
+            }
+            if (affectedModules.contains('financial')) {
+              final financialProvider = Provider.of<FinancialProvider>(context, listen: false);
+              financialProvider.updateModuleDataSources(temporaryModuleDataSources);
+            }
+          }
+        }
       }
 
       // 在数据库初始化后检查是否需要执行自动备份
-      await _checkAutoBackup(settings, dbProvider);
+      _checkAutoBackup(settings, dbProvider);
+
+              // 设置其他提供者的数据库连接
+        final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+        final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
+        final financialProvider = Provider.of<FinancialProvider>(context, listen: false);
+        
+        // 在模块化模式下，需要同时传递SQLite和MySQL连接
+        if (dataSourceMode == 'modular') {
+          // 获取模块配置
+          final moduleDataSources = settings.moduleDataSources ?? {};
+          
+          // MaterialProvider已在ChangeNotifierProxyProvider中使用initializeFromDatabase初始化，无需重复初始化
+          // PurchaseProvider和FinancialProvider已在ChangeNotifierProxyProvider中初始化，无需重复初始化
+          // AppointmentProvider已在ChangeNotifierProxyProvider中使用initializeFromDatabase初始化，无需重复初始化
+          // PatientProvider已在ChangeNotifierProxyProvider中使用initializeFromDatabase初始化，无需重复初始化
+          // UserProvider已在ChangeNotifierProxyProvider中使用initializeFromDatabase初始化，无需重复初始化
+        } else {
+          // 全局模式：MaterialProvider已在ChangeNotifierProxyProvider中初始化，无需重复初始化
+          // PurchaseProvider和FinancialProvider已在ChangeNotifierProxyProvider中初始化，无需重复初始化
+        }
+        
+        // 注意：现在Provider在初始化时就已经根据模块配置设置了正确的数据源，无需额外更新
 
       setState(() {
         _isInitialized = true;
       });
-    } catch (e) {
-      print('初始化时发生错误: $e');
+    } catch (e, stackTrace) {
+      print('🔴 初始化时发生错误: $e');
+      print('🔴 堆栈跟踪: $stackTrace');
       try {
         // 发生错误时，尝试使用默认SQLite
-        print('尝试使用默认SQLite初始化...');
+        print('⚠️ 尝试使用默认SQLite初始化...');
         await dbProvider.setDataSourceType('sqlite');
+        // 确保设置被保存
+        await settings.setDataSourceType('sqlite');
+        print('✅ 默认SQLite初始化成功');
         setState(() {
           _isInitialized = true;
         });
-      } catch (e) {
-        print('无法初始化默认数据库: $e');
-        setState(() {
-          _isInitialized = true; // 仍然标记为已初始化，但应用程序将显示错误界面
-        });
+      } catch (fallbackError, fallbackStackTrace) {
+        print('🔴 默认SQLite初始化也失败: $fallbackError');
+        print('🔴 堆栈跟踪: $fallbackStackTrace');
+        // 最后的兜底：创建最基本的SQLite数据库
+        try {
+          print('⚠️ 尝试创建最基本的SQLite数据库...');
+          await _createEmergencyDatabase(dbProvider, settings);
+          print('✅ 紧急数据库创建成功');
+          setState(() {
+            _isInitialized = true;
+          });
+        } catch (emergencyError, emergencyStackTrace) {
+          print('🔴 紧急数据库创建失败: $emergencyError');
+          print('🔴 堆栈跟踪: $emergencyStackTrace');
+          setState(() {
+            _isInitialized = true; // 仍然标记为已初始化，但应用程序将显示错误界面
+          });
+        }
       }
     }
   }
@@ -251,6 +655,73 @@ class _AppWithProvidersState extends State<AppWithProviders> {
     }
   }
 
+  // 更新所有Provider的模块数据源配置
+  Future<void> _updateAllProvidersModuleDataSources(SettingsProvider settings) async {
+    try {
+      print('开始更新所有Provider的模块数据源配置...');
+      
+      // 获取数据源模式和模块配置
+      final dataSourceMode = settings.dataSourceMode ?? 'global';
+      final moduleDataSources = settings.moduleDataSources ?? {};
+      
+      print('数据源模式: $dataSourceMode');
+      print('模块数据源配置: $moduleDataSources');
+      
+      if (dataSourceMode == 'modular' && moduleDataSources.isNotEmpty) {
+        // 模块化模式：更新各个Provider的模块配置
+        final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+        final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
+        final financialProvider = Provider.of<FinancialProvider>(context, listen: false);
+        final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
+        
+        // 更新MaterialProvider
+        if (moduleDataSources.containsKey('materials')) {
+          materialProvider.updateModuleDataSources(moduleDataSources);
+          print('已更新MaterialProvider的模块数据源配置: ${moduleDataSources['materials']}');
+        }
+        
+        // 更新PurchaseProvider
+        if (moduleDataSources.containsKey('purchase')) {
+          purchaseProvider.updateModuleDataSources(moduleDataSources);
+          print('已更新PurchaseProvider的模块数据源配置: ${moduleDataSources['purchase']}');
+        }
+        
+        // 更新FinancialProvider
+        if (moduleDataSources.containsKey('financial')) {
+          financialProvider.updateModuleDataSources(moduleDataSources);
+          print('已更新FinancialProvider的模块数据源配置: ${moduleDataSources['financial']}');
+        }
+
+        // AppointmentProvider已在ChangeNotifierProxyProvider中使用initializeFromDatabase初始化，无需重复初始化
+        
+        print('所有Provider的模块数据源配置更新完成');
+      } else {
+        print('使用全局数据源模式，无需更新模块配置');
+      }
+    } catch (e) {
+      print('更新Provider模块数据源配置失败: $e');
+    }
+  }
+
+  // 紧急数据库创建方法 - 当所有其他方法都失败时使用
+  Future<void> _createEmergencyDatabase(
+      DatabaseProvider dbProvider, SettingsProvider settings) async {
+    print('开始创建紧急SQLite数据库...');
+    
+    try {
+      // 强制使用默认路径创建SQLite数据库
+      await dbProvider.setDataSourceType('sqlite', customSqlitePath: null);
+      
+      // 确保设置被保存
+      await settings.setDataSourceType('sqlite');
+      
+      print('紧急SQLite数据库创建成功');
+    } catch (e) {
+      print('紧急数据库创建失败: $e');
+      rethrow;
+    }
+  }
+
   // 执行备份操作
   Future<void> _performBackup(
       SettingsProvider settings, DatabaseProvider dbProvider) async {
@@ -292,7 +763,7 @@ class _AppWithProvidersState extends State<AppWithProviders> {
         final now = DateTime.now();
         final todayDate = DateTime(now.year, now.month, now.day);
         await settings.updateLastBackupDate(todayDate);
-        print('主函数中已更新最后备份日期: ${todayDate.toIso8601String()}');
+        print('主函数中已更新最后备份日期: ${DateTimeFormatter.toDbString(todayDate)}');
       }
 
       print('自动备份完成');
@@ -303,51 +774,76 @@ class _AppWithProvidersState extends State<AppWithProviders> {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
-    final settings = Provider.of<SettingsProvider>(context);
+    try {
+      final appState = Provider.of<AppState>(context);
+      final settings = Provider.of<SettingsProvider>(context);
 
-    return MaterialApp(
-      title: '牙医诊所管理系统',
-      navigatorKey: appState.navigatorKey,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: settings.themeMode,
-      builder: (context, child) {
-        // 处理特殊主题模式
-        if (settings.extendedThemeMode == ExtendedThemeMode.grey) {
-          return Theme(
-            data: AppTheme.greyTheme,
-            child: child!,
-          );
-        } else if (settings.extendedThemeMode == ExtendedThemeMode.purple) {
-          return Theme(
-            data: AppTheme.purpleTheme,
-            child: child!,
-          );
-        }
-        return child!;
-      },
-      debugShowCheckedModeBanner: false,
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('zh', 'CN'),
-        Locale('en', 'US'),
-      ],
-      routes: {
-        '/login': (context) => const LoginScreen(),
-      },
-      home: !_isInitialized
-          ? const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
+      return MaterialApp(
+        title: '牙医诊所管理系统',
+        navigatorKey: appState.navigatorKey,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: settings.themeMode,
+        builder: (context, child) {
+          // 处理特殊主题模式
+          if (settings.extendedThemeMode == ExtendedThemeMode.grey) {
+            return Theme(
+              data: AppTheme.greyTheme,
+              child: child!,
+            );
+          } else if (settings.extendedThemeMode == ExtendedThemeMode.purple) {
+            return Theme(
+              data: AppTheme.purpleTheme,
+              child: child!,
+            );
+          }
+          return child!;
+        },
+        debugShowCheckedModeBanner: false,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('zh', 'CN'),
+          Locale('en', 'US'),
+        ],
+        routes: {
+          '/login': (context) => const LoginScreen(),
+        },
+        home: const LoginScreen(), // 始终显示登录屏幕，后台异步初始化
+      );
+    } catch (e) {
+      print('🔴 AppWithProviders build错误: $e');
+      return MaterialApp(
+        home: Scaffold(
+          backgroundColor: Colors.red.shade50,
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                  const SizedBox(height: 20),
+                  const Text('应用界面加载失败', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: SelectableText(
+                        '$e',
+                        style: const TextStyle(fontSize: 14, color: Colors.black87),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            )
-          : const LoginScreen(),
-    );
+            ),
+          ),
+        ),
+      );
+    }
   }
 }
 
@@ -360,10 +856,12 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
+  
+  // 不再自动执行数据库结构检测，只在用户主动点击时才执行
 
   // 页面列表
   final List<Widget> _pages = [
-    const DashboardScreen(),
+    const ModernDashboardScreen(),
     const PatientsScreen(),
     const AppointmentsScreen(),
     const SettingsScreen(),
