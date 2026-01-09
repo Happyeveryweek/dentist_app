@@ -521,63 +521,6 @@ MIT 许可证允许您：
 
 <div align="center">
 
-### 🌟 喜欢这个项目？
-
-**请给我们一个 Star ⭐，让更多人发现这个项目！**
-
-[![Star History Chart](https://api.star-history.com/svg?repos=your-username/dentist_app&type=Date)](https://star-history.com/#your-username/dentist_app&Date)
-
-</div>
-
-- **项目地址**：[GitHub Repository](https://github.com/your-username/dentist_app) - 🌟 **别忘了给我们 Star！**
-- **问题反馈**：[GitHub Issues](https://github.com/your-username/dentist_app/issues) - 🐛 报告 Bug 或提出问题
-- **功能建议**：[GitHub Discussions](https://github.com/your-username/dentist_app/discussions) - 💡 分享您的想法和建议
-- **项目动态**：[Watch 项目](https://github.com/your-username/dentist_app/subscription) - 👀 获取最新更新通知
-
-## 📜 许可证
-
-本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-MIT 许可证允许您：
-- ✅ 商业使用
-- ✅ 修改代码
-- ✅ 分发软件
-- ✅ 私人使用
-
-但需要：
-- 📋 包含许可证和版权声明
-- 📋 声明更改内容
-
-## 🙏 致谢
-
-感谢所有为这个项目做出贡献的开发者和用户！
-
-<div align="center">
-
-### 🌟 Star 历史
-
-[![Stargazers over time](https://starchart.cc/your-username/dentist_app.svg)](https://starchart.cc/your-username/dentist_app)
-
-### 💝 支持项目
-
-如果这个项目对您有帮助，请考虑：
-
-- ⭐ **给项目加星** - 这是免费的，但对我们意义重大！
-- 🐛 **报告问题** - 帮助我们改进项目质量
-- 💡 **提出建议** - 分享您的想法和需求
-- 🤝 **贡献代码** - 成为项目的贡献者
-- 📢 **推荐给朋友** - 让更多人受益
-
-**您的每一份支持都是我们前进的动力！** 🚀
-
-</div>
-
----
-
-**© 2024 牙医诊所管理系统. 保留所有权利.**
-
-<div align="center">
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Made with ❤️](https://img.shields.io/badge/Made%20with-❤️-red.svg)](https://github.com/your-username/dentist_app)
 [![GitHub contributors](https://img.shields.io/github/contributors/your-username/dentist_app.svg)](https://github.com/your-username/dentist_app/graphs/contributors)
