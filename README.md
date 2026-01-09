@@ -8,7 +8,7 @@
 
 **本项目是牙医诊所管理系统的唯一官方开源版本，请认准以下官方信息：**
 
-- **官方仓库地址**：[GitHub - your-username/dentist_app](https://github.com/your-username/dentist_app)
+- **官方仓库地址**：[GitHub - Happyeveryweek/dentist_app](https://github.com/Happyeveryweek/dentist_app.git)
 - **项目状态**：100% 免费开源，采用 MIT 开源协议
 - **收费声明**：本项目及其所有功能完全免费，任何人不得以此项目名义进行收费
 
@@ -472,10 +472,10 @@ dentist_app/
 
 </div>
 
-- **项目地址**：[GitHub Repository](https://github.com/your-username/dentist_app) - 🌟 **别忘了给我们 Star！**
-- **问题反馈**：[GitHub Issues](https://github.com/your-username/dentist_app/issues) - 🐛 报告 Bug 或提出问题
-- **功能建议**：[GitHub Discussions](https://github.com/your-username/dentist_app/discussions) - 💡 分享您的想法和建议
-- **项目动态**：[Watch 项目](https://github.com/your-username/dentist_app/subscription) - 👀 获取最新更新通知
+- **项目地址**：[GitHub Repository](https://github.com/Happyeveryweek/dentist_app) - 🌟 **别忘了给我们 Star！**
+- **问题反馈**：[GitHub Issues](https://github.com/Happyeveryweek/dentist_app/issues) - 🐛 报告 Bug 或提出问题
+- **功能建议**：[GitHub Discussions](https://github.com/Happyeveryweek/dentist_app/discussions) - 💡 分享您的想法和建议
+- **项目动态**：[Watch 项目](https://github.com/Happyeveryweek/dentist_app/subscription) - 👀 获取最新更新通知
 
 ## 📜 许可证
 
