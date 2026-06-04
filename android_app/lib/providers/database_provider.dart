@@ -1,0 +1,364 @@
+import 'package:flutter/foundation.dart';
+// 患者相关模型已迁移到 PatientProvider
+import 'package:sqflite/sqflite.dart';
+import '../models/database_config.dart';
+import 'package:mysql1/mysql1.dart';
+import 'dart:async';
+import 'mysql_connection_pool.dart';
+// 导入新创建的服务
+import '../services/mysql_connection_service.dart';
+import '../services/database_health_service.dart';
+import '../services/mysql_reconnect_service.dart';
+import '../services/sqlite_initialization_service.dart';
+import '../services/database_sync_service.dart';
+import '../services/database_bootstrap_service.dart';
+
+// 数据库提供者，用于管理应用程序与数据库的交互
+class DatabaseProvider extends ChangeNotifier {
+  // 服务实例
+  final MySQLConnectionService _mysqlConnectionService = MySQLConnectionService();
+  final DatabaseHealthService _healthService = DatabaseHealthService();
+  late MySQLReconnectService _reconnectService;
+  final SQLiteInitializationService _sqliteInitService = SQLiteInitializationService();
+  final DatabaseSyncService _syncService = DatabaseSyncService();
+  final DatabaseBootstrapService _bootstrapService = DatabaseBootstrapService();
+
+  String _dbType = ''; // 初始化前不设置默认值，避免误导
+  String _dbPath = '';
+  late DatabaseConfig _dbConfig;
+  bool _initialized = false;
+  // 添加一个数据库变更标志，当数据库切换时会变更
+  bool _databaseChanged = false;
+  bool _shouldNavigateToDashboard = false; // 添加控制是否导航到仪表盘的标志
+
+  // 用于仪表盘页面检查是否需要刷新数据
+  bool _dashboardNeedsRefresh = false;
+  bool get dashboardNeedsRefresh => _dashboardNeedsRefresh;
+
+  // 缓存数据
+  List<String>? _cachedDoctors;
+
+  // MySQL连接池
+  MySQLConnectionPool? _connectionPool;
+
+  // 获取连接状态（从健康服务获取）
+  bool get isConnected => _healthService.isConnected;
+  bool get isReconnecting => _healthService.isReconnecting;
+  bool get hasConnectionIssues => !_healthService.isConnected && _dbType == 'mysql';
+  
+  // 获取连接状态描述
+  String get connectionStatusText {
+    if (_dbType != 'mysql') return '本地数据库';
+    if (_healthService.isReconnecting) return '正在重连...';
+    if (_healthService.isConnected) return '已连接';
+    return '连接断开';
+  }
+
+  // 获取连接状态图标
+  String get connectionStatusIcon {
+    if (_dbType != 'mysql') return '💾';
+    if (_healthService.isReconnecting) return '🔄';
+    if (_healthService.isConnected) return '✅';
+    return '❌';
+  }
+
+  // 获取数据库类型
+  String get dbType => _dbType.isEmpty ? 'initializing' : _dbType;
+  
+  // 获取MySQL连接池
+  MySQLConnectionPool? get connectionPool => _connectionPool;
+
+  // 获取MySQL连接（从连接服务获取）
+  MySqlConnection? get mysqlConnection => _mysqlConnectionService.connection;
+  
+  // 获取配置文件中设置的数据库类型（不受自动切换影响）
+  String get configDbType => _dbConfig.dbType;
+  
+  // 获取当前实际使用的数据库类型描述
+  String get currentDbTypeDescription {
+    if (_isAutoSwitchedToSQLite && _dbConfig.dbType == 'mysql') {
+      return 'SQLite (MySQL连接失败时自动切换)';
+    }
+    return _dbType == 'mysql' ? 'MySQL' : 'SQLite';
+  }
+  
+  // 用于记录之前的数据库类型
+  String _previousDbType = 'sqlite';
+  String get previousDbType => _previousDbType;
+  set previousDbType(String value) {
+    _previousDbType = value;
+  }
+  
+  // 标记是否是自动切换到SQLite（MySQL连接失败时）
+  bool _isAutoSwitchedToSQLite = false;
+  bool get isAutoSwitchedToSQLite => _isAutoSwitchedToSQLite;
+
+  // 获取数据库路径
+  String get dbPath => _dbPath;
+
+  // 初始化标志
+  bool get isInitialized => _initialized;
+
+  // 数据库变更标志
+  bool get databaseChanged => _databaseChanged;
+
+  // 是否需要导航到仪表盘
+  bool get shouldNavigateToDashboard => _shouldNavigateToDashboard;
+
+  // 构造函数
+  DatabaseProvider() {
+    // 初始化重连服务
+    _reconnectService = MySQLReconnectService(
+      connectionService: _mysqlConnectionService,
+      healthService: _healthService,
+    );
+
+    // 设置健康检查服务的回调
+    _healthService.setOnHealthStatusChanged((isConnected) {
+      notifyListeners();
+    });
+
+    _reconnectService.setOnReconnectSuccess(() {
+      _markDataNeedsRefresh();
+    });
+
+    // 延迟初始化数据源，避免循环依赖
+  }
+
+  // 强制数据同步（供外部调用）
+  Future<bool> forceDataSync() async {
+    return await _syncService.forceDataSync();
+  }
+
+
+  // 标记数据需要刷新
+  void _markDataNeedsRefresh() {
+    _dashboardNeedsRefresh = true;
+    // 通知其他Provider数据需要刷新
+    notifyListeners();
+  }
+
+  // 手动重连（供UI调用）
+  Future<bool> manualReconnect() async {
+    if (_dbType != 'mysql') return true;
+    return await _reconnectService.manualReconnect();
+  }
+
+  // 强制重连（应用恢复时使用）
+  Future<bool> forceReconnect() async {
+    if (_dbType != 'mysql') return true;
+    return await _reconnectService.forceReconnect();
+  }
+
+  // 检查并确保连接可用
+  Future<bool> ensureConnection() async {
+    if (_dbType != 'mysql') return true;
+    return await _reconnectService.ensureConnection();
+  }
+
+  // 应用恢复时强制检查连接状态 - 始终创建新连接
+  Future<bool> checkConnectionOnAppResume() async {
+    if (_dbType != 'mysql') return true;
+    final result = await _reconnectService.checkConnectionOnAppResume();
+    if (result) {
+      _markDataNeedsRefresh();
+    }
+    return result;
+  }
+
+  // 智能连接检查（用于操作前的连接验证）
+  Future<bool> smartConnectionCheck() async {
+    if (_dbType != 'mysql') return true;
+    return await _reconnectService.smartConnectionCheck();
+  }
+
+  // 为了兼容性，将init()方法作为initDatabase()的别名
+  Future<void> init() => initDatabase();
+
+  // 重置数据库变更标志
+  void resetDatabaseChanged() {
+    _databaseChanged = false;
+    _shouldNavigateToDashboard = false;
+  }
+  
+  // 重置自动切换状态（用于下次启动时重新尝试MySQL）
+  void resetAutoSwitchState() {
+    _isAutoSwitchedToSQLite = false;
+    // 不重置_dbType，让它从配置文件重新加载
+  }
+  
+  // 强制设置数据库变更标志
+  void forceDataChanged({bool navigateToDashboard = false}) {
+    print('强制设置数据变更标志, 导航到仪表盘: $navigateToDashboard');
+
+    // 只有明确要求导航到仪表盘时才设置全局变更标志
+    if (navigateToDashboard) {
+      _databaseChanged = true;
+      _shouldNavigateToDashboard = true;
+    } else {
+      // 否则只标记仪表盘需要刷新，不导航
+      _dashboardNeedsRefresh = true;
+    }
+
+    _forceInvalidateCache();
+    notifyListeners();
+  }
+
+  // 患者数据刷新操作已迁移到 PatientProvider
+
+
+
+  // 重置仪表盘刷新标志
+  void resetDashboardRefreshFlag() {
+    print('重置仪表盘刷新标志');
+    _dashboardNeedsRefresh = false;
+  }
+
+  // 初始化数据库
+  Future<void> initDatabase() async {
+    if (_initialized) {
+      print('数据库已经初始化，跳过初始化过程');
+      return;
+    }
+
+    try {
+      final result = await _bootstrapService.bootstrap(
+        mysqlConnectionService: _mysqlConnectionService,
+        healthService: _healthService,
+        sqliteInitService: _sqliteInitService,
+        syncService: _syncService,
+      );
+
+      _dbConfig = result.dbConfig;
+      _dbType = result.dbType;
+      _dbPath = result.dbPath;
+      _initialized = result.initialized;
+      _databaseChanged = result.databaseChanged;
+      _shouldNavigateToDashboard = result.shouldNavigateToDashboard;
+      _isAutoSwitchedToSQLite = result.isAutoSwitchedToSQLite;
+      _previousDbType = result.previousDbType;
+
+      notifyListeners();
+
+      if (_databaseChanged) {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (_initialized && _databaseChanged) {
+            print('延迟通知数据库切换完成');
+            notifyListeners();
+          }
+        });
+      }
+
+      await _initializeAllProviders();
+      
+    } catch (e) {
+      debugPrint('初始化数据库错误: $e');
+      print('错误堆栈: ${StackTrace.current}');
+      _initialized = false;
+      throw Exception('数据库初始化失败: $e');
+    }
+  }
+
+
+  // 初始化所有Provider
+  Future<void> _initializeAllProviders() async {
+    try {
+      print('开始初始化所有Provider...');
+      
+      // 延迟执行以确保BuildContext可用
+      Future.delayed(const Duration(milliseconds: 500), () async {
+        try {
+          // 通知所有Provider数据库已就绪
+          notifyListeners();
+          print('所有Provider将通过监听器获取数据库实例');
+        } catch (e) {
+          print('初始化Provider时出错: $e');
+        }
+      });
+      
+    } catch (e) {
+      print('初始化Provider时出错: $e');
+    }
+  }
+
+
+
+
+  // 强制使所有缓存失效并重建
+  void _forceInvalidateCache() {
+    print('强制清除所有缓存数据');
+    // 清空所有缓存数据
+    _cachedDoctors = null;
+
+    // 其他可能的缓存数据
+    // 修改为仅标记仪表盘需要刷新，不设置全局变更标志
+    _dashboardNeedsRefresh = true;
+    // _databaseChanged = true;
+
+    // 主动加载一些数据以刷新缓存
+    Future.delayed(Duration.zero, () async {
+      try {
+        print('主动重新加载数据以更新缓存');
+        if (_dbType == 'sqlite') {
+          final db = await _sqliteInitService.getDatabase();
+          // 执行一些简单查询以确保数据库连接正常
+          await db!.rawQuery('SELECT 1');
+
+          // 患者数据缓存更新已迁移到 PatientProvider
+
+          // 再次通知监听者
+          notifyListeners();
+        }
+      } catch (e) {
+        print('主动加载数据失败: $e');
+      }
+    });
+  }
+
+  // 数据库配置相关操作
+
+
+
+
+
+  // 关闭数据库连接
+  Future<void> closeDatabase() async {
+    print('显式关闭数据库连接');
+    try {
+      // 关闭SQLite连接
+      await _sqliteInitService.closeDatabase();
+
+      // 关闭MySQL连接
+      await _mysqlConnectionService.closeConnection();
+
+      // 停止健康监控
+      _healthService.dispose();
+      _reconnectService.dispose();
+
+      // 清除缓存
+      _cachedDoctors = null;
+
+      print('所有数据库连接已关闭');
+    } catch (e) {
+      print('关闭数据库连接错误: $e');
+    }
+  }
+
+
+
+  // 获取SQLite数据库实例（供其他Provider使用）
+  Future<Database?> get sqliteDatabase async {
+    if (_dbType == 'sqlite' && _initialized) {
+      return await _sqliteInitService.getDatabase();
+    }
+    return null;
+  }
+
+  // 销毁资源
+  @override
+  void dispose() {
+    _healthService.dispose();
+    _reconnectService.dispose();
+    super.dispose();
+  }
+}

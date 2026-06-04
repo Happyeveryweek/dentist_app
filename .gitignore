@@ -1,0 +1,89 @@
+# Miscellaneous
+*.class
+*.log
+hs_err_pid*.log
+replay_pid*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+__pycache__/
+**/__pycache__/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+**/.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+**/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android/Gradle generated local files
+/android_app/android/app/debug
+/android_app/android/app/profile
+/android_app/android/app/release
+android_app/android/.gradle/
+android_app/android/.kotlin/
+android_app/android/app/.cxx/
+android_app/android/local.properties
+
+# Android Studio generated wrappers/local project files
+android_app/android/*.iml
+
+# Database files - should not be committed to version control
+*.db
+*.sqlite
+*.sqlite3
+**/data/*.db
+**/databases/*.db
+android_app/data/
+windows_app/data/
+backups/*.db
+backups/*.sql
+
+# Configuration files with sensitive data
+config/database_settings.json
+.kiro/settings/
+**/config/encryption.key
+**/config/encryption.iv
+
+# Project specific ignores
+android_app/.dart_tool/
+android_app/.flutter-plugins
+android_app/.flutter-plugins-dependencies
+windows_app/.dart_tool/
+windows_app/.flutter-plugins
+windows_app/.flutter-plugins-dependencies
+windows_app/installer/
+windows_app/tools/
+backups/*.db
+backups/*.sql
