@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
-import 'dart:convert';
 import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
-import 'package:dentist_app/providers/database_provider.dart';
 import 'package:dentist_app/providers/appointments_provider.dart';
 import 'package:dentist_app/providers/patient_provider.dart';
 import 'package:dentist_app/models/database_models.dart';
-import 'package:dentist_app/widgets/app_card.dart';
 import 'package:dentist_app/features/appointments/widgets/appointment_form_sheet.dart';
 import 'package:dentist_app/features/appointments/widgets/appointment_info_card.dart';
 import 'package:dentist_app/features/appointments/widgets/patient_info_card.dart';
 import 'package:dentist_app/features/appointments/widgets/appointment_action_buttons.dart';
 import 'package:dentist_app/utils/toast_util.dart';
 import 'package:dentist_app/utils/permission_utils.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // 牙位映射表 - 从医生视角看患者牙齿
 final Map<String, String> positionMap = {
@@ -51,7 +48,6 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
     });
 
     try {
-      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
       final patient = await Provider.of<PatientProvider>(context, listen: false).getPatientById(
         widget.appointment.patientId,
       );
@@ -149,7 +145,10 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                   children: [
                     AppointmentInfoCard(appointment: widget.appointment),
                     const SizedBox(height: 16),
-                    PatientInfoCard(patient: _patient),
+                    PatientInfoCard(
+                      patient: _patient,
+                      onPhoneCall: _callPhoneNumber,
+                    ),
                     const SizedBox(height: 16),
                     FutureBuilder<String?>(
                       future: _getAppointmentPatientDoctor(),
@@ -169,6 +168,33 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
               ),
       ),
     );
+  }
+
+  Future<void> _callPhoneNumber(String phoneNumber) async {
+    final trimmed = phoneNumber.trim();
+    if (trimmed.isEmpty || trimmed == '未设置') {
+      if (mounted) {
+        ToastUtil.showInfo(context, '无效的电话号码');
+      }
+      return;
+    }
+
+    final launchUri = Uri(scheme: 'tel', path: trimmed);
+
+    try {
+      final launched = await launchUrl(
+        launchUri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && mounted) {
+        ToastUtil.showInfo(context, '无法打开拨号界面: $trimmed');
+      }
+    } catch (e) {
+      print('拨打电话错误: $e');
+      if (mounted) {
+        ToastUtil.showInfo(context, '当前环境无法拨号，号码: $trimmed');
+      }
+    }
   }
 
   Widget _buildInfoRow(

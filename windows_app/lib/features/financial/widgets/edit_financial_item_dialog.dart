@@ -9,6 +9,7 @@ import '../../../providers/settings_provider.dart';
 import '../../../widgets/modern_date_picker.dart';
 import '../../../widgets/success_toast.dart'
     show AppToastManager;
+import '../helpers/amount_input_formatter.dart';
 // 编辑财务明细项对话框
 class EditFinancialItemDialog extends StatefulWidget {
   final FinancialItem financialItem;
@@ -455,6 +456,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                       labelStyle: TextStyle(color: Colors.purple[600]),
                     ),
                     keyboardType: TextInputType.number,
+                    inputFormatters: [amountInputFormatter],
                     onChanged: (value) {
                       setState(() {
                         // 触发UI更新以重新计算欠费金额
@@ -502,6 +504,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                       labelStyle: TextStyle(color: Colors.purple[600]),
                     ),
                     keyboardType: TextInputType.number,
+                    inputFormatters: [amountInputFormatter],
                     onChanged: (value) {
                       setState(() {
                         // 触发UI更新以重新计算欠费金额
@@ -554,6 +557,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                       labelStyle: TextStyle(color: Colors.purple[600]),
                     ),
                     keyboardType: TextInputType.number,
+                    inputFormatters: [amountInputFormatter],
                   ),
                 ),
               ),

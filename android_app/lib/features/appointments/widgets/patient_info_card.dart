@@ -3,11 +3,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
 import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/widgets/app_card.dart';
+import 'package:dentist_app/features/patients/widgets/patient_phone_display.dart';
 
 class PatientInfoCard extends StatelessWidget {
   final Patient? patient;
+  final ValueChanged<String>? onPhoneCall;
 
-  const PatientInfoCard({required this.patient});
+  const PatientInfoCard({super.key, required this.patient, this.onPhoneCall});
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +59,10 @@ class PatientInfoCard extends StatelessWidget {
           const SizedBox(height: 12),
           _buildInfoRow(CupertinoIcons.number, '年龄', '${patient!.age}岁'),
           const SizedBox(height: 12),
-          _buildInfoRow(CupertinoIcons.phone, '联系电话', patient!.phone),
+          PatientPhoneDisplay(
+            phoneNumbers: parsePatientPhoneNumbers(patient!.phone),
+            onPhoneCall: onPhoneCall,
+          ),
           if (patient!.medicalRecordNumber != null) ...[
             const SizedBox(height: 12),
             _buildInfoRow(

@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import '../models/patient_medical_record.dart';
 import '../models/medical_record_template.dart';
-import '../data_sources/medical_record_data_source.dart' hide SqliteMedicalRecordDataSource, MySqlMedicalRecordDataSource;
+import '../data_sources/medical_record_data_source.dart'
+    hide SqliteMedicalRecordDataSource, MySqlMedicalRecordDataSource;
 import '../data_sources/sqlite_medical_record_data_source.dart';
 import '../data_sources/mysql_medical_record_data_source.dart';
 import '../utils/database_operation_wrapper.dart';
@@ -16,29 +17,30 @@ class MedicalRecordProvider extends ChangeNotifier {
   // 缓存数据
   List<PatientMedicalRecord>? _cachedMedicalRecords;
   List<MedicalRecordTemplate>? _cachedTemplates;
-  
+
   // 数据源具体实现
   SqliteMedicalRecordDataSource? _sqliteDataSource;
   MySqlMedicalRecordDataSource? _mysqlDataSource;
-  final MedicalRecordInitializationService _initializationService = MedicalRecordInitializationService();
-  
+  final MedicalRecordInitializationService _initializationService =
+      MedicalRecordInitializationService();
+
   // 数据库提供者引用（用于获取最新连接）
   dynamic _databaseProvider;
-  
+
   // 数据库操作包装器
   DatabaseOperationWrapper? _dbWrapper;
-  
+
   // 数据库类型
   String _dataSourceType = 'sqlite'; // 默认使用sqlite
-  
+
   // 初始化标志
   bool initialized = false;
-  
+
   // 状态管理
   bool _isLoading = false;
   bool _hasError = false;
   String? _errorMessage;
-  
+
   // 缓存时间管理
   DateTime? _lastCacheTime;
   static const Duration _cacheValidDuration = Duration(minutes: 5);
@@ -70,10 +72,12 @@ class MedicalRecordProvider extends ChangeNotifier {
   void setSqliteDataSource(Database database) {
     _sqliteDataSource = SqliteMedicalRecordDataSource(database);
   }
-  
+
   // 设置MySQL数据源（使用动态连接获取）
   void setMySqlDataSource(MySqlConnection connection) {
-    _mysqlDataSource = MySqlMedicalRecordDataSource.withConnectionGetter(() => _currentMysqlConnection);
+    _mysqlDataSource = MySqlMedicalRecordDataSource.withConnectionGetter(
+      () => _currentMysqlConnection,
+    );
   }
 
   // 获取当前数据源（必须可用，否则抛出异常）
@@ -96,7 +100,7 @@ class MedicalRecordProvider extends ChangeNotifier {
     if (_dataSourceType != 'mysql' || _databaseProvider == null) {
       return null;
     }
-    
+
     try {
       final latestConnection = _databaseProvider.mysqlConnection;
       return latestConnection;
@@ -109,10 +113,10 @@ class MedicalRecordProvider extends ChangeNotifier {
   // 统一的数据库初始化方法
   Future<void> initializeFromDatabase(dynamic dbProvider) async {
     if (initialized) return;
-    
+
     try {
       print('MedicalRecordProvider 开始初始化...');
-      
+
       // 保存DatabaseProvider引用
       _databaseProvider = dbProvider;
       final result = await _initializationService.initializeFromDatabase(
@@ -121,24 +125,27 @@ class MedicalRecordProvider extends ChangeNotifier {
 
       _dataSourceType = result.dataSourceType;
       if (_dataSourceType == 'mysql') {
-        _mysqlDataSource = MySqlMedicalRecordDataSource.withConnectionGetter(() => _currentMysqlConnection);
+        _mysqlDataSource = MySqlMedicalRecordDataSource.withConnectionGetter(
+          () => _currentMysqlConnection,
+        );
         print('✅ MedicalRecordProvider MySQL数据源设置成功');
       } else {
         _sqliteDataSource = SqliteMedicalRecordDataSource(result.database!);
         print('✅ MedicalRecordProvider SQLite数据源设置成功');
       }
-      
+
       // 初始化数据库操作包装器
       _dbWrapper = DatabaseOperationWrapper(dbProvider);
       initialized = result.initialized;
-      
+
       print('MedicalRecordProvider 初始化完成');
     } catch (e) {
       print('MedicalRecordProvider 初始化失败: $e');
       initialized = false;
     }
-  } 
- // 设置加载状态
+  }
+
+  // 设置加载状态
   void _setLoading(bool loading) {
     _isLoading = loading;
     _safeNotifyListeners();
@@ -173,38 +180,49 @@ class MedicalRecordProvider extends ChangeNotifier {
   }
 
   // 获取患者的所有病历记录（带包装器，用于复杂操作）
-  Future<List<PatientMedicalRecord>> getPatientMedicalRecords(int patientId) async {
+  Future<List<PatientMedicalRecord>> getPatientMedicalRecords(
+    int patientId,
+  ) async {
     if (_dbWrapper == null) return [];
-    
-    return await _dbWrapper!.wrapOperation('getPatientMedicalRecords', () async {
-      try {
-        _setLoading(true);
-        _setError(null);
 
-        final records = await _currentDataSource.getPatientMedicalRecords(patientId);
-        
-        // 更新缓存
-        _cachedMedicalRecords = records;
-        _lastCacheTime = DateTime.now();
-        
-        return records;
-      } catch (e) {
-        print('获取患者病历记录失败: $e');
-        _setError('获取病历记录失败: $e');
-        return [];
-      } finally {
-        _setLoading(false);
-      }
-    });
+    return await _dbWrapper!.wrapOperation(
+      'getPatientMedicalRecords',
+      () async {
+        try {
+          _setLoading(true);
+          _setError(null);
+
+          final records = await _currentDataSource.getPatientMedicalRecords(
+            patientId,
+          );
+
+          // 更新缓存
+          _cachedMedicalRecords = records;
+          _lastCacheTime = DateTime.now();
+
+          return records;
+        } catch (e) {
+          print('获取患者病历记录失败: $e');
+          _setError('获取病历记录失败: $e');
+          if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
+          return [];
+        } finally {
+          _setLoading(false);
+        }
+      },
+    );
   }
 
   // 简单获取患者病历记录（不使用包装器，像患者提供者的getPatientById一样）
-  Future<List<PatientMedicalRecord>> getPatientMedicalRecordsSimple(int patientId) async {
+  Future<List<PatientMedicalRecord>> getPatientMedicalRecordsSimple(
+    int patientId,
+  ) async {
     try {
       // 直接使用数据源，不触发连接管理
       return await _currentDataSource.getPatientMedicalRecords(patientId);
     } catch (e) {
       print('简单获取患者病历记录失败: $e');
+      if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
       return [];
     }
   }
@@ -212,7 +230,7 @@ class MedicalRecordProvider extends ChangeNotifier {
   // 获取单个病历记录
   Future<PatientMedicalRecord?> getMedicalRecord(int recordId) async {
     if (_dbWrapper == null) return null;
-    
+
     return await _dbWrapper!.wrapOperation('getMedicalRecord', () async {
       try {
         _setLoading(true);
@@ -223,6 +241,7 @@ class MedicalRecordProvider extends ChangeNotifier {
       } catch (e) {
         print('获取病历记录失败: $e');
         _setError('获取病历记录失败: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return null;
       } finally {
         _setLoading(false);
@@ -233,12 +252,13 @@ class MedicalRecordProvider extends ChangeNotifier {
   // 检查患者是否有病历记录
   Future<bool> hasMedicalRecords(int patientId) async {
     if (_dbWrapper == null) return false;
-    
+
     return await _dbWrapper!.wrapOperation('hasMedicalRecords', () async {
       try {
         return await _currentDataSource.hasMedicalRecords(patientId);
       } catch (e) {
         print('检查患者病历记录失败: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return false;
       }
     });
@@ -247,48 +267,58 @@ class MedicalRecordProvider extends ChangeNotifier {
   // 获取病历模板
   Future<List<MedicalRecordTemplate>> getMedicalRecordTemplates() async {
     if (_dbWrapper == null) return [];
-    
-    return await _dbWrapper!.wrapOperation('getMedicalRecordTemplates', () async {
-      try {
-        // 检查缓存
-        if (_cachedTemplates != null && _isCacheValid()) {
-          return _cachedTemplates!;
+
+    return await _dbWrapper!.wrapOperation(
+      'getMedicalRecordTemplates',
+      () async {
+        try {
+          // 检查缓存
+          if (_cachedTemplates != null && _isCacheValid()) {
+            return _cachedTemplates!;
+          }
+
+          _setLoading(true);
+          _setError(null);
+
+          final templates =
+              await _currentDataSource.getMedicalRecordTemplates();
+
+          // 更新缓存
+          _cachedTemplates = templates;
+          _lastCacheTime = DateTime.now();
+
+          return templates;
+        } catch (e) {
+          print('获取病历模板失败: $e');
+          _setError('获取病历模板失败: $e');
+          if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
+          return [];
+        } finally {
+          _setLoading(false);
         }
-
-        _setLoading(true);
-        _setError(null);
-
-        final templates = await _currentDataSource.getMedicalRecordTemplates();
-        
-        // 更新缓存
-        _cachedTemplates = templates;
-        _lastCacheTime = DateTime.now();
-        
-        return templates;
-      } catch (e) {
-        print('获取病历模板失败: $e');
-        _setError('获取病历模板失败: $e');
-        return [];
-      } finally {
-        _setLoading(false);
-      }
-    });
+      },
+    );
   }
 
   // 根据类别获取病历模板
-  Future<List<MedicalRecordTemplate>> getTemplatesByCategory(String category) async {
+  Future<List<MedicalRecordTemplate>> getTemplatesByCategory(
+    String category,
+  ) async {
     if (_dbWrapper == null) return [];
-    
+
     return await _dbWrapper!.wrapOperation('getTemplatesByCategory', () async {
       try {
         _setLoading(true);
         _setError(null);
 
-        final templates = await _currentDataSource.getTemplatesByCategory(category);
+        final templates = await _currentDataSource.getTemplatesByCategory(
+          category,
+        );
         return templates;
       } catch (e) {
         print('获取分类病历模板失败: $e');
         _setError('获取分类病历模板失败: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return [];
       } finally {
         _setLoading(false);
@@ -299,24 +329,26 @@ class MedicalRecordProvider extends ChangeNotifier {
   // 初始化默认模板数据（如果数据库中没有模板数据）
   Future<void> initializeDefaultTemplates() async {
     if (_dbWrapper == null) return;
-    
+
     await _dbWrapper!.wrapOperation('initializeDefaultTemplates', () async {
       try {
         _setLoading(true);
         _setError(null);
 
         // 检查是否已有模板数据
-        final existingTemplates = await _currentDataSource.getMedicalRecordTemplates();
+        final existingTemplates =
+            await _currentDataSource.getMedicalRecordTemplates();
         if (existingTemplates.isNotEmpty) {
           print('模板数据已存在，跳过初始化');
           return;
         }
 
         print('开始初始化默认模板数据...');
-        
+
         // 获取所有默认模板
-        final defaultTemplates = DefaultTemplateInitializer.getAllDefaultTemplates();
-        
+        final defaultTemplates =
+            DefaultTemplateInitializer.getAllDefaultTemplates();
+
         // 批量插入模板
         int insertedCount = 0;
         for (final template in defaultTemplates) {
@@ -327,12 +359,11 @@ class MedicalRecordProvider extends ChangeNotifier {
             print('插入模板失败: ${template.name}, 错误: $e');
           }
         }
-        
+
         print('成功初始化 $insertedCount 个默认模板');
-        
+
         // 清除缓存以便重新加载
         _cachedTemplates = null;
-        
       } catch (e) {
         print('初始化默认模板失败: $e');
         _setError('初始化默认模板失败: $e');
@@ -344,12 +375,16 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 获取牙科疾病模板
   Future<List<MedicalRecordTemplate>> getDentalDiseaseTemplates() async {
-    return await getTemplatesByCategory(MedicalRecordTemplateCategory.dentalDisease);
+    return await getTemplatesByCategory(
+      MedicalRecordTemplateCategory.dentalDisease,
+    );
   }
 
   // 获取全身疾病模板
   Future<List<MedicalRecordTemplate>> getSystemicDiseaseTemplates() async {
-    return await getTemplatesByCategory(MedicalRecordTemplateCategory.systemicDisease);
+    return await getTemplatesByCategory(
+      MedicalRecordTemplateCategory.systemicDisease,
+    );
   }
 
   // 获取过敏类型模板
@@ -359,7 +394,9 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 清除指定患者的病历缓存
   void clearPatientMedicalRecordsCache(int patientId) {
-    _cachedMedicalRecords?.removeWhere((record) => record.patientId == patientId);
+    _cachedMedicalRecords?.removeWhere(
+      (record) => record.patientId == patientId,
+    );
     _safeNotifyListeners();
   }
 

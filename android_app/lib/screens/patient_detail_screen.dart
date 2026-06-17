@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
 import 'package:dentist_app/providers/database_provider.dart';
+import 'package:dentist_app/providers/financial_provider.dart';
 
 import 'package:dentist_app/providers/patient_image_provider.dart';
 import 'package:dentist_app/providers/patient_provider.dart';
@@ -14,9 +15,9 @@ import 'package:dentist_app/models/material_image.dart';
 import 'package:dentist_app/widgets/app_card.dart';
 import 'package:dentist_app/features/patients/widgets/patient_image_viewer.dart';
 import 'package:dentist_app/features/patients/widgets/patient_basic_info_card.dart';
-import 'package:dentist_app/features/patients/widgets/patient_phone_display.dart';
 import 'package:dentist_app/features/patients/widgets/patient_dental_condition_display.dart';
 import 'package:dentist_app/features/patients/widgets/patient_medical_records_section.dart';
+import 'package:dentist_app/screens/financial_detail_screen.dart';
 
 import 'package:dentist_app/screens/patients_screen.dart';
 import 'package:dentist_app/utils/toast_util.dart';
@@ -38,6 +39,7 @@ class PatientDetailScreen extends StatefulWidget {
 class _PatientDetailScreenState extends State<PatientDetailScreen> {
   List<String> _phoneNumbers = [];
   Patient? _freshPatient;
+  double _totalCollectedAmount = 0.0;
   bool _isLoading = true;
 
   @override
@@ -75,10 +77,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
           final freshPatient = await Provider.of<PatientProvider>(context, listen: false).getPatientById(
             widget.patient.id!,
           );
+          final totalCollectedAmount = await _loadTotalCollectedAmount(
+            widget.patient.id!,
+          );
 
           if (freshPatient != null && mounted) {
             setState(() {
               _freshPatient = freshPatient;
+              _totalCollectedAmount = totalCollectedAmount;
               // 重新初始化电话号码列表
               _initPhoneNumbers(freshPatient);
             });
@@ -94,6 +100,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
             if (mounted) {
               print('获取最新患者数据失败，使用缓存数据');
               // 使用传入的数据初始化
+              setState(() {
+                _totalCollectedAmount = totalCollectedAmount;
+              });
               _initPhoneNumbers(widget.patient);
             }
           }
@@ -115,6 +124,83 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       // 使用传入的数据初始化
       if (mounted) {
         _initPhoneNumbers(widget.patient);
+      }
+    }
+  }
+
+  Future<double> _loadTotalCollectedAmount(int patientId) async {
+    try {
+      final financialProvider = Provider.of<FinancialProvider>(
+        context,
+        listen: false,
+      );
+      final records = await financialProvider.getFinancialRecordsByPatientId(
+        patientId,
+      );
+
+      double totalCollected = 0.0;
+      for (final record in records) {
+        if (record.id == null) {
+          continue;
+        }
+        final items = await financialProvider.getFinancialItemsByRecordId(
+          record.id!,
+        );
+        for (final item in items) {
+          totalCollected += item.totalPrice;
+        }
+      }
+
+      return totalCollected;
+    } catch (e) {
+      print('加载患者已收费总金额失败: $e');
+      return 0.0;
+    }
+  }
+
+  Future<void> _openPatientFinancialDetail() async {
+    final patientId = _currentPatient.id;
+    if (patientId == null) {
+      SuccessToastManager.showError(context, message: '当前患者缺少ID，无法查看财务详情');
+      return;
+    }
+
+    try {
+      final financialProvider = Provider.of<FinancialProvider>(
+        context,
+        listen: false,
+      );
+      final records = await financialProvider.getFinancialRecordsByPatientId(
+        patientId,
+      );
+
+      if (records.isEmpty) {
+        if (mounted) {
+          SuccessToastManager.showInfo(context, message: '该患者暂无财务记录');
+        }
+        return;
+      }
+
+      records.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      final latestRecord = records.first;
+
+      if (!mounted) {
+        return;
+      }
+
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => FinancialDetailScreen(record: latestRecord),
+        ),
+      );
+
+      if (result == true && mounted) {
+        await _loadPatientData();
+      }
+    } catch (e) {
+      if (mounted) {
+        SuccessToastManager.showError(context, message: '打开财务详情失败: $e');
       }
     }
   }
@@ -368,6 +454,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
               children: [
                 PatientBasicInfoCard(
                   patient: _currentPatient,
+                  onPhoneCall: _callPhoneNumber,
+                  displayedTotalCost: _totalCollectedAmount,
+                  onTotalCostTap: _openPatientFinancialDetail,
                 ),
                 const SizedBox(height: 16),
 

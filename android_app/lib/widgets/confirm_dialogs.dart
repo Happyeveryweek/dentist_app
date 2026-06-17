@@ -606,12 +606,12 @@ class ModernDeleteDialog extends StatelessWidget {
                                   Text(
                                     itemName!,
                                     style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
                                       color: Colors.grey.shade800,
+                                      height: 1.45,
                                     ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+                                    softWrap: true,
                                   ),
                               ],
                             ),

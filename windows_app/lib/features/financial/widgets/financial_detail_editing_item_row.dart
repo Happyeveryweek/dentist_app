@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/modern_date_picker.dart';
+import '../helpers/amount_input_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import 'financial_detail_table_layout.dart';
 
@@ -198,6 +199,7 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               child: TextField(
                 controller: itemPriceController,
                 keyboardType: TextInputType.number,
+                inputFormatters: [amountInputFormatter],
                 textAlign: TextAlign.center,
                 onTap: () {
                   if (itemPriceController.text == '0') {
@@ -229,6 +231,7 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               child: TextField(
                 controller: totalPriceController,
                 keyboardType: TextInputType.number,
+                inputFormatters: [amountInputFormatter],
                 textAlign: TextAlign.center,
                 onTap: () {
                   if (totalPriceController.text == '0') {
@@ -260,6 +263,7 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               child: TextField(
                 controller: processingFeeController,
                 keyboardType: TextInputType.number,
+                inputFormatters: [amountInputFormatter],
                 textAlign: TextAlign.center,
                 onTap: () {
                   if (processingFeeController.text == '0') {

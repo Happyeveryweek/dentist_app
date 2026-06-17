@@ -37,8 +37,14 @@ class FinancialRecordService {
     return _dataSourceService.currentDataSource;
   }
 
+  MySqlConnection? get _currentMysqlConnection {
+    if (_dataSourceType != 'mysql') return _mysqlConnection;
+    return _dataSourceService.currentMysqlConnection ?? _mysqlConnection;
+  }
+
   /// 添加财务记录
-  Future<int> addFinancialRecord(FinancialRecord record, {
+  Future<int> addFinancialRecord(
+    FinancialRecord record, {
     required Future<void> Function() clearCache,
     required Function() markFinancialsNeedRefresh,
   }) async {
@@ -50,7 +56,7 @@ class FinancialRecordService {
         await _dataSourceService.ensureFinancialRecordsTableExists(
           dataSourceType: _dataSourceType,
           sqliteDatabase: _database,
-          mysqlConnection: _mysqlConnection,
+          mysqlConnection: _currentMysqlConnection,
         );
 
         // 使用数据源模式（统一接口）
@@ -73,7 +79,8 @@ class FinancialRecordService {
   }
 
   /// 更新财务记录
-  Future<int> updateFinancialRecord(FinancialRecord record, {
+  Future<int> updateFinancialRecord(
+    FinancialRecord record, {
     required Future<void> Function() clearCache,
     required Function() markFinancialsNeedRefresh,
   }) async {
@@ -89,7 +96,7 @@ class FinancialRecordService {
         await _dataSourceService.ensureFinancialRecordsTableExists(
           dataSourceType: _dataSourceType,
           sqliteDatabase: _database,
-          mysqlConnection: _mysqlConnection,
+          mysqlConnection: _currentMysqlConnection,
         );
 
         // 使用数据源模式（统一接口）
@@ -113,7 +120,8 @@ class FinancialRecordService {
   }
 
   /// 删除财务记录
-  Future<int> deleteFinancialRecord(int recordId, {
+  Future<int> deleteFinancialRecord(
+    int recordId, {
     required Future<void> Function() clearCache,
     required Function() markFinancialsNeedRefresh,
   }) async {
@@ -125,11 +133,13 @@ class FinancialRecordService {
         await _dataSourceService.ensureFinancialRecordsTableExists(
           dataSourceType: _dataSourceType,
           sqliteDatabase: _database,
-          mysqlConnection: _mysqlConnection,
+          mysqlConnection: _currentMysqlConnection,
         );
 
         // 使用数据源模式（统一接口）
-        final success = await _currentDataSource.deleteFinancialRecord(recordId);
+        final success = await _currentDataSource.deleteFinancialRecord(
+          recordId,
+        );
         final count = success ? 1 : 0;
 
         if (count > 0) {
@@ -148,7 +158,9 @@ class FinancialRecordService {
   }
 
   /// 根据患者ID获取财务记录
-  Future<List<FinancialRecord>> getFinancialRecordsByPatientId(int patientId) async {
+  Future<List<FinancialRecord>> getFinancialRecordsByPatientId(
+    int patientId,
+  ) async {
     // 如果patientId为0或无效，直接返回空列表
     if (patientId == 0) {
       print('⚠️ 无效的patientId: $patientId，返回空列表');
@@ -160,7 +172,7 @@ class FinancialRecordService {
       await _dataSourceService.ensureFinancialRecordsTableExists(
         dataSourceType: _dataSourceType,
         sqliteDatabase: _database,
-        mysqlConnection: _mysqlConnection,
+        mysqlConnection: _currentMysqlConnection,
       );
 
       List<FinancialRecord> records = [];
@@ -170,36 +182,50 @@ class FinancialRecordService {
         if (db == null) throw Exception('SQLite数据库未初始化');
 
         // 通过JOIN查询获取患者姓名
-        final result = await db.rawQuery('''
+        final result = await db.rawQuery(
+          '''
           SELECT fr.*, COALESCE(p.name, '未知患者') as patient_name
           FROM financial_records fr
           LEFT JOIN patients p ON fr.patient_id = p.id
           WHERE fr.patient_id = ?
           ORDER BY fr.updated_at DESC
-        ''', [patientId]);
-        records = result.map((e) => FinancialRecord.fromMap(e, dataSource: 'sqlite')).toList();
+        ''',
+          [patientId],
+        );
+        records =
+            result
+                .map((e) => FinancialRecord.fromMap(e, dataSource: 'sqlite'))
+                .toList();
       } else if (_dataSourceType == 'mysql') {
-        final conn = _mysqlConnection;
+        final conn = _currentMysqlConnection;
         if (conn == null) throw Exception('MySQL连接未初始化');
 
         // 通过JOIN查询获取患者姓名
-        final results = await conn.query('''
+        final results = await conn.query(
+          '''
           SELECT fr.*, p.name as patient_name
           FROM financial_records fr
           LEFT JOIN patients p ON fr.patient_id = p.id
           WHERE fr.patient_id = ?
           ORDER BY fr.updated_at DESC
-        ''', [patientId]);
+        ''',
+          [patientId],
+        );
 
-        records = results.map((row) => FinancialRecord.fromMap({
-          'id': row['id'],
-          'patient_id': row['patient_id'] ?? 0,
-          'total_quantity': row['total_quantity'] ?? 0,
-          'notes': row['notes']?.toString(),
-          'created_at': row['created_at']?.toString(),
-          'updated_at': row['updated_at']?.toString(),
-          'patient_name': row['patient_name']?.toString(),
-        }, dataSource: 'mysql')).toList();
+        records =
+            results
+                .map(
+                  (row) => FinancialRecord.fromMap({
+                    'id': row['id'],
+                    'patient_id': row['patient_id'] ?? 0,
+                    'total_quantity': row['total_quantity'] ?? 0,
+                    'notes': row['notes']?.toString(),
+                    'created_at': row['created_at']?.toString(),
+                    'updated_at': row['updated_at']?.toString(),
+                    'patient_name': row['patient_name']?.toString(),
+                  }, dataSource: 'mysql'),
+                )
+                .toList();
       }
 
       return records;

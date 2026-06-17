@@ -12,6 +12,7 @@ class PatientInfoRow extends StatelessWidget {
   final Color? valueColor;
   final bool isPhone;
   final VoidCallback? onPhoneCall;
+  final VoidCallback? onTap;
 
   const PatientInfoRow({
     super.key,
@@ -22,12 +23,14 @@ class PatientInfoRow extends StatelessWidget {
     this.valueColor,
     this.isPhone = false,
     this.onPhoneCall,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: alignTop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+    final row = Row(
+      crossAxisAlignment:
+          alignTop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: [
         Icon(icon, size: 18, color: AppTheme.secondaryTextColor),
         const SizedBox(width: 8),
@@ -40,9 +43,12 @@ class PatientInfoRow extends StatelessWidget {
         ),
         Expanded(
           child: isPhone
-              ? Row(
-                  children: [
-                    Text(
+              ? InkWell(
+                  onTap: onPhoneCall,
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Text(
                       value,
                       style: const TextStyle(
                         color: AppTheme.primaryColor,
@@ -51,34 +57,49 @@ class PatientInfoRow extends StatelessWidget {
                         decoration: TextDecoration.underline,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    InkWell(
-                      onTap: onPhoneCall,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Icon(
-                          Icons.call,
-                          size: 16,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 )
               : Text(
                   value,
                   style: TextStyle(
-                    color: valueColor ?? AppTheme.textColor,
+                    color:
+                        onTap != null
+                            ? AppTheme.primaryColor
+                            : (valueColor ?? AppTheme.textColor),
                     fontSize: 14,
-                    fontWeight: valueColor != null ? FontWeight.bold : FontWeight.normal,
+                    fontWeight:
+                        onTap != null || valueColor != null
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                    decoration:
+                        onTap != null
+                            ? TextDecoration.underline
+                            : TextDecoration.none,
                   ),
                 ),
         ),
+        if (onTap != null) ...[
+          const SizedBox(width: 8),
+          const Icon(
+            CupertinoIcons.chevron_right,
+            size: 14,
+            color: AppTheme.primaryColor,
+          ),
+        ],
       ],
+    );
+
+    if (onTap == null) {
+      return row;
+    }
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: row,
+      ),
     );
   }
 }

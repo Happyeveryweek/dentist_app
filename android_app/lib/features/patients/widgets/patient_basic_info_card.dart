@@ -5,15 +5,22 @@ import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
 import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/widgets/app_card.dart';
 import 'package:dentist_app/features/patients/widgets/patient_info_row.dart';
+import 'package:dentist_app/features/patients/widgets/patient_phone_display.dart';
 
 /// 患者基本信息显示卡片组件
 /// 职责：显示患者的基本信息（姓名、年龄、性别、病历号、医生、地址、身份证号、初诊日期、总费用、治疗项目）
 class PatientBasicInfoCard extends StatelessWidget {
   final Patient patient;
+  final ValueChanged<String>? onPhoneCall;
+  final double? displayedTotalCost;
+  final VoidCallback? onTotalCostTap;
 
   const PatientBasicInfoCard({
     super.key,
     required this.patient,
+    this.onPhoneCall,
+    this.displayedTotalCost,
+    this.onTotalCostTap,
   });
 
   @override
@@ -68,6 +75,11 @@ class PatientBasicInfoCard extends StatelessWidget {
             value: '${patient.age}岁',
           ),
           const SizedBox(height: 12),
+          PatientPhoneDisplay(
+            phoneNumbers: parsePatientPhoneNumbers(patient.phone),
+            onPhoneCall: onPhoneCall,
+          ),
+          const SizedBox(height: 12),
           if (patient.medicalRecordNumber != null) ...[
             PatientInfoRow(
               icon: CupertinoIcons.doc_text,
@@ -110,9 +122,11 @@ class PatientBasicInfoCard extends StatelessWidget {
           const SizedBox(height: 12),
           PatientInfoRow(
             icon: CupertinoIcons.money_dollar,
-            label: '总费用',
-            value: '¥${patient.totalCost.toStringAsFixed(2)}',
+            label: '已收费',
+            value:
+                '¥${(displayedTotalCost ?? patient.totalCost).toStringAsFixed(2)}',
             valueColor: AppTheme.accentColor,
+            onTap: onTotalCostTap,
           ),
           if (patient.treatmentItems != null &&
               patient.treatmentItems!.isNotEmpty) ...[

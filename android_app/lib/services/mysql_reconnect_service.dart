@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:mysql1/mysql1.dart';
 import 'mysql_connection_service.dart';
 import 'database_health_service.dart';
 
@@ -26,8 +25,8 @@ class MySQLReconnectService {
   MySQLReconnectService({
     required MySQLConnectionService connectionService,
     required DatabaseHealthService healthService,
-  })  : _connectionService = connectionService,
-        _healthService = healthService {
+  }) : _connectionService = connectionService,
+       _healthService = healthService {
     // 设置健康检查服务的回调
     _healthService.setOnReconnectNeeded(_startAutoReconnect);
   }
@@ -53,8 +52,9 @@ class MySQLReconnectService {
     _reconnectAttempts++;
 
     // 指数退避延迟：1, 2, 4, 8, 16, 32秒
-    final backoffDelay =
-        Duration(seconds: (1 << (_reconnectAttempts - 1)).clamp(1, 32));
+    final backoffDelay = Duration(
+      seconds: (1 << (_reconnectAttempts - 1)).clamp(1, 32),
+    );
     print('🔄 开始第 $_reconnectAttempts 次重连尝试，延迟 ${backoffDelay.inSeconds} 秒...');
 
     _reconnectTimer = Timer(backoffDelay, () async {
@@ -72,6 +72,7 @@ class MySQLReconnectService {
 
       // 重新初始化连接（自动重连时允许多次重试）
       await _connectionService.initConnection(isStartup: false);
+      _healthService.setConnection(_connectionService.connection);
 
       // 测试新连接
       final isHealthy = await _healthService.testConnectionHealth();
@@ -132,11 +133,15 @@ class MySQLReconnectService {
 
       // 重新建立连接（强制重连时允许多次重试）
       await _connectionService.initConnection(isStartup: false);
+      _healthService.setConnection(_connectionService.connection);
+
+      final isHealthy = await _healthService.testConnectionHealth();
+      _healthService.setConnectionStatus(isHealthy);
 
       // 重置重连状态
       _healthService.setReconnectingStatus(false);
 
-      return _healthService.isConnected;
+      return isHealthy;
     } catch (e) {
       print('❌ 强制重连失败: $e');
       _healthService.setConnectionStatus(false);
@@ -177,8 +182,12 @@ class MySQLReconnectService {
 
       // 重新初始化连接（应用恢复时允许多次重试）
       await _connectionService.initConnection(isStartup: false);
+      _healthService.setConnection(_connectionService.connection);
 
-      if (_healthService.isConnected) {
+      final isHealthy = await _healthService.testConnectionHealth();
+      _healthService.setConnectionStatus(isHealthy);
+
+      if (isHealthy) {
         print('✅ 应用恢复重连成功（新socket连接）');
         return true;
       } else {

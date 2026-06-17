@@ -40,7 +40,9 @@ mixin AppointmentDatabaseMixin {
 
   // 设置MySQL数据源（使用动态连接获取）
   void setMySqlDataSource(MySqlConnection connection) {
-    _mysqlDataSource = MySqlAppointmentDataSource.withConnectionGetter(() => _mysqlConnection);
+    _mysqlDataSource = MySqlAppointmentDataSource.withConnectionGetter(
+      () => currentMysqlConnection,
+    );
   }
 
   // 获取当前数据源（必须可用，否则抛出异常）

@@ -3,7 +3,8 @@ import 'package:flutter/scheduler.dart';
 import '../models/database_models.dart';
 import 'package:sqflite/sqflite.dart';
 import '../utils/database_operation_wrapper.dart';
-import '../data_sources/patient_data_source.dart' hide SqlitePatientDataSource, MySqlPatientDataSource;
+import '../data_sources/patient_data_source.dart'
+    hide SqlitePatientDataSource, MySqlPatientDataSource;
 import '../data_sources/sqlite_patient_data_source.dart';
 import '../data_sources/mysql_patient_data_source.dart';
 import 'package:mysql1/mysql1.dart';
@@ -17,24 +18,25 @@ import '../features/patients/services/patient_deletion_service.dart';
 // 患者管理提供者，专门处理患者相关的状态管理和流程编排
 class PatientProvider extends ChangeNotifier {
   // 初始化服务
-  final PatientInitializationService _initService = PatientInitializationService();
+  final PatientInitializationService _initService =
+      PatientInitializationService();
   final PatientDeletionService _deletionService = PatientDeletionService();
-  
+
   // 导出服务
   PatientExportService? _exportService;
-  
+
   // 缓存助手
   final PatientCacheHelper _cacheHelper = PatientCacheHelper();
-  
+
   // 数据库操作包装器
   DatabaseOperationWrapper? _dbWrapper;
-  
+
   // 初始化标志
   bool initialized = false;
-  
+
   // UserProvider引用（用于权限检查）
   UserProvider? _userProvider;
-  
+
   // 设置数据源类型
   void setDataSourceType(String dataSourceType) {
     _initService.setDataSourceType(dataSourceType);
@@ -58,24 +60,27 @@ class PatientProvider extends ChangeNotifier {
   }
 
   // 统一的数据库初始化方法
-  Future<void> initializeFromDatabase(dynamic dbProvider, {UserProvider? userProvider}) async {
+  Future<void> initializeFromDatabase(
+    dynamic dbProvider, {
+    UserProvider? userProvider,
+  }) async {
     if (initialized) return;
-    
+
     try {
       print('PatientProvider 开始初始化...');
-      
+
       // 保存UserProvider引用
       _userProvider = userProvider;
-      
+
       // 使用初始化服务
       final success = await _initService.initializeFromDatabase(dbProvider);
       if (success) {
         // 初始化导出服务
         _exportService = PatientExportService(_initService.dataSourceType);
-        
+
         // 初始化数据库操作包装器
         _dbWrapper = DatabaseOperationWrapper(dbProvider);
-        
+
         initialized = true;
         print('PatientProvider 初始化完成');
       } else {
@@ -86,42 +91,38 @@ class PatientProvider extends ChangeNotifier {
       initialized = false;
     }
   }
-  
+
   // 设置UserProvider引用
   void setUserProvider(UserProvider userProvider) {
     _userProvider = userProvider;
   }
-  
+
   // 获取医生过滤条件
   String? _getDoctorFilter() {
     if (_userProvider?.currentUser == null) {
       return null;
     }
-    
+
     return _userProvider!.buildDoctorFilter(_userProvider!.currentUser);
   }
-  
+
   // 检查是否需要数据过滤
   bool _shouldFilterByDoctor() {
     if (_userProvider?.currentUser == null) {
       return false;
     }
-    
+
     return _userProvider!.shouldFilterByDoctor(_userProvider!.currentUser);
   }
 
   // 获取数据源类型
   String get dataSourceType => _initService.dataSourceType;
 
-
-
   // 强制刷新患者数据
   Future<void> forceRefreshPatients() async {
     _cacheHelper.clearCache();
     _safeNotifyListeners();
   }
-
-
 
   // 导出患者表
   Future<String> exportPatientsTable(String destinationDir) async {
@@ -141,12 +142,11 @@ class PatientProvider extends ChangeNotifier {
     }
     return await _exportService!.savePatientBackupWithSaf(jsonData, fileName);
   }
-  
 
   // 获取所有患者（Android端不过滤查看权限）
   Future<List<Patient>> getAllPatients() async {
     if (_dbWrapper == null) return [];
-    
+
     return await _dbWrapper!.wrapOperation('getAllPatients', () async {
       try {
         if (_cacheHelper.hasCache()) {
@@ -162,17 +162,17 @@ class PatientProvider extends ChangeNotifier {
       } catch (e) {
         print('获取所有患者失败: $e');
         print('错误堆栈: ${StackTrace.current}');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return [];
       }
     });
   }
-  
+
   // Android端不需要数据查看过滤 - 所有用户都能查看所有数据
   // 权限控制只在编辑和删除操作时生效
   List<Patient> _applyDoctorFilter(List<Patient> patients) {
     final currentUser = _userProvider?.currentUser;
 
-    
     // Android端：所有用户都能查看所有数据，权限控制只在编辑/删除时生效
     return patients;
   }
@@ -180,7 +180,7 @@ class PatientProvider extends ChangeNotifier {
   // 获取患者总数（Android端不过滤查看权限）
   Future<int> getPatientCount() async {
     if (_dbWrapper == null) return 0;
-    
+
     return await _dbWrapper!.wrapOperation('getPatientCount', () async {
       try {
         // Android端：所有用户都能查看所有数据，直接返回数据库总数
@@ -188,6 +188,7 @@ class PatientProvider extends ChangeNotifier {
         return count;
       } catch (e) {
         print('获取患者总数错误: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return 0;
       }
     });
@@ -233,21 +234,22 @@ class PatientProvider extends ChangeNotifier {
     bool? ascending,
   }) async {
     if (_dbWrapper == null) return [];
-    
+
     return await _dbWrapper!.wrapOperation('getPatientsPage', () async {
       try {
         // 使用数据源模式（统一接口），传递排序参数
         final patients = await _currentDataSource.getPaginatedPatients(
-          page, 
-          pageSize, 
-          sortField: sortField, 
+          page,
+          pageSize,
+          sortField: sortField,
           ascending: ascending,
         );
-        
+
         // Android端：不过滤查看权限，返回所有数据
         return patients;
       } catch (e) {
         print('分页获取患者错误: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return [];
       }
     });
@@ -256,27 +258,25 @@ class PatientProvider extends ChangeNotifier {
   // 搜索患者（带权限过滤）
   Future<List<Patient>> searchPatients(String query) async {
     if (_dbWrapper == null) return [];
-    
+
     // 统一在入口处trim，防止前后空格导致搜索失败
     final trimmedQuery = query.trim();
-    
+
     return await _dbWrapper!.wrapOperation('searchPatients', () async {
       try {
         // 使用数据源模式（统一接口）
         final patients = await _currentDataSource.searchPatients(trimmedQuery);
-        
+
         // Android端：不过滤查看权限，返回所有数据
 
-        
         return patients;
       } catch (e) {
         print('搜索患者错误: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return [];
       }
     });
   }
-
-
 
   // 获取最后一位患者
   Future<Patient?> getLastPatient() async {
@@ -306,19 +306,24 @@ class PatientProvider extends ChangeNotifier {
 
   // 根据ID获取患者
   Future<Patient?> getPatientById(int id) async {
-    try {
-      // 使用数据源模式（统一接口）
-      return await _currentDataSource.getPatientById(id);
-    } catch (e) {
-      print('根据ID获取患者失败: $e');
-      return null;
-    }
+    if (_dbWrapper == null) return null;
+
+    return await _dbWrapper!.wrapOperation('getPatientById', () async {
+      try {
+        // 使用数据源模式（统一接口）
+        return await _currentDataSource.getPatientById(id);
+      } catch (e) {
+        print('根据ID获取患者失败: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
+        return null;
+      }
+    });
   }
 
   // 添加患者
   Future<int> addPatient(Patient patient) async {
     if (_dbWrapper == null) return -1;
-    
+
     return await _dbWrapper!.wrapOperation('addPatient', () async {
       try {
         // 使用数据源模式（统一接口）
@@ -338,7 +343,7 @@ class PatientProvider extends ChangeNotifier {
   // 更新患者
   Future<bool> updatePatient(Patient patient) async {
     if (_dbWrapper == null) return false;
-    
+
     return await _dbWrapper!.wrapOperation('updatePatient', () async {
       try {
         print('开始更新患者数据: ${patient.toMap()}');
@@ -358,6 +363,7 @@ class PatientProvider extends ChangeNotifier {
         return success;
       } catch (e) {
         print('更新患者错误: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return false;
       }
     });

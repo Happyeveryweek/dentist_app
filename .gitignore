@@ -86,3 +86,4 @@ windows_app/.flutter-plugins-dependencies
 windows_app/installer/
 backups/*.db
 backups/*.sql
+scripts/

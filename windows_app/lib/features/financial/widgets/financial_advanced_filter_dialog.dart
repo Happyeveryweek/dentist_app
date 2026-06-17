@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
+import '../helpers/amount_input_formatter.dart';
 
 /// 财务高级筛选对话框
 /// 用于按收费项目和金额区间筛选财务记录
@@ -86,6 +87,7 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
                 child: TextField(
                   decoration: const InputDecoration(labelText: '应收费最小值', prefixIcon: Icon(Icons.attach_money)),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [amountInputFormatter],
                   controller: TextEditingController(text: _receivableMin),
                   onChanged: (v) => _receivableMin = v,
                 ),
@@ -95,6 +97,7 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
                 child: TextField(
                   decoration: const InputDecoration(labelText: '应收费最大值', prefixIcon: Icon(Icons.attach_money)),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [amountInputFormatter],
                   controller: TextEditingController(text: _receivableMax),
                   onChanged: (v) => _receivableMax = v,
                 ),
@@ -106,6 +109,7 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
                 child: TextField(
                   decoration: const InputDecoration(labelText: '已收费最小值', prefixIcon: Icon(Icons.payments)),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [amountInputFormatter],
                   controller: TextEditingController(text: _receivedMin),
                   onChanged: (v) => _receivedMin = v,
                 ),
@@ -115,6 +119,7 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
                 child: TextField(
                   decoration: const InputDecoration(labelText: '已收费最大值', prefixIcon: Icon(Icons.payments)),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [amountInputFormatter],
                   controller: TextEditingController(text: _receivedMax),
                   onChanged: (v) => _receivedMax = v,
                 ),
@@ -126,6 +131,7 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
                 child: TextField(
                   decoration: const InputDecoration(labelText: '加工费最小值', prefixIcon: Icon(Icons.build)),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [amountInputFormatter],
                   controller: TextEditingController(text: _processingMin),
                   onChanged: (v) => _processingMin = v,
                 ),
@@ -135,6 +141,7 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
                 child: TextField(
                   decoration: const InputDecoration(labelText: '加工费最大值', prefixIcon: Icon(Icons.build)),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [amountInputFormatter],
                   controller: TextEditingController(text: _processingMax),
                   onChanged: (v) => _processingMax = v,
                 ),

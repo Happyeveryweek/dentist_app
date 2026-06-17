@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/financial_item.dart';
+import '../helpers/amount_input_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import '../../../widgets/modern_date_picker.dart';
 
@@ -54,7 +55,7 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
   }
 
   void _initializeControllers() {
-    _itemNameController.text = '';
+    _itemNameController.text = '综合收费';
     _itemPriceController.text = '0';
     _collectedAmountController.text = '0';
     _processingFeeController.text = '0';
@@ -179,6 +180,7 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
                                 prefixText: '¥',
                               ),
                               keyboardType: TextInputType.number,
+                              inputFormatters: [amountInputFormatter],
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return '请输入应收费金额';
@@ -201,6 +203,7 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
                                 prefixText: '¥',
                               ),
                               keyboardType: TextInputType.number,
+                              inputFormatters: [amountInputFormatter],
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
                                   return '请输入已收费金额';
@@ -227,6 +230,7 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
                           prefixText: '¥',
                         ),
                         keyboardType: TextInputType.number,
+                        inputFormatters: [amountInputFormatter],
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return '请输入加工费';

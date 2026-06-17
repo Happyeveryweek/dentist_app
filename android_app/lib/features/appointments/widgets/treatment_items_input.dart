@@ -4,11 +4,14 @@ import 'package:dentist_app/theme/app_theme.dart';
 class TreatmentItemsInput extends StatefulWidget {
   final TextEditingController controller;
   final List<String> selectedTreatments;
+  final List<String> suggestions;
   final Function(List<String>) onChanged;
 
   const TreatmentItemsInput({
+    super.key,
     required this.controller,
     required this.selectedTreatments,
+    required this.suggestions,
     required this.onChanged,
   });
 
@@ -17,13 +20,32 @@ class TreatmentItemsInput extends StatefulWidget {
 }
 
 class TreatmentItemsInputState extends State<TreatmentItemsInput> {
+  String? _selectedSuggestion;
+
+  void _addTreatment(String treatment) {
+    final trimmed = treatment.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+
+    final treatments = List<String>.from(widget.selectedTreatments);
+    if (!treatments.contains(trimmed)) {
+      treatments.add(trimmed);
+      widget.onChanged(treatments);
+    }
+
+    widget.controller.clear();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Expanded(
+              flex: 5,
               child: _buildModernTextField(
                 controller: widget.controller,
                 hint: '输入治疗项目',
@@ -31,20 +53,50 @@ class TreatmentItemsInputState extends State<TreatmentItemsInput> {
               ),
             ),
             const SizedBox(width: 8),
-            IconButton(
-              onPressed: () {
-                if (widget.controller.text.isNotEmpty) {
-                  setState(() {
-                    if (!widget.selectedTreatments.contains(widget.controller.text)) {
-                      widget.selectedTreatments.add(widget.controller.text);
-                    }
-                    widget.controller.clear();
-                    widget.onChanged(widget.selectedTreatments);
-                  });
-                }
-              },
-              icon: const Icon(Icons.add_circle_outline),
-              color: AppTheme.primaryColor,
+            Expanded(
+              flex: 4,
+              child: DropdownButtonFormField<String>(
+                value: _selectedSuggestion,
+                decoration: InputDecoration(
+                  labelText: '选择已有项目',
+                  filled: true,
+                  fillColor: AppTheme.backgroundColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.withOpacity(0.2),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.grey.withOpacity(0.2),
+                    ),
+                  ),
+                ),
+                hint: const Text('暂无'),
+                items:
+                    widget.suggestions
+                        .map(
+                          (item) => DropdownMenuItem<String>(
+                            value: item,
+                            child: Text(item, overflow: TextOverflow.ellipsis),
+                          ),
+                        )
+                        .toList(),
+                onChanged:
+                    widget.suggestions.isEmpty
+                        ? null
+                        : (value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setState(() {
+                            _selectedSuggestion = null;
+                            _addTreatment(value);
+                          });
+                        },
+              ),
             ),
           ],
         ),
@@ -53,20 +105,24 @@ class TreatmentItemsInputState extends State<TreatmentItemsInput> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: widget.selectedTreatments.map((treatment) {
-              return Chip(
-                label: Text(treatment),
-                deleteIcon: const Icon(Icons.close, size: 16),
-                onDeleted: () {
-                  setState(() {
-                    widget.selectedTreatments.remove(treatment);
-                    widget.onChanged(widget.selectedTreatments);
-                  });
-                },
-                backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                labelStyle: const TextStyle(color: AppTheme.primaryText),
-              );
-            }).toList(),
+            children:
+                widget.selectedTreatments.map((treatment) {
+                  return Chip(
+                    label: Text(treatment),
+                    deleteIcon: const Icon(Icons.close, size: 16),
+                    onDeleted: () {
+                      setState(() {
+                        final treatments = List<String>.from(
+                          widget.selectedTreatments,
+                        )..remove(treatment);
+                        widget.onChanged(treatments);
+                        widget.controller.clear();
+                      });
+                    },
+                    backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                    labelStyle: const TextStyle(color: AppTheme.primaryText),
+                  );
+                }).toList(),
           ),
         ],
       ],
@@ -88,6 +144,11 @@ class TreatmentItemsInputState extends State<TreatmentItemsInput> {
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
+        onFieldSubmitted: (_) {
+          setState(() {
+            _addTreatment(controller.text);
+          });
+        },
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(color: AppTheme.secondaryText),
@@ -101,12 +162,12 @@ class TreatmentItemsInputState extends State<TreatmentItemsInput> {
             child: Icon(icon, color: AppTheme.primaryColor, size: 18),
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
         ),
-        style: const TextStyle(
-          fontSize: 16,
-          color: AppTheme.primaryText,
-        ),
+        style: const TextStyle(fontSize: 16, color: AppTheme.primaryText),
       ),
     );
   }

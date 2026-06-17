@@ -39,6 +39,7 @@ class FinancialProvider extends ChangeNotifier {
 
   // 初始化标志
   bool _isInitializedFlag = false;
+  Future<void>? _initializationFuture;
 
   // 数据列表
   List<FinancialRecord> _financialRecords = [];
@@ -49,33 +50,45 @@ class FinancialProvider extends ChangeNotifier {
 
   // Service 和 Helper 实例
   final FinancialCacheHelper _cacheHelper = FinancialCacheHelper();
-  final FinancialPermissionService _permissionService = FinancialPermissionService();
-  final FinancialConnectionService _connectionService = FinancialConnectionService();
-  final FinancialDataSourceService _dataSourceService = FinancialDataSourceService();
-  final FinancialDataCleanerService _dataCleanerService = FinancialDataCleanerService();
-  final FinancialStatisticsService _statisticsService = FinancialStatisticsService();
-  final FinancialInitializationService _initializationService = FinancialInitializationService();
-  late final FinancialRecordService _recordService = FinancialRecordService(dataSourceService: _dataSourceService);
-  late final FinancialItemService _itemService = FinancialItemService(dataSourceService: _dataSourceService);
+  final FinancialPermissionService _permissionService =
+      FinancialPermissionService();
+  final FinancialConnectionService _connectionService =
+      FinancialConnectionService();
+  final FinancialDataSourceService _dataSourceService =
+      FinancialDataSourceService();
+  final FinancialDataCleanerService _dataCleanerService =
+      FinancialDataCleanerService();
+  final FinancialStatisticsService _statisticsService =
+      FinancialStatisticsService();
+  final FinancialInitializationService _initializationService =
+      FinancialInitializationService();
+  late final FinancialRecordService _recordService = FinancialRecordService(
+    dataSourceService: _dataSourceService,
+  );
+  late final FinancialItemService _itemService = FinancialItemService(
+    dataSourceService: _dataSourceService,
+  );
   late final FinancialQueryService _queryService = FinancialQueryService(
     dataSourceService: _dataSourceService,
     permissionService: _permissionService,
     connectionService: _connectionService,
   );
-  
+
   // Getters
-  bool get initialized => _database != null || _currentMysqlConnection != null;
+  bool get initialized =>
+      _isInitializedFlag &&
+      (_database != null || _currentMysqlConnection != null);
   bool get financialsNeedRefresh => _financialsNeedRefresh;
   bool get isConnected => _connectionService.isConnected;
   bool get isReconnecting => _connectionService.isReconnecting;
   String? get lastError => _connectionService.lastError;
-  
+
   // 检查数据库是否已初始化
   bool get isInitialized {
     if (_dataSourceType == 'mysql') {
-      return _currentMysqlConnection != null;
+      return _isInitializedFlag && _currentMysqlConnection != null;
     } else {
-      return _database != null;
+      return _isInitializedFlag && _database != null;
     }
   }
 
@@ -87,6 +100,7 @@ class FinancialProvider extends ChangeNotifier {
   // 设置MySQL数据源（使用动态连接获取）
   void setMySqlDataSource(MySqlConnection connection) {
     _dataSourceService.setMySqlDataSource(connection);
+    _dataSourceService.setMySqlConnectionGetter(() => _currentMysqlConnection);
   }
 
   // 设置用户提供者（用于权限控制）
@@ -101,7 +115,8 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   // 获取当前 MySQL 连接
-  MySqlConnection? get _currentMysqlConnection => _connectionService.currentMysqlConnection;
+  MySqlConnection? get _currentMysqlConnection =>
+      _connectionService.currentMysqlConnection;
 
   // 缓存相关方法（委托给 cacheHelper）
   bool get hasValidCache => _cacheHelper.hasValidCache;
@@ -109,10 +124,14 @@ class FinancialProvider extends ChangeNotifier {
   int get cachedRecordsCount => _cacheHelper.cachedRecordsCount;
   bool get hasCache => _cacheHelper.hasCache;
   List<FinancialRecord> get cachedRecords => _cacheHelper.cachedRecords;
-  Map<int, List<FinancialItem>> get cachedItemsMap => _cacheHelper.cachedItemsMap;
+  Map<int, List<FinancialItem>> get cachedItemsMap =>
+      _cacheHelper.cachedItemsMap;
 
   // 更新缓存（供外部调用，用于后台加载过程中实时更新）
-  void updateCacheManually(List<FinancialRecord> records, Map<int, List<FinancialItem>> itemsMap) {
+  void updateCacheManually(
+    List<FinancialRecord> records,
+    Map<int, List<FinancialItem>> itemsMap,
+  ) {
     _cacheHelper.updateCacheManually(records, itemsMap);
   }
 
@@ -130,7 +149,9 @@ class FinancialProvider extends ChangeNotifier {
       dataSourceType: _dataSourceType,
       sqliteDatabase: _database,
       mysqlConnection: _currentMysqlConnection,
-      clearCache: () async { clearCache(); },
+      clearCache: () async {
+        clearCache();
+      },
       autoReconnect: _connectionService.autoReconnect,
     );
   }
@@ -148,7 +169,19 @@ class FinancialProvider extends ChangeNotifier {
   // 从DatabaseProvider获取数据库连接
   Future<void> initializeFromDatabase(dynamic dbProvider) async {
     if (_isInitializedFlag) return;
+    if (_initializationFuture != null) {
+      return await _initializationFuture!;
+    }
 
+    _initializationFuture = _initializeFromDatabaseInternal(dbProvider);
+    try {
+      return await _initializationFuture!;
+    } finally {
+      _initializationFuture = null;
+    }
+  }
+
+  Future<void> _initializeFromDatabaseInternal(dynamic dbProvider) async {
     print('FinancialProvider开始初始化...');
 
     try {
@@ -169,12 +202,19 @@ class FinancialProvider extends ChangeNotifier {
       // 同步所有 Service 的数据库连接信息
       setDatabaseConnection(
         database: _database,
-        mysqlConnection: _mysqlConnection,
+        mysqlConnection: _currentMysqlConnection,
         dataSourceType: _dataSourceType,
       );
+      if (_dataSourceType == 'mysql') {
+        _dataSourceService.setMySqlConnectionGetter(
+          () => _currentMysqlConnection,
+        );
+      }
 
       _isInitializedFlag = result.initialized;
-      print('FinancialProvider初始化完成: _isInitializedFlag = $_isInitializedFlag, _dataSourceType = $_dataSourceType');
+      print(
+        'FinancialProvider初始化完成: _isInitializedFlag = $_isInitializedFlag, _dataSourceType = $_dataSourceType',
+      );
       // 延迟通知以避免在build阶段调用setState
       Future.microtask(() => notifyListeners());
     } catch (e) {
@@ -195,7 +235,7 @@ class FinancialProvider extends ChangeNotifier {
       print('FinancialProvider: 数据库状态变化通知');
     }
   }
-  
+
   // 构造函数
   FinancialProvider({
     Database? database,
@@ -206,7 +246,7 @@ class FinancialProvider extends ChangeNotifier {
     _mysqlConnection = mysqlConnection;
     _dataSourceType = dataSourceType;
   }
-  
+
   // 设置数据库连接
   void setDatabaseConnection({
     Database? database,
@@ -219,12 +259,17 @@ class FinancialProvider extends ChangeNotifier {
       _dataSourceType = dataSourceType;
       _dataSourceService.setDataSourceType(dataSourceType);
     }
+    if (_dataSourceType == 'mysql') {
+      _dataSourceService.setMySqlConnectionGetter(
+        () => _currentMysqlConnection,
+      );
+    }
 
     // 更新 recordService 的数据库连接
     _recordService.setDatabaseConnection(
       dataSourceType: _dataSourceType,
       database: _database,
-      mysqlConnection: _mysqlConnection,
+      mysqlConnection: _currentMysqlConnection,
       dbWrapper: _dbWrapper,
     );
 
@@ -232,7 +277,7 @@ class FinancialProvider extends ChangeNotifier {
     _itemService.setDatabaseConnection(
       dataSourceType: _dataSourceType,
       database: _database,
-      mysqlConnection: _mysqlConnection,
+      mysqlConnection: _currentMysqlConnection,
       dbWrapper: _dbWrapper,
     );
 
@@ -240,17 +285,17 @@ class FinancialProvider extends ChangeNotifier {
     _queryService.setDatabaseConnection(
       dataSourceType: _dataSourceType,
       database: _database,
-      mysqlConnection: _mysqlConnection,
+      mysqlConnection: _currentMysqlConnection,
       dbWrapper: _dbWrapper,
     );
   }
-  
+
   // 标记需要刷新
   void markFinancialsNeedRefresh() {
     _financialsNeedRefresh = true;
     notifyListeners();
   }
-  
+
   // 清除刷新标志
   void clearFinancialsNeedRefresh() {
     _financialsNeedRefresh = false;
@@ -330,27 +375,30 @@ class FinancialProvider extends ChangeNotifier {
   Future<List<FinancialRecord>> getFinancialRecordsWithCache() async {
     if (_dbWrapper == null) return _cacheHelper.cachedRecords;
 
-    return await _dbWrapper!.wrapOperation('getFinancialRecordsWithCache', () async {
-      try {
-        // 优先检查缓存（像患者管理一样）
-        if (_cacheHelper.hasValidCache) {
-          print('使用缓存的财务记录数据: ${_cacheHelper.cachedRecords.length} 条');
-          return _cacheHelper.cachedRecords;
-        }
+    return await _dbWrapper!.wrapOperation(
+      'getFinancialRecordsWithCache',
+      () async {
+        try {
+          // 优先检查缓存（像患者管理一样）
+          if (_cacheHelper.hasValidCache) {
+            print('使用缓存的财务记录数据: ${_cacheHelper.cachedRecords.length} 条');
+            return _cacheHelper.cachedRecords;
+          }
 
-        // 尝试从数据库获取最新数据
-        final records = await getAllFinancialRecords();
-        return records;
-      } catch (e) {
-        print('获取财务记录失败: $e');
-        // 优雅降级：如果有缓存就返回缓存，否则返回空列表（像患者管理一样）
-        if (_cacheHelper.cachedRecords.isNotEmpty) {
-          print('使用缓存的财务记录数据，连接异常: $e');
-          return _cacheHelper.cachedRecords;
+          // 尝试从数据库获取最新数据
+          final records = await getAllFinancialRecords();
+          return records;
+        } catch (e) {
+          print('获取财务记录失败: $e');
+          // 优雅降级：如果有缓存就返回缓存，否则返回空列表（像患者管理一样）
+          if (_cacheHelper.cachedRecords.isNotEmpty) {
+            print('使用缓存的财务记录数据，连接异常: $e');
+            return _cacheHelper.cachedRecords;
+          }
+          return []; // 返回空列表而不是抛出异常
         }
-        return []; // 返回空列表而不是抛出异常
-      }
-    });
+      },
+    );
   }
 
   // 获取财务记录总数
@@ -363,7 +411,10 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   // 分页获取财务记录
-  Future<List<FinancialRecord>> getPaginatedFinancialRecords(int page, int pageSize) async {
+  Future<List<FinancialRecord>> getPaginatedFinancialRecords(
+    int page,
+    int pageSize,
+  ) async {
     if (!initialized) {
       throw Exception('数据库未初始化');
     }
@@ -373,7 +424,14 @@ class FinancialProvider extends ChangeNotifier {
 
   // 获取财务记录总数
   Future<int> getFinancialRecordCount() async {
-    return await _queryService.getFinancialRecordCount();
+    if (!initialized) {
+      return 0;
+    }
+
+    return await _wrapFinancialOperation(
+      'getFinancialRecordCount',
+      () => _queryService.getFinancialRecordCount(),
+    );
   }
 
   // 搜索财务记录
@@ -389,7 +447,8 @@ class FinancialProvider extends ChangeNotifier {
   bool get hasValidStatsCache => _cacheHelper.hasValidStatsCache;
   bool get hasFullItemsCache => _cacheHelper.hasFullItemsCache;
   Map<String, dynamic>? get cachedStats => _cacheHelper.cachedStats;
-  Map<int, List<FinancialItem>>? get cachedFullItemsMap => _cacheHelper.cachedFullItemsMap;
+  Map<int, List<FinancialItem>>? get cachedFullItemsMap =>
+      _cacheHelper.cachedFullItemsMap;
   bool get isBackgroundLoadingFull => _cacheHelper.isBackgroundLoadingFull;
 
   void updateStatsCache(Map<String, dynamic> stats) {
@@ -423,11 +482,18 @@ class FinancialProvider extends ChangeNotifier {
     // 有完整缓存：先显示初步数字，再立即给出完整缓存
     if (!forceRefresh && _cacheHelper.hasFullItemsCache) {
       try {
-        final initialRecords = await getPaginatedFinancialRecords(1, initialCount);
+        final initialRecords = await getPaginatedFinancialRecords(
+          1,
+          initialCount,
+        );
         final initialItemsMap = <int, List<FinancialItem>>{};
         for (final r in initialRecords) {
           if (r.id != null) {
-            try { initialItemsMap[r.id!] = await getFinancialItemsByRecordId(r.id!); } catch (_) { initialItemsMap[r.id!] = []; }
+            try {
+              initialItemsMap[r.id!] = await getFinancialItemsByRecordId(r.id!);
+            } catch (_) {
+              initialItemsMap[r.id!] = [];
+            }
           }
         }
         onProgress(_cacheHelper.cachedStats!, false);
@@ -438,11 +504,18 @@ class FinancialProvider extends ChangeNotifier {
 
     // 无完整缓存：先显示初步数字
     try {
-      final initialRecords = await getPaginatedFinancialRecords(1, initialCount);
+      final initialRecords = await getPaginatedFinancialRecords(
+        1,
+        initialCount,
+      );
       final initialItemsMap = <int, List<FinancialItem>>{};
       for (final r in initialRecords) {
         if (r.id != null) {
-          try { initialItemsMap[r.id!] = await getFinancialItemsByRecordId(r.id!); } catch (_) { initialItemsMap[r.id!] = []; }
+          try {
+            initialItemsMap[r.id!] = await getFinancialItemsByRecordId(r.id!);
+          } catch (_) {
+            initialItemsMap[r.id!] = [];
+          }
         }
       }
       onProgress(_cacheHelper.cachedStats!, false);
@@ -463,11 +536,14 @@ class FinancialProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
-    return await _queryService.getPaginatedFinancialRecordsWithDateFilter(
-      page: page,
-      pageSize: pageSize,
-      startDate: startDate,
-      endDate: endDate,
+    return await _wrapFinancialOperation(
+      'getPaginatedFinancialRecordsWithDateFilter',
+      () => _queryService.getPaginatedFinancialRecordsWithDateFilter(
+        page: page,
+        pageSize: pageSize,
+        startDate: startDate,
+        endDate: endDate,
+      ),
     );
   }
 
@@ -476,9 +552,16 @@ class FinancialProvider extends ChangeNotifier {
     DateTime? startDate,
     DateTime? endDate,
   }) async {
-    return await _queryService.getFinancialRecordCount(
-      startDate: startDate,
-      endDate: endDate,
+    if (!initialized) {
+      return 0;
+    }
+
+    return await _wrapFinancialOperation(
+      'getFinancialRecordCountWithDateFilter',
+      () => _queryService.getFinancialRecordCount(
+        startDate: startDate,
+        endDate: endDate,
+      ),
     );
   }
 
@@ -490,7 +573,9 @@ class FinancialProvider extends ChangeNotifier {
 
     return await _recordService.addFinancialRecord(
       record,
-      clearCache: () async { clearCache(); },
+      clearCache: () async {
+        clearCache();
+      },
       markFinancialsNeedRefresh: markFinancialsNeedRefresh,
     );
   }
@@ -503,7 +588,9 @@ class FinancialProvider extends ChangeNotifier {
 
     return await _recordService.updateFinancialRecord(
       record,
-      clearCache: () async { clearCache(); },
+      clearCache: () async {
+        clearCache();
+      },
       markFinancialsNeedRefresh: markFinancialsNeedRefresh,
     );
   }
@@ -516,13 +603,17 @@ class FinancialProvider extends ChangeNotifier {
 
     return await _recordService.deleteFinancialRecord(
       recordId,
-      clearCache: () async { clearCache(); },
+      clearCache: () async {
+        clearCache();
+      },
       markFinancialsNeedRefresh: markFinancialsNeedRefresh,
     );
   }
 
   // 根据患者ID获取财务记录
-  Future<List<FinancialRecord>> getFinancialRecordsByPatientId(int patientId) async {
+  Future<List<FinancialRecord>> getFinancialRecordsByPatientId(
+    int patientId,
+  ) async {
     if (!initialized) {
       throw Exception('数据库未初始化');
     }
@@ -531,7 +622,7 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   // =================== 财务项目明细相关方法（委托给 itemService）===================
-  
+
   // 根据财务记录ID获取项目明细
   Future<List<FinancialItem>> getFinancialItemsByRecordId(int recordId) async {
     if (!initialized) {
@@ -578,28 +669,44 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   // =================== 统计方法（委托给 statisticsService）===================
-  
+
   // 获取患者总消费额
   Future<double> getPatientTotalCost(int patientId) async {
-    return await _statisticsService.getPatientTotalCost(
-      patientId: patientId,
-      dataSourceType: _dataSourceType,
-      sqliteDatabase: _database,
-      mysqlConnection: _currentMysqlConnection,
-      getDoctorFilter: _permissionService.getDoctorFilter,
-      shouldFilterByDoctor: _permissionService.shouldFilterByDoctor,
+    return await _wrapFinancialOperation(
+      'getPatientTotalCost',
+      () => _statisticsService.getPatientTotalCost(
+        patientId: patientId,
+        dataSourceType: _dataSourceType,
+        sqliteDatabase: _database,
+        mysqlConnection: _currentMysqlConnection,
+        getDoctorFilter: _permissionService.getDoctorFilter,
+        shouldFilterByDoctor: _permissionService.shouldFilterByDoctor,
+      ),
     );
   }
 
   // 获取所有财务记录的统计信息
   Future<Map<String, dynamic>> getFinancialStatistics() async {
-    return await _statisticsService.getFinancialStatistics(
-      dataSourceType: _dataSourceType,
-      sqliteDatabase: _database,
-      mysqlConnection: _currentMysqlConnection,
-      getDoctorFilter: _permissionService.getDoctorFilter,
-      shouldFilterByDoctor: _permissionService.shouldFilterByDoctor,
+    return await _wrapFinancialOperation(
+      'getFinancialStatistics',
+      () => _statisticsService.getFinancialStatistics(
+        dataSourceType: _dataSourceType,
+        sqliteDatabase: _database,
+        mysqlConnection: _currentMysqlConnection,
+        getDoctorFilter: _permissionService.getDoctorFilter,
+        shouldFilterByDoctor: _permissionService.shouldFilterByDoctor,
+      ),
     );
+  }
+
+  Future<T> _wrapFinancialOperation<T>(
+    String operationName,
+    Future<T> Function() operation,
+  ) async {
+    if (_dbWrapper == null) {
+      return await operation();
+    }
+    return await _dbWrapper!.wrapOperation(operationName, operation);
   }
 
   /// 获取所有财务项目明细（带权限过滤）

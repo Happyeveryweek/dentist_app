@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app/utils/datetime_formatter.dart';
 import 'package:dentist_app/widgets/modern_date_picker.dart';
+import '../helpers/amount_input_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import 'section_title.dart';
 
@@ -116,6 +117,7 @@ class ChargeInfoSection extends StatelessWidget {
                   prefixText: '¥',
                 ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [amountInputFormatter],
                 validator: receivableValidator,
               ),
             ),
@@ -131,6 +133,7 @@ class ChargeInfoSection extends StatelessWidget {
                   prefixText: '¥',
                 ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [amountInputFormatter],
                 validator: collectedValidator,
               ),
             ),
@@ -153,6 +156,7 @@ class ChargeInfoSection extends StatelessWidget {
                   prefixText: '¥',
                 ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [amountInputFormatter],
                 validator: processingValidator,
               ),
             ),

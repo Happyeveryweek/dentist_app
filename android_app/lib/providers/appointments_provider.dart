@@ -15,10 +15,15 @@ import '../features/appointments/providers/appointment_permission_mixin.dart';
 import '../features/appointments/services/appointment_initialization_service.dart';
 
 // 预约管理提供者，用于管理应用程序与预约相关的数据库操作
-class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, AppointmentDatabaseMixin, AppointmentPermissionMixin {
+class AppointmentsProvider extends ChangeNotifier
+    with
+        AppointmentCacheMixin,
+        AppointmentDatabaseMixin,
+        AppointmentPermissionMixin {
   // 数据库操作包装器
   DatabaseOperationWrapper? _dbWrapper;
-  final AppointmentInitializationService _initializationService = AppointmentInitializationService();
+  final AppointmentInitializationService _initializationService =
+      AppointmentInitializationService();
 
   // 连接状态
   bool _isConnected = true;
@@ -31,7 +36,10 @@ class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, Ap
   String? get lastError => _lastError;
 
   // 从DatabaseProvider获取数据库连接（保持向后兼容）
-  Future<void> initializeFromDatabase(dynamic dbProvider, {UserProvider? userProvider}) async {
+  Future<void> initializeFromDatabase(
+    dynamic dbProvider, {
+    UserProvider? userProvider,
+  }) async {
     if (isInitializedFlag) return;
 
     try {
@@ -67,7 +75,7 @@ class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, Ap
       dataSourceType = 'sqlite';
       isInitializedFlag = false;
     }
-    
+
     // 延迟通知以避免在build阶段调用setState
     Future.microtask(() => notifyListeners());
   }
@@ -84,7 +92,7 @@ class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, Ap
     _isConnected = false;
     notifyListeners();
   }
-  
+
   // 获取所有预约（带缓存）
   Future<List<Appointment>> getAllAppointments() async {
     if (!initialized) {
@@ -92,7 +100,7 @@ class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, Ap
     }
 
     if (_dbWrapper == null) return cachedAppointments ?? [];
-    
+
     return await _dbWrapper!.wrapOperation('getAllAppointments', () async {
       try {
         // 优先检查缓存
@@ -106,8 +114,9 @@ class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, Ap
 
         // 使用数据源模式（统一接口）
         // Android端：不过滤查看权限，所有用户都能查看所有数据
-        appointments = await currentDataSource.getAllAppointments(doctorFilter: null);
-
+        appointments = await currentDataSource.getAllAppointments(
+          doctorFilter: null,
+        );
 
         // 更新缓存
         updateCache(appointments);
@@ -115,6 +124,7 @@ class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, Ap
         return appointments;
       } catch (e) {
         print('❌ 获取预约数据失败: $e');
+        if (_isConnectionError(e)) rethrow;
 
         // 优雅降级：如果有缓存就返回缓存，否则返回空列表
         if (isCacheValid()) {
@@ -127,17 +137,33 @@ class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, Ap
     });
   }
 
+  bool _isConnectionError(dynamic error) {
+    final errorString = error.toString().toLowerCase();
+    return errorString.contains('connection') ||
+        errorString.contains('socket') ||
+        errorString.contains('timeout') ||
+        errorString.contains('network') ||
+        errorString.contains('broken pipe') ||
+        errorString.contains('connection reset') ||
+        errorString.contains('closed') ||
+        errorString.contains('disconnected') ||
+        errorString.contains('cannot write to socket') ||
+        errorString.contains('bad state');
+  }
+
   // 获取预约总数
   Future<int> getAppointmentCount() async {
     if (_dbWrapper == null) return 0;
-    
+
     return await _dbWrapper!.wrapOperation('getAppointmentCount', () async {
       try {
         print('正在获取预约总数...');
 
         // 使用数据源模式（统一接口）
         // Android端：不过滤查看权限，返回所有预约总数
-        final count = await currentDataSource.getAppointmentsCount(doctorFilter: null);
+        final count = await currentDataSource.getAppointmentsCount(
+          doctorFilter: null,
+        );
 
         return count;
       } catch (e) {
@@ -150,16 +176,27 @@ class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, Ap
   // 获取今日预约
   Future<List<Appointment>> getTodayAppointments() async {
     if (_dbWrapper == null) return [];
-    
+
     return await _dbWrapper!.wrapOperation('getTodayAppointments', () async {
       try {
         final today = DateTime.now();
         final startDate = DateTime(today.year, today.month, today.day);
-        final endDate = DateTime(today.year, today.month, today.day, 23, 59, 59);
+        final endDate = DateTime(
+          today.year,
+          today.month,
+          today.day,
+          23,
+          59,
+          59,
+        );
 
         // 使用数据源模式（统一接口）
         // Android端：不过滤查看权限，返回所有今日预约
-        return await currentDataSource.getAppointmentsByDateRange(startDate, endDate, doctorFilter: null);
+        return await currentDataSource.getAppointmentsByDateRange(
+          startDate,
+          endDate,
+          doctorFilter: null,
+        );
       } catch (e) {
         print('获取今日预约错误: $e');
         return [];
@@ -172,9 +209,9 @@ class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, Ap
     if (!initialized) {
       throw Exception('数据库未初始化');
     }
-    
+
     if (_dbWrapper == null) return -1;
-    
+
     return await _dbWrapper!.wrapOperation('addAppointment', () async {
       try {
         // 使用数据源模式（统一接口）
@@ -200,9 +237,9 @@ class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, Ap
     if (!initialized || appointment.id == null) {
       throw Exception('数据库未初始化或预约ID为空');
     }
-    
+
     if (_dbWrapper == null) return false;
-    
+
     return await _dbWrapper!.wrapOperation('updateAppointment', () async {
       try {
         // 使用数据源模式（统一接口）
@@ -230,7 +267,7 @@ class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, Ap
     }
 
     if (_dbWrapper == null) return false;
-    
+
     return await _dbWrapper!.wrapOperation('deleteAppointment', () async {
       try {
         // 使用数据源模式（统一接口）
@@ -254,28 +291,37 @@ class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, Ap
   // 根据患者ID获取预约
   Future<List<Appointment>> getAppointmentsByPatientId(int patientId) async {
     if (_dbWrapper == null) return [];
-    
-    return await _dbWrapper!.wrapOperation('getAppointmentsByPatientId', () async {
-      try {
-        // 使用数据源模式（统一接口）
-        final doctorFilter = getDoctorFilter();
-        return await currentDataSource.getAppointmentsByPatientId(patientId, doctorFilter: doctorFilter);
-      } catch (e) {
-        print('获取患者预约错误: $e');
-        return [];
-      }
-    });
+
+    return await _dbWrapper!.wrapOperation(
+      'getAppointmentsByPatientId',
+      () async {
+        try {
+          // 使用数据源模式（统一接口）
+          final doctorFilter = getDoctorFilter();
+          return await currentDataSource.getAppointmentsByPatientId(
+            patientId,
+            doctorFilter: doctorFilter,
+          );
+        } catch (e) {
+          print('获取患者预约错误: $e');
+          return [];
+        }
+      },
+    );
   }
 
   // 搜索预约
   Future<List<Appointment>> searchAppointments(String keyword) async {
     if (_dbWrapper == null) return [];
-    
+
     return await _dbWrapper!.wrapOperation('searchAppointments', () async {
       try {
         // 使用数据源模式（统一接口）
         final doctorFilter = getDoctorFilter();
-        return await currentDataSource.searchAppointments(keyword, doctorFilter: doctorFilter);
+        return await currentDataSource.searchAppointments(
+          keyword,
+          doctorFilter: doctorFilter,
+        );
       } catch (e) {
         print('搜索预约错误: $e');
         return [];
@@ -284,18 +330,28 @@ class AppointmentsProvider extends ChangeNotifier with AppointmentCacheMixin, Ap
   }
 
   // 根据日期范围获取预约
-  Future<List<Appointment>> getAppointmentsByDateRange(DateTime startDate, DateTime endDate) async {
+  Future<List<Appointment>> getAppointmentsByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
     if (_dbWrapper == null) return [];
-    
-    return await _dbWrapper!.wrapOperation('getAppointmentsByDateRange', () async {
-      try {
-        // 使用数据源模式（统一接口）
-        final doctorFilter = getDoctorFilter();
-        return await currentDataSource.getAppointmentsByDateRange(startDate, endDate, doctorFilter: doctorFilter);
-      } catch (e) {
-        print('根据日期范围获取预约错误: $e');
-        return [];
-      }
-    });
+
+    return await _dbWrapper!.wrapOperation(
+      'getAppointmentsByDateRange',
+      () async {
+        try {
+          // 使用数据源模式（统一接口）
+          final doctorFilter = getDoctorFilter();
+          return await currentDataSource.getAppointmentsByDateRange(
+            startDate,
+            endDate,
+            doctorFilter: doctorFilter,
+          );
+        } catch (e) {
+          print('根据日期范围获取预约错误: $e');
+          return [];
+        }
+      },
+    );
   }
 }

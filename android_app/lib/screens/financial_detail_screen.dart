@@ -48,6 +48,11 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+          tooltip: '返回',
+        ),
         title: Text('${widget.record.patientName ?? _patient?.name ?? '患者'} - 财务详情'),
         backgroundColor: Theme.of(context).primaryColor,
         foregroundColor: Colors.white,
@@ -218,9 +223,14 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
   /// 删除整个财务记录
   void _deleteRecord(BuildContext context) async {
+    final patientName = (_patient?.name ?? widget.record.patientName ?? '').trim();
+    final financialInfo = patientName.isNotEmpty
+        ? '患者"$patientName"的整条财务记录'
+        : '该患者的整条财务记录';
+
     final confirmed = await ModernDeleteDialogManager.showFinancialDelete(
       context,
-      financialInfo: '患者 "${widget.record.patientName ?? _patient?.name ?? '该患者'}" 的财务记录',
+      financialInfo: financialInfo,
     );
 
     if (confirmed == true) {
@@ -324,10 +334,17 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
   /// 删除收费项目
   void _deleteItem(FinancialItem item) async {
+    final financialInfo = [
+      '收费项目"${item.itemName}"',
+      '应收费 ¥${item.itemPrice.toStringAsFixed(2)}',
+      '已收费 ¥${item.totalPrice.toStringAsFixed(2)}',
+      '加工费 ¥${item.processingFee.toStringAsFixed(2)}',
+    ].join('\n');
+
     // 使用公共的删除确认框组件
     final confirmed = await ModernDeleteDialogManager.showFinancialDelete(
       context,
-      financialInfo: '收费项目"${item.itemName}"',
+      financialInfo: financialInfo,
     );
     
     if (confirmed == true) {

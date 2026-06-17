@@ -9,6 +9,7 @@ import '../../../providers/financial_provider.dart';
 import '../../../widgets/modern_date_picker.dart';
 import '../../../widgets/success_toast.dart'
     show DeleteConfirmDialogManager, InlineSuccessMessage, AppToastManager;
+import '../helpers/amount_input_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import 'financial_detail_table_layout.dart';
 
@@ -1135,6 +1136,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           child: TextField(
             controller: _editItemPriceController,
             keyboardType: TextInputType.number,
+            inputFormatters: [amountInputFormatter],
             textAlign: TextAlign.center,
             onTap: () {
               if (_editItemPriceController.text == '0') {
@@ -1166,6 +1168,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           child: TextField(
             controller: _editTotalPriceController,
             keyboardType: TextInputType.number,
+            inputFormatters: [amountInputFormatter],
             textAlign: TextAlign.center,
             onTap: () {
               if (_editTotalPriceController.text == '0') {
@@ -1197,6 +1200,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           child: TextField(
             controller: _editProcessingFeeController,
             keyboardType: TextInputType.number,
+            inputFormatters: [amountInputFormatter],
             textAlign: TextAlign.center,
             onTap: () {
               if (_editProcessingFeeController.text == '0') {

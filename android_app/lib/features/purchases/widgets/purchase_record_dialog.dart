@@ -41,6 +41,13 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
     super.initState();
     _isEditing = widget.record != null;
     _initializeControllers();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _isEditing || _notesController.text.trim().isNotEmpty) {
+        return;
+      }
+      _notesController.text =
+          '${DateFormat('yyyyMMdd').format(DateTime.now())}采购单';
+    });
     _loadMaterials();
     if (_isEditing) {
       _loadPurchaseItems();
@@ -55,6 +62,8 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
       _doctorController.text = widget.record!.doctor ?? '';
     } else {
       _purchaseDateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      _notesController.text =
+          '${DateFormat('yyyyMMdd').format(DateTime.now())}采购单';
       // 设置医生字段的默认值为当前登录用户的医生姓名
       _setDefaultDoctorName();
     }

@@ -1,7 +1,42 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/features/patients/widgets/patient_info_row.dart';
+
+List<String> parsePatientPhoneNumbers(String phoneData) {
+  final trimmed = phoneData.trim();
+  if (trimmed.isEmpty) {
+    return ['未设置'];
+  }
+
+  try {
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      final dynamic decoded = jsonDecode(trimmed);
+      if (decoded is List) {
+        final phones =
+            decoded
+                .map((item) => item.toString().trim())
+                .where((item) => item.isNotEmpty)
+                .toList();
+        return phones.isEmpty ? ['未设置'] : phones;
+      }
+    }
+  } catch (_) {}
+
+  final phones =
+      trimmed
+          .split(RegExp(r'[,，]'))
+          .map((item) => item.trim())
+          .where((item) => item.isNotEmpty)
+          .toList();
+
+  if (phones.isNotEmpty) {
+    return phones;
+  }
+
+  return [trimmed];
+}
 
 /// 患者电话号码显示组件
 /// 职责：显示患者电话号码列表，支持拨号功能
@@ -86,29 +121,34 @@ class PatientPhoneDisplay extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        phoneNumbers[i],
-                        style: TextStyle(
-                          color: AppTheme.textColor,
-                          fontSize: 14,
-                          decoration: phoneNumbers[i] != '未设置'
-                              ? TextDecoration.underline
-                              : TextDecoration.none,
-                        ),
-                      ),
+                      child:
+                          phoneNumbers[i] == '未设置'
+                              ? Text(
+                                phoneNumbers[i],
+                                style: const TextStyle(
+                                  color: AppTheme.textColor,
+                                  fontSize: 14,
+                                ),
+                              )
+                              : InkWell(
+                                onTap: () => onPhoneCall?.call(phoneNumbers[i]),
+                                borderRadius: BorderRadius.circular(4),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 2,
+                                  ),
+                                  child: Text(
+                                    phoneNumbers[i],
+                                    style: const TextStyle(
+                                      color: AppTheme.primaryColor,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ),
                     ),
-                    if (phoneNumbers[i] != '未设置')
-                      IconButton(
-                        icon: const Icon(
-                          Icons.phone,
-                          size: 18,
-                          color: AppTheme.primaryColor,
-                        ),
-                        padding: const EdgeInsets.all(4),
-                        constraints: const BoxConstraints(),
-                        onPressed: () => onPhoneCall?.call(phoneNumbers[i]),
-                        tooltip: '拨打此号码',
-                      ),
                   ],
                 ),
               ),

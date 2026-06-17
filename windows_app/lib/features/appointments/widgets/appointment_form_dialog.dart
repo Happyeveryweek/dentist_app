@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'dart:collection';
 import 'dart:convert';
 import '../../../models/appointment.dart';
-import '../../../models/dental_treatment.dart';
 import '../../../models/patient.dart';
-import '../../../providers/database_provider.dart';
+import '../../../providers/appointment_provider.dart';
 import '../../../providers/patient_provider.dart';
-import '../../../theme/app_theme.dart';
 import './appointment_time_picker.dart' hide CrossPainter;
 import '../../../widgets/modern_date_picker.dart';
 import './teeth_condition_widget.dart';
@@ -17,12 +15,6 @@ import './appointment_date_time_section.dart';
 import './appointment_cost_status_section.dart';
 import './appointment_notes_section.dart';
 import './appointment_patient_search_dialog.dart';
-import './teeth_condition_section.dart';
-import './treatment_section.dart';
-import './patient_selection_section.dart';
-import './date_time_section.dart';
-import './cost_status_section.dart';
-import './notes_section.dart';
 
 class AppointmentFormDialog extends StatefulWidget {
   final DateTime initialDate;
@@ -52,7 +44,6 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
   final TextEditingController _costController = TextEditingController();
   final TextEditingController _patientSearchController =
       TextEditingController();
-  List<Patient> _filteredPatients = [];
   List<Patient> _patients = [];
   bool _isLoadingPatients = true;
 
@@ -64,6 +55,7 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
 
   // 治疗项目
   List<String> _selectedTreatments = [];
+  List<String> _treatmentSuggestions = [];
 
   @override
   void initState() {
@@ -100,6 +92,7 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
     }
 
     _loadPatients();
+    _loadTreatmentSuggestions();
   }
 
   // 解析 treatment_type 字段中的数据
@@ -117,30 +110,22 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
 
       // 提取治疗项目数据
       if (data.containsKey('treatments')) {
-        _selectedTreatments = List<String>.from(data['treatments']);
+        _selectedTreatments = _normalizeTreatmentItems(
+          List<String>.from(data['treatments']),
+        );
         _updateTreatmentTypeController();
       }
     } catch (e) {
       // 如果解析失败，可能是旧数据格式，直接设为治疗项目
       print('解析treatment_type失败: $e');
-      _treatmentTypeController.text = treatmentTypeStr;
-
-      // 如果治疗类型包含多个项目（用顿号分隔），则解析为多选项目
-      if (treatmentTypeStr.contains('、')) {
-        _selectedTreatments = treatmentTypeStr.split('、');
-      } else if (treatmentTypeStr.isNotEmpty) {
-        _selectedTreatments = [treatmentTypeStr];
-      }
+      _selectedTreatments = _extractTreatmentItems(treatmentTypeStr);
+      _updateTreatmentTypeController();
     }
   }
 
   // 更新治疗项目控制器
   void _updateTreatmentTypeController() {
-    if (_selectedTreatments.isEmpty) {
-      _treatmentTypeController.text = '';
-    } else {
-      _treatmentTypeController.text = _selectedTreatments.join('、');
-    }
+    _treatmentTypeController.clear();
   }
 
   // 准备 treatment_type 数据，将牙齿情况和治疗项目合并为一个 JSON 字符串
@@ -150,6 +135,77 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
       'treatments': _selectedTreatments,
     };
     return json.encode(data);
+  }
+
+  List<String> _normalizeTreatmentItems(List<String> items) {
+    return LinkedHashSet<String>.from(
+      items.map((item) => item.trim()).where((item) => item.isNotEmpty),
+    ).toList();
+  }
+
+  List<String> _extractTreatmentItems(String? source) {
+    if (source == null || source.trim().isEmpty) {
+      return [];
+    }
+
+    final trimmed = source.trim();
+
+    try {
+      final decoded = json.decode(trimmed);
+      if (decoded is Map<String, dynamic> && decoded['treatments'] is List) {
+        return _normalizeTreatmentItems(
+          List<String>.from(decoded['treatments']),
+        );
+      }
+    } catch (_) {}
+
+    return _normalizeTreatmentItems(trimmed.split(RegExp(r'[、,，\n]')));
+  }
+
+  Future<void> _loadTreatmentSuggestions() async {
+    try {
+      final appointmentProvider = Provider.of<AppointmentProvider>(
+        context,
+        listen: false,
+      );
+      final appointments = await appointmentProvider.getAllAppointments();
+      final suggestions = LinkedHashSet<String>();
+
+      for (final appointment in appointments) {
+        for (final item in _extractTreatmentItems(appointment.treatment_type)) {
+          suggestions.add(item);
+        }
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _treatmentSuggestions = suggestions.toList();
+      });
+    } catch (e) {
+      print('加载治疗项目下拉数据失败: $e');
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _treatmentSuggestions = [];
+      });
+    }
+  }
+
+  void _ensurePendingTreatmentInputIncluded() {
+    final pending = _treatmentTypeController.text.trim();
+    if (pending.isEmpty) {
+      return;
+    }
+
+    _selectedTreatments = _normalizeTreatmentItems([
+      ..._selectedTreatments,
+      pending,
+    ]);
+    _treatmentTypeController.clear();
   }
 
   @override
@@ -173,7 +229,6 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
 
       setState(() {
         _patients = patients;
-        _filteredPatients = patients;
         _isLoadingPatients = false;
 
         if (widget.appointment != null &&
@@ -192,6 +247,9 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
         }
       });
     } catch (e) {
+      if (!mounted) {
+        return;
+      }
       setState(() => _isLoadingPatients = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('加载患者数据失败: $e'), backgroundColor: Colors.red),
@@ -402,10 +460,11 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
                          TreatmentSectionWidget(
                            selectedTreatments: _selectedTreatments,
                            treatmentTypeController: _treatmentTypeController,
-                           onShowTreatmentSelectionDialog: () => _showTreatmentSelectionDialog(context),
+                           suggestions: _treatmentSuggestions,
                            onTreatmentsChanged: (treatments) {
                              setState(() {
-                               _selectedTreatments = treatments;
+                               _selectedTreatments =
+                                   _normalizeTreatmentItems(treatments);
                              });
                            },
                          ),
@@ -471,6 +530,7 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
                     ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate() && _selectedPatient != null) {
+                          _ensurePendingTreatmentInputIncluded();
                           final appointmentDateTime = DateTime(
                             _date.year,
                             _date.month,
@@ -527,23 +587,6 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
     );
   }
 
-  void _showTreatmentSelectionDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return TreatmentSelectionDialog(
-          selectedTreatments: _selectedTreatments,
-          onConfirm: (selectedItems) {
-            setState(() {
-              _selectedTreatments = selectedItems;
-              _updateTreatmentTypeController();
-            });
-          },
-        );
-      },
-    );
-  }
-
   void _showPatientSearchDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -562,78 +605,4 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
       },
     );
   }
-
-  Widget _buildTeethCondition() {
-    return TeethConditionSection(
-      teethData: _teethData,
-      onTeethDataChanged: (crossIndex, field, value) {
-        setState(() {
-          _teethData[crossIndex][field] = value;
-        });
-      },
-    );
-  }
-
-  Widget _buildTreatmentSection() {
-    return TreatmentSection(
-      treatmentTypeController: _treatmentTypeController,
-      selectedTreatments: _selectedTreatments,
-      onShowTreatmentSelectionDialog: () => _showTreatmentSelectionDialog(context),
-      onAddCustomTreatment: _addCustomTreatment,
-      onUpdateTreatmentTypeController: _updateTreatmentTypeController,
-      onRemoveTreatment: (treatment) {
-        setState(() {
-          _selectedTreatments.remove(treatment);
-        });
-      },
-    );
-  }
-
-  Widget _buildPatientSelectionSection() {
-    return PatientSelectionSection(
-      preselectedPatient: widget.preselectedPatient,
-      selectedPatient: _selectedPatient,
-      isLoadingPatients: _isLoadingPatients,
-      onShowPatientSearchDialog: () => _showPatientSearchDialog(context),
-    );
-  }
-
-  Widget _buildDateTimeSection() {
-    return DateTimeSection(
-      date: _date,
-      time: _time,
-      onSelectDate: () => _selectDate(context),
-      onSelectTime: () => _selectTime(context),
-    );
-  }
-
-  Widget _buildCostAndStatusSection() {
-    return CostStatusSection(
-      costController: _costController,
-      status: _status,
-      onStatusChanged: (value) {
-        setState(() => _status = value);
-      },
-    );
-  }
-
-  Widget _buildNotesSection() {
-    return NotesSection(
-      notesController: _notesController,
-    );
-  }
-
-  void _addCustomTreatment(String treatment) {
-    final value = treatment.trim();
-    if (value.isEmpty) {
-      return;
-    }
-    if (!_selectedTreatments.contains(value)) {
-      setState(() {
-        _selectedTreatments.add(value);
-        _updateTreatmentTypeController();
-      });
-    }
-  }
-
 }

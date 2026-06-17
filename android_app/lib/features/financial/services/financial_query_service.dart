@@ -42,186 +42,233 @@ class FinancialQueryService {
   }
 
   /// 获取当前 MySQL 连接
-  MySqlConnection? get _currentMysqlConnection => _connectionService.currentMysqlConnection;
+  MySqlConnection? get _currentMysqlConnection =>
+      _connectionService.currentMysqlConnection;
+
+  bool _isConnectionError(dynamic error) {
+    return DatabaseOperationWrapper.isConnectionError(error);
+  }
 
   /// 获取财务记录总数
   Future<int> getFinancialRecordsCount() async {
     if (_dbWrapper == null) return 0;
 
-    return await _dbWrapper!.wrapOperation('getFinancialRecordsCount', () async {
-      try {
-        int count = 0;
+    return await _dbWrapper!.wrapOperation(
+      'getFinancialRecordsCount',
+      () async {
+        try {
+          int count = 0;
 
-        if (_dataSourceType == 'sqlite') {
-          final db = _database;
-          if (db == null) return 0;
+          if (_dataSourceType == 'sqlite') {
+            final db = _database;
+            if (db == null) return 0;
 
-          // 构建查询条件
-          List<String> conditions = ['fr.patient_id IS NOT NULL'];
-          List<dynamic> queryArgs = [];
-
-          // 权限过滤：基于医生字段
-          final doctorFilter = _permissionService.getDoctorFilter();
-          if (doctorFilter != null && _permissionService.shouldFilterByDoctor()) {
-            conditions.add('p.doctor = ?');
-            queryArgs.add(doctorFilter);
-          }
-
-          final result = await db.rawQuery('''
-            SELECT COUNT(*) as count
-            FROM financial_records fr
-            LEFT JOIN patients p ON fr.patient_id = p.id
-            WHERE ${conditions.join(' AND ')}
-          ''', queryArgs);
-          if (result.isNotEmpty) {
-            count = result.first['count'] as int;
-          }
-        } else if (_dataSourceType == 'mysql') {
-          final conn = _currentMysqlConnection;
-          if (conn == null) return 0;
-
-          // 构建查询条件
-          List<String> conditions = ['fr.patient_id IS NOT NULL'];
-          List<dynamic> queryArgs = [];
-
-          // 权限过滤：基于医生字段
-          final doctorFilter = _permissionService.getDoctorFilter();
-          if (doctorFilter != null && _permissionService.shouldFilterByDoctor()) {
-            conditions.add('p.doctor = ?');
-            queryArgs.add(doctorFilter);
-          }
-
-          final results = await conn.query('''
-            SELECT COUNT(*) as count
-            FROM financial_records fr
-            LEFT JOIN patients p ON fr.patient_id = p.id
-            WHERE ${conditions.join(' AND ')}
-          ''', queryArgs);
-          if (results.isNotEmpty) {
-            count = int.tryParse(results.first['count'].toString()) ?? 0;
-          }
-        }
-        return count;
-      } catch (e) {
-        print('获取财务记录总数失败: $e');
-        return 0;
-      }
-    });
-  }
-
-  /// 分页获取财务记录
-  Future<List<FinancialRecord>> getPaginatedFinancialRecords(int page, int pageSize) async {
-    if (_dbWrapper == null) return [];
-
-    return await _dbWrapper!.wrapOperation('getPaginatedFinancialRecords', () async {
-      try {
-        print('🔄 从数据库分页获取财务记录，页码: $page, 每页大小: $pageSize');
-
-        // 确保财务记录表存在
-        await _dataSourceService.ensureFinancialRecordsTableExists(
-          dataSourceType: _dataSourceType,
-          sqliteDatabase: _database,
-          mysqlConnection: _currentMysqlConnection,
-        );
-
-        // 检查MySQL连接状态
-        if (_dataSourceType == 'mysql') {
-          final connectionOk = await _connectionService.ensureConnection();
-          if (!connectionOk) {
-            // 尝试自动重连
-            final reconnected = await _connectionService.autoReconnect();
-            if (!reconnected) {
-              throw Exception('数据库连接失败，请检查网络连接');
-            }
-          }
-        }
-
-        List<FinancialRecord> records = [];
-        final offset = (page - 1) * pageSize;
-
-        if (_dataSourceType == 'sqlite') {
-          final db = _database;
-          if (db == null) throw Exception('SQLite数据库未初始化');
-
-          // 构建查询条件
-          List<String> conditions = ['fr.patient_id IS NOT NULL'];
-          List<dynamic> queryArgs = [];
-
-          // 权限过滤：基于医生字段
-          final doctorFilter = _permissionService.getDoctorFilter();
-          if (doctorFilter != null && _permissionService.shouldFilterByDoctor()) {
-            conditions.add('p.doctor = ?');
-            queryArgs.add(doctorFilter);
-          }
-
-          final result = await db.rawQuery('''
-            SELECT fr.*, p.name as patient_name
-            FROM financial_records fr
-            LEFT JOIN patients p ON fr.patient_id = p.id
-            WHERE ${conditions.join(' AND ')}
-            ORDER BY fr.updated_at DESC
-            LIMIT ? OFFSET ?
-          ''', [...queryArgs, pageSize, offset]);
-
-          records = result.map((e) => FinancialRecord.fromMap(e, dataSource: 'sqlite')).toList();
-          print('✅ SQLite分页查询成功，获取到 ${records.length} 条记录');
-
-        } else if (_dataSourceType == 'mysql') {
-          final conn = _currentMysqlConnection;
-          if (conn == null) throw Exception('MySQL连接未初始化');
-
-          try {
             // 构建查询条件
             List<String> conditions = ['fr.patient_id IS NOT NULL'];
             List<dynamic> queryArgs = [];
 
             // 权限过滤：基于医生字段
             final doctorFilter = _permissionService.getDoctorFilter();
-            if (doctorFilter != null && _permissionService.shouldFilterByDoctor()) {
+            if (doctorFilter != null &&
+                _permissionService.shouldFilterByDoctor()) {
+              conditions.add('p.doctor = ?');
+              queryArgs.add(doctorFilter);
+            }
+
+            final result = await db.rawQuery('''
+            SELECT COUNT(*) as count
+            FROM financial_records fr
+            LEFT JOIN patients p ON fr.patient_id = p.id
+            WHERE ${conditions.join(' AND ')}
+          ''', queryArgs);
+            if (result.isNotEmpty) {
+              count = result.first['count'] as int;
+            }
+          } else if (_dataSourceType == 'mysql') {
+            final conn = _currentMysqlConnection;
+            if (conn == null) return 0;
+
+            // 构建查询条件
+            List<String> conditions = ['fr.patient_id IS NOT NULL'];
+            List<dynamic> queryArgs = [];
+
+            // 权限过滤：基于医生字段
+            final doctorFilter = _permissionService.getDoctorFilter();
+            if (doctorFilter != null &&
+                _permissionService.shouldFilterByDoctor()) {
               conditions.add('p.doctor = ?');
               queryArgs.add(doctorFilter);
             }
 
             final results = await conn.query('''
+            SELECT COUNT(*) as count
+            FROM financial_records fr
+            LEFT JOIN patients p ON fr.patient_id = p.id
+            WHERE ${conditions.join(' AND ')}
+          ''', queryArgs);
+            if (results.isNotEmpty) {
+              count = int.tryParse(results.first['count'].toString()) ?? 0;
+            }
+          }
+          return count;
+        } catch (e) {
+          print('获取财务记录总数失败: $e');
+          if (_isConnectionError(e)) rethrow;
+          return 0;
+        }
+      },
+    );
+  }
+
+  /// 分页获取财务记录
+  Future<List<FinancialRecord>> getPaginatedFinancialRecords(
+    int page,
+    int pageSize,
+  ) async {
+    if (_dbWrapper == null) return [];
+
+    return await _dbWrapper!.wrapOperation(
+      'getPaginatedFinancialRecords',
+      () async {
+        try {
+          print('🔄 从数据库分页获取财务记录，页码: $page, 每页大小: $pageSize');
+
+          // 确保财务记录表存在
+          await _dataSourceService.ensureFinancialRecordsTableExists(
+            dataSourceType: _dataSourceType,
+            sqliteDatabase: _database,
+            mysqlConnection: _currentMysqlConnection,
+          );
+
+          // 检查MySQL连接状态
+          if (_dataSourceType == 'mysql') {
+            final connectionOk = await _connectionService.ensureConnection();
+            if (!connectionOk) {
+              // 尝试自动重连
+              final reconnected = await _connectionService.autoReconnect();
+              if (!reconnected) {
+                throw Exception('数据库连接失败，请检查网络连接');
+              }
+            }
+          }
+
+          List<FinancialRecord> records = [];
+          final offset = (page - 1) * pageSize;
+
+          if (_dataSourceType == 'sqlite') {
+            final db = _database;
+            if (db == null) throw Exception('SQLite数据库未初始化');
+
+            // 构建查询条件
+            List<String> conditions = ['fr.patient_id IS NOT NULL'];
+            List<dynamic> queryArgs = [];
+
+            // 权限过滤：基于医生字段
+            final doctorFilter = _permissionService.getDoctorFilter();
+            if (doctorFilter != null &&
+                _permissionService.shouldFilterByDoctor()) {
+              conditions.add('p.doctor = ?');
+              queryArgs.add(doctorFilter);
+            }
+
+            final result = await db.rawQuery(
+              '''
+            SELECT fr.*, p.name as patient_name
+            FROM financial_records fr
+            LEFT JOIN patients p ON fr.patient_id = p.id
+            WHERE ${conditions.join(' AND ')}
+            ORDER BY fr.updated_at DESC
+            LIMIT ? OFFSET ?
+          ''',
+              [...queryArgs, pageSize, offset],
+            );
+
+            records =
+                result
+                    .map(
+                      (e) => FinancialRecord.fromMap(e, dataSource: 'sqlite'),
+                    )
+                    .toList();
+            print('✅ SQLite分页查询成功，获取到 ${records.length} 条记录');
+          } else if (_dataSourceType == 'mysql') {
+            final conn = _currentMysqlConnection;
+            if (conn == null) throw Exception('MySQL连接未初始化');
+
+            try {
+              // 构建查询条件
+              List<String> conditions = ['fr.patient_id IS NOT NULL'];
+              List<dynamic> queryArgs = [];
+
+              // 权限过滤：基于医生字段
+              final doctorFilter = _permissionService.getDoctorFilter();
+              if (doctorFilter != null &&
+                  _permissionService.shouldFilterByDoctor()) {
+                conditions.add('p.doctor = ?');
+                queryArgs.add(doctorFilter);
+              }
+
+              final results = await conn.query(
+                '''
               SELECT fr.*, COALESCE(p.name, '未知患者') as patient_name
               FROM financial_records fr
               LEFT JOIN patients p ON fr.patient_id = p.id
               WHERE ${conditions.join(' AND ')}
               ORDER BY fr.updated_at DESC
               LIMIT ? OFFSET ?
-            ''', [...queryArgs, pageSize, offset]);
+            ''',
+                [...queryArgs, pageSize, offset],
+              );
 
-            records = results.map((row) => FinancialRecord.fromMap({
-              'id': int.tryParse(row['id'].toString()) ?? 0,
-              'patient_id': int.tryParse(row['patient_id'].toString()) ?? 0,
-              'total_quantity': int.tryParse(row['total_quantity'].toString()) ?? 0,
-              'notes': row['notes']?.toString(),
-              'created_at': FinancialPermissionService.convertBlobToString(row['created_at']) ?? DateTimeFormatter.nowDbString(),
-              'updated_at': FinancialPermissionService.convertBlobToString(row['updated_at']) ?? DateTimeFormatter.nowDbString(),
-              'patient_name': FinancialPermissionService.convertBlobToString(row['patient_name']),
-            }, dataSource: 'mysql')).toList();
+              records =
+                  results
+                      .map(
+                        (row) => FinancialRecord.fromMap({
+                          'id': int.tryParse(row['id'].toString()) ?? 0,
+                          'patient_id':
+                              int.tryParse(row['patient_id'].toString()) ?? 0,
+                          'total_quantity':
+                              int.tryParse(row['total_quantity'].toString()) ??
+                              0,
+                          'notes': row['notes']?.toString(),
+                          'created_at':
+                              FinancialPermissionService.convertBlobToString(
+                                row['created_at'],
+                              ) ??
+                              DateTimeFormatter.nowDbString(),
+                          'updated_at':
+                              FinancialPermissionService.convertBlobToString(
+                                row['updated_at'],
+                              ) ??
+                              DateTimeFormatter.nowDbString(),
+                          'patient_name':
+                              FinancialPermissionService.convertBlobToString(
+                                row['patient_name'],
+                              ),
+                        }, dataSource: 'mysql'),
+                      )
+                      .toList();
 
-            print('✅ MySQL分页查询成功，获取到 ${records.length} 条记录');
-
-          } catch (e) {
-            // 检查是否是连接错误
-            if (e.toString().contains('SocketException') ||
-                e.toString().contains('Cannot write to socket') ||
-                e.toString().contains('Connection reset')) {
-              print('检测到连接错误，尝试重连: $e');
-              await _connectionService.autoReconnect();
-              return await getPaginatedFinancialRecords(page, pageSize);
+              print('✅ MySQL分页查询成功，获取到 ${records.length} 条记录');
+            } catch (e) {
+              // 检查是否是连接错误
+              if (e.toString().contains('SocketException') ||
+                  e.toString().contains('Cannot write to socket') ||
+                  e.toString().contains('Connection reset')) {
+                print('检测到连接错误，尝试重连: $e');
+                await _connectionService.autoReconnect();
+                return await getPaginatedFinancialRecords(page, pageSize);
+              }
+              rethrow;
             }
-            rethrow;
           }
-        }
 
-        return records;
-      } catch (e) {
-        print('❌ 分页查询失败: $e');
-        rethrow;
-      }
-    });
+          return records;
+        } catch (e) {
+          print('❌ 分页查询失败: $e');
+          rethrow;
+        }
+      },
+    );
   }
 
   /// 搜索财务记录
@@ -238,7 +285,8 @@ class FinancialQueryService {
         if (_dataSourceType == 'sqlite') {
           final db = _database;
           if (db == null) throw Exception('SQLite数据库未初始化');
-          final result = await db.rawQuery('''
+          final result = await db.rawQuery(
+            '''
             SELECT
               fr.id, fr.patient_id, fr.total_quantity, fr.notes,
               fr.created_at, fr.updated_at,
@@ -252,13 +300,17 @@ class FinancialQueryService {
                OR LOWER(REPLACE(COALESCE(p.name_pinyin, ''), ' ', '')) LIKE ?
                OR LOWER(COALESCE(p.name_initials, '')) LIKE ?
             ORDER BY fr.updated_at DESC
-          ''', [lowerPattern, lowerPattern, noSpacePattern, lowerPattern]);
-          return result.map((e) => FinancialRecord.fromMap(e, dataSource: 'sqlite')).toList();
-
+          ''',
+            [lowerPattern, lowerPattern, noSpacePattern, lowerPattern],
+          );
+          return result
+              .map((e) => FinancialRecord.fromMap(e, dataSource: 'sqlite'))
+              .toList();
         } else if (_dataSourceType == 'mysql') {
           final conn = _currentMysqlConnection;
           if (conn == null) throw Exception('MySQL连接未初始化');
-          final results = await conn.query('''
+          final results = await conn.query(
+            '''
             SELECT
               fr.id, fr.patient_id, fr.total_quantity, fr.notes,
               fr.created_at, fr.updated_at,
@@ -272,23 +324,48 @@ class FinancialQueryService {
                OR LOWER(REPLACE(COALESCE(p.name_pinyin, ''), ' ', '')) LIKE ?
                OR LOWER(COALESCE(p.name_initials, '')) LIKE ?
             ORDER BY fr.updated_at DESC
-          ''', [lowerPattern, lowerPattern, noSpacePattern, lowerPattern]);
+          ''',
+            [lowerPattern, lowerPattern, noSpacePattern, lowerPattern],
+          );
 
-          return results.map((row) => FinancialRecord.fromMap({
-            'id': int.tryParse(row['id'].toString()) ?? 0,
-            'patient_id': int.tryParse(row['patient_id'].toString()) ?? 0,
-            'total_quantity': int.tryParse(row['total_quantity'].toString()) ?? 0,
-            'notes': row['notes']?.toString(),
-            'created_at': FinancialPermissionService.convertBlobToString(row['created_at']) ?? DateTimeFormatter.nowDbString(),
-            'updated_at': FinancialPermissionService.convertBlobToString(row['updated_at']) ?? DateTimeFormatter.nowDbString(),
-            'patient_name': FinancialPermissionService.convertBlobToString(row['patient_name']),
-            'patient_name_pinyin': FinancialPermissionService.convertBlobToString(row['patient_name_pinyin']),
-            'patient_name_initials': FinancialPermissionService.convertBlobToString(row['patient_name_initials']),
-          }, dataSource: 'mysql')).toList();
+          return results
+              .map(
+                (row) => FinancialRecord.fromMap({
+                  'id': int.tryParse(row['id'].toString()) ?? 0,
+                  'patient_id': int.tryParse(row['patient_id'].toString()) ?? 0,
+                  'total_quantity':
+                      int.tryParse(row['total_quantity'].toString()) ?? 0,
+                  'notes': row['notes']?.toString(),
+                  'created_at':
+                      FinancialPermissionService.convertBlobToString(
+                        row['created_at'],
+                      ) ??
+                      DateTimeFormatter.nowDbString(),
+                  'updated_at':
+                      FinancialPermissionService.convertBlobToString(
+                        row['updated_at'],
+                      ) ??
+                      DateTimeFormatter.nowDbString(),
+                  'patient_name':
+                      FinancialPermissionService.convertBlobToString(
+                        row['patient_name'],
+                      ),
+                  'patient_name_pinyin':
+                      FinancialPermissionService.convertBlobToString(
+                        row['patient_name_pinyin'],
+                      ),
+                  'patient_name_initials':
+                      FinancialPermissionService.convertBlobToString(
+                        row['patient_name_initials'],
+                      ),
+                }, dataSource: 'mysql'),
+              )
+              .toList();
         }
         return [];
       } catch (e) {
         print('❌ 搜索财务记录失败: $e');
+        if (_isConnectionError(e)) rethrow;
         return [];
       }
     });
@@ -303,34 +380,43 @@ class FinancialQueryService {
   }) async {
     if (_dbWrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('getPaginatedFinancialRecordsWithDateFilter', () async {
-      try {
-        // 构建日期条件
-        String dateCondition = '';
-        List<dynamic> dateArgs = [];
-        if (startDate != null && endDate != null) {
-          final s = '${startDate.year}-${startDate.month.toString().padLeft(2,'0')}-${startDate.day.toString().padLeft(2,'0')}';
-          final e = '${endDate.year}-${endDate.month.toString().padLeft(2,'0')}-${endDate.day.toString().padLeft(2,'0')}';
-          dateCondition = " WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?";
-          dateArgs = [s, e];
-        }
+    return await _dbWrapper!.wrapOperation(
+      'getPaginatedFinancialRecordsWithDateFilter',
+      () async {
+        try {
+          // 构建日期条件
+          String dateCondition = '';
+          List<dynamic> dateArgs = [];
+          if (startDate != null && endDate != null) {
+            final s =
+                '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
+            final e =
+                '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
+            dateCondition =
+                " AND DATE(fr.created_at) >= ? AND DATE(fr.created_at) <= ?";
+            dateArgs = [s, e];
+          }
 
-        final offset = (page - 1) * pageSize;
+          final offset = (page - 1) * pageSize;
 
-        if (_dataSourceType == 'sqlite') {
-          final db = _database;
-          if (db == null) throw Exception('SQLite数据库未初始化');
-          final result = await db.rawQuery(
-            'SELECT fr.*, COALESCE(p.name, \'未知患者\') as patient_name, p.name_pinyin as patient_name_pinyin, p.name_initials as patient_name_initials '
-            'FROM financial_records fr LEFT JOIN patients p ON fr.patient_id = p.id '
-            'WHERE fr.patient_id IS NOT NULL$dateCondition '
-            'ORDER BY fr.updated_at DESC LIMIT ? OFFSET ?', [...dateArgs, pageSize, offset]);
-          return result.map((e) => FinancialRecord.fromMap(e, dataSource: 'sqlite')).toList();
-
-        } else if (_dataSourceType == 'mysql') {
-          final conn = _currentMysqlConnection;
-          if (conn == null) throw Exception('MySQL连接未初始化');
-          final results = await conn.query('''
+          if (_dataSourceType == 'sqlite') {
+            final db = _database;
+            if (db == null) throw Exception('SQLite数据库未初始化');
+            final result = await db.rawQuery(
+              'SELECT fr.*, COALESCE(p.name, \'未知患者\') as patient_name, p.name_pinyin as patient_name_pinyin, p.name_initials as patient_name_initials '
+              'FROM financial_records fr LEFT JOIN patients p ON fr.patient_id = p.id '
+              'WHERE fr.patient_id IS NOT NULL$dateCondition '
+              'ORDER BY fr.updated_at DESC LIMIT ? OFFSET ?',
+              [...dateArgs, pageSize, offset],
+            );
+            return result
+                .map((e) => FinancialRecord.fromMap(e, dataSource: 'sqlite'))
+                .toList();
+          } else if (_dataSourceType == 'mysql') {
+            final conn = _currentMysqlConnection;
+            if (conn == null) throw Exception('MySQL连接未初始化');
+            final results = await conn.query(
+              '''
             SELECT fr.id, fr.patient_id, fr.total_quantity, fr.notes,
                    fr.created_at, fr.updated_at,
                    COALESCE(p.name, '未知患者') as patient_name,
@@ -341,25 +427,51 @@ class FinancialQueryService {
             WHERE fr.patient_id IS NOT NULL$dateCondition
             ORDER BY fr.updated_at DESC
             LIMIT ? OFFSET ?
-          ''', [...dateArgs, pageSize, offset]);
-          return results.map((row) => FinancialRecord.fromMap({
-            'id': int.tryParse(row['id'].toString()) ?? 0,
-            'patient_id': int.tryParse(row['patient_id'].toString()) ?? 0,
-            'total_quantity': int.tryParse(row['total_quantity'].toString()) ?? 0,
-            'notes': row['notes']?.toString(),
-            'created_at': FinancialPermissionService.convertBlobToString(row['created_at']) ?? DateTimeFormatter.nowDbString(),
-            'updated_at': FinancialPermissionService.convertBlobToString(row['updated_at']) ?? DateTimeFormatter.nowDbString(),
-            'patient_name': FinancialPermissionService.convertBlobToString(row['patient_name']),
-            'patient_name_pinyin': FinancialPermissionService.convertBlobToString(row['patient_name_pinyin']),
-            'patient_name_initials': FinancialPermissionService.convertBlobToString(row['patient_name_initials']),
-          }, dataSource: 'mysql')).toList();
+          ''',
+              [...dateArgs, pageSize, offset],
+            );
+            return results
+                .map(
+                  (row) => FinancialRecord.fromMap({
+                    'id': int.tryParse(row['id'].toString()) ?? 0,
+                    'patient_id':
+                        int.tryParse(row['patient_id'].toString()) ?? 0,
+                    'total_quantity':
+                        int.tryParse(row['total_quantity'].toString()) ?? 0,
+                    'notes': row['notes']?.toString(),
+                    'created_at':
+                        FinancialPermissionService.convertBlobToString(
+                          row['created_at'],
+                        ) ??
+                        DateTimeFormatter.nowDbString(),
+                    'updated_at':
+                        FinancialPermissionService.convertBlobToString(
+                          row['updated_at'],
+                        ) ??
+                        DateTimeFormatter.nowDbString(),
+                    'patient_name':
+                        FinancialPermissionService.convertBlobToString(
+                          row['patient_name'],
+                        ),
+                    'patient_name_pinyin':
+                        FinancialPermissionService.convertBlobToString(
+                          row['patient_name_pinyin'],
+                        ),
+                    'patient_name_initials':
+                        FinancialPermissionService.convertBlobToString(
+                          row['patient_name_initials'],
+                        ),
+                  }, dataSource: 'mysql'),
+                )
+                .toList();
+          }
+          return [];
+        } catch (e) {
+          print('❌ 带日期筛选分页查询失败: $e');
+          rethrow;
         }
-        return [];
-      } catch (e) {
-        print('❌ 带日期筛选分页查询失败: $e');
-        rethrow;
-      }
-    });
+      },
+    );
   }
 
   /// 获取财务记录总数（带日期筛选）
@@ -372,9 +484,12 @@ class FinancialQueryService {
       String dateCondition = '';
       List<dynamic> dateArgs = [];
       if (startDate != null && endDate != null) {
-        final s = '${startDate.year}-${startDate.month.toString().padLeft(2,'0')}-${startDate.day.toString().padLeft(2,'0')}';
-        final e = '${endDate.year}-${endDate.month.toString().padLeft(2,'0')}-${endDate.day.toString().padLeft(2,'0')}';
-        dateCondition = " WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?";
+        final s =
+            '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
+        final e =
+            '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
+        dateCondition =
+            " WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?";
         dateArgs = [s, e];
       }
 
@@ -382,18 +497,23 @@ class FinancialQueryService {
         final db = _database;
         if (db == null) throw Exception('SQLite数据库未初始化');
         final result = await db.rawQuery(
-          'SELECT COUNT(*) as count FROM financial_records$dateCondition', dateArgs);
+          'SELECT COUNT(*) as count FROM financial_records$dateCondition',
+          dateArgs,
+        );
         return (result.first['count'] as int?) ?? 0;
       } else if (_dataSourceType == 'mysql') {
         final conn = _currentMysqlConnection;
         if (conn == null) throw Exception('MySQL连接未初始化');
         final results = await conn.query(
-          'SELECT COUNT(*) as count FROM financial_records$dateCondition', dateArgs);
+          'SELECT COUNT(*) as count FROM financial_records$dateCondition',
+          dateArgs,
+        );
         return int.tryParse(results.first['count'].toString()) ?? 0;
       }
       return 0;
     } catch (e) {
       print('❌ 带日期筛选计数失败: $e');
+      if (_isConnectionError(e)) rethrow;
       return 0;
     }
   }
@@ -413,74 +533,78 @@ class FinancialQueryService {
   }) async {
     if (_dbWrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('getAllFinancialItemsWithDetailsFiltered', () async {
-      try {
-        // 构建查询条件
-        List<String> conditions = [];
-        List<dynamic> whereArgs = [];
+    return await _dbWrapper!.wrapOperation(
+      'getAllFinancialItemsWithDetailsFiltered',
+      () async {
+        try {
+          // 构建查询条件
+          List<String> conditions = [];
+          List<dynamic> whereArgs = [];
 
-        // 权限过滤：基于医生字段
-        final doctorFilter = _permissionService.getDoctorFilter();
-        if (doctorFilter != null && _permissionService.shouldFilterByDoctor()) {
-          conditions.add('p.doctor = ?');
-          whereArgs.add(doctorFilter);
-        }
+          // 权限过滤：基于医生字段
+          final doctorFilter = _permissionService.getDoctorFilter();
+          if (doctorFilter != null &&
+              _permissionService.shouldFilterByDoctor()) {
+            conditions.add('p.doctor = ?');
+            whereArgs.add(doctorFilter);
+          }
 
-        // 日期范围过滤
-        if (startDate != null) {
-          conditions.add('fi.charge_date >= ?');
-          whereArgs.add(DateTimeFormatter.toDbString(startDate));
-        }
-        if (endDate != null) {
-          conditions.add('fi.charge_date <= ?');
-          whereArgs.add(DateTimeFormatter.toDbString(endDate));
-        }
+          // 日期范围过滤
+          if (startDate != null) {
+            conditions.add('fi.charge_date >= ?');
+            whereArgs.add(DateTimeFormatter.toDbString(startDate));
+          }
+          if (endDate != null) {
+            conditions.add('fi.charge_date <= ?');
+            whereArgs.add(DateTimeFormatter.toDbString(endDate));
+          }
 
-        // 患者姓名过滤
-        if (patientName != null && patientName.isNotEmpty) {
-          conditions.add('p.name LIKE ?');
-          whereArgs.add('%$patientName%');
-        }
+          // 患者姓名过滤
+          if (patientName != null && patientName.isNotEmpty) {
+            conditions.add('p.name LIKE ?');
+            whereArgs.add('%$patientName%');
+          }
 
-        // 项目名称过滤
-        if (itemName != null && itemName.isNotEmpty) {
-          conditions.add('fi.item_name LIKE ?');
-          whereArgs.add('%$itemName%');
-        }
+          // 项目名称过滤
+          if (itemName != null && itemName.isNotEmpty) {
+            conditions.add('fi.item_name LIKE ?');
+            whereArgs.add('%$itemName%');
+          }
 
-        // 价格范围过滤
-        if (priceMin != null) {
-          conditions.add('fi.item_price >= ?');
-          whereArgs.add(priceMin);
-        }
-        if (priceMax != null) {
-          conditions.add('fi.item_price <= ?');
-          whereArgs.add(priceMax);
-        }
+          // 价格范围过滤
+          if (priceMin != null) {
+            conditions.add('fi.item_price >= ?');
+            whereArgs.add(priceMin);
+          }
+          if (priceMax != null) {
+            conditions.add('fi.item_price <= ?');
+            whereArgs.add(priceMax);
+          }
 
-        // 加工费范围过滤
-        if (processingMin != null) {
-          conditions.add('fi.processing_fee >= ?');
-          whereArgs.add(processingMin);
-        }
-        if (processingMax != null) {
-          conditions.add('fi.processing_fee <= ?');
-          whereArgs.add(processingMax);
-        }
+          // 加工费范围过滤
+          if (processingMin != null) {
+            conditions.add('fi.processing_fee >= ?');
+            whereArgs.add(processingMin);
+          }
+          if (processingMax != null) {
+            conditions.add('fi.processing_fee <= ?');
+            whereArgs.add(processingMax);
+          }
 
-        // 构建WHERE子句
-        String whereClause = conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
+          // 构建WHERE子句
+          String whereClause =
+              conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
 
-        // 构建ORDER BY子句
-        String orderBy = 'fi.$sortBy $sortOrder';
+          // 构建ORDER BY子句
+          String orderBy = 'fi.$sortBy $sortOrder';
 
-        List<Map<String, dynamic>> results = [];
+          List<Map<String, dynamic>> results = [];
 
-        if (_dataSourceType == 'sqlite') {
-          final db = _database;
-          if (db == null) throw Exception('SQLite数据库未初始化');
+          if (_dataSourceType == 'sqlite') {
+            final db = _database;
+            if (db == null) throw Exception('SQLite数据库未初始化');
 
-          final query = '''
+            final query = '''
             SELECT
               fi.*,
               fr.patient_id,
@@ -493,31 +617,35 @@ class FinancialQueryService {
             ORDER BY $orderBy
           ''';
 
-          final queryResults = await db.rawQuery(query, whereArgs);
+            final queryResults = await db.rawQuery(query, whereArgs);
 
-          results = queryResults.map((row) => {
-            'item': FinancialItem.fromMap({
-              'id': row['id'],
-              'financial_record_id': row['financial_record_id'],
-              'item_name': row['item_name'],
-              'item_price': row['item_price'],
-              'processing_fee': row['processing_fee'],
-              'quantity': row['quantity'],
-              'total_price': row['total_price'],
-              'charge_date': row['charge_date'],
-              'created_at': row['created_at'],
-              'updated_at': row['updated_at'],
-            }),
-            'patient_id': row['patient_id'],
-            'patient_name': row['patient_name'],
-            'patient_doctor': row['patient_doctor'],
-          }).toList();
+            results =
+                queryResults
+                    .map(
+                      (row) => {
+                        'item': FinancialItem.fromMap({
+                          'id': row['id'],
+                          'financial_record_id': row['financial_record_id'],
+                          'item_name': row['item_name'],
+                          'item_price': row['item_price'],
+                          'processing_fee': row['processing_fee'],
+                          'quantity': row['quantity'],
+                          'total_price': row['total_price'],
+                          'charge_date': row['charge_date'],
+                          'created_at': row['created_at'],
+                          'updated_at': row['updated_at'],
+                        }),
+                        'patient_id': row['patient_id'],
+                        'patient_name': row['patient_name'],
+                        'patient_doctor': row['patient_doctor'],
+                      },
+                    )
+                    .toList();
+          } else if (_dataSourceType == 'mysql') {
+            final conn = _currentMysqlConnection;
+            if (conn == null) throw Exception('MySQL连接未初始化');
 
-        } else if (_dataSourceType == 'mysql') {
-          final conn = _currentMysqlConnection;
-          if (conn == null) throw Exception('MySQL连接未初始化');
-
-          final query = '''
+            final query = '''
             SELECT
               fi.*,
               fr.patient_id,
@@ -530,32 +658,64 @@ class FinancialQueryService {
             ORDER BY $orderBy
           ''';
 
-          final queryResults = await conn.query(query, whereArgs);
+            final queryResults = await conn.query(query, whereArgs);
 
-          results = queryResults.map((row) => {
-            'item': FinancialItem.fromMap({
-              'id': row['id'],
-              'financial_record_id': row['financial_record_id'],
-              'item_name': FinancialPermissionService.convertBlobToString(row['item_name']) ?? '',
-              'item_price': (row['item_price'] as num?)?.toDouble() ?? 0.0,
-              'processing_fee': (row['processing_fee'] as num?)?.toDouble() ?? 0.0,
-              'quantity': row['quantity'] ?? 1,
-              'total_price': (row['total_price'] as num?)?.toDouble() ?? 0.0,
-              'charge_date': FinancialPermissionService.convertBlobToString(row['charge_date']) ?? DateTimeFormatter.nowDbString(),
-              'created_at': FinancialPermissionService.convertBlobToString(row['created_at']) ?? DateTimeFormatter.nowDbString(),
-              'updated_at': FinancialPermissionService.convertBlobToString(row['updated_at']) ?? DateTimeFormatter.nowDbString(),
-            }),
-            'patient_id': row['patient_id'],
-            'patient_name': FinancialPermissionService.convertBlobToString(row['patient_name']),
-            'patient_doctor': FinancialPermissionService.convertBlobToString(row['patient_doctor']),
-          }).toList();
+            results =
+                queryResults
+                    .map(
+                      (row) => {
+                        'item': FinancialItem.fromMap({
+                          'id': row['id'],
+                          'financial_record_id': row['financial_record_id'],
+                          'item_name':
+                              FinancialPermissionService.convertBlobToString(
+                                row['item_name'],
+                              ) ??
+                              '',
+                          'item_price':
+                              (row['item_price'] as num?)?.toDouble() ?? 0.0,
+                          'processing_fee':
+                              (row['processing_fee'] as num?)?.toDouble() ??
+                              0.0,
+                          'quantity': row['quantity'] ?? 1,
+                          'total_price':
+                              (row['total_price'] as num?)?.toDouble() ?? 0.0,
+                          'charge_date':
+                              FinancialPermissionService.convertBlobToString(
+                                row['charge_date'],
+                              ) ??
+                              DateTimeFormatter.nowDbString(),
+                          'created_at':
+                              FinancialPermissionService.convertBlobToString(
+                                row['created_at'],
+                              ) ??
+                              DateTimeFormatter.nowDbString(),
+                          'updated_at':
+                              FinancialPermissionService.convertBlobToString(
+                                row['updated_at'],
+                              ) ??
+                              DateTimeFormatter.nowDbString(),
+                        }),
+                        'patient_id': row['patient_id'],
+                        'patient_name':
+                            FinancialPermissionService.convertBlobToString(
+                              row['patient_name'],
+                            ),
+                        'patient_doctor':
+                            FinancialPermissionService.convertBlobToString(
+                              row['patient_doctor'],
+                            ),
+                      },
+                    )
+                    .toList();
+          }
+
+          return results;
+        } catch (e) {
+          print('❌ 获取财务项目明细失败: $e');
+          rethrow;
         }
-
-        return results;
-      } catch (e) {
-        print('❌ 获取财务项目明细失败: $e');
-        rethrow;
-      }
-    });
+      },
+    );
   }
 }

@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
-import 'package:dentist_app/providers/database_provider.dart';
+import 'dart:collection';
 import 'package:dentist_app/providers/appointments_provider.dart';
 import 'package:dentist_app/providers/patient_provider.dart';
 import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/widgets/modern_date_picker.dart';
-import 'package:dentist_app/features/patients/widgets/patient_form_sheet.dart';
 import 'package:dentist_app/features/patients/widgets/patient_selection_dialog.dart';
-import 'package:dentist_app/features/appointments/widgets/time_picker_dialog.dart' as custom;
+import 'package:dentist_app/features/appointments/widgets/time_picker_dialog.dart'
+    as custom;
 import 'package:dentist_app/features/appointments/widgets/teeth_condition_input.dart';
 import 'package:dentist_app/features/appointments/widgets/treatment_items_input.dart';
 import 'package:dentist_app/widgets/date_time_card.dart';
-import 'package:dentist_app/widgets/stateful_text_field.dart';
 
 class AppointmentFormSheet extends StatefulWidget {
   final Appointment? appointment;
@@ -41,7 +39,6 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
   late TimeOfDay _selectedTime;
   int? _selectedPatientId;
   String _status = 'scheduled';
-  String _treatmentType = '';
   String _notes = '';
   double _cost = 0.0;
 
@@ -53,20 +50,21 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
 
   // 治疗项目
   List<String> _selectedTreatments = [];
+  List<String> _treatmentSuggestions = [];
 
   // 患者相关
-  List<Patient> _patients = [];
   bool _isLoading = true;
   String _selectedPatientName = '';
   final TextEditingController _patientNameController = TextEditingController();
-  final TextEditingController _treatmentTypeController = TextEditingController();
+  final TextEditingController _treatmentTypeController =
+      TextEditingController();
   final TextEditingController _costController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
 
   // 状态映射
   final Map<String, String> _statusMapping = {
     '已预约': 'scheduled',
-    '已完成': 'completed', 
+    '已完成': 'completed',
     '已取消': 'cancelled',
     'scheduled': 'scheduled',
     'completed': 'completed',
@@ -83,6 +81,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
   @override
   void initState() {
     super.initState();
+    _loadTreatmentSuggestions();
     // 不再自动加载患者数据，只在需要时加载
 
     // 如果是编辑模式，初始化表单数据
@@ -93,26 +92,26 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
       _selectedPatientId = appointment.patientId;
       // 将数据库中的状态值映射到表单值
       _status = _statusMapping[appointment.status] ?? 'scheduled';
-      _treatmentType = appointment.treatmentType ?? '';
       _notes = appointment.notes ?? '';
       _cost = appointment.cost;
-      
+
       // 解析 treatment_type 字段
-      if (appointment.treatmentType != null && appointment.treatmentType!.isNotEmpty) {
+      if (appointment.treatmentType != null &&
+          appointment.treatmentType!.isNotEmpty) {
         _parseTreatmentTypeData(appointment.treatmentType!);
       }
-      
+
       // 设置控制器值
       _costController.text = _cost.toString();
       _notesController.text = _notes;
-      
-      // 编辑模式下需要立即加载患者数据来显示当前选中的患者
-      _loadPatients();
+
+      // 编辑模式下只加载当前患者姓名，避免打开表单时全量拉取患者列表
+      _loadSelectedPatientName();
     } else {
       // 新建预约模式，不预加载患者数据
       // 设置加载状态为false，因为不需要加载患者数据
       _isLoading = false;
-      
+
       // 如果有初始日期参数，使用它
       if (widget.initialDate != null) {
         _selectedDate = widget.initialDate!;
@@ -131,51 +130,60 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
     }
   }
 
-  // 根据患者ID设置患者姓名
-  void _setPatientNameFromId(int? patientId) {
-    if (patientId != null) {
-      final patient = _patients.firstWhere(
-        (p) => p.id == patientId,
-        orElse: () => Patient(
-          id: 0, 
-          name: '', 
-          age: 0,
-          gender: '男',
-          phone: '', 
-          createdAt: DateTime.now(), 
-          updatedAt: DateTime.now()
-        ),
+  Future<void> _loadTreatmentSuggestions() async {
+    try {
+      final appointmentsProvider = Provider.of<AppointmentsProvider>(
+        context,
+        listen: false,
       );
-      if (patient.id != 0) {
-        _selectedPatientName = patient.name;
-        _patientNameController.text = patient.name;
+      final appointments = await appointmentsProvider.getAllAppointments();
+      final suggestions = LinkedHashSet<String>();
+
+      for (final appointment in appointments) {
+        for (final item in _extractTreatmentItems(appointment.treatmentType)) {
+          suggestions.add(item);
+        }
       }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _treatmentSuggestions = suggestions.toList();
+      });
+    } catch (e) {
+      print('加载治疗项目下拉数据失败: $e');
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _treatmentSuggestions = [];
+      });
     }
   }
 
-  Future<void> _loadPatients() async {
+  Future<void> _loadSelectedPatientName() async {
+    if (_selectedPatientId == null) return;
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      final patients = await Provider.of<PatientProvider>(context, listen: false).getAllPatients();
-
-      // 按 updated_at 降序排序
-      patients.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-
+      final patient = await Provider.of<PatientProvider>(
+        context,
+        listen: false,
+      ).getPatientById(_selectedPatientId!);
       setState(() {
-        _patients = patients;
+        if (patient != null) {
+          _selectedPatientName = patient.name;
+          _patientNameController.text = patient.name;
+        }
         _isLoading = false;
       });
-      
-      // 加载患者数据后，如果是编辑模式，设置患者姓名
-      if (widget.appointment != null && _selectedPatientId != null) {
-        _setPatientNameFromId(_selectedPatientId);
-      }
     } catch (e) {
-      print('加载患者数据错误: $e');
+      print('加载当前患者数据错误: $e');
       setState(() {
         _isLoading = false;
       });
@@ -192,35 +200,65 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
       if (data.containsKey('teethData')) {
         var teethJsonData = data['teethData'];
         _teethData = List<Map<String, String>>.from(
-            teethJsonData.map((item) => Map<String, String>.from(item)));
+          teethJsonData.map((item) => Map<String, String>.from(item)),
+        );
       }
 
       // 提取治疗项目数据
       if (data.containsKey('treatments')) {
-        _selectedTreatments = List<String>.from(data['treatments']);
+        _selectedTreatments = _normalizeTreatmentItems(
+          List<String>.from(data['treatments']),
+        );
         _updateTreatmentTypeController();
       }
     } catch (e) {
       // 如果解析失败，可能是旧数据格式，直接设为治疗项目
       print('解析treatment_type失败: $e');
-      _treatmentTypeController.text = treatmentTypeStr;
-
-      // 如果治疗类型包含多个项目（用顿号分隔），则解析为多选项目
-      if (treatmentTypeStr.contains('、')) {
-        _selectedTreatments = treatmentTypeStr.split('、');
-      } else if (treatmentTypeStr.isNotEmpty) {
-        _selectedTreatments = [treatmentTypeStr];
-      }
+      _selectedTreatments = _extractTreatmentItems(treatmentTypeStr);
     }
   }
 
   // 更新治疗项目控制器
   void _updateTreatmentTypeController() {
-    if (_selectedTreatments.isEmpty) {
-      _treatmentTypeController.text = '';
-    } else {
-      _treatmentTypeController.text = _selectedTreatments.join('、');
+    _treatmentTypeController.clear();
+  }
+
+  List<String> _normalizeTreatmentItems(List<String> items) {
+    return LinkedHashSet<String>.from(
+      items.map((item) => item.trim()).where((item) => item.isNotEmpty),
+    ).toList();
+  }
+
+  List<String> _extractTreatmentItems(String? source) {
+    if (source == null || source.trim().isEmpty) {
+      return [];
     }
+
+    final trimmed = source.trim();
+
+    try {
+      final decoded = json.decode(trimmed);
+      if (decoded is Map<String, dynamic> && decoded['treatments'] is List) {
+        return _normalizeTreatmentItems(
+          List<String>.from(decoded['treatments']),
+        );
+      }
+    } catch (_) {}
+
+    return _normalizeTreatmentItems(trimmed.split(RegExp(r'[、,，\n]')));
+  }
+
+  void _ensurePendingTreatmentInputIncluded() {
+    final pending = _treatmentTypeController.text.trim();
+    if (pending.isEmpty) {
+      return;
+    }
+
+    _selectedTreatments = _normalizeTreatmentItems([
+      ..._selectedTreatments,
+      pending,
+    ]);
+    _treatmentTypeController.clear();
   }
 
   // 准备 treatment_type 数据，将牙齿情况和治疗项目合并为一个 JSON 字符串
@@ -247,7 +285,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
     });
 
     try {
-      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
+      _ensurePendingTreatmentInputIncluded();
 
       // 合并日期和时间
       final appointmentDate = DateTime(
@@ -269,8 +307,11 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
         cost: double.tryParse(_costController.text) ?? 0.0,
       );
 
-      final appointmentsProvider = Provider.of<AppointmentsProvider>(context, listen: false);
-      
+      final appointmentsProvider = Provider.of<AppointmentsProvider>(
+        context,
+        listen: false,
+      );
+
       if (widget.appointment == null) {
         // 新建预约
         await appointmentsProvider.addAppointment(appointment);
@@ -326,9 +367,11 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
   Future<void> _selectTime(BuildContext context) async {
     final newTime = await showDialog<TimeOfDay>(
       context: context,
-      builder: (context) => custom.CustomTimePickerDialog(initialTime: _selectedTime),
+      builder:
+          (context) =>
+              custom.CustomTimePickerDialog(initialTime: _selectedTime),
     );
-    
+
     if (newTime != null && newTime != _selectedTime) {
       setState(() {
         _selectedTime = newTime;
@@ -356,7 +399,6 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-
               // 患者选择区域
               _buildModernSection(
                 title: '患者信息',
@@ -403,9 +445,11 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
                 child: TreatmentItemsInput(
                   controller: _treatmentTypeController,
                   selectedTreatments: _selectedTreatments,
+                  suggestions: _treatmentSuggestions,
                   onChanged: (newTreatments) {
                     setState(() {
-                      _selectedTreatments = newTreatments;
+                      _selectedTreatments =
+                          _normalizeTreatmentItems(newTreatments);
                       _updateTreatmentTypeController();
                     });
                   },
@@ -454,9 +498,9 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              widget.appointment == null 
-                ? Icons.add_circle_outline_rounded 
-                : Icons.edit_calendar_rounded,
+              widget.appointment == null
+                  ? Icons.add_circle_outline_rounded
+                  : Icons.edit_calendar_rounded,
               color: Colors.white,
               size: 24,
             ),
@@ -477,10 +521,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
                 const SizedBox(height: 4),
                 Text(
                   '请填写预约信息',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.secondaryText,
-                  ),
+                  style: TextStyle(fontSize: 14, color: AppTheme.secondaryText),
                 ),
               ],
             ),
@@ -509,10 +550,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.grey.withOpacity(0.1),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -532,11 +570,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
                   color: AppTheme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: AppTheme.primaryColor,
-                ),
+                child: Icon(icon, size: 20, color: AppTheme.primaryColor),
               ),
               const SizedBox(width: 12),
               Text(
@@ -567,67 +601,59 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
       );
     }
 
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppTheme.backgroundColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _selectedPatientId != null 
-                ? AppTheme.primaryColor.withOpacity(0.3)
-                : Colors.grey.withOpacity(0.2),
-            ),
+    return InkWell(
+      onTap: _showPatientSelectionDialog,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color:
+                _selectedPatientId != null
+                    ? AppTheme.primaryColor.withOpacity(0.3)
+                    : Colors.grey.withOpacity(0.2),
           ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.person_rounded,
-                color: _selectedPatientId != null 
-                  ? AppTheme.primaryColor 
-                  : AppTheme.secondaryText,
-                size: 20,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  _selectedPatientName.isNotEmpty 
-                    ? _selectedPatientName 
-                    : '请选择患者',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: _selectedPatientName.isNotEmpty 
-                      ? AppTheme.primaryText 
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.person_rounded,
+              color:
+                  _selectedPatientId != null
+                      ? AppTheme.primaryColor
                       : AppTheme.secondaryText,
-                    fontWeight: _selectedPatientName.isNotEmpty 
-                      ? FontWeight.w500 
-                      : FontWeight.normal,
-                  ),
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _selectedPatientName.isNotEmpty
+                    ? _selectedPatientName
+                    : '请选择患者',
+                style: TextStyle(
+                  fontSize: 16,
+                  color:
+                      _selectedPatientName.isNotEmpty
+                          ? AppTheme.primaryText
+                          : AppTheme.secondaryText,
+                  fontWeight:
+                      _selectedPatientName.isNotEmpty
+                          ? FontWeight.w500
+                          : FontWeight.normal,
                 ),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => _showPatientSelectionDialog(),
-            icon: const Icon(Icons.person_search_rounded, size: 18),
-            label: const Text('选择患者'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
             ),
-          ),
+            const SizedBox(width: 12),
+            Icon(
+              Icons.person_search_rounded,
+              color: AppTheme.primaryColor,
+              size: 22,
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -682,12 +708,30 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
           ),
           filled: true,
           fillColor: AppTheme.backgroundColor,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
         ),
         items: [
-          _buildModernDropdownItem('scheduled', '已预约', Icons.schedule_rounded, AppTheme.infoColor),
-          _buildModernDropdownItem('completed', '已完成', Icons.check_circle_rounded, AppTheme.successColor),
-          _buildModernDropdownItem('cancelled', '已取消', Icons.cancel_rounded, AppTheme.errorColor),
+          _buildModernDropdownItem(
+            'scheduled',
+            '已预约',
+            Icons.schedule_rounded,
+            AppTheme.infoColor,
+          ),
+          _buildModernDropdownItem(
+            'completed',
+            '已完成',
+            Icons.check_circle_rounded,
+            AppTheme.successColor,
+          ),
+          _buildModernDropdownItem(
+            'cancelled',
+            '已取消',
+            Icons.cancel_rounded,
+            AppTheme.errorColor,
+          ),
         ],
         onChanged: (value) {
           setState(() {
@@ -721,10 +765,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
           const SizedBox(width: 12),
           Text(
             text,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -751,16 +792,20 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
               color: AppTheme.primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.note_alt_rounded, color: AppTheme.primaryColor, size: 18),
+            child: Icon(
+              Icons.note_alt_rounded,
+              color: AppTheme.primaryColor,
+              size: 18,
+            ),
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
         ),
         maxLines: 3,
-        style: const TextStyle(
-          fontSize: 16,
-          color: AppTheme.primaryText,
-        ),
+        style: const TextStyle(fontSize: 16, color: AppTheme.primaryText),
       ),
     );
   }
@@ -799,19 +844,23 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: _isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            child:
+                _isLoading
+                    ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                    : Text(
+                      widget.appointment == null ? '创建预约' : '更新预约',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  )
-                : Text(
-                    widget.appointment == null ? '创建预约' : '更新预约',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
           ),
         ),
       ],
@@ -820,19 +869,25 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
 
   // 显示患者选择对话框
   Future<void> _showPatientSelectionDialog() async {
-    // 在显示患者选择对话框时才加载患者数据
-    if (_patients.isEmpty) {
-      await _loadPatients();
-    }
-    
+    final patientProvider = Provider.of<PatientProvider>(
+      context,
+      listen: false,
+    );
+
     final selectedPatient = await showDialog<Patient>(
       context: context,
-      builder: (context) => PatientSelectionDialog(
-        patients: _patients,
-        onPatientAdded: () {
-          _loadPatients();
-        },
-      ),
+      builder:
+          (context) => PatientSelectionDialog(
+            patients: const [],
+            onLoadPatients:
+                () => patientProvider.getPatientsPage(
+                  1,
+                  50,
+                  sortField: 'updated',
+                  ascending: false,
+                ),
+            onSearchPatients: patientProvider.searchPatients,
+          ),
     );
 
     if (selectedPatient != null) {

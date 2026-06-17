@@ -17,17 +17,18 @@ class MaterialProvider extends ChangeNotifier {
   Database? _database;
   MySqlConnection? _mysqlConnection;
   String _dataSourceType = 'sqlite';
-  
+
   // 数据库提供者引用（用于获取最新连接）
   dynamic _databaseProvider;
-  
+
   // 数据库操作包装器
   DatabaseOperationWrapper? _dbWrapper;
-  
+
   // 数据源实现
   SqliteMaterialDataSource? _sqliteDataSource;
   MySqlMaterialDataSource? _mysqlDataSource;
-  final MaterialInitializationService _initializationService = MaterialInitializationService();
+  final MaterialInitializationService _initializationService =
+      MaterialInitializationService();
 
   // 缓存机制
   List<DentalMaterial>? _cachedMaterials;
@@ -38,21 +39,20 @@ class MaterialProvider extends ChangeNotifier {
   bool _isConnected = true;
   bool _isReconnecting = false;
   String? _lastError;
-  
-  
+
   // 初始化标志
   bool _isInitializedFlag = false;
-  
+
   // 数据列表
   List<DentalMaterial> _materials = [];
-  
+
   // 刷新标志
   bool _materialsNeedRefresh = false;
-  
+
   // Getters
   bool get initialized => _database != null || _mysqlConnection != null;
   bool get materialsNeedRefresh => _materialsNeedRefresh;
-  
+
   // 检查数据库是否已初始化
   bool get isInitialized {
     if (_dataSourceType == 'mysql') {
@@ -113,7 +113,9 @@ class MaterialProvider extends ChangeNotifier {
       _dataSourceType = result.dataSourceType;
 
       if (_dataSourceType == 'mysql') {
-        _mysqlDataSource = MySqlMaterialDataSource.withConnectionGetter(() => _currentMysqlConnection);
+        _mysqlDataSource = MySqlMaterialDataSource.withConnectionGetter(
+          () => _currentMysqlConnection,
+        );
       } else {
         if (_database != null) {
           _sqliteDataSource = SqliteMaterialDataSource(_database!);
@@ -133,7 +135,7 @@ class MaterialProvider extends ChangeNotifier {
 
     Future.microtask(() => notifyListeners());
   }
-  
+
   // 构造函数
   MaterialProvider({
     Database? database,
@@ -149,13 +151,15 @@ class MaterialProvider extends ChangeNotifier {
         _sqliteDataSource = SqliteMaterialDataSource(_database!);
       }
       if (_mysqlConnection != null) {
-        _mysqlDataSource = MySqlMaterialDataSource.withConnectionGetter(() => _currentMysqlConnection);
+        _mysqlDataSource = MySqlMaterialDataSource.withConnectionGetter(
+          () => _currentMysqlConnection,
+        );
       }
     } catch (e) {
       print('MaterialProvider 构造时初始化数据源失败: $e');
     }
   }
-  
+
   // 设置数据库连接
   void setDatabaseConnection({
     Database? database,
@@ -171,45 +175,49 @@ class MaterialProvider extends ChangeNotifier {
         _sqliteDataSource = SqliteMaterialDataSource(database);
       }
       if (mysqlConnection != null) {
-        _mysqlDataSource = MySqlMaterialDataSource.withConnectionGetter(() => _currentMysqlConnection);
+        _mysqlDataSource = MySqlMaterialDataSource.withConnectionGetter(
+          () => _currentMysqlConnection,
+        );
       }
     } catch (e) {
       print('设置数据源实现失败: $e');
     }
   }
-  
+
   // 标记需要刷新
   void markMaterialsNeedRefresh() {
     _materialsNeedRefresh = true;
     notifyListeners();
   }
-  
+
   // 清除刷新标志
   void clearMaterialsNeedRefresh() {
     _materialsNeedRefresh = false;
   }
 
   // =================== 材料相关方法 ===================
-  
+
   // 获取所有材料
   Future<List<DentalMaterial>> getAllMaterials() async {
     if (!initialized) {
       throw Exception('数据库未初始化');
     }
 
-    try {
-      // 使用数据源模式（统一接口）
-      final materials = await _currentDataSource.getAllMaterials();
-      
-      // 更新缓存
-      _cachedMaterials = List.from(materials);
-      _lastCacheTime = DateTime.now();
-      
-      return materials;
-    } catch (e) {
-      print('获取材料列表失败: $e');
-      rethrow;
-    }
+    return await _wrapMaterialOperation('getAllMaterials', () async {
+      try {
+        // 使用数据源模式（统一接口）
+        final materials = await _currentDataSource.getAllMaterials();
+
+        // 更新缓存
+        _cachedMaterials = List.from(materials);
+        _lastCacheTime = DateTime.now();
+
+        return materials;
+      } catch (e) {
+        print('获取材料列表失败: $e');
+        rethrow;
+      }
+    });
   }
 
   // 根据ID获取材料
@@ -218,13 +226,16 @@ class MaterialProvider extends ChangeNotifier {
       return null;
     }
 
-    try {
-      // 使用数据源模式（统一接口）
-      return await _currentDataSource.getMaterialById(id);
-    } catch (e) {
-      print('获取材料失败: $e');
-      return null;
-    }
+    return await _wrapMaterialOperation('getMaterialById', () async {
+      try {
+        // 使用数据源模式（统一接口）
+        return await _currentDataSource.getMaterialById(id);
+      } catch (e) {
+        print('获取材料失败: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
+        return null;
+      }
+    });
   }
 
   // 根据名称搜索材料
@@ -233,13 +244,16 @@ class MaterialProvider extends ChangeNotifier {
       return [];
     }
 
-    try {
-      // 使用数据源模式（统一接口）
-      return await _currentDataSource.searchMaterials(query);
-    } catch (e) {
-      print('搜索材料失败: $e');
-      return [];
-    }
+    return await _wrapMaterialOperation('searchMaterials', () async {
+      try {
+        // 使用数据源模式（统一接口）
+        return await _currentDataSource.searchMaterials(query);
+      } catch (e) {
+        print('搜索材料失败: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
+        return [];
+      }
+    });
   }
 
   // 添加材料
@@ -247,9 +261,9 @@ class MaterialProvider extends ChangeNotifier {
     if (!initialized) {
       throw Exception('数据库未初始化');
     }
-    
+
     if (_dbWrapper == null) return -1;
-    
+
     return await _dbWrapper!.wrapOperation('addMaterial', () async {
       try {
         // 使用数据源模式（统一接口）
@@ -272,9 +286,9 @@ class MaterialProvider extends ChangeNotifier {
     if (!initialized || material.id == null) {
       throw Exception('数据库未初始化或材料ID为空');
     }
-    
+
     if (_dbWrapper == null) return 0;
-    
+
     return await _dbWrapper!.wrapOperation('updateMaterial', () async {
       try {
         // 使用数据源模式（统一接口）
@@ -298,9 +312,9 @@ class MaterialProvider extends ChangeNotifier {
     if (!initialized) {
       throw Exception('数据库未初始化');
     }
-    
+
     if (_dbWrapper == null) return 0;
-    
+
     return await _dbWrapper!.wrapOperation('deleteMaterial', () async {
       try {
         // 使用数据源模式（统一接口）
@@ -320,7 +334,10 @@ class MaterialProvider extends ChangeNotifier {
   }
 
   // 检查材料名称是否已存在
-  Future<bool> isMaterialNameExists(String materialName, {int? excludeId}) async {
+  Future<bool> isMaterialNameExists(
+    String materialName, {
+    int? excludeId,
+  }) async {
     if (!initialized) {
       return false;
     }
@@ -330,7 +347,9 @@ class MaterialProvider extends ChangeNotifier {
       final results = await searchMaterials(materialName);
       if (results.isEmpty) return false;
       if (excludeId != null) {
-        return results.any((m) => m.id != excludeId && m.materialName == materialName);
+        return results.any(
+          (m) => m.id != excludeId && m.materialName == materialName,
+        );
       }
       return results.any((m) => m.materialName == materialName);
     } catch (e) {
@@ -342,24 +361,19 @@ class MaterialProvider extends ChangeNotifier {
   // 获取材料统计信息
   Future<Map<String, dynamic>> getMaterialStatistics() async {
     if (!initialized) {
-      return {
-        'totalMaterials': 0,
-        'totalValue': 0.0,
-        'supplierCount': 0,
-      };
+      return {'totalMaterials': 0, 'totalValue': 0.0, 'supplierCount': 0};
     }
 
-    try {
-      // 使用数据源模式（统一接口）
-      return await _currentDataSource.getMaterialStatistics();
-    } catch (e) {
-      print('获取材料统计信息失败: $e');
-      return {
-        'totalMaterials': 0,
-        'totalValue': 0.0,
-        'supplierCount': 0,
-      };
-    }
+    return await _wrapMaterialOperation('getMaterialStatistics', () async {
+      try {
+        // 使用数据源模式（统一接口）
+        return await _currentDataSource.getMaterialStatistics();
+      } catch (e) {
+        print('获取材料统计信息失败: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
+        return {'totalMaterials': 0, 'totalValue': 0.0, 'supplierCount': 0};
+      }
+    });
   }
 
   // 生成材料编码
@@ -375,12 +389,12 @@ class MaterialProvider extends ChangeNotifier {
       if (_dataSourceType == 'sqlite') {
         final db = _database;
         if (db == null) return 'M001';
-        
+
         final result = await db.rawQuery(
           'SELECT material_code FROM materials WHERE material_code LIKE ? ORDER BY material_code DESC LIMIT 1',
-          ['M%']
+          ['M%'],
         );
-        
+
         if (result.isNotEmpty) {
           final lastCode = result.first['material_code'] as String?;
           if (lastCode != null && lastCode.startsWith('M')) {
@@ -392,14 +406,14 @@ class MaterialProvider extends ChangeNotifier {
           }
         }
       } else if (_dataSourceType == 'mysql') {
-        final conn = _mysqlConnection;
+        final conn = _currentMysqlConnection;
         if (conn == null) return 'M001';
-        
+
         final results = await conn.query(
           'SELECT material_code FROM materials WHERE material_code LIKE ? ORDER BY material_code DESC LIMIT 1',
-          ['M%']
+          ['M%'],
         );
-        
+
         if (results.isNotEmpty) {
           final lastCode = results.first['material_code']?.toString();
           if (lastCode != null && lastCode.startsWith('M')) {
@@ -417,5 +431,15 @@ class MaterialProvider extends ChangeNotifier {
       print('生成材料编码失败: $e');
       return 'M001';
     }
+  }
+
+  Future<T> _wrapMaterialOperation<T>(
+    String operationName,
+    Future<T> Function() operation,
+  ) async {
+    if (_dbWrapper == null) {
+      return await operation();
+    }
+    return await _dbWrapper!.wrapOperation(operationName, operation);
   }
 }

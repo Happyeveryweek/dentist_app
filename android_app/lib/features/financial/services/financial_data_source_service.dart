@@ -10,6 +10,7 @@ class FinancialDataSourceService {
   MySqlFinancialDataSource? _mysqlDataSource;
   String _dataSourceType = 'sqlite';
   MySqlConnection? _mysqlConnection;
+  MySqlConnection? Function()? _mysqlConnectionGetter;
 
   /// 获取当前数据源类型
   String get dataSourceType => _dataSourceType;
@@ -27,7 +28,27 @@ class FinancialDataSourceService {
   /// 设置 MySQL 数据源
   void setMySqlDataSource(MySqlConnection connection) {
     _mysqlConnection = connection;
-    _mysqlDataSource = MySqlFinancialDataSource.withConnectionGetter(() => _mysqlConnection);
+    _mysqlDataSource = MySqlFinancialDataSource.withConnectionGetter(
+      () => currentMysqlConnection,
+    );
+  }
+
+  /// 设置 MySQL 连接获取器，避免后台恢复后继续使用旧 socket
+  void setMySqlConnectionGetter(MySqlConnection? Function() getter) {
+    _mysqlConnectionGetter = getter;
+    _mysqlDataSource = MySqlFinancialDataSource.withConnectionGetter(
+      () => currentMysqlConnection,
+    );
+  }
+
+  /// 获取当前 MySQL 连接
+  MySqlConnection? get currentMysqlConnection {
+    final latest = _mysqlConnectionGetter?.call();
+    if (latest != null) {
+      _mysqlConnection = latest;
+      return latest;
+    }
+    return _mysqlConnection;
   }
 
   /// 获取当前数据源（必须可用，否则抛出异常）
@@ -92,9 +113,8 @@ class FinancialDataSourceService {
             FOREIGN KEY (financial_record_id) REFERENCES financial_records(id)
           )
         ''');
-
       } else if (dataSourceType == 'mysql') {
-        final conn = mysqlConnection;
+        final conn = mysqlConnection ?? currentMysqlConnection;
         if (conn == null) return;
 
         // 创建财务记录表

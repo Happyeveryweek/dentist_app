@@ -14,9 +14,8 @@ class FinancialItemService {
   Database? _database;
   MySqlConnection? _mysqlConnection;
 
-  FinancialItemService({
-    required FinancialDataSourceService dataSourceService,
-  }) : _dataSourceService = dataSourceService;
+  FinancialItemService({required FinancialDataSourceService dataSourceService})
+    : _dataSourceService = dataSourceService;
 
   /// 设置数据库连接
   void setDatabaseConnection({
@@ -37,30 +36,39 @@ class FinancialItemService {
     return _dataSourceService.currentDataSource;
   }
 
+  MySqlConnection? get _currentMysqlConnection {
+    if (_dataSourceType != 'mysql') return _mysqlConnection;
+    return _dataSourceService.currentMysqlConnection ?? _mysqlConnection;
+  }
+
   /// 根据财务记录ID获取项目明细
   Future<List<FinancialItem>> getFinancialItemsByRecordId(int recordId) async {
     if (_dbWrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('getFinancialItemsByRecordId', () async {
-      try {
-        // 确保财务记录表存在
-        await _dataSourceService.ensureFinancialRecordsTableExists(
-          dataSourceType: _dataSourceType,
-          sqliteDatabase: _database,
-          mysqlConnection: _mysqlConnection,
-        );
+    return await _dbWrapper!.wrapOperation(
+      'getFinancialItemsByRecordId',
+      () async {
+        try {
+          // 确保财务记录表存在
+          await _dataSourceService.ensureFinancialRecordsTableExists(
+            dataSourceType: _dataSourceType,
+            sqliteDatabase: _database,
+            mysqlConnection: _currentMysqlConnection,
+          );
 
-        // 使用数据源模式（统一接口）
-        return await _currentDataSource.getFinancialItemsByRecordId(recordId);
-      } catch (e) {
-        print('获取财务项目明细失败: $e');
-        rethrow;
-      }
-    });
+          // 使用数据源模式（统一接口）
+          return await _currentDataSource.getFinancialItemsByRecordId(recordId);
+        } catch (e) {
+          print('获取财务项目明细失败: $e');
+          rethrow;
+        }
+      },
+    );
   }
 
   /// 添加财务项目明细
-  Future<int> addFinancialItem(FinancialItem item, {
+  Future<int> addFinancialItem(
+    FinancialItem item, {
     required Function() markFinancialsNeedRefresh,
   }) async {
     if (_dbWrapper == null) return -1;
@@ -83,7 +91,8 @@ class FinancialItemService {
   }
 
   /// 更新财务项目明细
-  Future<int> updateFinancialItem(FinancialItem item, {
+  Future<int> updateFinancialItem(
+    FinancialItem item, {
     required Function() markFinancialsNeedRefresh,
   }) async {
     if (item.id == null) {
@@ -111,7 +120,8 @@ class FinancialItemService {
   }
 
   /// 删除财务项目明细
-  Future<int> deleteFinancialItem(int itemId, {
+  Future<int> deleteFinancialItem(
+    int itemId, {
     required Function() markFinancialsNeedRefresh,
   }) async {
     if (_dbWrapper == null) return 0;

@@ -77,7 +77,11 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
     }
 
     _doctorController = TextEditingController(text: initialDoctorName);
-    _notesController = TextEditingController(text: widget.record?.notes ?? '');
+    final defaultNotes =
+        '${DateFormat('yyyyMMdd').format(DateTime.now())}采购单';
+    _notesController = TextEditingController(
+      text: isEditing ? (widget.record?.notes ?? '') : defaultNotes,
+    );
 
     if (isEditing) {
       _loadExistingItems();

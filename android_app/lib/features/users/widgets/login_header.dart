@@ -74,7 +74,7 @@ class LoginHeader extends StatelessWidget {
                     ),
                   ),
                   // 牙齿图标
-                  Icon(
+                  FaIcon(
                     FontAwesomeIcons.tooth,
                     size: logoSize * 0.48,
                     color: Colors.blue.shade700,
@@ -180,7 +180,7 @@ class LoginHeader extends StatelessWidget {
 
 /// 装饰性图标组件
 class _DecorIcon extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final Color color;
 
   const _DecorIcon(this.icon, this.color);
@@ -212,7 +212,7 @@ class _DecorIcon extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(
+          child: FaIcon(
             icon,
             color: Colors.white,
             size: 20,

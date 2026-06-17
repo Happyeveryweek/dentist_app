@@ -75,69 +75,62 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
           else if (isLoadingPatients)
             const Center(child: CircularProgressIndicator())
           else
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.person, color: AppTheme.primaryColor, size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: selectedPatient == null
-                              ? Text(
-                                  '请选择患者',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 14,
-                                  ),
-                                )
-                              : Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      selectedPatient!.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '最近就诊: ${selectedPatient!.updated_at.year.toString().padLeft(4, '0')}-${selectedPatient!.updated_at.month.toString().padLeft(2, '0')}-${selectedPatient!.updated_at.day.toString().padLeft(2, '0')}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onSelectPatient,
+                borderRadius: BorderRadius.circular(8),
+                child: Ink(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.person, color: AppTheme.primaryColor, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: selectedPatient == null
+                            ? Text(
+                                '请选择患者',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 14,
                                 ),
-                        ),
-                      ],
-                    ),
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    selectedPatient!.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '最近就诊: ${selectedPatient!.updated_at.year.toString().padLeft(4, '0')}-${selectedPatient!.updated_at.month.toString().padLeft(2, '0')}-${selectedPatient!.updated_at.day.toString().padLeft(2, '0')}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(
+                        Icons.search,
+                        color: AppTheme.primaryColor,
+                        size: 22,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                ElevatedButton.icon(
-                  onPressed: onSelectPatient,
-                  icon: const Icon(Icons.search, size: 18),
-                  label: const Text('选择'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
         ],
       ),

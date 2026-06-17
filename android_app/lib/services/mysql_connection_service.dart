@@ -322,10 +322,11 @@ class MySQLConnectionService {
       try {
         print('关闭MySQL连接');
         await _mysqlConnection!.close();
-        _mysqlConnection = null;
         print('MySQL连接已关闭');
       } catch (e) {
         print('关闭MySQL连接时出错: $e');
+      } finally {
+        _mysqlConnection = null;
       }
     }
   }

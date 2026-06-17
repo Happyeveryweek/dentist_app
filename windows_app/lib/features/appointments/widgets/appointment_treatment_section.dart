@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 class TreatmentSectionWidget extends StatefulWidget {
   final List<String> selectedTreatments;
   final TextEditingController treatmentTypeController;
-  final VoidCallback onShowTreatmentSelectionDialog;
+  final List<String> suggestions;
   final ValueChanged<List<String>> onTreatmentsChanged;
 
   const TreatmentSectionWidget({
     Key? key,
     required this.selectedTreatments,
     required this.treatmentTypeController,
-    required this.onShowTreatmentSelectionDialog,
+    required this.suggestions,
     required this.onTreatmentsChanged,
   }) : super(key: key);
 
@@ -21,10 +21,18 @@ class TreatmentSectionWidget extends StatefulWidget {
 class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
   late List<String> _localSelectedTreatments;
   late TextEditingController _localController;
+  String? _selectedSuggestion;
 
   @override
   void initState() {
     super.initState();
+    _localSelectedTreatments = List<String>.from(widget.selectedTreatments);
+    _localController = widget.treatmentTypeController;
+  }
+
+  @override
+  void didUpdateWidget(covariant TreatmentSectionWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
     _localSelectedTreatments = List<String>.from(widget.selectedTreatments);
     _localController = widget.treatmentTypeController;
   }
@@ -38,23 +46,13 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
         _localSelectedTreatments.add(trimmedTreatment);
       }
       _localController.clear();
-      _updateTreatmentTypeController();
       widget.onTreatmentsChanged(_localSelectedTreatments);
     });
-  }
-
-  void _updateTreatmentTypeController() {
-    if (_localSelectedTreatments.isEmpty) {
-      _localController.text = '';
-    } else {
-      _localController.text = _localSelectedTreatments.join('、');
-    }
   }
 
   void _removeTreatment(String treatment) {
     setState(() {
       _localSelectedTreatments.remove(treatment);
-      _updateTreatmentTypeController();
       widget.onTreatmentsChanged(_localSelectedTreatments);
     });
   }
@@ -87,56 +85,13 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
                   color: Color(0xFFFF9800),
                 ),
               ),
-              const Spacer(),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFFF9800),
-                      Color(0xFFFFB74D),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFFF9800).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: TextButton.icon(
-                  icon: const Icon(
-                    Icons.arrow_drop_down,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                  label: const Text(
-                    '选择',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  onPressed: widget.onShowTreatmentSelectionDialog,
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                    shadowColor: Colors.transparent,
-                  ),
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
+                flex: 5,
                 child: TextField(
                   controller: _localController,
                   decoration: InputDecoration(
@@ -162,48 +117,66 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
                 ),
               ),
               const SizedBox(width: 12),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFFF9800),
-                      Color(0xFFFFB74D),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFFF9800).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: () {
-                    _addCustomTreatment(_localController.text);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(
+              Expanded(
+                flex: 4,
+                child: DropdownButtonFormField<String>(
+                  value: _selectedSuggestion,
+                  decoration: InputDecoration(
+                    labelText: '选择已有项目',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
-                    elevation: 0,
-                    shadowColor: Colors.transparent,
-                  ),
-                  child: const Text(
-                    '添加',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFFF9800)),
                     ),
                   ),
+                  hint: const Text('暂无'),
+                  items:
+                      widget.suggestions
+                          .map(
+                            (item) => DropdownMenuItem<String>(
+                              value: item,
+                              child: Text(
+                                item,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                  onChanged:
+                      widget.suggestions.isEmpty
+                          ? null
+                          : (value) {
+                              if (value == null) {
+                                return;
+                              }
+                              setState(() {
+                                _selectedSuggestion = null;
+                                _addCustomTreatment(value);
+                              });
+                            },
                 ),
               ),
             ],
           ),
+          if (_localController.text.trim().isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              '输入后按回车，或直接保存时自动带入',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
           if (_localSelectedTreatments.isNotEmpty) ...[
             const SizedBox(height: 12),
             Container(
@@ -212,82 +185,39 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFFF9800).withOpacity(0.2)),
+                border: Border.all(
+                  color: const Color(0xFFFF9800).withOpacity(0.2),
+                ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.check_circle,
-                        color: const Color(0xFFFF9800),
-                        size: 14,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '已选治疗项目:',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFFFF9800),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: _localSelectedTreatments
-                        .map((treatment) => Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    const Color(0xFFFF9800).withOpacity(0.1),
-                                    const Color(0xFFFFB74D).withOpacity(0.05),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: const Color(0xFFFF9800).withOpacity(0.3),
-                                ),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children:
+                    _localSelectedTreatments
+                        .map(
+                          (treatment) => InputChip(
+                            label: Text(
+                              treatment,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFFFF9800),
+                                fontWeight: FontWeight.w500,
                               ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(20),
-                                  onTap: () {
-                                    _removeTreatment(treatment);
-                                  },
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          treatment,
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            color: Color(0xFFFF9800),
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Icon(
-                                          Icons.close,
-                                          size: 12,
-                                          color: const Color(0xFFFF9800),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ))
+                            ),
+                            onDeleted: () => _removeTreatment(treatment),
+                            deleteIcon: const Icon(
+                              Icons.close,
+                              size: 14,
+                              color: Color(0xFFFF9800),
+                            ),
+                            backgroundColor: const Color(0xFFFF9800)
+                                .withOpacity(0.08),
+                            side: BorderSide(
+                              color: const Color(0xFFFF9800).withOpacity(0.25),
+                            ),
+                          ),
+                        )
                         .toList(),
-                  ),
-                ],
               ),
             ),
           ],

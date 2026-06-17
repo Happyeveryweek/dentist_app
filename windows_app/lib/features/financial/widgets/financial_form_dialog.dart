@@ -11,6 +11,7 @@ import '../../../providers/settings_provider.dart';
 import '../../../widgets/modern_date_picker.dart';
 import '../../../widgets/success_toast.dart'
     show AppToastManager, ErrorDialogManager;
+import '../helpers/amount_input_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import './patient_selection_dialog.dart';
 import './financial_statistics_dialog_widget.dart';
@@ -660,6 +661,7 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                       labelStyle: TextStyle(color: Colors.purple[600]),
                     ),
                     keyboardType: TextInputType.number,
+                    inputFormatters: [amountInputFormatter],
                     onTap: () {
                       if (_receivableAmountController.text == '0') {
                         _receivableAmountController.selection = TextSelection(
@@ -715,6 +717,7 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                       labelStyle: TextStyle(color: Colors.purple[600]),
                     ),
                     keyboardType: TextInputType.number,
+                    inputFormatters: [amountInputFormatter],
                     onTap: () {
                       if (_collectedAmountController.text == '0') {
                         _collectedAmountController.selection = TextSelection(
@@ -775,6 +778,7 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                       labelStyle: TextStyle(color: Colors.purple[600]),
                     ),
                     keyboardType: TextInputType.number,
+                    inputFormatters: [amountInputFormatter],
                     onTap: () {
                       if (_processingFeeController.text == '0') {
                         _processingFeeController.selection = TextSelection(
