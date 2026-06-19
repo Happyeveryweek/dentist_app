@@ -125,8 +125,10 @@ class AppToastManager {
     AppToastType type = AppToastType.success,
     Duration duration = const Duration(seconds: 2),
     VoidCallback? onDismiss,
+    Color? backgroundColor,
   }) {
     final config = _getToastConfig(type);
+    final toastColor = backgroundColor ?? config.color;
     
     // 移除之前的提示（如果存在）
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -171,7 +173,7 @@ class AppToastManager {
               ),
           ],
         ),
-        backgroundColor: config.color,
+        backgroundColor: toastColor,
         duration: duration,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
@@ -189,6 +191,7 @@ class AppToastManager {
     required String message,
     Duration duration = const Duration(seconds: 2),
     VoidCallback? onDismiss,
+    Color? backgroundColor,
   }) {
     show(
       context,
@@ -196,6 +199,7 @@ class AppToastManager {
       type: AppToastType.success,
       duration: duration,
       onDismiss: onDismiss,
+      backgroundColor: backgroundColor,
     );
   }
 
@@ -204,6 +208,7 @@ class AppToastManager {
     required String message,
     Duration duration = const Duration(seconds: 4),
     VoidCallback? onDismiss,
+    Color? backgroundColor,
   }) {
     show(
       context,
@@ -211,6 +216,7 @@ class AppToastManager {
       type: AppToastType.error,
       duration: duration,
       onDismiss: onDismiss,
+      backgroundColor: backgroundColor,
     );
   }
 
@@ -219,6 +225,7 @@ class AppToastManager {
     required String message,
     Duration duration = const Duration(seconds: 3),
     VoidCallback? onDismiss,
+    Color? backgroundColor,
   }) {
     show(
       context,
@@ -226,6 +233,7 @@ class AppToastManager {
       type: AppToastType.info,
       duration: duration,
       onDismiss: onDismiss,
+      backgroundColor: backgroundColor,
     );
   }
 
@@ -234,6 +242,7 @@ class AppToastManager {
     required String message,
     Duration duration = const Duration(seconds: 2),
     VoidCallback? onDismiss,
+    Color? backgroundColor,
   }) {
     show(
       context,
@@ -241,6 +250,7 @@ class AppToastManager {
       type: AppToastType.delete,
       duration: duration,
       onDismiss: onDismiss,
+      backgroundColor: backgroundColor,
     );
   }
 

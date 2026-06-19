@@ -10,6 +10,7 @@ import '../providers/database_provider.dart';
 import '../providers/appointment_provider.dart';
 import '../providers/patient_provider.dart';
 import '../providers/app_state.dart';
+import '../features/dashboard/helpers/dashboard_status_helper.dart';
 import '../widgets/dental_icons.dart';
 import '../features/appointments/widgets/appointment_details_summary_card.dart';
 import '../features/appointments/widgets/appointment_details_treatment_section.dart';
@@ -158,14 +159,16 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
       // 重新加载数据
       _loadAppointmentData();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('预约状态已更新为: $newStatus'),
-            backgroundColor: Colors.green),
+      final statusColor = DashboardStatusHelper.getStatusColor(newStatus);
+      AppToastManager.showSuccess(
+        context,
+        message: '预约状态已更新为: $newStatus',
+        backgroundColor: statusColor,
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('更新预约状态失败: $e'), backgroundColor: Colors.red),
+      AppToastManager.showError(
+        context,
+        message: '更新预约状态失败: $e',
       );
     }
   }
