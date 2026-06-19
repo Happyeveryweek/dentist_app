@@ -46,7 +46,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
   DateTime _endDate = DateTime.now();
   String _activePreset = '6m';
   bool _isRefreshing = false;
-  
+  bool _showFinancialAmounts = false;
+
   // 获取最早的收费日期（用于“全部”时间范围）
   DateTime _getEarliestFinancialDate() {
     if (_financialItems.isEmpty) {
@@ -56,7 +57,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     }
     DateTime earliest = DateTime(9999);
     for (final item in _financialItems) {
-      final d = DateTime(item.chargeDate.year, item.chargeDate.month, item.chargeDate.day);
+      final d = DateTime(
+          item.chargeDate.year, item.chargeDate.month, item.chargeDate.day);
       if (d.isBefore(earliest)) earliest = d;
     }
     return earliest;
@@ -114,7 +116,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     final d = DateTime(date.year, date.month, date.day);
     final s = DateTime(_startDate.year, _startDate.month, _startDate.day);
     final e = DateTime(_endDate.year, _endDate.month, _endDate.day);
-    return (d.isAtSameMomentAs(s) || d.isAfter(s)) && (d.isAtSameMomentAs(e) || d.isBefore(e));
+    return (d.isAtSameMomentAs(s) || d.isAfter(s)) &&
+        (d.isAtSameMomentAs(e) || d.isBefore(e));
   }
 
   List<FinancialItem> _getFilteredItems() {
@@ -138,7 +141,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
       end = DateTime(now.year, now.month, now.day);
     } else if (preset == '30d') {
       // 30天：严格的最近30天（包括今天），起始日期是30天前
-      start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 30));
+      start = DateTime(now.year, now.month, now.day)
+          .subtract(const Duration(days: 30));
     } else if (preset == '90d') {
       start = now.subtract(const Duration(days: 90));
     } else if (preset == '12m') {
@@ -150,7 +154,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     } else if (preset == 'last_year') {
       start = DateTime(now.year - 1, 1, 1);
       end = DateTime(now.year - 1, 12, 31);
-    } else { // 'all'
+    } else {
+      // 'all'
       start = _getEarliestFinancialDate();
       end = DateTime.now();
     }
@@ -171,8 +176,9 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     // 生成时间范围内的所有月份
     DateTime currentMonth = DateTime(_startDate.year, _startDate.month, 1);
     final endMonth = DateTime(_endDate.year, _endDate.month, 1);
-    
-    while (currentMonth.isBefore(endMonth) || currentMonth.isAtSameMomentAs(endMonth)) {
+
+    while (currentMonth.isBefore(endMonth) ||
+        currentMonth.isAtSameMomentAs(endMonth)) {
       final monthKey = DateFormat('yyyy-MM').format(currentMonth);
       monthlyData[monthKey] = 0.0;
       currentMonth = DateTime(currentMonth.year, currentMonth.month + 1, 1);
@@ -181,7 +187,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     // 填充实际数据
     for (final item in filteredItems) {
       final monthKey = DateFormat('yyyy-MM').format(item.chargeDate);
-      monthlyData[monthKey] = (monthlyData[monthKey] ?? 0) + (item.processingFee ?? 0.0);
+      monthlyData[monthKey] =
+          (monthlyData[monthKey] ?? 0) + (item.processingFee ?? 0.0);
     }
 
     return monthlyData;
@@ -194,8 +201,9 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     // 生成时间范围内的所有月份
     DateTime currentMonth = DateTime(_startDate.year, _startDate.month, 1);
     final endMonth = DateTime(_endDate.year, _endDate.month, 1);
-    
-    while (currentMonth.isBefore(endMonth) || currentMonth.isAtSameMomentAs(endMonth)) {
+
+    while (currentMonth.isBefore(endMonth) ||
+        currentMonth.isAtSameMomentAs(endMonth)) {
       final monthKey = DateFormat('yyyy-MM').format(currentMonth);
       monthlyData[monthKey] = 0.0;
       currentMonth = DateTime(currentMonth.year, currentMonth.month + 1, 1);
@@ -262,7 +270,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
   }
 
   double _calculateTotalProcessingFee() {
-    return _getFilteredItems().fold(0, (sum, item) => sum + (item.processingFee ?? 0.0));
+    return _getFilteredItems()
+        .fold(0, (sum, item) => sum + (item.processingFee ?? 0.0));
   }
 
   int _calculateTotalItems() {
@@ -272,15 +281,20 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
   int _calculateTotalPatients() {
     final filteredItems = _getFilteredItems();
     final Set<int> patientIds = {};
-    
+
     for (final item in filteredItems) {
       final record = _financialRecords.firstWhere(
         (r) => r.id == item.financialRecordId,
-        orElse: () => FinancialRecord(id: 0, patientId: 0, totalQuantity: 0, createdAt: DateTime.now(), updatedAt: DateTime.now()),
+        orElse: () => FinancialRecord(
+            id: 0,
+            patientId: 0,
+            totalQuantity: 0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now()),
       );
       patientIds.add(record.patientId);
     }
-    
+
     return patientIds.length;
   }
 
@@ -296,11 +310,12 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
   double _calculateTotalDebt() {
     final Map<int, double> receivableByPatient = {};
     final Map<int, double> receivedByPatient = {};
-    
+
     // 按截止日期过滤：只计算结束日期之前的所有财务项目
     final endDate = DateTime(_endDate.year, _endDate.month, _endDate.day);
     final itemsBeforeEndDate = _financialItems.where((item) {
-      final itemDate = DateTime(item.chargeDate.year, item.chargeDate.month, item.chargeDate.day);
+      final itemDate = DateTime(
+          item.chargeDate.year, item.chargeDate.month, item.chargeDate.day);
       return itemDate.isBefore(endDate) || itemDate.isAtSameMomentAs(endDate);
     }).toList();
 
@@ -308,10 +323,16 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     for (final item in itemsBeforeEndDate) {
       final record = _financialRecords.firstWhere(
         (r) => r.id == item.financialRecordId,
-        orElse: () => FinancialRecord(id: 0, patientId: 0, totalQuantity: 0, createdAt: DateTime.now(), updatedAt: DateTime.now()),
+        orElse: () => FinancialRecord(
+            id: 0,
+            patientId: 0,
+            totalQuantity: 0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now()),
       );
       final pid = record.patientId;
-      receivableByPatient[pid] = (receivableByPatient[pid] ?? 0) + item.itemPrice;
+      receivableByPatient[pid] =
+          (receivableByPatient[pid] ?? 0) + item.itemPrice;
       receivedByPatient[pid] = (receivedByPatient[pid] ?? 0) + item.totalPrice;
     }
 
@@ -335,18 +356,30 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     for (final item in filteredItems) {
       final record = _financialRecords.firstWhere(
         (r) => r.id == item.financialRecordId,
-        orElse: () => FinancialRecord(id: 0, patientId: 0, totalQuantity: 0, createdAt: DateTime.now(), updatedAt: DateTime.now()),
+        orElse: () => FinancialRecord(
+            id: 0,
+            patientId: 0,
+            totalQuantity: 0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now()),
       );
       final patient = _patients.firstWhere(
         (p) => p.id == record.patientId,
-        orElse: () => Patient(id: 0, name: '未知患者', age: 0, gender: '未知', phone: '', first_visit_date: DateTime.now()),
+        orElse: () => Patient(
+            id: 0,
+            name: '未知患者',
+            age: 0,
+            gender: '未知',
+            phone: '',
+            first_visit_date: DateTime.now()),
       );
-      patientTotals[patient.name] = (patientTotals[patient.name] ?? 0) + item.totalPrice;
+      patientTotals[patient.name] =
+          (patientTotals[patient.name] ?? 0) + item.totalPrice;
     }
 
     final sortedPatients = patientTotals.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    
+
     return sortedPatients.take(20).toList();
   }
 
@@ -358,22 +391,29 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
   List<MapEntry<String, double>> _calculateTopDebtors() {
     final Map<int, double> receivableByPatient = {};
     final Map<int, double> receivedByPatient = {};
-    
+
     // 按截止日期过滤：只计算结束日期之前的所有财务项目
     final endDate = DateTime(_endDate.year, _endDate.month, _endDate.day);
     final itemsBeforeEndDate = _financialItems.where((item) {
-      final itemDate = DateTime(item.chargeDate.year, item.chargeDate.month, item.chargeDate.day);
+      final itemDate = DateTime(
+          item.chargeDate.year, item.chargeDate.month, item.chargeDate.day);
       return itemDate.isBefore(endDate) || itemDate.isAtSameMomentAs(endDate);
     }).toList();
 
     for (final item in itemsBeforeEndDate) {
       final record = _financialRecords.firstWhere(
         (r) => r.id == item.financialRecordId,
-        orElse: () => FinancialRecord(id: 0, patientId: 0, totalQuantity: 0, createdAt: DateTime.now(), updatedAt: DateTime.now()),
+        orElse: () => FinancialRecord(
+            id: 0,
+            patientId: 0,
+            totalQuantity: 0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now()),
       );
       final pid = record.patientId;
       // 患者维度应收= item_price 累加
-      receivableByPatient[pid] = (receivableByPatient[pid] ?? 0) + item.itemPrice;
+      receivableByPatient[pid] =
+          (receivableByPatient[pid] ?? 0) + item.itemPrice;
       receivedByPatient[pid] = (receivedByPatient[pid] ?? 0) + item.totalPrice;
     }
 
@@ -384,7 +424,13 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
       if (debt > 0) {
         final patient = _patients.firstWhere(
           (p) => p.id == pid,
-          orElse: () => Patient(id: 0, name: '未知患者', age: 0, gender: '未知', phone: '', first_visit_date: DateTime.now()),
+          orElse: () => Patient(
+              id: 0,
+              name: '未知患者',
+              age: 0,
+              gender: '未知',
+              phone: '',
+              first_visit_date: DateTime.now()),
         );
         patientDebts[patient.name] = debt;
       }
@@ -410,10 +456,13 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
         foregroundColor: active ? Colors.white : Colors.black87,
         elevation: active ? 3 : 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        side: BorderSide(color: active ? Colors.transparent : Colors.grey.withOpacity(0.12)),
+        side: BorderSide(
+            color: active ? Colors.transparent : Colors.grey.withOpacity(0.12)),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
-      child: Text(label, style: TextStyle(fontSize: 13, color: active ? Colors.white : Colors.black87)),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 13, color: active ? Colors.white : Colors.black87)),
     );
   }
 
@@ -429,7 +478,7 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     final monthlyProcessingData = _calculateMonthlyProcessingFee();
     final topPatients = _calculateTopPatients();
     final topDebtors = _calculateTopDebtors();
-    
+
     final sortedRevenueMonths = monthlyRevenueData.keys.toList()..sort();
     final sortedProcessingMonths = monthlyProcessingData.keys.toList()..sort();
 
@@ -488,7 +537,6 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
               ],
             ),
           ),
-
           MouseRegion(
             cursor: SystemMouseCursors.click,
             child: SizedBox(
@@ -501,19 +549,24 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(8),
-                  onTap: () async { await _showCustomDateRangePicker(); },
+                  onTap: () async {
+                    await _showCustomDateRangePicker();
+                  },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.calendar_today, size: 16, color: Colors.black54),
+                        const Icon(Icons.calendar_today,
+                            size: 16, color: Colors.black54),
                         const SizedBox(width: 6),
                         ConstrainedBox(
-                          constraints: const BoxConstraints(minWidth: 140, maxWidth: 180),
+                          constraints: const BoxConstraints(
+                              minWidth: 140, maxWidth: 180),
                           child: Text(
                             '${DateFormat('yyyy-MM-dd').format(_startDate)} - ${DateFormat('yyyy-MM-dd').format(_endDate)}',
-                            style: const TextStyle(color: Colors.black87, fontSize: 11),
+                            style: const TextStyle(
+                                color: Colors.black87, fontSize: 11),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -522,6 +575,17 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                   ),
                 ),
               ),
+            ),
+          ),
+          IconButton(
+            tooltip: _showFinancialAmounts ? '隐藏金额' : '显示金额',
+            onPressed: () {
+              setState(() {
+                _showFinancialAmounts = !_showFinancialAmounts;
+              });
+            },
+            icon: Icon(
+              _showFinancialAmounts ? Icons.visibility_off : Icons.visibility,
             ),
           ),
           IconButton(
@@ -547,8 +611,10 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 显示搜索条件提示
-            if ((widget.searchQuery != null && widget.searchQuery!.isNotEmpty) || 
-                (widget.chargeItemQuery != null && widget.chargeItemQuery!.isNotEmpty))
+            if ((widget.searchQuery != null &&
+                    widget.searchQuery!.isNotEmpty) ||
+                (widget.chargeItemQuery != null &&
+                    widget.chargeItemQuery!.isNotEmpty))
               Container(
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 16),
@@ -559,15 +625,23 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: DentalColors.info, size: 20),
+                    Icon(Icons.info_outline,
+                        color: DentalColors.info, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         '当前显示搜索结果的统计数据：${[
-                          if (widget.searchQuery != null && widget.searchQuery!.isNotEmpty) '患者搜索"${widget.searchQuery}"',
-                          if (widget.chargeItemQuery != null && widget.chargeItemQuery!.isNotEmpty) '收费项目"${widget.chargeItemQuery}"',
+                          if (widget.searchQuery != null &&
+                              widget.searchQuery!.isNotEmpty)
+                            '患者搜索"${widget.searchQuery}"',
+                          if (widget.chargeItemQuery != null &&
+                              widget.chargeItemQuery!.isNotEmpty)
+                            '收费项目"${widget.chargeItemQuery}"',
                         ].join('、')}',
-                        style: TextStyle(color: DentalColors.info, fontSize: 13, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                            color: DentalColors.info,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -582,7 +656,7 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
               paymentMethodTotals,
             ),
             const SizedBox(height: 20),
-            
+
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -591,8 +665,10 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                   // 固定切分：在原基础上将右侧整体再增加 100px（两个榜单各 +50px）
                   double rightW = (totalW / 3) < 520 ? 520 : (totalW / 3);
                   rightW += 100; // 两个榜单各 +50px
-                  if (rightW > totalW - 300) rightW = totalW - 300; // 左侧至少保留 300px
-                  final double leftW = totalW - rightW - gap; // 折线图宽度相应增加 100px（相对上次）
+                  if (rightW > totalW - 300)
+                    rightW = totalW - 300; // 左侧至少保留 300px
+                  final double leftW =
+                      totalW - rightW - gap; // 折线图宽度相应增加 100px（相对上次）
 
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -605,14 +681,17 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                             Expanded(
                               child: _buildChartCard(
                                 '月度收费趋势',
-                                _buildMonthlyRevenueChart(sortedRevenueMonths, monthlyRevenueData),
+                                _buildMonthlyRevenueChart(
+                                    sortedRevenueMonths, monthlyRevenueData),
                               ),
                             ),
                             const SizedBox(height: 12),
                             Expanded(
                               child: _buildChartCard(
                                 '加工费月趋势',
-                                _buildMonthlyProcessingChart(sortedProcessingMonths, monthlyProcessingData),
+                                _buildMonthlyProcessingChart(
+                                    sortedProcessingMonths,
+                                    monthlyProcessingData),
                               ),
                             ),
                           ],
@@ -641,20 +720,24 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     );
   }
 
-  Widget _buildMonthlyRevenueChart(List<String> sortedMonths, Map<String, double> monthlyData) {
+  Widget _buildMonthlyRevenueChart(
+      List<String> sortedMonths, Map<String, double> monthlyData) {
     if (sortedMonths.isEmpty) {
       return const Center(child: Text('暂无数据'));
     }
 
-    final maxValue = monthlyData.values.isEmpty ? 1 : monthlyData.values.reduce((a, b) => a > b ? a : b);
+    final maxValue = monthlyData.values.isEmpty
+        ? 1
+        : monthlyData.values.reduce((a, b) => a > b ? a : b);
     final maxY = maxValue * 1.2;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool enableScroll = sortedMonths.length > 12;
         // 动态计算宽度：增加每个点的宽度和额外缓冲，防止右侧标签被遮挡
-        final double chartWidth = enableScroll 
-            ? (sortedMonths.length * 70.0 + 60.0).clamp(constraints.maxWidth, double.infinity)
+        final double chartWidth = enableScroll
+            ? (sortedMonths.length * 70.0 + 60.0)
+                .clamp(constraints.maxWidth, double.infinity)
             : constraints.maxWidth;
 
         // 计算刻度间隔
@@ -662,120 +745,137 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
 
         // 定义左侧标题配置
         SideTitles leftTitlesConfig() => SideTitles(
-          showTitles: true,
-          reservedSize: 40,
-          interval: interval,
-          getTitlesWidget: (value, meta) {
-            if (value == 0) return const Text('¥0', style: TextStyle(fontSize: 10, color: Colors.black54));
-            return Text('¥${value.toInt()}', style: const TextStyle(fontSize: 10, color: Colors.black54));
-          },
-        );
+              showTitles: true,
+              reservedSize: 40,
+              interval: interval,
+              getTitlesWidget: (value, meta) {
+                if (value == 0)
+                  return const Text('¥0',
+                      style: TextStyle(fontSize: 10, color: Colors.black54));
+                return Text('¥${value.toInt()}',
+                    style:
+                        const TextStyle(fontSize: 10, color: Colors.black54));
+              },
+            );
 
         // 定义底部标题配置
         SideTitles bottomTitlesConfig({bool showLabels = true}) => SideTitles(
-          showTitles: true,
-          reservedSize: 22,
-          interval: 1,
-          getTitlesWidget: (value, meta) {
-            if (!showLabels) return const Text('');
-            if (value % 1 != 0) return const Text('');
-            final index = value.toInt();
-            if (index >= 0 && index < sortedMonths.length) {
-              final month = sortedMonths[index];
-              // 如果启用滚动，显示所有标签；否则适度稀疏
-              // 始终显示最后一个标签
-              if (!enableScroll && 
-                  sortedMonths.length > 8 && 
-                  index % 2 != 0 && 
-                  index != sortedMonths.length - 1) {
+              showTitles: true,
+              reservedSize: 22,
+              interval: 1,
+              getTitlesWidget: (value, meta) {
+                if (!showLabels) return const Text('');
+                if (value % 1 != 0) return const Text('');
+                final index = value.toInt();
+                if (index >= 0 && index < sortedMonths.length) {
+                  final month = sortedMonths[index];
+                  // 如果启用滚动，显示所有标签；否则适度稀疏
+                  // 始终显示最后一个标签
+                  if (!enableScroll &&
+                      sortedMonths.length > 8 &&
+                      index % 2 != 0 &&
+                      index != sortedMonths.length - 1) {
+                    return const Text('');
+                  }
+                  return Text(month.substring(5),
+                      style: const TextStyle(fontSize: 10));
+                }
                 return const Text('');
-              }
-              return Text(month.substring(5), style: const TextStyle(fontSize: 10));
-            }
-            return const Text('');
-          },
-        );
+              },
+            );
 
         // 主图表配置
         LineChartData mainChartData(bool showLeftTitles) => LineChartData(
-          lineTouchData: LineTouchData(
-            enabled: true,
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (spot) => Colors.white,
-              getTooltipItems: (touchedSpots) {
-                return touchedSpots.map((spot) {
-                  final index = spot.x.toInt();
-                  if (index >= 0 && index < sortedMonths.length) {
-                    final month = sortedMonths[index];
-                    final amount = monthlyData[month] ?? 0;
-                    return LineTooltipItem(
-                      '$month\n¥${amount.toStringAsFixed(0)}',
-                      const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
-                    );
-                  }
-                  return const LineTooltipItem('', TextStyle());
-                }).toList();
-              },
-              fitInsideHorizontally: true,
-              fitInsideVertically: true,
-            ),
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: interval, // 显式设置水平网格间隔
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
-          ),
-          titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(sideTitles: bottomTitlesConfig(showLabels: true)),
-            leftTitles: AxisTitles(sideTitles: showLeftTitles ? leftTitlesConfig() : SideTitles(showTitles: false)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 20)), // 增加顶部预留空间
-            rightTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true, 
-                reservedSize: 30, // 增加右侧预留空间，防止最后一个标签被裁剪
-                getTitlesWidget: (value, meta) => const Text(''),
+              lineTouchData: LineTouchData(
+                enabled: true,
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipColor: (spot) => Colors.white,
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((spot) {
+                      final index = spot.x.toInt();
+                      if (index >= 0 && index < sortedMonths.length) {
+                        final month = sortedMonths[index];
+                        final amount = monthlyData[month] ?? 0;
+                        return LineTooltipItem(
+                          '$month\n¥${amount.toStringAsFixed(0)}',
+                          const TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.bold),
+                        );
+                      }
+                      return const LineTooltipItem('', TextStyle());
+                    }).toList();
+                  },
+                  fitInsideHorizontally: true,
+                  fitInsideVertically: true,
+                ),
               ),
-            ),
-          ),
-          borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300, width: 1)),
-          minX: 0,
-          maxX: sortedMonths.length - 1,
-          minY: 0,
-          maxY: maxY,
-          lineBarsData: [
-            LineChartBarData(
-              spots: sortedMonths.asMap().entries.map((entry) {
-                final amount = monthlyData[entry.value] ?? 0;
-                return FlSpot(entry.key.toDouble(), amount);
-              }).toList(),
-              isCurved: true,
-              color: Colors.blue,
-              barWidth: 3,
-              isStrokeCapRound: true,
-              dotData: FlDotData(
+              gridData: FlGridData(
                 show: true,
-                getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                  radius: 3,
+                drawVerticalLine: false,
+                horizontalInterval: interval, // 显式设置水平网格间隔
+                getDrawingHorizontalLine: (value) =>
+                    FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+              ),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                    sideTitles: bottomTitlesConfig(showLabels: true)),
+                leftTitles: AxisTitles(
+                    sideTitles: showLeftTitles
+                        ? leftTitlesConfig()
+                        : SideTitles(showTitles: false)),
+                topTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                        showTitles: false, reservedSize: 20)), // 增加顶部预留空间
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30, // 增加右侧预留空间，防止最后一个标签被裁剪
+                    getTitlesWidget: (value, meta) => const Text(''),
+                  ),
+                ),
+              ),
+              borderData: FlBorderData(
+                  show: true,
+                  border: Border.all(color: Colors.grey.shade300, width: 1)),
+              minX: 0,
+              maxX: sortedMonths.length - 1,
+              minY: 0,
+              maxY: maxY,
+              lineBarsData: [
+                LineChartBarData(
+                  spots: sortedMonths.asMap().entries.map((entry) {
+                    final amount = monthlyData[entry.value] ?? 0;
+                    return FlSpot(entry.key.toDouble(), amount);
+                  }).toList(),
+                  isCurved: true,
                   color: Colors.blue,
-                  strokeWidth: 2,
-                  strokeColor: Colors.white,
+                  barWidth: 3,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) =>
+                        FlDotCirclePainter(
+                      radius: 3,
+                      color: Colors.blue,
+                      strokeWidth: 2,
+                      strokeColor: Colors.white,
+                    ),
+                  ),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.blue.withOpacity(0.3),
+                        Colors.blue.withOpacity(0.1),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.blue.withOpacity(0.3),
-                    Colors.blue.withOpacity(0.1),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
+              ],
+            );
 
         if (enableScroll) {
           final ScrollController scrollController = ScrollController();
@@ -789,10 +889,14 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                     lineTouchData: LineTouchData(enabled: false),
                     gridData: FlGridData(show: false),
                     titlesData: FlTitlesData(
-                      bottomTitles: AxisTitles(sideTitles: bottomTitlesConfig(showLabels: false)),
+                      bottomTitles: AxisTitles(
+                          sideTitles: bottomTitlesConfig(showLabels: false)),
                       leftTitles: AxisTitles(sideTitles: leftTitlesConfig()),
-                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 20)),
-                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: AxisTitles(
+                          sideTitles:
+                              SideTitles(showTitles: false, reservedSize: 20)),
+                      rightTitles:
+                          AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     ),
                     borderData: FlBorderData(show: false),
                     minX: 0,
@@ -827,19 +931,23 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     );
   }
 
-  Widget _buildMonthlyProcessingChart(List<String> sortedMonths, Map<String, double> monthlyData) {
+  Widget _buildMonthlyProcessingChart(
+      List<String> sortedMonths, Map<String, double> monthlyData) {
     if (sortedMonths.isEmpty) {
       return const Center(child: Text('暂无数据'));
     }
 
-    final maxValue = monthlyData.values.isEmpty ? 1 : monthlyData.values.reduce((a, b) => a > b ? a : b);
+    final maxValue = monthlyData.values.isEmpty
+        ? 1
+        : monthlyData.values.reduce((a, b) => a > b ? a : b);
     final maxY = maxValue * 1.2;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool enableScroll = sortedMonths.length > 12;
-        final double chartWidth = enableScroll 
-            ? (sortedMonths.length * 70.0 + 60.0).clamp(constraints.maxWidth, double.infinity)
+        final double chartWidth = enableScroll
+            ? (sortedMonths.length * 70.0 + 60.0)
+                .clamp(constraints.maxWidth, double.infinity)
             : constraints.maxWidth;
 
         // 计算刻度间隔
@@ -847,120 +955,137 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
 
         // 定义左侧标题配置
         SideTitles leftTitlesConfig() => SideTitles(
-          showTitles: true,
-          reservedSize: 40,
-          interval: interval,
-          getTitlesWidget: (value, meta) {
-            if (value == 0) return const Text('¥0', style: TextStyle(fontSize: 10, color: Colors.black54));
-            return Text('¥${value.toInt()}', style: const TextStyle(fontSize: 10, color: Colors.black54));
-          },
-        );
+              showTitles: true,
+              reservedSize: 40,
+              interval: interval,
+              getTitlesWidget: (value, meta) {
+                if (value == 0)
+                  return const Text('¥0',
+                      style: TextStyle(fontSize: 10, color: Colors.black54));
+                return Text('¥${value.toInt()}',
+                    style:
+                        const TextStyle(fontSize: 10, color: Colors.black54));
+              },
+            );
 
         // 定义底部标题配置
         SideTitles bottomTitlesConfig({bool showLabels = true}) => SideTitles(
-          showTitles: true,
-          reservedSize: 22,
-          interval: 1,
-          getTitlesWidget: (value, meta) {
-            if (!showLabels) return const Text('');
-            if (value % 1 != 0) return const Text('');
-            final index = value.toInt();
-            if (index >= 0 && index < sortedMonths.length) {
-              final month = sortedMonths[index];
-              // 如果启用滚动，显示所有标签；否则适度稀疏
-              // 始终显示最后一个标签
-              if (!enableScroll && 
-                  sortedMonths.length > 8 && 
-                  index % 2 != 0 && 
-                  index != sortedMonths.length - 1) {
+              showTitles: true,
+              reservedSize: 22,
+              interval: 1,
+              getTitlesWidget: (value, meta) {
+                if (!showLabels) return const Text('');
+                if (value % 1 != 0) return const Text('');
+                final index = value.toInt();
+                if (index >= 0 && index < sortedMonths.length) {
+                  final month = sortedMonths[index];
+                  // 如果启用滚动，显示所有标签；否则适度稀疏
+                  // 始终显示最后一个标签
+                  if (!enableScroll &&
+                      sortedMonths.length > 8 &&
+                      index % 2 != 0 &&
+                      index != sortedMonths.length - 1) {
+                    return const Text('');
+                  }
+                  return Text(month.substring(5),
+                      style: const TextStyle(fontSize: 10));
+                }
                 return const Text('');
-              }
-              return Text(month.substring(5), style: const TextStyle(fontSize: 10));
-            }
-            return const Text('');
-          },
-        );
+              },
+            );
 
         // 主图表配置
         LineChartData mainChartData(bool showLeftTitles) => LineChartData(
-          lineTouchData: LineTouchData(
-            enabled: true,
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (spot) => Colors.white,
-              getTooltipItems: (touchedSpots) {
-                return touchedSpots.map((spot) {
-                  final index = spot.x.toInt();
-                  if (index >= 0 && index < sortedMonths.length) {
-                    final month = sortedMonths[index];
-                    final amount = monthlyData[month] ?? 0;
-                    return LineTooltipItem(
-                      '$month\n¥${amount.toStringAsFixed(0)}',
-                      const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
-                    );
-                  }
-                  return const LineTooltipItem('', TextStyle());
-                }).toList();
-              },
-              fitInsideHorizontally: true,
-              fitInsideVertically: true,
-            ),
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: interval, // 显式设置水平网格间隔
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
-          ),
-          titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(sideTitles: bottomTitlesConfig(showLabels: true)),
-            leftTitles: AxisTitles(sideTitles: showLeftTitles ? leftTitlesConfig() : SideTitles(showTitles: false)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 20)), // 增加顶部预留空间
-            rightTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true, 
-                reservedSize: 30, // 增加右侧预留空间，防止最后一个标签被裁剪
-                getTitlesWidget: (value, meta) => const Text(''),
+              lineTouchData: LineTouchData(
+                enabled: true,
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipColor: (spot) => Colors.white,
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((spot) {
+                      final index = spot.x.toInt();
+                      if (index >= 0 && index < sortedMonths.length) {
+                        final month = sortedMonths[index];
+                        final amount = monthlyData[month] ?? 0;
+                        return LineTooltipItem(
+                          '$month\n¥${amount.toStringAsFixed(0)}',
+                          const TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.bold),
+                        );
+                      }
+                      return const LineTooltipItem('', TextStyle());
+                    }).toList();
+                  },
+                  fitInsideHorizontally: true,
+                  fitInsideVertically: true,
+                ),
               ),
-            ),
-          ),
-          borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300, width: 1)),
-          minX: 0,
-          maxX: sortedMonths.length - 1,
-          minY: 0,
-          maxY: maxY,
-          lineBarsData: [
-            LineChartBarData(
-              spots: sortedMonths.asMap().entries.map((entry) {
-                final amount = monthlyData[entry.value] ?? 0;
-                return FlSpot(entry.key.toDouble(), amount);
-              }).toList(),
-              isCurved: true,
-              color: Colors.green,
-              barWidth: 3,
-              isStrokeCapRound: true,
-              dotData: FlDotData(
+              gridData: FlGridData(
                 show: true,
-                getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                  radius: 3,
+                drawVerticalLine: false,
+                horizontalInterval: interval, // 显式设置水平网格间隔
+                getDrawingHorizontalLine: (value) =>
+                    FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+              ),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                    sideTitles: bottomTitlesConfig(showLabels: true)),
+                leftTitles: AxisTitles(
+                    sideTitles: showLeftTitles
+                        ? leftTitlesConfig()
+                        : SideTitles(showTitles: false)),
+                topTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                        showTitles: false, reservedSize: 20)), // 增加顶部预留空间
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30, // 增加右侧预留空间，防止最后一个标签被裁剪
+                    getTitlesWidget: (value, meta) => const Text(''),
+                  ),
+                ),
+              ),
+              borderData: FlBorderData(
+                  show: true,
+                  border: Border.all(color: Colors.grey.shade300, width: 1)),
+              minX: 0,
+              maxX: sortedMonths.length - 1,
+              minY: 0,
+              maxY: maxY,
+              lineBarsData: [
+                LineChartBarData(
+                  spots: sortedMonths.asMap().entries.map((entry) {
+                    final amount = monthlyData[entry.value] ?? 0;
+                    return FlSpot(entry.key.toDouble(), amount);
+                  }).toList(),
+                  isCurved: true,
                   color: Colors.green,
-                  strokeWidth: 2,
-                  strokeColor: Colors.white,
+                  barWidth: 3,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) =>
+                        FlDotCirclePainter(
+                      radius: 3,
+                      color: Colors.green,
+                      strokeWidth: 2,
+                      strokeColor: Colors.white,
+                    ),
+                  ),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.green.withOpacity(0.3),
+                        Colors.green.withOpacity(0.1),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.green.withOpacity(0.3),
-                    Colors.green.withOpacity(0.1),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
+              ],
+            );
 
         if (enableScroll) {
           final ScrollController scrollController = ScrollController();
@@ -974,10 +1099,14 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                     lineTouchData: LineTouchData(enabled: false),
                     gridData: FlGridData(show: false),
                     titlesData: FlTitlesData(
-                      bottomTitles: AxisTitles(sideTitles: bottomTitlesConfig(showLabels: false)),
+                      bottomTitles: AxisTitles(
+                          sideTitles: bottomTitlesConfig(showLabels: false)),
                       leftTitles: AxisTitles(sideTitles: leftTitlesConfig()),
-                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 20)),
-                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: AxisTitles(
+                          sideTitles:
+                              SideTitles(showTitles: false, reservedSize: 20)),
+                      rightTitles:
+                          AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     ),
                     borderData: FlBorderData(show: false),
                     minX: 0,
@@ -1027,35 +1156,58 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
         Expanded(
           child: SizedBox(
             height: summaryCardHeight,
-            child: _buildStatCard('总患者数', totalPatients.toString(), Icons.people, DentalColors.primary),
+            child: _buildStatCard('总患者数', totalPatients.toString(),
+                Icons.people, DentalColors.primary),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: SizedBox(
             height: summaryCardHeight,
-            child: _buildStatCard('总记录数', totalItems.toString(), Icons.insert_drive_file, DentalColors.success),
+            child: _buildStatCard('总记录数', totalItems.toString(),
+                Icons.insert_drive_file, DentalColors.success),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: SizedBox(
             height: summaryCardHeight,
-            child: _buildStatCard('总收费', '¥${totalReceived.toStringAsFixed(0)}', Icons.check_circle_outline, DentalColors.warning),
+            child: _buildStatCard(
+              '总收费',
+              _showFinancialAmounts
+                  ? '¥${totalReceived.toStringAsFixed(0)}'
+                  : '****',
+              Icons.check_circle_outline,
+              DentalColors.warning,
+            ),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: SizedBox(
             height: summaryCardHeight,
-            child: _buildStatCard('总欠费', '¥${totalDebt.toStringAsFixed(0)}', Icons.error_outline, DentalColors.error),
+            child: _buildStatCard(
+              '总欠费',
+              _showFinancialAmounts
+                  ? '¥${totalDebt.toStringAsFixed(0)}'
+                  : '****',
+              Icons.error_outline,
+              DentalColors.error,
+            ),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: SizedBox(
             height: summaryCardHeight,
-            child: _buildStatCard('总加工费', '¥${totalProcessingFee.toStringAsFixed(0)}', Icons.build, DentalColors.info),
+            child: _buildStatCard(
+              '总加工费',
+              _showFinancialAmounts
+                  ? '¥${totalProcessingFee.toStringAsFixed(0)}'
+                  : '****',
+              Icons.build,
+              DentalColors.info,
+            ),
           ),
         ),
         const SizedBox(width: 16),
@@ -1202,7 +1354,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
       return const SizedBox(height: 26);
     }
 
-    final iconPath = FinancialPaymentMethodHelper.iconAssetPathOrNull(methodKey);
+    final iconPath =
+        FinancialPaymentMethodHelper.iconAssetPathOrNull(methodKey);
     return Container(
       constraints: const BoxConstraints(minHeight: 26),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -1222,7 +1375,7 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
             const SizedBox(width: 3),
           ],
           Text(
-            '¥${amount.toStringAsFixed(0)}',
+            _showFinancialAmounts ? '¥${amount.toStringAsFixed(0)}' : '****',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
@@ -1283,7 +1436,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
   }
 
   Widget _buildTopPatientsCard(List<MapEntry<String, double>> topPatients) {
-    final grandTotal = topPatients.fold(0.0, (double sum, item) => sum + item.value);
+    final grandTotal =
+        topPatients.fold(0.0, (double sum, item) => sum + item.value);
     return _buildListCard(
       '患者收费统计 (前20名)',
       Icons.person_search,
@@ -1301,14 +1455,18 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                     backgroundColor: DentalColors.primary.withOpacity(0.1),
                     child: Text(
                       entry.key.substring(0, 1),
-                      style: TextStyle(color: DentalColors.primary, fontWeight: FontWeight.bold, fontSize: 11),
+                      style: TextStyle(
+                          color: DentalColors.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       entry.key,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w500),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1324,7 +1482,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text('${percentage.toStringAsFixed(1)}%', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                  Text('${percentage.toStringAsFixed(1)}%',
+                      style: const TextStyle(fontSize: 11, color: Colors.grey)),
                 ],
               ),
               const SizedBox(height: 4),
@@ -1339,7 +1498,7 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
       }).toList(),
     );
   }
-  
+
   Widget _buildTopDebtorsCard(List<MapEntry<String, double>> topDebtors) {
     return _buildListCard(
       '患者欠费排行 (前30名)',
@@ -1358,7 +1517,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
               Expanded(
                 child: Text(
                   entry.key,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w500),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1405,7 +1565,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],

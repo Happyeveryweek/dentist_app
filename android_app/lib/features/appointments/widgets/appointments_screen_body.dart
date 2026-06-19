@@ -18,6 +18,7 @@ class AppointmentsScreenBody extends StatelessWidget {
   final List<Appointment> filteredAppointments;
   final List<Appointment> todayAppointments;
   final TextEditingController searchController;
+  final String searchQuery;
   final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onSearchSubmitted;
   final VoidCallback onClearSearch;
@@ -44,6 +45,7 @@ class AppointmentsScreenBody extends StatelessWidget {
     required this.filteredAppointments,
     required this.todayAppointments,
     required this.searchController,
+    required this.searchQuery,
     required this.onSearchChanged,
     required this.onSearchSubmitted,
     required this.onClearSearch,
@@ -86,7 +88,7 @@ class AppointmentsScreenBody extends StatelessWidget {
                   children: [
                     AppointmentSearchFilterBar(
                       searchController: searchController,
-                      searchQuery: '',
+                      searchQuery: searchQuery,
                       onSearchChanged: onSearchChanged,
                       onSearchSubmitted: onSearchSubmitted,
                       onClearSearch: onClearSearch,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -16,7 +18,8 @@ import '../features/financial/services/financial_calculator.dart';
 import '../features/financial/widgets/financial_search_bar.dart';
 import '../features/financial/widgets/financial_statistics_card.dart';
 import '../features/financial/widgets/financial_record_card.dart';
-import '../features/financial/widgets/financial_sort_dialog.dart' as sort_dialog;
+import '../features/financial/widgets/financial_sort_dialog.dart'
+    as sort_dialog;
 import '../features/financial/widgets/progressive_statistics_dialog.dart';
 import '../features/financial/widgets/financial_management_screen_body.dart';
 
@@ -25,7 +28,8 @@ class FinancialManagementScreen extends StatefulWidget {
   const FinancialManagementScreen({super.key});
 
   @override
-  State<FinancialManagementScreen> createState() => _FinancialManagementScreenState();
+  State<FinancialManagementScreen> createState() =>
+      _FinancialManagementScreenState();
 }
 
 class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
@@ -38,15 +42,15 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   String _errorMessage = '';
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-  
+
   // 排序相关
   String _currentSort = 'updated_time';
   bool _ascending = false;
-  
+
   // 时间筛选相关变量
   DateTime? _startDate;
   DateTime? _endDate;
-  
+
   // 分页相关
   int _currentPage = 1;
   static const int _pageSize = 30;
@@ -60,6 +64,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   bool _isStatsLoading = false;
   // 保存 provider 引用，用于 dispose 时安全移除监听
   FinancialProvider? _financialProviderRef;
+  Timer? _searchDebounce;
 
   bool _hasInitialized = false;
 
@@ -72,7 +77,8 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   }
 
   void _scrollListener() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
       if (!_isLoadingMore && _hasMoreData && !_isSearchMode) {
         _loadMoreRecords();
       }
@@ -99,6 +105,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         searchQuery: _searchQuery,
         startDate: _startDate,
         endDate: _endDate,
+        onSearchChanged: _onSearchChanged,
         financialRecords: _financialRecords,
         filteredRecords: _filteredRecords,
         recordItemsMap: _recordItemsMap,
@@ -110,10 +117,14 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         scrollController: _scrollController,
         onShowStatistics: _showStatisticsDialog,
         onSearchSubmitted: (value) {
-          setState(() { _searchQuery = value.trim(); });
+          _searchDebounce?.cancel();
+          setState(() {
+            _searchQuery = value.trim();
+          });
           _performSearch();
         },
         onClearSearch: () {
+          _searchDebounce?.cancel();
           setState(() {
             _searchQuery = '';
             _searchController.clear();
@@ -122,21 +133,23 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         },
         onSortPressed: () => _showSortOptions(context),
         onDateFilterPressed: _showCustomDateRangePicker,
+        onPresetDateFilter: _applyPresetDateFilter,
         onClearDateFilter: () {
-          setState(() { _startDate = null; _endDate = null; });
+          setState(() {
+            _startDate = null;
+            _endDate = null;
+          });
           _onDateFilterChanged();
         },
         onRefresh: () async {
           await _loadData(showToast: false, forceRefresh: true);
           if (mounted) {
-            SuccessToastManager.show(
-              context,
-              message: '刷新成功',
-            );
+            SuccessToastManager.show(context, message: '刷新成功');
           }
         },
         onReconnect: _reconnectDatabase,
-        onShowRecordDetails: (record) => _showFinancialRecordDetails(context, record),
+        onShowRecordDetails:
+            (record) => _showFinancialRecordDetails(context, record),
         onDeleteRecord: (record) => _deleteFinancialRecord(record),
       ),
       floatingActionButton: FloatingActionButton(
@@ -155,7 +168,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         _isLoading = true;
         _hasError = false;
       });
-      
+
       final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
       if (dbProvider.dbType == 'mysql') {
         // 直接重新加载数据，如果连接有问题会自动提示
@@ -176,15 +189,26 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   }
 
   /// 加载数据 - 分页加载（时间筛选走数据库）
-  Future<void> _loadData({bool showToast = true, bool forceRefresh = false}) async {
+  Future<void> _loadData({
+    bool showToast = true,
+    bool forceRefresh = false,
+  }) async {
     if (!mounted) return;
 
     try {
-      final financialProvider = Provider.of<FinancialProvider>(context, listen: false);
-      final databaseProvider = Provider.of<DatabaseProvider>(context, listen: false);
+      final financialProvider = Provider.of<FinancialProvider>(
+        context,
+        listen: false,
+      );
+      final databaseProvider = Provider.of<DatabaseProvider>(
+        context,
+        listen: false,
+      );
 
       if (!financialProvider.initialized) {
-        setState(() { _isLoading = true; });
+        setState(() {
+          _isLoading = true;
+        });
         await financialProvider.initializeFromDatabase(databaseProvider);
       }
 
@@ -198,7 +222,10 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       }
 
       // 有分页缓存且无时间筛选且不强制刷新，直接用缓存
-      if (!forceRefresh && financialProvider.hasCache && _startDate == null && _endDate == null) {
+      if (!forceRefresh &&
+          financialProvider.hasCache &&
+          _startDate == null &&
+          _endDate == null) {
         final cached = financialProvider.cachedRecords;
         final cachedItems = financialProvider.cachedItemsMap;
         setState(() {
@@ -213,7 +240,9 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         });
         // 统计数据
         if (financialProvider.cachedStats != null) {
-          setState(() { _globalStats = financialProvider.cachedStats!; });
+          setState(() {
+            _globalStats = financialProvider.cachedStats!;
+          });
         }
         _loadGlobalStats(financialProvider, forceRefresh: false);
         return;
@@ -229,17 +258,20 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       });
 
       // 获取当前筛选条件下的总数
-      _totalRecordsInDatabase = await financialProvider.getFinancialRecordCountWithDateFilter(
-        startDate: _startDate,
-        endDate: _endDate,
-      );
+      _totalRecordsInDatabase = await financialProvider
+          .getFinancialRecordCountWithDateFilter(
+            startDate: _startDate,
+            endDate: _endDate,
+          );
 
       // 加载第一页（带日期筛选）
-      final records = await financialProvider.getPaginatedFinancialRecordsWithDateFilter(
-        1, _pageSize,
-        startDate: _startDate,
-        endDate: _endDate,
-      );
+      final records = await financialProvider
+          .getPaginatedFinancialRecordsWithDateFilter(
+            1,
+            _pageSize,
+            startDate: _startDate,
+            endDate: _endDate,
+          );
 
       // 加载明细项
       final itemsMap = <int, List<FinancialItem>>{};
@@ -247,7 +279,8 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         if (!mounted) return;
         if (record.id != null) {
           try {
-            itemsMap[record.id!] = await financialProvider.getFinancialItemsByRecordId(record.id!);
+            itemsMap[record.id!] = await financialProvider
+                .getFinancialItemsByRecordId(record.id!);
           } catch (e) {
             itemsMap[record.id!] = [];
           }
@@ -278,14 +311,24 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         _errorMessage = '加载数据失败: $e';
       });
       if (mounted && showToast) {
-        SuccessToastManager.showError(context, message: '加载数据失败: $e', duration: const Duration(seconds: 4));
+        SuccessToastManager.showError(
+          context,
+          message: '加载数据失败: $e',
+          duration: const Duration(seconds: 4),
+        );
       }
     }
   }
 
   /// 渐进式加载全量统计（先快速显示，后台独立任务继续更新）
-  Future<void> _loadGlobalStats(FinancialProvider financialProvider, {bool forceRefresh = false}) async {
-    if (mounted) setState(() { _isStatsLoading = true; });
+  Future<void> _loadGlobalStats(
+    FinancialProvider financialProvider, {
+    bool forceRefresh = false,
+  }) async {
+    if (mounted)
+      setState(() {
+        _isStatsLoading = true;
+      });
 
     await financialProvider.loadStatsProgressively(
       initialCount: 10,
@@ -324,6 +367,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
@@ -336,23 +380,31 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   /// 加载更多（下一页，带日期筛选）
   Future<void> _loadMoreRecords() async {
     if (_isLoadingMore || !_hasMoreData || _isSearchMode) return;
-    setState(() { _isLoadingMore = true; });
+    setState(() {
+      _isLoadingMore = true;
+    });
 
     try {
-      final financialProvider = Provider.of<FinancialProvider>(context, listen: false);
-      final nextPage = _currentPage + 1;
-      final records = await financialProvider.getPaginatedFinancialRecordsWithDateFilter(
-        nextPage, _pageSize,
-        startDate: _startDate,
-        endDate: _endDate,
+      final financialProvider = Provider.of<FinancialProvider>(
+        context,
+        listen: false,
       );
+      final nextPage = _currentPage + 1;
+      final records = await financialProvider
+          .getPaginatedFinancialRecordsWithDateFilter(
+            nextPage,
+            _pageSize,
+            startDate: _startDate,
+            endDate: _endDate,
+          );
 
       final itemsMap = Map<int, List<FinancialItem>>.from(_recordItemsMap);
       for (final record in records) {
         if (!mounted) return;
         if (record.id != null) {
           try {
-            itemsMap[record.id!] = await financialProvider.getFinancialItemsByRecordId(record.id!);
+            itemsMap[record.id!] = await financialProvider
+                .getFinancialItemsByRecordId(record.id!);
           } catch (e) {
             itemsMap[record.id!] = [];
           }
@@ -372,8 +424,22 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       }
     } catch (e) {
       print('❌ 加载更多财务记录失败: $e');
-      if (mounted) setState(() { _isLoadingMore = false; });
+      if (mounted)
+        setState(() {
+          _isLoadingMore = false;
+        });
     }
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    setState(() {
+      _searchQuery = value.trim();
+    });
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      _performSearch();
+    });
   }
 
   /// 执行数据库搜索
@@ -393,15 +459,23 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     });
 
     try {
-      final financialProvider = Provider.of<FinancialProvider>(context, listen: false);
-      final records = await financialProvider.searchFinancialRecords(query);
+      final financialProvider = Provider.of<FinancialProvider>(
+        context,
+        listen: false,
+      );
+      final records = await financialProvider.searchFinancialRecords(
+        query,
+        startDate: _startDate,
+        endDate: _endDate,
+      );
 
       final itemsMap = <int, List<FinancialItem>>{};
       for (final record in records) {
         if (!mounted) return;
         if (record.id != null) {
           try {
-            itemsMap[record.id!] = await financialProvider.getFinancialItemsByRecordId(record.id!);
+            itemsMap[record.id!] = await financialProvider
+                .getFinancialItemsByRecordId(record.id!);
           } catch (e) {
             itemsMap[record.id!] = [];
           }
@@ -430,19 +504,24 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
   /// 时间筛选变更 - 重新从数据库加载
   void _onDateFilterChanged() {
-    _loadData(showToast: false);
+    if (_searchQuery.trim().isNotEmpty) {
+      _performSearch();
+    } else {
+      _loadData(showToast: false);
+    }
   }
 
   /// 时间范围选择方法
   Future<void> _showCustomDateRangePicker() async {
     final now = DateTime.now();
-    final DateTime initialStart = _startDate ?? DateTime(now.year, now.month, 1);
+    final DateTime initialStart =
+        _startDate ?? DateTime(now.year, now.month, 1);
     final DateTime initialEnd = _endDate ?? now;
     final picked = await ReusableDateRangePicker.show(
       context,
       start: initialStart,
       end: initialEnd,
-      title: '选择财务记录日期范围'
+      title: '选择财务记录日期范围',
     );
     if (picked != null) {
       setState(() {
@@ -453,6 +532,46 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     }
   }
 
+  void _applyPresetDateFilter(String preset) {
+    final now = DateTime.now();
+    DateTime? start;
+    DateTime? end;
+
+    switch (preset) {
+      case 'this_month':
+        start = DateTime(now.year, now.month, 1);
+        end = DateTime(now.year, now.month + 1, 0);
+        break;
+      case 'last_month':
+        final lastMonth = DateTime(now.year, now.month - 1);
+        start = DateTime(lastMonth.year, lastMonth.month, 1);
+        end = DateTime(lastMonth.year, lastMonth.month + 1, 0);
+        break;
+      case '30d':
+        start = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).subtract(const Duration(days: 29));
+        end = DateTime(now.year, now.month, now.day);
+        break;
+      case 'this_year':
+        start = DateTime(now.year, 1, 1);
+        end = DateTime(now.year, 12, 31);
+        break;
+      case 'all':
+        break;
+      default:
+        return;
+    }
+
+    setState(() {
+      _startDate = start;
+      _endDate = end;
+    });
+    _onDateFilterChanged();
+  }
+
   /// 显示排序选项对话框
   void _showSortOptions(BuildContext context) {
     showModalBottomSheet(
@@ -460,24 +579,25 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (context) => sort_dialog.FinancialSortDialogContent(
-        currentSort: _currentSort,
-        isAscending: _ascending,
-        onSortChanged: (sortType) {
-          setState(() {
-            if (_currentSort == sortType) {
-              // 如果已经是当前排序项，则切换顺序
-              _ascending = !_ascending;
-            } else {
-              // 否则更改排序项并设置为降序
-              _currentSort = sortType;
-              _ascending = false;
-            }
-          });
-          // 应用排序
-          _sortRecords();
-        },
-      ),
+      builder:
+          (context) => sort_dialog.FinancialSortDialogContent(
+            currentSort: _currentSort,
+            isAscending: _ascending,
+            onSortChanged: (sortType) {
+              setState(() {
+                if (_currentSort == sortType) {
+                  // 如果已经是当前排序项，则切换顺序
+                  _ascending = !_ascending;
+                } else {
+                  // 否则更改排序项并设置为降序
+                  _currentSort = sortType;
+                  _ascending = false;
+                }
+              });
+              // 应用排序
+              _sortRecords();
+            },
+          ),
     );
   }
 
@@ -494,16 +614,18 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           break;
         case 'collected_amount':
           _filteredRecords.sort((a, b) {
-            final aCollected = FinancialCalculator.calculatePatientLatestCollectedAmount(
-              a.patientId,
-              _financialRecords,
-              _recordItemsMap,
-            );
-            final bCollected = FinancialCalculator.calculatePatientLatestCollectedAmount(
-              b.patientId,
-              _financialRecords,
-              _recordItemsMap,
-            );
+            final aCollected =
+                FinancialCalculator.calculatePatientLatestCollectedAmount(
+                  a.patientId,
+                  _financialRecords,
+                  _recordItemsMap,
+                );
+            final bCollected =
+                FinancialCalculator.calculatePatientLatestCollectedAmount(
+                  b.patientId,
+                  _financialRecords,
+                  _recordItemsMap,
+                );
             return _ascending
                 ? aCollected.compareTo(bCollected)
                 : bCollected.compareTo(aCollected);
@@ -511,30 +633,34 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           break;
         case 'outstanding_amount':
           _filteredRecords.sort((a, b) {
-            final aReceivable = FinancialCalculator.calculatePatientLatestReceivableAmount(
-              a.patientId,
-              _financialRecords,
-              _recordItemsMap,
-            );
-            final aCollected = FinancialCalculator.calculatePatientLatestCollectedAmount(
-              a.patientId,
-              _financialRecords,
-              _recordItemsMap,
-            );
+            final aReceivable =
+                FinancialCalculator.calculatePatientLatestReceivableAmount(
+                  a.patientId,
+                  _financialRecords,
+                  _recordItemsMap,
+                );
+            final aCollected =
+                FinancialCalculator.calculatePatientLatestCollectedAmount(
+                  a.patientId,
+                  _financialRecords,
+                  _recordItemsMap,
+                );
             final aOutstanding = aReceivable - aCollected;
-            
-            final bReceivable = FinancialCalculator.calculatePatientLatestReceivableAmount(
-              b.patientId,
-              _financialRecords,
-              _recordItemsMap,
-            );
-            final bCollected = FinancialCalculator.calculatePatientLatestCollectedAmount(
-              b.patientId,
-              _financialRecords,
-              _recordItemsMap,
-            );
+
+            final bReceivable =
+                FinancialCalculator.calculatePatientLatestReceivableAmount(
+                  b.patientId,
+                  _financialRecords,
+                  _recordItemsMap,
+                );
+            final bCollected =
+                FinancialCalculator.calculatePatientLatestCollectedAmount(
+                  b.patientId,
+                  _financialRecords,
+                  _recordItemsMap,
+                );
             final bOutstanding = bReceivable - bCollected;
-            
+
             return _ascending
                 ? aOutstanding.compareTo(bOutstanding)
                 : bOutstanding.compareTo(aOutstanding);
@@ -564,7 +690,10 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   }
 
   /// 显示财务记录详情
-  void _showFinancialRecordDetails(BuildContext context, FinancialRecord record) {
+  void _showFinancialRecordDetails(
+    BuildContext context,
+    FinancialRecord record,
+  ) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -586,13 +715,20 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
   /// 显示统计信息对话框 - 渐进式加载全量数据
   void _showStatisticsDialog() async {
-    final financialProvider = Provider.of<FinancialProvider>(context, listen: false);
+    final financialProvider = Provider.of<FinancialProvider>(
+      context,
+      listen: false,
+    );
 
     // 有完整 itemsMap 缓存，直接打开，不转圈
     if (financialProvider.hasFullItemsCache) {
       final allRecords = financialProvider.cachedRecords;
       final allItemsMap = financialProvider.cachedFullItemsMap!;
-      _openStatisticsDialog(financialProvider, allRecords, initialItemsMap: allItemsMap);
+      _openStatisticsDialog(
+        financialProvider,
+        allRecords,
+        initialItemsMap: allItemsMap,
+      );
       return;
     }
 
@@ -604,12 +740,14 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     );
 
     try {
-      final initialRecords = await financialProvider.getPaginatedFinancialRecords(1, 10);
+      final initialRecords = await financialProvider
+          .getPaginatedFinancialRecords(1, 10);
       final initialItemsMap = <int, List<FinancialItem>>{};
       for (final r in initialRecords) {
         if (r.id != null) {
           try {
-            initialItemsMap[r.id!] = await financialProvider.getFinancialItemsByRecordId(r.id!);
+            initialItemsMap[r.id!] = await financialProvider
+                .getFinancialItemsByRecordId(r.id!);
           } catch (_) {
             initialItemsMap[r.id!] = [];
           }
@@ -620,7 +758,11 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       Navigator.of(context).pop();
 
       // 用初步数据先打开图表
-      _openStatisticsDialog(financialProvider, initialRecords, initialItemsMap: initialItemsMap);
+      _openStatisticsDialog(
+        financialProvider,
+        initialRecords,
+        initialItemsMap: initialItemsMap,
+      );
 
       // 启动后台全量加载（独立于 widget，关闭图表也继续跑）
       financialProvider.ensureFullDataCached();
@@ -638,27 +780,34 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     Map<int, List<FinancialItem>>? initialItemsMap,
   }) {
     if (records.isEmpty) {
-      SuccessToastManager.showInfo(context, message: '暂无财务数据可统计', duration: const Duration(seconds: 2));
+      SuccessToastManager.showInfo(
+        context,
+        message: '暂无财务数据可统计',
+        duration: const Duration(seconds: 2),
+      );
       return;
     }
 
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => Dialog(
-        insetPadding: const EdgeInsets.all(16),
-        clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width,
-          height: MediaQuery.of(context).size.height * 0.9,
-          child: ProgressiveStatisticsDialog(
-            financialProvider: financialProvider,
-            initialRecords: records,
-            initialItemsMap: initialItemsMap ?? {},
+      builder:
+          (context) => Dialog(
+            insetPadding: const EdgeInsets.all(16),
+            clipBehavior: Clip.antiAlias,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width,
+              height: MediaQuery.of(context).size.height * 0.9,
+              child: ProgressiveStatisticsDialog(
+                financialProvider: financialProvider,
+                initialRecords: records,
+                initialItemsMap: initialItemsMap ?? {},
+              ),
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -666,7 +815,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   Future<void> _deleteFinancialRecord(FinancialRecord record) async {
     // 直接使用记录中的患者姓名
     final patientName = record.patientName ?? '未知患者';
-    
+
     // 使用公共的删除确认框组件
     final confirmed = await ModernDeleteDialogManager.showFinancialDelete(
       context,
@@ -677,7 +826,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       try {
         final provider = Provider.of<FinancialProvider>(context, listen: false);
         await provider.deleteFinancialRecord(record.id!);
-        
+
         if (mounted) {
           // 使用新的成功提示组件
           SuccessToastManager.show(
@@ -704,5 +853,4 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       }
     }
   }
-
 }

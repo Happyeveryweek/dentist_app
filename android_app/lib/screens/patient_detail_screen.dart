@@ -166,6 +166,16 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     }
 
     try {
+      final totalCollectedAmount = await _loadTotalCollectedAmount(patientId);
+      if (mounted) {
+        setState(() {
+          _totalCollectedAmount = totalCollectedAmount;
+        });
+      }
+      if (!mounted) {
+        return;
+      }
+
       final financialProvider = Provider.of<FinancialProvider>(
         context,
         listen: false,
@@ -188,14 +198,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         return;
       }
 
-      final result = await Navigator.push(
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => FinancialDetailScreen(record: latestRecord),
         ),
       );
 
-      if (result == true && mounted) {
+      if (mounted) {
         await _loadPatientData();
       }
     } catch (e) {

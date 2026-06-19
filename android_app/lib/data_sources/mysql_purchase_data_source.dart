@@ -16,7 +16,9 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
     for (var field in row.fields.keys) {
       var value = row[field];
 
-      if (field == 'purchase_date' || field == 'created_at' || field == 'updated_at') {
+      if (field == 'purchase_date' ||
+          field == 'created_at' ||
+          field == 'updated_at') {
         if (value is DateTime) {
           final localDateTime = value.isUtc ? value.toLocal() : value;
           map[field] = DateTimeFormatter.toDbString(localDateTime);
@@ -27,7 +29,10 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
         if (field == 'supplier' || field == 'notes' || field == 'doctor') {
           try {
             final bytes = value.toBytes();
-            map[field] = bytes.isNotEmpty ? utf8.decode(bytes, allowMalformed: true) : '';
+            map[field] =
+                bytes.isNotEmpty
+                    ? utf8.decode(bytes, allowMalformed: true)
+                    : '';
           } catch (e) {
             print('Blob转换失败: $e');
             map[field] = '';
@@ -38,7 +43,10 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
       } else if (value is Uint8List) {
         if (field == 'supplier' || field == 'notes' || field == 'doctor') {
           try {
-            map[field] = value.isNotEmpty ? utf8.decode(value, allowMalformed: true) : '';
+            map[field] =
+                value.isNotEmpty
+                    ? utf8.decode(value, allowMalformed: true)
+                    : '';
           } catch (e) {
             print('Uint8List转换失败: $e');
             map[field] = '';
@@ -75,75 +83,122 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
     query += ' ORDER BY purchase_date DESC';
 
     final results = await _connection().query(query, queryArgs);
-    return results.map((row) => PurchaseRecord.fromMap(_convertMySqlRow(row), dataSource: 'mysql')).toList();
+    return results
+        .map(
+          (row) => PurchaseRecord.fromMap(
+            _convertMySqlRow(row),
+            dataSource: 'mysql',
+          ),
+        )
+        .toList();
   }
 
   @override
   Future<PurchaseRecord?> getPurchaseById(int id) async {
-    final results = await _connection().query('''
+    final results = await _connection().query(
+      '''
       SELECT id, purchase_date, total_quantity, total_amount, supplier, notes, doctor, created_at, updated_at
       FROM purchase_records
       WHERE id = ?
-    ''', [id]);
+    ''',
+      [id],
+    );
 
     if (results.isEmpty) return null;
-    return PurchaseRecord.fromMap(_convertMySqlRow(results.first), dataSource: 'mysql');
+    return PurchaseRecord.fromMap(
+      _convertMySqlRow(results.first),
+      dataSource: 'mysql',
+    );
   }
 
   @override
   Future<int> createPurchase(PurchaseRecord purchase) async {
-    final result = await _connection().query('''
+    final result = await _connection().query(
+      '''
       INSERT INTO purchase_records (purchase_date, total_quantity, total_amount, supplier, notes, doctor, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', [
-      DateTimeFormatter.toDbString(purchase.purchaseDate),
-      purchase.totalQuantity,
-      purchase.totalAmount,
-      purchase.supplier,
-      purchase.notes,
-      purchase.doctor,
-      DateTimeFormatter.toDbString(purchase.createdAt),
-      DateTimeFormatter.toDbString(purchase.updatedAt),
-    ]);
+    ''',
+      [
+        DateTimeFormatter.toDbString(purchase.purchaseDate),
+        purchase.totalQuantity,
+        purchase.totalAmount,
+        purchase.supplier,
+        purchase.notes,
+        purchase.doctor,
+        DateTimeFormatter.toDbString(purchase.createdAt),
+        DateTimeFormatter.toDbString(purchase.updatedAt),
+      ],
+    );
 
     return result.insertId ?? 0;
   }
 
   @override
   Future<bool> updatePurchase(PurchaseRecord purchase) async {
-    final result = await _connection().query('''
+    final result = await _connection().query(
+      '''
       UPDATE purchase_records
       SET purchase_date = ?, total_quantity = ?, total_amount = ?, supplier = ?, notes = ?, doctor = ?, updated_at = ?
       WHERE id = ?
-    ''', [
-      DateTimeFormatter.toDbString(purchase.purchaseDate),
-      purchase.totalQuantity,
-      purchase.totalAmount,
-      purchase.supplier,
-      purchase.notes,
-      purchase.doctor,
-      DateTimeFormatter.toDbString(purchase.updatedAt),
-      purchase.id,
-    ]);
+    ''',
+      [
+        DateTimeFormatter.toDbString(purchase.purchaseDate),
+        purchase.totalQuantity,
+        purchase.totalAmount,
+        purchase.supplier,
+        purchase.notes,
+        purchase.doctor,
+        DateTimeFormatter.toDbString(purchase.updatedAt),
+        purchase.id,
+      ],
+    );
 
     return (result.affectedRows ?? 0) > 0;
   }
 
   @override
   Future<bool> deletePurchase(int id) async {
-    await _connection().query('DELETE FROM purchase_items WHERE purchase_record_id = ?', [id]);
-    final result = await _connection().query('DELETE FROM purchase_records WHERE id = ?', [id]);
+    await _connection().query(
+      'DELETE FROM purchase_items WHERE purchase_record_id = ?',
+      [id],
+    );
+    final result = await _connection().query(
+      'DELETE FROM purchase_records WHERE id = ?',
+      [id],
+    );
     return (result.affectedRows ?? 0) > 0;
   }
 
   @override
-  Future<List<PurchaseRecord>> searchPurchases(String keyword, {String? doctorFilter}) async {
+  Future<List<PurchaseRecord>> searchPurchases(
+    String keyword, {
+    String? doctorFilter,
+  }) async {
     String query = '''
       SELECT id, purchase_date, total_quantity, total_amount, supplier, notes, doctor, created_at, updated_at
       FROM purchase_records
-      WHERE (supplier LIKE ? OR notes LIKE ? OR doctor LIKE ?)
+      WHERE (
+        supplier LIKE ?
+        OR notes LIKE ?
+        OR doctor LIKE ?
+        OR CAST(id AS CHAR) LIKE ?
+        OR CAST(total_amount AS CHAR) LIKE ?
+        OR EXISTS (
+          SELECT 1 FROM purchase_items pi
+          WHERE pi.purchase_record_id = purchase_records.id
+            AND pi.material_name LIKE ?
+        )
+      )
     ''';
-    final queryArgs = <dynamic>['%$keyword%', '%$keyword%', '%$keyword%'];
+    final pattern = '%$keyword%';
+    final queryArgs = <dynamic>[
+      pattern,
+      pattern,
+      pattern,
+      pattern,
+      pattern,
+      pattern,
+    ];
 
     if (doctorFilter != null) {
       query += ' AND doctor = ?';
@@ -153,7 +208,14 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
     query += ' ORDER BY purchase_date DESC';
 
     final results = await _connection().query(query, queryArgs);
-    return results.map((row) => PurchaseRecord.fromMap(_convertMySqlRow(row), dataSource: 'mysql')).toList();
+    return results
+        .map(
+          (row) => PurchaseRecord.fromMap(
+            _convertMySqlRow(row),
+            dataSource: 'mysql',
+          ),
+        )
+        .toList();
   }
 
   @override
@@ -172,13 +234,20 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
   }
 
   @override
-  Future<List<PurchaseRecord>> getPurchasesByDateRange(DateTime startDate, DateTime endDate, {String? doctorFilter}) async {
+  Future<List<PurchaseRecord>> getPurchasesByDateRange(
+    DateTime startDate,
+    DateTime endDate, {
+    String? doctorFilter,
+  }) async {
     String query = '''
       SELECT id, purchase_date, total_quantity, total_amount, supplier, notes, doctor, created_at, updated_at
       FROM purchase_records
       WHERE purchase_date BETWEEN ? AND ?
     ''';
-    final queryArgs = <dynamic>[DateTimeFormatter.toDbString(startDate), DateTimeFormatter.toDbString(endDate)];
+    final queryArgs = <dynamic>[
+      DateTimeFormatter.toDbString(startDate),
+      DateTimeFormatter.toDbString(endDate),
+    ];
 
     if (doctorFilter != null) {
       query += ' AND doctor = ?';
@@ -188,7 +257,14 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
     query += ' ORDER BY purchase_date DESC';
 
     final results = await _connection().query(query, queryArgs);
-    return results.map((row) => PurchaseRecord.fromMap(_convertMySqlRow(row), dataSource: 'mysql')).toList();
+    return results
+        .map(
+          (row) => PurchaseRecord.fromMap(
+            _convertMySqlRow(row),
+            dataSource: 'mysql',
+          ),
+        )
+        .toList();
   }
 
   @override
@@ -202,43 +278,49 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
 
   @override
   Future<int> createPurchaseItem(dynamic item) async {
-    final result = await _connection().query('''
+    final result = await _connection().query(
+      '''
       INSERT INTO purchase_items
       (purchase_record_id, material_id, material_name, quantity, unit_price, total_price, unit, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', [
-      item.purchaseRecordId,
-      item.materialId,
-      item.materialName,
-      item.quantity,
-      item.unitPrice,
-      item.totalPrice,
-      item.unit,
-      DateTimeFormatter.toDbString(item.createdAt),
-      DateTimeFormatter.toDbString(item.updatedAt),
-    ]);
+    ''',
+      [
+        item.purchaseRecordId,
+        item.materialId,
+        item.materialName,
+        item.quantity,
+        item.unitPrice,
+        item.totalPrice,
+        item.unit,
+        DateTimeFormatter.toDbString(item.createdAt),
+        DateTimeFormatter.toDbString(item.updatedAt),
+      ],
+    );
 
     return result.insertId ?? 0;
   }
 
   @override
   Future<bool> updatePurchaseItem(dynamic item) async {
-    final result = await _connection().query('''
+    final result = await _connection().query(
+      '''
       UPDATE purchase_items SET
       purchase_record_id = ?, material_id = ?, material_name = ?, quantity = ?,
       unit_price = ?, total_price = ?, unit = ?, updated_at = ?
       WHERE id = ?
-    ''', [
-      item.purchaseRecordId,
-      item.materialId,
-      item.materialName,
-      item.quantity,
-      item.unitPrice,
-      item.totalPrice,
-      item.unit,
-      DateTimeFormatter.toDbString(item.updatedAt),
-      item.id,
-    ]);
+    ''',
+      [
+        item.purchaseRecordId,
+        item.materialId,
+        item.materialName,
+        item.quantity,
+        item.unitPrice,
+        item.totalPrice,
+        item.unit,
+        DateTimeFormatter.toDbString(item.updatedAt),
+        item.id,
+      ],
+    );
 
     return (result.affectedRows ?? 0) > 0;
   }

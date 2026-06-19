@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app/theme/app_theme.dart';
@@ -46,6 +48,31 @@ class PatientSearchFilterBar extends StatefulWidget {
 }
 
 class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
+  Timer? _searchDebounce;
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleSearch(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      widget.onSearch(value.trim());
+    });
+  }
+
+  void _submitSearch(String value) {
+    _searchDebounce?.cancel();
+    widget.onSearch(value.trim());
+  }
+
+  void _clearSearch() {
+    _searchDebounce?.cancel();
+    widget.onClearSearch();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -66,19 +93,22 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
                       Icons.search,
                       color: AppTheme.secondaryText,
                     ),
-                    suffixIcon: widget.searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(
-                              Icons.clear,
-                              color: AppTheme.secondaryText,
-                            ),
-                            onPressed: widget.onClearSearch,
-                          )
-                        : null,
+                    suffixIcon:
+                        widget.searchController.text.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(
+                                Icons.clear,
+                                color: AppTheme.secondaryText,
+                              ),
+                              onPressed: _clearSearch,
+                            )
+                            : null,
                     filled: true,
                     fillColor: AppTheme.backgroundColor,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppTheme.smallBorderRadius),
+                      borderRadius: BorderRadius.circular(
+                        AppTheme.smallBorderRadius,
+                      ),
                       borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.symmetric(
@@ -87,30 +117,13 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
                     ),
                   ),
                   onChanged: (value) {
-                    // 只更新UI状态，不触发搜索
                     setState(() {});
+                    _scheduleSearch(value);
                   },
                   onSubmitted: (value) {
-                    final trimmed = value.trim();
-                    widget.onSearch(trimmed);
+                    _submitSearch(value);
                   },
                 ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () {
-                  final trimmed = widget.searchController.text.trim();
-                  widget.onSearch(trimmed);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppTheme.smallBorderRadius),
-                  ),
-                ),
-                child: const Text('搜索'),
               ),
             ],
           ),
@@ -169,20 +182,22 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
                   widget.onToggleTimeFilter(!widget.showTimeFilter);
                 },
                 icon: Icon(
-                  widget.showTimeFilter ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                  widget.showTimeFilter
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
                   color: AppTheme.primaryColor,
                 ),
                 tooltip: widget.showTimeFilter ? '隐藏时间筛选' : '显示时间筛选',
               ),
             ],
           ),
-          
+
           // 时间筛选内容
           if (widget.showTimeFilter) ...[
             const SizedBox(height: 16),
             const Divider(height: 1),
             const SizedBox(height: 16),
-            
+
             // 筛选类型选择
             Row(
               children: [
@@ -195,22 +210,14 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                _buildFilterTypeButton(
-                  '首诊时间',
-                  'first_visit_date',
-                  Icons.event,
-                ),
+                _buildFilterTypeButton('首诊时间', 'first_visit_date', Icons.event),
                 const SizedBox(width: 12),
-                _buildFilterTypeButton(
-                  '更新时间',
-                  'updated_at',
-                  Icons.update,
-                ),
+                _buildFilterTypeButton('更新时间', 'updated_at', Icons.update),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // 日期范围选择
             Row(
               children: [
@@ -233,17 +240,18 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // 操作按钮
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: widget.startDate != null && widget.endDate != null
-                        ? widget.onApplyTimeFilter
-                        : null,
+                    onPressed:
+                        widget.startDate != null && widget.endDate != null
+                            ? widget.onApplyTimeFilter
+                            : null,
                     icon: const Icon(Icons.filter_list),
                     label: const Text('应用筛选'),
                     style: ElevatedButton.styleFrom(
@@ -273,16 +281,20 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
                 ),
               ],
             ),
-            
+
             // 当前筛选状态显示
-            if (widget.isDateRangeFiltering && widget.startDate != null && widget.endDate != null) ...[
+            if (widget.isDateRangeFiltering &&
+                widget.startDate != null &&
+                widget.endDate != null) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                  border: Border.all(
+                    color: AppTheme.primaryColor.withOpacity(0.3),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -352,7 +364,12 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
   }
 
   // 构建日期选择字段
-  Widget _buildDateField(String label, DateTime? date, Function(DateTime?) onDateSelected, {required bool isStartDate}) {
+  Widget _buildDateField(
+    String label,
+    DateTime? date,
+    Function(DateTime?) onDateSelected, {
+    required bool isStartDate,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -372,8 +389,14 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
               builder: (BuildContext context) {
                 return ModernDatePickerDialog(
                   initialDate: date ?? DateTime.now(),
-                  firstDate: isStartDate ? DateTime(2000) : (widget.startDate ?? DateTime(2000)),
-                  lastDate: isStartDate ? (widget.endDate ?? DateTime(2100)) : DateTime(2100),
+                  firstDate:
+                      isStartDate
+                          ? DateTime(2000)
+                          : (widget.startDate ?? DateTime(2000)),
+                  lastDate:
+                      isStartDate
+                          ? (widget.endDate ?? DateTime(2100))
+                          : DateTime(2100),
                   title: '选择$label',
                 );
               },
@@ -404,7 +427,10 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
                         : '请选择日期',
                     style: TextStyle(
                       fontSize: 14,
-                      color: date != null ? AppTheme.primaryText : AppTheme.secondaryText,
+                      color:
+                          date != null
+                              ? AppTheme.primaryText
+                              : AppTheme.secondaryText,
                     ),
                   ),
                 ),

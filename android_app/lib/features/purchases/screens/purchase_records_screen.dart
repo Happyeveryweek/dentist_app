@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dentist_app/providers/purchase_provider.dart';
@@ -24,7 +26,8 @@ class PurchaseRecordsScreen extends StatefulWidget {
   State<PurchaseRecordsScreen> createState() => _PurchaseRecordsScreenState();
 }
 
-class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with WidgetsBindingObserver {
+class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
+    with WidgetsBindingObserver {
   List<PurchaseRecord> _purchaseRecords = [];
   List<PurchaseRecord> _filteredRecords = [];
   bool _isLoading = false;
@@ -33,6 +36,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
   Map<String, dynamic> _statistics = {};
   bool _hasInitialized = false;
   late FocusNode _focusNode;
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -48,6 +52,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _focusNode.removeListener(_onFocusChange);
+    _searchDebounce?.cancel();
     _focusNode.dispose();
     _searchController.dispose();
     super.dispose();
@@ -92,22 +97,21 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
               statistics: _statistics,
               onTap: _showPurchaseStatistics,
             ),
-            
+
             // 搜索栏
             PurchaseSearchBar(
               controller: _searchController,
               searchQuery: _searchQuery,
-              onSearchChanged: (value) {
-                // 只更新UI状态，不触发搜索
-                setState(() {});
-              },
+              onSearchChanged: _onSearchChanged,
               onSearchSubmitted: () {
+                _searchDebounce?.cancel();
                 setState(() {
                   _searchQuery = _searchController.text.trim();
                 });
-                _filterRecords();
+                _performSearch();
               },
               onClear: () {
+                _searchDebounce?.cancel();
                 setState(() {
                   _searchQuery = '';
                   _searchController.clear();
@@ -115,23 +119,21 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
                 _filterRecords();
               },
             ),
-            
+
             // 采购记录列表 - 添加下拉刷新
             Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : RefreshIndicator(
-                      onRefresh: () async {
-                        await _loadData(showToast: false, forceRefresh: true);
-                        if (mounted) {
-                          SuccessToastManager.show(
-                            context,
-                            message: '刷新成功',
-                          );
-                        }
-                      },
-                      child: _buildPurchaseRecordsList(),
-                    ),
+              child:
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : RefreshIndicator(
+                        onRefresh: () async {
+                          await _loadData(showToast: false, forceRefresh: true);
+                          if (mounted) {
+                            SuccessToastManager.show(context, message: '刷新成功');
+                          }
+                        },
+                        child: _buildPurchaseRecordsList(),
+                      ),
             ),
           ],
         ),
@@ -166,72 +168,81 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
   }
 
   /// 加载数据
-  Future<void> _loadData({bool showToast = true, bool forceRefresh = false}) async {
+  Future<void> _loadData({
+    bool showToast = true,
+    bool forceRefresh = false,
+  }) async {
     if (!mounted) return;
-    
+
     setState(() {
       _isLoading = true;
     });
 
     try {
       final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      
+
       // 确保PurchaseProvider已初始化
       final provider = Provider.of<PurchaseProvider>(context, listen: false);
       if (!provider.isInitialized) {
         await provider.initializeFromDatabase(dbProvider);
       }
-      
+
       // 检查MySQL连接状态
       if (dbProvider.dbType == 'mysql') {
         if (!dbProvider.isConnected) {
           throw Exception('数据库连接失败，请检查网络连接');
         }
       }
-      
+
       print('🔄 开始${forceRefresh ? "强制" : ""}刷新采购记录数据...');
-      
+
       // 如果不是强制刷新且有缓存，使用缓存
       if (!forceRefresh && provider.hasCache) {
         print('✅ 使用缓存的采购数据，跳过重新加载');
+        final records = provider.cachedRecords;
+        final filteredRecords =
+            _searchQuery.isEmpty
+                ? records
+                : await provider.searchPurchaseRecords(_searchQuery);
         if (mounted) {
           setState(() {
-            _purchaseRecords = provider.cachedRecords;
-            _filteredRecords = _purchaseRecords;
+            _purchaseRecords = records;
+            _filteredRecords = filteredRecords;
             _isLoading = false;
           });
           _updateStatistics();
         }
         return;
       }
-      
+
       // 只在强制刷新时清除缓存
       if (forceRefresh) {
         print('🔄 强制刷新：清除缓存');
         provider.clearCache();
       }
-      
+
       // 直接调用getAllPurchaseRecords获取最新数据
       final records = await provider.getAllPurchaseRecords();
-      
+      final filteredRecords =
+          _searchQuery.isEmpty
+              ? records
+              : await provider.searchPurchaseRecords(_searchQuery);
+
       if (mounted) {
         setState(() {
           _purchaseRecords = records;
-          _filteredRecords = records;
+          _filteredRecords = filteredRecords;
           _isLoading = false;
         });
-        
+
         // 异步更新统计信息
         _updateStatistics();
-        
+
         print('✅ 采购记录数据刷新完成: ${records.length} 条记录');
-        
+
         // 只有在showToast为true时才显示刷新成功提示
         if (mounted && showToast) {
-          SuccessToastManager.show(
-            context,
-            message: '数据已刷新',
-          );
+          SuccessToastManager.show(context, message: '数据已刷新');
         }
       }
     } catch (e) {
@@ -240,13 +251,22 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
         setState(() {
           _isLoading = false;
         });
-        
-        SuccessToastManager.showError(
-          context,
-          message: '刷新数据失败: $e',
-        );
+
+        SuccessToastManager.showError(context, message: '刷新数据失败: $e');
       }
     }
+  }
+
+  /// 过滤记录
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    setState(() {
+      _searchQuery = value.trim();
+    });
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      _performSearch();
+    });
   }
 
   /// 过滤记录
@@ -257,12 +277,54 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
       });
     } else {
       setState(() {
-        _filteredRecords = _purchaseRecords.where((record) {
-          return (record.supplier?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
-                 (record.notes?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
-                 (record.doctor?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
-        }).toList();
+        _filteredRecords =
+            _purchaseRecords.where((record) {
+              return (record.supplier?.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      ) ??
+                      false) ||
+                  (record.notes?.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      ) ??
+                      false) ||
+                  (record.doctor?.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      ) ??
+                      false);
+            }).toList();
       });
+    }
+  }
+
+  Future<void> _performSearch() async {
+    if (!mounted) return;
+
+    final query = _searchQuery.trim();
+    if (query.isEmpty) {
+      _filterRecords();
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final provider = Provider.of<PurchaseProvider>(context, listen: false);
+      final records = await provider.searchPurchaseRecords(query);
+
+      if (!mounted) return;
+      setState(() {
+        _filteredRecords = records;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('❌ 搜索采购记录失败: $e');
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      SuccessToastManager.showError(context, message: '搜索失败: $e');
     }
   }
 
@@ -282,7 +344,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
 
     try {
       final provider = Provider.of<PurchaseProvider>(context, listen: false);
-      
+
       // 使用统计服务计算统计信息
       final statistics = await PurchaseStatisticsService.calculateStatistics(
         _purchaseRecords,
@@ -296,9 +358,11 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
       }
     } catch (e) {
       print('❌ 更新统计信息失败: $e');
-      
+
       // 如果完全失败，使用基础统计计算
-      final statistics = PurchaseStatisticsService.calculateBasicStatistics(_purchaseRecords);
+      final statistics = PurchaseStatisticsService.calculateBasicStatistics(
+        _purchaseRecords,
+      );
 
       if (mounted) {
         setState(() {
@@ -329,22 +393,24 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
 
   /// 显示采购记录详情
   void _showPurchaseRecordDetails(BuildContext context, PurchaseRecord record) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => PurchaseDetailScreen(record: record),
-      ),
-    ).then((result) {
-      // 如果从详情页返回true，说明有数据变更，需要刷新
-      if (result == true) {
-        print('🔄 从详情页返回，检测到数据变更，正在刷新...');
-        // 延迟刷新，确保数据库操作完成
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            _loadData(showToast: true); // 有数据变更时显示提示
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (context) => PurchaseDetailScreen(record: record),
+          ),
+        )
+        .then((result) {
+          // 如果从详情页返回true，说明有数据变更，需要刷新
+          if (result == true) {
+            print('🔄 从详情页返回，检测到数据变更，正在刷新...');
+            // 延迟刷新，确保数据库操作完成
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (mounted) {
+                _loadData(showToast: true); // 有数据变更时显示提示
+              }
+            });
           }
         });
-      }
-    });
   }
 
   /// 编辑采购记录
@@ -373,7 +439,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
       context,
       purchaseInfo: '采购记录 #${record.id}',
     );
-    
+
     if (confirmed) {
       _confirmDeletePurchaseRecord(record);
     }
@@ -384,7 +450,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
     try {
       final provider = Provider.of<PurchaseProvider>(context, listen: false);
       final result = await provider.deletePurchaseRecord(record.id!);
-      
+
       if (mounted) {
         if (result > 0) {
           // 删除成功，立即从本地列表中移除
@@ -392,36 +458,27 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
             _purchaseRecords.removeWhere((r) => r.id == record.id);
             _filterRecords(); // 重新过滤
           });
-          
+
           // 重新计算统计信息
           _updateStatistics();
-          
+
           // 强制刷新Provider状态
           provider.markPurchasesNeedRefresh();
-          
+
           // 显示成功提示
           if (mounted) {
-            SuccessToastManager.show(
-              context,
-              message: '采购记录删除成功',
-            );
+            SuccessToastManager.show(context, message: '采购记录删除成功');
           }
         } else {
           if (mounted) {
-            SuccessToastManager.showError(
-              context,
-              message: '删除失败：未找到记录',
-            );
+            SuccessToastManager.showError(context, message: '删除失败：未找到记录');
           }
         }
       }
     } catch (e) {
       print('删除采购记录时出错: $e');
       if (mounted) {
-        SuccessToastManager.showError(
-          context,
-          message: '删除失败: $e',
-        );
+        SuccessToastManager.showError(context, message: '删除失败: $e');
       }
     }
   }
@@ -433,16 +490,14 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
       final provider = Provider.of<PurchaseProvider>(context, listen: false);
-      
+
       // 准备采购项目数据映射
       final Map<int, List<PurchaseItem>> recordItemsMap = {};
-      
+
       for (final record in _purchaseRecords) {
         if (record.id != null) {
           try {
@@ -464,11 +519,12 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
       if (mounted) {
         await showDialog(
           context: context,
-          builder: (context) => PurchaseStatisticsDialog(
-            purchaseRecords: _purchaseRecords,
-            recordItemsMap: recordItemsMap,
-            purchaseProvider: provider,
-          ),
+          builder:
+              (context) => PurchaseStatisticsDialog(
+                purchaseRecords: _purchaseRecords,
+                recordItemsMap: recordItemsMap,
+                purchaseProvider: provider,
+              ),
         );
       }
     } catch (e) {
@@ -476,13 +532,10 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> with Widg
       if (mounted) {
         Navigator.of(context).pop();
       }
-      
+
       print('显示采购统计图表失败: $e');
       if (mounted) {
-        SuccessToastManager.showError(
-          context,
-          message: '加载统计数据失败: $e',
-        );
+        SuccessToastManager.showError(context, message: '加载统计数据失败: $e');
       }
     }
   }

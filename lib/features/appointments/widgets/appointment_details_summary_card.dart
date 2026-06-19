@@ -1,0 +1,140 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../../models/appointment.dart';
+import '../../../widgets/dental_icons.dart';
+
+class AppointmentDetailsSummaryCard extends StatelessWidget {
+  final Appointment appointment;
+
+  const AppointmentDetailsSummaryCard({
+    Key? key,
+    required this.appointment,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final statusColor = Color(int.parse(appointment.statusColor.replaceAll('#', '0xff')));
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            DentalColors.background.withOpacity(0.5),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: DentalColors.primary.withOpacity(0.1),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 8,
+            spreadRadius: 1,
+            offset: const Offset(0, 3),
+          ),
+        ],
+        border: Border.all(
+          color: DentalColors.primary.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        DentalColors.primary,
+                        DentalColors.secondary,
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: DentalColors.primary.withOpacity(0.3),
+                        blurRadius: 12,
+                        spreadRadius: 2,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.event_note_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        DateFormat('yyyy年MM月dd日 EEEE', 'zh_CN').format(appointment.appointmentDate),
+                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '时间: ${DateFormat('HH:mm').format(appointment.appointmentDate)}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: DentalColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        statusColor.withOpacity(0.1),
+                        statusColor.withOpacity(0.2),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: statusColor, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: statusColor.withOpacity(0.2),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    appointment.statusDisplay,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

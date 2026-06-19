@@ -41,11 +41,12 @@ class _PatientsScreenState extends State<PatientsScreen>
 
   // 时间筛选相关状态
   bool _showTimeFilter = false;
-  String _dateFilterType = 'first_visit_date'; // 'first_visit_date', 'updated_at'
+  String _dateFilterType =
+      'first_visit_date'; // 'first_visit_date', 'updated_at'
   DateTime? _startDate;
   DateTime? _endDate;
   bool _isDateRangeFiltering = false;
-  
+
   // 数据库中的总患者数
   int _totalPatientsInDatabase = 0;
 
@@ -67,7 +68,10 @@ class _PatientsScreenState extends State<PatientsScreen>
   void _scrollListener() {
     if (_scrollController.position.pixels ==
         _scrollController.position.maxScrollExtent) {
-      if (!_isLoadingMore && _hasMoreData && _searchQuery.isEmpty && !_isDateRangeFiltering) {
+      if (!_isLoadingMore &&
+          _hasMoreData &&
+          _searchQuery.isEmpty &&
+          !_isDateRangeFiltering) {
         _loadMorePatients();
       }
     }
@@ -104,34 +108,22 @@ class _PatientsScreenState extends State<PatientsScreen>
       print('加载患者列表，数据库类型: ${dbProvider.dbType}');
 
       // 确保PatientProvider已初始化
-      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
+      final patientProvider = Provider.of<PatientProvider>(
+        context,
+        listen: false,
+      );
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      
+
       if (!patientProvider.initialized) {
         await patientProvider.initializeFromDatabase(dbProvider);
       }
-      
+
       // 确保PatientProvider有UserProvider的引用用于权限过滤
       patientProvider.setUserProvider(userProvider);
 
       List<Patient> patients = [];
 
-      // 如果启用了时间筛选，需要获取所有患者数据进行筛选
-      if (_isDateRangeFiltering && _startDate != null && _endDate != null) {
-        // 获取所有患者数据
-        patients = await patientProvider.getAllPatients();
-        print('获取所有患者数据用于时间筛选: ${patients.length} 个患者');
-        
-        // 应用时间筛选
-        patients = _applyTimeFilterToPatients(patients);
-        print('应用时间筛选后剩余 ${patients.length} 个患者');
-        
-        // 在内存中应用排序
-        _sortPatientsInMemory(patients);
-        
-        // 时间筛选模式下，总患者数就是筛选后的数量
-        _totalPatientsInDatabase = patients.length;
-      } else if (_searchQuery.isEmpty) {
+      if (_searchQuery.isEmpty && !_isDateRangeFiltering) {
         // 正常分页查询，并传递排序参数
         patients = await patientProvider.getPatientsPage(
           _currentPage,
@@ -143,14 +135,20 @@ class _PatientsScreenState extends State<PatientsScreen>
         // 获取数据库中的总患者数
         _totalPatientsInDatabase = await patientProvider.getPatientCount();
       } else {
-        // 使用我们的搜索方法直接在数据库中搜索
-        patients = await patientProvider.searchPatients(_searchQuery);
-        print('搜索 "$_searchQuery" 返回 ${patients.length} 个结果');
-        
-        // 搜索模式下，总患者数就是搜索结果的数量
+        if (_searchQuery.isEmpty) {
+          patients = await patientProvider.getAllPatients();
+          print('获取所有患者数据用于时间筛选: ${patients.length} 个患者');
+        } else {
+          patients = await patientProvider.searchPatients(_searchQuery);
+          print('搜索 "$_searchQuery" 返回 ${patients.length} 个结果');
+        }
+
+        if (_isDateRangeFiltering && _startDate != null && _endDate != null) {
+          patients = _applyTimeFilterToPatients(patients);
+          print('应用时间筛选后剩余 ${patients.length} 个患者');
+        }
+
         _totalPatientsInDatabase = patients.length;
-        
-        // 在搜索模式下，需要在内存中排序
         _sortPatientsInMemory(patients);
       }
 
@@ -177,7 +175,11 @@ class _PatientsScreenState extends State<PatientsScreen>
 
   // 加载更多患者数据
   Future<void> _loadMorePatients() async {
-    if (_isLoadingMore || !_hasMoreData || _searchQuery.isNotEmpty || _isDateRangeFiltering) return;
+    if (_isLoadingMore ||
+        !_hasMoreData ||
+        _searchQuery.isNotEmpty ||
+        _isDateRangeFiltering)
+      return;
 
     setState(() {
       _isLoadingMore = true;
@@ -186,7 +188,10 @@ class _PatientsScreenState extends State<PatientsScreen>
     try {
       final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
       final nextPage = _currentPage + 1;
-      final newPatients = await Provider.of<PatientProvider>(context, listen: false).getPatientsPage(
+      final newPatients = await Provider.of<PatientProvider>(
+        context,
+        listen: false,
+      ).getPatientsPage(
         nextPage,
         _pageSize,
         sortField: _currentSort,
@@ -225,7 +230,10 @@ class _PatientsScreenState extends State<PatientsScreen>
 
     // 强制清除数据库提供者中的缓存
     final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-    await Provider.of<PatientProvider>(context, listen: false).forceRefreshPatients();
+    await Provider.of<PatientProvider>(
+      context,
+      listen: false,
+    ).forceRefreshPatients();
 
     if (mounted) {
       setState(() {
@@ -238,11 +246,8 @@ class _PatientsScreenState extends State<PatientsScreen>
 
     await _loadPatients();
 
-    if(mounted) {
-      SuccessToastManager.show(
-        context,
-        message: '刷新成功',
-      );
+    if (mounted) {
+      SuccessToastManager.show(context, message: '刷新成功');
     }
 
     print('患者列表刷新完成，加载了 ${_patients.length} 个患者');
@@ -254,9 +259,7 @@ class _PatientsScreenState extends State<PatientsScreen>
       case 'name':
         patients.sort(
           (a, b) =>
-              _ascending
-                  ? a.name.compareTo(b.name)
-                  : b.name.compareTo(a.name),
+              _ascending ? a.name.compareTo(b.name) : b.name.compareTo(a.name),
         );
         break;
       case 'age':
@@ -469,7 +472,8 @@ class _PatientsScreenState extends State<PatientsScreen>
             onSortChange: (sort) => _changeSort(sort),
           );
         },
-        onEditPatient: (patient) => _showPatientDialog(context, patient: patient),
+        onEditPatient:
+            (patient) => _showPatientDialog(context, patient: patient),
         onDeletePatient: (patient) => _confirmDeletePatient(context, patient),
       ),
       floatingActionButton: PermissionWrapper(
@@ -488,7 +492,6 @@ class _PatientsScreenState extends State<PatientsScreen>
       ),
     );
   }
-
 
   void _showPatientDetail(BuildContext context, Patient patient) {
     print(
@@ -520,7 +523,10 @@ class _PatientsScreenState extends State<PatientsScreen>
           listen: false,
         );
         final int maxMedicalRecordNumber =
-            await Provider.of<PatientProvider>(context, listen: false).getMaxMedicalRecordNumber();
+            await Provider.of<PatientProvider>(
+              context,
+              listen: false,
+            ).getMaxMedicalRecordNumber();
         final int nextMedicalRecordNumber = maxMedicalRecordNumber + 1;
 
         print('当前最大病历号: $maxMedicalRecordNumber');
@@ -550,7 +556,10 @@ class _PatientsScreenState extends State<PatientsScreen>
                             // 使用公共组件的成功提示
                             SuccessToastManager.show(context, message: message);
                           } else {
-                            SuccessToastManager.showError(context, message: message);
+                            SuccessToastManager.showError(
+                              context,
+                              message: message,
+                            );
                           }
                         },
                       ),
@@ -580,7 +589,10 @@ class _PatientsScreenState extends State<PatientsScreen>
                             // 使用公共组件的成功提示
                             SuccessToastManager.show(context, message: message);
                           } else {
-                            SuccessToastManager.showError(context, message: message);
+                            SuccessToastManager.showError(
+                              context,
+                              message: message,
+                            );
                           }
                         },
                       ),
@@ -610,7 +622,10 @@ class _PatientsScreenState extends State<PatientsScreen>
                         // 使用公共组件的成功提示
                         SuccessToastManager.show(context, message: message);
                       } else {
-                        SuccessToastManager.showError(context, message: message);
+                        SuccessToastManager.showError(
+                          context,
+                          message: message,
+                        );
                       }
                     },
                   ),
@@ -627,16 +642,19 @@ class _PatientsScreenState extends State<PatientsScreen>
       context,
       patientName: patient.name,
     );
-    
+
     if (confirmed == true) {
       try {
         final dbProvider = Provider.of<DatabaseProvider>(
           context,
           listen: false,
         );
-        await Provider.of<PatientProvider>(context, listen: false).deletePatient(patient.id!);
+        await Provider.of<PatientProvider>(
+          context,
+          listen: false,
+        ).deletePatient(patient.id!);
         _loadPatients();
-        
+
         // 使用新的成功提示组件
         if (mounted) {
           SuccessToastManager.show(context, message: '患者删除成功');
@@ -681,7 +699,7 @@ class _PatientsScreenState extends State<PatientsScreen>
 
     return patients.where((patient) {
       DateTime? patientDate;
-      
+
       if (_dateFilterType == 'first_visit_date') {
         patientDate = patient.firstVisitDate;
       } else if (_dateFilterType == 'updated_at') {
@@ -694,13 +712,25 @@ class _PatientsScreenState extends State<PatientsScreen>
 
       // 检查日期是否在范围内（包含开始和结束日期）
       // 将患者日期标准化为当天的开始时间（00:00:00）
-      final patientDateOnly = DateTime(patientDate.year, patientDate.month, patientDate.day);
-      final startDateOnly = DateTime(_startDate!.year, _startDate!.month, _startDate!.day);
-      final endDateOnly = DateTime(_endDate!.year, _endDate!.month, _endDate!.day);
-      
+      final patientDateOnly = DateTime(
+        patientDate.year,
+        patientDate.month,
+        patientDate.day,
+      );
+      final startDateOnly = DateTime(
+        _startDate!.year,
+        _startDate!.month,
+        _startDate!.day,
+      );
+      final endDateOnly = DateTime(
+        _endDate!.year,
+        _endDate!.month,
+        _endDate!.day,
+      );
+
       // 使用 compareTo 进行日期比较，包含开始和结束日期
-      return patientDateOnly.compareTo(startDateOnly) >= 0 && 
-             patientDateOnly.compareTo(endDateOnly) <= 0;
+      return patientDateOnly.compareTo(startDateOnly) >= 0 &&
+          patientDateOnly.compareTo(endDateOnly) <= 0;
     }).toList();
   }
 }

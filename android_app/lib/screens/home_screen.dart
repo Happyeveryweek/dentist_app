@@ -22,12 +22,17 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late int _selectedIndex;
+  final ValueNotifier<int> _appointmentsRefreshNotifier = ValueNotifier<int>(0);
   
   // 缓存页面实例，避免重复创建
   late final List<Widget> _pages = [
     const _KeepAlivePage(child: DashboardScreen()),
     const _KeepAlivePage(child: PatientsScreen()),
-    const _KeepAlivePage(child: AppointmentsScreen()),
+    _KeepAlivePage(
+      child: AppointmentsScreen(
+        refreshListenable: _appointmentsRefreshNotifier,
+      ),
+    ),
     const _KeepAlivePage(child: _BusinessManagementScreen()),
     const _KeepAlivePage(child: SettingsScreen()),
   ];
@@ -36,6 +41,12 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+  }
+
+  @override
+  void dispose() {
+    _appointmentsRefreshNotifier.dispose();
+    super.dispose();
   }
 
   Widget _getPage(int index) {
@@ -121,9 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          setState(() {
-            _selectedIndex = index;
-          });
+          _selectPage(index);
         },
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
@@ -160,6 +169,16 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  void _selectPage(int index) {
+    if (index == 2) {
+      _appointmentsRefreshNotifier.value++;
+    }
+
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 }
 

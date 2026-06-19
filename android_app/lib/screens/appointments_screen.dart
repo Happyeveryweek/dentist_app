@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -19,8 +21,13 @@ import 'package:dentist_app/utils/permission_utils.dart'; // 添加权限工具�
 
 class AppointmentsScreen extends StatefulWidget {
   final String? initialFilterStatus;
+  final ValueListenable<int>? refreshListenable;
 
-  const AppointmentsScreen({super.key, this.initialFilterStatus});
+  const AppointmentsScreen({
+    super.key,
+    this.initialFilterStatus,
+    this.refreshListenable,
+  });
 
   @override
   State<AppointmentsScreen> createState() => _AppointmentsScreenState();
@@ -43,6 +50,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
 
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
 
   Map<DateTime, List<Appointment>> _appointmentsByDay = {};
 
@@ -53,7 +61,17 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     super.initState();
     _filterStatus = widget.initialFilterStatus ?? '全部';
     _tabController = TabController(length: 2, vsync: this);
+    widget.refreshListenable?.addListener(_handleExternalRefresh);
     _loadAppointments();
+  }
+
+  @override
+  void didUpdateWidget(covariant AppointmentsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshListenable != widget.refreshListenable) {
+      oldWidget.refreshListenable?.removeListener(_handleExternalRefresh);
+      widget.refreshListenable?.addListener(_handleExternalRefresh);
+    }
   }
 
   @override
@@ -67,14 +85,42 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
 
   @override
   void dispose() {
+    widget.refreshListenable?.removeListener(_handleExternalRefresh);
+    _searchDebounce?.cancel();
     _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadAppointments({bool isRefresh = false}) async {
-    print('_loadAppointments 被调用，isRefresh: $isRefresh'); // 调试输出
-    
+  void _scheduleSearch(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (!mounted) return;
+      setState(() {
+        _searchQuery = value.trim();
+      });
+    });
+  }
+
+  void _submitSearch(String value) {
+    _searchDebounce?.cancel();
+    setState(() {
+      _searchQuery = value.trim();
+    });
+  }
+
+  void _handleExternalRefresh() {
+    _loadAppointments(forceReload: true);
+  }
+
+  Future<void> _loadAppointments({
+    bool isRefresh = false,
+    bool forceReload = false,
+  }) async {
+    print(
+      '_loadAppointments 被调用，isRefresh: $isRefresh, forceReload: $forceReload',
+    ); // 调试输出
+
     // 只有在手动刷新时才显示提示并重置筛选
     if (isRefresh) {
       if (!mounted) return;
@@ -89,52 +135,66 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
 
     try {
       final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      
-      final appointmentsProvider = Provider.of<AppointmentsProvider>(context, listen: false);
+
+      final appointmentsProvider = Provider.of<AppointmentsProvider>(
+        context,
+        listen: false,
+      );
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      
+
       if (!appointmentsProvider.initialized) {
         // 只有在初始化时才显示加载动画
         setState(() {
           _isLoading = true;
         });
-        await appointmentsProvider.initializeFromDatabase(dbProvider, userProvider: userProvider);
+        await appointmentsProvider.initializeFromDatabase(
+          dbProvider,
+          userProvider: userProvider,
+        );
+        if (!mounted) return;
       }
-      
-      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
+
+      final patientProvider = Provider.of<PatientProvider>(
+        context,
+        listen: false,
+      );
       if (!patientProvider.initialized) {
         // 只有在初始化时才显示加载动画
         setState(() {
           _isLoading = true;
         });
-        await patientProvider.initializeFromDatabase(dbProvider, userProvider: userProvider);
+        await patientProvider.initializeFromDatabase(
+          dbProvider,
+          userProvider: userProvider,
+        );
       }
-      
+
       // 如果是刷新操作，强制清除缓存并显示加载动画
-      if (isRefresh) {
+      if (isRefresh || forceReload) {
         setState(() {
           _isLoading = true;
         });
         appointmentsProvider.forceRefreshAppointments();
         patientProvider.forceRefreshPatients();
       }
-      
+
       final appointments = await appointmentsProvider.getAllAppointments();
-      
+
       // 批量获取所有患者信息（使用缓存）
       final allPatients = await patientProvider.getAllPatients();
       final patientMap = {for (var p in allPatients) p.id: p};
-      
+
       // 快速关联患者信息
-      final List<Appointment> appointmentsWithPatients = appointments.map((appointment) {
-        if (appointment.patientId != null) {
-          final patient = patientMap[appointment.patientId];
-          if (patient != null) {
-            return appointment.copyWith(patientName: patient.name);
-          }
-        }
-        return appointment;
-      }).toList();
+      final List<Appointment> appointmentsWithPatients =
+          appointments.map((appointment) {
+            if (appointment.patientId != null) {
+              final patient = patientMap[appointment.patientId];
+              if (patient != null) {
+                return appointment.copyWith(patientName: patient.name);
+              }
+            }
+            return appointment;
+          }).toList();
 
       Map<DateTime, List<Appointment>> appointmentMap = {};
       for (var appointment in appointmentsWithPatients) {
@@ -158,10 +218,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         });
         if (isRefresh && mounted) {
           print('显示刷新成功提示'); // 调试输出
-          SuccessToastManager.show(
-            context,
-            message: '刷新成功',
-          );
+          SuccessToastManager.show(context, message: '刷新成功');
         }
       }
     } catch (e) {
@@ -200,55 +257,73 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
       }
 
       if (status.isNotEmpty) {
-        filtered = filtered.where((appointment) =>
-              appointment.status == status ||
-              (status == 'no_show' && (appointment.status == 'missed' || appointment.status == '未到诊'))
-        ).toList();
+        filtered =
+            filtered
+                .where(
+                  (appointment) =>
+                      appointment.status == status ||
+                      (status == 'no_show' &&
+                          (appointment.status == 'missed' ||
+                              appointment.status == '未到诊')),
+                )
+                .toList();
       }
     }
 
     if (_startDate != null && _endDate != null) {
-      final endDateEndOfDay = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, 23, 59, 59);
-      filtered = filtered.where((appointment) {
-        return !appointment.appointmentDate.isBefore(_startDate!) && !appointment.appointmentDate.isAfter(endDateEndOfDay);
-      }).toList();
+      final endDateEndOfDay = DateTime(
+        _endDate!.year,
+        _endDate!.month,
+        _endDate!.day,
+        23,
+        59,
+        59,
+      );
+      filtered =
+          filtered.where((appointment) {
+            return !appointment.appointmentDate.isBefore(_startDate!) &&
+                !appointment.appointmentDate.isAfter(endDateEndOfDay);
+          }).toList();
     }
 
     if (_searchQuery.isNotEmpty) {
-      filtered = filtered.where((appointment) {
-        final patientName = appointment.patientName ?? '';
-        final treatmentType = appointment.treatmentType ?? '';
-        final query = _searchQuery.toLowerCase();
-        
-        // 支持多种搜索方式
-        bool nameMatch = patientName.toLowerCase().contains(query);
-        bool treatmentMatch = treatmentType.toLowerCase().contains(query);
-        
-        // 拼音搜索支持
-        bool pinyinMatch = false;
-        bool initialsMatch = false;
-        
-        if (patientName.isNotEmpty) {
-          try {
-            // 获取完整拼音（无空格）
-            final pinyin = PinyinUtil.toPinyin(patientName, separator: '').toLowerCase();
-            // 获取拼音首字母
-            final initials = PinyinUtil.getInitials(patientName).toLowerCase();
-            
-            pinyinMatch = pinyin.contains(query);
-            initialsMatch = initials.contains(query);
-          } catch (e) {
-            print('拼音搜索错误: $e');
-          }
-        }
-        
-        return nameMatch || treatmentMatch || pinyinMatch || initialsMatch;
-      }).toList();
+      filtered = filtered.where(_matchesSearchQuery).toList();
     }
 
     filtered.sort((a, b) => b.appointmentDate.compareTo(a.appointmentDate));
 
     return filtered;
+  }
+
+  bool _matchesSearchQuery(Appointment appointment) {
+    final patientName = appointment.patientName ?? '';
+    final treatmentType = appointment.treatmentType ?? '';
+    final query = _searchQuery.toLowerCase();
+
+    // 支持多种搜索方式
+    bool nameMatch = patientName.toLowerCase().contains(query);
+    bool treatmentMatch = treatmentType.toLowerCase().contains(query);
+
+    // 拼音搜索支持
+    bool pinyinMatch = false;
+    bool initialsMatch = false;
+
+    if (patientName.isNotEmpty) {
+      try {
+        // 获取完整拼音（无空格）
+        final pinyin =
+            PinyinUtil.toPinyin(patientName, separator: '').toLowerCase();
+        // 获取拼音首字母
+        final initials = PinyinUtil.getInitials(patientName).toLowerCase();
+
+        pinyinMatch = pinyin.contains(query);
+        initialsMatch = initials.contains(query);
+      } catch (e) {
+        print('拼音搜索错误: $e');
+      }
+    }
+
+    return nameMatch || treatmentMatch || pinyinMatch || initialsMatch;
   }
 
   List<Appointment> get _selectedDayAppointments {
@@ -272,6 +347,15 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     return appointments;
   }
 
+  List<Appointment> get _filteredTodayAppointments {
+    final appointments = List<Appointment>.from(_todayAppointments);
+    if (_searchQuery.isEmpty) {
+      return appointments;
+    }
+
+    return appointments.where(_matchesSearchQuery).toList();
+  }
+
   String _formatTreatmentType(dynamic treatmentType) {
     if (treatmentType == null) {
       return '常规复诊';
@@ -288,14 +372,15 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
 
       try {
         final data = json.decode(treatmentType);
-        
-        if (data is Map && data.containsKey('treatments') &&
+
+        if (data is Map &&
+            data.containsKey('treatments') &&
             data['treatments'] is List &&
             (data['treatments'] as List).isNotEmpty) {
           final treatments = (data['treatments'] as List);
           return treatments.join('、');
         }
-        
+
         return '常规复诊';
       } catch (e) {
         print('解析治疗类型JSON失败: $e');
@@ -310,7 +395,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     if (patientName.isEmpty) {
       return AppTheme.primaryColor;
     }
-    
+
     final int colorSeed = patientName.hashCode;
     final colors = [
       AppTheme.primaryColor,
@@ -342,17 +427,17 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         appointmentsByDay: _appointmentsByDay,
         selectedDayAppointments: _selectedDayAppointments,
         filteredAppointments: _filteredAppointments,
-        todayAppointments: _todayAppointments,
+        todayAppointments: _filteredTodayAppointments,
         searchController: _searchController,
+        searchQuery: _searchQuery,
         onSearchChanged: (value) {
-          setState(() {});
+          _scheduleSearch(value);
         },
         onSearchSubmitted: (value) {
-          setState(() {
-            _searchQuery = value.trim();
-          });
+          _submitSearch(value);
         },
         onClearSearch: () {
+          _searchDebounce?.cancel();
           setState(() {
             _searchQuery = '';
             _searchController.clear();
@@ -396,27 +481,32 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     );
   }
 
-  void _showAppointmentDialog(BuildContext context, {DateTime? initialDate, Appointment? appointment}) {
+  void _showAppointmentDialog(
+    BuildContext context, {
+    DateTime? initialDate,
+    Appointment? appointment,
+  }) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => Scaffold(
-          resizeToAvoidBottomInset: true,
-          body: SafeArea(
-            child: AppointmentFormSheet(
-              onSaved: (isSuccess, message) {
-                if (isSuccess) {
-                  _loadAppointments(isRefresh: true);
-                  SuccessToastManager.show(context, message: message);
-                } else {
-                  SuccessToastManager.showError(context, message: message);
-                }
-              },
-              initialDate: initialDate ?? appointment?.appointmentDate,
-              appointment: appointment,
+        builder:
+            (context) => Scaffold(
+              resizeToAvoidBottomInset: true,
+              body: SafeArea(
+                child: AppointmentFormSheet(
+                  onSaved: (isSuccess, message) {
+                    if (isSuccess) {
+                      _loadAppointments(isRefresh: true);
+                      SuccessToastManager.show(context, message: message);
+                    } else {
+                      SuccessToastManager.showError(context, message: message);
+                    }
+                  },
+                  initialDate: initialDate ?? appointment?.appointmentDate,
+                  appointment: appointment,
+                ),
+              ),
             ),
-          ),
-        ),
       ),
     );
   }
@@ -430,7 +520,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
       context,
       appointmentInfo: appointmentInfo,
     );
-    
+
     if (confirmed == true) {
       _deleteAppointment(appointment);
     }
@@ -444,7 +534,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     }
 
     try {
-      final appointmentsProvider = Provider.of<AppointmentsProvider>(context, listen: false);
+      final appointmentsProvider = Provider.of<AppointmentsProvider>(
+        context,
+        listen: false,
+      );
       await appointmentsProvider.deleteAppointment(appointment.id!);
 
       _loadAppointments(isRefresh: true);
@@ -496,14 +589,20 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close, color: AppTheme.secondaryText),
+                        icon: const Icon(
+                          Icons.close,
+                          color: AppTheme.secondaryText,
+                        ),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
 
-                  const Text('日期范围', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text(
+                    '日期范围',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   const SizedBox(height: 10),
                   Row(
                     children: [
@@ -531,13 +630,19 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               border: Border.all(color: AppTheme.dividerColor),
-                              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.borderRadius,
+                              ),
                             ),
                             child: Text(
                               tempStartDate != null
-                                  ? DateFormat('yyyy-MM-dd').format(tempStartDate!)
+                                  ? DateFormat(
+                                    'yyyy-MM-dd',
+                                  ).format(tempStartDate!)
                                   : '开始日期',
-                              style: const TextStyle(color: AppTheme.primaryText),
+                              style: const TextStyle(
+                                color: AppTheme.primaryText,
+                              ),
                             ),
                           ),
                         ),
@@ -570,13 +675,19 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               border: Border.all(color: AppTheme.dividerColor),
-                              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                              borderRadius: BorderRadius.circular(
+                                AppTheme.borderRadius,
+                              ),
                             ),
                             child: Text(
                               tempEndDate != null
-                                  ? DateFormat('yyyy-MM-dd').format(tempEndDate!)
+                                  ? DateFormat(
+                                    'yyyy-MM-dd',
+                                  ).format(tempEndDate!)
                                   : '结束日期',
-                              style: const TextStyle(color: AppTheme.primaryText),
+                              style: const TextStyle(
+                                color: AppTheme.primaryText,
+                              ),
                             ),
                           ),
                         ),
@@ -585,29 +696,36 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                   ),
                   const SizedBox(height: 20),
 
-                  const Text('预约状态', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text(
+                    '预约状态',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 8.0,
                     runSpacing: 8.0,
-                    children: ['全部', '已预约', '已完成', '已取消', '未到诊'].map((status) {
-                      return ChoiceChip(
-                        label: Text(status),
-                        selected: tempFilterStatus == status,
-                        onSelected: (selected) {
-                          if (selected) {
-                            setModalState(() {
-                              tempFilterStatus = status;
-                            });
-                          }
-                        },
-                        selectedColor: AppTheme.primaryColor,
-                        labelStyle: TextStyle(
-                          color: tempFilterStatus == status ? Colors.white : AppTheme.primaryText,
-                        ),
-                        backgroundColor: AppTheme.cardBackground,
-                      );
-                    }).toList(),
+                    children:
+                        ['全部', '已预约', '已完成', '已取消', '未到诊'].map((status) {
+                          return ChoiceChip(
+                            label: Text(status),
+                            selected: tempFilterStatus == status,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setModalState(() {
+                                  tempFilterStatus = status;
+                                });
+                              }
+                            },
+                            selectedColor: AppTheme.primaryColor,
+                            labelStyle: TextStyle(
+                              color:
+                                  tempFilterStatus == status
+                                      ? Colors.white
+                                      : AppTheme.primaryText,
+                            ),
+                            backgroundColor: AppTheme.cardBackground,
+                          );
+                        }).toList(),
                   ),
                   const Spacer(),
 
@@ -625,7 +743,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                           child: const Text('重置'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppTheme.primaryText,
-                            side: const BorderSide(color: AppTheme.dividerColor),
+                            side: const BorderSide(
+                              color: AppTheme.dividerColor,
+                            ),
                           ),
                         ),
                       ),
@@ -648,7 +768,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             );
@@ -662,10 +782,15 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   Future<String?> _getAppointmentPatientDoctor(Appointment appointment) async {
     try {
       if (appointment.patientId == null) return null;
-      
-      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
-      final patient = await patientProvider.getPatientById(appointment.patientId);
-      
+
+      final patientProvider = Provider.of<PatientProvider>(
+        context,
+        listen: false,
+      );
+      final patient = await patientProvider.getPatientById(
+        appointment.patientId,
+      );
+
       return patient?.doctor;
     } catch (e) {
       print('获取预约患者医生信息失败: $e');

@@ -271,22 +271,63 @@ class FinancialQueryService {
     );
   }
 
+  String _formatDateOnly(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
   /// 搜索财务记录
-  Future<List<FinancialRecord>> searchFinancialRecords(String keyword) async {
+  Future<List<FinancialRecord>> searchFinancialRecords(
+    String keyword, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     if (_dbWrapper == null) return [];
 
     return await _dbWrapper!.wrapOperation('searchFinancialRecords', () async {
       try {
-        if (keyword.isEmpty) return [];
+        final trimmed = keyword.trim();
+        if (trimmed.isEmpty) return [];
 
-        final lowerPattern = '%$keyword%';
-        final noSpacePattern = '%$keyword%'.replaceAll(' ', '');
+        final lowerKeyword = trimmed.toLowerCase();
+        final lowerPattern = '%$lowerKeyword%';
+        final noSpacePattern = '%${lowerKeyword.replaceAll(' ', '')}%';
+        final conditions = <String>[
+          'fr.patient_id IS NOT NULL',
+          '''(
+            LOWER(COALESCE(p.name, '')) LIKE ?
+            OR LOWER(COALESCE(p.name_pinyin, '')) LIKE ?
+            OR LOWER(REPLACE(COALESCE(p.name_pinyin, ''), ' ', '')) LIKE ?
+            OR LOWER(COALESCE(p.name_initials, '')) LIKE ?
+          )''',
+        ];
+        final queryArgs = <dynamic>[
+          lowerPattern,
+          lowerPattern,
+          noSpacePattern,
+          lowerPattern,
+        ];
+
+        if (startDate != null && endDate != null) {
+          conditions.add('DATE(fr.created_at) >= ?');
+          conditions.add('DATE(fr.created_at) <= ?');
+          queryArgs.addAll([
+            _formatDateOnly(startDate),
+            _formatDateOnly(endDate),
+          ]);
+        }
+
+        final doctorFilter = _permissionService.getDoctorFilter();
+        if (doctorFilter != null && _permissionService.shouldFilterByDoctor()) {
+          conditions.add('p.doctor = ?');
+          queryArgs.add(doctorFilter);
+        }
+
+        final whereClause = conditions.join(' AND ');
 
         if (_dataSourceType == 'sqlite') {
           final db = _database;
           if (db == null) throw Exception('SQLite数据库未初始化');
-          final result = await db.rawQuery(
-            '''
+          final result = await db.rawQuery('''
             SELECT
               fr.id, fr.patient_id, fr.total_quantity, fr.notes,
               fr.created_at, fr.updated_at,
@@ -295,22 +336,16 @@ class FinancialQueryService {
               p.name_initials as patient_name_initials
             FROM financial_records fr
             LEFT JOIN patients p ON fr.patient_id = p.id
-            WHERE LOWER(COALESCE(p.name, '')) LIKE ?
-               OR LOWER(COALESCE(p.name_pinyin, '')) LIKE ?
-               OR LOWER(REPLACE(COALESCE(p.name_pinyin, ''), ' ', '')) LIKE ?
-               OR LOWER(COALESCE(p.name_initials, '')) LIKE ?
+            WHERE $whereClause
             ORDER BY fr.updated_at DESC
-          ''',
-            [lowerPattern, lowerPattern, noSpacePattern, lowerPattern],
-          );
+          ''', queryArgs);
           return result
               .map((e) => FinancialRecord.fromMap(e, dataSource: 'sqlite'))
               .toList();
         } else if (_dataSourceType == 'mysql') {
           final conn = _currentMysqlConnection;
           if (conn == null) throw Exception('MySQL连接未初始化');
-          final results = await conn.query(
-            '''
+          final results = await conn.query('''
             SELECT
               fr.id, fr.patient_id, fr.total_quantity, fr.notes,
               fr.created_at, fr.updated_at,
@@ -319,14 +354,9 @@ class FinancialQueryService {
               p.name_initials as patient_name_initials
             FROM financial_records fr
             LEFT JOIN patients p ON fr.patient_id = p.id
-            WHERE LOWER(COALESCE(p.name, '')) LIKE ?
-               OR LOWER(COALESCE(p.name_pinyin, '')) LIKE ?
-               OR LOWER(REPLACE(COALESCE(p.name_pinyin, ''), ' ', '')) LIKE ?
-               OR LOWER(COALESCE(p.name_initials, '')) LIKE ?
+            WHERE $whereClause
             ORDER BY fr.updated_at DESC
-          ''',
-            [lowerPattern, lowerPattern, noSpacePattern, lowerPattern],
-          );
+          ''', queryArgs);
 
           return results
               .map(
@@ -384,19 +414,25 @@ class FinancialQueryService {
       'getPaginatedFinancialRecordsWithDateFilter',
       () async {
         try {
-          // 构建日期条件
-          String dateCondition = '';
-          List<dynamic> dateArgs = [];
+          final conditions = <String>['fr.patient_id IS NOT NULL'];
+          final queryArgs = <dynamic>[];
           if (startDate != null && endDate != null) {
-            final s =
-                '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
-            final e =
-                '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
-            dateCondition =
-                " AND DATE(fr.created_at) >= ? AND DATE(fr.created_at) <= ?";
-            dateArgs = [s, e];
+            conditions.add('DATE(fr.created_at) >= ?');
+            conditions.add('DATE(fr.created_at) <= ?');
+            queryArgs.addAll([
+              _formatDateOnly(startDate),
+              _formatDateOnly(endDate),
+            ]);
           }
 
+          final doctorFilter = _permissionService.getDoctorFilter();
+          if (doctorFilter != null &&
+              _permissionService.shouldFilterByDoctor()) {
+            conditions.add('p.doctor = ?');
+            queryArgs.add(doctorFilter);
+          }
+
+          final whereClause = conditions.join(' AND ');
           final offset = (page - 1) * pageSize;
 
           if (_dataSourceType == 'sqlite') {
@@ -405,9 +441,9 @@ class FinancialQueryService {
             final result = await db.rawQuery(
               'SELECT fr.*, COALESCE(p.name, \'未知患者\') as patient_name, p.name_pinyin as patient_name_pinyin, p.name_initials as patient_name_initials '
               'FROM financial_records fr LEFT JOIN patients p ON fr.patient_id = p.id '
-              'WHERE fr.patient_id IS NOT NULL$dateCondition '
+              'WHERE $whereClause '
               'ORDER BY fr.updated_at DESC LIMIT ? OFFSET ?',
-              [...dateArgs, pageSize, offset],
+              [...queryArgs, pageSize, offset],
             );
             return result
                 .map((e) => FinancialRecord.fromMap(e, dataSource: 'sqlite'))
@@ -424,11 +460,11 @@ class FinancialQueryService {
                    p.name_initials as patient_name_initials
             FROM financial_records fr
             LEFT JOIN patients p ON fr.patient_id = p.id
-            WHERE fr.patient_id IS NOT NULL$dateCondition
+            WHERE $whereClause
             ORDER BY fr.updated_at DESC
             LIMIT ? OFFSET ?
           ''',
-              [...dateArgs, pageSize, offset],
+              [...queryArgs, pageSize, offset],
             );
             return results
                 .map(
@@ -480,33 +516,39 @@ class FinancialQueryService {
     DateTime? endDate,
   }) async {
     try {
-      // 构建日期条件
-      String dateCondition = '';
-      List<dynamic> dateArgs = [];
+      final conditions = <String>['fr.patient_id IS NOT NULL'];
+      final queryArgs = <dynamic>[];
       if (startDate != null && endDate != null) {
-        final s =
-            '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
-        final e =
-            '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
-        dateCondition =
-            " WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?";
-        dateArgs = [s, e];
+        conditions.add('DATE(fr.created_at) >= ?');
+        conditions.add('DATE(fr.created_at) <= ?');
+        queryArgs.addAll([
+          _formatDateOnly(startDate),
+          _formatDateOnly(endDate),
+        ]);
       }
+
+      final doctorFilter = _permissionService.getDoctorFilter();
+      if (doctorFilter != null && _permissionService.shouldFilterByDoctor()) {
+        conditions.add('p.doctor = ?');
+        queryArgs.add(doctorFilter);
+      }
+
+      final whereClause = conditions.join(' AND ');
 
       if (_dataSourceType == 'sqlite') {
         final db = _database;
         if (db == null) throw Exception('SQLite数据库未初始化');
         final result = await db.rawQuery(
-          'SELECT COUNT(*) as count FROM financial_records$dateCondition',
-          dateArgs,
+          'SELECT COUNT(*) as count FROM financial_records fr LEFT JOIN patients p ON fr.patient_id = p.id WHERE $whereClause',
+          queryArgs,
         );
         return (result.first['count'] as int?) ?? 0;
       } else if (_dataSourceType == 'mysql') {
         final conn = _currentMysqlConnection;
         if (conn == null) throw Exception('MySQL连接未初始化');
         final results = await conn.query(
-          'SELECT COUNT(*) as count FROM financial_records$dateCondition',
-          dateArgs,
+          'SELECT COUNT(*) as count FROM financial_records fr LEFT JOIN patients p ON fr.patient_id = p.id WHERE $whereClause',
+          queryArgs,
         );
         return int.tryParse(results.first['count'].toString()) ?? 0;
       }

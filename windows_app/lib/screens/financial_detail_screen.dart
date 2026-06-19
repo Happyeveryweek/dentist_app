@@ -9,7 +9,8 @@ import '../providers/financial_provider.dart';
 import '../providers/patient_provider.dart';
 import '../providers/user_provider.dart';
 import '../widgets/success_toast.dart';
-import '../widgets/success_toast.dart' show DeleteConfirmDialogManager, InlineSuccessMessage;
+import '../widgets/success_toast.dart'
+    show DeleteConfirmDialogManager, InlineSuccessMessage;
 import '../widgets/modern_date_picker.dart';
 import '../utils/permission_utils.dart';
 import '../providers/settings_provider.dart';
@@ -21,6 +22,7 @@ import '../features/financial/widgets/financial_records_list_header.dart';
 import '../features/financial/widgets/financial_detail_record_card.dart';
 import '../features/financial/widgets/financial_detail_editing_item_row.dart';
 import '../features/financial/services/financial_detail_service.dart';
+import 'patient_detail_screen.dart';
 
 class FinancialDetailScreen extends StatefulWidget {
   final Patient patient;
@@ -41,26 +43,32 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   List<Map<String, dynamic>> _detailedRecords = []; // 存储详细记录（包含明细项）
   bool _isLoading = true;
   bool _isEditing = false; // 新增：编辑状态标志
+  bool _showProcessingFee = false;
   String _errorMessage = '';
   final ScrollController _scrollController = ScrollController();
   bool _hasDataChanged = false; // 跟踪数据是否有变动
-  
+
   // 成功消息显示
   String? _successMessage;
   bool _showSuccessMessage = false;
   bool _isDeleteMessage = false; // 是否是删除消息
-  
+
   // 内联编辑状态
   int? _editingItemId; // null表示无编辑，-1表示新增行
-  final TextEditingController _editChargeDateController = TextEditingController();
+  final TextEditingController _editChargeDateController =
+      TextEditingController();
   final TextEditingController _editItemNameController = TextEditingController();
-  String? _editPaymentMethod = FinancialPaymentMethodHelper.defaultPaymentMethod;
-  final TextEditingController _editItemPriceController = TextEditingController();
-  final TextEditingController _editProcessingFeeController = TextEditingController();
-  final TextEditingController _editTotalPriceController = TextEditingController();
+  String? _editPaymentMethod =
+      FinancialPaymentMethodHelper.defaultPaymentMethod;
+  final TextEditingController _editItemPriceController =
+      TextEditingController();
+  final TextEditingController _editProcessingFeeController =
+      TextEditingController();
+  final TextEditingController _editTotalPriceController =
+      TextEditingController();
   DateTime _editChargeDate = DateTime.now();
   FinancialRecord? _editingRecord; // 当前正在编辑的财务记录
-  
+
   // 业务逻辑 Service
   late FinancialDetailService _financialDetailService;
 
@@ -79,9 +87,11 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   void initState() {
     super.initState();
     // 初始化业务逻辑 Service
-    final financialProvider = Provider.of<FinancialProvider>(context, listen: false);
-    _financialDetailService = FinancialDetailService(financialProvider: financialProvider);
-    
+    final financialProvider =
+        Provider.of<FinancialProvider>(context, listen: false);
+    _financialDetailService =
+        FinancialDetailService(financialProvider: financialProvider);
+
     // 检查权限，如果没有权限则不加载数据
     if (_canViewPatientFinancialRecords()) {
       _loadPatientRecords();
@@ -96,18 +106,18 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   // 加载患者的财务记录
   void _scrollToHighlightedRecord() {
     if (_detailedRecords.isEmpty) return;
-    
+
     // 查找高亮记录的索引
-    final highlightedIndex = _detailedRecords.indexWhere(
-      (detailRecord) => detailRecord['isHighlighted'] as bool
-    );
-    
+    final highlightedIndex = _detailedRecords
+        .indexWhere((detailRecord) => detailRecord['isHighlighted'] as bool);
+
     if (highlightedIndex != -1 && _scrollController.hasClients) {
       // 计算滚动位置（居中显示）
       const itemHeight = 120.0; // 估计的卡片高度
       final screenHeight = MediaQuery.of(context).size.height;
-      final scrollPosition = highlightedIndex * itemHeight - screenHeight / 2 + itemHeight / 2;
-      
+      final scrollPosition =
+          highlightedIndex * itemHeight - screenHeight / 2 + itemHeight / 2;
+
       _scrollController.animateTo(
         scrollPosition.clamp(0.0, _scrollController.position.maxScrollExtent),
         duration: const Duration(milliseconds: 500),
@@ -118,7 +128,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
   Future<void> _loadPatientRecords() async {
     if (!mounted) return;
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -129,21 +139,21 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
         widget.patient.id!,
         widget.initialRecordId,
       );
-      
+
       // 从详细记录中提取财务记录列表
       final patientRecords = detailedRecords
           .map((detail) => detail['record'] as FinancialRecord)
           .toSet()
           .toList();
       patientRecords.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      
+
       if (mounted) {
         setState(() {
           _patientRecords = patientRecords;
           _detailedRecords = detailedRecords;
           _isLoading = false;
         });
-        
+
         // 如果有初始记录ID，滚动到该记录
         if (widget.initialRecordId != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -161,11 +171,24 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
     }
   }
 
+  Future<void> _openPatientDetail() async {
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => PatientDetailScreen(patient: widget.patient),
+      ),
+    );
+
+    if (result == true) {
+      _hasDataChanged = true;
+      await _loadPatientRecords();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // 检查是否在弹窗中显示
     final isInDialog = ModalRoute.of(context)?.settings.name == null;
-    
+
     if (isInDialog) {
       // 弹窗模式：不显示AppBar，直接显示内容
       return Scaffold(
@@ -217,6 +240,11 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
                     ),
                   ),
                   IconButton(
+                    onPressed: _openPatientDetail,
+                    icon: const Icon(Icons.person_search, color: Colors.white),
+                    tooltip: '查看患者详情',
+                  ),
+                  IconButton(
                     onPressed: () => Navigator.of(context).pop(_hasDataChanged),
                     icon: const Icon(Icons.close, color: Colors.white),
                     tooltip: '关闭',
@@ -242,6 +270,13 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
           backgroundColor: Colors.white,
           foregroundColor: Colors.black87,
           elevation: 0,
+          actions: [
+            IconButton(
+              onPressed: _openPatientDetail,
+              icon: const Icon(Icons.person_search),
+              tooltip: '查看患者详情',
+            ),
+          ],
         ),
         body: _buildBody(),
       );
@@ -278,16 +313,23 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.account_balance_wallet_outlined, size: 64, color: Colors.grey[400]),
+            Icon(Icons.account_balance_wallet_outlined,
+                size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               '暂无收费记录',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
               '点击下方按钮添加第一条收费记录',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.grey[500]),
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
@@ -314,7 +356,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             notes: _getPatientNotes(),
           ),
         ),
-        
+
         // 财务统计信息
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -324,7 +366,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             totalOutstanding: _totalOutstanding,
           ),
         ),
-        
+
         // 财务记录列表标题和表头
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -334,6 +376,12 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
               const SizedBox(height: 16), // 添加顶部间距
               FinancialRecordsListHeader(
                 recordCount: _detailedRecords.length,
+                showProcessingFee: _showProcessingFee,
+                onToggleProcessingFee: () {
+                  setState(() {
+                    _showProcessingFee = !_showProcessingFee;
+                  });
+                },
                 onAddRecord: _addFinancialRecord,
               ),
               const SizedBox(height: 8),
@@ -342,7 +390,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        
+
         // 财务记录列表 - 使用Expanded而不是SingleChildScrollView
         Expanded(
           child: Padding(
@@ -350,11 +398,12 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             child: _buildRecordsList(),
           ),
         ),
-        
+
         // 成功消息显示区域（在底部）
         if (_showSuccessMessage && _successMessage != null)
           Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16, top: 8),
+            padding:
+                const EdgeInsets.only(left: 16, right: 16, bottom: 16, top: 8),
             child: InlineSuccessMessage(
               message: _successMessage!,
               isDelete: _isDeleteMessage,
@@ -384,7 +433,8 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   // 获取或创建财务记录
   Future<FinancialRecord?> _getOrCreateFinancialRecord() async {
     try {
-      return await _financialDetailService.getOrCreateFinancialRecord(widget.patient.id!);
+      return await _financialDetailService
+          .getOrCreateFinancialRecord(widget.patient.id!);
     } catch (e) {
       print('获取或创建财务记录失败: $e');
       return null;
@@ -404,20 +454,21 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
     // 获取或创建财务记录
     FinancialRecord? targetRecord = await _getOrCreateFinancialRecord();
-    
+
     if (targetRecord == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('无法创建财务记录')),
       );
       return;
     }
-    
+
     // 启动内联编辑模式
     setState(() {
       _editingItemId = -1; // -1表示新增行
       _editingRecord = targetRecord;
       _editChargeDate = DateTime.now();
-      _editChargeDateController.text = DateFormat('yyyy-MM-dd').format(_editChargeDate);
+      _editChargeDateController.text =
+          DateFormat('yyyy-MM-dd').format(_editChargeDate);
       _editItemNameController.text = '综合收费';
       _editPaymentMethod = FinancialPaymentMethodHelper.defaultPaymentMethod;
       _editItemPriceController.text = '0';
@@ -427,31 +478,34 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   }
 
   // 编辑财务记录
-  Future<void> _editFinancialRecord(FinancialRecord record, {FinancialItem? item, bool isDetail = false}) async {
+  Future<void> _editFinancialRecord(FinancialRecord record,
+      {FinancialItem? item, bool isDetail = false}) async {
     if (isDetail && item != null) {
       // 启动内联编辑模式
       setState(() {
         _editingItemId = item.id;
         _editingRecord = record;
         _editChargeDate = item.chargeDate;
-        _editChargeDateController.text = DateFormat('yyyy-MM-dd').format(item.chargeDate);
+        _editChargeDateController.text =
+            DateFormat('yyyy-MM-dd').format(item.chargeDate);
         _editItemNameController.text = item.itemName;
         _editPaymentMethod = item.paymentMethod;
-        _editItemPriceController.text = item.itemPrice % 1 == 0 
-            ? item.itemPrice.toInt().toString() 
+        _editItemPriceController.text = item.itemPrice % 1 == 0
+            ? item.itemPrice.toInt().toString()
             : item.itemPrice.toString();
-        _editProcessingFeeController.text = item.processingFee % 1 == 0 
-            ? item.processingFee.toInt().toString() 
+        _editProcessingFeeController.text = item.processingFee % 1 == 0
+            ? item.processingFee.toInt().toString()
             : item.processingFee.toString();
-        _editTotalPriceController.text = item.totalPrice % 1 == 0 
-            ? item.totalPrice.toInt().toString() 
+        _editTotalPriceController.text = item.totalPrice % 1 == 0
+            ? item.totalPrice.toInt().toString()
             : item.totalPrice.toString();
       });
     }
   }
 
   // 删除财务记录
-  Future<void> _deleteFinancialRecord(FinancialRecord record, {FinancialItem? item, bool isDetail = false}) async {
+  Future<void> _deleteFinancialRecord(FinancialRecord record,
+      {FinancialItem? item, bool isDetail = false}) async {
     if (isDetail && item != null) {
       // 删除明细项
       final confirmed = await DeleteConfirmDialogManager.show(
@@ -469,18 +523,21 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       if (confirmed) {
         try {
           // 删除明细项
-          final success = await _financialDetailService.deleteFinancialItem(item.id!);
-          
+          final success =
+              await _financialDetailService.deleteFinancialItem(item.id!);
+
           if (success) {
             // 标记数据已变动
             _hasDataChanged = true;
             // 更新财务记录的收费项数量和更新时间
-            await _financialDetailService.updateFinancialRecordAfterItemChange(record);
+            await _financialDetailService
+                .updateFinancialRecordAfterItemChange(record);
             // 删除成功后，更新患者的财务统计
-            await _financialDetailService.updatePatientFinancialSummary(widget.patient.id!);
+            await _financialDetailService
+                .updatePatientFinancialSummary(widget.patient.id!);
             // 重新加载数据
             await _loadPatientRecords();
-            
+
             // 显示成功提示（橙色提示条）
             _showInlineSuccessMessage('已删除收费明细项', isDelete: true);
           } else {
@@ -502,7 +559,6 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       }
     }
   }
-
 
   // 取消编辑
   void _cancelEditing() {
@@ -540,49 +596,66 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
           paymentMethod: FinancialPaymentMethodHelper.toStorageValue(
             _editPaymentMethod,
           ),
-          itemPrice: double.tryParse(_editItemPriceController.text.replaceAll('¥', '').trim()) ?? 0.0,
-          processingFee: double.tryParse(_editProcessingFeeController.text.replaceAll('¥', '').trim()) ?? 0.0,
+          itemPrice: double.tryParse(
+                  _editItemPriceController.text.replaceAll('¥', '').trim()) ??
+              0.0,
+          processingFee: double.tryParse(_editProcessingFeeController.text
+                  .replaceAll('¥', '')
+                  .trim()) ??
+              0.0,
           quantity: 1,
-          totalPrice: double.tryParse(_editTotalPriceController.text.replaceAll('¥', '').trim()) ?? 0.0,
+          totalPrice: double.tryParse(
+                  _editTotalPriceController.text.replaceAll('¥', '').trim()) ??
+              0.0,
           chargeDate: _editChargeDate,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-        
+
         await _financialDetailService.addFinancialItem(newItem);
-        
+
         // 标记数据已变动
         _hasDataChanged = true;
-        
+
         // 更新财务记录的收费项数量和更新时间
-        await _financialDetailService.updateFinancialRecordAfterItemChange(_editingRecord!);
-        
+        await _financialDetailService
+            .updateFinancialRecordAfterItemChange(_editingRecord!);
+
         // 更新患者的财务统计
-        await _financialDetailService.updatePatientFinancialSummary(widget.patient.id!);
-        
+        await _financialDetailService
+            .updatePatientFinancialSummary(widget.patient.id!);
+
         // 重新加载数据
         await _loadPatientRecords();
-        
+
         // 取消编辑状态
         _cancelEditing();
-        
+
         // 显示成功提示
         _showInlineSuccessMessage('收费项添加成功');
       } else {
         // 更新现有收费项 - 先检查是否有变化
         final originalItem = _detailedRecords
-            .where((dr) => dr['item'] != null && (dr['item'] as FinancialItem).id == _editingItemId)
+            .where((dr) =>
+                dr['item'] != null &&
+                (dr['item'] as FinancialItem).id == _editingItemId)
             .map((dr) => dr['item'] as FinancialItem)
             .first;
-        
+
         final newItemName = _editItemNameController.text.trim();
         final newPaymentMethod = FinancialPaymentMethodHelper.toStorageValue(
           _editPaymentMethod,
         );
-        final newItemPrice = double.tryParse(_editItemPriceController.text.replaceAll('¥', '').trim()) ?? 0.0;
-        final newProcessingFee = double.tryParse(_editProcessingFeeController.text.replaceAll('¥', '').trim()) ?? 0.0;
-        final newTotalPrice = double.tryParse(_editTotalPriceController.text.replaceAll('¥', '').trim()) ?? 0.0;
-        
+        final newItemPrice = double.tryParse(
+                _editItemPriceController.text.replaceAll('¥', '').trim()) ??
+            0.0;
+        final newProcessingFee = double.tryParse(
+                _editProcessingFeeController.text.replaceAll('¥', '').trim()) ??
+            0.0;
+        final newTotalPrice = double.tryParse(
+                _editTotalPriceController.text.replaceAll('¥', '').trim()) ??
+            0.0;
+
         // 检查是否有任何变化
         final hasChanges = originalItem.itemName != newItemName ||
             originalItem.paymentMethod != newPaymentMethod ||
@@ -590,13 +663,13 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             originalItem.processingFee != newProcessingFee ||
             originalItem.totalPrice != newTotalPrice ||
             originalItem.chargeDate != _editChargeDate;
-        
+
         if (!hasChanges) {
           // 没有变化，静默取消编辑
           _cancelEditing();
           return;
         }
-        
+
         final updatedItem = FinancialItem(
           id: originalItem.id,
           financialRecordId: originalItem.financialRecordId,
@@ -610,24 +683,26 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
           createdAt: originalItem.createdAt,
           updatedAt: DateTime.now(),
         );
-        
+
         await _financialDetailService.updateFinancialItem(updatedItem);
-        
+
         // 标记数据已变动
         _hasDataChanged = true;
-        
+
         // 更新财务记录的收费项数量和更新时间
-        await _financialDetailService.updateFinancialRecordAfterItemChange(_editingRecord!);
-        
+        await _financialDetailService
+            .updateFinancialRecordAfterItemChange(_editingRecord!);
+
         // 更新患者的财务统计
-        await _financialDetailService.updatePatientFinancialSummary(widget.patient.id!);
-        
+        await _financialDetailService
+            .updatePatientFinancialSummary(widget.patient.id!);
+
         // 重新加载数据
         await _loadPatientRecords();
-        
+
         // 取消编辑状态
         _cancelEditing();
-        
+
         // 显示成功提示
         _showInlineSuccessMessage('收费项更新成功');
       }
@@ -648,7 +723,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
     }
     return total;
   }
-  
+
   double get _totalPaid {
     // 从financial_items表中计算已收费金额
     double total = 0.0;
@@ -660,7 +735,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
     }
     return total;
   }
-  
+
   double get _totalOutstanding {
     // 从financial_items表中计算欠费金额（应收费 - 已收费）
     return _totalReceivable - _totalPaid;
@@ -670,7 +745,8 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   Widget _buildRecordsList() {
     return ListView.builder(
       controller: _scrollController,
-      itemCount: _detailedRecords.length + (_editingItemId == -1 ? 1 : 0), // 如果是新增模式，增加一行
+      itemCount: _detailedRecords.length +
+          (_editingItemId == -1 ? 1 : 0), // 如果是新增模式，增加一行
       itemBuilder: (context, index) {
         // 如果是新增行（放在最上面）
         if (_editingItemId == -1 && index == 0) {
@@ -695,7 +771,8 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
               if (date != null) {
                 setState(() {
                   _editChargeDate = date;
-                  _editChargeDateController.text = DateFormat('yyyy-MM-dd').format(date);
+                  _editChargeDateController.text =
+                      DateFormat('yyyy-MM-dd').format(date);
                 });
               }
               return date;
@@ -710,7 +787,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             onCancel: _cancelEditing,
           );
         }
-        
+
         // 调整索引（如果有新增行）
         final actualIndex = _editingItemId == -1 ? index - 1 : index;
         final detailRecord = _detailedRecords[actualIndex];
@@ -719,7 +796,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
         final isDetail = detailRecord['isDetail'] as bool;
         final isHighlighted = detailRecord['isHighlighted'] as bool;
         final isEditing = item != null && _editingItemId == item.id;
-        
+
         if (isEditing) {
           return FinancialDetailEditingItemRow(
             chargeDateController: _editChargeDateController,
@@ -742,7 +819,8 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
               if (date != null) {
                 setState(() {
                   _editChargeDate = date;
-                  _editChargeDateController.text = DateFormat('yyyy-MM-dd').format(date);
+                  _editChargeDateController.text =
+                      DateFormat('yyyy-MM-dd').format(date);
                 });
               }
               return date;
@@ -757,15 +835,18 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             onCancel: _cancelEditing,
           );
         }
-        
+
         return FinancialDetailRecordCard(
           record: record,
           item: item,
           isDetail: isDetail,
           isHighlighted: isHighlighted,
           isEditing: _isEditing,
-          onEdit: () => _editFinancialRecord(record, item: item, isDetail: isDetail),
-          onDelete: () => _deleteFinancialRecord(record, item: item, isDetail: isDetail),
+          showProcessingFee: _showProcessingFee,
+          onEdit: () =>
+              _editFinancialRecord(record, item: item, isDetail: isDetail),
+          onDelete: () =>
+              _deleteFinancialRecord(record, item: item, isDetail: isDetail),
         );
       },
     );
@@ -776,7 +857,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
-      
+
       print('=== 财务详情页权限检查 ===');
       print('当前用户: ${currentUser?.username}');
       print('用户角色: ${currentUser?.role}');
@@ -784,18 +865,18 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       print('患者姓名: ${widget.patient.name}');
       print('患者医生: ${widget.patient.doctor}');
       print('用户是否为管理员: ${currentUser?.isAdmin}');
-      
+
       if (currentUser == null) {
         print('权限检查结果: false (用户未登录)');
         return false;
       }
-      
+
       // 管理员拥有所有权限
       if (currentUser.isAdmin) {
         print('权限检查结果: true (管理员权限)');
         return true;
       }
-      
+
       // 非管理员用户只能查看自己医生的患者的财务记录
       // 如果患者没有指定医生，或者当前用户的医生与患者的医生匹配，则允许查看
       if (widget.patient.doctor == null || widget.patient.doctor!.isEmpty) {
@@ -803,9 +884,10 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
         print('权限检查结果: true (患者未指定医生)');
         return true;
       }
-      
+
       // 检查当前用户的医生是否与患者的医生匹配
-      final hasPermission = currentUser.doctor != null && currentUser.doctor == widget.patient.doctor;
+      final hasPermission = currentUser.doctor != null &&
+          currentUser.doctor == widget.patient.doctor;
       print('权限检查结果: $hasPermission (医生匹配检查)');
       return hasPermission;
     } catch (e) {
@@ -813,7 +895,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       return false;
     }
   }
-  
+
   // 显示内联成功消息（短的绿色提示条）
   void _showInlineSuccessMessage(String message, {bool isDelete = false}) {
     setState(() {
@@ -821,7 +903,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       _showSuccessMessage = true;
       _isDeleteMessage = isDelete;
     });
-    
+
     // 2秒后自动隐藏
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
@@ -831,5 +913,4 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       }
     });
   }
-
 }

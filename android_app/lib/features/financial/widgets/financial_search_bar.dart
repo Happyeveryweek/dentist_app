@@ -7,10 +7,12 @@ class FinancialSearchBar extends StatelessWidget {
   final String searchQuery;
   final DateTime? startDate;
   final DateTime? endDate;
+  final Function(String) onSearchChanged;
   final Function(String) onSearchSubmitted;
   final Function() onClearSearch;
   final Function() onSortPressed;
   final Function() onDateFilterPressed;
+  final Function(String) onPresetDateFilter;
   final Function() onClearDateFilter;
 
   const FinancialSearchBar({
@@ -19,10 +21,12 @@ class FinancialSearchBar extends StatelessWidget {
     required this.searchQuery,
     required this.startDate,
     required this.endDate,
+    required this.onSearchChanged,
     required this.onSearchSubmitted,
     required this.onClearSearch,
     required this.onSortPressed,
     required this.onDateFilterPressed,
+    required this.onPresetDateFilter,
     required this.onClearDateFilter,
   });
 
@@ -41,36 +45,22 @@ class FinancialSearchBar extends StatelessWidget {
                   decoration: InputDecoration(
                     hintText: '搜索患者姓名、拼音、拼音首字母...',
                     prefixIcon: const Icon(Icons.search),
-                    suffixIcon: searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: onClearSearch,
-                          )
-                        : null,
+                    suffixIcon:
+                        searchController.text.isNotEmpty
+                            ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: onClearSearch,
+                            )
+                            : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     filled: true,
                     fillColor: Colors.grey[100],
                   ),
-                  onChanged: (value) {
-                    // 只更新 UI，不触发搜索
-                  },
+                  onChanged: onSearchChanged,
                   onSubmitted: onSearchSubmitted,
                 ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: () => onSearchSubmitted(searchController.text.trim()),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('搜索'),
               ),
               const SizedBox(width: 8),
               Container(
@@ -80,11 +70,18 @@ class FinancialSearchBar extends StatelessWidget {
                   border: Border.all(color: Colors.purple.shade200, width: 1),
                 ),
                 child: IconButton(
-                  icon: Icon(Icons.sort, color: Colors.purple.shade600, size: 20),
+                  icon: Icon(
+                    Icons.sort,
+                    color: Colors.purple.shade600,
+                    size: 20,
+                  ),
                   onPressed: onSortPressed,
                   tooltip: '排序选项',
                   padding: const EdgeInsets.all(10),
-                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                  constraints: const BoxConstraints(
+                    minWidth: 40,
+                    minHeight: 40,
+                  ),
                 ),
               ),
             ],
@@ -96,7 +93,10 @@ class FinancialSearchBar extends StatelessWidget {
                 child: GestureDetector(
                   onTap: onDateFilterPressed,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -104,7 +104,11 @@ class FinancialSearchBar extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.calendar_today, size: 16, color: Colors.black54),
+                        const Icon(
+                          Icons.calendar_today,
+                          size: 16,
+                          color: Colors.black54,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -123,7 +127,11 @@ class FinancialSearchBar extends StatelessWidget {
                           const SizedBox(width: 6),
                           GestureDetector(
                             onTap: onClearDateFilter,
-                            child: const Icon(Icons.close_rounded, size: 16, color: Colors.black45),
+                            child: const Icon(
+                              Icons.close_rounded,
+                              size: 16,
+                              color: Colors.black45,
+                            ),
                           ),
                         ],
                       ],
@@ -162,7 +170,7 @@ class FinancialSearchBar extends StatelessWidget {
   Widget _buildPresetButton(String label, String preset) {
     final isSelected = _isPresetSelected(preset);
     return GestureDetector(
-      onTap: () => onDateFilterPressed(),
+      onTap: () => onPresetDateFilter(preset),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -216,14 +224,14 @@ class FinancialSearchBar extends StatelessWidget {
     if (expectedStart == null || expectedEnd == null) return false;
 
     return startDate != null &&
-           endDate != null &&
-           _isSameDay(startDate!, expectedStart) &&
-           _isSameDay(endDate!, expectedEnd);
+        endDate != null &&
+        _isSameDay(startDate!, expectedStart) &&
+        _isSameDay(endDate!, expectedEnd);
   }
 
   bool _isSameDay(DateTime date1, DateTime date2) {
     return date1.year == date2.year &&
-           date1.month == date2.month &&
-           date1.day == date2.day;
+        date1.month == date2.month &&
+        date1.day == date2.day;
   }
 }

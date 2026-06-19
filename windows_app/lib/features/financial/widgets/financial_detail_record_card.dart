@@ -13,6 +13,7 @@ class FinancialDetailRecordCard extends StatelessWidget {
   final bool isDetail;
   final bool isHighlighted;
   final bool isEditing;
+  final bool showProcessingFee;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -23,6 +24,7 @@ class FinancialDetailRecordCard extends StatelessWidget {
     this.isDetail = false,
     this.isHighlighted = false,
     this.isEditing = false,
+    this.showProcessingFee = false,
     required this.onEdit,
     required this.onDelete,
   });
@@ -70,7 +72,9 @@ class FinancialDetailRecordCard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             Text(
-              isDetail && item != null ? item!.itemName : (record.notes ?? '收费项目'),
+              isDetail && item != null
+                  ? item!.itemName
+                  : (record.notes ?? '收费项目'),
               style: Theme.of(context).textTheme.bodyMedium,
               maxLines: 1,
               softWrap: false,
@@ -88,8 +92,9 @@ class FinancialDetailRecordCard extends StatelessWidget {
                         return const SizedBox.shrink();
                       }
                       return Tooltip(
-                        message: FinancialPaymentMethodHelper
-                            .displayNameOrDefault(item!.paymentMethod),
+                        message:
+                            FinancialPaymentMethodHelper.displayNameOrDefault(
+                                item!.paymentMethod),
                         child: SizedBox(
                           width: 20,
                           height: 20,
@@ -130,9 +135,11 @@ class FinancialDetailRecordCard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             Text(
-              isDetail && item != null
-                  ? '¥${(item!.processingFee % 1 == 0 ? item!.processingFee.toInt().toString() : item!.processingFee.toStringAsFixed(2))}'
-                  : '¥0',
+              !showProcessingFee
+                  ? '****'
+                  : isDetail && item != null
+                      ? '¥${(item!.processingFee % 1 == 0 ? item!.processingFee.toInt().toString() : item!.processingFee.toStringAsFixed(2))}'
+                      : '¥0',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.orange[700],
                     fontWeight: FontWeight.w500,

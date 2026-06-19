@@ -317,6 +317,39 @@ class PurchaseProvider extends ChangeNotifier {
     }
   }
 
+  // 搜索采购记录
+  Future<List<PurchaseRecord>> searchPurchaseRecords(String keyword) async {
+    if (!initialized) {
+      return [];
+    }
+
+    final trimmed = keyword.trim();
+    if (trimmed.isEmpty) {
+      return await getAllPurchaseRecords();
+    }
+
+    if (_dbWrapper == null) return [];
+
+    return await _dbWrapper!.wrapOperation('searchPurchaseRecords', () async {
+      try {
+        final doctorFilter = _permissionService?.getDoctorFilter();
+        if (doctorFilter != null &&
+            (_permissionService?.shouldFilterByDoctor() ?? false)) {
+          return await _currentDataSource.searchPurchases(
+            trimmed,
+            doctorFilter: doctorFilter,
+          );
+        }
+
+        return await _currentDataSource.searchPurchases(trimmed);
+      } catch (e) {
+        print('搜索采购记录失败: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
+        return [];
+      }
+    });
+  }
+
   // 根据ID获取采购记录
   Future<PurchaseRecord?> getPurchaseRecordById(int id) async {
     if (!initialized) {

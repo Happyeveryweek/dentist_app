@@ -435,12 +435,20 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   // 搜索财务记录
-  Future<List<FinancialRecord>> searchFinancialRecords(String keyword) async {
+  Future<List<FinancialRecord>> searchFinancialRecords(
+    String keyword, {
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     if (!initialized) {
       throw Exception('数据库未初始化');
     }
 
-    return await _queryService.searchFinancialRecords(keyword);
+    return await _queryService.searchFinancialRecords(
+      keyword,
+      startDate: startDate,
+      endDate: endDate,
+    );
   }
 
   // ── 全量统计缓存（委托给 cacheHelper）─────────────────────────────────────────────

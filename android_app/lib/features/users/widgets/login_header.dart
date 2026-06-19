@@ -212,10 +212,12 @@ class _DecorIcon extends StatelessWidget {
               ),
             ],
           ),
-          child: FaIcon(
-            icon,
-            color: Colors.white,
-            size: 20,
+          child: Center(
+            child: FaIcon(
+              icon,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
         ),
       ),

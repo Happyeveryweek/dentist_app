@@ -31,38 +31,35 @@ class AppointmentSearchFilterBar extends StatelessWidget {
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
                 hintText: '搜索患者姓名或治疗项目',
-                prefixIcon: const Icon(Icons.search, color: AppTheme.secondaryText),
-                suffixIcon: searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: AppTheme.secondaryText),
-                        onPressed: onClearSearch,
-                      )
-                    : null,
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: AppTheme.secondaryText,
+                ),
+                suffixIcon:
+                    searchQuery.isNotEmpty
+                        ? IconButton(
+                          icon: const Icon(
+                            Icons.clear,
+                            color: AppTheme.secondaryText,
+                          ),
+                          onPressed: onClearSearch,
+                        )
+                        : null,
                 filled: true,
                 fillColor: Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 16,
+                ),
               ),
               style: const TextStyle(color: AppTheme.primaryText, fontSize: 14),
               onChanged: onSearchChanged,
               onSubmitted: onSearchSubmitted,
             ),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: () => onSearchSubmitted(searchController.text.trim()),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            child: const Text('搜索', style: TextStyle(fontSize: 14)),
           ),
           const SizedBox(width: 8),
           CupertinoButton(

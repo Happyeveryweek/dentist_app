@@ -21,7 +21,9 @@ class SqlitePurchaseDataSource implements PurchaseDataSource {
     query += ' ORDER BY purchase_date DESC';
 
     final result = await _database.rawQuery(query, queryArgs);
-    return result.map((e) => PurchaseRecord.fromMap(e, dataSource: 'sqlite')).toList();
+    return result
+        .map((e) => PurchaseRecord.fromMap(e, dataSource: 'sqlite'))
+        .toList();
   }
 
   @override
@@ -67,12 +69,34 @@ class SqlitePurchaseDataSource implements PurchaseDataSource {
   }
 
   @override
-  Future<List<PurchaseRecord>> searchPurchases(String keyword, {String? doctorFilter}) async {
+  Future<List<PurchaseRecord>> searchPurchases(
+    String keyword, {
+    String? doctorFilter,
+  }) async {
     String query = '''
       SELECT * FROM purchase_records
-      WHERE (supplier LIKE ? OR notes LIKE ? OR doctor LIKE ?)
+      WHERE (
+        supplier LIKE ?
+        OR notes LIKE ?
+        OR doctor LIKE ?
+        OR CAST(id AS TEXT) LIKE ?
+        OR CAST(total_amount AS TEXT) LIKE ?
+        OR EXISTS (
+          SELECT 1 FROM purchase_items pi
+          WHERE pi.purchase_record_id = purchase_records.id
+            AND pi.material_name LIKE ?
+        )
+      )
     ''';
-    final queryArgs = <dynamic>['%$keyword%', '%$keyword%', '%$keyword%'];
+    final pattern = '%$keyword%';
+    final queryArgs = <dynamic>[
+      pattern,
+      pattern,
+      pattern,
+      pattern,
+      pattern,
+      pattern,
+    ];
 
     if (doctorFilter != null) {
       query += ' AND doctor = ?';
@@ -82,7 +106,9 @@ class SqlitePurchaseDataSource implements PurchaseDataSource {
     query += ' ORDER BY purchase_date DESC';
 
     final result = await _database.rawQuery(query, queryArgs);
-    return result.map((e) => PurchaseRecord.fromMap(e, dataSource: 'sqlite')).toList();
+    return result
+        .map((e) => PurchaseRecord.fromMap(e, dataSource: 'sqlite'))
+        .toList();
   }
 
   @override
@@ -101,7 +127,11 @@ class SqlitePurchaseDataSource implements PurchaseDataSource {
   }
 
   @override
-  Future<List<PurchaseRecord>> getPurchasesByDateRange(DateTime startDate, DateTime endDate, {String? doctorFilter}) async {
+  Future<List<PurchaseRecord>> getPurchasesByDateRange(
+    DateTime startDate,
+    DateTime endDate, {
+    String? doctorFilter,
+  }) async {
     String query = '''
       SELECT * FROM purchase_records
       WHERE purchase_date BETWEEN ? AND ?
@@ -116,7 +146,9 @@ class SqlitePurchaseDataSource implements PurchaseDataSource {
     query += ' ORDER BY purchase_date DESC';
 
     final result = await _database.rawQuery(query, queryArgs);
-    return result.map((e) => PurchaseRecord.fromMap(e, dataSource: 'sqlite')).toList();
+    return result
+        .map((e) => PurchaseRecord.fromMap(e, dataSource: 'sqlite'))
+        .toList();
   }
 
   @override
