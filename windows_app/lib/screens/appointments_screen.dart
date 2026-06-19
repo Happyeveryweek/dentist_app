@@ -212,6 +212,38 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     }
   }
 
+  Future<void> _changeAppointmentStatus(Appointment appointment, String status) async {
+    if (!PermissionUtils.canEditDoctor(context, appointment.patient?.doctor)) {
+      AppToastManager.showError(
+        context,
+        message: '您只能编辑自己医生患者的预约',
+      );
+      return;
+    }
+
+    final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
+    final appState = Provider.of<AppState>(context, listen: false);
+
+    try {
+      await appState.showLoading(
+        appointmentProvider.updateAppointment(
+          appointment.copyWith(
+            status: status,
+            updated_at: DateTime.now(),
+          ),
+        ),
+        message: '正在更新状态...',
+      );
+
+      await _stateService!.loadAppointments();
+      if (!mounted) return;
+      AppToastManager.showSuccess(context, message: '预约状态已更新');
+    } catch (e) {
+      if (!mounted) return;
+      AppToastManager.showError(context, message: '更新预约状态失败: $e');
+    }
+  }
+
   // 在_AppointmentsScreenState类中添加方法，用于格式化显示治疗类型和牙位信息
   String _formatTreatmentTypeForDisplay(String? treatmentTypeStr) {
     if (treatmentTypeStr == null || treatmentTypeStr.isEmpty) {
@@ -459,6 +491,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                             AppToastManager.showError(context, message: '您只能删除自己医生患者的预约');
                           }
                         },
+                        onStatusChanged: _changeAppointmentStatus,
                       );
                     },
                   ),

@@ -65,6 +65,9 @@ class AppointmentCostStatusSection extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: DropdownButtonFormField<String>(
+                  borderRadius: BorderRadius.circular(12),
+                  dropdownColor: Colors.white,
+                  focusColor: Colors.transparent,
                   decoration: InputDecoration(
                     labelText: '预约状态',
                     border: OutlineInputBorder(

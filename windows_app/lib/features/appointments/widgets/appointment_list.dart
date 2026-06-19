@@ -9,6 +9,7 @@ class AppointmentList extends StatelessWidget {
   final Function(Appointment) onView;
   final Function(Appointment) onEdit;
   final Function(Appointment) onDelete;
+  final Function(Appointment, String) onStatusChanged;
 
   const AppointmentList({
     Key? key,
@@ -18,6 +19,7 @@ class AppointmentList extends StatelessWidget {
     required this.onView,
     required this.onEdit,
     required this.onDelete,
+    required this.onStatusChanged,
   }) : super(key: key);
 
   @override
@@ -49,6 +51,7 @@ class AppointmentList extends StatelessWidget {
             onView: () => onView(ap),
             onEdit: () => onEdit(ap),
             onDelete: () => onDelete(ap),
+            onStatusChanged: (status) => onStatusChanged(ap, status),
           );
         },
       ),

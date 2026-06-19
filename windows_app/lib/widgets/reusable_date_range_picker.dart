@@ -26,6 +26,7 @@ class ReusableDateRangePicker extends StatefulWidget {
     final DateTime e = end ?? now;
     DateTime? pickedStart;
     DateTime? pickedEnd;
+    String? activePreset;
 
     bool hoverStart = false;
     bool hoverEnd = false;
@@ -44,6 +45,10 @@ class ReusableDateRangePicker extends StatefulWidget {
                 DateTime start;
                 DateTime end = DateTime(now.year, now.month, now.day);
                 switch (preset) {
+                  case 'today':
+                    start = DateTime(now.year, now.month, now.day);
+                    end = DateTime(now.year, now.month, now.day);
+                    break;
                   case 'this_month':
                     start = DateTime(now.year, now.month, 1);
                     break;
@@ -73,6 +78,7 @@ class ReusableDateRangePicker extends StatefulWidget {
                 setState(() {
                   pickedStart = start;
                   pickedEnd = end;
+                  activePreset = preset;
                 });
               }
 
@@ -118,12 +124,12 @@ class ReusableDateRangePicker extends StatefulWidget {
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _PresetChip(label: '本月', onTap: () => applyPreset('this_month')),
-                        _PresetChip(label: '上月', onTap: () => applyPreset('last_month')),
-                        _PresetChip(label: '30天', onTap: () => applyPreset('30d')),
-                        _PresetChip(label: '半年', onTap: () => applyPreset('6m')),
-                        _PresetChip(label: '今年', onTap: () => applyPreset('this_year')),
-                        _PresetChip(label: '去年', onTap: () => applyPreset('last_year')),
+                        _PresetChip(label: '今天', selected: activePreset == 'today', onTap: () => applyPreset('today')),
+                        _PresetChip(label: '本月', selected: activePreset == 'this_month', onTap: () => applyPreset('this_month')),
+                        _PresetChip(label: '上月', selected: activePreset == 'last_month', onTap: () => applyPreset('last_month')),
+                        _PresetChip(label: '30天', selected: activePreset == '30d', onTap: () => applyPreset('30d')),
+                        _PresetChip(label: '半年', selected: activePreset == '6m', onTap: () => applyPreset('6m')),
+                        _PresetChip(label: '今年', selected: activePreset == 'this_year', onTap: () => applyPreset('this_year')),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -142,6 +148,7 @@ class ReusableDateRangePicker extends StatefulWidget {
                       if (d != null) {
                         setState(() {
                           pickedStart = d;
+                          activePreset = null;
                           if (pickedEnd!.isBefore(pickedStart!)) pickedEnd = pickedStart;
                         });
                       }
@@ -160,7 +167,10 @@ class ReusableDateRangePicker extends StatefulWidget {
                         ),
                       );
                       if (d != null) {
-                        setState(() { pickedEnd = d; });
+                        setState(() {
+                          pickedEnd = d;
+                          activePreset = null;
+                        });
                       }
                     }),
                     const SizedBox(height: 12),
@@ -202,8 +212,9 @@ class _ReusableDateRangePickerState extends State<ReusableDateRangePicker> {
 
 class _PresetChip extends StatefulWidget {
   final String label;
+  final bool selected;
   final VoidCallback onTap;
-  const _PresetChip({required this.label, required this.onTap});
+  const _PresetChip({required this.label, required this.selected, required this.onTap});
 
   @override
   State<_PresetChip> createState() => _PresetChipState();
@@ -223,9 +234,19 @@ class _PresetChipState extends State<_PresetChip> {
           duration: const Duration(milliseconds: 120),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: _hovering ? Colors.blue.withOpacity(0.08) : Colors.grey.shade100,
+            color: widget.selected
+                ? AppTheme.primaryColor
+                : _hovering
+                    ? Colors.blue.withOpacity(0.08)
+                    : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _hovering ? AppTheme.primaryColor : Colors.grey.shade300),
+            border: Border.all(
+              color: widget.selected
+                  ? AppTheme.primaryColor
+                  : _hovering
+                      ? AppTheme.primaryColor
+                      : Colors.grey.shade300,
+            ),
             boxShadow: _hovering
                 ? [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.15), blurRadius: 6, offset: const Offset(0, 2))]
                 : null,
@@ -234,8 +255,12 @@ class _PresetChipState extends State<_PresetChip> {
             widget.label,
             style: TextStyle(
               fontSize: 12,
-              color: _hovering ? AppTheme.primaryColor : Colors.black87,
-              fontWeight: _hovering ? FontWeight.w600 : FontWeight.w500,
+              color: widget.selected
+                  ? Colors.white
+                  : _hovering
+                      ? AppTheme.primaryColor
+                      : Colors.black87,
+              fontWeight: widget.selected || _hovering ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
         ),

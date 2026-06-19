@@ -15,6 +15,9 @@ import '../features/appointments/widgets/appointment_details_summary_card.dart';
 import '../features/appointments/widgets/appointment_details_treatment_section.dart';
 import '../features/appointments/widgets/appointment_details_teeth_section.dart';
 import '../features/appointments/widgets/appointment_details_patient_card.dart';
+import '../features/appointments/widgets/appointment_form_dialog.dart';
+import '../utils/permission_utils.dart';
+import '../widgets/success_toast.dart';
 import './patient_detail_screen.dart';
 
 // 牙位映射表 - 从医生视角看患者牙齿
@@ -167,6 +170,46 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
     }
   }
 
+  Future<void> _showEditAppointmentDialog() async {
+    if (_appointment == null) return;
+
+    if (!PermissionUtils.canEditDoctor(context, _appointment!.patient?.doctor ?? _patient?.doctor)) {
+      AppToastManager.showError(
+        context,
+        message: '您只能编辑自己医生患者的预约',
+      );
+      return;
+    }
+
+    final result = await showDialog<Appointment>(
+      context: context,
+      builder: (context) => AppointmentFormDialog(
+        initialDate: _appointment!.appointment_date,
+        appointment: _appointment,
+        preselectedPatient: _patient,
+      ),
+    );
+
+    if (result == null) return;
+
+    final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
+    final appState = Provider.of<AppState>(context, listen: false);
+
+    try {
+      await appState.showLoading(
+        appointmentProvider.updateAppointment(result),
+        message: '正在更新预约...',
+      );
+
+      await _loadAppointmentData();
+      if (!mounted) return;
+      AppToastManager.showSuccess(context, message: '预约已更新');
+    } catch (e) {
+      if (!mounted) return;
+      AppToastManager.showError(context, message: '更新预约失败: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -201,6 +244,25 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
         foregroundColor: DentalColors.onSurface,
         elevation: 0,
         actions: [
+          if (!_isLoading && _appointment != null)
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: DentalColors.warning.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: DentalColors.warning.withOpacity(0.3),
+                ),
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.edit_rounded,
+                  color: DentalColors.warning,
+                ),
+                tooltip: '编辑预约',
+                onPressed: _showEditAppointmentDialog,
+              ),
+            ),
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(

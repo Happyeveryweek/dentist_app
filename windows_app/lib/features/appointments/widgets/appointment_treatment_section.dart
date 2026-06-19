@@ -121,6 +121,9 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
                 flex: 4,
                 child: DropdownButtonFormField<String>(
                   value: _selectedSuggestion,
+                  borderRadius: BorderRadius.circular(12),
+                  dropdownColor: Colors.white,
+                  focusColor: Colors.transparent,
                   decoration: InputDecoration(
                     labelText: '选择已有项目',
                     filled: true,

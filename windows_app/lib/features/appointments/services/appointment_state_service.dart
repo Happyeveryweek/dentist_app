@@ -14,7 +14,7 @@ class AppointmentStateService extends ChangeNotifier {
   List<Appointment> filteredAppointments = [];
   bool isLoading = false;
   bool showAllAppointments = true;
-  bool isFiltering = false;
+  bool isFiltering = true;
   bool isDateRangeFiltering = false;
   String searchQuery = '';
 

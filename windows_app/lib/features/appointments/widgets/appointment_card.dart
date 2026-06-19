@@ -11,6 +11,7 @@ class AppointmentCard extends StatelessWidget {
   final VoidCallback? onView;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final ValueChanged<String>? onStatusChanged;
 
   const AppointmentCard({
     Key? key,
@@ -18,7 +19,10 @@ class AppointmentCard extends StatelessWidget {
     this.onView,
     this.onEdit,
     this.onDelete,
+    this.onStatusChanged,
   }) : super(key: key);
+
+  static const List<String> _statusOptions = ['已预约', '已完成', '已取消', '未到诊'];
 
   String _formatAppointmentTime(DateTime dateTime) {
     // Keep simple formatting to avoid importing intl here
@@ -124,6 +128,59 @@ class AppointmentCard extends StatelessWidget {
     );
   }
 
+  Widget _buildStatusSelector(Color statusColor) {
+    final currentStatus = _statusOptions.contains(appointment.statusDisplay)
+        ? appointment.statusDisplay
+        : _statusOptions.first;
+
+    return Container(
+      height: 26,
+      padding: const EdgeInsets.only(left: 8, right: 4),
+      decoration: BoxDecoration(
+        color: statusColor.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(
+          color: statusColor.withOpacity(0.4),
+          width: 1,
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: currentStatus,
+          isDense: true,
+          borderRadius: BorderRadius.circular(12),
+          dropdownColor: Colors.white,
+          focusColor: Colors.transparent,
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            size: 16,
+            color: statusColor,
+          ),
+          style: TextStyle(
+            color: statusColor,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+          items: _statusOptions
+              .map(
+                (status) => DropdownMenuItem<String>(
+                  value: status,
+                  child: Text(status),
+                ),
+              )
+              .toList(),
+          onChanged: onStatusChanged == null
+              ? null
+              : (status) {
+                  if (status != null && status != appointment.statusDisplay) {
+                    onStatusChanged!(status);
+                  }
+                },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appointmentDate = appointment.appointment_date;
@@ -145,6 +202,10 @@ class AppointmentCard extends StatelessWidget {
         child: InkWell(
           onTap: onView,
           borderRadius: BorderRadius.circular(12),
+          hoverColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          focusColor: Colors.transparent,
           mouseCursor: SystemMouseCursors.click,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -172,28 +233,7 @@ class AppointmentCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: statusColor.withOpacity(0.4),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              appointment.statusDisplay,
-                              style: TextStyle(
-                                color: statusColor,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
+                          _buildStatusSelector(statusColor),
                         ],
                       ),
                       const SizedBox(height: 4),
