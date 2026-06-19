@@ -4,10 +4,8 @@ import 'package:intl/intl.dart';
 // import 'package:animated_text_kit/animated_text_kit.dart'; // 暂时注释掉
 // import 'package:shimmer/shimmer.dart'; // 暂时注释掉
 import 'dart:convert';
-import 'dart:math';
 import 'dart:typed_data';
 
-import '../theme/app_theme.dart';
 import '../features/dashboard/widgets/hoverable_stat_card.dart';
 import '../features/dashboard/services/dashboard_treatment_formatter.dart';
 import '../features/dashboard/services/dashboard_data_service.dart';
@@ -21,8 +19,6 @@ import '../models/patient.dart';
 import '../models/appointment.dart';
 import '../providers/app_state.dart';
 import '../screens/appointment_details_screen.dart';
-import '../screens/appointments_screen.dart';
-import '../screens/patients_screen.dart';
 import '../screens/patient_detail_screen.dart';
 import '../utils/permission_utils.dart';
 
@@ -39,9 +35,12 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
   int _appointmentCount = 0;
   int _completedAppointments = 0;
   int _upcomingAppointments = 0;
+  int _todayAppointmentCount = 0;
   List<Appointment> _todayAppointments = [];
   List<Patient> _recentPatients = [];
   bool _isLoading = true;
+  bool _isRefreshingData = false;
+  bool _hasLoadedOnce = false;
   String _currentUserName = '';
   Uint8List? _currentUserAvatar;
   
@@ -51,6 +50,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _pulseAnimation;
   late DashboardDataService _dashboardDataService;
+  late AppointmentProvider _appointmentProvider;
 
   @override
   void initState() {
@@ -104,39 +104,65 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
       databaseProvider: databaseProvider,
       userProvider: userProvider,
     );
+    _appointmentProvider = appointmentProvider;
+    _appointmentProvider.addListener(_handleAppointmentProviderChanged);
     
     _loadData();
   }
 
   @override
   void dispose() {
+    _appointmentProvider.removeListener(_handleAppointmentProviderChanged);
     _animationController.dispose();
     _pulseController.dispose();
     super.dispose();
   }
 
+  void _handleAppointmentProviderChanged() {
+    if (!mounted || _isRefreshingData) {
+      return;
+    }
+
+    _loadData();
+  }
+
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    if (_isRefreshingData) {
+      return;
+    }
+
+    _isRefreshingData = true;
+    if (mounted && !_hasLoadedOnce) {
+      setState(() => _isLoading = true);
+    }
 
     try {
       final data = await _dashboardDataService.loadData();
+
+      if (!mounted) return;
 
       setState(() {
         _patientCount = data.patientCount;
         _appointmentCount = data.appointmentCount;
         _completedAppointments = data.completedAppointments;
         _upcomingAppointments = data.upcomingAppointments;
+        _todayAppointmentCount = data.todayAppointmentsCount;
         _todayAppointments = data.todayAppointments;
         _recentPatients = data.recentPatients;
         _currentUserName = data.currentUserName;
         _currentUserAvatar = data.currentUserAvatar;
         _isLoading = false;
+        _hasLoadedOnce = true;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('加载数据失败: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('加载数据失败: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      _isRefreshingData = false;
     }
   }
 
@@ -529,20 +555,34 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                             color: DentalColors.onSurface,
                           ),
                         ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: DentalColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            '${_todayAppointments.length} 个',
-                            style: TextStyle(
-                              color: DentalColors.primary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Wrap(
+                            alignment: WrapAlignment.end,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _buildTodaySummaryChip(
+                                label: '已预约',
+                                value: dataTodayScheduledAppointments,
+                                color: DentalColors.info,
+                              ),
+                              _buildTodaySummaryChip(
+                                label: '已完成',
+                                value: dataTodayCompletedAppointments,
+                                color: DentalColors.success,
+                              ),
+                              _buildTodaySummaryChip(
+                                label: '未完成',
+                                value: dataTodayUnfinishedAppointments,
+                                color: DentalColors.warning,
+                              ),
+                              _buildTodaySummaryChip(
+                                label: '合计',
+                                value: _todayAppointmentCount,
+                                color: DentalColors.primary,
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -608,6 +648,47 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
           ),
         );
       },
+    );
+  }
+
+  int get dataTodayScheduledAppointments {
+    return _todayAppointments
+        .where((appointment) => DashboardStatusHelper.isScheduled(appointment.status))
+        .length;
+  }
+
+  int get dataTodayCompletedAppointments {
+    return _todayAppointments
+        .where((appointment) => DashboardStatusHelper.isCompleted(appointment.status))
+        .length;
+  }
+
+  int get dataTodayUnfinishedAppointments {
+    return _todayAppointments
+        .where((appointment) => DashboardStatusHelper.isUnfinished(appointment.status))
+        .length;
+  }
+
+  Widget _buildTodaySummaryChip({
+    required String label,
+    required int value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.15)),
+      ),
+      child: Text(
+        '$label $value',
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 
@@ -715,7 +796,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    appointment.status,
+                    appointment.statusDisplay,
                     style: TextStyle(
                       color: statusColor,
                       fontSize: 12,

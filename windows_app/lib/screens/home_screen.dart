@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
-import 'dart:typed_data';
 
 import '../theme/app_theme.dart';
 import '../features/home/widgets/home_widgets.dart';
@@ -747,17 +745,12 @@ class _HomeScreenState extends State<HomeScreen> {
   // 根据导航到的模块自动刷新该模块的数据
   void _refreshModuleDataOnNavigation(int index) {
     try {
-      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      
       // 获取点击的菜单项
       if (index >= _visibleNavItems.length) return;
-      
-      final moduleId = _visibleNavItems[index].moduleId;
-      
+
       switch (index) {
         case 0: // 仪表盘
-          dbProvider.markDashboardNeedRefresh();
-          print('🔄 切换到仪表盘：标记数据需要刷新');
+          print('🔄 切换到仪表盘');
           break;
         case 1: // 患者管理
           final patientProvider = Provider.of<PatientProvider>(context, listen: false);

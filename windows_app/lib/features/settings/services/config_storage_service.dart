@@ -10,6 +10,7 @@ import 'package:dentist_app_windows/utils/datetime_formatter.dart';
 /// 负责应用的配置存储管理，包括文件存储和SharedPreferences存储
 class ConfigStorageService {
   final ConfigManager _configManager = ConfigManager.instance;
+  static const String _migrationCompletedKey = '__config_migration_completed__';
   
   // 配置存储模式
   bool _useFileStorage = true;
@@ -24,10 +25,14 @@ class ConfigStorageService {
       if (canUseFileStorage) {
         _useFileStorage = true;
         _configManager.setStorageMode(StorageMode.hybrid);
-        print('使用混合配置存储模式（优先文件存储）');
         
-        // 尝试迁移现有配置到文件
-        await _migrateConfigsToFile();
+        // 只在第一次发现旧配置时迁移，避免每次启动重复执行
+        final migrationCompleted =
+            await _configManager.loadConfig<bool>(_migrationCompletedKey, defaultValue: false) ??
+                false;
+        if (!migrationCompleted) {
+          await _migrateConfigsToFile();
+        }
       } else {
         _useFileStorage = false;
         _configManager.setStorageMode(StorageMode.preferences);
@@ -67,10 +72,7 @@ class ConfigStorageService {
   /// 迁移配置到文件存储
   Future<void> _migrateConfigsToFile() async {
     try {
-      final migrated = await _configManager.migrateToFile();
-      if (migrated) {
-        print('配置已成功迁移到文件存储');
-      }
+      await _configManager.migrateToFile();
     } catch (e) {
       print('配置迁移失败: $e');
     }

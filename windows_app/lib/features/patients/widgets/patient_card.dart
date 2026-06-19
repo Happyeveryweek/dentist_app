@@ -48,9 +48,9 @@ class PatientCard extends StatelessWidget {
               DentalAvatar(
                 gender: patient.gender,
                 name: patient.name,
-                size: 52,
+                size: 40,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

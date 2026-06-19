@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
-import '../../../theme/app_theme.dart';
 import '../../../models/appointment.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../widgets/success_toast.dart';
 
-class AppointmentCard extends StatelessWidget {
+class AppointmentCard extends StatefulWidget {
   final Appointment appointment;
   final VoidCallback? onView;
   final VoidCallback? onEdit;
@@ -22,10 +21,15 @@ class AppointmentCard extends StatelessWidget {
     this.onStatusChanged,
   }) : super(key: key);
 
+  @override
+  State<AppointmentCard> createState() => _AppointmentCardState();
+}
+
+class _AppointmentCardState extends State<AppointmentCard> {
   static const List<String> _statusOptions = ['已预约', '已完成', '已取消', '未到诊'];
+  bool _isHovered = false;
 
   String _formatAppointmentTime(DateTime dateTime) {
-    // Keep simple formatting to avoid importing intl here
     final h = dateTime.hour.toString().padLeft(2, '0');
     final m = dateTime.minute.toString().padLeft(2, '0');
     return '$h:$m';
@@ -35,28 +39,24 @@ class AppointmentCard extends StatelessWidget {
     return '${dateTime.year.toString().padLeft(4, '0')}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}';
   }
 
-  // 格式化显示治疗类型和牙位信息
   String _formatTreatmentTypeForDisplay(String? treatmentTypeStr) {
     if (treatmentTypeStr == null || treatmentTypeStr.isEmpty) {
       return '常规复诊';
     }
 
     try {
-      // 尝试解析JSON数据
-      Map<String, dynamic> data = json.decode(treatmentTypeStr);
-      List<String> displayParts = [];
+      final Map<String, dynamic> data = json.decode(treatmentTypeStr);
+      final List<String> displayParts = [];
 
-      // 处理牙位信息
       if (data.containsKey('teethData') &&
           data['teethData'] is List &&
           (data['teethData'] as List).isNotEmpty) {
-        List teethData = data['teethData'];
+        final List teethData = data['teethData'];
 
         for (int i = 0; i < teethData.length; i++) {
-          List<String> positions = [];
-          Map<String, dynamic> tooth = Map<String, dynamic>.from(teethData[i]);
+          final List<String> positions = [];
+          final Map<String, dynamic> tooth = Map<String, dynamic>.from(teethData[i]);
 
-          // 检查所有可能的字段名称
           final fieldMapping = {
             'topLeft': '右上',
             'topRight': '左上',
@@ -82,9 +82,8 @@ class AppointmentCard extends StatelessWidget {
         }
       }
 
-      // 处理治疗项目
       if (data.containsKey('treatments') && data['treatments'] is List) {
-        List<String> treatments = List<String>.from(data['treatments']);
+        final List<String> treatments = List<String>.from(data['treatments']);
         if (treatments.isNotEmpty) {
           if (displayParts.isNotEmpty) {
             displayParts.add('- ${treatments.join("、")}');
@@ -96,7 +95,6 @@ class AppointmentCard extends StatelessWidget {
 
       return displayParts.isNotEmpty ? displayParts.join(' ') : '常规复诊';
     } catch (e) {
-      // 如果不是JSON格式，直接返回原始字符串
       return treatmentTypeStr;
     }
   }
@@ -108,11 +106,11 @@ class AppointmentCard extends StatelessWidget {
     required VoidCallback onPressed,
   }) {
     return Container(
-      width: 40,
-      height: 40,
+      width: 34,
+      height: 34,
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(9),
         border: Border.all(
           color: color.withOpacity(0.3),
           width: 1,
@@ -129,51 +127,67 @@ class AppointmentCard extends StatelessWidget {
   }
 
   Widget _buildStatusSelector(Color statusColor) {
-    final currentStatus = _statusOptions.contains(appointment.statusDisplay)
-        ? appointment.statusDisplay
+    final currentStatus = _statusOptions.contains(widget.appointment.statusDisplay)
+        ? widget.appointment.statusDisplay
         : _statusOptions.first;
 
     return Container(
-      height: 26,
-      padding: const EdgeInsets.only(left: 8, right: 4),
+      height: 15,
+      padding: const EdgeInsets.only(left: 5, right: 2),
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(9),
+        color: Colors.white.withOpacity(0.28),
+        borderRadius: BorderRadius.circular(7),
         border: Border.all(
-          color: statusColor.withOpacity(0.4),
+          color: statusColor.withOpacity(0.28),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: currentStatus,
           isDense: true,
-          borderRadius: BorderRadius.circular(12),
-          dropdownColor: Colors.white,
+          itemHeight: 48,
+          borderRadius: BorderRadius.circular(14),
+          dropdownColor: Colors.white.withOpacity(0.72),
           focusColor: Colors.transparent,
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
-            size: 16,
+            size: 12,
             color: statusColor,
           ),
           style: TextStyle(
             color: statusColor,
-            fontSize: 11,
+            fontSize: 9,
             fontWeight: FontWeight.w600,
           ),
+          menuMaxHeight: 220,
           items: _statusOptions
               .map(
                 (status) => DropdownMenuItem<String>(
                   value: status,
-                  child: Text(status),
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      color: statusColor.withOpacity(0.92),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               )
               .toList(),
-          onChanged: onStatusChanged == null
+          onChanged: widget.onStatusChanged == null
               ? null
               : (status) {
-                  if (status != null && status != appointment.statusDisplay) {
-                    onStatusChanged!(status);
+                  if (status != null && status != widget.appointment.statusDisplay) {
+                    widget.onStatusChanged!(status);
                   }
                 },
         ),
@@ -183,24 +197,35 @@ class AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appointmentDate = appointment.appointment_date;
+    final appointmentDate = widget.appointment.appointment_date;
     final appointmentDateStr = _formatAppointmentDate(appointmentDate);
     final appointmentTimeStr = _formatAppointmentTime(appointmentDate);
 
-    Color statusColor = Color(
-      int.parse(appointment.statusColor.replaceAll('#', '0xff')),
+    final statusColor = Color(
+      int.parse(widget.appointment.statusColor.replaceAll('#', '0xff')),
     );
 
-    final gender = appointment.patient?.gender ?? '';
+    final gender = widget.appointment.patient?.gender ?? '';
+    final treatmentDisplay = _formatTreatmentTypeForDisplay(widget.appointment.treatment_type);
 
-    String treatmentDisplay = _formatTreatmentTypeForDisplay(appointment.treatment_type);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: DentalCard(
-        color: Colors.white,
+    return DentalCard(
+      margin: EdgeInsets.zero,
+      padding: EdgeInsets.zero,
+      color: _isHovered ? const Color(0xFFEAF4FF) : Colors.white,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) {
+          if (mounted) {
+            setState(() => _isHovered = true);
+          }
+        },
+        onExit: (_) {
+          if (mounted) {
+            setState(() => _isHovered = false);
+          }
+        },
         child: InkWell(
-          onTap: onView,
+          onTap: widget.onView,
           borderRadius: BorderRadius.circular(12),
           hoverColor: Colors.transparent,
           highlightColor: Colors.transparent,
@@ -208,15 +233,15 @@ class AppointmentCard extends StatelessWidget {
           focusColor: Colors.transparent,
           mouseCursor: SystemMouseCursors.click,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: Row(
               children: [
                 DentalAvatar(
                   gender: gender,
-                  name: appointment.patient?.name ?? "未知",
-                  size: 36,
+                  name: widget.appointment.patient?.name ?? "未知",
+                  size: 40,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,14 +250,14 @@ class AppointmentCard extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            appointment.patient?.name ?? "未知患者",
+                            widget.appointment.patient?.name ?? "未知患者",
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                              fontSize: 14,
                               color: DentalColors.onSurface,
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           _buildStatusSelector(statusColor),
                         ],
                       ),
@@ -241,7 +266,7 @@ class AppointmentCard extends StatelessWidget {
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
+                              horizontal: 5,
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
@@ -253,36 +278,36 @@ class AppointmentCard extends StatelessWidget {
                               children: [
                                 Icon(
                                   Icons.access_time_rounded,
-                                  size: 11,
+                                  size: 10,
                                   color: DentalColors.info,
                                 ),
-                                const SizedBox(width: 3),
+                                const SizedBox(width: 2),
                                 Text(
                                   '$appointmentDateStr $appointmentTimeStr',
                                   style: TextStyle(
                                     color: DentalColors.info,
-                                    fontSize: 11,
+                                    fontSize: 10,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           Expanded(
                             child: Row(
                               children: [
                                 Icon(
                                   DentalIcons.tooth,
-                                  size: 12,
+                                  size: 11,
                                   color: DentalColors.primary.withOpacity(0.7),
                                 ),
-                                const SizedBox(width: 4),
+                                const SizedBox(width: 3),
                                 Expanded(
                                   child: Text(
                                     treatmentDisplay,
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 11,
                                       color: DentalColors.onSurfaceVariant,
                                       fontWeight: FontWeight.w500,
                                     ),
@@ -293,11 +318,11 @@ class AppointmentCard extends StatelessWidget {
                               ],
                             ),
                           ),
-                          if (appointment.cost != null) ...[
-                            const SizedBox(width: 8),
+                          if (widget.appointment.cost != null) ...[
+                            const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
+                                horizontal: 5,
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
@@ -309,14 +334,14 @@ class AppointmentCard extends StatelessWidget {
                                 children: [
                                   Icon(
                                     Icons.payments_rounded,
-                                    size: 11,
+                                    size: 10,
                                     color: DentalColors.success,
                                   ),
-                                  const SizedBox(width: 3),
+                                  const SizedBox(width: 2),
                                   Text(
-                                    '¥${appointment.cost!.toStringAsFixed(0)}',
+                                    '¥${widget.appointment.cost!.toStringAsFixed(0)}',
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 10,
                                       color: DentalColors.success,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -330,7 +355,7 @@ class AppointmentCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -338,15 +363,15 @@ class AppointmentCard extends StatelessWidget {
                       icon: Icons.visibility_rounded,
                       color: DentalColors.info,
                       tooltip: '查看',
-                      onPressed: onView ?? () {},
+                      onPressed: widget.onView ?? () {},
                     ),
                     const SizedBox(width: 6),
-                    onEdit != null
+                    widget.onEdit != null
                         ? _buildCompactActionButton(
                             icon: Icons.edit_rounded,
                             color: DentalColors.warning,
                             tooltip: '编辑',
-                            onPressed: onEdit!,
+                            onPressed: widget.onEdit!,
                           )
                         : _buildCompactActionButton(
                             icon: Icons.lock,
@@ -358,12 +383,12 @@ class AppointmentCard extends StatelessWidget {
                             ),
                           ),
                     const SizedBox(width: 6),
-                    onDelete != null
+                    widget.onDelete != null
                         ? _buildCompactActionButton(
                             icon: Icons.delete_rounded,
                             color: DentalColors.error,
                             tooltip: '删除',
-                            onPressed: onDelete!,
+                            onPressed: widget.onDelete!,
                           )
                         : _buildCompactActionButton(
                             icon: Icons.lock,

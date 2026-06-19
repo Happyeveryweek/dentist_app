@@ -1488,7 +1488,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       fee: fee,
       received: received,
       debt: debt,
-      avatarBackgroundColor: _getAvatarBackgroundColor(patient),
       onTap: () => _showFinancialDetail(patient),
       onEdit: () async {
         final result = await _showEditFinancialRecordDialog(patient, record);

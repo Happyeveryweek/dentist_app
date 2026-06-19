@@ -5,6 +5,7 @@ import 'package:dentist_app_windows/providers/patient_provider.dart';
 import 'package:dentist_app_windows/providers/user_provider.dart';
 import 'package:dentist_app_windows/models/patient.dart';
 import 'package:dentist_app_windows/models/appointment.dart';
+import '../helpers/dashboard_status_helper.dart';
 
 /// 仪表盘数据
 class DashboardData {
@@ -12,6 +13,10 @@ class DashboardData {
   final int appointmentCount;
   final int completedAppointments;
   final int upcomingAppointments;
+  final int todayAppointmentsCount;
+  final int todayScheduledAppointments;
+  final int todayCompletedAppointments;
+  final int todayUnfinishedAppointments;
   final List<Appointment> todayAppointments;
   final List<Patient> recentPatients;
   final String currentUserName;
@@ -22,6 +27,10 @@ class DashboardData {
     required this.appointmentCount,
     required this.completedAppointments,
     required this.upcomingAppointments,
+    required this.todayAppointmentsCount,
+    required this.todayScheduledAppointments,
+    required this.todayCompletedAppointments,
+    required this.todayUnfinishedAppointments,
     required this.todayAppointments,
     required this.recentPatients,
     required this.currentUserName,
@@ -58,8 +67,9 @@ class DashboardDataService {
     
     // 获取用户头像
     Uint8List? currentUserAvatar;
-    if (currentUser?.imageData != null && currentUser!.imageData!.isNotEmpty) {
-      currentUserAvatar = Uint8List.fromList(currentUser!.imageData!);
+    final imageData = currentUser?.imageData;
+    if (imageData != null && imageData.isNotEmpty) {
+      currentUserAvatar = Uint8List.fromList(imageData);
     } else {
       currentUserAvatar = null;
     }
@@ -83,24 +93,36 @@ class DashboardDataService {
           appointmentDate.month == today.month &&
           appointmentDate.day == today.day;
     }).toList();
-    
+
     // 按时间排序今日预约
     todayAppointments.sort((a, b) => a.appointment_date.compareTo(b.appointment_date));
-    
+
+    final todayScheduledAppointments =
+        todayAppointments.where((appointment) => DashboardStatusHelper.isScheduled(appointment.status)).length;
+    final todayCompletedAppointments =
+        todayAppointments.where((appointment) => DashboardStatusHelper.isCompleted(appointment.status)).length;
+    final todayUnfinishedAppointments =
+        todayAppointments.where((appointment) => DashboardStatusHelper.isUnfinished(appointment.status)).length;
+
     // 获取最近的患者（按更新时间排序）
     final recentPatients = List<Patient>.from(patients);
     recentPatients.sort((a, b) => b.updated_at.compareTo(a.updated_at));
-    
+
     // 计算完成和即将到来的预约
-    final completed = appointments.where((a) => a.status == '已完成').length;
-    final upcoming = appointments.where((a) => 
-      a.appointment_date.isAfter(DateTime.now()) && a.status == '已预约').length;
+    final completed = appointments.where((a) => DashboardStatusHelper.isCompleted(a.status)).length;
+    final upcoming = appointments.where((a) =>
+      a.appointment_date.isAfter(DateTime.now()) &&
+      DashboardStatusHelper.isScheduled(a.status)).length;
 
     return DashboardData(
       patientCount: patients.length,
       appointmentCount: appointments.length,
       completedAppointments: completed,
       upcomingAppointments: upcoming,
+      todayAppointmentsCount: todayAppointments.length,
+      todayScheduledAppointments: todayScheduledAppointments,
+      todayCompletedAppointments: todayCompletedAppointments,
+      todayUnfinishedAppointments: todayUnfinishedAppointments,
       todayAppointments: todayAppointments.take(5).toList(),
       recentPatients: recentPatients.take(5).toList(),
       currentUserName: currentUserName,

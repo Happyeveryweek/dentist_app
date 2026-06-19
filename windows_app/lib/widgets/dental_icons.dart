@@ -35,7 +35,7 @@ class DentalIcons {
   static const IconData chartLine = Icons.show_chart;
   static const IconData chartPie = Icons.pie_chart;
   static const IconData shoppingCart = Icons.shopping_cart;
-  
+
   // 替代图标（使用Material Icons）
   static const IconData userMd = Icons.person;
   static const IconData userPlus = Icons.person_add;
@@ -46,7 +46,7 @@ class DentalIcons {
   static const IconData bed = Icons.bed;
   static const IconData procedures = Icons.healing;
   static const IconData prescriptionBottle = Icons.medical_services;
-  
+
   // 牙科治疗相关图标（使用Material Icons）
   static const IconData cleaning = Icons.cleaning_services; // 洁治
   static const IconData filling = Icons.build; // 充填
@@ -60,19 +60,19 @@ class DentalIcons {
   static const IconData whitening = Icons.star_border; // 美白
   static const IconData periodontics = Icons.nature; // 牙周治疗
   static const IconData surgery = Icons.medical_services; // 手术
-  
+
   // 状态图标（使用Material Icons）
   static const IconData completed = Icons.check_circle;
   static const IconData pending = Icons.schedule;
   static const IconData cancelled = Icons.cancel;
   static const IconData warning = Icons.warning;
   static const IconData emergency = Icons.error;
-  
+
   // 性别图标（使用Material Icons）
   static const IconData male = Icons.male;
   static const IconData female = Icons.female;
   static const IconData child = Icons.child_care;
-  
+
   // 获取治疗类型对应的图标
   static IconData getTreatmentIcon(String treatmentType) {
     switch (treatmentType.toLowerCase()) {
@@ -113,7 +113,7 @@ class DentalIcons {
         return tooth;
     }
   }
-  
+
   // 获取状态对应的图标
   static IconData getStatusIcon(String status) {
     switch (status) {
@@ -131,7 +131,7 @@ class DentalIcons {
         return pending;
     }
   }
-  
+
   // 获取性别对应的图标
   static IconData getGenderIcon(String gender) {
     switch (gender) {
@@ -154,23 +154,23 @@ class DentalColors {
   static const Color secondary = Color(0xFF03DAC6);
   static const Color tertiary = Color(0xFF00BCD4);
   static const Color accent = Color(0xFF4FC3F7);
-  
+
   // 功能颜色
   static const Color success = Color(0xFF4CAF50);
   static const Color warning = Color(0xFFFF9800);
   static const Color error = Color(0xFFF44336);
   static const Color info = Color(0xFF2196F3);
-  
+
   // Gender specific colors
   static const Color femalePink = Color(0xFFE91E63);
   static const Color maleBlue = Color(0xFF2196F3);
-  
+
   // 状态颜色
   static const Color completed = Color(0xFF66BB6A);
   static const Color pending = Color(0xFFFFB74D);
   static const Color cancelled = Color(0xFFEF5350);
   static const Color urgent = Color(0xFFFF7043);
-  
+
   // 中性颜色
   static const Color surface = Color(0xFFFFFFFF);
   static const Color background = Color(0xFFF8FCFF);
@@ -179,23 +179,21 @@ class DentalColors {
   static const Color onSurfaceVariant = Color(0xFF546E7A);
   static const Color onPrimary = Color(0xFFFFFFFF);
   static const Color divider = Color(0xFFE0E0E0);
-  
 
-  
   // 卡片颜色
   static const Color cardPrimary = Color(0xFFE3F2FD);
   static const Color cardSecondary = Color(0xFFE0F2F1);
   static const Color cardSuccess = Color(0xFFE8F5E8);
   static const Color cardWarning = Color(0xFFFFF3E0);
   static const Color cardError = Color(0xFFFFEBEE);
-  
+
   // 牙科专业颜色
   static const Color dentalBlue = Color(0xFF0D47A1);
   static const Color dentalTeal = Color(0xFF00695C);
   static const Color dentalGreen = Color(0xFF2E7D32);
   static const Color toothWhite = Color(0xFFFFFDE7);
   static const Color gumPink = Color(0xFFE1BEE7);
-  
+
   // 现代医疗渐变
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
@@ -203,44 +201,44 @@ class DentalColors {
     colors: [Color(0xFF2196F3), Color(0xFF03DAC6), Color(0xFF00BCD4)],
     stops: [0.0, 0.5, 1.0],
   );
-  
+
   static const LinearGradient secondaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [Color(0xFF03DAC6), Color(0xFF4FC3F7)],
   );
-  
+
   static const LinearGradient successGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [Color(0xFF66BB6A), Color(0xFF81C784)],
   );
-  
+
   static const LinearGradient warningGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [Color(0xFFFFB74D), Color(0xFFFFCC02)],
   );
-  
+
   static const LinearGradient errorGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [Color(0xFFEF5350), Color(0xFFFF7043)],
   );
-  
+
   // 背景装饰渐变
   static const LinearGradient backgroundGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [Color(0xFFF8FCFF), Color(0xFFE3F2FD)],
   );
-  
+
   static const LinearGradient cardGradient = LinearGradient(
     colors: [surface, Color(0xFFF5F7FA)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
-  
+
   // 阴影颜色
   static Color shadowLight = const Color(0xFF2196F3).withOpacity(0.1);
   static Color shadowMedium = const Color(0xFF2196F3).withOpacity(0.2);
@@ -255,7 +253,7 @@ class DentalCard extends StatelessWidget {
   final Color? color;
   final double? elevation;
   final VoidCallback? onTap;
-  
+
   const DentalCard({
     Key? key,
     required this.child,
@@ -313,7 +311,7 @@ class DentalGradientButton extends StatelessWidget {
   final bool isLoading;
   final bool isOutlined;
   final Gradient? gradient;
-  
+
   const DentalGradientButton({
     Key? key,
     this.text,
@@ -323,8 +321,9 @@ class DentalGradientButton extends StatelessWidget {
     this.isLoading = false,
     this.isOutlined = false,
     this.gradient,
-  }) : assert(text != null || child != null, 'Either text or child must be provided'),
-       super(key: key);
+  })  : assert(text != null || child != null,
+            'Either text or child must be provided'),
+        super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -343,35 +342,37 @@ class DentalGradientButton extends StatelessWidget {
             onTap: isLoading ? null : onPressed,
             borderRadius: BorderRadius.circular(12.0),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-              child: child ?? Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (isLoading) ...[
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: DentalColors.primary,
-                        strokeWidth: 2,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+              child: child ??
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (isLoading) ...[
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: DentalColors.primary,
+                            strokeWidth: 2,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ] else if (icon != null) ...[
+                        Icon(icon, color: DentalColors.primary, size: 20),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        text!,
+                        style: TextStyle(
+                          color: DentalColors.primary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                  ] else if (icon != null) ...[
-                    Icon(icon, color: DentalColors.primary, size: 20),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(
-                    text!,
-                    style: TextStyle(
-                      color: DentalColors.primary,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
+                    ],
                   ),
-                ],
-              ),
             ),
           ),
         ),
@@ -396,35 +397,37 @@ class DentalGradientButton extends StatelessWidget {
           onTap: isLoading ? null : onPressed,
           borderRadius: BorderRadius.circular(12.0),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-            child: child ?? Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (isLoading) ...[
-                  const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: DentalColors.onPrimary,
-                      strokeWidth: 2,
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+            child: child ??
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (isLoading) ...[
+                      const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: DentalColors.onPrimary,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ] else if (icon != null) ...[
+                      Icon(icon, color: DentalColors.onPrimary, size: 20),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      text!,
+                      style: const TextStyle(
+                        color: DentalColors.onPrimary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                ] else if (icon != null) ...[
-                  Icon(icon, color: DentalColors.onPrimary, size: 20),
-                  const SizedBox(width: 8),
-                ],
-                Text(
-                  text!,
-                  style: const TextStyle(
-                    color: DentalColors.onPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
+                  ],
                 ),
-              ],
-            ),
           ),
         ),
       ),
@@ -437,25 +440,23 @@ class DentalAvatar extends StatelessWidget {
   final String gender;
   final String name;
   final double size;
-  
+
   const DentalAvatar({
     Key? key,
     required this.gender,
     required this.name,
     this.size = 40,
   }) : super(key: key);
-  
+
   @override
   Widget build(BuildContext context) {
     final bool isFemale = gender == '女';
-    final Color backgroundColor = isFemale 
-        ? DentalColors.femalePink.withOpacity(0.2) 
-        : DentalColors.maleBlue.withOpacity(0.2);
-    final Color textColor = isFemale 
-        ? DentalColors.femalePink 
-        : DentalColors.maleBlue;
+    final Color baseColor =
+        isFemale ? DentalColors.femalePink : DentalColors.maleBlue;
+    final Color backgroundColor = baseColor.withOpacity(0.14);
+    final Color textColor = baseColor;
     final String initial = name.isNotEmpty ? name[0] : '?';
-    
+
     return Container(
       width: size,
       height: size,
@@ -463,14 +464,14 @@ class DentalAvatar extends StatelessWidget {
         color: backgroundColor,
         shape: BoxShape.circle,
         border: Border.all(
-          color: textColor.withOpacity(0.3),
-          width: 2,
+          color: textColor.withOpacity(0.16),
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: textColor.withOpacity(0.2),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: textColor.withOpacity(0.08),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -478,8 +479,8 @@ class DentalAvatar extends StatelessWidget {
         child: Text(
           initial,
           style: TextStyle(
-            fontSize: size * 0.4,
-            fontWeight: FontWeight.bold,
+            fontSize: size * 0.34,
+            fontWeight: FontWeight.w700,
             color: textColor,
           ),
         ),
@@ -493,7 +494,7 @@ class DentalStatusIndicator extends StatelessWidget {
   final String status;
   final Color? color;
   final IconData? icon;
-  
+
   const DentalStatusIndicator({
     Key? key,
     required this.status,
@@ -505,7 +506,7 @@ class DentalStatusIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     Color statusColor = color ?? _getStatusColor(status);
     IconData statusIcon = icon ?? _getStatusIcon(status);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -542,7 +543,7 @@ class DentalStatusIndicator extends StatelessWidget {
       ),
     );
   }
-  
+
   Color _getStatusColor(String status) {
     switch (status) {
       case '已完成':
@@ -559,7 +560,7 @@ class DentalStatusIndicator extends StatelessWidget {
         return DentalColors.onSurfaceVariant;
     }
   }
-  
+
   IconData _getStatusIcon(String status) {
     switch (status) {
       case '已完成':
@@ -583,14 +584,14 @@ class AvatarSelector extends StatelessWidget {
   final String? selectedAvatar;
   final Function(String) onAvatarSelected;
   final double size;
-  
+
   const AvatarSelector({
     Key? key,
     this.selectedAvatar,
     required this.onAvatarSelected,
     this.size = 60,
   }) : super(key: key);
-  
+
   @override
   Widget build(BuildContext context) {
     return const SizedBox.shrink(); // 空组件，内置头像已删除
@@ -603,7 +604,7 @@ class UserAvatar extends StatelessWidget {
   final double size;
   final bool showBorder;
   final bool showStyledBorder; // 是否显示编辑预览样式的边框
-  
+
   const UserAvatar({
     Key? key,
     required this.user,
@@ -611,7 +612,7 @@ class UserAvatar extends StatelessWidget {
     this.showBorder = true,
     this.showStyledBorder = false,
   }) : super(key: key);
-  
+
   @override
   Widget build(BuildContext context) {
     // 如果需要显示样式化边框（编辑预览样式）
@@ -619,7 +620,7 @@ class UserAvatar extends StatelessWidget {
       // 计算圆角半径，保持与编辑预览图的比例一致
       final borderRadius = size > 60 ? 12.0 : (size * 0.2);
       final clipRadius = borderRadius - 2;
-      
+
       // 直接返回固定大小的 Container，不使用任何可能被压扁的包装器
       return Container(
         width: size,
@@ -634,7 +635,7 @@ class UserAvatar extends StatelessWidget {
         ),
       );
     }
-    
+
     // 普通模式（不显示样式化边框）
     // 如果用户上传了自定义头像图片，显示上传的图片
     if (user.imageData != null && user.imageData!.isNotEmpty) {
@@ -659,11 +660,11 @@ class UserAvatar extends StatelessWidget {
         ),
       );
     }
-    
+
     // 使用默认头像（基于角色）
     return _buildDefaultAvatar(user);
   }
-  
+
   // 构建样式化头像内容（用于showStyledBorder模式）
   Widget _buildStyledAvatarContent(User user) {
     // 如果用户上传了自定义头像图片，显示上传的图片
@@ -685,11 +686,11 @@ class UserAvatar extends StatelessWidget {
         ),
       );
     }
-    
+
     // 使用默认头像
     return _buildStyledDefaultAvatar(user);
   }
-  
+
   // 构建样式化默认头像（用于showStyledBorder模式）
   Widget _buildStyledDefaultAvatar(User user) {
     String assetPath;
@@ -698,7 +699,7 @@ class UserAvatar extends StatelessWidget {
     } else {
       assetPath = 'assets/icons/nurse.png';
     }
-    
+
     return SizedBox(
       width: size,
       height: size,
@@ -716,7 +717,7 @@ class UserAvatar extends StatelessWidget {
       ),
     );
   }
-  
+
   // 构建默认头像（基于角色，使用assets中的图片）
   Widget _buildDefaultAvatar(User user) {
     // 根据角色选择默认头像图片
@@ -727,7 +728,7 @@ class UserAvatar extends StatelessWidget {
     } else {
       assetPath = 'assets/icons/nurse.png';
     }
-    
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(size * 0.2),
       child: AspectRatio(
@@ -749,7 +750,7 @@ class UserAvatar extends StatelessWidget {
       ),
     );
   }
-  
+
   // 构建降级头像（纯色背景+图标）
   Widget _buildFallbackAvatar(User user) {
     final roleColors = {
@@ -758,17 +759,18 @@ class UserAvatar extends StatelessWidget {
       'assistant': [Color(0xFF009688), Color(0xFF26A69A)],
       'receptionist': [Color(0xFF607D8B), Color(0xFF78909C)],
     };
-    
+
     final roleIcons = {
       'admin': Icons.admin_panel_settings,
       'doctor': Icons.medical_services,
       'assistant': Icons.assistant,
       'receptionist': Icons.person_outline,
     };
-    
-    final colors = roleColors[user.role] ?? [Color(0xFF9E9E9E), Color(0xFFBDBDBD)];
+
+    final colors =
+        roleColors[user.role] ?? [Color(0xFF9E9E9E), Color(0xFFBDBDBD)];
     final icon = roleIcons[user.role] ?? Icons.person;
-    
+
     return Container(
       width: size,
       height: size,
@@ -779,13 +781,15 @@ class UserAvatar extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(size * 0.2),
-        boxShadow: showBorder ? [
-          BoxShadow(
-            color: colors.first.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ] : null,
+        boxShadow: showBorder
+            ? [
+                BoxShadow(
+                  color: colors.first.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ]
+            : null,
       ),
       child: Icon(
         icon,

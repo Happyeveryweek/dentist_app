@@ -18,6 +18,8 @@ class ConfigManager {
   static ConfigManager get instance => _instance ??= ConfigManager._();
   ConfigManager._();
 
+  static const String _migrationCompletedKey = '__config_migration_completed__';
+
   StorageMode _storageMode = StorageMode.hybrid;
 
   /// 设置存储模式
@@ -159,13 +161,13 @@ class ConfigManager {
           allConfigs[key] = value;
         }
       }
+
+      // 记录迁移已完成，避免每次启动都重复执行迁移流程
+      allConfigs[_migrationCompletedKey] = true;
       
-      if (allConfigs.isNotEmpty) {
-        final success = await _saveAllToFile(allConfigs);
-        if (success) {
-          print('配置迁移成功，共迁移 ${allConfigs.length} 项配置');
-          return true;
-        }
+      final success = await _saveAllToFile(allConfigs);
+      if (success) {
+        return true;
       }
       
       return false;

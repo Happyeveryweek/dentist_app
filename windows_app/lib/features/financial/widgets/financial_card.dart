@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../models/patient.dart';
 import '../../../models/financial_record.dart';
 import '../../../theme/app_theme.dart';
+import '../../../widgets/dental_icons.dart';
 import 'financial_compact_tag.dart';
 import 'financial_compact_action_button.dart';
 import 'financial_hoverable_cards.dart';
@@ -19,7 +20,6 @@ class FinancialCard extends StatelessWidget {
   final double fee;
   final double received;
   final double debt;
-  final Color avatarBackgroundColor;
   final VoidCallback onTap;
   final Future<bool?> Function() onEdit;
   final VoidCallback onDelete;
@@ -35,7 +35,6 @@ class FinancialCard extends StatelessWidget {
     required this.fee,
     required this.received,
     required this.debt,
-    required this.avatarBackgroundColor,
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
@@ -48,21 +47,14 @@ class FinancialCard extends StatelessWidget {
       child: Row(
         children: [
           // 左侧：头像
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: avatarBackgroundColor,
-            child: Text(
-              patient.name.substring(0, 1),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          DentalAvatar(
+            gender: patient.gender,
+            name: patient.name,
+            size: 40,
           ),
-          
+
           const SizedBox(width: 12),
-          
+
           // 中间：患者信息和财务数据
           Expanded(
             child: Column(
@@ -111,9 +103,9 @@ class FinancialCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 6),
-                
+
                 // 第二行：财务信息标签
                 Row(
                   children: [
@@ -122,63 +114,69 @@ class FinancialCard extends StatelessWidget {
                       flex: 2,
                       child: FinancialCompactTag(
                         icon: Icons.calendar_today,
-                        label: DateFormat('yy-MM-dd').format(patient.first_visit_date),
+                        label: DateFormat('yy-MM-dd')
+                            .format(patient.first_visit_date),
                         color: Colors.purple,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    
+
                     // 最近更新
                     if (lastFinancialUpdateDate != null)
                       Flexible(
                         flex: 2,
                         child: FinancialCompactTag(
                           icon: Icons.update,
-                          label: DateFormat('yy-MM-dd').format(lastFinancialUpdateDate!),
+                          label: DateFormat('yy-MM-dd')
+                              .format(lastFinancialUpdateDate!),
                           color: Colors.orange,
                         ),
                       ),
                     const SizedBox(width: 4),
-                    
+
                     // 应收费
                     Flexible(
                       flex: 2,
                       child: FinancialCompactTag(
                         icon: Icons.account_balance_wallet,
-                        label: '¥${(totalCost % 1 == 0 ? totalCost.toInt().toString() : totalCost.toStringAsFixed(0))}',
+                        label:
+                            '¥${(totalCost % 1 == 0 ? totalCost.toInt().toString() : totalCost.toStringAsFixed(0))}',
                         color: Colors.blue,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    
+
                     // 已收费
                     Flexible(
                       flex: 2,
                       child: FinancialCompactTag(
                         icon: Icons.check_circle,
-                        label: '¥${(received % 1 == 0 ? received.toInt().toString() : received.toStringAsFixed(0))}',
+                        label:
+                            '¥${(received % 1 == 0 ? received.toInt().toString() : received.toStringAsFixed(0))}',
                         color: Colors.green,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    
+
                     // 加工费
                     Flexible(
                       flex: 2,
                       child: FinancialCompactTag(
                         icon: Icons.build,
-                        label: '¥${(fee % 1 == 0 ? fee.toInt().toString() : fee.toStringAsFixed(0))}',
+                        label:
+                            '¥${(fee % 1 == 0 ? fee.toInt().toString() : fee.toStringAsFixed(0))}',
                         color: Colors.orange,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    
+
                     // 欠费
                     Flexible(
                       flex: 2,
                       child: FinancialCompactTag(
                         icon: Icons.pending,
-                        label: '¥${(debt % 1 == 0 ? debt.toInt().toString() : debt.toStringAsFixed(0))}',
+                        label:
+                            '¥${(debt % 1 == 0 ? debt.toInt().toString() : debt.toStringAsFixed(0))}',
                         color: debt > 0 ? Colors.red : Colors.grey,
                       ),
                     ),
@@ -187,9 +185,9 @@ class FinancialCard extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(width: 8),
-          
+
           // 右侧：操作按钮
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -201,9 +199,9 @@ class FinancialCard extends StatelessWidget {
                 tooltip: '查看',
                 onPressed: onTap,
               ),
-              
+
               const SizedBox(width: 6),
-              
+
               // 编辑按钮
               FinancialCompactActionButton(
                 icon: Icons.edit,
@@ -211,9 +209,9 @@ class FinancialCard extends StatelessWidget {
                 tooltip: '编辑',
                 onPressed: onEdit,
               ),
-              
+
               const SizedBox(width: 6),
-              
+
               // 删除按钮
               FinancialCompactActionButton(
                 icon: Icons.delete,
