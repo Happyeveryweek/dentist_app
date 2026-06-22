@@ -54,35 +54,38 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 用户权限提供者引用
   UserProvider? _userProvider;
-  
+
   // 连接状态
   bool _isConnected = true;
   String? _lastError;
-  
+
   // 数据库提供者引用（用于MySQL动态连接获取）
   dynamic _databaseProvider;
-  
+
   // 数据库实例（保留向后兼容）
   Database? _database;
   MySqlConnection? _mysqlConnection;
-  
+
   // 数据源类型（保留向后兼容）
   String _dataSourceType = 'sqlite';
-  
+
   // 有效数据源类型（考虑模块化配置）
   String? _effectiveDataSourceType;
-  
+
   // 当前用户信息
   User? _currentUser;
-  
+
   // 加载状态
   bool _isLoading = false;
-  
+
   // 刷新标志
   bool _templatesNeedRefresh = false;
-  
+
   // Getters
-  bool get initialized => _currentDataSource != null || _database != null || _mysqlConnection != null;
+  bool get initialized =>
+      _currentDataSource != null ||
+      _database != null ||
+      _mysqlConnection != null;
   bool get isConnected => _isConnected;
   String? get lastError => _lastError;
   bool get isLoading => _isLoading;
@@ -93,32 +96,33 @@ class MedicalRecordProvider extends ChangeNotifier {
   bool get hasValidTemplateCache => _cacheHelper.isTemplateCacheValid();
   DateTime? get lastTemplateCacheTime => _cacheHelper.lastTemplateCacheTime;
   int get cachedTemplatesCount => _cacheHelper.cachedTemplatesCount;
-  
+
   // 检查数据源是否真正可用
   bool get isDataSourceReady {
     final dataSource = _currentDataSource;
     final ready = dataSource != null && _effectiveDataSourceType != null;
-    print('MedicalRecordProvider.isDataSourceReady: $ready (dataSource=${dataSource != null}, effectiveType=$_effectiveDataSourceType)');
+    print(
+        'MedicalRecordProvider.isDataSourceReady: $ready (dataSource=${dataSource != null}, effectiveType=$_effectiveDataSourceType)');
     return ready;
   }
-  
+
   // 获取当前数据源
   MedicalRecordDataSource? get _currentDataSource {
-        if (_effectiveDataSourceType == 'mysql') {
-            return _mysqlDataSource;
+    if (_effectiveDataSourceType == 'mysql') {
+      return _mysqlDataSource;
     } else if (_effectiveDataSourceType == 'sqlite') {
-            return _sqliteDataSource;
+      return _sqliteDataSource;
     }
-        return null;
+    return null;
   }
-  
+
   // MySQL动态连接获取
   MySqlConnection? get _currentMysqlConnection {
     return _dataSourceInitializer.getCurrentMysqlConnection(
       cachedConnection: _mysqlConnection,
     );
   }
-  
+
   /// 获取用于同步的MySQL连接
   ///
   /// 说明：
@@ -137,7 +141,7 @@ class MedicalRecordProvider extends ChangeNotifier {
       },
     );
   }
-  
+
   // 构造函数
   MedicalRecordProvider({
     UserProvider? userProvider,
@@ -151,7 +155,8 @@ class MedicalRecordProvider extends ChangeNotifier {
 
     _syncService = MedicalRecordSyncService(
       getSyncMysqlConnection: () => _syncMysqlConnection,
-      getEffectiveDataSourceType: () => _effectiveDataSourceType ?? _dataSourceType,
+      getEffectiveDataSourceType: () =>
+          _effectiveDataSourceType ?? _dataSourceType,
     );
 
     _templateService = MedicalRecordTemplateService(
@@ -197,7 +202,8 @@ class MedicalRecordProvider extends ChangeNotifier {
     String? dataSourceMode,
     UserProvider? userProvider,
   }) {
-    print('MedicalRecordProvider($_instanceId).initializeFromDatabaseSync: 开始同步初始化');
+    print(
+        'MedicalRecordProvider($_instanceId).initializeFromDatabaseSync: 开始同步初始化');
 
     _databaseProvider = dbProvider;
     _userProvider = userProvider;
@@ -233,7 +239,8 @@ class MedicalRecordProvider extends ChangeNotifier {
     if (result.success) {
       // 清除缓存，强制重新加载
       _cacheHelper.clearAllCache();
-      print('MedicalRecordProvider($_instanceId).initializeFromDatabaseSync: 同步初始化完成');
+      print(
+          'MedicalRecordProvider($_instanceId).initializeFromDatabaseSync: 同步初始化完成');
     } else {
       _setError(result.error ?? '初始化失败');
     }
@@ -304,7 +311,7 @@ class MedicalRecordProvider extends ChangeNotifier {
       _setError('初始化失败: $e');
     }
   }
-  
+
   /// 如果需要，初始化默认模板数据
   Future<void> _initializeDefaultTemplatesIfNeeded() async {
     try {
@@ -427,7 +434,8 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 更新模块数据源配置
   void updateModuleDataSources(Map<String, String> moduleDataSources) {
-    print('MedicalRecordProvider.updateModuleDataSources - 模块数据源配置已更新: $moduleDataSources');
+    print(
+        'MedicalRecordProvider.updateModuleDataSources - 模块数据源配置已更新: $moduleDataSources');
 
     // 如果病历模块的数据源类型发生变化，需要重新初始化
     if (_databaseProvider != null) {
@@ -460,8 +468,10 @@ class MedicalRecordProvider extends ChangeNotifier {
   // ================ 病历CRUD操作方法 ===================
 
   /// 获取患者的所有病历记录
-  Future<List<PatientMedicalRecord>> getPatientMedicalRecords(int patientId, {bool forceRefresh = false}) async {
-    return _medicalRecordService.getPatientMedicalRecords(patientId, forceRefresh: forceRefresh);
+  Future<List<PatientMedicalRecord>> getPatientMedicalRecords(int patientId,
+      {bool forceRefresh = false}) async {
+    return _medicalRecordService.getPatientMedicalRecords(patientId,
+        forceRefresh: forceRefresh);
   }
 
   /// 根据ID获取病历记录
@@ -485,8 +495,10 @@ class MedicalRecordProvider extends ChangeNotifier {
   }
 
   /// 搜索病历记录
-  Future<List<PatientMedicalRecord>> searchMedicalRecords(String query, {int? patientId}) async {
-    return _medicalRecordService.searchMedicalRecords(query, patientId: patientId);
+  Future<List<PatientMedicalRecord>> searchMedicalRecords(String query,
+      {int? patientId}) async {
+    return _medicalRecordService.searchMedicalRecords(query,
+        patientId: patientId);
   }
 
   /// 获取病历记录数量
@@ -538,7 +550,8 @@ class MedicalRecordProvider extends ChangeNotifier {
   // =================== 模板管理方法 ===================
 
   /// 根据类别获取模板列表
-  Future<List<MedicalRecordTemplate>> getTemplatesByCategory(String category, {bool forceRefresh = false}) async {
+  Future<List<MedicalRecordTemplate>> getTemplatesByCategory(String category,
+      {bool forceRefresh = false}) async {
     return _templateService.getTemplatesByCategory(
       category,
       forceRefresh: forceRefresh,
@@ -556,28 +569,40 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   /// 创建新模板
   Future<int> createTemplate(MedicalRecordTemplate template) async {
-    return _templateService.createTemplate(
+    final id = await _templateService.createTemplate(
       template,
       cachedTemplates: _cacheHelper.cachedTemplates,
-      clearTemplateCache: () => _cacheHelper.clearTemplateCache(),
+      clearTemplateCache: () {},
     );
+    if (id > 0) {
+      _cacheHelper.upsertTemplate(template.copyWith(id: id));
+    }
+    return id;
   }
 
   /// 更新模板
   Future<bool> updateTemplate(MedicalRecordTemplate template) async {
-    return _templateService.updateTemplate(
+    final success = await _templateService.updateTemplate(
       template,
       cachedTemplates: _cacheHelper.cachedTemplates,
-      clearTemplateCache: () => _cacheHelper.clearTemplateCache(),
+      clearTemplateCache: () {},
     );
+    if (success) {
+      _cacheHelper.upsertTemplate(template);
+    }
+    return success;
   }
 
   /// 删除模板
   Future<bool> deleteTemplate(int id) async {
-    return _templateService.deleteTemplate(
+    final success = await _templateService.deleteTemplate(
       id,
-      clearTemplateCache: () => _cacheHelper.clearTemplateCache(),
+      clearTemplateCache: () {},
     );
+    if (success) {
+      _cacheHelper.removeTemplateById(id);
+    }
+    return success;
   }
 
   /// 初始化默认模板
@@ -593,7 +618,8 @@ class MedicalRecordProvider extends ChangeNotifier {
   }
 
   /// 获取所有模板
-  Future<Map<String, List<MedicalRecordTemplate>>> getAllTemplates({bool forceRefresh = false}) async {
+  Future<Map<String, List<MedicalRecordTemplate>>> getAllTemplates(
+      {bool forceRefresh = false}) async {
     return _templateService.getAllTemplates(
       forceRefresh: forceRefresh,
       cachedTemplates: _cacheHelper.cachedTemplates,
@@ -604,7 +630,8 @@ class MedicalRecordProvider extends ChangeNotifier {
   }
 
   /// 批量创建模板
-  Future<List<int>> createTemplates(List<MedicalRecordTemplate> templates) async {
+  Future<List<int>> createTemplates(
+      List<MedicalRecordTemplate> templates) async {
     return _templateService.createTemplates(
       templates,
       cachedTemplates: _cacheHelper.cachedTemplates,
@@ -613,17 +640,20 @@ class MedicalRecordProvider extends ChangeNotifier {
   }
 
   /// 获取主要疾病类型
-  Future<List<MedicalRecordTemplate>> getMainDiseaseTypes(String category) async {
+  Future<List<MedicalRecordTemplate>> getMainDiseaseTypes(
+      String category) async {
     return _templateService.getMainDiseaseTypes(category);
   }
 
   /// 获取子疾病类型
-  Future<List<MedicalRecordTemplate>> getSubDiseaseTypes(String category, String parentName) async {
+  Future<List<MedicalRecordTemplate>> getSubDiseaseTypes(
+      String category, String parentName) async {
     return _templateService.getSubDiseaseTypes(category, parentName);
   }
 
   /// 搜索模板
-  Future<List<MedicalRecordTemplate>> searchTemplates(String query, String category) async {
+  Future<List<MedicalRecordTemplate>> searchTemplates(
+      String query, String category) async {
     return _templateService.searchTemplates(query, category);
   }
 
@@ -666,4 +696,3 @@ class MedicalRecordProvider extends ChangeNotifier {
     }
   }
 }
-

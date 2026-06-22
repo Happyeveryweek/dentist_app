@@ -38,16 +38,17 @@ class MedicalRecordTemplateService {
     }
 
     try {
-      setLoading(true);
-
       // 检查缓存
       if (!forceRefresh &&
           lastTemplateCacheTime != null &&
-          DateTime.now().difference(lastTemplateCacheTime) < cacheValidDuration &&
+          DateTime.now().difference(lastTemplateCacheTime) <
+              cacheValidDuration &&
           cachedTemplates != null &&
           cachedTemplates.containsKey(category)) {
         return cachedTemplates[category]!;
       }
+
+      setLoading(true);
 
       // 从数据源获取数据
       final templates = await dataSource.getTemplatesByCategory(category);
@@ -86,7 +87,8 @@ class MedicalRecordTemplateService {
       setLoading(true);
 
       final template = await dataSource.getTemplateById(id);
-      print('MedicalRecordTemplateService: ${template != null ? '找到模板' : '未找到模板'}');
+      print(
+          'MedicalRecordTemplateService: ${template != null ? '找到模板' : '未找到模板'}');
 
       clearError();
       return template;
@@ -125,23 +127,30 @@ class MedicalRecordTemplateService {
       final id = await dataSource.createTemplate(template);
 
       if (id > 0) {
-        // 清除相关缓存
+        // 就地更新缓存，避免整类模板在页面刷新时短暂丢失
         if (cachedTemplates != null) {
-          cachedTemplates.remove(template.category);
+          final categoryTemplates = cachedTemplates[template.category];
+          if (categoryTemplates != null) {
+            final savedTemplate = template.copyWith(id: id);
+            final index = categoryTemplates
+                .indexWhere((item) => item.id == savedTemplate.id);
+            if (index >= 0) {
+              categoryTemplates[index] = savedTemplate;
+            } else {
+              categoryTemplates.add(savedTemplate);
+            }
+          }
         }
-        if (clearTemplateCache != null) {
-          clearTemplateCache();
-        }
-        markTemplatesNeedRefresh();
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (syncService.needsSync) {
-          print('MedicalRecordTemplateService: SQLite模板创建成功，开始同步到MySQL: 模板ID=$id');
-          syncService.syncTemplateToMySQL(template.copyWith(id: id).toMap(), id);
+          print(
+              'MedicalRecordTemplateService: SQLite模板创建成功，开始同步到MySQL: 模板ID=$id');
+          syncService.syncTemplateToMySQL(
+              template.copyWith(id: id).toMap(), id);
         }
 
         clearError();
-        notifyListeners();
       } else {
         throw Exception('创建模板失败');
       }
@@ -186,23 +195,28 @@ class MedicalRecordTemplateService {
       final success = await dataSource.updateTemplate(template);
 
       if (success) {
-        // 清除相关缓存
+        // 只更新当前模板，不要整类清缓存，避免页面在刷新键重建后丢失其它子项
         if (cachedTemplates != null) {
-          cachedTemplates.remove(template.category);
+          final categoryTemplates = cachedTemplates[template.category];
+          if (categoryTemplates != null) {
+            final index =
+                categoryTemplates.indexWhere((item) => item.id == template.id);
+            if (index >= 0) {
+              categoryTemplates[index] = template;
+            } else {
+              categoryTemplates.add(template);
+            }
+          }
         }
-        if (clearTemplateCache != null) {
-          clearTemplateCache();
-        }
-        markTemplatesNeedRefresh();
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (syncService.needsSync) {
-          print('MedicalRecordTemplateService: SQLite模板更新成功，开始同步到MySQL: 模板ID=${template.id}');
+          print(
+              'MedicalRecordTemplateService: SQLite模板更新成功，开始同步到MySQL: 模板ID=${template.id}');
           syncService.syncTemplateToMySQL(template.toMap(), template.id!);
         }
 
         clearError();
-        notifyListeners();
       } else {
         throw Exception('更新模板失败');
       }
@@ -246,7 +260,8 @@ class MedicalRecordTemplateService {
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (syncService.needsSync) {
-          print('MedicalRecordTemplateService: SQLite模板删除成功，开始同步删除到MySQL: 模板ID=$id');
+          print(
+              'MedicalRecordTemplateService: SQLite模板删除成功，开始同步删除到MySQL: 模板ID=$id');
           syncService.syncDeleteTemplateToMySQL(id);
         }
 
@@ -380,7 +395,8 @@ class MedicalRecordTemplateService {
   }
 
   /// 搜索模板
-  Future<List<MedicalRecordTemplate>> searchTemplates(String category, String query) async {
+  Future<List<MedicalRecordTemplate>> searchTemplates(
+      String category, String query) async {
     final dataSource = getCurrentDataSource();
     if (dataSource == null) {
       throw Exception('数据源未初始化');
@@ -501,14 +517,19 @@ class MedicalRecordTemplateService {
   }
 
   /// 获取主疾病类型（没有父级的模板）
-  Future<List<MedicalRecordTemplate>> getMainDiseaseTypes(String category) async {
+  Future<List<MedicalRecordTemplate>> getMainDiseaseTypes(
+      String category) async {
     final templates = await getTemplatesByCategory(category);
     return templates.where((template) => template.isMainType).toList();
   }
 
   /// 获取子疾病类型（有父级的模板）
-  Future<List<MedicalRecordTemplate>> getSubDiseaseTypes(String category, String parentName) async {
+  Future<List<MedicalRecordTemplate>> getSubDiseaseTypes(
+      String category, String parentName) async {
     final templates = await getTemplatesByCategory(category);
-    return templates.where((template) => template.isSubType && template.parentName == parentName).toList();
+    return templates
+        .where((template) =>
+            template.isSubType && template.parentName == parentName)
+        .toList();
   }
 }

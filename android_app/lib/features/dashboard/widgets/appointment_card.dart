@@ -12,11 +12,13 @@ import 'status_chip.dart';
 class AppointmentCard extends StatelessWidget {
   final Appointment appointment;
   final Patient? patient;
+  final VoidCallback onDetailUpdated;
 
   const AppointmentCard({
     super.key,
     required this.appointment,
     this.patient,
+    required this.onDetailUpdated,
   });
 
   @override
@@ -45,8 +47,8 @@ class AppointmentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => AppointmentDetailScreen(
@@ -54,6 +56,10 @@ class AppointmentCard extends StatelessWidget {
                 ),
               ),
             );
+
+            if (result == true) {
+              onDetailUpdated();
+            }
           },
           child: Padding(
             padding: const EdgeInsets.all(16),

@@ -829,9 +829,10 @@ class PurchaseProvider extends ChangeNotifier {
       // 使用数据源模式（统一接口）
       final success = await _currentDataSource.updatePurchase(record);
       if (success) {
-        // 清除缓存并标记需要刷新
-        clearCache();
-        markPurchasesNeedRefresh();
+        // 更新不触发整页刷新，避免界面闪烁
+        _cachedRecords = null;
+        _lastCacheTime = null;
+        _purchasesNeedRefresh = false;
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (_syncService.needsSync && record.id != null) {
@@ -973,7 +974,8 @@ class PurchaseProvider extends ChangeNotifier {
       // 使用数据源模式（统一接口）
       final success = await _currentDataSource.updatePurchaseItem(item);
       if (success) {
-        markPurchasesNeedRefresh();
+        // 更新不触发整页刷新，避免界面闪烁
+        _purchasesNeedRefresh = false;
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (_syncService.needsSync && item.id != null) {

@@ -20,13 +20,10 @@ import 'avatar_upload_section.dart';
 class UserFormDialog extends StatefulWidget {
   final User? user;
   final List<String> availableRoles;
-  final VoidCallback? onRefresh;
-
   const UserFormDialog({
     Key? key,
     this.user,
     required this.availableRoles,
-    this.onRefresh,
   }) : super(key: key);
 
   @override
@@ -43,8 +40,9 @@ class _UserFormDialogState extends State<UserFormDialog> {
   late final TextEditingController _passwordController;
   late final TextEditingController _emailController;
   late final TextEditingController _doctorNameController;
-  
+
   late String _selectedRole;
+  String? _usernameErrorMessage;
   String? _emailErrorMessage;
   List<int>? _uploadedImageData;
   String? _avatarFileName;
@@ -95,12 +93,29 @@ class _UserFormDialogState extends State<UserFormDialog> {
 
   Future<void> _handleSubmit() async {
     setState(() {
+      _usernameErrorMessage = null;
       _emailErrorMessage = null;
     });
 
     if (_formKey.currentState!.validate()) {
       try {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
+
+        if (_usernameController.text.isNotEmpty) {
+          bool isUsernameExists =
+              await UserValidationService.checkUsernameExists(
+            userProvider,
+            _usernameController.text,
+            _isEditing ? widget.user!.id : null,
+          );
+
+          if (isUsernameExists) {
+            setState(() {
+              _usernameErrorMessage = '该用户名已被使用';
+            });
+            return;
+          }
+        }
 
         // 添加前检查邮箱是否已存在
         if (_emailController.text.isNotEmpty) {
@@ -144,9 +159,8 @@ class _UserFormDialogState extends State<UserFormDialog> {
             _usernameController.text,
             null, // 不更新密码
             _selectedRole,
-            email: _emailController.text.isNotEmpty
-                ? _emailController.text
-                : null,
+            email:
+                _emailController.text.isNotEmpty ? _emailController.text : null,
             doctor: _doctorNameController.text.isNotEmpty
                 ? _doctorNameController.text
                 : null,
@@ -160,9 +174,8 @@ class _UserFormDialogState extends State<UserFormDialog> {
             _usernameController.text,
             _passwordController.text,
             _selectedRole,
-            email: _emailController.text.isNotEmpty
-                ? _emailController.text
-                : null,
+            email:
+                _emailController.text.isNotEmpty ? _emailController.text : null,
             doctor: _doctorNameController.text.isNotEmpty
                 ? _doctorNameController.text
                 : null,
@@ -173,10 +186,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
         }
 
         if (!mounted) return;
-        Navigator.of(context).pop();
-
-        // 刷新用户列表
-        widget.onRefresh?.call();
+        Navigator.of(context).pop(true);
 
         AppToastManager.showSuccess(
           context,
@@ -195,8 +205,8 @@ class _UserFormDialogState extends State<UserFormDialog> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final isPurpleTheme = Theme.of(context).scaffoldBackgroundColor ==
-        AppTheme.purpleBackground;
+    final isPurpleTheme =
+        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
 
     final accentColor = isPurpleTheme
         ? AppTheme.purpleColor
@@ -243,7 +253,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
                   label: '用户名',
                   hint: '请输入用户名',
                   icon: Icons.person,
-                  readOnly: _isEditing,
+                  errorText: _usernameErrorMessage,
                 ),
                 const SizedBox(height: 20),
                 if (!_isEditing)

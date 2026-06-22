@@ -77,16 +77,16 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
     super.initState();
     _searchController = TextEditingController();
     _pageJumpController = TextEditingController();
-    
+
     // 初始化筛选分页服务
     _filterPaginationService = MaterialFilterPaginationService(
       materialsPerPage: _materialsPerPage,
     );
-    
+
     // 确保初始状态没有错误
     _hasError = false;
     _errorMessage = '';
-    
+
     _loadData();
   }
 
@@ -94,10 +94,11 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // 检查材料提供者中的刷新标志
-    final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+    final materialProvider =
+        Provider.of<MaterialProvider>(context, listen: false);
     if (materialProvider.materialsNeedRefresh) {
       // 如果材料数据需要刷新，则重新加载
-      _loadData();
+      _loadData(showLoading: false, forceRefresh: true);
       // 重置刷新标志
       materialProvider.resetMaterialsRefreshFlag();
     }
@@ -149,17 +150,30 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
     });
   }
 
-  Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _hasError = false;
-      _errorMessage = ''; // 确保错误消息被清空
-    });
+  Future<void> _loadData({
+    bool showLoading = true,
+    bool forceRefresh = false,
+  }) async {
+    if (showLoading) {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+        _errorMessage = ''; // 确保错误消息被清空
+      });
+    } else {
+      setState(() {
+        _hasError = false;
+        _errorMessage = '';
+      });
+    }
 
     try {
-      final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
-      final materials = await materialProvider.getAllMaterials();
-      
+      final materialProvider =
+          Provider.of<MaterialProvider>(context, listen: false);
+      final materials = await materialProvider.getAllMaterials(
+        forceRefresh: forceRefresh,
+      );
+
       // 不再自动初始化材料，只在用户主动点击时才执行
       setState(() {
         _materials = materials;
@@ -167,13 +181,14 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
         _hasError = false;
         _errorMessage = '';
       });
-      
+
       // 重新应用当前筛选条件（保留用户选择的类型和搜索词，保留当前页）
       _filterMaterials(resetPage: false);
-      
+
       // 打印调试信息
-      print('材料数据加载成功，错误状态已重置: _hasError=$_hasError, _errorMessage="$_errorMessage"');
-      
+      print(
+          '材料数据加载成功，错误状态已重置: _hasError=$_hasError, _errorMessage="$_errorMessage"');
+
       // 额外确保错误状态被重置
       if (_hasError || _errorMessage.isNotEmpty) {
         print('检测到错误状态仍然存在，强制重置...');
@@ -181,7 +196,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
           _hasError = false;
           _errorMessage = '';
         });
-        print('强制重置后错误状态: _hasError=$_hasError, _errorMessage="$_errorMessage"');
+        print(
+            '强制重置后错误状态: _hasError=$_hasError, _errorMessage="$_errorMessage"');
       }
     } catch (e) {
       setState(() {
@@ -196,29 +212,32 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   Future<void> _startInitialization() async {
     // 显示初始化进度对话框
     this._showInitializationProgressDialog();
-    
+
     try {
       // 执行初始化
-      final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+      final materialProvider =
+          Provider.of<MaterialProvider>(context, listen: false);
       final initializationService = MaterialInitializationService(
         materialProvider: materialProvider,
       );
-      
+
       final result = await initializationService.initializeDefaultMaterials();
-      
+
       // 重新加载数据
       if (mounted) {
-        await _loadData();
-        
+        await _loadData(showLoading: false, forceRefresh: true);
+
         // 重置错误状态
         setState(() {
           _hasError = false;
           _errorMessage = '';
         });
-        
+
         // 显示成功提示
         if (result.success) {
-          AppToastManager.showSuccess(context, message: '材料数据初始化完成！成功 ${result.successCount} 个，失败 ${result.failCount} 个');
+          AppToastManager.showSuccess(context,
+              message:
+                  '材料数据初始化完成！成功 ${result.successCount} 个，失败 ${result.failCount} 个');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -231,7 +250,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
       }
     } catch (e) {
       print('材料数据初始化过程中出现异常: $e');
-      
+
       // 显示错误提示
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -269,20 +288,24 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
 
   // 跳转到指定页面
   void _goToPage(int page) {
-    _applyFilterResult(_filterPaginationService.goToPage(_currentFilterResult(), page));
+    _applyFilterResult(
+        _filterPaginationService.goToPage(_currentFilterResult(), page));
   }
 
   // 跳转到上一页
   void _goToPreviousPage() {
-    _applyFilterResult(_filterPaginationService.goToPreviousPage(_currentFilterResult()));
+    _applyFilterResult(
+        _filterPaginationService.goToPreviousPage(_currentFilterResult()));
   }
 
   // 跳转到下一页
   void _goToNextPage() {
-    _applyFilterResult(_filterPaginationService.goToNextPage(_currentFilterResult()));
+    _applyFilterResult(
+        _filterPaginationService.goToNextPage(_currentFilterResult()));
   }
 
-  Future<void> _showMaterialDetail(material_models.MaterialInfo material) async {
+  Future<void> _showMaterialDetail(
+      material_models.MaterialInfo material) async {
     showDialog(
       context: context,
       builder: (context) => MaterialDetailDialog(
@@ -295,18 +318,13 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
 
   // 构建现代化表单字段
 
-
   // 构建现代化下拉字段
-
 
   // 构建现代化下拉容器
 
-
   // 构建现代化单位下拉框
 
-
   // 构建类型筛选下拉框
-
 
   // 构建详情行
 
@@ -318,11 +336,12 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
 
     if (confirmed == true) {
       try {
-        final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+        final materialProvider =
+            Provider.of<MaterialProvider>(context, listen: false);
         final success = await materialProvider.deleteMaterial(material.id!);
 
         if (success) {
-          await _loadData();
+          await _loadData(showLoading: false);
           AppToastManager.showDelete(context, message: '材料删除成功');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -344,7 +363,6 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   }
 
   // 紧凑型材料操作按钮
-
 
   @override
   Widget build(BuildContext context) {
@@ -388,7 +406,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             child: IconButton(
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               onPressed: () async {
-                await _loadData();
+                await _loadData(showLoading: false, forceRefresh: true);
                 // 使用公用成功提示组件
                 AppToastManager.showSuccess(context, message: '数据已刷新');
               },
@@ -407,7 +425,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.settings_backup_restore_rounded, color: Colors.white),
+              icon: const Icon(Icons.settings_backup_restore_rounded,
+                  color: Colors.white),
               onPressed: () => this._showInitializeDialog(),
               tooltip: '初始化默认材料',
             ),
@@ -441,54 +460,68 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.black.withOpacity(0.06)),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 2)),
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2)),
                 ],
               ),
               child: Row(
-              children: [
-                // 搜索栏 - 自适应长度
-                Expanded(
-                  child: UnifiedSearchField(
-                    controller: _searchController,
-                    labelText: '搜索材料',
-                    hintText: '输入材料名称、编码、供应商或描述',
-                    prefixIcon: Icons.search_rounded,
-                    searchQuery: _searchQuery,
-                    onChanged: (value) {
-                      setState(() { _searchQuery = value; });
-                      _filterMaterials();
-                    },
-                    onClear: () {
-                      setState(() { _searchQuery = ''; });
-                      _searchController.clear();
-                      _filterMaterials();
-                    },
+                children: [
+                  // 搜索栏 - 自适应长度
+                  Expanded(
+                    child: UnifiedSearchField(
+                      controller: _searchController,
+                      labelText: '搜索材料',
+                      hintText: '输入材料名称、编码、供应商或描述',
+                      prefixIcon: Icons.search_rounded,
+                      searchQuery: _searchQuery,
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value;
+                        });
+                        _filterMaterials();
+                      },
+                      onClear: () {
+                        setState(() {
+                          _searchQuery = '';
+                        });
+                        _searchController.clear();
+                        _filterMaterials();
+                      },
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                // 类型筛选器 - 靠右固定宽度
-                Container(
-                  constraints: const BoxConstraints(minWidth: 200),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.category_rounded, color: DentalColors.primary, size: 20),
-                      const SizedBox(width: 8),
-                      Text('类型:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: DentalColors.onSurface)),
-                      const SizedBox(width: 12),
-                      this._buildModernTypeDropdown(
-                        value: _selectedType,
-                        items: _materialTypes,
-                        onChanged: (value) {
-                          setState(() { _selectedType = value; });
-                          _filterMaterials();
-                        },
-                      ),
-                    ],
+                  const SizedBox(width: 16),
+                  // 类型筛选器 - 靠右固定宽度
+                  Container(
+                    constraints: const BoxConstraints(minWidth: 200),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.category_rounded,
+                            color: DentalColors.primary, size: 20),
+                        const SizedBox(width: 8),
+                        Text('类型:',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: DentalColors.onSurface)),
+                        const SizedBox(width: 12),
+                        this._buildModernTypeDropdown(
+                          value: _selectedType,
+                          items: _materialTypes,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedType = value;
+                            });
+                            _filterMaterials();
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
             ),
           ),
           // 统计信息 - 紧凑版
@@ -509,7 +542,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                   child: this._buildStatCard(
                     icon: Icons.attach_money_rounded,
                     label: '总价值',
-                    value: '¥${_filteredMaterials.fold<double>(0.0, (sum, material) => sum + material.defaultPrice).toStringAsFixed(0)}',
+                    value:
+                        '¥${_filteredMaterials.fold<double>(0.0, (sum, material) => sum + material.defaultPrice).toStringAsFixed(0)}',
                     color: DentalColors.success,
                   ),
                 ),
@@ -518,7 +552,11 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                   child: this._buildStatCard(
                     icon: Icons.category_rounded,
                     label: '类型数',
-                    value: _filteredMaterials.map((m) => m.materialType).toSet().length.toString(),
+                    value: _filteredMaterials
+                        .map((m) => m.materialType)
+                        .toSet()
+                        .length
+                        .toString(),
                     color: Colors.purple,
                   ),
                 ),
@@ -527,20 +565,23 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                   child: this._buildStatCard(
                     icon: Icons.business_rounded,
                     label: '供应商数',
-                    value: _filteredMaterials.map((m) => m.supplier).where((s) => s != null).toSet().length.toString(),
+                    value: _filteredMaterials
+                        .map((m) => m.supplier)
+                        .where((s) => s != null)
+                        .toSet()
+                        .length
+                        .toString(),
                     color: DentalColors.warning,
                   ),
                 ),
               ],
             ),
           ),
-          
+
           // 分页信息显示
-          
+
           const SizedBox(height: 16),
-          
-          
-          
+
           // 材料列表
           Expanded(
             child: _isLoading
@@ -550,20 +591,27 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                            Icon(Icons.error_outline,
+                                size: 64, color: Colors.red[300]),
                             const SizedBox(height: 16),
                             Text(
                               '加载失败',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: Colors.red[300],
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    color: Colors.red[300],
+                                  ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               _errorMessage,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
@@ -580,24 +628,32 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
-                                  _searchQuery.isEmpty ? Icons.inventory_outlined : Icons.search_off,
+                                  _searchQuery.isEmpty
+                                      ? Icons.inventory_outlined
+                                      : Icons.search_off,
                                   size: 64,
                                   color: Colors.grey[400],
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   _searchQuery.isEmpty ? '暂无材料数据' : '未找到匹配的材料',
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    color: Colors.grey[600],
-                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                        color: Colors.grey[600],
+                                      ),
                                 ),
                                 if (_searchQuery.isEmpty) ...[
                                   const SizedBox(height: 8),
                                   Text(
                                     '点击"添加材料"开始创建您的第一个材料',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Colors.grey[500],
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: Colors.grey[500],
+                                        ),
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton.icon(
@@ -614,14 +670,16 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                               // 材料列表
                               Expanded(
                                 child: ListView.builder(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
                                   itemCount: _displayedMaterials.length,
                                   itemBuilder: (context, index) {
-                                    return this._buildMaterialCard(_displayedMaterials[index]);
+                                    return this._buildMaterialCard(
+                                        _displayedMaterials[index]);
                                   },
                                 ),
                               ),
-                              
+
                               // 分页控件
                               if (_totalPages > 1) this._buildPagination(),
                             ],
@@ -633,7 +691,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   }
 
   Widget _buildMaterialCard(material_models.MaterialInfo material) {
-    final isPurpleTheme = Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
+    final isPurpleTheme =
+        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
 
     return HoverableMaterialCard(
       onTap: () => _showMaterialDetail(material),
@@ -644,7 +703,9 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: isPurpleTheme ? AppTheme.purpleColor : Theme.of(context).primaryColor,
+              color: isPurpleTheme
+                  ? AppTheme.purpleColor
+                  : Theme.of(context).primaryColor,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -653,9 +714,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
               size: 20,
             ),
           ),
-          
           const SizedBox(width: 12),
-          
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -668,13 +727,12 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                
                 const SizedBox(height: 6),
-                
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.green.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
@@ -682,7 +740,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.attach_money, size: 11, color: Colors.green[700]),
+                          Icon(Icons.attach_money,
+                              size: 11, color: Colors.green[700]),
                           const SizedBox(width: 3),
                           Text(
                             '¥${material.defaultPrice.toStringAsFixed(0)}',
@@ -695,11 +754,10 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         ],
                       ),
                     ),
-                    
                     const SizedBox(width: 6),
-                    
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.blue.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
@@ -707,7 +765,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.inventory, size: 11, color: Colors.blue[700]),
+                          Icon(Icons.inventory,
+                              size: 11, color: Colors.blue[700]),
                           const SizedBox(width: 3),
                           Text(
                             material.unit,
@@ -720,12 +779,11 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         ],
                       ),
                     ),
-                    
                     const SizedBox(width: 6),
-                    
                     Flexible(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.purple.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
@@ -733,7 +791,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.category_rounded, size: 11, color: Colors.purple[700]),
+                            Icon(Icons.category_rounded,
+                                size: 11, color: Colors.purple[700]),
                             const SizedBox(width: 3),
                             Flexible(
                               child: Text(
@@ -750,12 +809,12 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         ),
                       ),
                     ),
-                    
                     if (material.supplier != null) ...[
                       const SizedBox(width: 6),
                       Flexible(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.orange.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(6),
@@ -763,7 +822,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.business, size: 11, color: Colors.orange[700]),
+                              Icon(Icons.business,
+                                  size: 11, color: Colors.orange[700]),
                               const SizedBox(width: 3),
                               Flexible(
                                 child: Text(
@@ -786,9 +846,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
               ],
             ),
           ),
-          
           const SizedBox(width: 8),
-          
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -915,8 +973,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: (_selectedType != '全部' || _isTypeHover) 
-                ? DentalColors.primary.withOpacity(0.6) 
+            color: (_selectedType != '全部' || _isTypeHover)
+                ? DentalColors.primary.withOpacity(0.6)
                 : Colors.grey[300]!,
             width: 1.5,
           ),
@@ -944,14 +1002,16 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
               enabled: false,
               height: 44,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   gradient: DentalColors.primaryGradient,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.category_rounded, size: 18, color: Colors.white),
+                    const Icon(Icons.category_rounded,
+                        size: 18, color: Colors.white),
                     const SizedBox(width: 10),
                     const Text(
                       '材料类型',
@@ -963,7 +1023,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
@@ -990,9 +1051,12 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 value: type,
                 height: 38,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isSelected ? DentalColors.primary.withOpacity(0.1) : Colors.transparent,
+                    color: isSelected
+                        ? DentalColors.primary.withOpacity(0.1)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
@@ -1002,14 +1066,18 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         height: 18,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: isSelected ? DentalColors.primaryGradient : null,
+                          gradient:
+                              isSelected ? DentalColors.primaryGradient : null,
                           border: Border.all(
-                            color: isSelected ? Colors.transparent : Colors.grey.shade400,
+                            color: isSelected
+                                ? Colors.transparent
+                                : Colors.grey.shade400,
                             width: 2,
                           ),
                         ),
                         child: isSelected
-                            ? const Icon(Icons.check, size: 12, color: Colors.white)
+                            ? const Icon(Icons.check,
+                                size: 12, color: Colors.white)
                             : null,
                       ),
                       const SizedBox(width: 12),
@@ -1018,14 +1086,19 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                           type,
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                            color: isSelected ? DentalColors.primary : Colors.grey[700],
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? DentalColors.primary
+                                : Colors.grey[700],
                           ),
                         ),
                       ),
                       if (isSelected)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: DentalColors.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
@@ -1053,8 +1126,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 Icon(
                   Icons.filter_list_rounded,
                   size: 18,
-                  color: (_selectedType != '全部' || _isTypeHover) 
-                      ? DentalColors.primary 
+                  color: (_selectedType != '全部' || _isTypeHover)
+                      ? DentalColors.primary
                       : Colors.grey[600],
                 ),
                 const SizedBox(width: 8),
@@ -1063,8 +1136,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: (_selectedType != '全部' || _isTypeHover) 
-                        ? DentalColors.primary 
+                    color: (_selectedType != '全部' || _isTypeHover)
+                        ? DentalColors.primary
                         : Colors.grey[600],
                   ),
                 ),
@@ -1072,8 +1145,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 Icon(
                   Icons.keyboard_arrow_down_rounded,
                   size: 18,
-                  color: (_selectedType != '全部' || _isTypeHover) 
-                      ? DentalColors.primary 
+                  color: (_selectedType != '全部' || _isTypeHover)
+                      ? DentalColors.primary
                       : Colors.grey[600],
                 ),
               ],
@@ -1084,7 +1157,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value, Color color) {
+  Widget _buildDetailRow(
+      IconData icon, String label, String value, Color color) {
     return MaterialDetailRow(
       icon: icon,
       label: label,
@@ -1156,7 +1230,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 ),
                 child: CircularProgressIndicator(
                   strokeWidth: 4,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
                 ),
               ),
               const SizedBox(height: 24),
@@ -1186,22 +1261,22 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
     );
   }
 
-  Future<void> _showMaterialDialog([material_models.MaterialInfo? material]) async {
+  Future<void> _showMaterialDialog(
+      [material_models.MaterialInfo? material]) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => MaterialFormDialog(
         material: material,
         materialTypes: _materialTypes,
-        onSuccess: () => _loadData(),
+        onSuccess: () => _loadData(showLoading: false),
         fixMaybeDecoded: _fixMaybeDecoded,
       ),
     );
 
     if (result == true) {
-      await _loadData();
+      await _loadData(showLoading: false);
     }
   }
-
 }
 
 // 可悬浮的材料卡片组件

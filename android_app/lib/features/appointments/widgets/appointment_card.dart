@@ -15,6 +15,7 @@ class AppointmentCard extends StatelessWidget {
   final Future<String?> Function(Appointment) getAppointmentPatientDoctor;
   final Function(Appointment) onEdit;
   final Function(Appointment) onDelete;
+  final VoidCallback onDetailUpdated;
 
   const AppointmentCard({
     required this.appointment,
@@ -23,6 +24,7 @@ class AppointmentCard extends StatelessWidget {
     required this.getAppointmentPatientDoctor,
     required this.onEdit,
     required this.onDelete,
+    required this.onDetailUpdated,
   });
 
   @override
@@ -48,7 +50,7 @@ class AppointmentCard extends StatelessWidget {
           );
           
           if (result == true) {
-            onEdit(appointment);
+            onDetailUpdated();
           }
         },
         borderRadius: BorderRadius.circular(AppTheme.borderRadius),

@@ -24,37 +24,40 @@ class MaterialProvider extends ChangeNotifier {
   // 同步服务
   late final MaterialSyncService _syncService;
   late final MaterialMysqlConnectionService _mysqlConnectionService;
-  
+
   // 缓存机制（20分钟有效期）
   List<material_models.MaterialInfo>? _cachedMaterials;
   DateTime? _lastCacheTime;
   static const Duration _cacheValidDuration = Duration(minutes: 20);
-  
+
   // 连接状态
   bool _isConnected = true;
   String? _lastError;
-  
+
   // 数据库提供者引用（用于MySQL动态连接获取）
   dynamic _databaseProvider;
-  
+
   // 数据库实例（保留向后兼容）
   Database? _database;
   MySqlConnection? _mysqlConnection;
-  
+
   // 数据源类型（保留向后兼容）
   String _dataSourceType = 'sqlite';
-  
+
   // 有效数据源类型（考虑模块化配置）
   String? _effectiveDataSourceType;
-  
+
   // 当前用户信息
   User? _currentUser;
-  
+
   // 刷新标志
   bool _materialsNeedRefresh = false;
-  
+
   // Getters
-  bool get initialized => _currentDataSource != null || _database != null || _mysqlConnection != null;
+  bool get initialized =>
+      _currentDataSource != null ||
+      _database != null ||
+      _mysqlConnection != null;
   bool get materialsNeedRefresh => _materialsNeedRefresh;
   String get dataSourceType => _effectiveDataSourceType ?? _dataSourceType;
   Database? get database => _database;
@@ -64,7 +67,7 @@ class MaterialProvider extends ChangeNotifier {
   bool get hasValidCache => _isCacheValid();
   DateTime? get lastCacheTime => _lastCacheTime;
   int get cachedMaterialsCount => _cachedMaterials?.length ?? 0;
-  
+
   // 获取当前数据源
   MaterialDataSource? get _currentDataSource {
     if (_effectiveDataSourceType == 'mysql') {
@@ -79,7 +82,7 @@ class MaterialProvider extends ChangeNotifier {
     }
     return null;
   }
-  
+
   // 构造函数
   MaterialProvider({
     Database? database,
@@ -98,12 +101,14 @@ class MaterialProvider extends ChangeNotifier {
       setCachedConnection: (connection) {
         _mysqlConnection = connection;
       },
-      getEffectiveDataSourceType: () => _effectiveDataSourceType ?? _dataSourceType,
+      getEffectiveDataSourceType: () =>
+          _effectiveDataSourceType ?? _dataSourceType,
     );
 
     _syncService = MaterialSyncService(
       getSyncMysqlConnection: () => _mysqlConnectionService.getSyncConnection(),
-      getEffectiveDataSourceType: () => _effectiveDataSourceType ?? _dataSourceType,
+      getEffectiveDataSourceType: () =>
+          _effectiveDataSourceType ?? _dataSourceType,
     );
   }
 
@@ -115,13 +120,13 @@ class MaterialProvider extends ChangeNotifier {
   }) async {
     try {
       _databaseProvider = dbProvider;
-      
+
       // 确定要使用的数据源类型
       String dbType = 'sqlite';
-      
+
       // 如果是模块化模式且有模块配置，优先使用模块配置
-      if (dataSourceMode == 'modular' && 
-          moduleDataSources != null && 
+      if (dataSourceMode == 'modular' &&
+          moduleDataSources != null &&
           moduleDataSources.containsKey('materials')) {
         dbType = moduleDataSources['materials']!;
         print('MaterialProvider使用模块化配置: materials -> $dbType');
@@ -130,9 +135,9 @@ class MaterialProvider extends ChangeNotifier {
         dbType = dbProvider.dataSourceType ?? 'sqlite';
         print('MaterialProvider使用全局配置: $dbType');
       }
-      
+
       _effectiveDataSourceType = dbType;
-      
+
       // 一次性初始化正确的数据源
       if (dbType == 'sqlite') {
         final database = dbProvider.database;
@@ -151,7 +156,7 @@ class MaterialProvider extends ChangeNotifier {
         if (mysqlConn == null) {
           print('⚠️ MaterialProvider: MySQL连接不可用，自动降级到SQLite');
           _effectiveDataSourceType = 'sqlite';
-          
+
           // 降级到SQLite
           final database = dbProvider.database;
           if (database != null) {
@@ -180,7 +185,7 @@ class MaterialProvider extends ChangeNotifier {
             },
           );
           _mysqlConnection = dbProvider.mysqlConnection; // 保持向后兼容
-          
+
           // 测试MySQL连接
           final testResult = await _testMySqlConnection();
           if (testResult) {
@@ -188,7 +193,7 @@ class MaterialProvider extends ChangeNotifier {
           } else {
             print('⚠️ MaterialProvider: MySQL连接测试失败，自动降级到SQLite');
             _effectiveDataSourceType = 'sqlite';
-            
+
             // 降级到SQLite
             final database = dbProvider.database;
             if (database != null) {
@@ -203,46 +208,45 @@ class MaterialProvider extends ChangeNotifier {
           }
         }
       }
-      
+
       // 清除缓存，强制重新加载
       clearCache();
-      
     } catch (e) {
       print('MaterialProvider初始化失败: $e');
       _setError('初始化失败: $e');
     }
   }
-  
+
   // 缓存管理
   bool _isCacheValid() {
-    return _cachedMaterials != null && 
-           _lastCacheTime != null && 
-           DateTime.now().difference(_lastCacheTime!) < _cacheValidDuration;
+    return _cachedMaterials != null &&
+        _lastCacheTime != null &&
+        DateTime.now().difference(_lastCacheTime!) < _cacheValidDuration;
   }
-  
+
   void _updateCache(List<material_models.MaterialInfo> materials) {
     _cachedMaterials = materials;
     _lastCacheTime = DateTime.now();
   }
-  
+
   void clearCache() {
     _cachedMaterials = null;
     _lastCacheTime = null;
     print('MaterialProvider: 缓存已清除');
   }
-  
+
   // 错误处理
   void _setError(String error) {
     _lastError = error;
     _isConnected = false;
     print('MaterialProvider错误: $error');
   }
-  
+
   void _clearError() {
     _lastError = null;
     _isConnected = true;
   }
-  
+
   // MySQL连接测试
   Future<bool> _testMySqlConnection() async {
     final success = await _mysqlConnectionService.testCurrentConnection();
@@ -270,13 +274,13 @@ class MaterialProvider extends ChangeNotifier {
     if (dataSourceType != null) _dataSourceType = dataSourceType;
     if (currentUser != null) _currentUser = currentUser;
   }
-  
+
   // 标记刷新
   void markMaterialsNeedRefresh() {
     _materialsNeedRefresh = true;
     notifyListeners();
   }
-  
+
   // 重置刷新标志
   void resetMaterialsRefreshFlag() {
     _materialsNeedRefresh = false;
@@ -284,14 +288,16 @@ class MaterialProvider extends ChangeNotifier {
 
   // 更新模块数据源配置
   void updateModuleDataSources(Map<String, String> moduleDataSources) {
-    print('MaterialProvider.updateModuleDataSources - 模块数据源配置已更新: $moduleDataSources');
-    
+    print(
+        'MaterialProvider.updateModuleDataSources - 模块数据源配置已更新: $moduleDataSources');
+
     // 如果材料模块的数据源类型发生变化，需要重新初始化
     if (_databaseProvider != null) {
-      final newDataSourceType = moduleDataSources['materials'] ?? _dataSourceType;
+      final newDataSourceType =
+          moduleDataSources['materials'] ?? _dataSourceType;
       if (newDataSourceType != _effectiveDataSourceType) {
         print('材料模块数据源类型变更: $_effectiveDataSourceType -> $newDataSourceType');
-        
+
         initializeFromDatabase(
           _databaseProvider,
           moduleDataSources: moduleDataSources,
@@ -302,42 +308,47 @@ class MaterialProvider extends ChangeNotifier {
   }
 
   // =================== 材料相关方法 ===================
-  
+
   // 获取所有材料（使用缓存机制和数据源架构）
-  Future<List<material_models.MaterialInfo>> getAllMaterials() async {
+  Future<List<material_models.MaterialInfo>> getAllMaterials({
+    bool forceRefresh = false,
+  }) async {
     try {
       // 检查缓存是否有效
-      if (_isCacheValid()) {
-                return List.from(_cachedMaterials!);
+      if (!forceRefresh && _isCacheValid()) {
+        return List.from(_cachedMaterials!);
+      }
+
+      if (forceRefresh) {
+        clearCache();
       }
 
       print('正在从数据源获取最新材料数据...');
-      
+
       // 从数据源获取数据
       final materials = await _currentDataSource!.getAllMaterials();
-      
+
       // 更新缓存
       _updateCache(materials);
-      
+
       // 重置刷新标志
       _materialsNeedRefresh = false;
-      
-            return materials;
-      
+
+      return materials;
     } catch (e) {
       print('获取材料数据失败: $e');
       _setError('获取材料数据失败: $e');
-      
+
       // 如果有缓存数据，返回缓存（优雅降级）
       if (_cachedMaterials != null) {
         print('使用缓存数据作为降级方案: ${_cachedMaterials!.length} 条记录');
         return List.from(_cachedMaterials!);
       }
-      
+
       return [];
     }
   }
-  
+
   // 根据ID获取材料（使用数据源架构）
   Future<material_models.MaterialInfo?> getMaterialById(int id) async {
     try {
@@ -347,7 +358,7 @@ class MaterialProvider extends ChangeNotifier {
       return null;
     }
   }
-  
+
   // 添加材料（使用数据源架构）
   Future<int> addMaterial(material_models.MaterialInfo material) async {
     try {
@@ -355,10 +366,10 @@ class MaterialProvider extends ChangeNotifier {
       if (id > 0) {
         clearCache(); // 清除缓存
         notifyListeners();
-        
+
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (_syncService.needsSync) {
-                    final materialMap = material.toMap();
+          final materialMap = material.toMap();
           materialMap['id'] = id;
           _syncService.syncMaterialToMySQL(materialMap, id);
         }
@@ -378,14 +389,14 @@ class MaterialProvider extends ChangeNotifier {
       if (id > 0) {
         clearCache();
         notifyListeners();
-        
+
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (_syncService.needsSync) {
-                    final materialMap = material.toMap();
+          final materialMap = material.toMap();
           materialMap['id'] = id;
           _syncService.syncMaterialToMySQL(materialMap, id);
         }
-        
+
         return true;
       }
       return false;
@@ -401,12 +412,13 @@ class MaterialProvider extends ChangeNotifier {
     try {
       final success = await _currentDataSource!.updateMaterial(material);
       if (success) {
-        clearCache();
-        notifyListeners();
-        
+        _cachedMaterials = null;
+        _lastCacheTime = null;
+        _materialsNeedRefresh = false;
+
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (_syncService.needsSync && material.id != null) {
-                    final materialMap = material.toMap();
+          final materialMap = material.toMap();
           _syncService.syncMaterialToMySQL(materialMap, material.id!);
         }
       }
@@ -424,10 +436,10 @@ class MaterialProvider extends ChangeNotifier {
       if (success) {
         clearCache();
         notifyListeners();
-        
+
         // 如果当前使用的是SQLite数据源，需要同步删除到MySQL
         if (_syncService.needsSync) {
-                    _syncService.syncDeleteMaterialToMySQL(id);
+          _syncService.syncDeleteMaterialToMySQL(id);
         }
       }
       return success;
@@ -438,7 +450,8 @@ class MaterialProvider extends ChangeNotifier {
   }
 
   // 搜索材料
-  Future<List<material_models.MaterialInfo>> searchMaterials(String query) async {
+  Future<List<material_models.MaterialInfo>> searchMaterials(
+      String query) async {
     try {
       return await _currentDataSource!.searchMaterials(query);
     } catch (e) {
@@ -470,7 +483,8 @@ class MaterialProvider extends ChangeNotifier {
   }
 
   // 根据类别获取材料
-  Future<List<material_models.MaterialInfo>> getMaterialsByCategory(String category) async {
+  Future<List<material_models.MaterialInfo>> getMaterialsByCategory(
+      String category) async {
     try {
       return await _currentDataSource!.getMaterialsByCategory(category);
     } catch (e) {
@@ -513,7 +527,8 @@ class MaterialProvider extends ChangeNotifier {
   // 获取材料总数
   Future<int> getMaterialsCount({String? searchQuery}) async {
     try {
-      return await _currentDataSource!.getMaterialsCount(searchQuery: searchQuery);
+      return await _currentDataSource!
+          .getMaterialsCount(searchQuery: searchQuery);
     } catch (e) {
       print('获取材料总数失败: $e');
       _setError('获取材料总数失败: $e');
@@ -544,55 +559,55 @@ class MaterialProvider extends ChangeNotifier {
   // 更新现有材料的类型（兼容性方法）
   Future<void> updateExistingMaterialTypes() async {
     if (!initialized) return;
-    
+
     try {
       print('开始更新现有材料的类型分类...');
-      
+
       // 在数据源架构中，我们通过直接访问数据库来执行批量更新
       // 这是一个特殊的维护操作，不适合通过标准的数据源接口
-      
+
       if (_effectiveDataSourceType == 'sqlite' && _database != null) {
         final db = _database!;
-        
+
         // 根据材料名称和编码更新类型
         final updates = [
           // 药品类
           "UPDATE materials SET material_type = '药品' WHERE material_name LIKE '%胶囊%' OR material_name LIKE '%片%' OR material_name LIKE '%注射液%'",
-          
+
           // 局部麻醉药
           "UPDATE materials SET material_type = '局部麻醉药' WHERE material_name LIKE '%卡因%' OR material_name LIKE '%利多卡因%' OR material_name LIKE '%布比卡因%'",
-          
+
           // 消毒用品
           "UPDATE materials SET material_type = '消毒用品' WHERE material_name LIKE '%消毒%' OR material_name LIKE '%酒精%' OR material_name LIKE '%双氧水%' OR material_name LIKE '%生理盐水%'",
-          
+
           // 一次性用品
           "UPDATE materials SET material_type = '一次性用品' WHERE material_name LIKE '%一次性%'",
-          
+
           // 牙科材料
           "UPDATE materials SET material_type = '牙科材料' WHERE material_name LIKE '%水门汀%' OR material_name LIKE '%树脂%' OR material_name LIKE '%粘接剂%' OR material_name LIKE '%封闭剂%'",
-          
+
           // 牙科器械
           "UPDATE materials SET material_type = '牙科器械' WHERE material_name LIKE '%探针%' OR material_name LIKE '%镊子%' OR material_name LIKE '%刮匙%' OR material_name LIKE '%手机%' OR material_name LIKE '%光固化灯%'",
-          
+
           // 根管治疗器械
           "UPDATE materials SET material_type = '根管治疗器械' WHERE material_name LIKE '%根管%' OR material_name LIKE '%拔髓针%'",
-          
+
           // 牙科耗材
           "UPDATE materials SET material_type = '牙科耗材' WHERE material_name LIKE '%车针%' OR material_name LIKE '%牙胶尖%' OR material_name LIKE '%牙胶条%' OR material_name LIKE '%牙胶块%'",
-          
+
           // 正畸材料
           "UPDATE materials SET material_type = '正畸材料' WHERE material_name LIKE '%弓丝%' OR material_name LIKE '%结扎丝%'",
-          
+
           // 口腔护理用品
           "UPDATE materials SET material_type = '口腔护理用品' WHERE material_name LIKE '%牙膏%' OR material_name LIKE '%牙刷%' OR material_name LIKE '%漱口水%'",
-          
+
           // 防护用品
           "UPDATE materials SET material_type = '防护用品' WHERE material_name LIKE '%防护%' OR material_name LIKE '%口罩%' OR material_name LIKE '%手套%'",
-          
+
           // 办公用品
           "UPDATE materials SET material_type = '办公用品' WHERE material_name LIKE '%标签%' OR material_name LIKE '%记录本%' OR material_name LIKE '%笔%'",
         ];
-        
+
         for (final update in updates) {
           await db.execute(update);
         }
@@ -601,7 +616,7 @@ class MaterialProvider extends ChangeNotifier {
         if (conn == null) {
           return;
         }
-        
+
         // MySQL 版本的更新语句
         final updates = [
           "UPDATE materials SET material_type = '药品' WHERE material_name LIKE '%胶囊%' OR material_name LIKE '%片%' OR material_name LIKE '%注射液%'",
@@ -617,15 +632,15 @@ class MaterialProvider extends ChangeNotifier {
           "UPDATE materials SET material_type = '防护用品' WHERE material_name LIKE '%防护%' OR material_name LIKE '%口罩%' OR material_name LIKE '%手套%'",
           "UPDATE materials SET material_type = '办公用品' WHERE material_name LIKE '%标签%' OR material_name LIKE '%记录本%' OR material_name LIKE '%笔%'",
         ];
-        
+
         for (final update in updates) {
           await conn.query(update);
         }
       }
-      
+
       // 更新完成后清除缓存
       clearCache();
-      
+
       print('已成功更新现有材料的类型分类');
     } catch (e) {
       print('更新材料类型失败: $e');
@@ -633,5 +648,4 @@ class MaterialProvider extends ChangeNotifier {
   }
 
   // =================== SQLite→MySQL 同步方法 ===================
-  
 }

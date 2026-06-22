@@ -463,6 +463,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         onDeleteAppointment: (appointment) {
           _showDeleteConfirmation(appointment);
         },
+        onDetailUpdated: () {
+          _loadAppointments(forceReload: true);
+        },
       ),
       floatingActionButton: PermissionWrapper(
         module: 'appointments',

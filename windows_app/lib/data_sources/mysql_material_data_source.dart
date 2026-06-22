@@ -63,7 +63,7 @@ class MySqlMaterialDataSource extends BaseMySqlDataSource
       material.description ?? '',
       material.unit,
       material.defaultPrice,
-      0, // 默认库存为0
+      material.stockQuantity,
       0, // 默认最小库存为0
       material.supplier ?? '',
     ]);
@@ -76,7 +76,7 @@ class MySqlMaterialDataSource extends BaseMySqlDataSource
     final result = await executeQuery('''
       UPDATE materials 
       SET material_name = ?, material_code = ?, material_type = ?, unit = ?, 
-          default_price = ?, supplier = ?, description = ?, updated_at = NOW()
+          default_price = ?, stock_quantity = ?, supplier = ?, description = ?, updated_at = NOW()
       WHERE id = ?
     ''', [
       material.materialName,
@@ -84,6 +84,7 @@ class MySqlMaterialDataSource extends BaseMySqlDataSource
       material.materialType,
       material.unit,
       material.defaultPrice,
+      material.stockQuantity,
       material.supplier ?? '',
       material.description ?? '',
       material.id,

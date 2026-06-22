@@ -17,13 +17,14 @@ class MedicalRecordCacheHelper {
   /// 检查病历记录缓存是否有效
   bool isCacheValid() {
     return lastCacheTime != null &&
-           DateTime.now().difference(lastCacheTime!) < cacheValidDuration;
+        DateTime.now().difference(lastCacheTime!) < cacheValidDuration;
   }
 
   /// 检查模板缓存是否有效
   bool isTemplateCacheValid() {
     return lastTemplateCacheTime != null &&
-           DateTime.now().difference(lastTemplateCacheTime!) < templateCacheValidDuration;
+        DateTime.now().difference(lastTemplateCacheTime!) <
+            templateCacheValidDuration;
   }
 
   /// 更新病历记录缓存
@@ -33,9 +34,41 @@ class MedicalRecordCacheHelper {
   }
 
   /// 更新模板缓存
-  void updateTemplateCache(String category, List<MedicalRecordTemplate> templates) {
+  void updateTemplateCache(
+      String category, List<MedicalRecordTemplate> templates) {
     cachedTemplates[category] = templates;
     lastTemplateCacheTime = DateTime.now();
+  }
+
+  /// 插入或替换单个模板缓存
+  void upsertTemplate(MedicalRecordTemplate template) {
+    final categoryTemplates = List<MedicalRecordTemplate>.from(
+      cachedTemplates[template.category] ?? const <MedicalRecordTemplate>[],
+    );
+    final index =
+        categoryTemplates.indexWhere((item) => item.id == template.id);
+    if (index >= 0) {
+      categoryTemplates[index] = template;
+    } else {
+      categoryTemplates.add(template);
+    }
+    cachedTemplates[template.category] = categoryTemplates;
+    lastTemplateCacheTime = DateTime.now();
+  }
+
+  /// 从模板缓存中移除指定ID
+  void removeTemplateById(int id) {
+    final keysToUpdate = <String>[];
+    for (final entry in cachedTemplates.entries) {
+      final next = entry.value.where((item) => item.id != id).toList();
+      if (next.length != entry.value.length) {
+        cachedTemplates[entry.key] = next;
+        keysToUpdate.add(entry.key);
+      }
+    }
+    if (keysToUpdate.isNotEmpty) {
+      lastTemplateCacheTime = DateTime.now();
+    }
   }
 
   /// 清除病历记录缓存

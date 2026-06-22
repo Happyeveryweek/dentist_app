@@ -22,6 +22,14 @@ class UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayName = user.doctor != null && user.doctor!.trim().isNotEmpty
+        ? user.doctor!.trim()
+        : user.username;
+    final showUsername = user.doctor != null &&
+        user.doctor!.trim().isNotEmpty &&
+        user.username.trim().isNotEmpty &&
+        user.username.trim() != displayName;
+
     final roleColors = {
       'admin': AppTheme.dangerGradient,
       'doctor': AppTheme.successGradient,
@@ -54,7 +62,7 @@ class UserCard extends StatelessWidget {
                   // 用户头像
                   _buildUserAvatar(),
                   const SizedBox(width: 12),
-                  
+
                   // 用户信息
                   Expanded(
                     child: Column(
@@ -64,7 +72,7 @@ class UserCard extends StatelessWidget {
                         Row(
                           children: [
                             Text(
-                              user.username,
+                              displayName,
                               style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
@@ -72,9 +80,11 @@ class UserCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                gradient: roleColors[user.role] ?? AppTheme.primaryGradient,
+                                gradient: roleColors[user.role] ??
+                                    AppTheme.primaryGradient,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
@@ -89,10 +99,24 @@ class UserCard extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 4),
+                        if (showUsername) ...[
+                          Text(
+                            '@${user.username}',
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                        ],
                         Row(
                           children: [
-                            if (user.email != null && user.email!.isNotEmpty) ...[
-                              Icon(Icons.email, size: 12, color: Colors.grey.shade600),
+                            if (user.email != null &&
+                                user.email!.isNotEmpty) ...[
+                              Icon(Icons.email,
+                                  size: 12, color: Colors.grey.shade600),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
@@ -107,7 +131,7 @@ class UserCard extends StatelessWidget {
                             ],
                           ],
                         ),
-                        
+
                         // 显示权限信息（仅对非管理员用户）
                         if (user.role != 'admin') ...[
                           const SizedBox(height: 4),
@@ -119,7 +143,7 @@ class UserCard extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 右侧：操作按钮
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -130,11 +154,13 @@ class UserCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
-                    icon: Icon(Icons.lock, color: AppTheme.primaryColor, size: 16),
+                    icon: Icon(Icons.lock,
+                        color: AppTheme.primaryColor, size: 16),
                     tooltip: '修改密码',
                     onPressed: onResetPassword,
                     padding: const EdgeInsets.all(6),
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -144,11 +170,13 @@ class UserCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
-                    icon: Icon(Icons.edit, color: AppTheme.successColor, size: 16),
+                    icon: Icon(Icons.edit,
+                        color: AppTheme.successColor, size: 16),
                     tooltip: '编辑',
                     onPressed: onEdit,
                     padding: const EdgeInsets.all(6),
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                 ),
                 if (user.role != 'admin') ...[
@@ -159,11 +187,13 @@ class UserCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.security, color: AppTheme.infoColor, size: 16),
+                      icon: Icon(Icons.security,
+                          color: AppTheme.infoColor, size: 16),
                       tooltip: '权限配置',
                       onPressed: onPermissionPreview,
                       padding: const EdgeInsets.all(6),
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints:
+                          const BoxConstraints(minWidth: 32, minHeight: 32),
                     ),
                   ),
                 ],
@@ -175,11 +205,13 @@ class UserCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.delete, color: AppTheme.errorColor, size: 16),
+                      icon: Icon(Icons.delete,
+                          color: AppTheme.errorColor, size: 16),
                       tooltip: '删除',
                       onPressed: onDelete,
                       padding: const EdgeInsets.all(6),
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints:
+                          const BoxConstraints(minWidth: 32, minHeight: 32),
                     ),
                   ),
                 ],
@@ -275,7 +307,7 @@ class UserCard extends StatelessWidget {
       children: allowedModules.take(3).map((module) {
         final info = moduleInfo[module];
         if (info == null) return const SizedBox.shrink();
-        
+
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
@@ -296,23 +328,26 @@ class UserCard extends StatelessWidget {
           ),
         );
       }).toList()
-        ..addAll(allowedModules.length > 3 ? [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '+${allowedModules.length - 3}',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ] : []),
+        ..addAll(allowedModules.length > 3
+            ? [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '+${allowedModules.length - 3}',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ]
+            : []),
     );
   }
 }

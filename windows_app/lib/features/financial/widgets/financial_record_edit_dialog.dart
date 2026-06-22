@@ -40,7 +40,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
   final TextEditingController _editChargeDateController =
       TextEditingController();
   final TextEditingController _editItemNameController = TextEditingController();
-  String? _editPaymentMethod = FinancialPaymentMethodHelper.defaultPaymentMethod;
+  String? _editPaymentMethod =
+      FinancialPaymentMethodHelper.defaultPaymentMethod;
   final TextEditingController _editItemPriceController =
       TextEditingController();
   final TextEditingController _editProcessingFeeController =
@@ -77,8 +78,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
     try {
       final financialProvider =
           Provider.of<FinancialProvider>(context, listen: false);
-      final items =
-          await financialProvider.getFinancialItemsByRecordId(widget.record.id!);
+      final items = await financialProvider
+          .getFinancialItemsByRecordId(widget.record.id!);
       setState(() {
         _financialItems = items;
       });
@@ -241,9 +242,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                       child: _buildInfoChip(
                         icon: Icons.badge,
                         label: '病历号',
-                        value: widget.patient.medical_record_number
-                                ?.toString() ??
-                            '未设置',
+                        value:
+                            widget.patient.medical_record_number?.toString() ??
+                                '未设置',
                         color: Colors.orange[600]!,
                       ),
                     ),
@@ -415,8 +416,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                         decoration: BoxDecoration(
                           color: Colors.green[50],
                           border: Border(
-                            bottom:
-                                BorderSide(color: Colors.grey[200]!, width: 0.5),
+                            bottom: BorderSide(
+                                color: Colors.grey[200]!, width: 0.5),
                           ),
                         ),
                         child: _buildEditingItemRow(null),
@@ -438,8 +439,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                                   ? Colors.white
                                   : Colors.grey[50]),
                           border: Border(
-                            bottom:
-                                BorderSide(color: Colors.grey[200]!, width: 0.5),
+                            bottom: BorderSide(
+                                color: Colors.grey[200]!, width: 0.5),
                           ),
                         ),
                         child: isEditing
@@ -737,11 +738,11 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
   }
 
   // 保存当前编辑的收费项
-  Future<void> _saveEditingItem() async {
+  Future<bool> _commitEditingItem({bool showSuccessMessage = true}) async {
     // 验证表单
     if (_editItemNameController.text.trim().isEmpty) {
       AppToastManager.showError(context, message: '请输入收费项目名称');
-      return;
+      return false;
     }
 
     try {
@@ -756,18 +757,16 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           paymentMethod: FinancialPaymentMethodHelper.toStorageValue(
             _editPaymentMethod,
           ),
-          itemPrice: double.tryParse(_editItemPriceController.text
-                  .replaceAll('¥', '')
-                  .trim()) ??
+          itemPrice: double.tryParse(
+                  _editItemPriceController.text.replaceAll('¥', '').trim()) ??
               0.0,
           processingFee: double.tryParse(_editProcessingFeeController.text
                   .replaceAll('¥', '')
                   .trim()) ??
               0.0,
           quantity: 1,
-          totalPrice: double.tryParse(_editTotalPriceController.text
-                  .replaceAll('¥', '')
-                  .trim()) ??
+          totalPrice: double.tryParse(
+                  _editTotalPriceController.text.replaceAll('¥', '').trim()) ??
               0.0,
           chargeDate: _editChargeDate,
           createdAt: DateTime.now(),
@@ -786,7 +785,10 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
         _cancelEditing();
 
         // 显示成功消息（在对话框内）
-        _showSuccessMessageInDialog('收费项添加成功');
+        if (showSuccessMessage) {
+          _showSuccessMessageInDialog('收费项添加成功');
+        }
+        return true;
       } else {
         // 更新现有收费项 - 先检查是否有变化
         final originalItem =
@@ -796,14 +798,11 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
         final newPaymentMethod = FinancialPaymentMethodHelper.toStorageValue(
           _editPaymentMethod,
         );
-        final newItemPrice = double.tryParse(_editItemPriceController.text
-                .replaceAll('¥', '')
-                .trim()) ??
+        final newItemPrice = double.tryParse(
+                _editItemPriceController.text.replaceAll('¥', '').trim()) ??
             0.0;
-        final newProcessingFee = double.tryParse(_editProcessingFeeController
-                .text
-                .replaceAll('¥', '')
-                .trim()) ??
+        final newProcessingFee = double.tryParse(
+                _editProcessingFeeController.text.replaceAll('¥', '').trim()) ??
             0.0;
         final newTotalPrice = double.tryParse(
                 _editTotalPriceController.text.replaceAll('¥', '').trim()) ??
@@ -820,7 +819,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
         if (!hasChanges) {
           // 没有变化，静默取消编辑
           _cancelEditing();
-          return;
+          return true;
         }
 
         final updatedItem = FinancialItem(
@@ -849,11 +848,19 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
         _cancelEditing();
 
         // 显示成功消息（在对话框内）
-        _showSuccessMessageInDialog('收费项更新成功');
+        if (showSuccessMessage) {
+          _showSuccessMessageInDialog('收费项更新成功');
+        }
+        return true;
       }
     } catch (e) {
       AppToastManager.showError(context, message: '保存失败: $e');
+      return false;
     }
+  }
+
+  Future<void> _saveEditingItem() async {
+    await _commitEditingItem();
   }
 
   // 在对话框内显示成功消息
@@ -895,14 +902,14 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
         Center(
           child: Builder(
             builder: (context) {
-              final iconPath =
-                  FinancialPaymentMethodHelper.iconAssetPathOrNull(item.paymentMethod);
+              final iconPath = FinancialPaymentMethodHelper.iconAssetPathOrNull(
+                  item.paymentMethod);
               if (iconPath == null) {
                 return const SizedBox.shrink();
               }
               return Tooltip(
-                message:
-                    FinancialPaymentMethodHelper.displayNameOrDefault(item.paymentMethod),
+                message: FinancialPaymentMethodHelper.displayNameOrDefault(
+                    item.paymentMethod),
                 child: SizedBox(
                   width: 20,
                   height: 20,
@@ -1070,7 +1077,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
               isDense: true,
               contentPadding: EdgeInsets.symmetric(horizontal: 2),
             ),
-            icon: Icon(Icons.arrow_drop_down, color: Colors.grey[600], size: 16),
+            icon:
+                Icon(Icons.arrow_drop_down, color: Colors.grey[600], size: 16),
             isExpanded: true,
             menuMaxHeight: 220,
             borderRadius: BorderRadius.circular(6),
@@ -1095,14 +1103,17 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                               width: 14,
                               height: 14,
                               child: Image.asset(
-                                FinancialPaymentMethodHelper.iconAssetPath(method),
+                                FinancialPaymentMethodHelper.iconAssetPath(
+                                    method),
                                 fit: BoxFit.contain,
                               ),
                             ),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              method == FinancialPaymentMethodHelper.nonePaymentMethod
+                              method ==
+                                      FinancialPaymentMethodHelper
+                                          .nonePaymentMethod
                                   ? '无'
                                   : FinancialPaymentMethodHelper
                                       .displayNameOrDefault(method),
@@ -1251,8 +1262,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           Provider.of<FinancialProvider>(context, listen: false);
 
       // 获取该财务记录的所有收费项，重新计算总数量
-      final items =
-          await financialProvider.getFinancialItemsByRecordId(widget.record.id!);
+      final items = await financialProvider
+          .getFinancialItemsByRecordId(widget.record.id!);
       final totalQuantity =
           items.fold<int>(0, (sum, item) => sum + (item.quantity ?? 1));
 
@@ -1263,6 +1274,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
       );
 
       await financialProvider.updateFinancialRecord(updatedRecord);
+      await financialProvider.updatePatientFinancialSummary(widget.patient.id!);
     } catch (e) {
       print('更新财务记录失败: $e');
     }
@@ -1313,6 +1325,13 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
     });
 
     try {
+      if (_editingItemId != null) {
+        final itemSaved = await _commitEditingItem(showSuccessMessage: false);
+        if (!itemSaved) {
+          return;
+        }
+      }
+
       final financialProvider =
           Provider.of<FinancialProvider>(context, listen: false);
 
@@ -1330,6 +1349,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
 
       if (success) {
         AppToastManager.showSuccess(context, message: '财务记录更新成功');
+        await financialProvider
+            .updatePatientFinancialSummary(widget.patient.id!);
         Navigator.of(context).pop(true);
       } else {
         AppToastManager.showError(context, message: '更新失败，请重试');
@@ -1337,9 +1358,11 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
     } catch (e) {
       AppToastManager.showError(context, message: '操作出错: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 }

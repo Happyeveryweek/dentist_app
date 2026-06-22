@@ -507,6 +507,12 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   Future<void> _deleteFinancialRecord(FinancialRecord record,
       {FinancialItem? item, bool isDetail = false}) async {
     if (isDetail && item != null) {
+      final recordItems = await _financialDetailService.financialProvider
+          .getFinancialItemsByRecordId(
+        record.id!,
+      );
+      final isLastItem = recordItems.length <= 1;
+
       // 删除明细项
       final confirmed = await DeleteConfirmDialogManager.show(
         context,
@@ -516,7 +522,8 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             '收费日期: ${DateFormat('yyyy-MM-dd').format(item.chargeDate)}\n'
             '应收费: ¥${item.itemPrice % 1 == 0 ? item.itemPrice.toInt() : item.itemPrice}  '
             '加工费: ¥${item.processingFee % 1 == 0 ? item.processingFee.toInt() : item.processingFee}  '
-            '已收费: ¥${item.totalPrice % 1 == 0 ? item.totalPrice.toInt() : item.totalPrice}\n\n'
+            '已收费: ¥${item.totalPrice % 1 == 0 ? item.totalPrice.toInt() : item.totalPrice}\n'
+            '${isLastItem ? '\n这是该患者这条财务记录的最后一条收费记录，删除后会连带删除整条财务记录。\n' : '\n'}'
             '删除后无法恢复！',
       );
 
@@ -524,14 +531,19 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
         try {
           // 删除明细项
           final success =
-              await _financialDetailService.deleteFinancialItem(item.id!);
+              await _financialDetailService.deleteFinancialItemAndCleanupRecord(
+            itemId: item.id!,
+            recordId: record.id!,
+          );
 
           if (success) {
             // 标记数据已变动
             _hasDataChanged = true;
-            // 更新财务记录的收费项数量和更新时间
-            await _financialDetailService
-                .updateFinancialRecordAfterItemChange(record);
+            if (!isLastItem) {
+              // 更新财务记录的收费项数量和更新时间
+              await _financialDetailService
+                  .updateFinancialRecordAfterItemChange(record);
+            }
             // 删除成功后，更新患者的财务统计
             await _financialDetailService
                 .updatePatientFinancialSummary(widget.patient.id!);
@@ -539,7 +551,10 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             await _loadPatientRecords();
 
             // 显示成功提示（橙色提示条）
-            _showInlineSuccessMessage('已删除收费明细项', isDelete: true);
+            _showInlineSuccessMessage(
+              isLastItem ? '已删除最后一条收费记录，并同步删除财务记录' : '已删除收费明细项',
+              isDelete: true,
+            );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(

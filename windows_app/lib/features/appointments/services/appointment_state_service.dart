@@ -18,6 +18,49 @@ class AppointmentStateService extends ChangeNotifier {
   bool isDateRangeFiltering = false;
   String searchQuery = '';
 
+  void _sortAppointmentsInPlace() {
+    appointments.sort((a, b) {
+      final now = DateTime.now();
+      final diffA = a.appointment_date.difference(now).inMinutes.abs();
+      final diffB = b.appointment_date.difference(now).inMinutes.abs();
+
+      if (a.appointment_date.isAfter(now) && b.appointment_date.isBefore(now)) {
+        return -1;
+      }
+      if (a.appointment_date.isBefore(now) && b.appointment_date.isAfter(now)) {
+        return 1;
+      }
+      return diffA.compareTo(diffB);
+    });
+  }
+
+  void _syncFilteredAppointments() {
+    _filterAppointmentsByDate();
+  }
+
+  void setAppointments(List<Appointment> loadedAppointments) {
+    appointments = List.from(loadedAppointments);
+    _sortAppointmentsInPlace();
+    _syncFilteredAppointments();
+  }
+
+  void replaceAppointment(Appointment updatedAppointment) {
+    final index = appointments
+        .indexWhere((appointment) => appointment.id == updatedAppointment.id);
+    if (index >= 0) {
+      appointments[index] = updatedAppointment;
+    } else {
+      appointments.add(updatedAppointment);
+    }
+    _sortAppointmentsInPlace();
+    _syncFilteredAppointments();
+  }
+
+  void removeAppointmentById(int appointmentId) {
+    appointments.removeWhere((appointment) => appointment.id == appointmentId);
+    _syncFilteredAppointments();
+  }
+
   Future<void> loadAppointments() async {
     isLoading = true;
     notifyListeners();
@@ -34,22 +77,7 @@ class AppointmentStateService extends ChangeNotifier {
         loaded = await appointmentProvider.getAllAppointments();
       }
 
-      loaded.sort((a, b) {
-        final now = DateTime.now();
-        final diffA = a.appointment_date.difference(now).inMinutes.abs();
-        final diffB = b.appointment_date.difference(now).inMinutes.abs();
-
-        if (a.appointment_date.isAfter(now) && b.appointment_date.isBefore(now)) {
-          return -1;
-        }
-        if (a.appointment_date.isBefore(now) && b.appointment_date.isAfter(now)) {
-          return 1;
-        }
-        return diffA.compareTo(diffB);
-      });
-
-      appointments = loaded;
-      _filterAppointmentsByDate();
+      setAppointments(loaded);
     } catch (e) {
       appointments = [];
       filteredAppointments = [];
@@ -66,14 +94,19 @@ class AppointmentStateService extends ChangeNotifier {
     } else if (isDateRangeFiltering && endDate != null) {
       base = appointments.where((appointment) {
         final d = appointment.appointment_date;
-        final startDateTime = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
-        final endDateTime = DateTime(endDate!.year, endDate!.month, endDate!.day, 23, 59, 59);
-        return d.isAfter(startDateTime.subtract(const Duration(seconds: 1))) && d.isBefore(endDateTime.add(const Duration(seconds: 1)));
+        final startDateTime =
+            DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+        final endDateTime =
+            DateTime(endDate!.year, endDate!.month, endDate!.day, 23, 59, 59);
+        return d.isAfter(startDateTime.subtract(const Duration(seconds: 1))) &&
+            d.isBefore(endDateTime.add(const Duration(seconds: 1)));
       }).toList();
     } else {
       base = appointments.where((appointment) {
         final d = appointment.appointment_date;
-        return d.year == selectedDate.year && d.month == selectedDate.month && d.day == selectedDate.day;
+        return d.year == selectedDate.year &&
+            d.month == selectedDate.month &&
+            d.day == selectedDate.day;
       }).toList();
     }
 
@@ -147,7 +180,8 @@ class AppointmentStateService extends ChangeNotifier {
       patient?.name,
       patient?.name_pinyin,
       if (patient != null) PinyinUtil.toPinyin(patient.name),
-      if (patient != null) PinyinUtil.toPinyin(patient.name).replaceAll(' ', ''),
+      if (patient != null)
+        PinyinUtil.toPinyin(patient.name).replaceAll(' ', ''),
       patient?.name_initials,
       if (patient != null) PinyinUtil.getInitials(patient.name),
       if (patient != null) PinyinUtil.getFirstLetters(patient.name),

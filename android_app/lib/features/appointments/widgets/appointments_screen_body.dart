@@ -31,6 +31,7 @@ class AppointmentsScreenBody extends StatelessWidget {
   final Future<String?> Function(Appointment) getAppointmentPatientDoctor;
   final Function(Appointment) onEditAppointment;
   final Function(Appointment) onDeleteAppointment;
+  final VoidCallback onDetailUpdated;
 
   const AppointmentsScreenBody({
     super.key,
@@ -58,6 +59,7 @@ class AppointmentsScreenBody extends StatelessWidget {
     required this.getAppointmentPatientDoctor,
     required this.onEditAppointment,
     required this.onDeleteAppointment,
+    required this.onDetailUpdated,
   });
 
   @override
@@ -236,6 +238,7 @@ class AppointmentsScreenBody extends StatelessWidget {
       getAppointmentPatientDoctor: getAppointmentPatientDoctor,
       onEdit: onEditAppointment,
       onDelete: onDeleteAppointment,
+      onDetailUpdated: onDetailUpdated,
     );
   }
 }

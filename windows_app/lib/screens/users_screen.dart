@@ -42,6 +42,16 @@ class _UsersScreenState extends State<UsersScreen> {
     _loadUsers(forceRefresh: true);
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    if (userProvider.usersNeedRefresh) {
+      _loadUsers(forceRefresh: true);
+      userProvider.resetUsersRefreshFlag();
+    }
+  }
+
   // 加载所有用户
   Future<void> _loadUsers({bool forceRefresh = true}) async {
     setState(() {
@@ -52,14 +62,14 @@ class _UsersScreenState extends State<UsersScreen> {
 
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      
+
       // 使用强制刷新参数，确保获取最新数据
       final users = await userProvider.getAllUsers(forceRefresh: forceRefresh);
       setState(() {
         _users = users;
         _isLoading = false;
       });
-      
+
       print('用户数据加载完成: ${users.length} 个用户 (强制刷新: $forceRefresh)');
     } catch (e) {
       setState(() {
@@ -71,20 +81,21 @@ class _UsersScreenState extends State<UsersScreen> {
     }
   }
 
-
   // 显示添加/编辑用户对话框
   Future<void> _showAddEditUserDialog([User? user]) async {
-    await showDialog(
+    final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => UserFormDialog(
         user: user,
         availableRoles: _availableRoles,
-        onRefresh: () => _loadUsers(forceRefresh: true),
       ),
     );
-  }
 
+    if (result == true && mounted) {
+      await _loadUsers(forceRefresh: true);
+    }
+  }
 
   // 显示重置密码对话框
   Future<void> _showResetPasswordDialog(User user) async {
@@ -108,7 +119,7 @@ class _UsersScreenState extends State<UsersScreen> {
         await userProvider.deleteUser(user.id!);
 
         if (!mounted) return;
-        
+
         // 强制刷新用户列表
         await _loadUsers(forceRefresh: true);
 
@@ -198,7 +209,7 @@ class _UsersScreenState extends State<UsersScreen> {
         children: [
           // MySQL连接状态检查
           const MySQLConnectionWarning(moduleName: '用户管理'),
-          
+
           Expanded(
             child: _buildUserList(),
           ),
@@ -236,7 +247,7 @@ class _UsersScreenState extends State<UsersScreen> {
             adminCount: _users.where((u) => u.role == 'admin').length,
           ),
           const SizedBox(height: 16),
-          
+
           // 用户列表
           Expanded(
             child: GridView.builder(
@@ -263,7 +274,6 @@ class _UsersScreenState extends State<UsersScreen> {
       ),
     );
   }
-
 
   // 显示权限预览对话框
   Future<void> _showPermissionPreviewDialog(User user) async {

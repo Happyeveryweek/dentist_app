@@ -44,8 +44,11 @@ class AppointmentsScreen extends StatefulWidget {
 
 class _AppointmentsScreenState extends State<AppointmentsScreen> {
   AppointmentStateService? _stateService;
+  AppointmentProvider? _appointmentProvider;
+  bool _appointmentProviderListenerAttached = false;
   bool _patientDropdownOpen = false;
-  final TextEditingController _patientSearchController = TextEditingController();
+  final TextEditingController _patientSearchController =
+      TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   List<Patient> _filteredPatients = [];
   List<Patient> _patients = [];
@@ -63,20 +66,43 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
 
   @override
   void dispose() {
+    if (_appointmentProvider != null && _appointmentProviderListenerAttached) {
+      _appointmentProvider!.removeListener(_handleAppointmentProviderChanged);
+    }
     _patientSearchController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
+  void _handleAppointmentProviderChanged() {
+    if (!mounted || _stateService == null || _appointmentProvider == null) {
+      return;
+    }
+
+    if (!_appointmentProvider!.hasValidCache) {
+      return;
+    }
+
+    _stateService!.setAppointments(_appointmentProvider!.cachedAppointments);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
-    final stateService = _stateService ??= AppointmentStateService(appointmentProvider: appointmentProvider);
+    final appointmentProvider =
+        Provider.of<AppointmentProvider>(context, listen: false);
+    _appointmentProvider = appointmentProvider;
+    final stateService = _stateService ??=
+        AppointmentStateService(appointmentProvider: appointmentProvider);
+
+    if (!_appointmentProviderListenerAttached) {
+      appointmentProvider.addListener(_handleAppointmentProviderChanged);
+      _appointmentProviderListenerAttached = true;
+    }
+
     stateService.loadAppointments();
 
     if (appointmentProvider.appointmentsNeedRefresh) {
-      stateService.loadAppointments();
       appointmentProvider.resetAppointmentsRefreshFlag();
     }
   }
@@ -93,16 +119,17 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
 
   Future<void> _showAddEditAppointmentDialog([Appointment? appointment]) async {
     final bool isEditing = appointment != null;
-    
+
     // 检查权限
-    if (isEditing && !PermissionUtils.canEditDoctor(context, appointment?.patient?.doctor)) {
+    if (isEditing &&
+        !PermissionUtils.canEditDoctor(context, appointment?.patient?.doctor)) {
       AppToastManager.showError(
         context,
         message: '您只能编辑自己医生患者的预约',
       );
       return;
     }
-    
+
     // 所有登录用户都可以添加预约，编辑时检查医生权限
 
     final result = await showDialog<Appointment>(
@@ -114,16 +141,13 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     );
 
     if (result != null) {
-      final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
-      final appState = Provider.of<AppState>(context, listen: false);
+      final appointmentProvider =
+          Provider.of<AppointmentProvider>(context, listen: false);
 
       try {
         if (isEditing) {
-          // 添加防重复提交保护
-          await appState.showLoading(
-            appointmentProvider.updateAppointment(result),
-            message: '正在更新预约...',
-          );
+          await appointmentProvider.updateAppointment(result);
+          _stateService?.replaceAppointment(result);
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -159,6 +183,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             ),
           );
         } else {
+          final appState = Provider.of<AppState>(context, listen: false);
           // 添加防重复提交保护
           await appState.showLoading(
             appointmentProvider.addAppointment(result),
@@ -168,32 +193,33 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           // 使用公用成功提示组件
           AppToastManager.showSuccess(context, message: '预约已添加');
         }
-
-        _stateService!.loadAppointments();
       } catch (e) {
         // 显示错误提示
-        AppToastManager.showError(context, message: '${isEditing ? "更新" : "添加"}预约失败: $e');
+        AppToastManager.showError(context,
+            message: '${isEditing ? "更新" : "添加"}预约失败: $e');
       }
     }
   }
 
   Future<void> _confirmDeleteAppointment(Appointment appointment) async {
     // 检查删除权限
-    if (!PermissionUtils.canDeleteDoctor(context, appointment.patient?.doctor)) {
+    if (!PermissionUtils.canDeleteDoctor(
+        context, appointment.patient?.doctor)) {
       AppToastManager.showError(
         context,
         message: '您只能删除自己医生患者的预约',
       );
       return;
     }
-    
+
     final confirmed = await DeleteConfirmDialogManager.showAppointmentDelete(
       context,
       appointmentInfo: '${appointment.patient?.name ?? "未知患者"}的预约',
     );
 
     if (confirmed == true) {
-      final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
+      final appointmentProvider =
+          Provider.of<AppointmentProvider>(context, listen: false);
       final appState = Provider.of<AppState>(context, listen: false);
 
       try {
@@ -212,7 +238,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     }
   }
 
-  Future<void> _changeAppointmentStatus(Appointment appointment, String status) async {
+  Future<void> _changeAppointmentStatus(
+      Appointment appointment, String status) async {
     if (!PermissionUtils.canEditDoctor(context, appointment.patient?.doctor)) {
       AppToastManager.showError(
         context,
@@ -221,21 +248,16 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
       return;
     }
 
-    final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
-    final appState = Provider.of<AppState>(context, listen: false);
+    final appointmentProvider =
+        Provider.of<AppointmentProvider>(context, listen: false);
 
     try {
-      await appState.showLoading(
-        appointmentProvider.updateAppointment(
-          appointment.copyWith(
-            status: status,
-            updated_at: DateTime.now(),
-          ),
-        ),
-        message: '正在更新状态...',
+      final updatedAppointment = appointment.copyWith(
+        status: status,
+        updated_at: DateTime.now(),
       );
-
-      await _stateService!.loadAppointments();
+      await appointmentProvider.updateAppointment(updatedAppointment);
+      _stateService?.replaceAppointment(updatedAppointment);
       if (!mounted) return;
       AppToastManager.showSuccess(context, message: '预约状态已更新');
     } catch (e) {
@@ -310,8 +332,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
     }
   }
 
-
-
   // 紧凑型操作按钮
   Widget _buildCompactActionButton({
     required IconData icon,
@@ -347,7 +367,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final stateService = _stateService!;
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -418,7 +437,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         children: [
           // MySQL连接状态检查
           const MySQLConnectionWarning(moduleName: '预约管理'),
-          
+
           // 顶部筛选栏（已拆分为独立组件）
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -442,7 +461,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     final result = await ReusableDateRangePicker.show(
                       context,
                       start: _stateService!.selectedDate,
-                      end: _stateService!.endDate ?? _stateService!.selectedDate.add(const Duration(days: 7)),
+                      end: _stateService!.endDate ??
+                          _stateService!.selectedDate
+                              .add(const Duration(days: 7)),
                       title: '选择日期范围',
                     );
                     if (result != null) {
@@ -456,48 +477,52 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               },
             ),
           ),
-                // 预约列表（已拆分为组件）
-                Expanded(
-                  child: AnimatedBuilder(
-                    animation: _stateService!,
-                    builder: (context, _) {
-                      return AppointmentList(
-                        appointments: _stateService!.filteredAppointments,
-                        isLoading: _stateService!.isLoading,
-                        onRefresh: () => _stateService!.loadAppointments(),
-                        onView: (ap) {
-                          if (ap.id != null) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AppointmentDetailsScreen(
-                                  appointmentId: ap.id!,
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                        onEdit: (ap) {
-                          if (PermissionUtils.canEditDoctor(context, ap.patient?.doctor)) {
-                            _showAddEditAppointmentDialog(ap);
-                          } else {
-                            AppToastManager.showError(context, message: '您只能编辑自己医生患者的预约');
-                          }
-                        },
-                        onDelete: (ap) {
-                          if (PermissionUtils.canDeleteDoctor(context, ap.patient?.doctor)) {
-                            _confirmDeleteAppointment(ap);
-                          } else {
-                            AppToastManager.showError(context, message: '您只能删除自己医生患者的预约');
-                          }
-                        },
-                        onStatusChanged: _changeAppointmentStatus,
+          // 预约列表（已拆分为组件）
+          Expanded(
+            child: AnimatedBuilder(
+              animation: _stateService!,
+              builder: (context, _) {
+                return AppointmentList(
+                  appointments: _stateService!.filteredAppointments,
+                  isLoading: _stateService!.isLoading,
+                  onRefresh: () => _stateService!.loadAppointments(),
+                  onView: (ap) {
+                    if (ap.id != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AppointmentDetailsScreen(
+                            appointmentId: ap.id!,
+                          ),
+                        ),
                       );
-                    },
-                  ),
-                ),
-              ],
+                    }
+                  },
+                  onEdit: (ap) {
+                    if (PermissionUtils.canEditDoctor(
+                        context, ap.patient?.doctor)) {
+                      _showAddEditAppointmentDialog(ap);
+                    } else {
+                      AppToastManager.showError(context,
+                          message: '您只能编辑自己医生患者的预约');
+                    }
+                  },
+                  onDelete: (ap) {
+                    if (PermissionUtils.canDeleteDoctor(
+                        context, ap.patient?.doctor)) {
+                      _confirmDeleteAppointment(ap);
+                    } else {
+                      AppToastManager.showError(context,
+                          message: '您只能删除自己医生患者的预约');
+                    }
+                  },
+                  onStatusChanged: _changeAppointmentStatus,
+                );
+              },
             ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddEditAppointmentDialog(),
         tooltip: '添加预约',

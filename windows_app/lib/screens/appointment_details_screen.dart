@@ -6,10 +6,8 @@ import 'dart:convert';
 import '../theme/app_theme.dart';
 import '../models/appointment.dart';
 import '../models/patient.dart';
-import '../providers/database_provider.dart';
 import '../providers/appointment_provider.dart';
 import '../providers/patient_provider.dart';
-import '../providers/app_state.dart';
 import '../features/dashboard/helpers/dashboard_status_helper.dart';
 import '../widgets/dental_icons.dart';
 import '../features/appointments/widgets/appointment_details_summary_card.dart';
@@ -65,8 +63,10 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
-      final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
+      final patientProvider =
+          Provider.of<PatientProvider>(context, listen: false);
+      final appointmentProvider =
+          Provider.of<AppointmentProvider>(context, listen: false);
 
       // 获取预约详情
       final appointments = await appointmentProvider.getAllAppointments();
@@ -129,35 +129,34 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
     }
   }
 
+  void _applyAppointmentLocally(Appointment appointment) {
+    _appointment = appointment;
+    _patient = appointment.patient ?? _patient;
+    _teethData = [];
+    _treatments = [];
+
+    if (appointment.treatment_type != null) {
+      _parseTreatmentTypeData(appointment.treatment_type!);
+    }
+  }
+
   void _changeAppointmentStatus(String newStatus) async {
     if (_appointment == null) return;
 
-    final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
-    final appState = Provider.of<AppState>(context, listen: false);
+    final appointmentProvider =
+        Provider.of<AppointmentProvider>(context, listen: false);
 
     try {
-      // 创建更新后的预约对象
-      var updatedAppointment = Appointment(
-        id: _appointment!.id,
-        patient_id: _appointment!.patient_id,
-        patient: _appointment!.patient,
-        appointment_date: _appointment!.appointment_date,
+      final updatedAppointment = _appointment!.copyWith(
         status: newStatus,
-        treatment_type: _appointment!.treatment_type,
-        notes: _appointment!.notes,
-        cost: _appointment!.cost,
-        created_at: _appointment!.created_at,
         updated_at: DateTime.now(),
       );
+      await appointmentProvider.updateAppointment(updatedAppointment);
 
-      // 添加防重复提交保护
-      await appState.showLoading(
-        appointmentProvider.updateAppointment(updatedAppointment),
-        message: '正在更新状态...',
-      );
-
-      // 重新加载数据
-      _loadAppointmentData();
+      if (!mounted) return;
+      setState(() {
+        _applyAppointmentLocally(updatedAppointment);
+      });
 
       final statusColor = DashboardStatusHelper.getStatusColor(newStatus);
       AppToastManager.showSuccess(
@@ -176,7 +175,8 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
   Future<void> _showEditAppointmentDialog() async {
     if (_appointment == null) return;
 
-    if (!PermissionUtils.canEditDoctor(context, _appointment!.patient?.doctor ?? _patient?.doctor)) {
+    if (!PermissionUtils.canEditDoctor(
+        context, _appointment!.patient?.doctor ?? _patient?.doctor)) {
       AppToastManager.showError(
         context,
         message: '您只能编辑自己医生患者的预约',
@@ -195,17 +195,17 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
 
     if (result == null) return;
 
-    final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
-    final appState = Provider.of<AppState>(context, listen: false);
+    final appointmentProvider =
+        Provider.of<AppointmentProvider>(context, listen: false);
 
     try {
-      await appState.showLoading(
-        appointmentProvider.updateAppointment(result),
-        message: '正在更新预约...',
-      );
+      await appointmentProvider.updateAppointment(result);
 
-      await _loadAppointmentData();
       if (!mounted) return;
+      setState(() {
+        _applyAppointmentLocally(result);
+      });
+
       AppToastManager.showSuccess(context, message: '预约已更新');
     } catch (e) {
       if (!mounted) return;
@@ -299,21 +299,25 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                       const SizedBox(height: 16),
                       AppointmentDetailsTeethSection(teethData: _teethData),
                       const SizedBox(height: 16),
-                      AppointmentDetailsTreatmentSection(appointment: _appointment!),
+                      AppointmentDetailsTreatmentSection(
+                          appointment: _appointment!),
                       const SizedBox(height: 16),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: DentalColors.divider.withOpacity(0.5)),
+                          border: Border.all(
+                              color: DentalColors.divider.withOpacity(0.5)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.update_rounded, size: 16, color: Colors.orange),
+                                const Icon(Icons.update_rounded,
+                                    size: 16, color: Colors.orange),
                                 const SizedBox(width: 6),
                                 Text(
                                   '更新预约状态',
@@ -340,10 +344,12 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      if (_appointment!.notes != null && _appointment!.notes!.isNotEmpty)
+                      if (_appointment!.notes != null &&
+                          _appointment!.notes!.isNotEmpty)
                         _buildInfoRow('备注', _appointment!.notes!),
                       if (_appointment!.cost != null)
-                        _buildInfoRow('费用', '¥${_appointment!.cost!.toStringAsFixed(2)}'),
+                        _buildInfoRow(
+                            '费用', '¥${_appointment!.cost!.toStringAsFixed(2)}'),
                       const SizedBox(height: 12),
                       if (_patient != null)
                         AppointmentDetailsPatientCard(
@@ -351,7 +357,8 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                           onViewDetails: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => PatientDetailScreen(patient: _patient!),
+                                builder: (context) =>
+                                    PatientDetailScreen(patient: _patient!),
                               ),
                             );
                           },

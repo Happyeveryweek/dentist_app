@@ -22,7 +22,8 @@ class MedicalManagementScreen extends StatefulWidget {
   const MedicalManagementScreen({Key? key}) : super(key: key);
 
   @override
-  State<MedicalManagementScreen> createState() => _MedicalManagementScreenState();
+  State<MedicalManagementScreen> createState() =>
+      _MedicalManagementScreenState();
 }
 
 class _MedicalManagementScreenState extends State<MedicalManagementScreen>
@@ -30,7 +31,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
   late TabController _tabController;
   bool _isLoading = false;
   String? _errorMessage;
-  
+
   // 用于强制刷新的键
   int _refreshKey = 0;
 
@@ -59,10 +60,10 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
-    
+
     final provider = Provider.of<MedicalRecordProvider>(context, listen: false);
     _initializationService = MedicalTemplateInitializationService(provider);
-    
+
     _initializeData();
   }
 
@@ -70,10 +71,11 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     // 检查医疗记录提供者中的刷新标志
-    final medicalRecordProvider = Provider.of<MedicalRecordProvider>(context, listen: false);
+    final medicalRecordProvider =
+        Provider.of<MedicalRecordProvider>(context, listen: false);
     if (medicalRecordProvider.templatesNeedRefresh) {
-      // 如果医疗记录数据需要刷新，则重新加载
-      _initializeData();
+      // 如果医疗记录数据需要刷新，则静默刷新当前标签页
+      _refreshCurrentTab();
       // 重置刷新标志
       medicalRecordProvider.resetTemplatesRefreshFlag();
     }
@@ -86,13 +88,15 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
   }
 
   /// 加载指定类别的模板数据
-  Future<List<MedicalRecordTemplate>> _loadTemplatesForCategory(String category) async {
+  Future<List<MedicalRecordTemplate>> _loadTemplatesForCategory(
+      String category) async {
     try {
-      final provider = Provider.of<MedicalRecordProvider>(context, listen: false);
-      
-      // 使用forceRefresh参数避免缓存问题
-      final templates = await provider.getTemplatesByCategory(category, forceRefresh: true);
-      
+      final provider =
+          Provider.of<MedicalRecordProvider>(context, listen: false);
+
+      // 优先使用缓存，必要时由 provider 自行回源
+      final templates = await provider.getTemplatesByCategory(category);
+
       return templates;
     } catch (e) {
       print('MedicalManagementScreen._loadTemplatesForCategory: 加载模板数据失败: $e');
@@ -108,16 +112,18 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
     });
 
     try {
-      final provider = Provider.of<MedicalRecordProvider>(context, listen: false);
-      
+      final provider =
+          Provider.of<MedicalRecordProvider>(context, listen: false);
+
       // 等待数据源准备就绪
       int retryCount = 0;
       while (!provider.isDataSourceReady && retryCount < 10) {
-        print('MedicalManagementScreen: 等待数据源准备就绪... (尝试 ${retryCount + 1}/10)');
+        print(
+            'MedicalManagementScreen: 等待数据源准备就绪... (尝试 ${retryCount + 1}/10)');
         await Future.delayed(const Duration(milliseconds: 100));
         retryCount++;
       }
-      
+
       if (!provider.isDataSourceReady) {
         print('MedicalManagementScreen: 数据源未准备就绪，显示错误状态');
         setState(() {
@@ -126,10 +132,10 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
         });
         return;
       }
-      
+
       // 检查是否有模板数据
       final hasData = await provider.hasTemplateData();
-      
+
       if (!hasData) {
         // 如果没有数据，不自动初始化，而是显示空状态让用户手动初始化
         setState(() {
@@ -138,16 +144,15 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
         });
         return;
       }
-      
+
       // 预加载所有类别的模板数据
       await provider.getAllTemplates(forceRefresh: true);
-      
+
       // 数据加载完成
       setState(() {
         _isLoading = false;
         _errorMessage = null;
       });
-      
     } catch (e) {
       print('MedicalManagementScreen: 初始化数据时出错: $e');
       // 出错时也不显示错误状态，而是显示空状态让用户手动初始化
@@ -222,7 +227,8 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.library_books_rounded, color: Colors.white),
+              icon:
+                  const Icon(Icons.library_books_rounded, color: Colors.white),
               onPressed: _openTemplateManagement,
               tooltip: '模板管理',
             ),
@@ -239,7 +245,8 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.settings_backup_restore_rounded, color: Colors.white),
+              icon: const Icon(Icons.settings_backup_restore_rounded,
+                  color: Colors.white),
               onPressed: _showInitializeDialog,
               tooltip: '初始化',
             ),
@@ -274,7 +281,8 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
               indicator: BoxDecoration(
                 color: AppTheme.primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+                border:
+                    Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
               ),
               labelColor: AppTheme.primaryColor,
               unselectedLabelColor: Colors.grey[600],
@@ -286,22 +294,24 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
                 fontWeight: FontWeight.w500,
                 fontSize: 14,
               ),
-              tabs: _tabs.map((tab) => Tab(
-                height: 40,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(tab['icon'], size: 18),
-                    const SizedBox(width: 6),
-                    Text(tab['title']),
-                  ],
-                ),
-              )).toList(),
+              tabs: _tabs
+                  .map((tab) => Tab(
+                        height: 40,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(tab['icon'], size: 18),
+                            const SizedBox(width: 6),
+                            Text(tab['title']),
+                          ],
+                        ),
+                      ))
+                  .toList(),
               dividerColor: Colors.transparent,
               indicatorSize: TabBarIndicatorSize.tab,
             ),
           ),
-          
+
           // Tab Content
           Expanded(
             child: Container(
@@ -324,10 +334,12 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
                       ? _buildErrorWidget()
                       : TabBarView(
                           controller: _tabController,
-                          children: _tabs.map((tab) => _buildTabContent(
-                            tab['category'] as String,
-                            tab['title'] as String,
-                          )).toList(),
+                          children: _tabs
+                              .map((tab) => _buildTabContent(
+                                    tab['category'] as String,
+                                    tab['title'] as String,
+                                  ))
+                              .toList(),
                         ),
             ),
           ),
@@ -395,7 +407,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
         }
 
         final templates = snapshot.data ?? [];
-        
+
         if (templates.isEmpty) {
           return MedicalManagementEmptyState(
             category: category,
@@ -411,15 +423,12 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
   }
 
   /// 构建模板列表
-  Widget _buildTemplateList(List<MedicalRecordTemplate> templates, String category, String title) {
-
-    
+  Widget _buildTemplateList(
+      List<MedicalRecordTemplate> templates, String category, String title) {
     // 按层级组织数据
     final mainTypes = templates.where((t) => t.isMainType).toList();
     final subTypes = <String, List<MedicalRecordTemplate>>{};
-    
 
-    
     for (final template in templates.where((t) => t.isSubType)) {
       final parentName = template.parentName!;
       if (!subTypes.containsKey(parentName)) {
@@ -427,8 +436,6 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
       }
       subTypes[parentName]!.add(template);
     }
-    
-
 
     return Column(
       children: [
@@ -446,16 +453,19 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
             itemBuilder: (context, index) {
               final mainType = mainTypes[index];
               final children = subTypes[mainType.name] ?? [];
-              
+
               return MedicalTemplateTypeCard(
                 mainType: mainType,
                 children: children,
                 category: category,
                 onEdit: () => _handleMainTypeAction('edit', mainType, category),
-                onDelete: () => _handleMainTypeAction('delete', mainType, category),
+                onDelete: () =>
+                    _handleMainTypeAction('delete', mainType, category),
                 onAddSubType: () => _addSubType(category, mainType.name),
-                onSubTypeEdit: (subType) => _handleSubTypeAction('edit', subType, category),
-                onSubTypeDelete: (subType) => _handleSubTypeAction('delete', subType, category),
+                onSubTypeEdit: (subType) =>
+                    _handleSubTypeAction('edit', subType, category),
+                onSubTypeDelete: (subType) =>
+                    _handleSubTypeAction('delete', subType, category),
               );
             },
           ),
@@ -474,15 +484,15 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
     try {
       // 使用 Service 清除缓存
       _initializationService.clearTemplateCache();
-      
+
       // 使用 Service 强制刷新所有模板数据
       await _initializationService.refreshAllTemplates();
-      
+
       // 增加刷新键强制重建UI
       setState(() {
         _refreshKey++;
       });
-      
+
       // 显示刷新成功提示
       if (mounted) {
         AppToastManager.showInfo(
@@ -495,7 +505,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
       setState(() {
         _errorMessage = '刷新数据失败: $e';
       });
-      
+
       // 显示刷新失败提示
       if (mounted) {
         AppToastManager.showError(
@@ -530,27 +540,27 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
       barrierDismissible: false,
       builder: (context) => const MedicalTemplateInitializeProgressDialog(),
     );
-    
+
     try {
       // 使用 Service 执行初始化
       final result = await _initializationService.executeInitialization();
-      
+
       if (result['success'] == true) {
         // 重新加载数据
         if (mounted) {
           await _initializeData();
-          
+
           // 重置错误状态
           setState(() {
             _isLoading = false;
             _errorMessage = null;
           });
-          
+
           // 关闭进度对话框
           if (Navigator.canPop(context)) {
             Navigator.of(context).pop();
           }
-          
+
           // 显示成功提示
           AppToastManager.showSuccess(
             context,
@@ -563,12 +573,12 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
       }
     } catch (e) {
       print('病历模板数据初始化过程中出现异常: $e');
-      
+
       // 关闭进度对话框
       if (Navigator.canPop(context)) {
         Navigator.of(context).pop();
       }
-      
+
       // 显示错误提示
       if (mounted) {
         AppToastManager.showError(
@@ -611,9 +621,6 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
 
   /// 刷新当前标签页
   void _refreshCurrentTab() {
-    // 使用 Service 清除缓存
-    _initializationService.clearTemplateCache();
-    
     // 增加刷新键并触发界面重建
     setState(() {
       _refreshKey++;
@@ -621,7 +628,8 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
   }
 
   /// 处理主类型操作
-  void _handleMainTypeAction(String action, MedicalRecordTemplate template, String category) {
+  void _handleMainTypeAction(
+      String action, MedicalRecordTemplate template, String category) {
     switch (action) {
       case 'edit':
         _showDiseaseTypeDialog(template: template);
@@ -633,7 +641,8 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
   }
 
   /// 处理子类型操作
-  void _handleSubTypeAction(String action, MedicalRecordTemplate template, String category) {
+  void _handleSubTypeAction(
+      String action, MedicalRecordTemplate template, String category) {
     switch (action) {
       case 'edit':
         _showDiseaseTypeDialog(template: template);
@@ -648,22 +657,26 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
   Future<void> _showDeleteConfirmDialog(MedicalRecordTemplate template) async {
     String message;
     String title = '确认删除';
-    
+
     if (template.isMainType) {
       // 使用 Service 获取子类型数量
-      final allTemplates = await _initializationService.getTemplatesByCategory(template.category);
-      final childCount = allTemplates.where((t) => t.parentName != null && t.parentName == template.name).length;
-      
+      final allTemplates = await _initializationService
+          .getTemplatesByCategory(template.category);
+      final childCount = allTemplates
+          .where((t) => t.parentName != null && t.parentName == template.name)
+          .length;
+
       if (childCount > 0) {
         title = '确认删除主类型';
-        message = '您确定要删除主类型"{itemName}"吗？\n\n⚠️ 警告：删除主类型将同时删除其下的 $childCount 个子类型！\n\n此操作不可撤销，请谨慎操作。';
+        message =
+            '您确定要删除主类型"{itemName}"吗？\n\n⚠️ 警告：删除主类型将同时删除其下的 $childCount 个子类型！\n\n此操作不可撤销，请谨慎操作。';
       } else {
         message = '您确定要删除主类型"{itemName}"吗？\n此操作不可撤销。';
       }
     } else {
       message = '您确定要删除子类型"{itemName}"吗？\n此操作不可撤销。';
     }
-    
+
     final confirmed = await DeleteConfirmDialogManager.show(
       context,
       title: title,
@@ -672,7 +685,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
       confirmText: '删除',
       cancelText: '取消',
     );
-    
+
     if (confirmed) {
       await _deleteTemplate(template);
     }
@@ -680,18 +693,19 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
 
   /// 删除模板
   Future<void> _deleteTemplate(MedicalRecordTemplate template) async {
-    print('MedicalManagementScreen._deleteTemplate: 开始删除模板: ${template.name} (ID: ${template.id})');
-    
+    print(
+        'MedicalManagementScreen._deleteTemplate: 开始删除模板: ${template.name} (ID: ${template.id})');
+
     // 使用 Service 执行删除
     final result = await _initializationService.deleteTemplate(template);
-    
+
     if (result['success'] == true) {
       AppToastManager.showDelete(
         context,
         message: '已删除"${template.name}"',
         duration: const Duration(seconds: 2),
       );
-      
+
       _refreshCurrentTab();
     } else {
       AppToastManager.showError(
@@ -701,8 +715,6 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
       );
     }
   }
-
-
 
   /// 打开模板管理页面
   void _openTemplateManagement() {

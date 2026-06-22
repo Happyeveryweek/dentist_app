@@ -16,14 +16,14 @@ class DentalMaterialsInit {
       _createMaterial('M008', '奥硝唑片', '盒', '药品'),
       _createMaterial('M009', '阿奇霉素片', '盒', '药品'),
       _createMaterial('M010', '左氧氟沙星片', '盒', '药品'),
-      
+
       // 局部麻醉药
       _createMaterial('M011', '利多卡因注射液', '支', '局部麻醉药'),
       _createMaterial('M012', '阿替卡因注射液', '支', '局部麻醉药'),
       _createMaterial('M013', '布比卡因注射液', '支', '局部麻醉药'),
       _createMaterial('M014', '普鲁卡因注射液', '支', '局部麻醉药'),
       _createMaterial('M015', '甲哌卡因注射液', '支', '局部麻醉药'),
-      
+
       // 消毒用品
       _createMaterial('M016', '碘伏消毒液', '瓶', '消毒用品'),
       _createMaterial('M017', '酒精消毒液', '瓶', '消毒用品'),
@@ -33,7 +33,7 @@ class DentalMaterialsInit {
       _createMaterial('M021', '过氧化氢溶液', '瓶', '消毒用品'),
       _createMaterial('M022', '戊二醛消毒液', '瓶', '消毒用品'),
       _createMaterial('M023', '次氯酸钠溶液', '瓶', '消毒用品'),
-      
+
       // 一次性用品
       _createMaterial('M024', '一次性手套', '盒', '一次性用品'),
       _createMaterial('M025', '一次性口罩', '盒', '一次性用品'),
@@ -50,7 +50,7 @@ class DentalMaterialsInit {
       _createMaterial('M036', '一次性棉球', '包', '一次性用品'),
       _createMaterial('M037', '一次性牙线', '盒', '一次性用品'),
       _createMaterial('M038', '一次性牙签', '盒', '一次性用品'),
-      
+
       // 牙科材料
       _createMaterial('M039', '玻璃离子水门汀', '盒', '牙科材料'),
       _createMaterial('M040', '复合树脂', '盒', '牙科材料'),
@@ -70,7 +70,7 @@ class DentalMaterialsInit {
       _createMaterial('M054', '漂白剂', '盒', '牙科材料'),
       _createMaterial('M055', '氟化物凝胶', '支', '牙科材料'),
       _createMaterial('M056', '氟化物漱口液', '瓶', '牙科材料'),
-      
+
       // 牙科器械
       _createMaterial('M057', '探针', '把', '牙科器械'),
       _createMaterial('M058', '镊子', '把', '牙科器械'),
@@ -79,7 +79,7 @@ class DentalMaterialsInit {
       _createMaterial('M061', '充填器', '把', '牙科器械'),
       _createMaterial('M062', '雕刻刀', '把', '牙科器械'),
       _createMaterial('M063', '抛光器', '把', '牙科器械'),
-      
+
       // 根管治疗器械 - K型根管锉
       _createMaterial('M064', 'K型根管锉 08#', '支', '根管治疗器械'),
       _createMaterial('M065', 'K型根管锉 10#', '支', '根管治疗器械'),
@@ -102,7 +102,7 @@ class DentalMaterialsInit {
       _createMaterial('M082', 'K型根管锉 130#', '支', '根管治疗器械'),
       _createMaterial('M083', 'K型根管锉 140#', '支', '根管治疗器械'),
       _createMaterial('M084', 'K型根管锉 150#', '支', '根管治疗器械'),
-      
+
       // 根管扩大针
       _createMaterial('M085', '根管扩大针 08#', '支', '根管治疗器械'),
       _createMaterial('M086', '根管扩大针 10#', '支', '根管治疗器械'),
@@ -125,7 +125,7 @@ class DentalMaterialsInit {
       _createMaterial('M103', '根管扩大针 130#', '支', '根管治疗器械'),
       _createMaterial('M104', '根管扩大针 140#', '支', '根管治疗器械'),
       _createMaterial('M105', '根管扩大针 150#', '支', '根管治疗器械'),
-      
+
       // 拔髓针
       _createMaterial('M106', '拔髓针 08#', '支', '根管治疗器械'),
       _createMaterial('M107', '拔髓针 10#', '支', '根管治疗器械'),
@@ -148,7 +148,7 @@ class DentalMaterialsInit {
       _createMaterial('M124', '拔髓针 130#', '支', '根管治疗器械'),
       _createMaterial('M125', '拔髓针 140#', '支', '根管治疗器械'),
       _createMaterial('M126', '拔髓针 150#', '支', '根管治疗器械'),
-      
+
       // 其他根管器械
       _createMaterial('M127', '根管测量器', '支', '根管治疗器械'),
       _createMaterial('M128', '根管充填器', '支', '根管治疗器械'),
@@ -166,7 +166,7 @@ class DentalMaterialsInit {
       _createMaterial('M140', '三用枪', '把', '牙科器械'),
       _createMaterial('M141', '水枪', '把', '牙科器械'),
       _createMaterial('M142', '气枪', '把', '牙科器械'),
-      
+
       // 牙科耗材 - 车针系列
       _createMaterial('M143', '高速车针 1#', '支', '牙科耗材'),
       _createMaterial('M144', '高速车针 2#', '支', '牙科耗材'),
@@ -189,7 +189,7 @@ class DentalMaterialsInit {
       _createMaterial('M161', '高速车针 36#', '支', '牙科耗材'),
       _createMaterial('M162', '高速车针 38#', '支', '牙科耗材'),
       _createMaterial('M163', '高速车针 40#', '支', '牙科耗材'),
-      
+
       // 金刚砂车针
       _createMaterial('M164', '金刚砂车针 1#', '支', '牙科耗材'),
       _createMaterial('M165', '金刚砂车针 2#', '支', '牙科耗材'),
@@ -212,7 +212,7 @@ class DentalMaterialsInit {
       _createMaterial('M182', '金刚砂车针 36#', '支', '牙科耗材'),
       _createMaterial('M183', '金刚砂车针 38#', '支', '牙科耗材'),
       _createMaterial('M184', '金刚砂车针 40#', '支', '牙科耗材'),
-      
+
       // 钨钢车针
       _createMaterial('M185', '钨钢车针 1#', '支', '牙科耗材'),
       _createMaterial('M186', '钨钢车针 2#', '支', '牙科耗材'),
@@ -235,7 +235,7 @@ class DentalMaterialsInit {
       _createMaterial('M203', '钨钢车针 36#', '支', '牙科耗材'),
       _createMaterial('M204', '钨钢车针 38#', '支', '牙科耗材'),
       _createMaterial('M205', '钨钢车针 40#', '支', '牙科耗材'),
-      
+
       // 其他耗材
       _createMaterial('M206', '抛光杯', '盒', '牙科耗材'),
       _createMaterial('M207', '抛光刷', '盒', '牙科耗材'),
@@ -250,7 +250,7 @@ class DentalMaterialsInit {
       _createMaterial('M216', '成形片夹', '把', '牙科耗材'),
       _createMaterial('M217', '分离圈', '盒', '牙科耗材'),
       _createMaterial('M218', '分离环', '盒', '牙科耗材'),
-      
+
       // 牙胶尖系列
       _createMaterial('M219', '牙胶尖 15#', '支', '牙科耗材'),
       _createMaterial('M220', '牙胶尖 20#', '支', '牙科耗材'),
@@ -271,11 +271,11 @@ class DentalMaterialsInit {
       _createMaterial('M235', '牙胶尖 130#', '支', '牙科耗材'),
       _createMaterial('M236', '牙胶尖 140#', '支', '牙科耗材'),
       _createMaterial('M237', '牙胶尖 150#', '支', '牙科耗材'),
-      
+
       // 牙胶条和牙胶块
       _createMaterial('M238', '牙胶条', '盒', '牙科耗材'),
       _createMaterial('M239', '牙胶块', '盒', '牙科耗材'),
-      
+
       // 正畸材料 - 弓丝系列
       _createMaterial('M240', '镍钛弓丝 0.012"', '根', '正畸材料'),
       _createMaterial('M241', '镍钛弓丝 0.014"', '根', '正畸材料'),
@@ -292,7 +292,7 @@ class DentalMaterialsInit {
       _createMaterial('M252', '镍钛弓丝 0.040"', '根', '正畸材料'),
       _createMaterial('M253', '镍钛弓丝 0.045"', '根', '正畸材料'),
       _createMaterial('M254', '镍钛弓丝 0.050"', '根', '正畸材料'),
-      
+
       // 不锈钢弓丝
       _createMaterial('M255', '不锈钢弓丝 0.012"', '根', '正畸材料'),
       _createMaterial('M256', '不锈钢弓丝 0.014"', '根', '正畸材料'),
@@ -309,7 +309,7 @@ class DentalMaterialsInit {
       _createMaterial('M267', '不锈钢弓丝 0.040"', '根', '正畸材料'),
       _createMaterial('M268', '不锈钢弓丝 0.045"', '根', '正畸材料'),
       _createMaterial('M269', '不锈钢弓丝 0.050"', '根', '正畸材料'),
-      
+
       // 结扎丝系列
       _createMaterial('M270', '结扎丝 0.008"', '卷', '正畸材料'),
       _createMaterial('M271', '结扎丝 0.009"', '卷', '正畸材料'),
@@ -321,7 +321,7 @@ class DentalMaterialsInit {
       _createMaterial('M277', '结扎丝 0.020"', '卷', '正畸材料'),
       _createMaterial('M278', '结扎丝 0.022"', '卷', '正畸材料'),
       _createMaterial('M279', '结扎丝 0.025"', '卷', '正畸材料'),
-      
+
       // 口腔护理用品
       _createMaterial('M280', '牙膏', '支', '口腔护理用品'),
       _createMaterial('M281', '牙刷', '把', '口腔护理用品'),
@@ -333,14 +333,14 @@ class DentalMaterialsInit {
       _createMaterial('M287', '口腔凝胶', '支', '口腔护理用品'),
       _createMaterial('M288', '口腔贴片', '盒', '口腔护理用品'),
       _createMaterial('M289', '口腔含片', '盒', '口腔护理用品'),
-      
+
       // 防护用品
       _createMaterial('M290', '防护眼镜', '副', '防护用品'),
       _createMaterial('M291', '防护面罩', '个', '防护用品'),
       _createMaterial('M292', '防护服', '件', '防护用品'),
       _createMaterial('M293', '防护鞋套', '双', '防护用品'),
       _createMaterial('M294', '防护袖套', '对', '防护用品'),
-      
+
       // 其他用品
       _createMaterial('M295', '标签纸', '卷', '办公用品'),
       _createMaterial('M296', '记录本', '本', '办公用品'),
@@ -354,15 +354,17 @@ class DentalMaterialsInit {
       _createMaterial('M304', '听诊器', '个', '办公用品'),
     ];
   }
-  
+
   /// 创建材料对象
-  static material_models.MaterialInfo _createMaterial(String code, String name, String unit, String type) {
+  static material_models.MaterialInfo _createMaterial(
+      String code, String name, String unit, String type) {
     return material_models.MaterialInfo(
       id: null,
       materialName: name,
       materialCode: code,
       materialType: type, // 新增：材料类型
       unit: unit,
+      stockQuantity: 1,
       defaultPrice: 0.0,
       supplier: null,
       description: null,

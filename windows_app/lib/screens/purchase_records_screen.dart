@@ -70,17 +70,23 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
         Provider.of<PurchaseProvider>(context, listen: false);
     if (purchaseProvider.purchasesNeedRefresh) {
       // 如果采购数据需要刷新，则重新加载
-      _loadData();
+      _loadData(showLoading: false);
       // 重置刷新标志
       purchaseProvider.resetPurchasesRefreshFlag();
     }
   }
 
-  Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _hasError = false;
-    });
+  Future<void> _loadData({bool showLoading = true}) async {
+    if (showLoading) {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
+    } else {
+      setState(() {
+        _hasError = false;
+      });
+    }
 
     try {
       final purchaseProvider =
@@ -162,7 +168,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
       _searchQuery = value;
       _currentPage = 1;
     });
-    _loadData();
+    _loadData(showLoading: false);
   }
 
   @override
@@ -194,7 +200,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
           context: context,
           record: record,
           onSaved: () {
-            _loadData();
+            _loadData(showLoading: false);
             _showPurchaseDetail(record);
           },
         );
@@ -325,7 +331,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
         final success = await purchaseProvider.deletePurchaseRecord(record.id!);
 
         if (success) {
-          _loadData();
+          _loadData(showLoading: false);
           AppToastManager.showDelete(context, message: '采购记录删除成功');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -588,7 +594,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                 onPressed: () => showPurchaseFormDialog(
                   context: context,
                   record: record,
-                  onSaved: _loadData,
+                  onSaved: () => _loadData(showLoading: false),
                 ),
               ),
               const SizedBox(width: 6),
@@ -680,7 +686,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
             child: IconButton(
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               onPressed: () async {
-                await _loadData();
+                await _loadData(showLoading: false);
                 // 使用公用成功提示组件
                 AppToastManager.showSuccess(context, message: '数据已刷新');
               },
@@ -698,7 +704,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
               icon: const Icon(Icons.add_rounded, color: Colors.white),
               onPressed: () => showPurchaseFormDialog(
                 context: context,
-                onSaved: _loadData,
+                onSaved: () => _loadData(showLoading: false),
               ),
               tooltip: '添加采购记录',
             ),
@@ -762,7 +768,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                           _currentPage = 1;
                         });
                         _searchController.clear();
-                        _loadData();
+                        _loadData(showLoading: false);
                       },
                     ),
                   ),
@@ -890,7 +896,8 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                                     ElevatedButton.icon(
                                       onPressed: () => showPurchaseFormDialog(
                                         context: context,
-                                        onSaved: _loadData,
+                                        onSaved: () =>
+                                            _loadData(showLoading: false),
                                       ),
                                       icon: const Icon(Icons.add),
                                       label: const Text('添加采购记录'),
@@ -922,7 +929,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                                   setState(() {
                                     _currentPage = page;
                                   });
-                                  _loadData();
+                                  _loadData(showLoading: false);
                                 },
                               ),
                             ],

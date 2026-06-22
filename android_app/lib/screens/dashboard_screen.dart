@@ -287,6 +287,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       TodayAppointmentsSection(
                         todayAppointments: _todayAppointments,
                         fadeAnimation: _fadeAnimation,
+                        onDetailUpdated: _loadDataWithRetry,
                       ),
                     ],
                   ),
@@ -315,4 +316,3 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
 }
-

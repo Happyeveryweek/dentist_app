@@ -50,7 +50,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   List<FinancialItem> _financialItems = [];
   List<PatientMedicalRecord> _medicalRecords = [];
   late TabController _tabController;
-  
+
   // 标记数据是否已更改，用于通知父页面是否需要刷新
   bool _dataChanged = false;
   bool _dataLoaded = false;
@@ -79,10 +79,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     super.dispose();
   }
 
-  Future<void> _loadPatientData() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _loadPatientData({bool showLoading = true}) async {
+    if (showLoading) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       final data = await PatientDetailLoaderService.load(
@@ -118,8 +120,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     }
   }
 
-  Future<void> _reloadPatientData({bool markChanged = true}) async {
-    await _loadPatientData();
+  Future<void> _reloadPatientData(
+      {bool markChanged = true, bool showLoading = true}) async {
+    await _loadPatientData(showLoading: showLoading);
     if (markChanged) {
       _dataChanged = true;
     }
@@ -195,9 +198,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
           // 用分区标签分割内容
           const PatientDetailSectionHeader(
-              title: '个人信息',
-              icon: Icons.person,
-              color: Color(0xFF2ecc71)),
+              title: '个人信息', icon: Icons.person, color: Color(0xFF2ecc71)),
           PatientPersonalInfoCard(patient: _patient!),
 
           // 牙齿状况和治疗分区
@@ -403,7 +404,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         String dateStr = rowData['dateStr'];
 
         // 获取创建者医生信息
-        String createdByDoctor = _ensureString(dentalCharts['created_by_doctor-$i']);
+        String createdByDoctor =
+            _ensureString(dentalCharts['created_by_doctor-$i']);
 
         // 获取各位置数据并确保是字符串类型
         // 第一个图表
@@ -467,9 +469,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         scrollController: _dentalScrollController,
         maxHeight: _calculateOptimalChartHeight(chartRows.length),
       );
-
-
-
     } catch (e) {
       return Padding(
         padding: const EdgeInsets.all(8.0),
@@ -487,17 +486,18 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     const double headerHeight = 40.0;
     // 底部间距
     const double bottomPadding = 16.0;
-    
+
     // 最多显示 3 行，超过则滚动
     const int maxVisibleRows = 3;
     final int displayCount = chartCount.clamp(1, maxVisibleRows);
-    
+
     // 计算总高度
-    double totalHeight = headerHeight + (displayCount * baseChartHeight) + bottomPadding;
-    
+    double totalHeight =
+        headerHeight + (displayCount * baseChartHeight) + bottomPadding;
+
     // 设置合理的最小高度
     const double minHeight = 180.0;
-    
+
     return totalHeight.clamp(minHeight, double.infinity);
   }
 
@@ -737,8 +737,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           treatmentTypeText:
               _formatTreatmentTypeForDisplay(appointment.treatment_type) ??
                   '未指定',
-          canEdit:
-              PermissionUtils.canEditDoctor(context, appointment.patient?.doctor),
+          canEdit: PermissionUtils.canEditDoctor(
+              context, appointment.patient?.doctor),
           canDelete: PermissionUtils.canDeleteDoctor(
             context,
             appointment.patient?.doctor,
@@ -763,8 +763,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     if (_patient == null) return;
 
     // 所有医生都可以编辑任何患者，但编辑权限在表单内部控制
-    
-    final patientProvider = Provider.of<PatientProvider>(context, listen: false);
+
+    final patientProvider =
+        Provider.of<PatientProvider>(context, listen: false);
 
     // 从数据库获取最新的患者信息，确保包含完整的牙齿状况数据
     Patient? freshPatient;
@@ -804,7 +805,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   void _savePatient(Patient updatedPatient) async {
     try {
       // 患者已经在PatientFormDialog中保存过了，这里只需要刷新数据
-      
+
       // 重新加载数据（_loadPatientData内部会管理_isLoading状态）
       await _reloadPatientData();
 
@@ -902,7 +903,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       );
       return;
     }
-    
+
     // 实现编辑预约功能
     final result = await showDialog<Appointment>(
       context: context,
@@ -938,14 +939,15 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
   void _deleteAppointment(Appointment appointment) async {
     // 检查删除权限
-    if (!PermissionUtils.canDeleteDoctor(context, appointment.patient?.doctor)) {
+    if (!PermissionUtils.canDeleteDoctor(
+        context, appointment.patient?.doctor)) {
       AppToastManager.showError(
         context,
         message: '您只能删除自己医生患者的预约',
       );
       return;
     }
-    
+
     // 实现删除预约功能
     final confirm = await DeleteConfirmDialogManager.showAppointmentDelete(
       context,
@@ -1084,7 +1086,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           if (r.id != null) {
             for (final item in _financialItems) {
               if (item.financialRecordId == r.id) {
-                patientTotalReceivable += (item.itemPrice * (item.quantity ?? 1));
+                patientTotalReceivable +=
+                    (item.itemPrice * (item.quantity ?? 1));
               }
             }
           }
@@ -1165,7 +1168,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       return;
     }
 
-    final result = await PatientDetailDialogActions.showEditFinancialRecordDialog(
+    final result =
+        await PatientDetailDialogActions.showEditFinancialRecordDialog(
       context: context,
       patient: widget.patient,
       record: record,
@@ -1185,7 +1189,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       return;
     }
 
-    final confirm = await PatientDetailDialogActions.showDeleteFinancialRecordConfirm(
+    final confirm =
+        await PatientDetailDialogActions.showDeleteFinancialRecordConfirm(
       context: context,
     );
 
@@ -1225,22 +1230,22 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
-      
+
       if (currentUser == null) {
         return false;
       }
-      
+
       // 管理员拥有所有权限
       if (currentUser.role == 'admin') {
         return true;
       }
-      
+
       // 非管理员用户只能编辑自己创建的病历记录
       if (currentUser.doctor != null && currentUser.doctor!.isNotEmpty) {
         final createdByDoctor = record.createdByDoctor ?? record.doctorName;
         return createdByDoctor == currentUser.doctor;
       }
-      
+
       return false;
     } catch (e) {
       print('检查病历编辑权限时出错: $e');
@@ -1259,9 +1264,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       print('_addMedicalRecord: _patient is null');
       return;
     }
-    
-    print('_addMedicalRecord: patient id = ${_patient!.id}, name = ${_patient!.name}');
-    
+
+    print(
+        '_addMedicalRecord: patient id = ${_patient!.id}, name = ${_patient!.name}');
+
     try {
       final result = await showDialog<PatientMedicalRecord>(
         context: context,
@@ -1271,9 +1277,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           onSave: (record) async {
             try {
               // 调用MedicalRecordProvider保存病历
-              final medicalRecordProvider = Provider.of<MedicalRecordProvider>(context, listen: false);
-              final recordId = await medicalRecordProvider.createMedicalRecord(record);
-              
+              final medicalRecordProvider =
+                  Provider.of<MedicalRecordProvider>(context, listen: false);
+              final recordId =
+                  await medicalRecordProvider.createMedicalRecord(record);
+
               if (recordId > 0) {
                 // 保存成功，返回带ID的记录
                 final savedRecord = record.copyWith(id: recordId);
@@ -1297,8 +1305,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
       if (result != null) {
         // 重新加载病历数据
-        await _reloadPatientData();
-        
+        await _reloadPatientData(showLoading: false);
+
         if (mounted) {
           AppToastManager.showSuccess(context, message: '病历记录已创建');
         }
@@ -1336,7 +1344,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
   void _editMedicalRecord(PatientMedicalRecord record) async {
     if (_patient == null) return;
-    
+
     // 检查编辑权限
     if (!_canEditMedicalRecord(record)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1347,7 +1355,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       );
       return;
     }
-    
+
     try {
       final result = await showDialog<PatientMedicalRecord>(
         context: context,
@@ -1358,9 +1366,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           onSave: (updatedRecord) async {
             try {
               // 调用MedicalRecordProvider更新病历
-              final medicalRecordProvider = Provider.of<MedicalRecordProvider>(context, listen: false);
-              final success = await medicalRecordProvider.updateMedicalRecord(updatedRecord);
-              
+              final medicalRecordProvider =
+                  Provider.of<MedicalRecordProvider>(context, listen: false);
+              final success = await medicalRecordProvider
+                  .updateMedicalRecord(updatedRecord);
+
               if (success) {
                 Navigator.of(context).pop(updatedRecord);
               } else {
@@ -1382,8 +1392,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
       if (result != null) {
         // 重新加载病历数据
-        await _reloadPatientData();
-        
+        await _reloadPatientData(showLoading: false);
+
         if (mounted) {
           AppToastManager.showSuccess(context, message: '病历记录已更新');
         }
@@ -1399,7 +1409,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
   Future<void> _deleteMedicalRecord(PatientMedicalRecord record) async {
     if (_patient == null) return;
-    
+
     // 检查删除权限
     if (!_canDeleteMedicalRecord(record)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1410,7 +1420,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       );
       return;
     }
-    
+
     // 使用公共删除确认框组件
     final confirmed = await DeleteConfirmDialogManager.show(
       context,
@@ -1420,12 +1430,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
     if (confirmed) {
       try {
-        final medicalRecordProvider = Provider.of<MedicalRecordProvider>(context, listen: false);
+        final medicalRecordProvider =
+            Provider.of<MedicalRecordProvider>(context, listen: false);
         await medicalRecordProvider.deleteMedicalRecord(record.id!);
-        
+
         // 重新加载病历数据
-        await _reloadPatientData();
-        
+        await _reloadPatientData(showLoading: false);
+
         if (mounted) {
           AppToastManager.showDelete(context, message: '病历记录已删除');
         }
@@ -1451,10 +1462,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   /// 刷新病历记录数据
   Future<void> _refreshMedicalRecords() async {
     if (_patient == null) return;
-    
+
     try {
       await _runWithLoadingState(() async {
-        final medicalRecords = await PatientDetailLoaderService.loadMedicalRecords(
+        final medicalRecords =
+            await PatientDetailLoaderService.loadMedicalRecords(
           context: context,
           patientId: _patient!.id!,
         );
@@ -1477,7 +1489,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         setState(() {
           _isLoading = false;
         });
-        
+
         AppToastManager.showError(
           context,
           message: '刷新病历数据失败: $e',
@@ -1491,11 +1503,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   bool _canViewPatientFinancialRecords() {
     // 使用 widget.patient 而不是 _patient，因为在数据加载时 _patient 可能还是 null
     final patient = _patient ?? widget.patient;
-    
+
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
-      
+
       print('=== 财务记录权限检查 ===');
       print('当前用户: ${currentUser?.username}');
       print('用户角色: ${currentUser?.role}');
@@ -1503,18 +1515,18 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       print('患者姓名: ${patient.name}');
       print('患者医生: ${patient.doctor}');
       print('用户是否为管理员: ${currentUser?.isAdmin}');
-      
+
       if (currentUser == null) {
         print('权限检查结果: false (用户未登录)');
         return false;
       }
-      
+
       // 管理员拥有所有权限
       if (currentUser.isAdmin) {
         print('权限检查结果: true (管理员权限)');
         return true;
       }
-      
+
       // 非管理员用户只能查看自己医生的患者的财务记录
       // 如果患者没有指定医生，或者当前用户的医生与患者的医生匹配，则允许查看
       if (patient.doctor == null || patient.doctor!.isEmpty) {
@@ -1522,9 +1534,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         print('权限检查结果: true (患者未指定医生)');
         return true;
       }
-      
+
       // 检查当前用户的医生是否与患者的医生匹配
-      final hasPermission = currentUser.doctor != null && currentUser.doctor == patient.doctor;
+      final hasPermission =
+          currentUser.doctor != null && currentUser.doctor == patient.doctor;
       print('权限检查结果: $hasPermission (医生匹配检查)');
       return hasPermission;
     } catch (e) {

@@ -135,18 +135,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 只在已初始化后才检查刷新标志
-    if (!_hasInitialized) return;
-
-    // 检查财务提供者中的刷新标志
-    final financialProvider =
-        Provider.of<FinancialProvider>(context, listen: false);
-    if (financialProvider.financialsNeedRefresh) {
-      // 如果财务数据需要刷新，则重新加载
-      _loadData();
-      // 重置刷新标志
-      financialProvider.resetFinancialsRefreshFlag();
-    }
   }
 
   // 高级筛选（收费项目/金额区间）
@@ -481,12 +469,12 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   }
 
   // 加载数据
-  Future<void> _loadData() async {
+  Future<void> _loadData({bool showLoading = true}) async {
     if (!mounted) return;
 
     print('🔄 开始加载数据: 显示模式=$_displayMode, 当前页=$_currentPage');
 
-    if (mounted) {
+    if (mounted && showLoading) {
       setState(() {
         _isLoading = true;
         _hasError = false;
@@ -802,7 +790,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       _currentPage = 1; // 重置到第一页
       _pageCache.clear(); // 清除缓存
     });
-    _loadData(); // 重新从后端加载数据
+    _loadData(showLoading: false); // 重新从后端加载数据
   }
 
   @override
@@ -923,10 +911,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             child: IconButton(
               icon: const Icon(Icons.add_rounded, color: Colors.white),
               onPressed: () async {
-                final result = await this._showFinancialRecordDialog();
-                if (result == true) {
-                  await _loadData();
-                }
+                await this._showFinancialRecordDialog();
               },
               tooltip: '添加收费记录',
             ),
@@ -960,7 +945,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             child: IconButton(
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               onPressed: () async {
-                await _loadData();
+                await _loadData(showLoading: false);
                 if (!mounted) return;
                 AppToastManager.showSuccess(context, message: '刷新数据成功');
               },
@@ -976,7 +961,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
               if (financialProvider.financialsNeedRefresh) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (mounted) {
-                    _loadData();
+                    _loadData(showLoading: false);
                     financialProvider.resetFinancialsRefreshFlag();
                   }
                 });
@@ -1008,7 +993,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
                         _searchQuery = value;
                       });
                       _currentPage = 1;
-                      _loadData();
+                      _loadData(showLoading: false);
                     },
                     onSearchCleared: () {
                       if (_hasAdvancedFilter) {
@@ -1020,7 +1005,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
                       });
                       _syncSearchControllerText();
                       _currentPage = 1;
-                      _loadData();
+                      _loadData(showLoading: false);
                     },
                     onSortChanged: (String value) {
                       setState(() {
@@ -1053,9 +1038,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
                             ? FinancialEmptyState(
                                 searchQuery: _searchQuery,
                                 onAddRecord: () async {
-                                  final result =
-                                      await _showFinancialRecordDialog();
-                                  if (result == true) await _loadData();
+                                  await _showFinancialRecordDialog();
                                 },
                               )
                             : Column(
@@ -1115,9 +1098,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             await financialProvider.deleteFinancialRecord(record.id!);
 
         if (success) {
-          // 重新加载数据
-          await _loadData();
-
           AppToastManager.showDelete(
             context,
             message: '财务记录删除成功',
@@ -1193,9 +1173,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       ),
     ).then((result) {
       // 只有在有数据变动时才刷新（result为true表示有变动）
-      if (result == true) {
-        _loadData();
-      }
+      if (result == true) {}
     });
   }
 
@@ -1229,9 +1207,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           }
           await financialProvider.deleteFinancialRecord(patientRecord.id!);
         }
-
-        // 重新加载数据
-        await _loadData();
 
         AppToastManager.showDelete(
           context,
@@ -1375,23 +1350,30 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         contextPatient: patient,
         item: item,
         showNotesField: false,
+        notifyOnSave: false,
       ),
     );
-
     if (result == true) {
-      await _loadData();
+      await _loadData(showLoading: false);
     }
   }
 
   // 删除收费记录明细项
   Future<void> _deleteFinancialItem(
       FinancialRecord record, FinancialItem item, Patient patient) async {
+    final financialProvider =
+        Provider.of<FinancialProvider>(context, listen: false);
+    final recordItems =
+        await financialProvider.getFinancialItemsByRecordId(record.id!);
+    final isLastItem = recordItems.length <= 1;
+
     final confirmed = await DeleteConfirmDialogManager.show(
       context,
       title: '确认删除',
       message: '确定要删除患者 "${patient.name}" 的这条收费明细项吗？\n\n'
           '收费项目: ${item.itemName}\n'
-          '收费日期: ${DateFormat('yyyy-MM-dd').format(item.chargeDate)}\n\n'
+          '收费日期: ${DateFormat('yyyy-MM-dd').format(item.chargeDate)}\n'
+          '${isLastItem ? '\n这是该患者这条财务记录的最后一条收费记录，删除后会连带删除整条财务记录。\n' : '\n'}'
           '删除后无法恢复！',
       confirmText: '删除',
       cancelText: '取消',
@@ -1399,16 +1381,18 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
     if (confirmed == true) {
       try {
-        final financialProvider =
-            Provider.of<FinancialProvider>(context, listen: false);
-        final success = await financialProvider.deleteFinancialItem(item.id!);
+        final success =
+            await financialProvider.deleteFinancialItemAndCleanupRecord(
+          itemId: item.id!,
+          recordId: record.id!,
+        );
 
         if (success) {
-          await _loadData();
-
           AppToastManager.showDelete(
             context,
-            message: '已删除患者 "${patient.name}" 的收费明细项',
+            message: isLastItem
+                ? '已删除患者 "${patient.name}" 的最后一条收费记录，并同步删除财务记录'
+                : '已删除患者 "${patient.name}" 的收费明细项',
           );
         } else {
           AppToastManager.showError(
@@ -1490,10 +1474,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       debt: debt,
       onTap: () => _showFinancialDetail(patient),
       onEdit: () async {
-        final result = await _showEditFinancialRecordDialog(patient, record);
-        if (result == true) {
-          await _loadData();
-        }
+        await _showEditFinancialRecordDialog(patient, record);
       },
       onDelete: () => _deleteAllFinancialRecordsByPatient(record),
     );
@@ -1564,10 +1545,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       ),
     );
 
-    if (result == true) {
-      await _loadData();
-    }
-
     return result ?? false;
   }
 
@@ -1584,10 +1561,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           record: record,
         ),
       );
-
-      if (result == true) {
-        await _loadData();
-      }
 
       return result ?? false;
     } catch (e) {

@@ -9,7 +9,7 @@ import 'material_dropdown_field.dart';
 import 'material_unit_dropdown.dart';
 
 /// 材料表单对话框
-/// 
+///
 /// 用于添加或编辑材料信息
 class MaterialFormDialog extends StatefulWidget {
   final material_models.MaterialInfo? material;
@@ -37,14 +37,44 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
   late TextEditingController _descriptionController;
   late TextEditingController _quantityController;
   late TextEditingController _unitController;
-  
+
   late String _selectedType;
   late String _selectedUnit;
-  
+
   final List<String> _unitOptions = [
-    '个', '瓶', '把', '盒', '包', '支', '片', '克', '毫升', '米', '厘米',
-    '箱', '卷', '袋', '套', '件', '条', '块', '粒', '颗', '根', '张',
-    '台', '架', '组', '对', '双', '副', '只', '枚', '筒', '罐', '桶'
+    '个',
+    '瓶',
+    '把',
+    '盒',
+    '包',
+    '支',
+    '片',
+    '克',
+    '毫升',
+    '米',
+    '厘米',
+    '箱',
+    '卷',
+    '袋',
+    '套',
+    '件',
+    '条',
+    '块',
+    '粒',
+    '颗',
+    '根',
+    '张',
+    '台',
+    '架',
+    '组',
+    '对',
+    '双',
+    '副',
+    '只',
+    '枚',
+    '筒',
+    '罐',
+    '桶'
   ];
 
   bool get isEditing => widget.material != null;
@@ -52,19 +82,25 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.material?.materialName ?? '');
-    _priceController = TextEditingController(text: widget.material?.defaultPrice.toString() ?? '0.0');
-    _supplierController = TextEditingController(text: widget.material?.supplier ?? '');
-    _descriptionController = TextEditingController(text: widget.fixMaybeDecoded(widget.material?.description ?? ''));
-    _quantityController = TextEditingController(text: '1');
-    
+    _nameController =
+        TextEditingController(text: widget.material?.materialName ?? '');
+    _priceController = TextEditingController(
+        text: widget.material?.defaultPrice.toString() ?? '0.0');
+    _supplierController =
+        TextEditingController(text: widget.material?.supplier ?? '');
+    _descriptionController = TextEditingController(
+        text: widget.fixMaybeDecoded(widget.material?.description ?? ''));
+    _quantityController = TextEditingController(
+        text: widget.material?.stockQuantity.toString() ?? '1');
+
     _selectedType = widget.material?.materialType ?? '其他';
     _selectedUnit = widget.material?.unit ?? '个';
     _unitController = TextEditingController(text: _selectedUnit);
-    
+
     // Initialize _codeController immediately to avoid LateInitializationError
     if (isEditing) {
-      _codeController = TextEditingController(text: widget.material?.materialCode ?? '');
+      _codeController =
+          TextEditingController(text: widget.material?.materialCode ?? '');
     } else {
       _codeController = TextEditingController(text: 'M001'); // Default value
       _initializeNextCode(); // Update asynchronously
@@ -73,7 +109,8 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
 
   Future<void> _initializeNextCode() async {
     try {
-      final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+      final materialProvider =
+          Provider.of<MaterialProvider>(context, listen: false);
       final nextCode = await materialProvider.getNextMaterialCode();
       setState(() {
         _codeController = TextEditingController(text: nextCode);
@@ -111,13 +148,16 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
 
     try {
       final price = double.tryParse(_priceController.text) ?? 0.0;
-      
+
       String? materialCode;
       if (isEditing) {
-        materialCode = _codeController.text.trim().isEmpty ? null : _codeController.text.trim();
+        materialCode = _codeController.text.trim().isEmpty
+            ? null
+            : _codeController.text.trim();
       } else {
         if (_codeController.text.trim().isEmpty) {
-          final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+          final materialProvider =
+              Provider.of<MaterialProvider>(context, listen: false);
           try {
             materialCode = await materialProvider.getNextMaterialCode();
           } catch (e) {
@@ -128,7 +168,7 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
           materialCode = _codeController.text.trim();
         }
       }
-      
+
       final newMaterial = material_models.MaterialInfo(
         id: widget.material?.id,
         materialName: _nameController.text.trim(),
@@ -136,13 +176,19 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
         materialType: _selectedType,
         unit: _unitController.text,
         defaultPrice: price,
-        supplier: _supplierController.text.trim().isEmpty ? null : _supplierController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
+        stockQuantity: int.tryParse(_quantityController.text.trim()) ?? 0,
+        supplier: _supplierController.text.trim().isEmpty
+            ? null
+            : _supplierController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
       );
 
-      final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+      final materialProvider =
+          Provider.of<MaterialProvider>(context, listen: false);
       bool success;
-      
+
       if (isEditing) {
         success = await materialProvider.updateMaterial(newMaterial);
       } else {
@@ -153,7 +199,8 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
       if (success) {
         Navigator.of(context).pop(true);
         widget.onSuccess();
-        AppToastManager.showSuccess(context, message: isEditing ? '材料更新成功' : '材料添加成功');
+        AppToastManager.showSuccess(context,
+            message: isEditing ? '材料更新成功' : '材料添加成功');
       } else {
         AppToastManager.showError(context, message: '操作失败');
       }
@@ -260,23 +307,20 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
               icon: Icons.inventory_rounded,
               isRequired: true,
             ),
-            
             const SizedBox(height: 20),
-            
             MaterialFormField(
               controller: _codeController,
               label: '材料编码',
               hint: '例如: M001',
               icon: Icons.qr_code_rounded,
             ),
-            
             const SizedBox(height: 20),
-            
             MaterialDropdownField(
               value: _selectedType,
               label: '材料类型',
               icon: Icons.category_rounded,
-              items: widget.materialTypes.where((type) => type != '全部').toList(),
+              items:
+                  widget.materialTypes.where((type) => type != '全部').toList(),
               onChanged: (value) {
                 if (value != null) {
                   setState(() {
@@ -285,9 +329,7 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
                 }
               },
             ),
-            
             const SizedBox(height: 20),
-            
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -307,7 +349,8 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.straighten_rounded, size: 20, color: AppTheme.primaryColor),
+                          Icon(Icons.straighten_rounded,
+                              size: 20, color: AppTheme.primaryColor),
                           const SizedBox(width: 8),
                           Text(
                             '单位',
@@ -334,9 +377,7 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
                 ),
               ],
             ),
-            
             const SizedBox(height: 20),
-            
             MaterialFormField(
               controller: _priceController,
               label: '默认价格',
@@ -345,18 +386,14 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
               keyboardType: TextInputType.number,
               prefix: '¥',
             ),
-            
             const SizedBox(height: 20),
-            
             MaterialFormField(
               controller: _supplierController,
               label: '供应商',
               hint: '请输入供应商名称',
               icon: Icons.business_rounded,
             ),
-            
             const SizedBox(height: 20),
-            
             MaterialFormField(
               controller: _descriptionController,
               label: '描述',

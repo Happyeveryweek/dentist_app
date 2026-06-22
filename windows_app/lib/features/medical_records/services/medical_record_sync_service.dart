@@ -21,7 +21,8 @@ class MedicalRecordSyncService {
     Future.microtask(() async {
       try {
         final conn = getSyncMysqlConnection();
-        final summary = 'patient_id=${recordMap['patient_id'] ?? ''}, record_number=${recordMap['record_number'] ?? ''}';
+        final summary =
+            'patient_id=${recordMap['patient_id'] ?? ''}, record_number=${recordMap['record_number'] ?? ''}';
         if (conn == null) {
           await LogManager.logSyncOperation(
             module: 'medical_record',
@@ -64,7 +65,8 @@ class MedicalRecordSyncService {
             print('成功更新MySQL病历记录(id=$recordId)，影响行数: ${result.affectedRows}');
           } else {
             final insertFields = ['id', ...fields];
-            final placeholders = List.filled(insertFields.length, '?').join(', ');
+            final placeholders =
+                List.filled(insertFields.length, '?').join(', ');
             final result = await conn.query(
               'INSERT INTO patient_medical_records (${insertFields.join(', ')}) VALUES ($placeholders)',
               [recordId, ...values],
@@ -98,7 +100,8 @@ class MedicalRecordSyncService {
           table: 'patient_medical_records',
           status: 'failed',
           recordId: recordId,
-          summary: 'patient_id=${recordMap['patient_id'] ?? ''}, record_number=${recordMap['record_number'] ?? ''}',
+          summary:
+              'patient_id=${recordMap['patient_id'] ?? ''}, record_number=${recordMap['record_number'] ?? ''}',
           error: e.toString(),
         );
         print('病历记录同步到MySQL发生不可预期错误: $e');
@@ -170,13 +173,13 @@ class MedicalRecordSyncService {
           if (existResult.isNotEmpty) {
             final result = await conn.query('''
               UPDATE medical_record_templates SET
-                name = ?, category = ?, content = ?,
+                name = ?, category = ?, description = ?,
                 created_at = ?, updated_at = ?
               WHERE id = ?
             ''', [
               templateMap['name'],
               templateMap['category'],
-              templateMap['content'],
+              templateMap['description'] ?? templateMap['content'] ?? '',
               templateMap['created_at'],
               templateMap['updated_at'],
               templateId,
@@ -185,13 +188,13 @@ class MedicalRecordSyncService {
           } else {
             final result = await conn.query('''
               INSERT INTO medical_record_templates
-              (id, name, category, content, created_at, updated_at)
+              (id, name, category, description, created_at, updated_at)
               VALUES (?, ?, ?, ?, ?, ?)
             ''', [
               templateId,
               templateMap['name'],
               templateMap['category'],
-              templateMap['content'],
+              templateMap['description'] ?? templateMap['content'] ?? '',
               templateMap['created_at'],
               templateMap['updated_at'],
             ]);

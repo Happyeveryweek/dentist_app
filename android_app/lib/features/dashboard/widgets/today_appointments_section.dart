@@ -4,7 +4,6 @@ import '../../../models/database_models.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../../utils/permission_utils.dart';
-import '../../../screens/appointment_detail_screen.dart';
 import '../../../screens/home_screen.dart';
 import 'appointment_card.dart';
 
@@ -12,11 +11,13 @@ import 'appointment_card.dart';
 class TodayAppointmentsSection extends StatelessWidget {
   final List<Appointment> todayAppointments;
   final Animation<double> fadeAnimation;
+  final VoidCallback onDetailUpdated;
 
   const TodayAppointmentsSection({
     super.key,
     required this.todayAppointments,
     required this.fadeAnimation,
+    required this.onDetailUpdated,
   });
 
   @override
@@ -129,6 +130,7 @@ class TodayAppointmentsSection extends StatelessWidget {
                         return AppointmentCard(
                           appointment: appointment,
                           patient: patient,
+                          onDetailUpdated: onDetailUpdated,
                         );
                       },
                     );

@@ -17,22 +17,22 @@ class FinancialDetailService {
   ) async {
     try {
       final allRecords = await financialProvider.getAllFinancialRecords();
-      
+
       // 获取该患者的所有财务记录
-      final patientRecords = allRecords
-          .where((record) => record.patientId == patientId)
-          .toList();
-      
+      final patientRecords =
+          allRecords.where((record) => record.patientId == patientId).toList();
+
       // 按日期排序，最新的在前面
       patientRecords.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      
+
       // 为每个财务记录加载其明细项
       final List<Map<String, dynamic>> detailedRecords = [];
-      
+
       for (final record in patientRecords) {
         // 获取该财务记录的所有明细项
-        final items = await financialProvider.getFinancialItemsByRecordId(record.id!);
-        
+        final items =
+            await financialProvider.getFinancialItemsByRecordId(record.id!);
+
         if (items.isNotEmpty) {
           // 如果有明细项，为每个明细项创建一个显示记录
           for (final item in items) {
@@ -40,7 +40,8 @@ class FinancialDetailService {
               'record': record,
               'item': item,
               'isDetail': true,
-              'isHighlighted': initialRecordId != null && record.id == initialRecordId,
+              'isHighlighted':
+                  initialRecordId != null && record.id == initialRecordId,
             });
           }
         } else {
@@ -49,11 +50,12 @@ class FinancialDetailService {
             'record': record,
             'item': null,
             'isDetail': false,
-            'isHighlighted': initialRecordId != null && record.id == initialRecordId,
+            'isHighlighted':
+                initialRecordId != null && record.id == initialRecordId,
           });
         }
       }
-      
+
       return detailedRecords;
     } catch (e) {
       throw Exception('获取财务记录失败: $e');
@@ -64,8 +66,9 @@ class FinancialDetailService {
   Future<FinancialRecord?> getOrCreateFinancialRecord(int patientId) async {
     try {
       // 首先检查该患者是否已有财务记录
-      final existingRecords = await financialProvider.getFinancialRecordsByPatientId(patientId);
-      
+      final existingRecords =
+          await financialProvider.getFinancialRecordsByPatientId(patientId);
+
       if (existingRecords.isNotEmpty) {
         // 如果已有记录，返回第一个记录（通常按创建时间排序）
         return existingRecords.first;
@@ -79,9 +82,9 @@ class FinancialDetailService {
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
-        
+
         final recordId = await financialProvider.addFinancialRecord(newRecord);
-        
+
         if (recordId > 0) {
           // 返回创建的记录
           return newRecord.copyWith(id: recordId);
@@ -103,19 +106,36 @@ class FinancialDetailService {
     }
   }
 
+  Future<bool> deleteFinancialItemAndCleanupRecord({
+    required int itemId,
+    required int recordId,
+  }) async {
+    try {
+      return await financialProvider.deleteFinancialItemAndCleanupRecord(
+        itemId: itemId,
+        recordId: recordId,
+      );
+    } catch (e) {
+      throw Exception('删除收费明细项失败: $e');
+    }
+  }
+
   /// 更新财务记录的收费项数量和更新时间
-  Future<void> updateFinancialRecordAfterItemChange(FinancialRecord record) async {
+  Future<void> updateFinancialRecordAfterItemChange(
+      FinancialRecord record) async {
     try {
       // 获取该财务记录的所有收费项，重新计算总数量
-      final items = await financialProvider.getFinancialItemsByRecordId(record.id!);
-      final totalQuantity = items.fold<int>(0, (sum, item) => sum + (item.quantity ?? 1));
-      
+      final items =
+          await financialProvider.getFinancialItemsByRecordId(record.id!);
+      final totalQuantity =
+          items.fold<int>(0, (sum, item) => sum + (item.quantity ?? 1));
+
       // 更新财务记录
       final updatedRecord = record.copyWith(
         totalQuantity: totalQuantity,
         updatedAt: DateTime.now(),
       );
-      
+
       await financialProvider.updateFinancialRecord(updatedRecord);
     } catch (e) {
       throw Exception('更新财务记录失败: $e');
