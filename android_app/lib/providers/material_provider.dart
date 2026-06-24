@@ -1,16 +1,12 @@
 import 'package:flutter/foundation.dart';
 import '../models/material.dart';
-import '../models/database_models.dart';
-import '../providers/database_provider.dart';
 import '../utils/database_operation_wrapper.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
-import 'package:intl/intl.dart';
 import '../data_sources/material_data_source.dart';
 import '../features/materials/services/material_initialization_service.dart';
 import 'dart:async';
-import 'dart:convert';
-import 'dart:typed_data';
+import '../utils/app_logger.dart';
 
 class MaterialProvider extends ChangeNotifier {
   // 数据库连接
@@ -30,21 +26,8 @@ class MaterialProvider extends ChangeNotifier {
   final MaterialInitializationService _initializationService =
       MaterialInitializationService();
 
-  // 缓存机制
-  List<DentalMaterial>? _cachedMaterials;
-  DateTime? _lastCacheTime;
-  static const Duration _cacheValidDuration = Duration(minutes: 20);
-
-  // 连接/状态
-  bool _isConnected = true;
-  bool _isReconnecting = false;
-  String? _lastError;
-
   // 初始化标志
   bool _isInitializedFlag = false;
-
-  // 数据列表
-  List<DentalMaterial> _materials = [];
 
   // 刷新标志
   bool _materialsNeedRefresh = false;
@@ -86,7 +69,7 @@ class MaterialProvider extends ChangeNotifier {
         return latest;
       }
     } catch (e) {
-      print('获取最新MySQL连接失败: $e');
+      AppLogger.info('获取最新MySQL连接失败: $e');
     }
     return _mysqlConnection;
   }
@@ -99,7 +82,7 @@ class MaterialProvider extends ChangeNotifier {
     if (_isInitializedFlag) return;
 
     try {
-      print('MaterialProvider开始初始化...');
+      AppLogger.info('MaterialProvider开始初始化...');
 
       // 保存 DatabaseProvider 引用，用于动态获取 MySQL 连接
       _databaseProvider = dbProvider;
@@ -126,9 +109,9 @@ class MaterialProvider extends ChangeNotifier {
       _dbWrapper = DatabaseOperationWrapper(dbProvider);
 
       _isInitializedFlag = result.initialized;
-      print('MaterialProvider初始化完成');
+      AppLogger.info('MaterialProvider初始化完成');
     } catch (e) {
-      print('MaterialProvider初始化失败: $e');
+      AppLogger.info('MaterialProvider初始化失败: $e');
       _dataSourceType = 'sqlite';
       _isInitializedFlag = true;
     }
@@ -156,7 +139,7 @@ class MaterialProvider extends ChangeNotifier {
         );
       }
     } catch (e) {
-      print('MaterialProvider 构造时初始化数据源失败: $e');
+      AppLogger.info('MaterialProvider 构造时初始化数据源失败: $e');
     }
   }
 
@@ -180,7 +163,7 @@ class MaterialProvider extends ChangeNotifier {
         );
       }
     } catch (e) {
-      print('设置数据源实现失败: $e');
+      AppLogger.info('设置数据源实现失败: $e');
     }
   }
 
@@ -208,13 +191,9 @@ class MaterialProvider extends ChangeNotifier {
         // 使用数据源模式（统一接口）
         final materials = await _currentDataSource.getAllMaterials();
 
-        // 更新缓存
-        _cachedMaterials = List.from(materials);
-        _lastCacheTime = DateTime.now();
-
         return materials;
       } catch (e) {
-        print('获取材料列表失败: $e');
+        AppLogger.info('获取材料列表失败: $e');
         rethrow;
       }
     });
@@ -231,7 +210,7 @@ class MaterialProvider extends ChangeNotifier {
         // 使用数据源模式（统一接口）
         return await _currentDataSource.getMaterialById(id);
       } catch (e) {
-        print('获取材料失败: $e');
+        AppLogger.info('获取材料失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return null;
       }
@@ -249,7 +228,7 @@ class MaterialProvider extends ChangeNotifier {
         // 使用数据源模式（统一接口）
         return await _currentDataSource.searchMaterials(query);
       } catch (e) {
-        print('搜索材料失败: $e');
+        AppLogger.info('搜索材料失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return [];
       }
@@ -275,7 +254,7 @@ class MaterialProvider extends ChangeNotifier {
 
         return id;
       } catch (e) {
-        print('添加材料失败: $e');
+        AppLogger.info('添加材料失败: $e');
         rethrow;
       }
     });
@@ -301,7 +280,7 @@ class MaterialProvider extends ChangeNotifier {
 
         return count;
       } catch (e) {
-        print('更新材料失败: $e');
+        AppLogger.info('更新材料失败: $e');
         rethrow;
       }
     });
@@ -327,7 +306,7 @@ class MaterialProvider extends ChangeNotifier {
 
         return count;
       } catch (e) {
-        print('删除材料失败: $e');
+        AppLogger.info('删除材料失败: $e');
         rethrow;
       }
     });
@@ -353,7 +332,7 @@ class MaterialProvider extends ChangeNotifier {
       }
       return results.any((m) => m.materialName == materialName);
     } catch (e) {
-      print('检查材料名称是否存在失败: $e');
+      AppLogger.info('检查材料名称是否存在失败: $e');
       return false;
     }
   }
@@ -369,7 +348,7 @@ class MaterialProvider extends ChangeNotifier {
         // 使用数据源模式（统一接口）
         return await _currentDataSource.getMaterialStatistics();
       } catch (e) {
-        print('获取材料统计信息失败: $e');
+        AppLogger.info('获取材料统计信息失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return {'totalMaterials': 0, 'totalValue': 0.0, 'supplierCount': 0};
       }
@@ -428,7 +407,7 @@ class MaterialProvider extends ChangeNotifier {
 
       return '$prefix${nextNumber.toString().padLeft(3, '0')}';
     } catch (e) {
-      print('生成材料编码失败: $e');
+      AppLogger.info('生成材料编码失败: $e');
       return 'M001';
     }
   }

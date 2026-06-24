@@ -35,7 +35,7 @@ class _StatefulTextFieldState extends State<StatefulTextField> {
     super.initState();
     _controller = TextEditingController(text: widget.initialValue);
     _focusNode = FocusNode();
-    
+
     // 监听文本变化
     _controller.addListener(() {
       widget.onChanged(_controller.text);
@@ -45,7 +45,7 @@ class _StatefulTextFieldState extends State<StatefulTextField> {
   @override
   void didUpdateWidget(StatefulTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
     // 只有在初始值改变且输入框没有焦点时才更新
     if (widget.initialValue != oldWidget.initialValue && !_focusNode.hasFocus) {
       _controller.text = widget.initialValue;

@@ -6,15 +6,12 @@ import 'package:intl/intl.dart';
 class MonthlyProcessingChart extends StatelessWidget {
   final Map<String, double> monthlyData;
 
-  const MonthlyProcessingChart({
-    super.key,
-    required this.monthlyData,
-  });
+  const MonthlyProcessingChart({super.key, required this.monthlyData});
 
   @override
   Widget build(BuildContext context) {
     final sortedMonths = monthlyData.keys.toList()..sort();
-    
+
     if (sortedMonths.isEmpty) {
       return Container(
         decoration: BoxDecoration(
@@ -70,7 +67,7 @@ class MonthlyProcessingChart extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // 使用紧凑的列表布局
           Expanded(
             child: ListView.builder(
@@ -80,12 +77,15 @@ class MonthlyProcessingChart extends StatelessWidget {
                 final reversedIndex = sortedMonths.length - 1 - index;
                 final month = sortedMonths[reversedIndex];
                 final value = monthlyData[month]!;
-                
+
                 final valueRate = maxValue > 0 ? value / maxValue : 0.0;
-                
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.teal.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
@@ -115,9 +115,9 @@ class MonthlyProcessingChart extends StatelessWidget {
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(width: 12),
-                      
+
                       // 中间：进度条和金额
                       Expanded(
                         child: Column(
@@ -148,7 +148,9 @@ class MonthlyProcessingChart extends StatelessWidget {
                             LinearProgressIndicator(
                               value: valueRate,
                               backgroundColor: Colors.grey[200],
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.teal[600]!),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.teal[600]!,
+                              ),
                               minHeight: 3,
                             ),
                           ],

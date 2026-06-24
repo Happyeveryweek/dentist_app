@@ -5,10 +5,7 @@ import '../services/appointment_status_helper.dart';
 class StatusChip extends StatelessWidget {
   final String status;
 
-  const StatusChip({
-    super.key,
-    required this.status,
-  });
+  const StatusChip({super.key, required this.status});
 
   @override
   Widget build(BuildContext context) {
@@ -19,15 +16,15 @@ class StatusChip extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            statusInfo.color.withOpacity(0.15),
-            statusInfo.color.withOpacity(0.1),
+            statusInfo.color.withValues(alpha: 0.15),
+            statusInfo.color.withValues(alpha: 0.1),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: statusInfo.color.withOpacity(0.3),
+          color: statusInfo.color.withValues(alpha: 0.3),
           width: 1,
         ),
       ),

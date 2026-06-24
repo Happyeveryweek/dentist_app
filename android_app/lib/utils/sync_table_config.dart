@@ -18,7 +18,7 @@ class SyncTableConfig {
     'patient_medical_records',
     'medical_record_templates',
   ];
-  
+
   /// 获取所有需要同步的表及其SQLite结构
   static Map<String, TableSchema> getSyncTables() {
     return {
@@ -36,15 +36,15 @@ class SyncTableConfig {
       'medical_record_templates': SQLiteMedicalRecordTemplatesTableSchema(),
     };
   }
-  
+
   /// 检查表名是否在同步列表中
   static bool isSyncTable(String tableName) {
     return syncTableNames.contains(tableName);
   }
-  
+
   /// 获取同步表数量
   static int get syncTableCount => syncTableNames.length;
-  
+
   /// 获取表的SQLite结构
   static TableSchema? getTableSchema(String tableName) {
     final tables = getSyncTables();

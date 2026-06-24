@@ -1,15 +1,13 @@
-import 'package:mysql1/mysql1.dart';
-import 'package:sqflite/sqflite.dart';
 import 'user_connection_service.dart';
+import '../../../utils/app_logger.dart';
 
 /// 用户统计服务
 /// 职责：用户统计信息查询
 class UserStatisticsService {
   final UserConnectionService _connectionService;
 
-  UserStatisticsService({
-    required UserConnectionService connectionService,
-  }) : _connectionService = connectionService;
+  UserStatisticsService({required UserConnectionService connectionService})
+    : _connectionService = connectionService;
 
   /// 获取用户统计信息
   Future<Map<String, dynamic>> getUserStatistics() async {
@@ -33,13 +31,13 @@ class UserStatisticsService {
       if (_connectionService.dataSourceType == 'sqlite') {
         final db = _connectionService.getSqliteDatabase();
         if (db == null) return stats;
-        
+
         // 检查数据库是否仍然可用
         if (!db.isOpen) {
-          print('SQLite数据库连接已关闭，返回默认统计信息');
+          AppLogger.info('SQLite数据库连接已关闭，返回默认统计信息');
           return stats;
         }
-        
+
         final result = await db.rawQuery('''
           SELECT 
             COUNT(*) as total_users,
@@ -48,7 +46,7 @@ class UserStatisticsService {
             COUNT(CASE WHEN role = 'user' THEN 1 END) as user_count
           FROM users
         ''');
-        
+
         if (result.isNotEmpty) {
           stats['totalUsers'] = result.first['total_users'] ?? 0;
           stats['adminCount'] = result.first['admin_count'] ?? 0;
@@ -58,16 +56,16 @@ class UserStatisticsService {
       } else if (_connectionService.dataSourceType == 'mysql') {
         final conn = _connectionService.getCurrentMysqlConnection();
         if (conn == null) return stats;
-        
+
         // 检查MySQL连接是否仍然有效
         try {
           // 尝试执行一个简单的查询来测试连接
           await conn.query('SELECT 1');
         } catch (e) {
-          print('MySQL连接已断开，返回默认统计信息');
+          AppLogger.info('MySQL连接已断开，返回默认统计信息');
           return stats;
         }
-        
+
         final results = await conn.query('''
           SELECT 
             COUNT(*) as total_users,
@@ -76,7 +74,7 @@ class UserStatisticsService {
             COUNT(CASE WHEN role = 'user' THEN 1 END) as user_count
           FROM users
         ''');
-        
+
         if (results.isNotEmpty) {
           final row = results.first;
           stats['totalUsers'] = row['total_users'] ?? 0;
@@ -88,7 +86,7 @@ class UserStatisticsService {
 
       return stats;
     } catch (e) {
-      print('获取用户统计信息失败: $e');
+      AppLogger.info('获取用户统计信息失败: $e');
       return {
         'totalUsers': 0,
         'adminCount': 0,

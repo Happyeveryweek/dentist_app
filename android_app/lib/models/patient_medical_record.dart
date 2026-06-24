@@ -1,22 +1,23 @@
 import '../utils/datetime_formatter.dart';
+import '../utils/app_logger.dart';
 
 /// 患者病历模型
 class PatientMedicalRecord {
   final int? id;
   final int patientId;
-  final String recordNumber;           // 病历编号
-  final DateTime recordDate;           // 病历日期
-  final String chiefComplaint;         // 主诉
-  final String presentIllness;         // 现病史
-  final String pastMedicalHistory;     // 全身疾病既往史
-  final String pastDentalHistory;      // 口腔疾病既往史
-  final String allergyHistory;         // 过敏史
-  final String oralExamination;        // 口腔检查
-  final String diagnosis;              // 诊断
-  final String treatmentPlan;          // 治疗方案
-  final String notes;                  // 注意事项
-  final String doctorName;             // 医生姓名
-  final String? createdByDoctor;       // 创建病历的医生姓名（用于权限控制）
+  final String recordNumber; // 病历编号
+  final DateTime recordDate; // 病历日期
+  final String chiefComplaint; // 主诉
+  final String presentIllness; // 现病史
+  final String pastMedicalHistory; // 全身疾病既往史
+  final String pastDentalHistory; // 口腔疾病既往史
+  final String allergyHistory; // 过敏史
+  final String oralExamination; // 口腔检查
+  final String diagnosis; // 诊断
+  final String treatmentPlan; // 治疗方案
+  final String notes; // 注意事项
+  final String doctorName; // 医生姓名
+  final String? createdByDoctor; // 创建病历的医生姓名（用于权限控制）
   final String? selectedDentalConditionDate; // 关联的牙齿状况日期
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -40,8 +41,8 @@ class PatientMedicalRecord {
     this.selectedDentalConditionDate,
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   /// 从Map构造PatientMedicalRecord对象
   factory PatientMedicalRecord.fromMap(Map<String, dynamic> map) {
@@ -54,14 +55,14 @@ class PatientMedicalRecord {
         try {
           return String.fromCharCodes(field);
         } catch (e) {
-          print('PatientMedicalRecord.fromMap: Blob转换失败: $e');
+          AppLogger.info('PatientMedicalRecord.fromMap: Blob转换失败: $e');
           return '';
         }
       }
       try {
         return field.toString();
       } catch (e) {
-        print('PatientMedicalRecord.fromMap: 字段转换失败: $e');
+        AppLogger.info('PatientMedicalRecord.fromMap: 字段转换失败: $e');
         return '';
       }
     }
@@ -73,10 +74,12 @@ class PatientMedicalRecord {
         if (map['created_at'] is DateTime) {
           createdAt = map['created_at'];
         } else {
-          createdAt = DateTimeFormatter.fromDbString(map['created_at'].toString());
+          createdAt = DateTimeFormatter.fromDbString(
+            map['created_at'].toString(),
+          );
         }
       } catch (e) {
-        print('解析created_at错误: ${map['created_at']}');
+        AppLogger.info('解析created_at错误: ${map['created_at']}');
       }
     }
 
@@ -86,10 +89,12 @@ class PatientMedicalRecord {
         if (map['updated_at'] is DateTime) {
           updatedAt = map['updated_at'];
         } else {
-          updatedAt = DateTimeFormatter.fromDbString(map['updated_at'].toString());
+          updatedAt = DateTimeFormatter.fromDbString(
+            map['updated_at'].toString(),
+          );
         }
       } catch (e) {
-        print('解析updated_at错误: ${map['updated_at']}');
+        AppLogger.info('解析updated_at错误: ${map['updated_at']}');
       }
     }
 
@@ -100,10 +105,12 @@ class PatientMedicalRecord {
         if (map['record_date'] is DateTime) {
           recordDate = map['record_date'];
         } else {
-          recordDate = DateTimeFormatter.fromDbString(map['record_date'].toString());
+          recordDate = DateTimeFormatter.fromDbString(
+            map['record_date'].toString(),
+          );
         }
       } catch (e) {
-        print('解析record_date错误: ${map['record_date']}');
+        AppLogger.info('解析record_date错误: ${map['record_date']}');
       }
     }
 
@@ -122,12 +129,14 @@ class PatientMedicalRecord {
       treatmentPlan: safeStringFromField(map['treatment_plan']),
       notes: safeStringFromField(map['notes']),
       doctorName: safeStringFromField(map['doctor_name']),
-      createdByDoctor: safeStringFromField(map['created_by_doctor']).isEmpty 
-          ? null 
-          : safeStringFromField(map['created_by_doctor']),
-      selectedDentalConditionDate: safeStringFromField(map['selected_dental_condition_date']).isEmpty 
-          ? null 
-          : safeStringFromField(map['selected_dental_condition_date']),
+      createdByDoctor:
+          safeStringFromField(map['created_by_doctor']).isEmpty
+              ? null
+              : safeStringFromField(map['created_by_doctor']),
+      selectedDentalConditionDate:
+          safeStringFromField(map['selected_dental_condition_date']).isEmpty
+              ? null
+              : safeStringFromField(map['selected_dental_condition_date']),
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -161,7 +170,7 @@ class PatientMedicalRecord {
   Map<String, dynamic> toJson() => toMap();
 
   /// 从JSON构造对象
-  factory PatientMedicalRecord.fromJson(Map<String, dynamic> json) => 
+  factory PatientMedicalRecord.fromJson(Map<String, dynamic> json) =>
       PatientMedicalRecord.fromMap(json);
 
   /// 复制PatientMedicalRecord对象，但可以修改部分属性
@@ -201,7 +210,8 @@ class PatientMedicalRecord {
       notes: notes ?? this.notes,
       doctorName: doctorName ?? this.doctorName,
       createdByDoctor: createdByDoctor ?? this.createdByDoctor,
-      selectedDentalConditionDate: selectedDentalConditionDate ?? this.selectedDentalConditionDate,
+      selectedDentalConditionDate:
+          selectedDentalConditionDate ?? this.selectedDentalConditionDate,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTime.now(), // 更新时间总是使用当前时间
     );

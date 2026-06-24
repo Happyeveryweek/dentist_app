@@ -37,11 +37,14 @@ class PurchaseDateRangeService {
   }
 
   /// 应用预设时间范围
-  static Map<String, DateTime> applyPreset(String preset, DateTime earliestDate) {
+  static Map<String, DateTime> applyPreset(
+    String preset,
+    DateTime earliestDate,
+  ) {
     final now = DateTimeFormatter.nowLocal();
     DateTime start;
     DateTime end = DateTime(now.year, now.month, now.day);
-    
+
     switch (preset) {
       case 'this_month':
         start = DateTime(now.year, now.month, 1);
@@ -64,7 +67,7 @@ class PurchaseDateRangeService {
       default:
         start = DateTime(now.year, now.month - 2, 1);
     }
-    
+
     return {'start': start, 'end': end};
   }
 
@@ -78,7 +81,7 @@ class PurchaseDateRangeService {
     final now = DateTimeFormatter.nowLocal();
     final s = DateTime(startDate.year, startDate.month, startDate.day);
     final e = DateTime(endDate.year, endDate.month, endDate.day);
-    
+
     switch (preset) {
       case 'this_month':
         final ps = DateTime(now.year, now.month, 1);
@@ -113,10 +116,15 @@ class PurchaseDateRangeService {
   }
 
   /// 判断记录是否在时间范围内
-  static bool isWithinRange(DateTime date, DateTime startDate, DateTime endDate) {
+  static bool isWithinRange(
+    DateTime date,
+    DateTime startDate,
+    DateTime endDate,
+  ) {
     final d = DateTime(date.year, date.month, date.day);
     final s = DateTime(startDate.year, startDate.month, startDate.day);
     final e = DateTime(endDate.year, endDate.month, endDate.day);
-    return (d.isAtSameMomentAs(s) || d.isAfter(s)) && (d.isAtSameMomentAs(e) || d.isBefore(e));
+    return (d.isAtSameMomentAs(s) || d.isAfter(s)) &&
+        (d.isAtSameMomentAs(e) || d.isBefore(e));
   }
 }

@@ -14,6 +14,7 @@ import '../features/purchases/widgets/purchase_items_card.dart';
 import '../features/purchases/widgets/purchase_amount_card.dart';
 import '../features/purchases/widgets/purchase_export_options_dialog.dart';
 import '../features/purchases/services/purchase_export_service.dart';
+import '../utils/app_logger.dart';
 
 class PurchaseDetailScreen extends StatefulWidget {
   final PurchaseRecord record;
@@ -43,26 +44,31 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
     });
 
     try {
-      final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
-      
+      final purchaseProvider = Provider.of<PurchaseProvider>(
+        context,
+        listen: false,
+      );
+
       // ✅ 检查数据库连接状态
       if (!purchaseProvider.isInitialized) {
         throw Exception('数据库未初始化，请检查数据库连接');
       }
-      
-      print('🔄 开始加载采购项目，记录ID: ${widget.record.id}');
-      final items = await purchaseProvider.getPurchaseItemsByRecordId(widget.record.id!);
-      
+
+      AppLogger.info('🔄 开始加载采购项目，记录ID: ${widget.record.id}');
+      final items = await purchaseProvider.getPurchaseItemsByRecordId(
+        widget.record.id!,
+      );
+
       // ✅ 按更新时间降序排序，确保最新添加/更新的项目显示在最上面
       items.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      
-      print('✅ 成功加载 ${items.length} 个采购项目，按更新时间排序');
+
+      AppLogger.info('✅ 成功加载 ${items.length} 个采购项目，按更新时间排序');
       setState(() {
         _purchaseItems = items;
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ 加载采购项目失败: $e');
+      AppLogger.info('❌ 加载采购项目失败: $e');
       setState(() {
         _hasError = true;
         _errorMessage = '加载采购项目失败: $e';
@@ -113,11 +119,11 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
             // 基本信息
             _buildBasicInfoCard(),
             const SizedBox(height: 16),
-            
+
             // 采购项目明细
             _buildItemsCard(),
             const SizedBox(height: 16),
-            
+
             // 金额信息
             _buildAmountCard(),
           ],
@@ -141,7 +147,6 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
     );
   }
 
-
   Widget _buildAmountCard() {
     return PurchaseAmountCard(
       record: widget.record,
@@ -149,21 +154,24 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
     );
   }
 
-
-
   void _addPurchaseItem(BuildContext context) async {
     final result = await showDialog<PurchaseItem>(
       context: context,
-      builder: (context) => PurchaseItemDialog(
-        purchaseRecordId: widget.record.id!, // ✅ 传递采购记录ID
-      ),
+      builder:
+          (context) => PurchaseItemDialog(
+            purchaseRecordId: widget.record.id!, // ✅ 传递采购记录ID
+          ),
     );
-    
+
     if (result != null) {
+      if (!context.mounted) return;
       // 添加采购项目到数据库
       try {
-        final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
-        
+        final purchaseProvider = Provider.of<PurchaseProvider>(
+          context,
+          listen: false,
+        );
+
         // ✅ 确保项目有正确的采购记录ID和统一的时间格式
         final now = DateTimeFormatter.nowLocal();
         final purchaseItem = result.copyWith(
@@ -171,14 +179,14 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
           createdAt: now,
           updatedAt: now,
         );
-        
+
         final itemId = await purchaseProvider.addPurchaseItem(purchaseItem);
         if (itemId > 0) {
           // 重新加载采购项目
           await _loadPurchaseItems();
-          
+
           // ✅ 显示成功提示
-          if (mounted) {
+          if (context.mounted) {
             // 使用公共组件的绿色背景成功提示
             SuccessToastManager.show(
               context,
@@ -190,8 +198,8 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
           throw Exception('添加失败：返回ID无效');
         }
       } catch (e) {
-        print('添加采购项目失败: $e');
-        if (mounted) {
+        AppLogger.info('添加采购项目失败: $e');
+        if (context.mounted) {
           // 使用公共组件的错误提示
           SuccessToastManager.showError(
             context,
@@ -208,10 +216,11 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
       context: context,
       builder: (context) => PurchaseRecordDialog(record: widget.record),
     );
-    
+
     if (result == true) {
       // 编辑成功，重新加载数据
       await _loadPurchaseItems();
+      if (!context.mounted) return;
       // 使用公共组件的绿色背景成功提示
       SuccessToastManager.show(
         context,
@@ -229,30 +238,31 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
     );
 
     if (confirmed == true) {
+      if (!context.mounted) return;
       try {
-        final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
-        final success = await purchaseProvider.deletePurchaseRecord(widget.record.id!);
-        
+        final purchaseProvider = Provider.of<PurchaseProvider>(
+          context,
+          listen: false,
+        );
+        final success = await purchaseProvider.deletePurchaseRecord(
+          widget.record.id!,
+        );
+
         if (success > 0) {
-          if (mounted) {
+          if (context.mounted) {
             // 删除成功后返回上一页，并传递删除成功的标志
             Navigator.of(context).pop(true);
-            DeleteSuccessToastManager.show(
-              context,
-              message: '采购记录已删除',
-            );
+            DeleteSuccessToastManager.show(context, message: '采购记录已删除');
           }
         } else {
-          SuccessToastManager.showError(
-            context,
-            message: '删除失败',
-          );
+          if (context.mounted) {
+            SuccessToastManager.showError(context, message: '删除失败');
+          }
         }
       } catch (e) {
-        SuccessToastManager.showError(
-          context,
-          message: '删除失败: $e',
-        );
+        if (context.mounted) {
+          SuccessToastManager.showError(context, message: '删除失败: $e');
+        }
       }
     }
   }
@@ -263,7 +273,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
       context: context,
       builder: (context) => const PurchaseExportOptionsDialog(),
     );
-    
+
     // 如果用户选择了导出选项，则执行导出
     if (result != null) {
       _exportPurchaseRecordAsImage(result);
@@ -271,13 +281,12 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
   }
 
   /// 导出采购记录为图片
-  Future<void> _exportPurchaseRecordAsImage(Map<String, bool> exportOptions) async {
+  Future<void> _exportPurchaseRecordAsImage(
+    Map<String, bool> exportOptions,
+  ) async {
     try {
       // 显示加载提示
-      SuccessToastManager.showInfo(
-        context,
-        message: '正在生成图片...',
-      );
+      SuccessToastManager.showInfo(context, message: '正在生成图片...');
 
       // 使用导出服务生成图片数据
       final exportService = PurchaseExportService();
@@ -286,28 +295,23 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
         _purchaseItems,
         exportOptions,
       );
-      
+
       // 保存图片
       final result = await exportService.saveImageToDownloads(imageData);
-      
-      if (result != null) {
-        // 显示成功提示
-        SuccessToastManager.show(
-          context,
-          message: '图片已保存到: $result',
-        );
-      } else {
-        // 显示失败提示
-        SuccessToastManager.showError(
-          context,
-          message: '图片保存失败',
-        );
+
+      if (mounted) {
+        if (result != null) {
+          // 显示成功提示
+          SuccessToastManager.show(context, message: '图片已保存到: $result');
+        } else {
+          // 显示失败提示
+          SuccessToastManager.showError(context, message: '图片保存失败');
+        }
       }
     } catch (e) {
-      SuccessToastManager.showError(
-        context,
-        message: '导出失败: $e',
-      );
+      if (mounted) {
+        SuccessToastManager.showError(context, message: '导出失败: $e');
+      }
     }
   }
 }

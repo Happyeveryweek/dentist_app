@@ -1,12 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:dentist_app/models/purchase_item.dart';
 import 'package:dentist_app/models/purchase_record.dart';
-import 'package:dentist_app/models/database_models.dart';
-import 'package:dentist_app/providers/database_provider.dart';
 import 'package:dentist_app/providers/user_provider.dart';
 import 'package:dentist_app/utils/database_operation_wrapper.dart';
 import 'package:dentist_app/data_sources/purchase_data_source.dart'
-    hide SqlitePurchaseDataSource, MySqlPurchaseDataSource;
+    hide MySqlPurchaseDataSource;
 import 'package:dentist_app/data_sources/sqlite_purchase_data_source.dart';
 import 'package:dentist_app/data_sources/mysql_purchase_data_source.dart';
 import 'package:dentist_app/features/purchases/services/purchase_cache_service.dart';
@@ -17,6 +15,7 @@ import 'package:dentist_app/features/purchases/services/purchase_statistics_serv
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
 import 'dart:async';
+import '../utils/app_logger.dart';
 
 class PurchaseProvider extends ChangeNotifier {
   // 数据库连接
@@ -39,10 +38,6 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 初始化标志
   bool _isInitializedFlag = false;
-
-  // 数据列表
-  List<PurchaseRecord> _purchaseRecords = [];
-  List<PurchaseItem> _purchaseItems = [];
 
   // 服务实例
   PurchaseCacheService? _cacheService;
@@ -122,7 +117,7 @@ class PurchaseProvider extends ChangeNotifier {
         return latestConnection;
       }
     } catch (e) {
-      print('获取最新MySQL连接失败: $e');
+      AppLogger.info('获取最新MySQL连接失败: $e');
     }
 
     return _mysqlConnection;
@@ -160,7 +155,7 @@ class PurchaseProvider extends ChangeNotifier {
       _mysqlDataSource = result.mysqlDataSource;
 
       if (!_isInitializedFlag) {
-        print('警告：采购Provider未完成初始化，延迟重试...');
+        AppLogger.info('警告：采购Provider未完成初始化，延迟重试...');
         Future.delayed(const Duration(milliseconds: 500), () {
           if (!_isInitializedFlag) {
             initializeFromDatabase(dbProvider);
@@ -169,9 +164,9 @@ class PurchaseProvider extends ChangeNotifier {
         return;
       }
 
-      print('PurchaseProvider初始化完成');
+      AppLogger.info('PurchaseProvider初始化完成');
     } catch (e) {
-      print('PurchaseProvider初始化失败: $e');
+      AppLogger.info('PurchaseProvider初始化失败: $e');
       // 设置默认值，但不标记为已初始化
       _dataSourceType = 'sqlite';
       _isInitializedFlag = false;
@@ -179,15 +174,6 @@ class PurchaseProvider extends ChangeNotifier {
 
     // 延迟通知以避免在build阶段调用setState
     Future.microtask(() => notifyListeners());
-  }
-
-  // 监听数据库状态变化
-  void _onDatabaseStateChanged() {
-    if (_dataSourceType == 'mysql') {
-      // 由于我们无法直接获取DatabaseProvider实例，这里暂时跳过状态同步
-      // 实际使用时，可以通过依赖注入或其他方式获取DatabaseProvider
-      print('PurchaseProvider: 数据库状态变化通知');
-    }
   }
 
   // 构造函数
@@ -227,7 +213,7 @@ class PurchaseProvider extends ChangeNotifier {
   void clearCache() {
     _cacheService?.clearCache();
     _purchasesNeedRefresh = true; // 标记需要刷新
-    print('采购数据缓存已清除，标记需要刷新');
+    AppLogger.info('采购数据缓存已清除，标记需要刷新');
     // 延迟通知以避免在build阶段调用setState
     Future.microtask(() => notifyListeners());
   }
@@ -246,11 +232,11 @@ class PurchaseProvider extends ChangeNotifier {
       try {
         // 优先检查缓存（像财务管理一样）
         if (_cacheService?.isCacheValid() == true) {
-          print('使用缓存的采购记录数据: ${cachedRecords.length} 条');
+          AppLogger.info('使用缓存的采购记录数据: ${cachedRecords.length} 条');
           return cachedRecords;
         }
 
-        print('🔄 从数据库获取最新采购记录...');
+        AppLogger.info('🔄 从数据库获取最新采购记录...');
         List<PurchaseRecord> records = [];
 
         // 检查是否需要权限过滤
@@ -261,23 +247,23 @@ class PurchaseProvider extends ChangeNotifier {
           records = await _currentDataSource.getAllPurchases(
             doctorFilter: doctorFilter,
           );
-          print('✅ 权限过滤查询成功，获取到 ${records.length} 条采购记录（医生：$doctorFilter）');
+          AppLogger.info('✅ 权限过滤查询成功，获取到 ${records.length} 条采购记录（医生：$doctorFilter）');
         } else {
           // 使用数据源模式（统一接口）
           records = await _currentDataSource.getAllPurchases();
-          print('✅ 数据源模式查询成功，获取到 ${records.length} 条采购记录');
+          AppLogger.info('✅ 数据源模式查询成功，获取到 ${records.length} 条采购记录');
         }
 
         // 更新缓存
         _cacheService?.updateCache(records, {});
-        print('✅ 采购记录缓存已更新');
+        AppLogger.info('✅ 采购记录缓存已更新');
         return records;
       } catch (e) {
-        print('❌ 获取采购记录失败: $e');
+        AppLogger.info('❌ 获取采购记录失败: $e');
 
         // 优雅降级：如果有缓存就返回缓存，否则返回空列表（像财务管理一样）
         if (_cacheService?.isCacheValid() == true) {
-          print('使用缓存的采购记录数据，查询失败: $e');
+          AppLogger.info('使用缓存的采购记录数据，查询失败: $e');
           return cachedRecords;
         }
 
@@ -292,12 +278,12 @@ class PurchaseProvider extends ChangeNotifier {
     if (_cacheService?.isCacheValid() == true &&
         isConnected &&
         !_purchasesNeedRefresh) {
-      print('使用缓存的采购记录数据: ${cachedRecords.length} 条');
+      AppLogger.info('使用缓存的采购记录数据: ${cachedRecords.length} 条');
       return cachedRecords;
     }
 
     try {
-      print('🔄 缓存无效或需要刷新，从数据库获取最新数据...');
+      AppLogger.info('🔄 缓存无效或需要刷新，从数据库获取最新数据...');
       // 尝试从数据库获取最新数据
       final records = await getAllPurchaseRecords();
 
@@ -307,10 +293,10 @@ class PurchaseProvider extends ChangeNotifier {
 
       return records;
     } catch (e) {
-      print('❌ 获取最新数据失败: $e');
+      AppLogger.info('❌ 获取最新数据失败: $e');
       // 如果获取失败但有缓存，返回缓存数据
       if (hasCache) {
-        print('使用缓存的采购记录数据，连接异常: $e');
+        AppLogger.info('使用缓存的采购记录数据，连接异常: $e');
         return cachedRecords;
       }
       rethrow;
@@ -343,7 +329,7 @@ class PurchaseProvider extends ChangeNotifier {
 
         return await _currentDataSource.searchPurchases(trimmed);
       } catch (e) {
-        print('搜索采购记录失败: $e');
+        AppLogger.info('搜索采购记录失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return [];
       }
@@ -360,7 +346,7 @@ class PurchaseProvider extends ChangeNotifier {
       // 使用数据源模式（统一接口）
       return await _currentDataSource.getPurchaseById(id);
     } catch (e) {
-      print('获取采购记录失败: $e');
+      AppLogger.info('获取采购记录失败: $e');
       return null;
     }
   }
@@ -377,18 +363,18 @@ class PurchaseProvider extends ChangeNotifier {
       try {
         // 使用数据源模式（统一接口）
         final id = await _currentDataSource.createPurchase(record);
-        print('✅ 数据源模式添加成功，ID: $id');
+        AppLogger.info('✅ 数据源模式添加成功，ID: $id');
 
         if (id > 0) {
           // 清除缓存并标记需要刷新
           clearCache();
           markPurchasesNeedRefresh();
-          print('✅ 采购记录添加成功，已清除缓存并标记刷新');
+          AppLogger.info('✅ 采购记录添加成功，已清除缓存并标记刷新');
         }
 
         return id;
       } catch (e) {
-        print('添加采购记录失败: $e');
+        AppLogger.info('添加采购记录失败: $e');
         rethrow;
       }
     });
@@ -407,18 +393,18 @@ class PurchaseProvider extends ChangeNotifier {
         // 使用数据源模式（统一接口）
         final success = await _currentDataSource.updatePurchase(record);
         final count = success ? 1 : 0;
-        print('✅ 数据源模式更新${success ? "成功" : "失败"}');
+        AppLogger.info('✅ 数据源模式更新${success ? "成功" : "失败"}');
 
         if (count > 0) {
           // 清除缓存并标记需要刷新
           clearCache();
           markPurchasesNeedRefresh();
-          print('✅ 采购记录更新成功，已清除缓存并标记刷新');
+          AppLogger.info('✅ 采购记录更新成功，已清除缓存并标记刷新');
         }
 
         return count;
       } catch (e) {
-        print('更新采购记录失败: $e');
+        AppLogger.info('更新采购记录失败: $e');
         rethrow;
       }
     });
@@ -442,12 +428,12 @@ class PurchaseProvider extends ChangeNotifier {
           // 清除缓存并标记需要刷新
           clearCache();
           markPurchasesNeedRefresh();
-          print('✅ 采购记录删除成功，已清除缓存并标记刷新');
+          AppLogger.info('✅ 采购记录删除成功，已清除缓存并标记刷新');
         }
 
         return count;
       } catch (e) {
-        print('删除采购记录失败: $e');
+        AppLogger.info('删除采购记录失败: $e');
         rethrow;
       }
     });
@@ -473,7 +459,7 @@ class PurchaseProvider extends ChangeNotifier {
               .map((e) => PurchaseItem.fromMap(e, dataSource: _dataSourceType))
               .toList();
         } catch (e) {
-          print('获取采购项目明细失败: $e');
+          AppLogger.info('获取采购项目明细失败: $e');
           rethrow;
         }
       },
@@ -497,7 +483,7 @@ class PurchaseProvider extends ChangeNotifier {
 
         return id;
       } catch (e) {
-        print('添加采购项目明细失败: $e');
+        AppLogger.info('添加采购项目明细失败: $e');
         rethrow;
       }
     });
@@ -521,7 +507,7 @@ class PurchaseProvider extends ChangeNotifier {
 
         return count;
       } catch (e) {
-        print('更新采购项目明细失败: $e');
+        AppLogger.info('更新采购项目明细失败: $e');
         rethrow;
       }
     });
@@ -545,7 +531,7 @@ class PurchaseProvider extends ChangeNotifier {
 
         return count;
       } catch (e) {
-        print('删除采购项目明细失败: $e');
+        AppLogger.info('删除采购项目明细失败: $e');
         rethrow;
       }
     });
@@ -594,7 +580,7 @@ class PurchaseProvider extends ChangeNotifier {
 
         return await _statisticsService!.getPurchaseStatistics();
       } catch (e) {
-        print('获取采购统计信息失败: $e');
+        AppLogger.info('获取采购统计信息失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return {
           'totalRecords': 0,
@@ -640,7 +626,7 @@ class PurchaseProvider extends ChangeNotifier {
             endDate,
           );
         } catch (e) {
-          print('获取日期范围采购统计失败: $e');
+          AppLogger.info('获取日期范围采购统计失败: $e');
           if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
           return {'totalRecords': 0, 'totalAmount': 0.0, 'totalQuantity': 0};
         }

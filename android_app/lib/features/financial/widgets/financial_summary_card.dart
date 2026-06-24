@@ -8,14 +8,10 @@ import '../../../models/financial_item.dart';
 class FinancialSummaryCard extends StatelessWidget {
   final List<FinancialItem> items;
 
-  const FinancialSummaryCard({
-    super.key,
-    required this.items,
-  });
+  const FinancialSummaryCard({super.key, required this.items});
 
   @override
   Widget build(BuildContext context) {
-    final recordCount = items.length;
     final totalReceivable = items.fold<double>(
       0.0,
       (sum, item) => sum + item.itemPrice, // 与Windows端一致，不乘数量
@@ -25,10 +21,6 @@ class FinancialSummaryCard extends StatelessWidget {
       (sum, item) => sum + item.totalPrice,
     );
     final totalOutstanding = totalReceivable - totalCollected;
-    final totalProcessingFee = items.fold<double>(
-      0.0,
-      (sum, item) => sum + item.processingFee,
-    );
 
     return AppCard(
       child: Padding(
@@ -38,10 +30,7 @@ class FinancialSummaryCard extends StatelessWidget {
           children: [
             const Text(
               '财务统计',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             // 显示应收费、已收费、欠费
@@ -79,7 +68,12 @@ class FinancialSummaryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatItem(String title, String value, IconData icon, Color color) {
+  Widget _buildStatItem(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       children: [
         Icon(icon, size: 32, color: color),

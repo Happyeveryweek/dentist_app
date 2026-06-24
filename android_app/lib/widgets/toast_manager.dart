@@ -11,17 +11,13 @@ class SuccessToastManager {
   }) {
     // 移除之前的提示（如果存在）
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    
+
     // 显示新的成功提示
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              Icons.check_circle_outline,
-              color: Colors.white,
-              size: 20,
-            ),
+            const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -37,27 +33,18 @@ class SuccessToastManager {
               IconButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  onDismiss?.call();
+                  onDismiss();
                 },
-                icon: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                icon: const Icon(Icons.close, color: Colors.white, size: 20),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
-                ),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
           ],
         ),
         backgroundColor: Colors.green.shade600,
         duration: duration,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
         elevation: 2,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -74,17 +61,13 @@ class SuccessToastManager {
   }) {
     // 移除之前的提示（如果存在）
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    
+
     // 显示错误提示
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              Icons.error_outline,
-              color: Colors.white,
-              size: 20,
-            ),
+            const Icon(Icons.error_outline, color: Colors.white, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -100,27 +83,18 @@ class SuccessToastManager {
               IconButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  onDismiss?.call();
+                  onDismiss();
                 },
-                icon: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                icon: const Icon(Icons.close, color: Colors.white, size: 20),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
-                ),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
           ],
         ),
         backgroundColor: Colors.red.shade500,
         duration: duration,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
         elevation: 2,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -137,17 +111,13 @@ class SuccessToastManager {
   }) {
     // 移除之前的提示（如果存在）
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    
+
     // 显示信息提示
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              Icons.info_outline,
-              color: Colors.white,
-              size: 20,
-            ),
+            const Icon(Icons.info_outline, color: Colors.white, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -163,27 +133,18 @@ class SuccessToastManager {
               IconButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  onDismiss?.call();
+                  onDismiss();
                 },
-                icon: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                icon: const Icon(Icons.close, color: Colors.white, size: 20),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
-                ),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
           ],
         ),
         backgroundColor: Colors.blue.shade600,
         duration: duration,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
         elevation: 2,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -203,17 +164,13 @@ class DeleteSuccessToastManager {
   }) {
     // 移除之前的提示（如果存在）
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    
+
     // 显示删除成功提示
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            Icon(
-              Icons.delete_outline,
-              color: Colors.white,
-              size: 20,
-            ),
+            const Icon(Icons.delete_outline, color: Colors.white, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -229,27 +186,18 @@ class DeleteSuccessToastManager {
               IconButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  onDismiss?.call();
+                  onDismiss();
                 },
-                icon: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                icon: const Icon(Icons.close, color: Colors.white, size: 20),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
-                ),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
           ],
         ),
         backgroundColor: Colors.orange.shade600,
         duration: duration,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
         elevation: 2,
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
-import 'package:dentist_app/providers/database_provider.dart';
 import 'package:dentist_app/providers/financial_provider.dart';
 
 import 'package:dentist_app/providers/patient_image_provider.dart';
 import 'package:dentist_app/providers/patient_provider.dart';
 import 'package:dentist_app/models/database_models.dart';
-import 'package:dentist_app/models/patient_material.dart';
-import 'package:dentist_app/models/material_image.dart';
 import 'package:dentist_app/widgets/app_card.dart';
 import 'package:dentist_app/features/patients/widgets/patient_image_viewer.dart';
 import 'package:dentist_app/features/patients/widgets/patient_basic_info_card.dart';
@@ -19,13 +14,13 @@ import 'package:dentist_app/features/patients/widgets/patient_dental_condition_d
 import 'package:dentist_app/features/patients/widgets/patient_medical_records_section.dart';
 import 'package:dentist_app/screens/financial_detail_screen.dart';
 
-import 'package:dentist_app/screens/patients_screen.dart';
 import 'package:dentist_app/utils/toast_util.dart';
 import 'package:dentist_app/features/patients/widgets/patient_form_sheet.dart';
 import 'package:dentist_app/widgets/toast_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dentist_app/utils/permission_utils.dart';
+import '../utils/app_logger.dart';
 
 class PatientDetailScreen extends StatefulWidget {
   final Patient patient;
@@ -40,7 +35,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   List<String> _phoneNumbers = [];
   Patient? _freshPatient;
   double _totalCollectedAmount = 0.0;
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -54,10 +48,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   Future<void> _loadPatientData() async {
     try {
       if (widget.patient.id != null) {
-        final dbProvider = Provider.of<DatabaseProvider>(
-          context,
-          listen: false,
-        );
         final imageProvider = Provider.of<PatientImageProvider>(
           context,
           listen: false,
@@ -65,18 +55,19 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
 
         // 清除可能的缓存 - 避免在构建过程中触发状态更新
         // await Provider.of<PatientProvider>(context, listen: false).forceRefreshPatients();
-        
+
         // 强制刷新图片数据缓存
         if (imageProvider.hasCachedData(widget.patient.id!)) {
-          print('清除患者图片缓存，强制重新获取最新数据');
+          AppLogger.info('清除患者图片缓存，强制重新获取最新数据');
           imageProvider.clearPatientCache(widget.patient.id!);
         }
 
         try {
-          print('强制重新获取患者数据 ID: ${widget.patient.id}');
-          final freshPatient = await Provider.of<PatientProvider>(context, listen: false).getPatientById(
-            widget.patient.id!,
-          );
+          AppLogger.info('强制重新获取患者数据 ID: ${widget.patient.id}');
+          final freshPatient = await Provider.of<PatientProvider>(
+            context,
+            listen: false,
+          ).getPatientById(widget.patient.id!);
           final totalCollectedAmount = await _loadTotalCollectedAmount(
             widget.patient.id!,
           );
@@ -89,16 +80,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
               _initPhoneNumbers(freshPatient);
             });
 
-
-            
             // 强制重新获取图片数据
-            print('开始强制重新获取患者图片数据');
+            AppLogger.info('开始强制重新获取患者图片数据');
             await imageProvider.getPatientImages(widget.patient.id!);
-            
-            print('成功更新患者数据: ${freshPatient.toMap()}');
+
+            AppLogger.info('成功更新患者数据: ${freshPatient.toMap()}');
           } else {
             if (mounted) {
-              print('获取最新患者数据失败，使用缓存数据');
+              AppLogger.info('获取最新患者数据失败，使用缓存数据');
               // 使用传入的数据初始化
               setState(() {
                 _totalCollectedAmount = totalCollectedAmount;
@@ -107,7 +96,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
             }
           }
         } catch (dbError) {
-          print('获取患者数据错误: $dbError');
+          AppLogger.info('获取患者数据错误: $dbError');
           // 使用传入的数据初始化
           if (mounted) {
             _initPhoneNumbers(widget.patient);
@@ -120,7 +109,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         }
       }
     } catch (e) {
-      print('加载患者数据错误: $e');
+      AppLogger.info('加载患者数据错误: $e');
       // 使用传入的数据初始化
       if (mounted) {
         _initPhoneNumbers(widget.patient);
@@ -153,7 +142,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
 
       return totalCollected;
     } catch (e) {
-      print('加载患者已收费总金额失败: $e');
+      AppLogger.info('加载患者已收费总金额失败: $e');
       return 0.0;
     }
   }
@@ -218,7 +207,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   void _initPhoneNumbers(Patient patient) {
     try {
       _phoneNumbers = [];
-      print('初始化电话号码: ${patient.phone}');
+      AppLogger.info('初始化电话号码: ${patient.phone}');
 
       // 先检查是否为空
       if (patient.phone.isEmpty) {
@@ -235,12 +224,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
           final parsedPhones = jsonDecode(phoneData) as List<dynamic>;
           if (parsedPhones.isNotEmpty) {
             _phoneNumbers = parsedPhones.map((p) => p.toString()).toList();
-            print('JSON解析成功，电话号码列表: $_phoneNumbers');
+            AppLogger.info('JSON解析成功，电话号码列表: $_phoneNumbers');
           } else {
             _phoneNumbers = ['未设置'];
           }
         } catch (jsonError) {
-          print('JSON解析失败: $jsonError，尝试其他方式解析');
+          AppLogger.info('JSON解析失败: $jsonError，尝试其他方式解析');
 
           // 去除方括号并处理内容
           String content = phoneData.substring(1, phoneData.length - 1);
@@ -287,7 +276,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                 .map((p) => p.trim())
                 .where((p) => p.isNotEmpty)
                 .toList();
-        print('逗号分隔电话号码: $_phoneNumbers');
+        AppLogger.info('逗号分隔电话号码: $_phoneNumbers');
 
         if (_phoneNumbers.isEmpty) {
           _phoneNumbers = ['未设置'];
@@ -295,17 +284,15 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       } else {
         // 单个电话号码
         _phoneNumbers = [phoneData];
-        print('单个电话号码: $phoneData');
+        AppLogger.info('单个电话号码: $phoneData');
       }
 
-      print('最终电话号码列表: $_phoneNumbers');
+      AppLogger.info('最终电话号码列表: $_phoneNumbers');
     } catch (e) {
-      print('电话号码初始化错误: $e');
+      AppLogger.info('电话号码初始化错误: $e');
       _phoneNumbers = ['未设置'];
     }
   }
-
-
 
   Patient get _currentPatient => _freshPatient ?? widget.patient;
 
@@ -314,11 +301,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     try {
       // 打印患者数据以进行调试
       try {
-        print('显示患者详细信息: ${_currentPatient.toMap()}');
-        print('患者数据来源: ${_freshPatient != null ? "最新查询" : "缓存"}');
+        AppLogger.info('显示患者详细信息: ${_currentPatient.toMap()}');
+        AppLogger.info('患者数据来源: ${_freshPatient != null ? "最新查询" : "缓存"}');
       } catch (e) {
         // 捕获任何打印异常，避免界面闪红
-        print('打印患者数据时发生错误: $e');
+        AppLogger.info('打印患者数据时发生错误: $e');
       }
 
       // 确保_phoneNumbers被初始化
@@ -357,100 +344,106 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
               child: IconButton(
                 icon: const Icon(Icons.edit, color: AppTheme.primaryColor),
                 onPressed: () async {
-                // 确保使用包含原始电话号码格式的患者对象
-                final patientToEdit = _currentPatient;
-                // 打印详细日志用于诊断
-                print('传递给编辑表单的患者数据: ${patientToEdit.toMap()}');
-                print('传递的电话号码格式: ${patientToEdit.phone}');
-                print('电话号码格式类型: ${patientToEdit.phone.runtimeType}');
-                patientToEdit.debugPhoneFormat();
-                print('电话号码是否包含逗号: ${patientToEdit.phone.contains(',')}');
-                print('解析后的电话号码列表: $_phoneNumbers');
+                  // 确保使用包含原始电话号码格式的患者对象
+                  final patientToEdit = _currentPatient;
+                  // 打印详细日志用于诊断
+                  AppLogger.info('传递给编辑表单的患者数据: ${patientToEdit.toMap()}');
+                  AppLogger.info('传递的电话号码格式: ${patientToEdit.phone}');
+                  AppLogger.info('电话号码格式类型: ${patientToEdit.phone.runtimeType}');
+                  patientToEdit.debugPhoneFormat();
+                  AppLogger.info('电话号码是否包含逗号: ${patientToEdit.phone.contains(',')}');
+                  AppLogger.info('解析后的电话号码列表: $_phoneNumbers');
 
-                // 创建一个确保电话号码为JSON格式的患者对象
-                final Patient patientForEdit = patientToEdit.withPhoneAsJson();
+                  // 创建一个确保电话号码为JSON格式的患者对象
+                  final Patient patientForEdit =
+                      patientToEdit.withPhoneAsJson();
 
-                // 如果电话号码包含逗号但不是JSON格式，强制转换为JSON格式
-                if (patientForEdit.phone.contains(',') &&
-                    !patientForEdit.phone.startsWith('[')) {
-                  // 手动创建新的患者对象并设置JSON格式的电话号码
-                  List<String> phones =
-                      patientForEdit.phone
-                          .split(',')
-                          .map((p) => p.trim())
-                          .where((p) => p.isNotEmpty)
-                          .toList();
+                  // 如果电话号码包含逗号但不是JSON格式，强制转换为JSON格式
+                  if (patientForEdit.phone.contains(',') &&
+                      !patientForEdit.phone.startsWith('[')) {
+                    // 手动创建新的患者对象并设置JSON格式的电话号码
+                    List<String> phones =
+                        patientForEdit.phone
+                            .split(',')
+                            .map((p) => p.trim())
+                            .where((p) => p.isNotEmpty)
+                            .toList();
 
-                  if (phones.length > 1) {
-                    String jsonPhones = jsonEncode(phones);
-                    print('手动强制转换为JSON格式电话: $jsonPhones');
+                    if (phones.length > 1) {
+                      String jsonPhones = jsonEncode(phones);
+                      AppLogger.info('手动强制转换为JSON格式电话: $jsonPhones');
 
-                    final forcedJsonPatient = patientForEdit.copyWithPhone(
-                      jsonPhones,
-                    );
-                    patientForEdit.debugPhoneFormat();
-                    print('转换后的电话格式: ${forcedJsonPatient.phone}');
+                      final forcedJsonPatient = patientForEdit.copyWithPhone(
+                        jsonPhones,
+                      );
+                      patientForEdit.debugPhoneFormat();
+                      AppLogger.info('转换后的电话格式: ${forcedJsonPatient.phone}');
 
-                    // 使用新患者对象
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) => PatientFormSheet(
-                              patient: forcedJsonPatient,
-                              initialMedicalRecordNumber:
-                                  forcedJsonPatient.medicalRecordNumber,
-                              onSaved: (isSuccess, message) {
-                                if (isSuccess) {
-                                  _loadPatientData();
-                                  if (mounted) {
-                                    // 使用公共组件的成功提示
-                                    SuccessToastManager.show(context, message: "患者信息已更新");
+                      // 使用新患者对象
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => PatientFormSheet(
+                                patient: forcedJsonPatient,
+                                initialMedicalRecordNumber:
+                                    forcedJsonPatient.medicalRecordNumber,
+                                onSaved: (isSuccess, message) {
+                                  if (isSuccess) {
+                                    _loadPatientData();
+                                    if (mounted) {
+                                      // 使用公共组件的成功提示
+                                      SuccessToastManager.show(
+                                        context,
+                                        message: "患者信息已更新",
+                                      );
+                                    }
                                   }
-                                }
-                              },
-                            ),
-                      ),
-                    );
-
-                    // 处理结果
-                    if (result == true && mounted) {
-                      setState(() {
-                        _freshPatient = null;
-                        _isLoading = true;
-                      });
-                      await _loadPatientData();
-                    }
-                    return; // 提前返回，避免执行下面的代码
-                  }
-                }
-
-                // 如果不需要特殊处理，使用原始逻辑
-                print('使用标准流程处理电话: ${patientForEdit.phone}');
-                patientForEdit.debugPhoneFormat();
-
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder:
-                        (context) => PatientFormSheet(
-                          patient: patientForEdit,
-                          initialMedicalRecordNumber:
-                              patientForEdit.medicalRecordNumber,
-                          onSaved: (isSuccess, message) {
-                            if (isSuccess) {
-                              _loadPatientData();
-                              if (mounted) {
-                                // 使用公共组件的成功提示
-                                SuccessToastManager.show(context, message: "患者信息已更新");
-                              }
-                            }
-                          },
+                                },
+                              ),
                         ),
-                  ),
-                );
-              },
-            ),
+                      );
+
+                      // 处理结果
+                      if (result == true && mounted) {
+                        setState(() {
+                          _freshPatient = null;
+                        });
+                        await _loadPatientData();
+                      }
+                      return; // 提前返回，避免执行下面的代码
+                    }
+                  }
+
+                  // 如果不需要特殊处理，使用原始逻辑
+                  AppLogger.info('使用标准流程处理电话: ${patientForEdit.phone}');
+                  patientForEdit.debugPhoneFormat();
+
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => PatientFormSheet(
+                            patient: patientForEdit,
+                            initialMedicalRecordNumber:
+                                patientForEdit.medicalRecordNumber,
+                            onSaved: (isSuccess, message) {
+                              if (isSuccess) {
+                                _loadPatientData();
+                                if (mounted) {
+                                  // 使用公共组件的成功提示
+                                  SuccessToastManager.show(
+                                    context,
+                                    message: "患者信息已更新",
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -505,10 +498,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                           margin: const EdgeInsets.only(bottom: 16),
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
+                            color: Colors.blue.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: Colors.blue.withOpacity(0.3),
+                              color: Colors.blue.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
@@ -547,7 +540,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                     final error = imageProvider.getError(_currentPatient.id!);
                     if (error != null) {
                       return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: Column(
@@ -576,7 +572,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                               ),
                               const SizedBox(height: 8),
                               ElevatedButton(
-                                onPressed: () => imageProvider.refreshPatientData(_currentPatient.id!),
+                                onPressed:
+                                    () => imageProvider.refreshPatientData(
+                                      _currentPatient.id!,
+                                    ),
                                 child: const Text('重试'),
                               ),
                             ],
@@ -589,8 +588,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                       builder: (context, imageProvider, child) {
                         // 检查是否有缓存数据
                         if (imageProvider.hasCachedData(_currentPatient.id!)) {
-                          final materials = imageProvider.getCachedMaterials(_currentPatient.id!);
-                          final images = imageProvider.getCachedImages(_currentPatient.id!);
+                          final materials = imageProvider.getCachedMaterials(
+                            _currentPatient.id!,
+                          );
+                          final images = imageProvider.getCachedImages(
+                            _currentPatient.id!,
+                          );
                           return PatientImageViewer(
                             materials: materials,
                             images: images,
@@ -607,20 +610,26 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
 
                         if (imageProvider.isLoading(_currentPatient.id!)) {
                           return const Card(
-                            margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            margin: EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             child: Padding(
                               padding: EdgeInsets.all(16),
-                              child: Center(
-                                child: CircularProgressIndicator(),
-                              ),
+                              child: Center(child: CircularProgressIndicator()),
                             ),
                           );
                         }
 
-                        final error = imageProvider.getError(_currentPatient.id!);
+                        final error = imageProvider.getError(
+                          _currentPatient.id!,
+                        );
                         if (error != null) {
                           return Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             child: Padding(
                               padding: const EdgeInsets.all(16),
                               child: Column(
@@ -649,7 +658,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                                   ),
                                   const SizedBox(height: 8),
                                   ElevatedButton(
-                                    onPressed: () => imageProvider.refreshPatientData(_currentPatient.id!),
+                                    onPressed:
+                                        () => imageProvider.refreshPatientData(
+                                          _currentPatient.id!,
+                                        ),
                                     child: const Text('重试'),
                                   ),
                                 ],
@@ -658,10 +670,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                           );
                         }
 
-                        return PatientImageViewer(
-                          materials: [],
-                          images: [],
-                        );
+                        return const PatientImageViewer(materials: [], images: []);
                       },
                     );
                   },
@@ -670,10 +679,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                 const SizedBox(height: 16),
 
                 // 病历记录查看器
-                PatientMedicalRecordsSection(
-                  patient: _currentPatient,
-                ),
-
+                PatientMedicalRecordsSection(patient: _currentPatient),
               ],
             ),
           ),
@@ -681,7 +687,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       );
     } catch (e) {
       // 出现任何异常时，显示错误回退页面
-      print('患者详情页面构建错误: $e');
+      AppLogger.info('患者详情页面构建错误: $e');
       return Scaffold(
         appBar: AppBar(
           leading: IconButton(
@@ -713,7 +719,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     }
   }
 
-
   // 拨打电话功能
   void _callPhoneNumber(String phoneNumber) async {
     if (phoneNumber == '未设置' || phoneNumber.isEmpty) {
@@ -743,7 +748,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
           mode: LaunchMode.externalApplication,
         );
       } catch (e) {
-        print('url_launcher方式失败: $e');
+        AppLogger.info('url_launcher方式失败: $e');
         launched = false;
       }
 
@@ -751,7 +756,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
         ToastUtil.showInfo(context, '正在尝试拨打电话: $phoneNumber');
       }
     } catch (e) {
-      print('拨打电话错误: $e');
+      AppLogger.info('拨打电话错误: $e');
       if (mounted) {
         // 在模拟器上显示电话号码，因为模拟器通常无法拨打电话
         ToastUtil.showInfo(context, '模拟器无法拨打电话，实际号码: $phoneNumber');

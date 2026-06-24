@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../theme/app_theme.dart';
 import 'default_avatar_icon.dart';
 
 /// 欢迎区域组件
@@ -45,17 +44,14 @@ class WelcomeSection extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [
-              Color(0xFF1A73E8),
-              Color(0xFF4285F4),
-            ],
+            colors: [Color(0xFF1A73E8), Color(0xFF4285F4)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1A73E8).withOpacity(0.3),
+              color: const Color(0xFF1A73E8).withValues(alpha: 0.3),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -75,7 +71,7 @@ class WelcomeSection extends StatelessWidget {
                         children: [
                           Icon(
                             greetingIcon,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             size: 24,
                           ),
                           const SizedBox(width: 8),
@@ -97,7 +93,7 @@ class WelcomeSection extends StatelessWidget {
                       Text(
                         DateFormat('MM月dd日 EEEE', 'zh_CN').format(now),
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.85),
+                          color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -109,25 +105,26 @@ class WelcomeSection extends StatelessWidget {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: Colors.white.withValues(alpha: 0.3),
                       width: 2,
                     ),
                   ),
-                  child: currentUserAvatar != null && currentUserAvatar!.isNotEmpty
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: Image.memory(
-                            currentUserAvatar!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const DefaultAvatarIcon();
-                            },
-                          ),
-                        )
-                      : const DefaultAvatarIcon(),
+                  child:
+                      currentUserAvatar != null && currentUserAvatar!.isNotEmpty
+                          ? ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.memory(
+                              currentUserAvatar!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const DefaultAvatarIcon();
+                              },
+                            ),
+                          )
+                          : const DefaultAvatarIcon(),
                 ),
               ],
             ),
@@ -135,10 +132,10 @@ class WelcomeSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha: 0.3),
                   width: 1,
                 ),
               ),
@@ -164,7 +161,7 @@ class WelcomeSection extends StatelessWidget {
                         Text(
                           '今日预约',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),

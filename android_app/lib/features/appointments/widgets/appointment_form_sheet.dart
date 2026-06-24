@@ -14,6 +14,7 @@ import 'package:dentist_app/features/appointments/widgets/time_picker_dialog.dar
 import 'package:dentist_app/features/appointments/widgets/teeth_condition_input.dart';
 import 'package:dentist_app/features/appointments/widgets/treatment_items_input.dart';
 import 'package:dentist_app/widgets/date_time_card.dart';
+import '../../../utils/app_logger.dart';
 
 class AppointmentFormSheet extends StatefulWidget {
   final Appointment? appointment;
@@ -137,7 +138,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
         listen: false,
       );
       final appointments = await appointmentsProvider.getAllAppointments();
-      final suggestions = LinkedHashSet<String>();
+      final suggestions = <String>{};
 
       for (final appointment in appointments) {
         for (final item in _extractTreatmentItems(appointment.treatmentType)) {
@@ -153,7 +154,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
         _treatmentSuggestions = suggestions.toList();
       });
     } catch (e) {
-      print('加载治疗项目下拉数据失败: $e');
+      AppLogger.info('加载治疗项目下拉数据失败: $e');
       if (!mounted) {
         return;
       }
@@ -183,7 +184,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
         _isLoading = false;
       });
     } catch (e) {
-      print('加载当前患者数据错误: $e');
+      AppLogger.info('加载当前患者数据错误: $e');
       setState(() {
         _isLoading = false;
       });
@@ -213,7 +214,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
       }
     } catch (e) {
       // 如果解析失败，可能是旧数据格式，直接设为治疗项目
-      print('解析treatment_type失败: $e');
+      AppLogger.info('解析treatment_type失败: $e');
       _selectedTreatments = _extractTreatmentItems(treatmentTypeStr);
     }
   }
@@ -340,7 +341,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
 
       // 通知父组件显示错误消息
       widget.onSaved(false, '保存失败: $e');
-      print('保存预约错误: $e');
+      AppLogger.info('保存预约错误: $e');
     }
   }
 
@@ -448,8 +449,9 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
                   suggestions: _treatmentSuggestions,
                   onChanged: (newTreatments) {
                     setState(() {
-                      _selectedTreatments =
-                          _normalizeTreatmentItems(newTreatments);
+                      _selectedTreatments = _normalizeTreatmentItems(
+                        newTreatments,
+                      );
                       _updateTreatmentTypeController();
                     });
                   },
@@ -474,71 +476,6 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
     );
   }
 
-  // 现代化标题栏
-  Widget _buildModernHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primaryColor.withOpacity(0.1),
-            AppTheme.primaryColor.withOpacity(0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              widget.appointment == null
-                  ? Icons.add_circle_outline_rounded
-                  : Icons.edit_calendar_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.appointment == null ? '新建预约' : '编辑预约',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryText,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '请填写预约信息',
-                  style: TextStyle(fontSize: 14, color: AppTheme.secondaryText),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close_rounded),
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.grey.withOpacity(0.1),
-              foregroundColor: AppTheme.secondaryText,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   // 现代化区域包装器
   Widget _buildModernSection({
     required String title,
@@ -550,10 +487,10 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.1), width: 1),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -567,7 +504,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, size: 20, color: AppTheme.primaryColor),
@@ -612,8 +549,8 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
           border: Border.all(
             color:
                 _selectedPatientId != null
-                    ? AppTheme.primaryColor.withOpacity(0.3)
-                    : Colors.grey.withOpacity(0.2),
+                    ? AppTheme.primaryColor.withValues(alpha: 0.3)
+                    : Colors.grey.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -646,7 +583,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
               ),
             ),
             const SizedBox(width: 12),
-            Icon(
+            const Icon(
               Icons.person_search_rounded,
               color: AppTheme.primaryColor,
               size: 22,
@@ -691,20 +628,20 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: DropdownButtonFormField<String>(
-        value: _status,
+        initialValue: _status,
         decoration: InputDecoration(
           hintText: '选择状态',
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+            borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
+            borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+            borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
           ),
           filled: true,
           fillColor: AppTheme.backgroundColor,
@@ -757,7 +694,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(icon, size: 16, color: color),
@@ -778,21 +715,21 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
       decoration: BoxDecoration(
         color: AppTheme.backgroundColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: TextFormField(
         controller: _notesController,
         decoration: InputDecoration(
           hintText: '输入备注信息',
-          hintStyle: TextStyle(color: AppTheme.secondaryText),
+          hintStyle: const TextStyle(color: AppTheme.secondaryText),
           prefixIcon: Container(
             margin: const EdgeInsets.all(8),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.note_alt_rounded,
               color: AppTheme.primaryColor,
               size: 18,
@@ -819,7 +756,9 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
             onPressed: () => Navigator.pop(context),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppTheme.secondaryText,
-              side: BorderSide(color: AppTheme.secondaryText.withOpacity(0.3)),
+              side: BorderSide(
+                color: AppTheme.secondaryText.withValues(alpha: 0.3),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

@@ -7,7 +7,7 @@ class DateTimeCard extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
 
-  const DateTimeCard({
+  const DateTimeCard({super.key, 
     required this.title,
     required this.value,
     required this.icon,
@@ -24,24 +24,15 @@ class DateTimeCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppTheme.backgroundColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.grey.withOpacity(0.2),
-          ),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              color: AppTheme.primaryColor,
-              size: 20,
-            ),
+            Icon(icon, color: AppTheme.primaryColor, size: 20),
             const SizedBox(height: 8),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.secondaryText,
-              ),
+              style: const TextStyle(fontSize: 12, color: AppTheme.secondaryText),
             ),
             const SizedBox(height: 4),
             Text(

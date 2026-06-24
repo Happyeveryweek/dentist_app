@@ -1,7 +1,7 @@
 import 'package:mysql1/mysql1.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../../data_sources/patient_data_source.dart';
-import '../../../models/database_config.dart';
+import '../../../utils/app_logger.dart';
 
 /// 患者数据源初始化服务
 /// 职责：管理患者数据源的初始化、数据源类型切换、连接管理
@@ -26,7 +26,9 @@ class PatientInitializationService {
 
   /// 设置 MySQL 数据源
   void setMySqlDataSource(MySqlConnection connection) {
-    _mysqlDataSource = MySqlPatientDataSource.withConnectionGetter(() => _currentMysqlConnection);
+    _mysqlDataSource = MySqlPatientDataSource.withConnectionGetter(
+      () => _currentMysqlConnection,
+    );
   }
 
   /// 获取当前数据源（必须可用，否则抛出异常）
@@ -54,7 +56,7 @@ class PatientInitializationService {
       final latestConnection = _databaseProvider.mysqlConnection;
       return latestConnection;
     } catch (e) {
-      print('获取最新MySQL连接失败: $e');
+      AppLogger.info('获取最新MySQL连接失败: $e');
       return null;
     }
   }
@@ -62,7 +64,7 @@ class PatientInitializationService {
   /// 统一的数据库初始化方法
   Future<bool> initializeFromDatabase(dynamic dbProvider) async {
     try {
-      print('PatientInitializationService 开始初始化...');
+      AppLogger.info('PatientInitializationService 开始初始化...');
 
       _databaseProvider = dbProvider;
       setDataSourceType(dbProvider.dbType);
@@ -71,7 +73,7 @@ class PatientInitializationService {
         final database = await dbProvider.sqliteDatabase;
         if (database != null) {
           setSqliteDataSource(database);
-          print('✅ PatientInitializationService SQLite数据源设置成功');
+          AppLogger.info('✅ PatientInitializationService SQLite数据源设置成功');
           return true;
         } else {
           throw Exception('SQLite数据库为null，无法创建数据源');
@@ -80,7 +82,7 @@ class PatientInitializationService {
         final mysqlConnection = dbProvider.mysqlConnection;
         if (mysqlConnection != null) {
           setMySqlDataSource(mysqlConnection);
-          print('✅ PatientInitializationService MySQL数据源设置成功');
+          AppLogger.info('✅ PatientInitializationService MySQL数据源设置成功');
           return true;
         } else {
           throw Exception('MySQL连接为null，无法创建数据源');
@@ -89,7 +91,7 @@ class PatientInitializationService {
 
       return false;
     } catch (e) {
-      print('PatientInitializationService 初始化失败: $e');
+      AppLogger.info('PatientInitializationService 初始化失败: $e');
       return false;
     }
   }

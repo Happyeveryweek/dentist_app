@@ -26,7 +26,8 @@ class PurchaseStatisticsDialog extends StatefulWidget {
   });
 
   @override
-  State<PurchaseStatisticsDialog> createState() => _PurchaseStatisticsDialogState();
+  State<PurchaseStatisticsDialog> createState() =>
+      _PurchaseStatisticsDialogState();
 }
 
 class _PurchaseStatisticsDialogState extends State<PurchaseStatisticsDialog>
@@ -60,7 +61,10 @@ class _PurchaseStatisticsDialogState extends State<PurchaseStatisticsDialog>
 
   /// 应用预设时间范围
   void _applyPreset(String preset) {
-    final newRange = PurchaseDateRangeService.applyPreset(preset, _earliestDate);
+    final newRange = PurchaseDateRangeService.applyPreset(
+      preset,
+      _earliestDate,
+    );
     setState(() {
       _startDate = newRange['start']!;
       _endDate = newRange['end']!;
@@ -71,18 +75,21 @@ class _PurchaseStatisticsDialogState extends State<PurchaseStatisticsDialog>
   Future<void> _showCustomDatePicker() async {
     await showDialog(
       context: context,
-      builder: (context) => ModernDateRangePicker(
-        initialStartDate: _startDate,
-        initialEndDate: _endDate,
-        firstDate: DateTime(2020),
-        lastDate: DateTimeFormatter.nowLocal().add(const Duration(days: 365)),
-        onDateRangeSelected: (startDate, endDate) {
-          setState(() {
-            _startDate = startDate;
-            _endDate = endDate;
-          });
-        },
-      ),
+      builder:
+          (context) => ModernDateRangePicker(
+            initialStartDate: _startDate,
+            initialEndDate: _endDate,
+            firstDate: DateTime(2020),
+            lastDate: DateTimeFormatter.nowLocal().add(
+              const Duration(days: 365),
+            ),
+            onDateRangeSelected: (startDate, endDate) {
+              setState(() {
+                _startDate = startDate;
+                _endDate = endDate;
+              });
+            },
+          ),
     );
   }
 
@@ -159,7 +166,7 @@ class _PurchaseStatisticsDialogState extends State<PurchaseStatisticsDialog>
                   onPresetApplied: _applyPreset,
                   onCustomDatePicker: _showCustomDatePicker,
                 ),
-                
+
                 // 内容区域
                 Expanded(
                   child: TabBarView(

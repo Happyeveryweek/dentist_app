@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'package:provider/provider.dart';
 import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/providers/database_provider.dart';
@@ -13,6 +12,7 @@ import 'package:dentist_app/features/patients/widgets/patient_sort_options.dart'
 import 'package:dentist_app/widgets/toast_manager.dart';
 import 'package:dentist_app/widgets/confirm_dialogs.dart';
 import 'package:dentist_app/utils/permission_utils.dart';
+import '../utils/app_logger.dart';
 
 class PatientsScreen extends StatefulWidget {
   const PatientsScreen({super.key});
@@ -105,7 +105,7 @@ class _PatientsScreenState extends State<PatientsScreen>
 
     try {
       final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      print('加载患者列表，数据库类型: ${dbProvider.dbType}');
+      AppLogger.info('加载患者列表，数据库类型: ${dbProvider.dbType}');
 
       // 确保PatientProvider已初始化
       final patientProvider = Provider.of<PatientProvider>(
@@ -137,15 +137,15 @@ class _PatientsScreenState extends State<PatientsScreen>
       } else {
         if (_searchQuery.isEmpty) {
           patients = await patientProvider.getAllPatients();
-          print('获取所有患者数据用于时间筛选: ${patients.length} 个患者');
+          AppLogger.info('获取所有患者数据用于时间筛选: ${patients.length} 个患者');
         } else {
           patients = await patientProvider.searchPatients(_searchQuery);
-          print('搜索 "$_searchQuery" 返回 ${patients.length} 个结果');
+          AppLogger.info('搜索 "$_searchQuery" 返回 ${patients.length} 个结果');
         }
 
         if (_isDateRangeFiltering && _startDate != null && _endDate != null) {
           patients = _applyTimeFilterToPatients(patients);
-          print('应用时间筛选后剩余 ${patients.length} 个患者');
+          AppLogger.info('应用时间筛选后剩余 ${patients.length} 个患者');
         }
 
         _totalPatientsInDatabase = patients.length;
@@ -164,7 +164,7 @@ class _PatientsScreenState extends State<PatientsScreen>
         }
       });
     } catch (e) {
-      print('加载患者数据错误: $e');
+      AppLogger.info('加载患者数据错误: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -178,15 +178,15 @@ class _PatientsScreenState extends State<PatientsScreen>
     if (_isLoadingMore ||
         !_hasMoreData ||
         _searchQuery.isNotEmpty ||
-        _isDateRangeFiltering)
+        _isDateRangeFiltering) {
       return;
+    }
 
     setState(() {
       _isLoadingMore = true;
     });
 
     try {
-      final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
       final nextPage = _currentPage + 1;
       final newPatients = await Provider.of<PatientProvider>(
         context,
@@ -214,7 +214,7 @@ class _PatientsScreenState extends State<PatientsScreen>
         }
       }
     } catch (e) {
-      print('加载更多患者数据错误: $e');
+      AppLogger.info('加载更多患者数据错误: $e');
       if (mounted) {
         setState(() {
           _isLoadingMore = false;
@@ -226,10 +226,9 @@ class _PatientsScreenState extends State<PatientsScreen>
   // 重置搜索和分页状态，重新加载数据
   Future<void> _refreshPatients() async {
     if (!mounted) return;
-    print('刷新患者列表...');
+    AppLogger.info('刷新患者列表...');
 
     // 强制清除数据库提供者中的缓存
-    final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
     await Provider.of<PatientProvider>(
       context,
       listen: false,
@@ -250,7 +249,7 @@ class _PatientsScreenState extends State<PatientsScreen>
       SuccessToastManager.show(context, message: '刷新成功');
     }
 
-    print('患者列表刷新完成，加载了 ${_patients.length} 个患者');
+    AppLogger.info('患者列表刷新完成，加载了 ${_patients.length} 个患者');
   }
 
   // 在内存中对患者列表进行排序（不触发setState）
@@ -289,13 +288,6 @@ class _PatientsScreenState extends State<PatientsScreen>
     }
   }
 
-  // 对当前显示的患者列表进行排序（触发setState）
-  void _sortPatients() {
-    setState(() {
-      _sortPatientsInMemory(_patients);
-    });
-  }
-
   void _changeSort(String sortType) {
     setState(() {
       if (_currentSort == sortType) {
@@ -311,90 +303,6 @@ class _PatientsScreenState extends State<PatientsScreen>
       _currentPage = 1;
       _loadPatients();
     });
-  }
-
-  // 在患者列表中展示联系方式
-  String _getDisplayPhone(String phone) {
-    if (phone.isEmpty) {
-      return "未设置";
-    }
-
-    // 判断是否为JSON格式
-    if (phone.startsWith('[') && phone.endsWith(']')) {
-      try {
-        // 尝试解析JSON
-        List<dynamic> phones = jsonDecode(phone);
-        if (phones.isNotEmpty) {
-          // 如果有多个号码，显示第一个并加上提示
-          if (phones.length > 1) {
-            return "${phones[0]} (+${phones.length - 1})";
-          } else {
-            return phones[0].toString();
-          }
-        } else {
-          return "未设置";
-        }
-      } catch (e) {
-        print('解析电话号码JSON失败: $e');
-        // 如果解析失败，尝试简单处理去除方括号
-        String content = phone.substring(1, phone.length - 1);
-
-        // 尝试匹配引号中的内容
-        final RegExp regex = RegExp(r'"([^"]*)"');
-        final matches = regex.allMatches(content);
-        List<String> parts = [];
-
-        if (matches.isNotEmpty) {
-          for (final match in matches) {
-            if (match.group(1)?.isNotEmpty == true) {
-              parts.add(match.group(1)!);
-            }
-          }
-        }
-
-        if (parts.isEmpty) {
-          // 如果没有找到引号包围的内容，尝试直接按逗号分割
-          parts = content.split(',').map((p) => p.trim()).toList();
-          // 移除可能的引号
-          parts =
-              parts.map((p) {
-                if ((p.startsWith('"') && p.endsWith('"')) ||
-                    (p.startsWith("'") && p.endsWith("'"))) {
-                  return p.substring(1, p.length - 1);
-                }
-                return p;
-              }).toList();
-        }
-
-        if (parts.isNotEmpty) {
-          if (parts.length > 1) {
-            return "${parts[0]} (+${parts.length - 1})";
-          } else {
-            return parts[0];
-          }
-        }
-
-        return phone;
-      }
-    } else if (phone.contains(',')) {
-      // 处理逗号分隔的电话号码
-      List<String> parts = phone.split(',');
-      if (parts.isNotEmpty) {
-        List<String> cleanParts =
-            parts.map((p) => p.trim()).where((p) => p.isNotEmpty).toList();
-        if (cleanParts.isEmpty) {
-          return "未设置";
-        }
-
-        if (cleanParts.length > 1) {
-          return "${cleanParts[0]} (+${cleanParts.length - 1})";
-        } else {
-          return cleanParts[0];
-        }
-      }
-    }
-
-    return phone;
   }
 
   @override
@@ -494,7 +402,7 @@ class _PatientsScreenState extends State<PatientsScreen>
   }
 
   void _showPatientDetail(BuildContext context, Patient patient) {
-    print(
+    AppLogger.info(
       '查看患者详情: id=${patient.id}, name=${patient.name}, age=${patient.age}, gender=${patient.gender}',
     );
 
@@ -506,7 +414,7 @@ class _PatientsScreenState extends State<PatientsScreen>
     ).then((result) {
       // 当从患者详情页返回时，刷新患者列表以获取最新数据
       if (result == true) {
-        print('从患者详情页返回，刷新患者列表');
+        AppLogger.info('从患者详情页返回，刷新患者列表');
         _refreshPatients();
       }
     });
@@ -518,10 +426,6 @@ class _PatientsScreenState extends State<PatientsScreen>
 
       try {
         // 先获取最大病历号 - 使用await等待操作完成
-        final dbProvider = Provider.of<DatabaseProvider>(
-          context,
-          listen: false,
-        );
         final int maxMedicalRecordNumber =
             await Provider.of<PatientProvider>(
               context,
@@ -529,15 +433,15 @@ class _PatientsScreenState extends State<PatientsScreen>
             ).getMaxMedicalRecordNumber();
         final int nextMedicalRecordNumber = maxMedicalRecordNumber + 1;
 
-        print('当前最大病历号: $maxMedicalRecordNumber');
-        print('将使用默认病历号: $nextMedicalRecordNumber');
+        AppLogger.info('当前最大病历号: $maxMedicalRecordNumber');
+        AppLogger.info('将使用默认病历号: $nextMedicalRecordNumber');
 
         // 移除提示条，直接设置病历号
 
         // 确保UI上下文仍然有效
         if (context.mounted) {
           // 使用 Navigator.push 打开全屏页面
-          print('构建PatientFormSheet，传入初始病历号: $nextMedicalRecordNumber');
+          AppLogger.info('构建PatientFormSheet，传入初始病历号: $nextMedicalRecordNumber');
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -551,7 +455,7 @@ class _PatientsScreenState extends State<PatientsScreen>
                             nextMedicalRecordNumber, // 传递初始病历号
                         onSaved: (isSuccess, message) {
                           if (isSuccess) {
-                            print('患者表单保存成功，直接刷新患者列表');
+                            AppLogger.info('患者表单保存成功，直接刷新患者列表');
                             _loadPatients();
                             // 使用公共组件的成功提示
                             SuccessToastManager.show(context, message: message);
@@ -569,7 +473,7 @@ class _PatientsScreenState extends State<PatientsScreen>
           );
         }
       } catch (error) {
-        print('获取最大病历号出错: $error');
+        AppLogger.info('获取最大病历号出错: $error');
         // 出错时仍然打开表单，默认设置为1
         if (context.mounted) {
           Navigator.push(
@@ -584,7 +488,7 @@ class _PatientsScreenState extends State<PatientsScreen>
                         initialMedicalRecordNumber: 1, // 出错时默认设置为1
                         onSaved: (isSuccess, message) {
                           if (isSuccess) {
-                            print('患者表单保存成功，直接刷新患者列表');
+                            AppLogger.info('患者表单保存成功，直接刷新患者列表');
                             _loadPatients();
                             // 使用公共组件的成功提示
                             SuccessToastManager.show(context, message: message);
@@ -617,7 +521,7 @@ class _PatientsScreenState extends State<PatientsScreen>
                     initialMedicalRecordNumber: patient.medicalRecordNumber,
                     onSaved: (isSuccess, message) {
                       if (isSuccess) {
-                        print('患者表单保存成功，直接刷新患者列表');
+                        AppLogger.info('患者表单保存成功，直接刷新患者列表');
                         _loadPatients();
                         // 使用公共组件的成功提示
                         SuccessToastManager.show(context, message: message);
@@ -644,11 +548,8 @@ class _PatientsScreenState extends State<PatientsScreen>
     );
 
     if (confirmed == true) {
+      if (!context.mounted) return;
       try {
-        final dbProvider = Provider.of<DatabaseProvider>(
-          context,
-          listen: false,
-        );
         await Provider.of<PatientProvider>(
           context,
           listen: false,
@@ -656,11 +557,11 @@ class _PatientsScreenState extends State<PatientsScreen>
         _loadPatients();
 
         // 使用新的成功提示组件
-        if (mounted) {
+        if (context.mounted) {
           SuccessToastManager.show(context, message: '患者删除成功');
         }
       } catch (e) {
-        if (mounted) {
+        if (context.mounted) {
           SuccessToastManager.showError(context, message: '删除失败: $e');
         }
       }

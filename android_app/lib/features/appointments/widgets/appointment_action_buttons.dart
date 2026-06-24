@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app/theme/app_theme.dart';
-import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/utils/permission_utils.dart';
 
 class AppointmentActionButtons extends StatelessWidget {
@@ -8,7 +7,7 @@ class AppointmentActionButtons extends StatelessWidget {
   final String? patientDoctor;
   final Function(String) onChangeStatus;
 
-  const AppointmentActionButtons({
+  const AppointmentActionButtons({super.key, 
     required this.status,
     required this.patientDoctor,
     required this.onChangeStatus,
@@ -93,7 +92,9 @@ class AppointmentActionButtons extends StatelessWidget {
                       () => onChangeStatus('cancelled'),
                     ),
                   ),
-                if (status != '未到诊' && status != 'missed' && status != 'no_show')
+                if (status != '未到诊' &&
+                    status != 'missed' &&
+                    status != 'no_show')
                   PermissionWrapper(
                     module: 'appointments',
                     action: 'edit',
@@ -130,7 +131,7 @@ class AppointmentActionButtons extends StatelessWidget {
       icon: Icon(icon, size: 18),
       label: Text(label),
       style: ElevatedButton.styleFrom(
-        backgroundColor: color.withOpacity(0.1),
+        backgroundColor: color.withValues(alpha: 0.1),
         foregroundColor: color,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         shape: RoundedRectangleBorder(

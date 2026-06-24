@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// 提供统一的 SnackBar 显示方法
 class SnackBarUtil {
   /// 显示 SnackBar
-  /// 
+  ///
   /// [context] - BuildContext
   /// [message] - 显示的消息
   /// [isSuccess] - 是否为成功消息（默认为 true）

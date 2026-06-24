@@ -3,20 +3,23 @@ import 'package:excel/excel.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app/utils/datetime_formatter.dart';
 import 'dart:convert';
+import '../../../utils/app_logger.dart';
 
 /// Excel 导出服务
 /// 负责导出患者信息到 Excel 文件
 class ExcelExportService {
-
   /// 导出患者信息到Excel文件
-  /// 
+  ///
   /// [filePath] - 导出文件路径
   /// [patients] - 患者数据列表
-  /// 
+  ///
   /// 返回导出文件的完整路径
-  static Future<String> exportPatientsToExcel(String filePath, List<Map<String, dynamic>> patients) async {
+  static Future<String> exportPatientsToExcel(
+    String filePath,
+    List<Map<String, dynamic>> patients,
+  ) async {
     try {
-      print('开始导出患者数据到Excel');
+      AppLogger.info('开始导出患者数据到Excel');
 
       if (patients.isEmpty) {
         throw Exception('没有患者数据可导出');
@@ -106,7 +109,7 @@ class ExcelExportService {
             mainPhone = phone;
           }
         } catch (e) {
-          print('解析电话号码失败: $e, 使用原始值');
+          AppLogger.info('解析电话号码失败: $e, 使用原始值');
           mainPhone = patient['phone'] ?? '';
         }
 
@@ -160,7 +163,11 @@ class ExcelExportService {
               CellIndex.indexByColumnRow(columnIndex: 9, rowIndex: rowIndex),
             )
             .value = TextCellValue(
-          DateFormat('yyyy-MM-dd').format(DateTimeFormatter.fromDbString(patient['first_visit_date'] ?? DateTimeFormatter.nowDbString())),
+          DateFormat('yyyy-MM-dd').format(
+            DateTimeFormatter.fromDbString(
+              patient['first_visit_date'] ?? DateTimeFormatter.nowDbString(),
+            ),
+          ),
         );
 
         // 总费用
@@ -187,7 +194,7 @@ class ExcelExportService {
               dentalData = _formatDentalCondition(patient['dental_condition']);
             }
           } catch (e) {
-            print('处理牙齿状况失败: $e, 使用原始数据');
+            AppLogger.info('处理牙齿状况失败: $e, 使用原始数据');
             dentalData = patient['dental_condition'];
           }
         }
@@ -209,13 +216,13 @@ class ExcelExportService {
       if (bytes != null) {
         final file = File(filePath);
         await file.writeAsBytes(bytes);
-        print('Excel文件已保存到: $filePath');
+        AppLogger.info('Excel文件已保存到: $filePath');
         return filePath;
       } else {
         throw Exception('Excel编码失败');
       }
     } catch (e) {
-      print('导出Excel文件错误: $e');
+      AppLogger.info('导出Excel文件错误: $e');
       throw Exception('导出Excel文件错误: $e');
     }
   }
@@ -326,7 +333,7 @@ class ExcelExportService {
       // 合并所有行
       return formattedLines.join('\n');
     } catch (e) {
-      print('格式化牙齿状况失败: $e');
+      AppLogger.info('格式化牙齿状况失败: $e');
       return dentalCondition; // 如果格式化失败，返回原始字符串
     }
   }

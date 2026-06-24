@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app/theme/app_theme.dart';
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import 'package:intl/intl.dart';
 

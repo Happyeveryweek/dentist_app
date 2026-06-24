@@ -1,15 +1,16 @@
 import '../utils/datetime_formatter.dart';
+import '../utils/app_logger.dart';
 
 /// 病历模板数据模型
 /// 用于存储疾病类型等模板数据，支持牙科疾病、全身疾病、过敏类型三大类别
 class MedicalRecordTemplate {
   final int? id;
-  final String category;           // 类别：dental_disease, systemic_disease, allergy
-  final String name;               // 疾病名称
-  final String? parentName;        // 父级疾病名称（用于子类型）
-  final String description;        // 详细描述
-  final bool isActive;             // 是否启用
-  final int sortOrder;             // 排序顺序
+  final String category; // 类别：dental_disease, systemic_disease, allergy
+  final String name; // 疾病名称
+  final String? parentName; // 父级疾病名称（用于子类型）
+  final String description; // 详细描述
+  final bool isActive; // 是否启用
+  final int sortOrder; // 排序顺序
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -23,8 +24,8 @@ class MedicalRecordTemplate {
     this.sortOrder = 0,
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   /// 从Map构造MedicalRecordTemplate对象
   factory MedicalRecordTemplate.fromMap(Map<String, dynamic> map) {
@@ -36,14 +37,14 @@ class MedicalRecordTemplate {
         try {
           return String.fromCharCodes(field);
         } catch (e) {
-          print('MedicalRecordTemplate.fromMap: Blob转换失败: $e');
+          AppLogger.info('MedicalRecordTemplate.fromMap: Blob转换失败: $e');
           return '';
         }
       }
       try {
         return field.toString();
       } catch (e) {
-        print('MedicalRecordTemplate.fromMap: 字段转换失败: $e');
+        AppLogger.info('MedicalRecordTemplate.fromMap: 字段转换失败: $e');
         return '';
       }
     }
@@ -55,10 +56,12 @@ class MedicalRecordTemplate {
         if (map['created_at'] is DateTime) {
           createdAt = map['created_at'];
         } else {
-          createdAt = DateTimeFormatter.fromDbString(map['created_at'].toString());
+          createdAt = DateTimeFormatter.fromDbString(
+            map['created_at'].toString(),
+          );
         }
       } catch (e) {
-        print('解析created_at错误: ${map['created_at']}');
+        AppLogger.info('解析created_at错误: ${map['created_at']}');
       }
     }
 
@@ -68,13 +71,15 @@ class MedicalRecordTemplate {
         if (map['updated_at'] is DateTime) {
           updatedAt = map['updated_at'];
         } else {
-          updatedAt = DateTimeFormatter.fromDbString(map['updated_at'].toString());
+          updatedAt = DateTimeFormatter.fromDbString(
+            map['updated_at'].toString(),
+          );
         }
       } catch (e) {
-        print('解析updated_at错误: ${map['updated_at']}');
+        AppLogger.info('解析updated_at错误: ${map['updated_at']}');
       }
     }
-    
+
     // 处理parent_name字段，确保NULL值被正确识别
     String? parentName;
     if (map['parent_name'] == null) {
@@ -82,8 +87,8 @@ class MedicalRecordTemplate {
     } else {
       final parentNameStr = safeStringFromField(map['parent_name']);
       // 检查是否为空字符串、"null"字符串或"(Null)"字符串
-      if (parentNameStr.isEmpty || 
-          parentNameStr.toLowerCase() == 'null' || 
+      if (parentNameStr.isEmpty ||
+          parentNameStr.toLowerCase() == 'null' ||
           parentNameStr == '(Null)') {
         parentName = null;
       } else {
@@ -123,7 +128,7 @@ class MedicalRecordTemplate {
   Map<String, dynamic> toJson() => toMap();
 
   /// 从JSON构造对象
-  factory MedicalRecordTemplate.fromJson(Map<String, dynamic> json) => 
+  factory MedicalRecordTemplate.fromJson(Map<String, dynamic> json) =>
       MedicalRecordTemplate.fromMap(json);
 
   /// 复制MedicalRecordTemplate对象，但可以修改部分属性
@@ -181,20 +186,20 @@ class MedicalRecordTemplate {
           parentName == other.parentName;
 
   @override
-  int get hashCode => id.hashCode ^ category.hashCode ^ name.hashCode ^ (parentName?.hashCode ?? 0);
+  int get hashCode =>
+      id.hashCode ^
+      category.hashCode ^
+      name.hashCode ^
+      (parentName?.hashCode ?? 0);
 }
 
 /// 病历模板类别常量
 class MedicalRecordTemplateCategory {
-  static const String dentalDisease = 'dental_disease';      // 牙科疾病
-  static const String systemicDisease = 'systemic_disease';  // 全身疾病
-  static const String allergy = 'allergy';                   // 过敏史
+  static const String dentalDisease = 'dental_disease'; // 牙科疾病
+  static const String systemicDisease = 'systemic_disease'; // 全身疾病
+  static const String allergy = 'allergy'; // 过敏史
 
-  static const List<String> all = [
-    dentalDisease,
-    systemicDisease,
-    allergy,
-  ];
+  static const List<String> all = [dentalDisease, systemicDisease, allergy];
 
   /// 获取类别的中文名称
   static String getCategoryName(String category) {
@@ -236,7 +241,7 @@ class DefaultTemplateInitializer {
   static List<MedicalRecordTemplate> getDentalDiseaseTemplates() {
     final List<MedicalRecordTemplate> templates = [];
     int sortOrder = 0;
-    
+
     const Map<String, List<String>> dentalDiseases = {
       '龋齿': ['浅龋', '中龋', '深龋', '猛性龋', '继发龋', '根面龋'],
       '牙缺损': ['楔状缺损', '磨损', '酸蚀', '外伤性缺损', '发育缺陷'],
@@ -252,26 +257,32 @@ class DefaultTemplateInitializer {
       '牙外伤': ['牙震荡', '牙脱位', '牙折', '牙槽骨骨折'],
     };
 
-    dentalDiseases.forEach((mainType, subTypes) {
+    for (final entry in dentalDiseases.entries) {
+      final mainType = entry.key;
+      final subTypes = entry.value;
       // 添加主疾病类型
-      templates.add(MedicalRecordTemplate(
-        category: MedicalRecordTemplateCategory.dentalDisease,
-        name: mainType,
-        description: '牙科疾病：$mainType',
-        sortOrder: sortOrder++,
-      ));
+      templates.add(
+        MedicalRecordTemplate(
+          category: MedicalRecordTemplateCategory.dentalDisease,
+          name: mainType,
+          description: '牙科疾病：$mainType',
+          sortOrder: sortOrder++,
+        ),
+      );
 
       // 添加子类型
       for (String subType in subTypes) {
-        templates.add(MedicalRecordTemplate(
-          category: MedicalRecordTemplateCategory.dentalDisease,
-          name: subType,
-          parentName: mainType,
-          description: '$mainType的子类型：$subType',
-          sortOrder: sortOrder++,
-        ));
+        templates.add(
+          MedicalRecordTemplate(
+            category: MedicalRecordTemplateCategory.dentalDisease,
+            name: subType,
+            parentName: mainType,
+            description: '$mainType的子类型：$subType',
+            sortOrder: sortOrder++,
+          ),
+        );
       }
-    });
+    }
 
     return templates;
   }
@@ -280,7 +291,7 @@ class DefaultTemplateInitializer {
   static List<MedicalRecordTemplate> getSystemicDiseaseTemplates() {
     final List<MedicalRecordTemplate> templates = [];
     int sortOrder = 0;
-    
+
     const Map<String, List<String>> systemicDiseases = {
       '心脏病': ['冠心病', '心律不齐', '心肌病', '先天性心脏病', '心脏瓣膜病', '心力衰竭'],
       '高血压': ['轻度高血压', '中度高血压', '重度高血压', '继发性高血压'],
@@ -296,26 +307,32 @@ class DefaultTemplateInitializer {
       '骨关节疾病': ['关节炎', '骨质疏松', '腰椎间盘突出', '颈椎病'],
     };
 
-    systemicDiseases.forEach((mainType, subTypes) {
+    for (final entry in systemicDiseases.entries) {
+      final mainType = entry.key;
+      final subTypes = entry.value;
       // 添加主疾病类型
-      templates.add(MedicalRecordTemplate(
-        category: MedicalRecordTemplateCategory.systemicDisease,
-        name: mainType,
-        description: '全身疾病：$mainType',
-        sortOrder: sortOrder++,
-      ));
+      templates.add(
+        MedicalRecordTemplate(
+          category: MedicalRecordTemplateCategory.systemicDisease,
+          name: mainType,
+          description: '全身疾病：$mainType',
+          sortOrder: sortOrder++,
+        ),
+      );
 
       // 添加子类型
       for (String subType in subTypes) {
-        templates.add(MedicalRecordTemplate(
-          category: MedicalRecordTemplateCategory.systemicDisease,
-          name: subType,
-          parentName: mainType,
-          description: '$mainType的子类型：$subType',
-          sortOrder: sortOrder++,
-        ));
+        templates.add(
+          MedicalRecordTemplate(
+            category: MedicalRecordTemplateCategory.systemicDisease,
+            name: subType,
+            parentName: mainType,
+            description: '$mainType的子类型：$subType',
+            sortOrder: sortOrder++,
+          ),
+        );
       }
-    });
+    }
 
     return templates;
   }
@@ -324,48 +341,97 @@ class DefaultTemplateInitializer {
   static List<MedicalRecordTemplate> getAllergyTemplates() {
     final List<MedicalRecordTemplate> templates = [];
     int sortOrder = 0;
-    
+
     const Map<String, List<String>> allergies = {
       '药物过敏': [
-        '青霉素', '头孢菌素', '磺胺类', '阿司匹林', '布洛芬', '利多卡因',
-        '普鲁卡因', '碘伏', '碘酊', '氯己定', '甲硝唑', '红霉素',
-        '四环素', '庆大霉素', '地塞米松', '氢化可的松',
+        '青霉素',
+        '头孢菌素',
+        '磺胺类',
+        '阿司匹林',
+        '布洛芬',
+        '利多卡因',
+        '普鲁卡因',
+        '碘伏',
+        '碘酊',
+        '氯己定',
+        '甲硝唑',
+        '红霉素',
+        '四环素',
+        '庆大霉素',
+        '地塞米松',
+        '氢化可的松',
       ],
       '食物过敏': [
-        '海鲜', '虾蟹', '鱼类', '牛奶', '鸡蛋', '花生',
-        '坚果', '大豆', '小麦', '芝麻', '水果', '蔬菜',
-        '蜂蜜', '巧克力',
+        '海鲜',
+        '虾蟹',
+        '鱼类',
+        '牛奶',
+        '鸡蛋',
+        '花生',
+        '坚果',
+        '大豆',
+        '小麦',
+        '芝麻',
+        '水果',
+        '蔬菜',
+        '蜂蜜',
+        '巧克力',
       ],
       '材料过敏': [
-        '乳胶', '金属', '镍', '铬', '钴', '汞',
-        '银汞合金', '复合树脂', '印模材料', '粘接剂', '漂白剂', '橡胶', '塑料',
+        '乳胶',
+        '金属',
+        '镍',
+        '铬',
+        '钴',
+        '汞',
+        '银汞合金',
+        '复合树脂',
+        '印模材料',
+        '粘接剂',
+        '漂白剂',
+        '橡胶',
+        '塑料',
       ],
       '环境过敏': [
-        '花粉', '尘螨', '霉菌', '动物毛发', '化妆品', '香水',
-        '洗涤剂', '消毒剂', '紫外线', '冷热刺激',
+        '花粉',
+        '尘螨',
+        '霉菌',
+        '动物毛发',
+        '化妆品',
+        '香水',
+        '洗涤剂',
+        '消毒剂',
+        '紫外线',
+        '冷热刺激',
       ],
     };
 
-    allergies.forEach((mainType, subTypes) {
+    for (final entry in allergies.entries) {
+      final mainType = entry.key;
+      final subTypes = entry.value;
       // 添加主过敏类型
-      templates.add(MedicalRecordTemplate(
-        category: MedicalRecordTemplateCategory.allergy,
-        name: mainType,
-        description: '过敏类型：$mainType',
-        sortOrder: sortOrder++,
-      ));
+      templates.add(
+        MedicalRecordTemplate(
+          category: MedicalRecordTemplateCategory.allergy,
+          name: mainType,
+          description: '过敏类型：$mainType',
+          sortOrder: sortOrder++,
+        ),
+      );
 
       // 添加具体过敏原
       for (String subType in subTypes) {
-        templates.add(MedicalRecordTemplate(
-          category: MedicalRecordTemplateCategory.allergy,
-          name: subType,
-          parentName: mainType,
-          description: '$mainType的具体过敏原：$subType',
-          sortOrder: sortOrder++,
-        ));
+        templates.add(
+          MedicalRecordTemplate(
+            category: MedicalRecordTemplateCategory.allergy,
+            name: subType,
+            parentName: mainType,
+            description: '$mainType的具体过敏原：$subType',
+            sortOrder: sortOrder++,
+          ),
+        );
       }
-    });
+    }
 
     return templates;
   }

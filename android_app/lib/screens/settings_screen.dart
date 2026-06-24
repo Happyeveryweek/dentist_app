@@ -1,34 +1,15 @@
 import 'dart:io';
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/models/database_config.dart';
 import 'package:dentist_app/providers/database_provider.dart';
 import 'package:dentist_app/providers/app_state.dart';
-import 'package:dentist_app/providers/settings_provider.dart';
-import 'package:dentist_app/providers/patient_provider.dart';
-import 'package:dentist_app/utils/database_utils.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:file_selector/file_selector.dart';
 import 'package:path/path.dart' as path;
-import 'package:mysql1/mysql1.dart';
-import 'package:dentist_app/utils/config_utils.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../utils/datetime_formatter.dart';
-import 'package:flutter_phoenix/flutter_phoenix.dart';
-import 'package:cross_file/cross_file.dart';
-import 'package:flutter/foundation.dart';
 import 'package:dentist_app/widgets/confirm_dialogs.dart';
 import '../utils/snackbar_util.dart';
-import 'sync_logs_screen.dart';
-import '../models/sync_config.dart';
-import '../utils/schema_validator.dart';
-import '../models/database_models.dart';
-import '../utils/toast_util.dart';
 import '../features/settings/widgets/database_source_section.dart';
 import '../features/settings/widgets/backup_restore_section.dart';
 import '../features/settings/widgets/sync_config_section.dart';
@@ -39,8 +20,7 @@ import '../features/settings/widgets/sqlite_config_dialogs.dart';
 import '../features/settings/services/permission_service.dart';
 import '../features/settings/services/mysql_config_service.dart';
 import '../features/settings/services/database_switch_service.dart';
-import '../features/settings/services/backup_restore_service.dart';
-import '../features/settings/services/excel_export_service.dart';
+import '../utils/app_logger.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -129,7 +109,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       // 使用数据库切换服务加载配置
       _dbConfig = await DatabaseSwitchService.initDatabaseConfig();
 
-      print(
+      AppLogger.info(
         '已加载数据库配置: 类型=${_dbConfig.dbType}, SQLite路径=${_dbConfig.sqlite.path}',
       );
 
@@ -139,9 +119,10 @@ class _SettingsScreenState extends State<SettingsScreen>
       // 更新UI状态
       setState(() {
         _selectedDbType = _dbConfig.dbType;
-        _dbPath = _dbConfig.dbType == 'sqlite' 
-            ? _dbConfig.sqlite.path 
-            : '${_dbConfig.mysql.host}:${_dbConfig.mysql.port}/${_dbConfig.mysql.database}';
+        _dbPath =
+            _dbConfig.dbType == 'sqlite'
+                ? _dbConfig.sqlite.path
+                : '${_dbConfig.mysql.host}:${_dbConfig.mysql.port}/${_dbConfig.mysql.database}';
         _showMysqlConfig = _selectedDbType == 'mysql';
         _isEditingMysql = false; // 加载时重置编辑模式
 
@@ -160,21 +141,21 @@ class _SettingsScreenState extends State<SettingsScreen>
       if (dbProvider == null) return;
       final providerDbType = dbProvider!.dbType;
       final providerDbPath = dbProvider!.dbPath;
-      print('从Provider获取数据库信息: 类型=$providerDbType, 路径=$providerDbPath');
+      AppLogger.info('从Provider获取数据库信息: 类型=$providerDbType, 路径=$providerDbPath');
 
       setState(() {
         _selectedDbType = providerDbType;
         // 优先使用Provider的实际路径
         if (providerDbPath.isNotEmpty) {
           _dbPath = providerDbPath;
-          print('已更新显示路径: $_dbPath (来自Provider)');
+          AppLogger.info('已更新显示路径: $_dbPath (来自Provider)');
         } else {
-          print('Provider路径为空，保持当前路径: $_dbPath');
+          AppLogger.info('Provider路径为空，保持当前路径: $_dbPath');
         }
         _isLoading = false;
       });
     } catch (e) {
-      print('加载设置错误: $e');
+      AppLogger.info('加载设置错误: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -187,17 +168,13 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
   }
 
-  // 检查是否使用的是缓存路径
-  bool _isUsingCachePath(String dbPath) {
-    return dbPath.contains('/cache/') || dbPath.endsWith('.bin');
-  }
-
   Future<void> _switchDatabaseType(String dbType) async {
     // 如果选择的类型与当前类型相同，无需操作
     if (dbType == _selectedDbType) return;
 
     // 显示确认对话框
-    final bool? confirmed = await SettingsDialogs.showDatabaseSwitchConfirmDialog(context, dbType);
+    final bool? confirmed =
+        await SettingsDialogs.showDatabaseSwitchConfirmDialog(context, dbType);
 
     if (confirmed != true) return;
 
@@ -210,7 +187,10 @@ class _SettingsScreenState extends State<SettingsScreen>
         // SQLite切换，确认后立即生效
         if (dbProvider == null) return;
         // 使用数据库切换服务更新配置
-        _dbConfig = await DatabaseSwitchService.switchDatabaseType('sqlite', _dbConfig);
+        _dbConfig = await DatabaseSwitchService.switchDatabaseType(
+          'sqlite',
+          _dbConfig,
+        );
 
         // 更新UI状态
         setState(() {
@@ -276,7 +256,11 @@ class _SettingsScreenState extends State<SettingsScreen>
         }
 
         // 更新配置
-        _dbConfig = await DatabaseSwitchService.switchDatabaseType('sqlite', _dbConfig, path: filePath);
+        _dbConfig = await DatabaseSwitchService.switchDatabaseType(
+          'sqlite',
+          _dbConfig,
+          path: filePath,
+        );
 
         // 切换数据库
         if (dbProvider == null) return;
@@ -288,139 +272,18 @@ class _SettingsScreenState extends State<SettingsScreen>
         // 显示成功提示
         if (!mounted) return;
         final fileName = path.basename(filePath);
-        await SqliteConfigDialogs.showSqliteConfigSavedDialog(context, fileName, filePath);
+        await SqliteConfigDialogs.showSqliteConfigSavedDialog(
+          context,
+          fileName,
+          filePath,
+        );
       }
     } catch (e) {
-      print('选择自定义数据库路径错误: $e');
+      AppLogger.info('选择自定义数据库路径错误: $e');
 
       // 显示错误提示
       if (!mounted) return;
       _showSnackBar('设置自定义数据库路径失败', isSuccess: false);
-    }
-  }
-
-  // 先选择目录，再选择数据库文件
-  Future<void> _selectCustomDbPathAlternative() async {
-    try {
-      // 首先请求存储权限
-      bool permissionGranted = await _requestStoragePermission();
-      if (!permissionGranted) {
-        if (mounted) {
-          _showSnackBar('需要存储权限才能选择数据库文件', isSuccess: false);
-        }
-        return;
-      }
-
-      // Step 1: 先选择目录
-      setState(() {
-        _isLoading = true;
-        _loadingText = '请选择数据库文件所在目录...';
-      });
-
-      // 使用服务选择自定义数据库路径
-      final filePath = await DatabaseSwitchService.selectCustomDbPathAlternative();
-
-      if (filePath == null) {
-        // 用户取消了选择
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-        return;
-      }
-
-      print('选择的文件: $filePath');
-      final fileName = path.basename(filePath);
-
-      // 显示确认对话框
-      final bool? confirmed = await SettingsDialogs.showConfirmDatabaseDialog(context, fileName, filePath);
-
-      if (confirmed != true) {
-        return;
-      }
-
-      // 更新配置但不立即切换数据库，避免大型数据库加载导致的卡顿
-      setState(() {
-        _isLoading = true;
-        _loadingText = '正在保存配置...';
-      });
-
-      try {
-        // 只更新配置，不立即切换数据库
-        _dbConfig.dbType = 'sqlite';
-        _dbConfig.sqlite.path = filePath;
-        await _dbConfig.saveConfig();
-        print('配置已保存: $filePath');
-
-        // 更新状态
-        if (mounted) {
-          setState(() {
-            _selectedDbType = 'sqlite';
-            _dbPath = filePath; // 立即更新本地路径变量
-            _isLoading = false;
-            _showMysqlConfig = false; // 隐藏MySQL配置区域
-          });
-
-          // 显示成功提示并询问是否立即加载数据库
-          if (mounted) {
-            final shouldLoadNow = await SqliteConfigDialogs.showSqliteConfigSavedDialogWithLoadOption(context, fileName, filePath);
-
-            if (shouldLoadNow == true) {
-              // 用户选择立即加载数据库
-              setState(() {
-                _isLoading = true;
-                _loadingText = '正在加载数据库...';
-              });
-
-              try {
-                // 切换数据库
-                if (dbProvider == null) return;
-                _dbConfig = await DatabaseSwitchService.switchDatabaseType('sqlite', _dbConfig, path: filePath);
-                print('数据库已切换');
-
-                // 更新状态和通知监听器
-                if (mounted) {
-                  setState(() {
-                    _isLoading = false;
-                  });
-
-                  // 强制数据库提供者通知所有监听器数据源已更改
-                  dbProvider!.forceDataChanged(navigateToDashboard: true);
-                  _showSnackBar('数据库已切换: $fileName', isSuccess: true);
-                }
-              } catch (e) {
-                print('切换数据库失败: $e');
-                if (mounted) {
-                  setState(() {
-                    _isLoading = false;
-                  });
-                  _showSnackBar('切换数据库失败: $e', isSuccess: false);
-                }
-              }
-            } else {
-              // 用户选择稍后加载，仅显示提示
-              _showSnackBar('数据库配置已更新，重启应用后生效', isSuccess: true);
-            }
-          }
-        }
-      } catch (e) {
-        print('保存数据库配置失败: $e');
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-          _showSnackBar('保存配置失败: $e', isSuccess: false);
-        }
-      }
-    } catch (e) {
-      print('选择数据库路径错误: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        _showSnackBar('选择数据库路径失败: $e', isSuccess: false);
-      }
     }
   }
 
@@ -489,7 +352,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         });
       }
     } catch (e) {
-      print('MySQL连接测试失败: $e');
+      AppLogger.info('MySQL连接测试失败: $e');
 
       if (!mounted) return;
 
@@ -527,7 +390,12 @@ class _SettingsScreenState extends State<SettingsScreen>
     int duration = 3,
   }) {
     if (!mounted) return;
-    SnackBarUtil.show(context, message, isSuccess: isSuccess, duration: duration);
+    SnackBarUtil.show(
+      context,
+      message,
+      isSuccess: isSuccess,
+      duration: duration,
+    );
   }
 
   @override
@@ -543,59 +411,63 @@ class _SettingsScreenState extends State<SettingsScreen>
         children: [
           _buildSettingsHeader(),
           Expanded(
-            child: _isLoading
-                ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const CircularProgressIndicator(),
-                      const SizedBox(height: 16),
-                      Text(
-                        '加载设置...',
-                        style: TextStyle(color: AppTheme.secondaryText),
+            child:
+                _isLoading
+                    ? const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text(
+                            '加载设置...',
+                            style: TextStyle(color: AppTheme.secondaryText),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                )
-                : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    DatabaseSourceSection(
-                      selectedDbType: _selectedDbType,
-                      showMysqlConfig: _showMysqlConfig,
-                      isEditingMysql: _isEditingMysql,
-                      mysqlTestSuccess: _mysqlTestSuccess,
-                      dbConfig: _dbConfig,
-                      hostController: _hostController,
-                      portController: _portController,
-                      databaseController: _databaseController,
-                      usernameController: _usernameController,
-                      passwordController: _passwordController,
-                      onSwitchToSqlite: () => _switchDatabaseType('sqlite'),
-                      onSwitchToMysql: () => _switchDatabaseType('mysql'),
-                      onToggleMysqlEdit: () {
-                        setState(() {
-                          _isEditingMysql = !_isEditingMysql;
-                        });
-                      },
-                      onTestNetwork: () => _testNetworkConnection(_hostController.text, _portController.text),
-                      onTestConnection: _testMySqlConnection,
-                      onSaveMysql: _mysqlTestSuccess ? _saveMySQLConfig : null,
-                      onSelectCustomDbPath: _selectCustomDbPath,
+                    )
+                    : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        DatabaseSourceSection(
+                          selectedDbType: _selectedDbType,
+                          showMysqlConfig: _showMysqlConfig,
+                          isEditingMysql: _isEditingMysql,
+                          mysqlTestSuccess: _mysqlTestSuccess,
+                          dbConfig: _dbConfig,
+                          hostController: _hostController,
+                          portController: _portController,
+                          databaseController: _databaseController,
+                          usernameController: _usernameController,
+                          passwordController: _passwordController,
+                          onSwitchToSqlite: () => _switchDatabaseType('sqlite'),
+                          onSwitchToMysql: () => _switchDatabaseType('mysql'),
+                          onToggleMysqlEdit: () {
+                            setState(() {
+                              _isEditingMysql = !_isEditingMysql;
+                            });
+                          },
+                          onTestNetwork:
+                              () => _testNetworkConnection(
+                                _hostController.text,
+                                _portController.text,
+                              ),
+                          onTestConnection: _testMySqlConnection,
+                          onSaveMysql:
+                              _mysqlTestSuccess ? _saveMySQLConfig : null,
+                          onSelectCustomDbPath: _selectCustomDbPath,
+                        ),
+                        BackupRestoreSection(
+                          isLoading: _isLoading,
+                          loadingText: _loadingText,
+                          onBackup: _showBackupDialog,
+                          onRestore: _restoreDatabaseFromBackup,
+                          onExportExcel: _showExcelExportDialog,
+                        ),
+                        const SyncConfigSection(),
+                        SystemSettingsSection(onLogout: _showLogoutDialog),
+                      ],
                     ),
-                    BackupRestoreSection(
-                      isLoading: _isLoading,
-                      loadingText: _loadingText,
-                      onBackup: _showBackupDialog,
-                      onRestore: _restoreDatabaseFromBackup,
-                      onExportExcel: _showExcelExportDialog,
-                    ),
-                    const SyncConfigSection(),
-                    SystemSettingsSection(
-                      onLogout: _showLogoutDialog,
-                    ),
-                  ],
-                ),
           ),
         ],
       ),
@@ -609,69 +481,28 @@ class _SettingsScreenState extends State<SettingsScreen>
       onHelp: () {
         showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('关于设置'),
-            content: const SingleChildScrollView(
-              child: Text(
-                '在此页面，您可以配置系统的数据源和其他系统设置。\n\n'
-                '数据源：您可以选择使用SQLite本地数据库或MySQL远程数据库。\n\n'
-                '备份与恢复：提供数据备份和恢复功能，保护您的重要数据。\n\n'
-                '系统设置：配置其它系统参数和用户偏好设置。',
+          builder:
+              (context) => AlertDialog(
+                title: const Text('关于设置'),
+                content: const SingleChildScrollView(
+                  child: Text(
+                    '在此页面，您可以配置系统的数据源和其他系统设置。\n\n'
+                    '数据源：您可以选择使用SQLite本地数据库或MySQL远程数据库。\n\n'
+                    '备份与恢复：提供数据备份和恢复功能，保护您的重要数据。\n\n'
+                    '系统设置：配置其它系统参数和用户偏好设置。',
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('了解'),
+                  ),
+                ],
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('了解'),
-              ),
-            ],
-          ),
         );
       },
     );
   }
-
-  // 获取用于显示的数据库路径
-  String _getDisplayDbPath() {
-    // 首先检查当前选择的数据库类型
-    if (_selectedDbType == 'mysql') {
-      // 如果是MySQL，显示连接信息而不是文件路径
-      return '${_dbConfig.mysql.host}:${_dbConfig.mysql.port}/${_dbConfig.mysql.database}';
-    }
-
-    // 对于SQLite，优先从数据库提供者获取当前实际使用的路径
-    try {
-      if (dbProvider != null && 
-          dbProvider!.isInitialized && 
-          dbProvider!.dbType == 'sqlite' && 
-          dbProvider!.dbPath.isNotEmpty) {
-        print('从Provider获取SQLite显示路径: ${dbProvider!.dbPath}');
-        return dbProvider!.dbPath;
-      }
-    } catch (e) {
-      print('从数据库提供者获取路径错误: $e');
-    }
-
-    // 其次使用_dbPath实例变量（这是用户最新选择的路径）
-    if (_selectedDbType == 'sqlite' && _dbPath.isNotEmpty && !_dbPath.contains(':')) {
-      print('使用本地SQLite路径变量: $_dbPath');
-      return _dbPath;
-    }
-
-    // 最后检查配置文件中的SQLite路径
-    try {
-      if (_selectedDbType == 'sqlite' && _dbConfig.sqlite.path.isNotEmpty) {
-        print('从配置获取SQLite显示路径: ${_dbConfig.sqlite.path}');
-        return _dbConfig.sqlite.path;
-      }
-    } catch (e) {
-      print('从配置获取显示数据库路径错误: $e');
-    }
-
-    return "未设置数据库路径";
-  }
-
-
 
   // 新增：显示备份对话框方法
   void _showBackupDialog() async {
@@ -690,31 +521,9 @@ class _SettingsScreenState extends State<SettingsScreen>
         });
         _showSnackBar(message, isSuccess: isSuccess);
       },
-      mounted: () => this.mounted,
+      mounted: () => mounted,
     );
   }
-
-  // 文件选择目录方法
-  Future<String?> _selectOutputDirectory() async {
-    try {
-      // 先确保有存储权限
-      final bool permissionGranted = await _requestStoragePermission();
-      if (!permissionGranted) {
-        if (mounted) {
-          _showSnackBar('需要存储权限才能选择文件夹', isSuccess: false);
-        }
-        return null;
-      }
-
-      // 使用服务选择输出目录
-      final directoryPath = await BackupRestoreService.selectOutputDirectory();
-      return directoryPath;
-    } catch (e) {
-      print('选择目录错误: $e');
-      return null;
-    }
-  }
-
 
   // 测试网络连接
   Future<bool> _testNetworkConnection(String host, String port) async {
@@ -723,7 +532,10 @@ class _SettingsScreenState extends State<SettingsScreen>
         _isLoading = true;
       });
 
-      final success = await MysqlConfigService.testNetworkConnection(host, port);
+      final success = await MysqlConfigService.testNetworkConnection(
+        host,
+        port,
+      );
 
       if (!mounted) return false;
 
@@ -732,7 +544,10 @@ class _SettingsScreenState extends State<SettingsScreen>
       });
 
       final effectiveHost = MysqlConfigService.getEffectiveHost(host);
-      final isConverted = MysqlConfigService.isHostConverted(host, effectiveHost);
+      final isConverted = MysqlConfigService.isHostConverted(
+        host,
+        effectiveHost,
+      );
 
       if (success) {
         if (isConverted) {
@@ -763,7 +578,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         return false;
       }
     } catch (e) {
-      print('网络测试错误: $e');
+      AppLogger.info('网络测试错误: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -792,19 +607,16 @@ class _SettingsScreenState extends State<SettingsScreen>
       final username = _usernameController.text.trim();
       final password = _passwordController.text.trim();
 
-      // 获取应用状态管理器
-      final appState = Provider.of<AppState>(context, listen: false);
-
       // 检查Android平台上的localhost
       String effectiveHost = host;
       if (Platform.isAndroid && (host == 'localhost' || host == '127.0.0.1')) {
-        print('Android平台检测到localhost，自动转换为10.0.2.2');
+        AppLogger.info('Android平台检测到localhost，自动转换为10.0.2.2');
         effectiveHost = '10.0.2.2';
         _hostController.text = effectiveHost; // 更新输入框
       }
 
       // 确认使用的主机名和端口
-      print('保存配置使用的主机名和端口: $effectiveHost:$port');
+      AppLogger.info('保存配置使用的主机名和端口: $effectiveHost:$port');
 
       // 更新配置
       _dbConfig.dbType = 'mysql';
@@ -815,11 +627,11 @@ class _SettingsScreenState extends State<SettingsScreen>
       _dbConfig.mysql.password = password;
 
       // 打印配置信息用于调试
-      print('配置已准备保存: $_dbConfig');
+      AppLogger.info('配置已准备保存: $_dbConfig');
 
       // 保存配置到文件
       await _dbConfig.saveConfig();
-      print('配置已成功保存到配置文件');
+      AppLogger.info('配置已成功保存到配置文件');
 
       // 设置UI为MySQL模式，但不切换数据库连接
       setState(() {
@@ -831,20 +643,20 @@ class _SettingsScreenState extends State<SettingsScreen>
       // 显示现代化的重启应用提示对话框
       if (!mounted) return;
 
-      final shouldRestart = await SettingsDialogs.showMySqlConfigSavedDialog(context, effectiveHost);
+      final shouldRestart = await SettingsDialogs.showMySqlConfigSavedDialog(
+        context,
+        effectiveHost,
+      );
 
+      if (!mounted) return;
       if (shouldRestart == true) {
         final appState = Provider.of<AppState>(context, listen: false);
         appState.exitApp();
       } else {
-        _showSnackBar(
-          '配置已保存，请重启应用以应用MySQL配置',
-          isSuccess: true,
-          duration: 5,
-        );
+        _showSnackBar('配置已保存，请重启应用以应用MySQL配置', isSuccess: true, duration: 5);
       }
     } catch (e) {
-      print('保存MySQL配置错误: $e');
+      AppLogger.info('保存MySQL配置错误: $e');
 
       if (!mounted) return;
       String errorMessage = e.toString();
@@ -858,7 +670,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       });
     }
   }
-
 
   // 从备份恢复数据库
   void _restoreDatabaseFromBackup() async {
@@ -879,7 +690,7 @@ class _SettingsScreenState extends State<SettingsScreen>
         });
         _showSnackBar(message, isSuccess: isSuccess);
       },
-      mounted: () => this.mounted,
+      mounted: () => mounted,
     );
   }
 
@@ -900,17 +711,16 @@ class _SettingsScreenState extends State<SettingsScreen>
         });
         _showSnackBar(message, isSuccess: isSuccess);
       },
-      mounted: () => this.mounted,
+      mounted: () => mounted,
     );
   }
-
 
   // 显示退出登录对话框
   void _showLogoutDialog() {
     // 获取当前用户信息
     final appState = Provider.of<AppState>(context, listen: false);
     final currentUser = appState.currentUser;
-    
+
     // 使用公共组件显示退出登录对话框
     LogoutConfirmDialogManager.show(
       context,
@@ -927,18 +737,18 @@ class _SettingsScreenState extends State<SettingsScreen>
     try {
       // 获取应用状态管理器
       final appState = Provider.of<AppState>(context, listen: false);
-      
+
       // 清除登录状态
       appState.logout();
-      
+
       // 显示退出成功消息
       if (mounted) {
         _showSnackBar('已成功退出登录', isSuccess: true);
       }
-      
+
       // 延迟一下再跳转，让用户看到成功消息
       await Future.delayed(const Duration(milliseconds: 500));
-      
+
       // 导航到登录页面
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil(
@@ -947,12 +757,10 @@ class _SettingsScreenState extends State<SettingsScreen>
         );
       }
     } catch (e) {
-      print('退出登录错误: $e');
+      AppLogger.info('退出登录错误: $e');
       if (mounted) {
         _showSnackBar('退出登录失败: $e', isSuccess: false);
       }
     }
   }
-
-
 }

@@ -45,13 +45,9 @@ class ChargeInfoSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionTitle(
-          title: '收费信息',
-          icon: Icons.receipt,
-          color: Colors.green,
-        ),
+        const SectionTitle(title: '收费信息', icon: Icons.receipt, color: Colors.green),
         const SizedBox(height: 8),
-        
+
         // 收费日期和项目名称 - 紧凑布局
         Row(
           children: [
@@ -61,8 +57,13 @@ class ChargeInfoSection extends StatelessWidget {
                 controller: chargeDateController,
                 decoration: InputDecoration(
                   labelText: '收费日期',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
                   suffixIcon: const Icon(Icons.calendar_today, size: 18),
                 ),
                 readOnly: true,
@@ -73,13 +74,17 @@ class ChargeInfoSection extends StatelessWidget {
                       return ModernDatePickerDialog(
                         initialDate: DateTimeFormatter.nowLocal(),
                         firstDate: DateTime(2020),
-                        lastDate: DateTimeFormatter.nowLocal().add(const Duration(days: 365)),
+                        lastDate: DateTimeFormatter.nowLocal().add(
+                          const Duration(days: 365),
+                        ),
                         title: '选择收费日期',
                       );
                     },
                   );
                   if (date != null) {
-                    chargeDateController.text = DateFormat('yyyy-MM-dd').format(date);
+                    chargeDateController.text = DateFormat(
+                      'yyyy-MM-dd',
+                    ).format(date);
                   }
                 },
               ),
@@ -95,7 +100,10 @@ class ChargeInfoSection extends StatelessWidget {
           decoration: InputDecoration(
             labelText: '项目名称',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
             hintText: '请输入收费项目名称',
           ),
           validator: itemNameValidator,
@@ -112,11 +120,18 @@ class ChargeInfoSection extends StatelessWidget {
                 focusNode: receivableFocusNode,
                 decoration: InputDecoration(
                   labelText: '应收费',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
                   prefixText: '¥',
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 inputFormatters: [amountInputFormatter],
                 validator: receivableValidator,
               ),
@@ -128,11 +143,18 @@ class ChargeInfoSection extends StatelessWidget {
                 focusNode: collectedFocusNode,
                 decoration: InputDecoration(
                   labelText: '已收费',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
                   prefixText: '¥',
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 inputFormatters: [amountInputFormatter],
                 validator: collectedValidator,
               ),
@@ -151,11 +173,18 @@ class ChargeInfoSection extends StatelessWidget {
                 focusNode: processingFocusNode,
                 decoration: InputDecoration(
                   labelText: '加工费',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
                   prefixText: '¥',
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 inputFormatters: [amountInputFormatter],
                 validator: processingValidator,
               ),
@@ -164,13 +193,22 @@ class ChargeInfoSection extends StatelessWidget {
             Expanded(
               child: DropdownButtonFormField<String>(
                 isExpanded: true,
-                value: FinancialPaymentMethodHelper.uiValue(paymentMethod),
+                initialValue: FinancialPaymentMethodHelper.uiValue(paymentMethod),
                 decoration: InputDecoration(
                   labelText: '收费方式',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 14,
+                  ),
                   prefixIcon: Padding(
                     padding: const EdgeInsets.all(10),
                     child: Icon(
@@ -180,34 +218,43 @@ class ChargeInfoSection extends StatelessWidget {
                     ),
                   ),
                 ),
-                items: FinancialPaymentMethodHelper.dropdownMethods.map((method) {
-                  final displayName = method == FinancialPaymentMethodHelper.nonePaymentMethod
-                      ? '未选择'
-                      : FinancialPaymentMethodHelper.displayName(method);
-                  final iconPath = FinancialPaymentMethodHelper.iconAssetPathOrNull(method);
-                  return DropdownMenuItem<String>(
-                    value: method,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (iconPath != null) ...[
-                          Image.asset(
-                            iconPath,
-                            width: 16,
-                            height: 16,
-                            errorBuilder: (_, __, ___) => Icon(
-                              Icons.payment,
-                              size: 16,
-                              color: Colors.green[600],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                        Text(displayName),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                items:
+                    FinancialPaymentMethodHelper.dropdownMethods.map((method) {
+                      final displayName =
+                          method ==
+                                  FinancialPaymentMethodHelper.nonePaymentMethod
+                              ? '未选择'
+                              : FinancialPaymentMethodHelper.displayName(
+                                method,
+                              );
+                      final iconPath =
+                          FinancialPaymentMethodHelper.iconAssetPathOrNull(
+                            method,
+                          );
+                      return DropdownMenuItem<String>(
+                        value: method,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (iconPath != null) ...[
+                              Image.asset(
+                                iconPath,
+                                width: 16,
+                                height: 16,
+                                errorBuilder:
+                                    (_, __, ___) => Icon(
+                                      Icons.payment,
+                                      size: 16,
+                                      color: Colors.green[600],
+                                    ),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            Text(displayName),
+                          ],
+                        ),
+                      );
+                    }).toList(),
                 onChanged: onPaymentMethodChanged,
               ),
             ),

@@ -6,7 +6,8 @@ import 'user_permission_cache_service.dart';
 /// 职责：用户列表缓存、权限缓存管理
 class UserCacheService {
   final UserListCacheService _userListCacheService = UserListCacheService();
-  final UserPermissionCacheService _permissionCacheService = UserPermissionCacheService();
+  final UserPermissionCacheService _permissionCacheService =
+      UserPermissionCacheService();
 
   // Getters
   bool get hasValidCache => _userListCacheService.hasValidCache;

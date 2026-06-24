@@ -1,4 +1,5 @@
 import 'package:lpinyin/lpinyin.dart';
+import './app_logger.dart';
 
 /// 拼音转换工具类
 class PinyinUtil {
@@ -20,7 +21,7 @@ class PinyinUtil {
         format: PinyinFormat.WITHOUT_TONE,
       );
     } catch (e) {
-      print('拼音转换错误: $e');
+      AppLogger.info('拼音转换错误: $e');
       return '';
     }
   }
@@ -38,7 +39,7 @@ class PinyinUtil {
       // 获取每个字的拼音首字母
       return PinyinHelper.getShortPinyin(text).toUpperCase();
     } catch (e) {
-      print('获取拼音首字母错误: $e');
+      AppLogger.info('获取拼音首字母错误: $e');
       return '';
     }
   }

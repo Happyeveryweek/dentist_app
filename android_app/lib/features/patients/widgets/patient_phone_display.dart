@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/features/patients/widgets/patient_info_row.dart';
+import '../../../utils/app_logger.dart';
 
 List<String> parsePatientPhoneNumbers(String phoneData) {
   final trimmed = phoneData.trim();
@@ -54,7 +55,7 @@ class PatientPhoneDisplay extends StatelessWidget {
   Widget build(BuildContext context) {
     try {
       if (phoneNumbers.isEmpty) {
-        return PatientInfoRow(
+        return const PatientInfoRow(
           icon: CupertinoIcons.phone,
           label: '联系电话',
           value: '未设置',
@@ -68,7 +69,10 @@ class PatientPhoneDisplay extends StatelessWidget {
           label: '联系电话',
           value: phoneNumbers[0],
           isPhone: phoneNumbers[0] != '未设置',
-          onPhoneCall: phoneNumbers[0] != '未设置' ? () => onPhoneCall?.call(phoneNumbers[0]) : null,
+          onPhoneCall:
+              phoneNumbers[0] != '未设置'
+                  ? () => onPhoneCall?.call(phoneNumbers[0])
+                  : null,
         );
       } else {
         return Column(
@@ -103,17 +107,21 @@ class PatientPhoneDisplay extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: i == 0
-                            ? AppTheme.primaryColor.withOpacity(0.1)
-                            : AppTheme.secondaryColor.withOpacity(0.1),
+                        color:
+                            i == 0
+                                ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                                : AppTheme.secondaryColor.withValues(
+                                  alpha: 0.1,
+                                ),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         i == 0 ? '主要' : '备用',
                         style: TextStyle(
-                          color: i == 0
-                              ? AppTheme.primaryColor
-                              : AppTheme.secondaryColor,
+                          color:
+                              i == 0
+                                  ? AppTheme.primaryColor
+                                  : AppTheme.secondaryColor,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -156,8 +164,8 @@ class PatientPhoneDisplay extends StatelessWidget {
         );
       }
     } catch (e) {
-      print('构建电话号码部分错误: $e');
-      return PatientInfoRow(
+      AppLogger.info('构建电话号码部分错误: $e');
+      return const PatientInfoRow(
         icon: CupertinoIcons.phone,
         label: '联系电话',
         value: '未设置',

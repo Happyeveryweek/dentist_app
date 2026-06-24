@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/database_provider.dart';
 import '../../../providers/user_provider.dart';
 import '../../../utils/message_toast_helper.dart';
+import '../../../utils/app_logger.dart';
 
 /// 登录初始化服务
 class LoginInitializationService {
@@ -15,7 +16,7 @@ class LoginInitializationService {
       final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-      print('🔄 等待数据库初始化...');
+      AppLogger.info('🔄 等待数据库初始化...');
 
       // 第一步：等待数据库初始化（最多等待10秒）
       int retryCount = 0;
@@ -25,7 +26,7 @@ class LoginInitializationService {
       }
 
       if (!dbProvider.isInitialized) {
-        print('❌ 数据库初始化超时');
+        AppLogger.info('❌ 数据库初始化超时');
         if (context.mounted) {
           onInitializationComplete(false);
           MessageToastHelper.showError(context, '数据库初始化超时，请重启应用');
@@ -33,24 +34,27 @@ class LoginInitializationService {
         return false;
       }
 
-      print('✅ 数据库初始化完成 (${dbProvider.dbType})');
+      AppLogger.info('✅ 数据库初始化完成 (${dbProvider.dbType})');
 
       // 如果是自动切换到SQLite，显示提示
       if (dbProvider.isAutoSwitchedToSQLite) {
-        print('⚠️ MySQL连接失败，已自动切换到SQLite');
+        AppLogger.info('⚠️ MySQL连接失败，已自动切换到SQLite');
       }
 
-      print('🔄 等待 UserProvider 初始化...');
+      AppLogger.info('🔄 等待 UserProvider 初始化...');
 
       // 第二步：等待 UserProvider 初始化
       if (!userProvider.initialized) {
         try {
           await userProvider.initializeFromDatabase(dbProvider);
         } catch (e) {
-          print('❌ UserProvider 初始化失败: $e');
+          AppLogger.info('❌ UserProvider 初始化失败: $e');
           if (context.mounted) {
             onInitializationComplete(false);
-            MessageToastHelper.showError(context, 'UserProvider初始化失败: ${e.toString()}');
+            MessageToastHelper.showError(
+              context,
+              'UserProvider初始化失败: ${e.toString()}',
+            );
           }
           return false;
         }
@@ -64,7 +68,7 @@ class LoginInitializationService {
       }
 
       if (!userProvider.initialized) {
-        print('❌ UserProvider 初始化超时');
+        AppLogger.info('❌ UserProvider 初始化超时');
         if (context.mounted) {
           onInitializationComplete(false);
           MessageToastHelper.showError(context, 'UserProvider初始化超时，请重启应用');
@@ -72,15 +76,15 @@ class LoginInitializationService {
         return false;
       }
 
-      print('✅ UserProvider 初始化完成');
-      print('✅ 系统初始化完成，可以登录');
+      AppLogger.info('✅ UserProvider 初始化完成');
+      AppLogger.info('✅ 系统初始化完成，可以登录');
 
       if (context.mounted) {
         onInitializationComplete(true);
       }
       return true;
     } catch (e) {
-      print('❌ 等待初始化失败: $e');
+      AppLogger.info('❌ 等待初始化失败: $e');
       if (context.mounted) {
         onInitializationComplete(false);
         MessageToastHelper.showError(context, '初始化失败: ${e.toString()}');
@@ -88,5 +92,4 @@ class LoginInitializationService {
       return false;
     }
   }
-
 }

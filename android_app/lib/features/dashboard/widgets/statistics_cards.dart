@@ -37,7 +37,11 @@ class StatisticsCards extends StatelessWidget {
                   icon: Icons.people_alt_rounded,
                   color: AppTheme.infoColor,
                   onTap: () async {
-                    final hasPermission = await PermissionUtils.canEdit(context, 'patients');
+                    final hasPermission = await PermissionUtils.canEdit(
+                      context,
+                      'patients',
+                    );
+                    if (!context.mounted) return;
                     if (hasPermission) {
                       Navigator.push(
                         context,
@@ -62,7 +66,11 @@ class StatisticsCards extends StatelessWidget {
                   icon: Icons.calendar_month_rounded,
                   color: AppTheme.primaryColor,
                   onTap: () async {
-                    final hasPermission = await PermissionUtils.canEdit(context, 'appointments');
+                    final hasPermission = await PermissionUtils.canEdit(
+                      context,
+                      'appointments',
+                    );
+                    if (!context.mounted) return;
                     if (hasPermission) {
                       Navigator.push(
                         context,
@@ -91,14 +99,19 @@ class StatisticsCards extends StatelessWidget {
                   icon: Icons.check_circle_outline_rounded,
                   color: AppTheme.successColor,
                   onTap: () async {
-                    final hasPermission = await PermissionUtils.canEdit(context, 'appointments');
+                    final hasPermission = await PermissionUtils.canEdit(
+                      context,
+                      'appointments',
+                    );
+                    if (!context.mounted) return;
                     if (hasPermission) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const AppointmentsScreen(
-                            initialFilterStatus: '已完成',
-                          ),
+                          builder:
+                              (context) => const AppointmentsScreen(
+                                initialFilterStatus: '已完成',
+                              ),
                         ),
                       );
                     } else {
@@ -118,14 +131,19 @@ class StatisticsCards extends StatelessWidget {
                   icon: Icons.schedule_rounded,
                   color: AppTheme.warningColor,
                   onTap: () async {
-                    final hasPermission = await PermissionUtils.canEdit(context, 'appointments');
+                    final hasPermission = await PermissionUtils.canEdit(
+                      context,
+                      'appointments',
+                    );
+                    if (!context.mounted) return;
                     if (hasPermission) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const AppointmentsScreen(
-                            initialFilterStatus: '已预约',
-                          ),
+                          builder:
+                              (context) => const AppointmentsScreen(
+                                initialFilterStatus: '已预约',
+                              ),
                         ),
                       );
                     } else {

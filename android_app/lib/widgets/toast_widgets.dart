@@ -26,7 +26,7 @@ class SuccessToast extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -34,11 +34,7 @@ class SuccessToast extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.check_circle_outline,
-            color: Colors.white,
-            size: 20,
-          ),
+          const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -53,16 +49,9 @@ class SuccessToast extends StatelessWidget {
           if (onDismiss != null)
             IconButton(
               onPressed: onDismiss,
-              icon: const Icon(
-                Icons.close,
-                color: Colors.white,
-                size: 20,
-              ),
+              icon: const Icon(Icons.close, color: Colors.white, size: 20),
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: 32,
-                minHeight: 32,
-              ),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
         ],
       ),
@@ -95,7 +84,7 @@ class SuccessToastBottom extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -103,11 +92,7 @@ class SuccessToastBottom extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.check_circle_outline,
-            color: Colors.white,
-            size: 20,
-          ),
+          const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -122,16 +107,9 @@ class SuccessToastBottom extends StatelessWidget {
           if (onDismiss != null)
             IconButton(
               onPressed: onDismiss,
-              icon: const Icon(
-                Icons.close,
-                color: Colors.white,
-                size: 20,
-              ),
+              icon: const Icon(Icons.close, color: Colors.white, size: 20),
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: 32,
-                minHeight: 32,
-              ),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
         ],
       ),
@@ -164,7 +142,7 @@ class DeleteSuccessToast extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -172,11 +150,7 @@ class DeleteSuccessToast extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.delete_outline,
-            color: Colors.white,
-            size: 20,
-          ),
+          const Icon(Icons.delete_outline, color: Colors.white, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -191,16 +165,9 @@ class DeleteSuccessToast extends StatelessWidget {
           if (onDismiss != null)
             IconButton(
               onPressed: onDismiss,
-              icon: const Icon(
-                Icons.close,
-                color: Colors.white,
-                size: 20,
-              ),
+              icon: const Icon(Icons.close, color: Colors.white, size: 20),
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: 32,
-                minHeight: 32,
-              ),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
         ],
       ),
@@ -233,7 +200,7 @@ class DeleteSuccessToastBottom extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -241,11 +208,7 @@ class DeleteSuccessToastBottom extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.delete_outline,
-            color: Colors.white,
-            size: 20,
-          ),
+          const Icon(Icons.delete_outline, color: Colors.white, size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -260,16 +223,9 @@ class DeleteSuccessToastBottom extends StatelessWidget {
           if (onDismiss != null)
             IconButton(
               onPressed: onDismiss,
-              icon: const Icon(
-                Icons.close,
-                color: Colors.white,
-                size: 20,
-              ),
+              icon: const Icon(Icons.close, color: Colors.white, size: 20),
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: 32,
-                minHeight: 32,
-              ),
+              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
         ],
       ),

@@ -19,10 +19,22 @@ class PurchaseOverviewTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalRecords = filteredRecords.length;
-    final totalAmount = filteredRecords.fold<double>(0.0, (sum, record) => sum + record.totalAmount);
-    final totalQuantity = filteredRecords.fold<int>(0, (sum, record) => sum + record.totalQuantity);
-    final uniqueMaterials = filteredItems.map((item) => item.materialName).toSet().length;
-    final uniqueSuppliers = filteredRecords.map((record) => record.supplier).where((s) => s != null && s.isNotEmpty).toSet().length;
+    final totalAmount = filteredRecords.fold<double>(
+      0.0,
+      (sum, record) => sum + record.totalAmount,
+    );
+    final totalQuantity = filteredRecords.fold<int>(
+      0,
+      (sum, record) => sum + record.totalQuantity,
+    );
+    final uniqueMaterials =
+        filteredItems.map((item) => item.materialName).toSet().length;
+    final uniqueSuppliers =
+        filteredRecords
+            .map((record) => record.supplier)
+            .where((s) => s != null && s.isNotEmpty)
+            .toSet()
+            .length;
     final averageAmount = totalRecords > 0 ? totalAmount / totalRecords : 0.0;
 
     return SingleChildScrollView(
@@ -39,26 +51,64 @@ class PurchaseOverviewTab extends StatelessWidget {
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
             children: [
-              PurchaseStatCard(title: '记录数', value: totalRecords.toString(), icon: Icons.receipt_long, color: Colors.blue),
-              PurchaseStatCard(title: '材料种类', value: uniqueMaterials.toString(), icon: Icons.category, color: Colors.purple),
-              PurchaseStatCard(title: '供应商数', value: uniqueSuppliers.toString(), icon: Icons.business, color: Colors.green),
-              PurchaseStatCard(title: '总采购量', value: NumberFormat('#,##0').format(totalQuantity), icon: Icons.inventory_2, color: Colors.orange),
-              PurchaseStatCard(title: '总采购额', value: '¥${NumberFormat('#,##0').format(totalAmount)}', icon: Icons.monetization_on, color: Colors.teal),
-              PurchaseStatCard(title: '平均金额', value: '¥${NumberFormat('#,##0').format(averageAmount)}', icon: Icons.trending_up, color: Colors.indigo),
+              PurchaseStatCard(
+                title: '记录数',
+                value: totalRecords.toString(),
+                icon: Icons.receipt_long,
+                color: Colors.blue,
+              ),
+              PurchaseStatCard(
+                title: '材料种类',
+                value: uniqueMaterials.toString(),
+                icon: Icons.category,
+                color: Colors.purple,
+              ),
+              PurchaseStatCard(
+                title: '供应商数',
+                value: uniqueSuppliers.toString(),
+                icon: Icons.business,
+                color: Colors.green,
+              ),
+              PurchaseStatCard(
+                title: '总采购量',
+                value: NumberFormat('#,##0').format(totalQuantity),
+                icon: Icons.inventory_2,
+                color: Colors.orange,
+              ),
+              PurchaseStatCard(
+                title: '总采购额',
+                value: '¥${NumberFormat('#,##0').format(totalAmount)}',
+                icon: Icons.monetization_on,
+                color: Colors.teal,
+              ),
+              PurchaseStatCard(
+                title: '平均金额',
+                value: '¥${NumberFormat('#,##0').format(averageAmount)}',
+                icon: Icons.trending_up,
+                color: Colors.indigo,
+              ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // 采购分布图表
-          _buildPurchaseDistributionChart(totalAmount, totalQuantity, uniqueMaterials),
+          _buildPurchaseDistributionChart(
+            totalAmount,
+            totalQuantity,
+            uniqueMaterials,
+          ),
         ],
       ),
     );
   }
 
   /// 构建采购分布图表
-  Widget _buildPurchaseDistributionChart(double totalAmount, int totalQuantity, int uniqueMaterials) {
+  Widget _buildPurchaseDistributionChart(
+    double totalAmount,
+    int totalQuantity,
+    int uniqueMaterials,
+  ) {
     if (totalAmount <= 0) {
       return Container(
         height: 200,
@@ -100,7 +150,7 @@ class PurchaseOverviewTab extends StatelessWidget {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 24),
-          
+
           // 平均单价分析
           Row(
             children: [
@@ -117,7 +167,7 @@ class PurchaseOverviewTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          
+
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -132,10 +182,7 @@ class PurchaseOverviewTab extends StatelessWidget {
                   children: [
                     Text(
                       '总采购金额',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.green[700],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.green[700]),
                     ),
                     Text(
                       '¥${NumberFormat('#,##0').format(totalAmount)}',
@@ -153,10 +200,7 @@ class PurchaseOverviewTab extends StatelessWidget {
                   children: [
                     Text(
                       '总采购数量',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.green[700],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.green[700]),
                     ),
                     Text(
                       NumberFormat('#,##0').format(totalQuantity),
@@ -174,10 +218,7 @@ class PurchaseOverviewTab extends StatelessWidget {
                   children: [
                     Text(
                       '平均单价',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.green[700],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.green[700]),
                     ),
                     Text(
                       '¥${totalQuantity > 0 ? (totalAmount / totalQuantity).toStringAsFixed(2) : '0.00'}',
@@ -192,9 +233,9 @@ class PurchaseOverviewTab extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // 材料多样性分析
           Row(
             children: [
@@ -211,7 +252,7 @@ class PurchaseOverviewTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          
+
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -224,10 +265,7 @@ class PurchaseOverviewTab extends StatelessWidget {
               children: [
                 Text(
                   '材料种类数量',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.blue[700],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.blue[700]),
                 ),
                 Text(
                   '$uniqueMaterials 种',

@@ -1,5 +1,6 @@
 import '../../../models/user.dart';
 import 'user_permission_service.dart';
+import '../../../utils/app_logger.dart';
 
 /// 当前用户权限服务
 class UserCurrentPermissionService {
@@ -17,21 +18,23 @@ class UserCurrentPermissionService {
 
   Future<void> primeCurrentUserPermissions(User currentUser) async {
     if (currentUser.id == null) {
-      print('当前用户为空或ID无效，无法加载权限');
+      AppLogger.info('当前用户为空或ID无效，无法加载权限');
       return;
     }
 
     try {
       if (_permissionService == null) return;
-      final permissions = await _permissionService.getUserPermissions(currentUser.id!);
+      final permissions = await _permissionService.getUserPermissions(
+        currentUser.id!,
+      );
       if (permissions != null) {
-        print('当前用户权限加载成功，用户ID: ${currentUser.id}');
-        print('权限配置: $permissions');
+        AppLogger.info('当前用户权限加载成功，用户ID: ${currentUser.id}');
+        AppLogger.info('权限配置: $permissions');
       } else {
-        print('当前用户无权限配置，用户ID: ${currentUser.id}');
+        AppLogger.info('当前用户无权限配置，用户ID: ${currentUser.id}');
       }
     } catch (e) {
-      print('加载当前用户权限失败: $e');
+      AppLogger.info('加载当前用户权限失败: $e');
       rethrow;
     }
   }
@@ -39,7 +42,7 @@ class UserCurrentPermissionService {
   Future<void> loadCurrentUserPermissions() async {
     final currentUser = _currentUserGetter();
     if (currentUser == null || currentUser.id == null) {
-      print('当前用户为空或ID无效，无法加载权限');
+      AppLogger.info('当前用户为空或ID无效，无法加载权限');
       return;
     }
 
@@ -49,7 +52,7 @@ class UserCurrentPermissionService {
   Future<void> refreshCurrentUserPermissions() async {
     final currentUser = _currentUserGetter();
     if (currentUser == null || currentUser.id == null) {
-      print('当前用户为空或ID无效，无法刷新权限');
+      AppLogger.info('当前用户为空或ID无效，无法刷新权限');
       return;
     }
 
@@ -57,9 +60,9 @@ class UserCurrentPermissionService {
       if (_permissionService == null) return;
       _permissionService.clearPermissionsCache(currentUser.id!);
       await primeCurrentUserPermissions(currentUser);
-      print('当前用户权限刷新成功，用户ID: ${currentUser.id}');
+      AppLogger.info('当前用户权限刷新成功，用户ID: ${currentUser.id}');
     } catch (e) {
-      print('刷新当前用户权限失败: $e');
+      AppLogger.info('刷新当前用户权限失败: $e');
       rethrow;
     }
   }

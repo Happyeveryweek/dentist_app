@@ -15,7 +15,8 @@ class PatientSortOptions extends StatelessWidget {
     required this.onSortChange,
   });
 
-  static void show(BuildContext context, {
+  static void show(
+    BuildContext context, {
     required String currentSort,
     required bool ascending,
     required Function(String) onSortChange,

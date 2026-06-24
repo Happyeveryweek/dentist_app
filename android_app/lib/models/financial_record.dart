@@ -1,6 +1,5 @@
-import 'package:intl/intl.dart';
-import 'dart:convert';
 import '../utils/datetime_formatter.dart';
+import '../utils/app_logger.dart';
 
 // 财务记录模型
 class FinancialRecord {
@@ -28,10 +27,13 @@ class FinancialRecord {
   });
 
   // 从Map创建FinancialRecord
-  factory FinancialRecord.fromMap(Map<String, dynamic> map, {String dataSource = 'sqlite'}) {
+  factory FinancialRecord.fromMap(
+    Map<String, dynamic> map, {
+    String dataSource = 'sqlite',
+  }) {
     DateTime created = DateTime.now();
     DateTime updated = DateTime.now();
-    
+
     // 使用统一的时间解析方法
     try {
       if (map['created_at'] is DateTime) {
@@ -40,10 +42,10 @@ class FinancialRecord {
         created = DateTimeFormatter.fromDbString(map['created_at']);
       }
     } catch (e) {
-      print('created_at解析失败: ${map['created_at']}, 使用当前时间');
+      AppLogger.info('created_at解析失败: ${map['created_at']}, 使用当前时间');
       created = DateTime.now();
     }
-    
+
     try {
       if (map['updated_at'] is DateTime) {
         updated = map['updated_at'];
@@ -51,22 +53,24 @@ class FinancialRecord {
         updated = DateTimeFormatter.fromDbString(map['updated_at']);
       }
     } catch (e) {
-      print('updated_at解析失败: ${map['updated_at']}, 使用当前时间');
+      AppLogger.info('updated_at解析失败: ${map['updated_at']}, 使用当前时间');
       updated = DateTime.now();
     }
 
     final record = FinancialRecord(
       id: map['id'] != null ? int.tryParse(map['id'].toString()) ?? 0 : null,
       patientId: int.tryParse(map['patient_id'].toString()) ?? 0,
-      totalQuantity: int.tryParse(map['total_quantity'].toString()) ?? 0, // 新增：收费总条数
+      totalQuantity:
+          int.tryParse(map['total_quantity'].toString()) ?? 0, // 新增：收费总条数
       notes: map['notes']?.toString(),
       createdAt: created,
       updatedAt: updated,
       patientName: map['patient_name']?.toString(), // 新增：患者姓名
       patientNamePinyin: map['patient_name_pinyin']?.toString(), // 患者姓名拼音
-      patientNameInitials: map['patient_name_initials']?.toString(), // 患者姓名拼音首字母
+      patientNameInitials:
+          map['patient_name_initials']?.toString(), // 患者姓名拼音首字母
     );
-    
+
     return record;
   }
 
@@ -117,7 +121,8 @@ class FinancialRecord {
       updatedAt: updatedAt ?? this.updatedAt,
       patientName: patientName ?? this.patientName, // 新增：患者姓名
       patientNamePinyin: patientNamePinyin ?? this.patientNamePinyin, // 患者姓名拼音
-      patientNameInitials: patientNameInitials ?? this.patientNameInitials, // 患者姓名拼音首字母
+      patientNameInitials:
+          patientNameInitials ?? this.patientNameInitials, // 患者姓名拼音首字母
     );
   }
 

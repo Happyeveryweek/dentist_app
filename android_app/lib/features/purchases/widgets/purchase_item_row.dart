@@ -6,10 +6,7 @@ import '../../../models/purchase_item.dart';
 class PurchaseItemRow extends StatelessWidget {
   final PurchaseItem item;
 
-  const PurchaseItemRow({
-    super.key,
-    required this.item,
-  });
+  const PurchaseItemRow({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {

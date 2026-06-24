@@ -11,19 +11,9 @@ class PurchaseEmptyState extends StatelessWidget {
         padding: EdgeInsets.all(32),
         child: Column(
           children: [
-            Icon(
-              Icons.inventory_2,
-              size: 64,
-              color: Colors.grey,
-            ),
+            Icon(Icons.inventory_2, size: 64, color: Colors.grey),
             SizedBox(height: 8),
-            Text(
-              '暂无采购项目',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 16,
-              ),
-            ),
+            Text('暂无采购项目', style: TextStyle(color: Colors.grey, fontSize: 16)),
           ],
         ),
       ),

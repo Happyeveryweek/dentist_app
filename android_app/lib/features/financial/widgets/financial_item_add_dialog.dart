@@ -60,24 +60,25 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
     _collectedAmountController.text = '0';
     _processingFeeController.text = '0';
     // 移除数量字段，不再需要初始化
-    _chargeDateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    _chargeDateController.text = DateFormat(
+      'yyyy-MM-dd',
+    ).format(DateTime.now());
 
-    _setupFocusNodeAndController(_itemPriceFocusNode, _itemPriceController, '0');
-    _setupFocusNodeAndController(_collectedAmountFocusNode, _collectedAmountController, '0');
-    _setupFocusNodeAndController(_processingFeeFocusNode, _processingFeeController, '0');
-  }
-
-  /// 计算欠费金额
-  double _calculateOutstanding() {
-    try {
-      final receivable = double.tryParse(_itemPriceController.text) ?? 0.0;
-      final collected = double.tryParse(_collectedAmountController.text) ?? 0.0;
-      
-      // 欠费金额 = 应收费 - 已收费
-      return receivable - collected;
-    } catch (e) {
-      return 0.0;
-    }
+    _setupFocusNodeAndController(
+      _itemPriceFocusNode,
+      _itemPriceController,
+      '0',
+    );
+    _setupFocusNodeAndController(
+      _collectedAmountFocusNode,
+      _collectedAmountController,
+      '0',
+    );
+    _setupFocusNodeAndController(
+      _processingFeeFocusNode,
+      _processingFeeController,
+      '0',
+    );
   }
 
   void _save() {
@@ -87,14 +88,16 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
         itemName: _itemNameController.text,
         itemPrice: double.tryParse(_itemPriceController.text) ?? 0.0,
         processingFee: double.tryParse(_processingFeeController.text) ?? 0.0,
-        paymentMethod: FinancialPaymentMethodHelper.toStorageValue(_paymentMethod),
+        paymentMethod: FinancialPaymentMethodHelper.toStorageValue(
+          _paymentMethod,
+        ),
         quantity: 1, // 固定数量为1
         totalPrice: double.tryParse(_collectedAmountController.text) ?? 0.0,
         chargeDate: DateFormat('yyyy-MM-dd').parse(_chargeDateController.text),
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-      
+
       widget.onSave(newItem);
     }
   }
@@ -132,15 +135,22 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                    constraints: const BoxConstraints(
+                      minWidth: 24,
+                      minHeight: 24,
+                    ),
                   ),
                 ],
               ),
             ),
-            
+
             // 表单内容
             Flexible(
               child: SingleChildScrollView(
@@ -164,9 +174,9 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
                           return null;
                         },
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // 金额信息行
                       Row(
                         children: [
@@ -217,9 +227,9 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // 加工费行
                       TextFormField(
                         controller: _processingFeeController,
@@ -241,12 +251,14 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
                           return null;
                         },
                       ),
-                      
+
                       const SizedBox(height: 16),
 
                       DropdownButtonFormField<String>(
                         isExpanded: true,
-                        value: FinancialPaymentMethodHelper.uiValue(_paymentMethod),
+                        initialValue: FinancialPaymentMethodHelper.uiValue(
+                          _paymentMethod,
+                        ),
                         decoration: InputDecoration(
                           labelText: '收费方式',
                           border: OutlineInputBorder(
@@ -258,36 +270,51 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 14,
+                          ),
                           prefixIcon: const Icon(Icons.payment),
                         ),
-                        items: FinancialPaymentMethodHelper.dropdownMethods.map((method) {
-                          final iconPath = FinancialPaymentMethodHelper.iconAssetPathOrNull(method);
-                          final label = method == FinancialPaymentMethodHelper.nonePaymentMethod
-                              ? '未选择'
-                              : FinancialPaymentMethodHelper.displayName(method);
-                          return DropdownMenuItem<String>(
-                            value: method,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (iconPath != null) ...[
-                                  Image.asset(
-                                    iconPath,
-                                    width: 16,
-                                    height: 16,
-                                    errorBuilder: (_, __, ___) => const Icon(
-                                      Icons.payment,
-                                      size: 16,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                ],
-                                Text(label),
-                              ],
-                            ),
-                          );
-                        }).toList(),
+                        items:
+                            FinancialPaymentMethodHelper.dropdownMethods.map((
+                              method,
+                            ) {
+                              final iconPath =
+                                  FinancialPaymentMethodHelper.iconAssetPathOrNull(
+                                    method,
+                                  );
+                              final label =
+                                  method ==
+                                          FinancialPaymentMethodHelper
+                                              .nonePaymentMethod
+                                      ? '未选择'
+                                      : FinancialPaymentMethodHelper.displayName(
+                                        method,
+                                      );
+                              return DropdownMenuItem<String>(
+                                value: method,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (iconPath != null) ...[
+                                      Image.asset(
+                                        iconPath,
+                                        width: 16,
+                                        height: 16,
+                                        errorBuilder:
+                                            (_, __, ___) => const Icon(
+                                              Icons.payment,
+                                              size: 16,
+                                            ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                    ],
+                                    Text(label),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
                         onChanged: (value) {
                           setState(() {
                             _paymentMethod = value;
@@ -296,7 +323,7 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
                       ),
 
                       const SizedBox(height: 16),
-                      
+
                       // 收费日期
                       TextFormField(
                         controller: _chargeDateController,
@@ -313,14 +340,18 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
                               return ModernDatePickerDialog(
                                 initialDate: DateTime.now(),
                                 firstDate: DateTime(2020),
-                                lastDate: DateTime.now().add(const Duration(days: 365)),
+                                lastDate: DateTime.now().add(
+                                  const Duration(days: 365),
+                                ),
                                 title: '选择收费日期',
                               );
                             },
                           );
                           if (date != null) {
                             setState(() {
-                              _chargeDateController.text = DateFormat('yyyy-MM-dd').format(date);
+                              _chargeDateController.text = DateFormat(
+                                'yyyy-MM-dd',
+                              ).format(date);
                             });
                           }
                         },
@@ -330,7 +361,7 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
                 ),
               ),
             ),
-            
+
             // 底部按钮
             Container(
               padding: const EdgeInsets.all(16),
@@ -362,7 +393,11 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
     );
   }
 
-  void _setupFocusNodeAndController(FocusNode focusNode, TextEditingController controller, String defaultValue) {
+  void _setupFocusNodeAndController(
+    FocusNode focusNode,
+    TextEditingController controller,
+    String defaultValue,
+  ) {
     focusNode.addListener(() {
       if (focusNode.hasFocus) {
         if (controller.text == defaultValue) {

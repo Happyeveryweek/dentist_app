@@ -47,7 +47,9 @@ class DeleteConfirmDialog extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: Text(
-                itemName != null ? message.replaceAll('{itemName}', itemName!) : message,
+                itemName != null
+                    ? message.replaceAll('{itemName}', itemName!)
+                    : message,
                 style: const TextStyle(fontSize: 16),
               ),
             ),
@@ -66,10 +68,7 @@ class DeleteConfirmDialog extends StatelessWidget {
           ),
           child: Text(
             cancelText,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
         ),
         const SizedBox(width: 12),
@@ -86,10 +85,7 @@ class DeleteConfirmDialog extends StatelessWidget {
           ),
           child: Text(
             confirmText,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -113,13 +109,14 @@ class DeleteConfirmDialogManager {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => DeleteConfirmDialog(
-        title: title,
-        message: message,
-        itemName: itemName,
-        confirmText: confirmText,
-        cancelText: cancelText,
-      ),
+      builder:
+          (context) => DeleteConfirmDialog(
+            title: title,
+            message: message,
+            itemName: itemName,
+            confirmText: confirmText,
+            cancelText: cancelText,
+          ),
     );
     return result ?? false;
   }
@@ -195,13 +192,13 @@ class LogoutConfirmDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 30,
               spreadRadius: 0,
               offset: const Offset(0, 15),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               spreadRadius: 0,
               offset: const Offset(0, 5),
@@ -224,15 +221,12 @@ class LogoutConfirmDialog extends StatelessWidget {
                       gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: [
-                          Colors.red.shade400,
-                          Colors.red.shade500,
-                        ],
+                        colors: [Colors.red.shade400, Colors.red.shade500],
                       ),
                       borderRadius: BorderRadius.circular(32),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.shade300.withOpacity(0.3),
+                          color: Colors.red.shade300.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -244,9 +238,9 @@ class LogoutConfirmDialog extends StatelessWidget {
                       size: 28,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // 标题
                   Text(
                     '退出登录',
@@ -257,9 +251,9 @@ class LogoutConfirmDialog extends StatelessWidget {
                       letterSpacing: -0.5,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   // 描述文本
                   Text(
                     '确认要退出登录吗？',
@@ -271,7 +265,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                       fontWeight: FontWeight.w400,
                     ),
                   ),
-                  
+
                   // 用户名显示（如果有的话）
                   if (username != null) ...[
                     const SizedBox(height: 16),
@@ -320,7 +314,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 分割线
             Container(
               height: 1,
@@ -335,7 +329,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // 按钮区域
             Padding(
               padding: const EdgeInsets.all(24),
@@ -357,7 +351,9 @@ class LogoutConfirmDialog extends StatelessWidget {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: onCancel ?? () => Navigator.of(context).pop(false),
+                          onTap:
+                              onCancel ??
+                              () => Navigator.of(context).pop(false),
                           child: Center(
                             child: Text(
                               cancelText,
@@ -372,9 +368,9 @@ class LogoutConfirmDialog extends StatelessWidget {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(width: 12),
-                  
+
                   // 确认按钮
                   Expanded(
                     child: Container(
@@ -383,15 +379,12 @@ class LogoutConfirmDialog extends StatelessWidget {
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.red.shade400,
-                            Colors.red.shade500,
-                          ],
+                          colors: [Colors.red.shade400, Colors.red.shade500],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.red.shade300.withOpacity(0.4),
+                            color: Colors.red.shade300.withValues(alpha: 0.4),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -401,7 +394,9 @@ class LogoutConfirmDialog extends StatelessWidget {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: onConfirm ?? () => Navigator.of(context).pop(true),
+                          onTap:
+                              onConfirm ??
+                              () => Navigator.of(context).pop(true),
                           child: Center(
                             child: Text(
                               confirmText,
@@ -440,12 +435,13 @@ class LogoutConfirmDialogManager {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.6),
-      builder: (context) => LogoutConfirmDialog(
-        username: username,
-        confirmText: confirmText,
-        cancelText: cancelText,
-      ),
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      builder:
+          (context) => LogoutConfirmDialog(
+            username: username,
+            confirmText: confirmText,
+            cancelText: cancelText,
+          ),
     );
     return result ?? false;
   }
@@ -491,7 +487,7 @@ class ModernDeleteDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final effectiveAccentColor = accentColor ?? Colors.red.shade500;
     final effectiveIcon = icon ?? Icons.delete_forever_rounded;
-    
+
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -501,7 +497,7 @@ class ModernDeleteDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 30,
               offset: const Offset(0, 15),
             ),
@@ -517,7 +513,7 @@ class ModernDeleteDialog extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     effectiveAccentColor,
-                    effectiveAccentColor.withOpacity(0.7),
+                    effectiveAccentColor.withValues(alpha: 0.7),
                   ],
                 ),
                 borderRadius: const BorderRadius.only(
@@ -526,7 +522,7 @@ class ModernDeleteDialog extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // 主要内容
             Padding(
               padding: const EdgeInsets.all(24),
@@ -537,10 +533,10 @@ class ModernDeleteDialog extends StatelessWidget {
                     width: 72,
                     height: 72,
                     decoration: BoxDecoration(
-                      color: effectiveAccentColor.withOpacity(0.1),
+                      color: effectiveAccentColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: effectiveAccentColor.withOpacity(0.3),
+                        color: effectiveAccentColor.withValues(alpha: 0.3),
                         width: 2,
                       ),
                     ),
@@ -550,9 +546,9 @@ class ModernDeleteDialog extends StatelessWidget {
                       size: 36,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // 标题
                   Text(
                     title,
@@ -562,9 +558,9 @@ class ModernDeleteDialog extends StatelessWidget {
                       color: Colors.grey.shade800,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // 项目信息（如果有的话）
                   if (itemName != null || itemType != null) ...[
                     Container(
@@ -573,10 +569,10 @@ class ModernDeleteDialog extends StatelessWidget {
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: effectiveAccentColor.withOpacity(0.05),
+                        color: effectiveAccentColor.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: effectiveAccentColor.withOpacity(0.2),
+                          color: effectiveAccentColor.withValues(alpha: 0.2),
                           width: 1,
                         ),
                       ),
@@ -599,7 +595,9 @@ class ModernDeleteDialog extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: effectiveAccentColor.withOpacity(0.7),
+                                      color: effectiveAccentColor.withValues(
+                                        alpha: 0.7,
+                                      ),
                                     ),
                                   ),
                                 if (itemName != null)
@@ -621,7 +619,7 @@ class ModernDeleteDialog extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                   ],
-                  
+
                   // 描述文本
                   Text(
                     message,
@@ -632,9 +630,9 @@ class ModernDeleteDialog extends StatelessWidget {
                       height: 1.5,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 28),
-                  
+
                   // 操作按钮
                   Row(
                     children: [
@@ -653,7 +651,8 @@ class ModernDeleteDialog extends StatelessWidget {
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(16),
-                              onTap: onCancel ?? () => Navigator.of(context).pop(),
+                              onTap:
+                                  onCancel ?? () => Navigator.of(context).pop(),
                               child: Center(
                                 child: Text(
                                   cancelText,
@@ -668,9 +667,9 @@ class ModernDeleteDialog extends StatelessWidget {
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(width: 16),
-                      
+
                       // 确认删除按钮
                       Expanded(
                         child: Container(
@@ -679,13 +678,15 @@ class ModernDeleteDialog extends StatelessWidget {
                             gradient: LinearGradient(
                               colors: [
                                 effectiveAccentColor,
-                                effectiveAccentColor.withOpacity(0.8),
+                                effectiveAccentColor.withValues(alpha: 0.8),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: effectiveAccentColor.withOpacity(0.3),
+                                color: effectiveAccentColor.withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 12,
                                 offset: const Offset(0, 6),
                               ),
@@ -695,7 +696,9 @@ class ModernDeleteDialog extends StatelessWidget {
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(16),
-                              onTap: onConfirm ?? () => Navigator.of(context).pop(true),
+                              onTap:
+                                  onConfirm ??
+                                  () => Navigator.of(context).pop(true),
                               child: Center(
                                 child: Text(
                                   confirmText,
@@ -741,17 +744,18 @@ class ModernDeleteDialogManager {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.6),
-      builder: (context) => ModernDeleteDialog(
-        title: title,
-        message: message,
-        itemName: itemName,
-        itemType: itemType,
-        confirmText: confirmText,
-        cancelText: cancelText,
-        icon: icon,
-        accentColor: accentColor,
-      ),
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      builder:
+          (context) => ModernDeleteDialog(
+            title: title,
+            message: message,
+            itemName: itemName,
+            itemType: itemType,
+            confirmText: confirmText,
+            cancelText: cancelText,
+            icon: icon,
+            accentColor: accentColor,
+          ),
     );
     return result ?? false;
   }
@@ -844,9 +848,8 @@ class ModernDeleteDialogManager {
     String? customMessage,
     Color? accentColor,
   }) async {
-    final message = customMessage ?? 
-        '您确定要删除这个$itemType吗？\n删除后将无法恢复相关数据。';
-    
+    final message = customMessage ?? '您确定要删除这个$itemType吗？\n删除后将无法恢复相关数据。';
+
     return show(
       context,
       title: '删除$itemType',

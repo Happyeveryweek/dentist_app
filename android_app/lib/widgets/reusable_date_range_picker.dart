@@ -16,23 +16,25 @@ class ReusableDateRangePicker extends StatefulWidget {
     this.title = '选择日期范围',
   }) : super(key: key);
 
-  static Future<DateTimeRange?> show(BuildContext context,
-      {DateTime? start,
-      DateTime? end,
-      String title = '选择日期范围'}) async {
+  static Future<DateTimeRange?> show(
+    BuildContext context, {
+    DateTime? start,
+    DateTime? end,
+    String title = '选择日期范围',
+  }) async {
     final now = DateTime.now();
     final DateTime s = start ?? DateTime(now.year, now.month, 1);
     final DateTime e = end ?? now;
     DateTime? pickedStart;
     DateTime? pickedEnd;
 
-    bool hoverStart = false;
-    bool hoverEnd = false;
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: StatefulBuilder(
             builder: (context, setState) {
               pickedStart ??= s;
@@ -72,11 +74,18 @@ class ReusableDateRangePicker extends StatefulWidget {
                 });
               }
 
-              Widget buildDateTile(String label, DateTime date, {required VoidCallback onTap}) {
+              Widget buildDateTile(
+                String label,
+                DateTime date, {
+                required VoidCallback onTap,
+              }) {
                 return GestureDetector(
                   onTap: onTap,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade50,
                       border: Border.all(color: Colors.grey.shade300),
@@ -84,10 +93,19 @@ class ReusableDateRangePicker extends StatefulWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.calendar_today, size: 18, color: Colors.blueAccent),
+                        const Icon(
+                          Icons.calendar_today,
+                          size: 18,
+                          color: Colors.blueAccent,
+                        ),
                         const SizedBox(width: 10),
-                        Text('${label}: ${DateFormat('yyyy年MM月dd日').format(date)}', 
-                             style: const TextStyle(fontSize: 14, color: Colors.black87)),
+                        Text(
+                          '$label: ${DateFormat('yyyy年MM月dd日').format(date)}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -99,82 +117,130 @@ class ReusableDateRangePicker extends StatefulWidget {
                 constraints: BoxConstraints(
                   maxHeight: MediaQuery.of(context).size.height * 0.7,
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(children: [
-                      Expanded(child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(false), 
-                        icon: const Icon(Icons.close, size: 20), 
-                        padding: EdgeInsets.zero, 
-                        constraints: const BoxConstraints()
-                      ),
-                    ]),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          icon: const Icon(Icons.close, size: 20),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _PresetChip(label: '本月', onTap: () => applyPreset('this_month')),
-                        _PresetChip(label: '上月', onTap: () => applyPreset('last_month')),
-                        _PresetChip(label: '30天', onTap: () => applyPreset('30d')),
-                        _PresetChip(label: '半年', onTap: () => applyPreset('6m')),
-                        _PresetChip(label: '今年', onTap: () => applyPreset('this_year')),
+                        _PresetChip(
+                          label: '本月',
+                          onTap: () => applyPreset('this_month'),
+                        ),
+                        _PresetChip(
+                          label: '上月',
+                          onTap: () => applyPreset('last_month'),
+                        ),
+                        _PresetChip(
+                          label: '30天',
+                          onTap: () => applyPreset('30d'),
+                        ),
+                        _PresetChip(
+                          label: '半年',
+                          onTap: () => applyPreset('6m'),
+                        ),
+                        _PresetChip(
+                          label: '今年',
+                          onTap: () => applyPreset('this_year'),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
                     const Text('开始日期:', style: TextStyle(fontSize: 13)),
                     const SizedBox(height: 6),
-                    buildDateTile('开始', pickedStart!, onTap: () async {
-                      final d = await showDialog<DateTime>(
-                        context: context,
-                        builder: (c) => ModernDatePickerDialog(
-                          initialDate: pickedStart!,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                          title: '选择开始日期',
-                        ),
-                      );
-                      if (d != null) {
-                        setState(() {
-                          pickedStart = d;
-                          if (pickedEnd!.isBefore(pickedStart!)) pickedEnd = pickedStart;
-                        });
-                      }
-                    }),
+                    buildDateTile(
+                      '开始',
+                      pickedStart!,
+                      onTap: () async {
+                        final d = await showDialog<DateTime>(
+                          context: context,
+                          builder:
+                              (c) => ModernDatePickerDialog(
+                                initialDate: pickedStart!,
+                                firstDate: DateTime(2000),
+                                lastDate: DateTime(2100),
+                                title: '选择开始日期',
+                              ),
+                        );
+                        if (d != null) {
+                          setState(() {
+                            pickedStart = d;
+                            if (pickedEnd!.isBefore(pickedStart!)) {
+                              pickedEnd = pickedStart;
+                            }
+                          });
+                        }
+                      },
+                    ),
                     const SizedBox(height: 10),
                     const Text('结束日期:', style: TextStyle(fontSize: 13)),
                     const SizedBox(height: 6),
-                    buildDateTile('结束', pickedEnd!, onTap: () async {
-                      final d = await showDialog<DateTime>(
-                        context: context,
-                        builder: (c) => ModernDatePickerDialog(
-                          initialDate: pickedEnd!,
-                          firstDate: pickedStart!,
-                          lastDate: DateTime(2100),
-                          title: '选择结束日期',
-                        ),
-                      );
-                      if (d != null) {
-                        setState(() { pickedEnd = d; });
-                      }
-                    }),
+                    buildDateTile(
+                      '结束',
+                      pickedEnd!,
+                      onTap: () async {
+                        final d = await showDialog<DateTime>(
+                          context: context,
+                          builder:
+                              (c) => ModernDatePickerDialog(
+                                initialDate: pickedEnd!,
+                                firstDate: pickedStart!,
+                                lastDate: DateTime(2100),
+                                title: '选择结束日期',
+                              ),
+                        );
+                        if (d != null) {
+                          setState(() {
+                            pickedEnd = d;
+                          });
+                        }
+                      },
+                    ),
                     const SizedBox(height: 12),
-                    Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                      TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          foregroundColor: Colors.white,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('取消'),
                         ),
-                        child: const Text('确定'),
-                      ),
-                    ])
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('确定'),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               );
@@ -191,7 +257,8 @@ class ReusableDateRangePicker extends StatefulWidget {
   }
 
   @override
-  State<ReusableDateRangePicker> createState() => _ReusableDateRangePickerState();
+  State<ReusableDateRangePicker> createState() =>
+      _ReusableDateRangePickerState();
 }
 
 class _ReusableDateRangePickerState extends State<ReusableDateRangePicker> {

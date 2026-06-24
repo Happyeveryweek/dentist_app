@@ -56,7 +56,7 @@ class TreatmentItemsInputState extends State<TreatmentItemsInput> {
             Expanded(
               flex: 4,
               child: DropdownButtonFormField<String>(
-                value: _selectedSuggestion,
+                initialValue: _selectedSuggestion,
                 decoration: InputDecoration(
                   labelText: '选择已有项目',
                   filled: true,
@@ -64,13 +64,13 @@ class TreatmentItemsInputState extends State<TreatmentItemsInput> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha: 0.2),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: Colors.grey.withOpacity(0.2),
+                      color: Colors.grey.withValues(alpha: 0.2),
                     ),
                   ),
                 ),
@@ -119,7 +119,9 @@ class TreatmentItemsInputState extends State<TreatmentItemsInput> {
                         widget.controller.clear();
                       });
                     },
-                    backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                    backgroundColor: AppTheme.primaryColor.withValues(
+                      alpha: 0.1,
+                    ),
                     labelStyle: const TextStyle(color: AppTheme.primaryText),
                   );
                 }).toList(),
@@ -139,7 +141,7 @@ class TreatmentItemsInputState extends State<TreatmentItemsInput> {
       decoration: BoxDecoration(
         color: AppTheme.backgroundColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withOpacity(0.2)),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
       child: TextFormField(
         controller: controller,
@@ -151,12 +153,12 @@ class TreatmentItemsInputState extends State<TreatmentItemsInput> {
         },
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: AppTheme.secondaryText),
+          hintStyle: const TextStyle(color: AppTheme.secondaryText),
           prefixIcon: Container(
             margin: const EdgeInsets.all(8),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: AppTheme.primaryColor, size: 18),

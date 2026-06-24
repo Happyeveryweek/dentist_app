@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:mysql1/mysql1.dart';
+import '../utils/app_logger.dart';
 
 /// 数据库健康检查服务
 /// 职责：连接健康检查、快速检查、健康监控定时器
@@ -52,15 +53,13 @@ class DatabaseHealthService {
   /// 启动连接健康监控
   void startHealthMonitoring() {
     if (_connectionHealthTimer == null) {
-      print('启动MySQL连接健康监控，检查间隔: $_healthCheckInterval');
-      _connectionHealthTimer =
-          Timer.periodic(_healthCheckInterval, (timer) {
+      AppLogger.info('启动MySQL连接健康监控，检查间隔: $_healthCheckInterval');
+      _connectionHealthTimer = Timer.periodic(_healthCheckInterval, (timer) {
         _checkConnectionHealth();
       });
 
       // 添加更频繁的快速检查（用于检测连接丢失）
-      _quickCheckTimer =
-          Timer.periodic(_quickCheckInterval, (timer) {
+      _quickCheckTimer = Timer.periodic(_quickCheckInterval, (timer) {
         if (!_isReconnecting) {
           _quickConnectionCheck();
         }
@@ -81,21 +80,21 @@ class DatabaseHealthService {
     if (_isReconnecting) return;
 
     try {
-      print('🔍 检查MySQL连接健康状态...');
+      AppLogger.info('🔍 检查MySQL连接健康状态...');
       final isHealthy = await testConnectionHealth();
 
       if (!isHealthy && !_isReconnecting) {
-        print('⚠️ 检测到连接异常，启动自动重连...');
+        AppLogger.info('⚠️ 检测到连接异常，启动自动重连...');
         _isConnected = false;
         _onHealthStatusChanged?.call(false);
         _onReconnectNeeded?.call();
       } else if (isHealthy && !_isConnected) {
-        print('✅ 连接已恢复');
+        AppLogger.info('✅ 连接已恢复');
         _isConnected = true;
         _onHealthStatusChanged?.call(true);
       }
     } catch (e) {
-      print('❌ 连接健康检查失败: $e');
+      AppLogger.info('❌ 连接健康检查失败: $e');
       if (!_isReconnecting) {
         _onReconnectNeeded?.call();
       }
@@ -113,20 +112,19 @@ class DatabaseHealthService {
           .timeout(
             const Duration(seconds: 2),
             onTimeout: () {
-              throw TimeoutException('快速连接检查超时',
-                  const Duration(seconds: 2));
+              throw TimeoutException('快速连接检查超时', const Duration(seconds: 2));
             },
           );
 
       if (results.isNotEmpty && !_isConnected) {
-        print('✅ 快速检查发现连接已恢复');
+        AppLogger.info('✅ 快速检查发现连接已恢复');
         _isConnected = true;
         _onHealthStatusChanged?.call(true);
       }
     } catch (e) {
       // 快速检查失败，但不立即重连，等待完整检查
       if (_isConnected) {
-        print('⚠️ 快速检查发现连接可能丢失: $e');
+        AppLogger.info('⚠️ 快速检查发现连接可能丢失: $e');
         _isConnected = false;
         _onHealthStatusChanged?.call(false);
       }
@@ -144,8 +142,7 @@ class DatabaseHealthService {
           .timeout(
             const Duration(seconds: 5),
             onTimeout: () {
-              throw TimeoutException('连接测试超时',
-                  const Duration(seconds: 5));
+              throw TimeoutException('连接测试超时', const Duration(seconds: 5));
             },
           );
 
@@ -155,7 +152,7 @@ class DatabaseHealthService {
       }
       return false;
     } catch (e) {
-      print('连接健康测试失败: $e');
+      AppLogger.info('连接健康测试失败: $e');
       _isConnected = false;
       return false;
     }

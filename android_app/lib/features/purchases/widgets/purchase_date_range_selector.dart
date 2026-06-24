@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../services/purchase_date_range_service.dart';
-import '../../../widgets/modern_date_range_picker.dart';
 
 /// 采购统计时间范围选择器组件
 class PurchaseDateRangeSelector extends StatelessWidget {
@@ -35,8 +34,14 @@ class PurchaseDateRangeSelector extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  PurchaseDateRangeService.formatDateRangeDisplay(startDate, endDate),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  PurchaseDateRangeService.formatDateRangeDisplay(
+                    startDate,
+                    endDate,
+                  ),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               TextButton(
@@ -45,42 +50,47 @@ class PurchaseDateRangeSelector extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // 预设时间范围按钮
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: PurchaseDateRangeService.presets.map((preset) {
-                final isActive = PurchaseDateRangeService.isPresetActive(
-                  preset['key'],
-                  startDate,
-                  endDate,
-                  earliestDate,
-                );
-                return Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(
-                      preset['label'],
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    selected: isActive,
-                    onSelected: (_) => onPresetApplied(preset['key']),
-                    selectedColor: Colors.green.shade100,
-                    checkmarkColor: Colors.green.shade600,
-                    backgroundColor: Colors.grey.shade100,
-                    labelStyle: TextStyle(
-                      color: isActive ? Colors.green.shade600 : Colors.grey.shade700,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                      fontSize: 12,
-                    ),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                );
-              }).toList(),
+              children:
+                  PurchaseDateRangeService.presets.map((preset) {
+                    final isActive = PurchaseDateRangeService.isPresetActive(
+                      preset['key'],
+                      startDate,
+                      endDate,
+                      earliestDate,
+                    );
+                    return Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: Text(
+                          preset['label'],
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        selected: isActive,
+                        onSelected: (_) => onPresetApplied(preset['key']),
+                        selectedColor: Colors.green.shade100,
+                        checkmarkColor: Colors.green.shade600,
+                        backgroundColor: Colors.grey.shade100,
+                        labelStyle: TextStyle(
+                          color:
+                              isActive
+                                  ? Colors.green.shade600
+                                  : Colors.grey.shade700,
+                          fontWeight:
+                              isActive ? FontWeight.w600 : FontWeight.normal,
+                          fontSize: 12,
+                        ),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    );
+                  }).toList(),
             ),
           ),
         ],

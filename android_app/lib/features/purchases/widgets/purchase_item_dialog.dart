@@ -6,12 +6,13 @@ import '../../../models/material.dart';
 import '../../../providers/material_provider.dart';
 import '../../../widgets/toast_manager.dart';
 import '../../../utils/datetime_formatter.dart';
+import '../../../utils/app_logger.dart';
 
 class PurchaseItemDialog extends StatefulWidget {
   final PurchaseItem? item;
   final bool isEditing;
   final int? purchaseRecordId; // ✅ 新增：采购记录ID参数
-  
+
   const PurchaseItemDialog({
     super.key,
     this.item,
@@ -30,13 +31,21 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
   final _unitPriceController = TextEditingController();
   final _unitController = TextEditingController();
   final _unitPriceFocusNode = FocusNode();
-  
+
   // 常用单位选项
-  final List<String> _commonUnits = ['个', '件', '盒', '包', '瓶', '支', '副', '套', '米', '千克'];
-  
-  // 材料库数据
-  List<DentalMaterial> _availableMaterials = [];
-  bool _isLoadingMaterials = false;
+  final List<String> _commonUnits = [
+    '个',
+    '件',
+    '盒',
+    '包',
+    '瓶',
+    '支',
+    '副',
+    '套',
+    '米',
+    '千克',
+  ];
+
   int? _selectedMaterialId; // 添加选中的材料ID
 
   @override
@@ -44,7 +53,11 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
     super.initState();
     _initializeControllers();
     _loadMaterials();
-    _setupFocusNodeAndController(_unitPriceFocusNode, _unitPriceController, '0.00');
+    _setupFocusNodeAndController(
+      _unitPriceFocusNode,
+      _unitPriceController,
+      '0.00',
+    );
   }
 
   void _initializeControllers() {
@@ -61,33 +74,20 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
     }
   }
 
-  // 加载材料库数据
   Future<void> _loadMaterials() async {
-    setState(() {
-      _isLoadingMaterials = true;
-    });
-
     try {
       // 从MaterialProvider获取真实材料数据
-      final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
-      final materials = await materialProvider.getAllMaterials();
-      
-      setState(() {
-        _availableMaterials = materials;
-      });
+      final materialProvider = Provider.of<MaterialProvider>(
+        context,
+        listen: false,
+      );
+      await materialProvider.getAllMaterials();
     } catch (e) {
-      print('加载材料库失败: $e');
+      AppLogger.info('加载材料库失败: $e');
       // 如果加载失败，显示错误提示
       if (mounted) {
-        SuccessToastManager.showError(
-          context,
-          message: '加载材料库失败: $e',
-        );
+        SuccessToastManager.showError(context, message: '加载材料库失败: $e');
       }
-    } finally {
-      setState(() {
-        _isLoadingMaterials = false;
-      });
     }
   }
 
@@ -95,9 +95,9 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
   Future<void> _showMaterialSearchDialog() async {
     final result = await showDialog<DentalMaterial>(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.3), // 设置半透明背景
+      barrierColor: Colors.black.withValues(alpha: 0.3), // 设置半透明背景
       barrierDismissible: true, // 允许点击背景关闭
-      builder: (context) => _MaterialSearchDialog(),
+      builder: (context) => const _MaterialSearchDialog(),
     );
 
     if (result != null) {
@@ -110,8 +110,11 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
     }
   }
 
-
-  void _setupFocusNodeAndController(FocusNode focusNode, TextEditingController controller, String defaultValue) {
+  void _setupFocusNodeAndController(
+    FocusNode focusNode,
+    TextEditingController controller,
+    String defaultValue,
+  ) {
     focusNode.addListener(() {
       if (focusNode.hasFocus) {
         if (controller.text == defaultValue) {
@@ -128,12 +131,13 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white, // 明确设置背景色
       elevation: 8, // 增加阴影效果
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40), // 设置边距
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 40,
+      ), // 设置边距
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
         constraints: BoxConstraints(
@@ -145,7 +149,7 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -182,15 +186,22 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                 ],
               ),
             ),
-            
+
             // 表单内容 - 减少padding和间距，让单位填写框紧贴底部按钮
             Padding(
               padding: const EdgeInsets.all(8), // 从12减少到8
@@ -208,10 +219,16 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                             controller: _materialNameController,
                             decoration: const InputDecoration(
                               labelText: '材料名称 *',
-                              prefixIcon: Icon(Icons.inventory, color: Colors.blue),
+                              prefixIcon: Icon(
+                                Icons.inventory,
+                                color: Colors.blue,
+                              ),
                               border: OutlineInputBorder(),
                               hintText: '请输入材料名称',
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10), // 减少垂直padding
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ), // 减少垂直padding
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
@@ -234,9 +251,8 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 8), // 从12减少到8
-                    
                     // 数量和单价行
                     Row(
                       children: [
@@ -246,10 +262,16 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                             controller: _quantityController,
                             decoration: const InputDecoration(
                               labelText: '数量 *',
-                              prefixIcon: Icon(Icons.format_list_numbered, color: Colors.green),
+                              prefixIcon: Icon(
+                                Icons.format_list_numbered,
+                                color: Colors.green,
+                              ),
                               border: OutlineInputBorder(),
                               hintText: '1',
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10), // 进一步减少垂直padding
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ), // 进一步减少垂直padding
                             ),
                             keyboardType: TextInputType.number,
                             validator: (value) {
@@ -262,9 +284,9 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                             textInputAction: TextInputAction.next,
                           ),
                         ),
-                        
+
                         const SizedBox(width: 12),
-                        
+
                         // 单价
                         Expanded(
                           child: TextFormField(
@@ -272,12 +294,20 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                             focusNode: _unitPriceFocusNode,
                             decoration: const InputDecoration(
                               labelText: '单价 *',
-                              prefixIcon: Icon(Icons.attach_money, color: Colors.orange),
+                              prefixIcon: Icon(
+                                Icons.attach_money,
+                                color: Colors.orange,
+                              ),
                               border: OutlineInputBorder(),
                               hintText: '0.00',
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10), // 进一步减少垂直padding
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ), // 进一步减少垂直padding
                             ),
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             validator: (value) {
                               final price = double.tryParse(value ?? '');
                               if (price == null || price < 0) {
@@ -290,9 +320,8 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 8), // 从12减少到8
-                    
                     // 单位选择 - 紧贴底部按钮
                     Row(
                       children: [
@@ -301,10 +330,16 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                             controller: _unitController,
                             decoration: const InputDecoration(
                               labelText: '单位',
-                              prefixIcon: Icon(Icons.category, color: Colors.purple),
+                              prefixIcon: Icon(
+                                Icons.category,
+                                color: Colors.purple,
+                              ),
                               border: OutlineInputBorder(),
                               hintText: '个',
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10), // 减少垂直padding
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ), // 减少垂直padding
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
@@ -314,9 +349,9 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                             },
                           ),
                         ),
-                        
+
                         const SizedBox(width: 12),
-                        
+
                         // 常用单位快速选择
                         PopupMenuButton<String>(
                           onSelected: (String unit) {
@@ -333,78 +368,92 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                             }).toList();
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // 减少水平padding
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 10,
+                            ), // 减少水平padding
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.grey[400]!),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                            child: const Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.grey,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    
-                                         // 预览信息 - 只在有内容时显示，减少空白
-                     if (_materialNameController.text.isNotEmpty) ...[
-                       const SizedBox(height: 8), // 减少间距
-                       
-                       // ✅ 显示临时ID提示（如果是新创建的采购记录）
-                       if (widget.purchaseRecordId == 0 && !widget.isEditing) ...[
-                         Container(
-                           padding: const EdgeInsets.all(6),
-                           decoration: BoxDecoration(
-                             color: Colors.orange[50],
-                             borderRadius: BorderRadius.circular(6),
-                             border: Border.all(color: Colors.orange[200]!),
-                           ),
-                           child: Row(
-                             children: [
-                               Icon(Icons.info_outline, color: Colors.orange[600], size: 14),
-                               const SizedBox(width: 6),
-                               Expanded(
-                                 child: Text(
-                                   '这是新采购记录的项目，保存采购记录时会自动分配ID',
-                                   style: TextStyle(
-                                     color: Colors.orange[700],
-                                     fontSize: 11,
-                                   ),
-                                 ),
-                               ),
-                             ],
-                           ),
-                         ),
-                         const SizedBox(height: 6),
-                       ],
-                       
-                       Container(
-                         padding: const EdgeInsets.all(8), // 从12减少到8
-                         decoration: BoxDecoration(
-                           color: Colors.blue[50],
-                           borderRadius: BorderRadius.circular(8),
-                           border: Border.all(color: Colors.blue[200]!),
-                         ),
-                         child: Column(
-                           crossAxisAlignment: CrossAxisAlignment.start,
-                           children: [
-                             Text(
-                               '预览信息',
-                               style: TextStyle(
-                                 color: Colors.blue[700],
-                                 fontWeight: FontWeight.bold,
-                                 fontSize: 13, // 从14减少到13
-                               ),
-                             ),
+
+                    // 预览信息 - 只在有内容时显示，减少空白
+                    if (_materialNameController.text.isNotEmpty) ...[
+                      const SizedBox(height: 8), // 减少间距
+                      // ✅ 显示临时ID提示（如果是新创建的采购记录）
+                      if (widget.purchaseRecordId == 0 &&
+                          !widget.isEditing) ...[
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.orange[50],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.orange[200]!),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                color: Colors.orange[600],
+                                size: 14,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  '这是新采购记录的项目，保存采购记录时会自动分配ID',
+                                  style: TextStyle(
+                                    color: Colors.orange[700],
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                      ],
+
+                      Container(
+                        padding: const EdgeInsets.all(8), // 从12减少到8
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue[200]!),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '预览信息',
+                              style: TextStyle(
+                                color: Colors.blue[700],
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13, // 从14减少到13
+                              ),
+                            ),
                             const SizedBox(height: 4), // 从6减少到4
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   '材料名称: ${_materialNameController.text}',
-                                  style: const TextStyle(fontSize: 13), // 从14减少到13
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                  ), // 从14减少到13
                                 ),
                                 Text(
                                   '数量: ${_quantityController.text}',
-                                  style: const TextStyle(fontSize: 13), // 从14减少到13
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                  ), // 从14减少到13
                                 ),
                               ],
                             ),
@@ -414,11 +463,15 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                               children: [
                                 Text(
                                   '单价: ¥${_unitPriceController.text}',
-                                  style: const TextStyle(fontSize: 13), // 从14减少到13
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                  ), // 从14减少到13
                                 ),
                                 Text(
                                   '单位: ${_unitController.text}',
-                                  style: const TextStyle(fontSize: 13), // 从14减少到13
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                  ), // 从14减少到13
                                 ),
                               ],
                             ),
@@ -448,7 +501,7 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                 ),
               ),
             ),
-            
+
             // 底部按钮 - 紧贴表单内容，减少padding
             Container(
               padding: const EdgeInsets.all(8), // 从12减少到8
@@ -507,9 +560,8 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
 
     // ✅ 对于新创建的采购记录，允许使用临时ID 0
     // 在保存采购记录时会重新设置正确的ID
-    final purchaseRecordId = widget.purchaseRecordId ?? 
-                            widget.item?.purchaseRecordId ?? 
-                            0;
+    final purchaseRecordId =
+        widget.purchaseRecordId ?? widget.item?.purchaseRecordId ?? 0;
 
     // ✅ 只有在编辑现有项目且没有有效ID时才报错
     if (widget.isEditing && purchaseRecordId <= 0) {
@@ -575,12 +627,15 @@ class _MaterialSearchDialogState extends State<_MaterialSearchDialog> {
     });
 
     try {
-      final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+      final materialProvider = Provider.of<MaterialProvider>(
+        context,
+        listen: false,
+      );
       final materials = await materialProvider.getAllMaterials();
       _allMaterials = materials;
       _filteredMaterials = List.from(_allMaterials);
     } catch (e) {
-      print('加载材料失败: $e');
+      AppLogger.info('加载材料失败: $e');
       _allMaterials = [];
       _filteredMaterials = [];
     } finally {
@@ -603,22 +658,36 @@ class _MaterialSearchDialogState extends State<_MaterialSearchDialog> {
     }
 
     try {
-      final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+      final materialProvider = Provider.of<MaterialProvider>(
+        context,
+        listen: false,
+      );
       // 使用 provider 的 searchMaterials（会走 data source + 缓存）
       final results = await materialProvider.searchMaterials(_searchQuery);
       setState(() {
         _filteredMaterials = results;
       });
     } catch (e) {
-      print('搜索材料失败: $e');
+      AppLogger.info('搜索材料失败: $e');
       // 本地过滤作为回退
       setState(() {
-        _filteredMaterials = _allMaterials.where((DentalMaterial material) {
-          final nameMatch = material.materialName.toLowerCase().contains(_searchQuery.toLowerCase());
-          final codeMatch = material.materialCode?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false;
-          final supplierMatch = material.supplier?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false;
-          return nameMatch || codeMatch || supplierMatch;
-        }).toList();
+        _filteredMaterials =
+            _allMaterials.where((DentalMaterial material) {
+              final nameMatch = material.materialName.toLowerCase().contains(
+                _searchQuery.toLowerCase(),
+              );
+              final codeMatch =
+                  material.materialCode?.toLowerCase().contains(
+                    _searchQuery.toLowerCase(),
+                  ) ??
+                  false;
+              final supplierMatch =
+                  material.supplier?.toLowerCase().contains(
+                    _searchQuery.toLowerCase(),
+                  ) ??
+                  false;
+              return nameMatch || codeMatch || supplierMatch;
+            }).toList();
       });
     }
   }
@@ -626,9 +695,7 @@ class _MaterialSearchDialogState extends State<_MaterialSearchDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
         constraints: BoxConstraints(
@@ -662,15 +729,22 @@ class _MaterialSearchDialogState extends State<_MaterialSearchDialog> {
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                 ],
               ),
             ),
-            
+
             // 搜索框 - 减少margin
             Container(
               margin: const EdgeInsets.all(12), // 从16减少到12
@@ -695,27 +769,34 @@ class _MaterialSearchDialogState extends State<_MaterialSearchDialog> {
                   hintStyle: TextStyle(color: Colors.grey[400]),
                   filled: true,
                   fillColor: Colors.grey[50],
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), // 减少垂直padding
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.grey),
-                          onPressed: () {
-                            _searchController.clear();
-                            _filterMaterials('');
-                          },
-                        )
-                      : null,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ), // 减少垂直padding
+                  suffixIcon:
+                      _searchQuery.isNotEmpty
+                          ? IconButton(
+                            icon: const Icon(Icons.clear, color: Colors.grey),
+                            onPressed: () {
+                              _searchController.clear();
+                              _filterMaterials('');
+                            },
+                          )
+                          : null,
                 ),
                 onChanged: _filterMaterials,
                 autofocus: true, // 自动聚焦到搜索框
               ),
             ),
-            
-                  // 搜索结果统计 - 减少margin
+
+            // 搜索结果统计 - 减少margin
             if (_searchQuery.isNotEmpty)
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 12), // 从16减少到12
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // 减少垂直padding
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ), // 减少垂直padding
                 decoration: BoxDecoration(
                   color: Colors.blue[50],
                   borderRadius: BorderRadius.circular(6),
@@ -736,145 +817,163 @@ class _MaterialSearchDialogState extends State<_MaterialSearchDialog> {
                     const Spacer(),
                     Text(
                       '共 ${_allMaterials.length} 个材料',
-                      style: TextStyle(
-                        color: Colors.blue[600],
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Colors.blue[600], fontSize: 12),
                     ),
                   ],
                 ),
               ),
             // 材料列表 - 减少padding
             Flexible(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _filteredMaterials.isEmpty
+              child:
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _filteredMaterials.isEmpty
                       ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _searchQuery.isEmpty ? Icons.inventory_2 : Icons.search_off,
-                                size: 48,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(height: 12), // 从16减少到12
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _searchQuery.isEmpty
+                                  ? Icons.inventory_2
+                                  : Icons.search_off,
+                              size: 48,
+                              color: Colors.grey,
+                            ),
+                            const SizedBox(height: 12), // 从16减少到12
+                            Text(
+                              _searchQuery.isEmpty ? '暂无材料' : '未找到匹配的材料',
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                            if (_searchQuery.isNotEmpty) ...[
+                              const SizedBox(height: 6), // 从8减少到6
                               Text(
-                                _searchQuery.isEmpty ? '暂无材料' : '未找到匹配的材料',
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                              if (_searchQuery.isNotEmpty) ...[
-                                const SizedBox(height: 6), // 从8减少到6
-                                Text(
-                                  '尝试使用其他关键词搜索',
-                                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                                '尝试使用其他关键词搜索',
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 12,
                                 ),
-                              ],
+                              ),
                             ],
-                          ),
-                        )
+                          ],
+                        ),
+                      )
                       : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 12), // 从16减少到12
-                          itemCount: _filteredMaterials.length,
-                          itemBuilder: (context, index) {
-                            final DentalMaterial material = _filteredMaterials[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 6), // 从8减少到6
-                              child: Padding(
-                                padding: const EdgeInsets.all(10), // 从12减少到10
-                                child: Row(
-                                  children: [
-                                    // 材料图标
-                                    Container(
-                                      width: 36, // 从40减少到36
-                                      height: 36, // 从40减少到36
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue[100],
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Icon(Icons.inventory, color: Colors.blue[700], size: 18), // 从20减少到18
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                        ), // 从16减少到12
+                        itemCount: _filteredMaterials.length,
+                        itemBuilder: (context, index) {
+                          final DentalMaterial material =
+                              _filteredMaterials[index];
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 6), // 从8减少到6
+                            child: Padding(
+                              padding: const EdgeInsets.all(10), // 从12减少到10
+                              child: Row(
+                                children: [
+                                  // 材料图标
+                                  Container(
+                                    width: 36, // 从40减少到36
+                                    height: 36, // 从40减少到36
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue[100],
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
-                                    const SizedBox(width: 10), // 从12减少到10
-                                    
-                                    // 材料信息
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
+                                    child: Icon(
+                                      Icons.inventory,
+                                      color: Colors.blue[700],
+                                      size: 18,
+                                    ), // 从20减少到18
+                                  ),
+                                  const SizedBox(width: 10), // 从12减少到10
+                                  // 材料信息
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          material.materialName,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 3), // 从4减少到3
+                                        if (material.materialCode != null) ...[
                                           Text(
-                                            material.materialName,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 14,
+                                            '编码: ${material.materialCode}',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 1), // 从2减少到1
+                                        ],
+                                        Row(
+                                          children: [
+                                            Text(
+                                              '单位: ${material.unit}',
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              width: 12,
+                                            ), // 从16减少到12
+                                            Text(
+                                              '价格: ¥${material.defaultPrice.toStringAsFixed(2)}',
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        if (material.supplier != null &&
+                                            material.supplier!.isNotEmpty) ...[
+                                          const SizedBox(height: 1), // 从2减少到1
+                                          Text(
+                                            '供应商: ${material.supplier}',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 12,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                           ),
-                                          const SizedBox(height: 3), // 从4减少到3
-                                          if (material.materialCode != null) ...[
-                                            Text(
-                                              '编码: ${material.materialCode}',
-                                              style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 1), // 从2减少到1
-                                          ],
-                                          Row(
-                                            children: [
-                                              Text(
-                                                '单位: ${material.unit}',
-                                                style: TextStyle(
-                                                  color: Colors.grey[600],
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12), // 从16减少到12
-                                              Text(
-                                                '价格: ¥${material.defaultPrice.toStringAsFixed(2)}',
-                                                style: TextStyle(
-                                                  color: Colors.grey[600],
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          if (material.supplier != null && material.supplier!.isNotEmpty) ...[
-                                            const SizedBox(height: 1), // 从2减少到1
-                                            Text(
-                                              '供应商: ${material.supplier}',
-                                              style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 12,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
                                         ],
+                                      ],
+                                    ),
+                                  ),
+
+                                  // 选择按钮
+                                  ElevatedButton(
+                                    onPressed:
+                                        () =>
+                                            Navigator.of(context).pop(material),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue[600],
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 6,
+                                      ), // 减少padding
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(6),
                                       ),
                                     ),
-                                    
-                                    // 选择按钮
-                                    ElevatedButton(
-                                      onPressed: () => Navigator.of(context).pop(material),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue[600],
-                                        foregroundColor: Colors.white,
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6), // 减少padding
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                      ),
-                                      child: const Text('选择'),
-                                    ),
-                                  ],
-                                ),
+                                    child: const Text('选择'),
+                                  ),
+                                ],
                               ),
-                            );
-                          },
-                        ),
+                            ),
+                          );
+                        },
+                      ),
             ),
           ],
         ),

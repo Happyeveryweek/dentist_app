@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import '../models/user.dart';
 import 'user_data_source.dart';
+import '../utils/app_logger.dart';
 
 class SqliteUserDataSource implements UserDataSource {
   final Database _database;
@@ -15,7 +16,9 @@ class SqliteUserDataSource implements UserDataSource {
 
   @override
   Future<List<User>> getAllUsers() async {
-    final result = await _database.rawQuery('SELECT * FROM users ORDER BY username');
+    final result = await _database.rawQuery(
+      'SELECT * FROM users ORDER BY username',
+    );
     return result.map((e) => User.fromMap(e)).toList();
   }
 
@@ -35,13 +38,16 @@ class SqliteUserDataSource implements UserDataSource {
     final digest = sha256.convert(bytes);
     final hashedPassword = digest.toString();
 
-    print('创建用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
+    AppLogger.info(
+      '创建用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword',
+    );
 
     final userData = user.toMap();
     userData['password'] = hashedPassword;
 
     if (userData['module_permissions'] != null) {
-      userData['module_permissions'] = userData['module_permissions'].toString();
+      userData['module_permissions'] =
+          userData['module_permissions'].toString();
     }
 
     if (userData['image_data'] != null && userData['image_data'] is List<int>) {
@@ -57,16 +63,20 @@ class SqliteUserDataSource implements UserDataSource {
     final digest = sha256.convert(bytes);
     final hashedPassword = digest.toString();
 
-    print('更新用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
+    AppLogger.info(
+      '更新用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword',
+    );
 
     final updateData = user.toMap();
     updateData['password'] = hashedPassword;
 
     if (updateData['module_permissions'] != null) {
-      updateData['module_permissions'] = updateData['module_permissions'].toString();
+      updateData['module_permissions'] =
+          updateData['module_permissions'].toString();
     }
 
-    if (updateData['image_data'] != null && updateData['image_data'] is List<int>) {
+    if (updateData['image_data'] != null &&
+        updateData['image_data'] is List<int>) {
       updateData['image_data'] = Uint8List.fromList(updateData['image_data']);
     }
 
@@ -91,31 +101,36 @@ class SqliteUserDataSource implements UserDataSource {
 
   @override
   Future<List<User>> searchUsers(String keyword) async {
-    final result = await _database.rawQuery('''
+    final result = await _database.rawQuery(
+      '''
       SELECT * FROM users
       WHERE username LIKE ? OR email LIKE ?
       ORDER BY username
-    ''', ['%$keyword%', '%$keyword%']);
+    ''',
+      ['%$keyword%', '%$keyword%'],
+    );
     return result.map((e) => User.fromMap(e)).toList();
   }
 
   @override
   Future<int> getUsersCount() async {
-    final result = await _database.rawQuery('SELECT COUNT(*) as count FROM users');
+    final result = await _database.rawQuery(
+      'SELECT COUNT(*) as count FROM users',
+    );
     final row = result.first;
     return (row['count'] as int?) ?? 0;
   }
 
   @override
   Future<User?> authenticateUser(String username, String password) async {
-    print('用户认证 - 用户名: $username, 原始密码: $password');
+    AppLogger.info('用户认证 - 用户名: $username, 原始密码: $password');
 
     final bytes = utf8.encode(password);
     final md5Hash = md5.convert(bytes).toString();
     final sha256Hash = sha256.convert(bytes).toString();
 
-    print('尝试MD5加密密码: $md5Hash');
-    print('尝试SHA-256加密密码: $sha256Hash');
+    AppLogger.info('尝试MD5加密密码: $md5Hash');
+    AppLogger.info('尝试SHA-256加密密码: $sha256Hash');
 
     var result = await _database.rawQuery(
       'SELECT * FROM users WHERE username = ? AND password = ?',
@@ -123,7 +138,7 @@ class SqliteUserDataSource implements UserDataSource {
     );
 
     if (result.isEmpty) {
-      print('SHA-256密码认证失败，尝试MD5密码');
+      AppLogger.info('SHA-256密码认证失败，尝试MD5密码');
       result = await _database.rawQuery(
         'SELECT * FROM users WHERE username = ? AND password = ?',
         [username, md5Hash],
@@ -131,44 +146,44 @@ class SqliteUserDataSource implements UserDataSource {
     }
 
     if (result.isEmpty) {
-      print('MD5密码认证失败，尝试明文密码');
+      AppLogger.info('MD5密码认证失败，尝试明文密码');
       result = await _database.rawQuery(
         'SELECT * FROM users WHERE username = ? AND password = ?',
         [username, password],
       );
     }
 
-    print('SQLite查询结果: ${result.length} 行');
+    AppLogger.info('SQLite查询结果: ${result.length} 行');
     if (result.isNotEmpty) {
       final user = User.fromMap(result.first);
-      print('SQLite认证成功，用户: ${user.username}');
+      AppLogger.info('SQLite认证成功，用户: ${user.username}');
 
       final currentPassword = result.first['password'] as String;
 
       if (currentPassword == password) {
-        print('检测到明文密码，自动更新为SHA-256密码');
+        AppLogger.info('检测到明文密码，自动更新为SHA-256密码');
         await _database.update(
           'users',
           {'password': sha256Hash},
           where: 'id = ?',
           whereArgs: [user.id],
         );
-        print('密码已更新为SHA-256格式');
+        AppLogger.info('密码已更新为SHA-256格式');
       } else if (currentPassword == md5Hash) {
-        print('检测到MD5密码，自动更新为SHA-256密码');
+        AppLogger.info('检测到MD5密码，自动更新为SHA-256密码');
         await _database.update(
           'users',
           {'password': sha256Hash},
           where: 'id = ?',
           whereArgs: [user.id],
         );
-        print('密码已更新为SHA-256格式');
+        AppLogger.info('密码已更新为SHA-256格式');
       }
 
       return user;
     }
 
-    print('用户认证失败: 用户名或密码错误');
+    AppLogger.info('用户认证失败: 用户名或密码错误');
     return null;
   }
 
@@ -216,12 +231,7 @@ class SqliteUserDataSource implements UserDataSource {
       };
     }
 
-    return {
-      'totalUsers': 0,
-      'adminCount': 0,
-      'doctorCount': 0,
-      'userCount': 0,
-    };
+    return {'totalUsers': 0, 'adminCount': 0, 'doctorCount': 0, 'userCount': 0};
   }
 
   @override
@@ -240,13 +250,16 @@ class SqliteUserDataSource implements UserDataSource {
       final permissions = jsonDecode(permissionsJson) as Map<String, dynamic>;
       return permissions.map((key, value) => MapEntry(key, value == true));
     } catch (e) {
-      print('获取用户权限失败: $e');
+      AppLogger.info('获取用户权限失败: $e');
       return null;
     }
   }
 
   @override
-  Future<bool> updateUserPermissions(int userId, Map<String, bool> permissions) async {
+  Future<bool> updateUserPermissions(
+    int userId,
+    Map<String, bool> permissions,
+  ) async {
     try {
       final permissionsJson = jsonEncode(permissions);
       final count = await _database.update(
@@ -257,7 +270,7 @@ class SqliteUserDataSource implements UserDataSource {
       );
       return count > 0;
     } catch (e) {
-      print('更新用户权限失败: $e');
+      AppLogger.info('更新用户权限失败: $e');
       return false;
     }
   }

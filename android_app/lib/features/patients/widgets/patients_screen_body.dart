@@ -97,48 +97,53 @@ class PatientsScreenBody extends StatelessWidget {
           isDateRangeFiltering: isDateRangeFiltering,
         ),
         Expanded(
-          child: isLoading
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text(
-                        '加载患者数据中...',
-                        style: TextStyle(color: AppTheme.secondaryText),
-                      ),
-                    ],
-                  ),
-                )
-              : patients.isEmpty
-                  ? PatientEmptyState(
-                      searchQuery: searchQuery,
-                      onClearSearch: onClearSearch,
-                      onAddPatient: onAddPatient,
-                    )
-                  : RefreshIndicator(
-                      onRefresh: onRefresh,
-                      color: AppTheme.primaryColor,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(AppTheme.padding),
-                        controller: scrollController,
-                        itemCount: patients.length + (hasMoreData && searchQuery.isEmpty ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index == patients.length && hasMoreData && searchQuery.isEmpty) {
-                            return _buildLoadingMoreIndicator();
-                          }
-
-                          final patient = patients[index];
-                          return PatientListCard(
-                            patient: patient,
-                            onTap: () => onShowPatientDetail(patient),
-                            onEdit: () => onEditPatient(patient),
-                            onDelete: () => onDeletePatient(patient),
-                          );
-                        },
-                      ),
+          child:
+              isLoading
+                  ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text(
+                          '加载患者数据中...',
+                          style: TextStyle(color: AppTheme.secondaryText),
+                        ),
+                      ],
                     ),
+                  )
+                  : patients.isEmpty
+                  ? PatientEmptyState(
+                    searchQuery: searchQuery,
+                    onClearSearch: onClearSearch,
+                    onAddPatient: onAddPatient,
+                  )
+                  : RefreshIndicator(
+                    onRefresh: onRefresh,
+                    color: AppTheme.primaryColor,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(AppTheme.padding),
+                      controller: scrollController,
+                      itemCount:
+                          patients.length +
+                          (hasMoreData && searchQuery.isEmpty ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == patients.length &&
+                            hasMoreData &&
+                            searchQuery.isEmpty) {
+                          return _buildLoadingMoreIndicator();
+                        }
+
+                        final patient = patients[index];
+                        return PatientListCard(
+                          patient: patient,
+                          onTap: () => onShowPatientDetail(patient),
+                          onEdit: () => onEditPatient(patient),
+                          onDelete: () => onDeletePatient(patient),
+                        );
+                      },
+                    ),
+                  ),
         ),
       ],
     );
@@ -184,10 +189,7 @@ class PatientsScreenBody extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Container(
-            height: 1,
-            color: Colors.teal.shade100,
-          ),
+          Container(height: 1, color: Colors.teal.shade100),
         ],
       ),
     );

@@ -26,10 +26,7 @@ class CompactStatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -45,11 +42,7 @@ class CompactStatCard extends StatelessWidget {
                   color: color.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: Icon(
-                  icon, 
-                  color: color, 
-                  size: 14,
-                ),
+                child: Icon(icon, color: color, size: 14),
               ),
               const SizedBox(width: 6),
               Flexible(
@@ -65,42 +58,43 @@ class CompactStatCard extends StatelessWidget {
               ),
             ],
           ),
-          
+
           // 数值显示 - 统一布局
           Flexible(
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: prefix == '¥'
-                ? Text(
-                    '$prefix$value',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-                  )
-                : RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: value,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: color,
-                          ),
+              child:
+                  prefix == '¥'
+                      ? Text(
+                        '$prefix$value',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: color,
                         ),
-                        TextSpan(
-                          text: prefix,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[600],
-                          ),
+                      )
+                      : RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: value,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: color,
+                              ),
+                            ),
+                            TextSpan(
+                              text: prefix,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
             ),
           ),
         ],

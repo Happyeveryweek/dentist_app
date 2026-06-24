@@ -10,7 +10,7 @@ import 'package:dentist_app/features/appointments/widgets/appointment_status_chi
 class AppointmentInfoCard extends StatelessWidget {
   final Appointment appointment;
 
-  const AppointmentInfoCard({required this.appointment});
+  const AppointmentInfoCard({super.key, required this.appointment});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,7 @@ class AppointmentInfoCard extends StatelessWidget {
                   color: AppTheme.textColor,
                 ),
               ),
-              AppointmentStatusChip(status: appointment.status ?? ''),
+              AppointmentStatusChip(status: appointment.status),
             ],
           ),
           const Divider(height: 24),
@@ -45,7 +45,8 @@ class AppointmentInfoCard extends StatelessWidget {
             '预约时间',
             DateFormat('HH:mm').format(appointment.appointmentDate),
           ),
-          if (appointment.treatmentType != null && appointment.treatmentType!.isNotEmpty) ...[
+          if (appointment.treatmentType != null &&
+              appointment.treatmentType!.isNotEmpty) ...[
             const SizedBox(height: 12),
             TreatmentInfoDisplay(treatmentTypeJson: appointment.treatmentType!),
           ],
@@ -92,7 +93,8 @@ class AppointmentInfoCard extends StatelessWidget {
     Color? valueColor,
   }) {
     return Row(
-      crossAxisAlignment: alignTop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      crossAxisAlignment:
+          alignTop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: [
         Icon(icon, size: 18, color: AppTheme.secondaryTextColor),
         const SizedBox(width: 8),
@@ -109,7 +111,8 @@ class AppointmentInfoCard extends StatelessWidget {
             style: TextStyle(
               color: valueColor ?? AppTheme.textColor,
               fontSize: 14,
-              fontWeight: valueColor != null ? FontWeight.bold : FontWeight.normal,
+              fontWeight:
+                  valueColor != null ? FontWeight.bold : FontWeight.normal,
             ),
           ),
         ),

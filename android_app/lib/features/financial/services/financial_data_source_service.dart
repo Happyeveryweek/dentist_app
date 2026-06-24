@@ -1,7 +1,7 @@
 import '../../../data_sources/financial_data_source.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
-import '../../../utils/datetime_formatter.dart';
+import '../../../utils/app_logger.dart';
 
 /// 财务数据源管理服务
 /// 职责：管理财务数据源的初始化、数据源类型切换、连接管理
@@ -149,8 +149,8 @@ class FinancialDataSourceService {
         ''');
       }
     } catch (e) {
-      print('创建财务记录表失败: $e');
-      throw e;
+      AppLogger.info('创建财务记录表失败: $e');
+      rethrow;
     }
   }
 }

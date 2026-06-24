@@ -11,11 +11,13 @@ class PurchaseDataFilter {
     DateTime endDate,
   ) {
     return records
-        .where((record) => PurchaseDateRangeService.isWithinRange(
-              record.purchaseDate,
-              startDate,
-              endDate,
-            ))
+        .where(
+          (record) => PurchaseDateRangeService.isWithinRange(
+            record.purchaseDate,
+            startDate,
+            endDate,
+          ),
+        )
         .toList();
   }
 
@@ -26,13 +28,13 @@ class PurchaseDataFilter {
   ) {
     final filteredRecordIds = filteredRecords.map((r) => r.id).toSet();
     final List<PurchaseItem> allItems = [];
-    
+
     for (final recordId in filteredRecordIds) {
       if (recordId != null && recordItemsMap.containsKey(recordId)) {
         allItems.addAll(recordItemsMap[recordId]!);
       }
     }
-    
+
     return allItems;
   }
 }

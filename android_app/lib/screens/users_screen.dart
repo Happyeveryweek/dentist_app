@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:typed_data';
-import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
 import 'package:dentist_app/providers/user_provider.dart';
 import 'package:dentist_app/models/user.dart';
 import 'package:dentist_app/screens/user_detail_screen.dart';
@@ -39,26 +38,24 @@ class _UsersScreenState extends State<UsersScreen> {
         children: [
           // 统计信息卡片
           _buildStatisticsCard(),
-          
+
           // 搜索栏
           _buildSearchBar(),
-          
+
           // 用户列表 - 添加下拉刷新
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : RefreshIndicator(
-                    onRefresh: () async {
-                      await _loadData();
-                      if (mounted) {
-                        SuccessToastManager.show(
-                          context,
-                          message: '刷新成功',
-                        );
-                      }
-                    },
-                    child: _buildUsersList(),
-                  ),
+            child:
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : RefreshIndicator(
+                      onRefresh: () async {
+                        await _loadData();
+                        if (context.mounted) {
+                          SuccessToastManager.show(context, message: '刷新成功');
+                        }
+                      },
+                      child: _buildUsersList(),
+                    ),
           ),
         ],
       ),
@@ -124,7 +121,12 @@ class _UsersScreenState extends State<UsersScreen> {
   }
 
   /// 构建统计项目
-  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       children: [
         Icon(icon, color: color, size: 24),
@@ -137,13 +139,7 @@ class _UsersScreenState extends State<UsersScreen> {
             color: color,
           ),
         ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
       ],
     );
   }
@@ -187,10 +183,7 @@ class _UsersScreenState extends State<UsersScreen> {
           children: [
             Icon(Icons.people, size: 64, color: Colors.grey),
             SizedBox(height: 16),
-            Text(
-              '暂无用户',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
+            Text('暂无用户', style: TextStyle(fontSize: 18, color: Colors.grey)),
           ],
         ),
       );
@@ -224,22 +217,26 @@ class _UsersScreenState extends State<UsersScreen> {
                   // 用户头像 - 更大的显示
                   CircleAvatar(
                     radius: 32,
-                    backgroundColor: _getRoleColor(user.role ?? ''),
-                    backgroundImage: user.imageData != null && user.imageData!.isNotEmpty
-                        ? MemoryImage(Uint8List.fromList(user.imageData!))
-                        : _getDefaultAvatarImage(user.role ?? ''),
-                    child: user.imageData != null && user.imageData!.isNotEmpty
-                        ? null
-                        : (_getDefaultAvatarImage(user.role ?? '') != null
+                    backgroundColor: _getRoleColor(user.role),
+                    backgroundImage:
+                        user.imageData != null && user.imageData!.isNotEmpty
+                            ? MemoryImage(Uint8List.fromList(user.imageData!))
+                            : _getDefaultAvatarImage(user.role),
+                    child:
+                        user.imageData != null && user.imageData!.isNotEmpty
                             ? null
-                            : Text(
-                                user.username.isNotEmpty ? user.username[0].toUpperCase() : 'U',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )),
+                            : (_getDefaultAvatarImage(user.role) != null
+                                ? null
+                                : Text(
+                                  user.username.isNotEmpty
+                                      ? user.username[0].toUpperCase()
+                                      : 'U',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                )),
                   ),
                   const SizedBox(width: 16),
                   // 用户名和邮箱
@@ -277,14 +274,20 @@ class _UsersScreenState extends State<UsersScreen> {
                         icon: const Icon(Icons.edit, color: Colors.blue),
                         tooltip: '编辑',
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
                       ),
                       IconButton(
                         onPressed: () => _deleteUser(user),
                         icon: const Icon(Icons.delete, color: Colors.red),
                         tooltip: '删除',
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        constraints: const BoxConstraints(
+                          minWidth: 40,
+                          minHeight: 40,
+                        ),
                       ),
                     ],
                   ),
@@ -306,17 +309,21 @@ class _UsersScreenState extends State<UsersScreen> {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: _getRoleColor(user.role ?? '').withOpacity(0.15),
+                      color: _getRoleColor(
+                        user.role,
+                      ).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: _getRoleColor(user.role ?? '').withOpacity(0.3),
+                        color: _getRoleColor(
+                          user.role,
+                        ).withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
                     child: Text(
-                      _getRoleDisplayName(user.role ?? ''),
+                      _getRoleDisplayName(user.role),
                       style: TextStyle(
-                        color: _getRoleColor(user.role ?? ''),
+                        color: _getRoleColor(user.role),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -332,10 +339,7 @@ class _UsersScreenState extends State<UsersScreen> {
                       decoration: BoxDecoration(
                         color: Colors.green[100],
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.green[300]!,
-                          width: 1,
-                        ),
+                        border: Border.all(color: Colors.green[300]!, width: 1),
                       ),
                       child: Text(
                         '医生: ${user.doctor}',
@@ -350,10 +354,14 @@ class _UsersScreenState extends State<UsersScreen> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                      Icon(
+                        Icons.calendar_today,
+                        size: 14,
+                        color: Colors.grey[600],
+                      ),
                       const SizedBox(width: 4),
                       Text(
-                        DateFormat('yyyy-MM-dd').format(user.created_at),
+                        DateFormat('yyyy-MM-dd').format(user.createdAt),
                         style: TextStyle(color: Colors.grey[600], fontSize: 12),
                       ),
                     ],
@@ -400,9 +408,9 @@ class _UsersScreenState extends State<UsersScreen> {
     switch (role.toLowerCase()) {
       case 'admin':
       case 'doctor':
-        return AssetImage('assets/icons/doctor.png');
+        return const AssetImage('assets/icons/doctor.png');
       case 'user':
-        return AssetImage('assets/icons/nurse.png');
+        return const AssetImage('assets/icons/nurse.png');
       default:
         return null;
     }
@@ -416,21 +424,21 @@ class _UsersScreenState extends State<UsersScreen> {
 
     try {
       final provider = Provider.of<UserProvider>(context, listen: false);
-      
+
       // 如果是刷新操作，强制清除缓存
       if (isRefresh) {
         provider.forceRefreshUsers();
       }
-      
+
       // 先修复数据库中的无效角色值
       await provider.fixInvalidRoles();
-      
+
       // 加载用户列表
       final users = await provider.getAllUsers();
-      
+
       // 加载统计信息
       final stats = await provider.getUserStatistics();
-      
+
       if (mounted) {
         setState(() {
           _users = users;
@@ -438,13 +446,10 @@ class _UsersScreenState extends State<UsersScreen> {
           _statistics = stats;
           _isLoading = false;
         });
-        
+
         // 只在手动刷新时显示成功提示
         if (isRefresh) {
-          SuccessToastManager.show(
-            context,
-            message: '数据已刷新',
-          );
+          SuccessToastManager.show(context, message: '数据已刷新');
         }
       }
     } catch (e) {
@@ -452,11 +457,8 @@ class _UsersScreenState extends State<UsersScreen> {
         setState(() {
           _isLoading = false;
         });
-        
-        SuccessToastManager.showError(
-          context,
-          message: '加载数据失败: $e',
-        );
+
+        SuccessToastManager.showError(context, message: '加载数据失败: $e');
       }
     }
   }
@@ -469,39 +471,33 @@ class _UsersScreenState extends State<UsersScreen> {
       });
     } else {
       setState(() {
-        _filteredUsers = _users.where((user) {
-          return user.username.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                 (user.email?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
-        }).toList();
+        _filteredUsers =
+            _users.where((user) {
+              return user.username.toLowerCase().contains(
+                    _searchQuery.toLowerCase(),
+                  ) ||
+                  (user.email?.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      ) ??
+                      false);
+            }).toList();
       });
-    }
-  }
-
-  /// 处理用户操作
-  void _handleUserAction(String action, User user) {
-    switch (action) {
-      case 'edit':
-        _editUser(user);
-        break;
-      case 'delete':
-        _deleteUser(user);
-        break;
     }
   }
 
   /// 显示添加用户对话框
   void _showAddUserDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => const UserDialog(),
-    ).then((result) {
-      if (result == true) {
-        // 强制刷新数据，确保获取最新数据
-        final provider = Provider.of<UserProvider>(context, listen: false);
-        provider.forceRefreshUsers();
-        _loadData(); // 刷新数据
-      }
-    });
+    showDialog(context: context, builder: (context) => const UserDialog()).then(
+      (result) {
+        if (result == true) {
+          if (!context.mounted) return;
+          // 强制刷新数据，确保获取最新数据
+          final provider = Provider.of<UserProvider>(context, listen: false);
+          provider.forceRefreshUsers();
+          _loadData(); // 刷新数据
+        }
+      },
+    );
   }
 
   /// 编辑用户
@@ -511,6 +507,7 @@ class _UsersScreenState extends State<UsersScreen> {
       builder: (context) => UserDialog(user: user),
     ).then((result) {
       if (result == true) {
+        if (!mounted) return;
         // 强制刷新数据，确保获取最新数据
         final provider = Provider.of<UserProvider>(context, listen: false);
         provider.forceRefreshUsers();
@@ -526,7 +523,7 @@ class _UsersScreenState extends State<UsersScreen> {
       context,
       username: user.username,
     );
-    
+
     if (confirmed == true) {
       _confirmDeleteUser(user);
     }
@@ -537,13 +534,10 @@ class _UsersScreenState extends State<UsersScreen> {
     try {
       final provider = Provider.of<UserProvider>(context, listen: false);
       await provider.deleteUser(user.id!);
-      
+
       if (mounted) {
         // 使用公共组件的删除成功提示
-        DeleteSuccessToastManager.show(
-          context,
-          message: '用户删除成功',
-        );
+        DeleteSuccessToastManager.show(context, message: '用户删除成功');
         // 强制刷新数据，确保获取最新数据
         final provider = Provider.of<UserProvider>(context, listen: false);
         provider.forceRefreshUsers();
@@ -552,10 +546,7 @@ class _UsersScreenState extends State<UsersScreen> {
     } catch (e) {
       if (mounted) {
         // 使用公共组件的错误提示
-        SuccessToastManager.showError(
-          context,
-          message: '删除失败: $e',
-        );
+        SuccessToastManager.showError(context, message: '删除失败: $e');
       }
     }
   }
@@ -563,12 +554,11 @@ class _UsersScreenState extends State<UsersScreen> {
   /// 显示用户详情
   void _showUserDetails(BuildContext context, User user) async {
     final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => UserDetailScreen(user: user),
-      ),
+      MaterialPageRoute(builder: (context) => UserDetailScreen(user: user)),
     );
 
     if (result == true) {
+      if (!context.mounted) return;
       // 强制刷新数据，确保获取最新数据
       final provider = Provider.of<UserProvider>(context, listen: false);
       provider.forceRefreshUsers();

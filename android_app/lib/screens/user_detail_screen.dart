@@ -40,7 +40,7 @@ class UserDetailScreen extends StatelessWidget {
             // 新的用户头部
             _buildNewUserHeader(context),
             const SizedBox(height: 24),
-            
+
             // 详细信息卡片
             _buildDetailsExpansionCard(context),
           ],
@@ -56,22 +56,26 @@ class UserDetailScreen extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 40,
-            backgroundColor: _getRoleColor(user.role ?? ''),
-            backgroundImage: user.imageData != null && user.imageData!.isNotEmpty
-                ? MemoryImage(Uint8List.fromList(user.imageData!))
-                : _getDefaultAvatarImage(user.role ?? ''),
-            child: user.imageData != null && user.imageData!.isNotEmpty
-                ? null
-                : (_getDefaultAvatarImage(user.role ?? '') != null
+            backgroundColor: _getRoleColor(user.role),
+            backgroundImage:
+                user.imageData != null && user.imageData!.isNotEmpty
+                    ? MemoryImage(Uint8List.fromList(user.imageData!))
+                    : _getDefaultAvatarImage(user.role),
+            child:
+                user.imageData != null && user.imageData!.isNotEmpty
                     ? null
-                    : Text(
-                        user.username.isNotEmpty ? user.username[0].toUpperCase() : 'U',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )),
+                    : (_getDefaultAvatarImage(user.role) != null
+                        ? null
+                        : Text(
+                          user.username.isNotEmpty
+                              ? user.username[0].toUpperCase()
+                              : 'U',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )),
           ),
           const SizedBox(width: 20),
           Expanded(
@@ -88,15 +92,20 @@ class UserDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: _getRoleColor(user.role ?? '').withOpacity(0.15),
+                    color: _getRoleColor(
+                      user.role,
+                    ).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    _getRoleDisplayName(user.role ?? ''),
+                    _getRoleDisplayName(user.role),
                     style: TextStyle(
-                      color: _getRoleColor(user.role ?? ''),
+                      color: _getRoleColor(user.role),
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -117,7 +126,10 @@ class UserDetailScreen extends StatelessWidget {
         children: [
           ExpansionTile(
             initiallyExpanded: true,
-            leading: Icon(Icons.info_outline, color: Theme.of(context).primaryColor),
+            leading: Icon(
+              Icons.info_outline,
+              color: Theme.of(context).primaryColor,
+            ),
             title: const Text(
               '基本信息',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
@@ -127,32 +139,58 @@ class UserDetailScreen extends StatelessWidget {
               _buildInfoRow(context, Icons.person, '用户名:', user.username),
               _buildInfoRow(context, Icons.email, '邮箱:', user.email ?? '未设置'),
               if (user.doctor?.isNotEmpty == true)
-                _buildInfoRow(context, Icons.medical_services, '医生信息:', user.doctor!),
+                _buildInfoRow(
+                  context,
+                  Icons.medical_services,
+                  '医生信息:',
+                  user.doctor!,
+                ),
               if (user.avatar?.isNotEmpty == true)
                 _buildInfoRow(context, Icons.face, '头像:', user.avatar!),
             ],
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
           ExpansionTile(
-            leading: Icon(Icons.verified_user_outlined, color: Theme.of(context).primaryColor),
+            leading: Icon(
+              Icons.verified_user_outlined,
+              color: Theme.of(context).primaryColor,
+            ),
             title: const Text(
               '角色和权限',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             children: [
-              _buildInfoRow(context, Icons.verified_user, '角色:', _getRoleDisplayName(user.role ?? '')),
-              _buildInfoRow(context, Icons.description, '角色描述:', _getRoleDescription(user.role ?? '')),
+              _buildInfoRow(
+                context,
+                Icons.verified_user,
+                '角色:',
+                _getRoleDisplayName(user.role),
+              ),
+              _buildInfoRow(
+                context,
+                Icons.description,
+                '角色描述:',
+                _getRoleDescription(user.role),
+              ),
             ],
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
           ExpansionTile(
-            leading: Icon(Icons.history_outlined, color: Theme.of(context).primaryColor),
+            leading: Icon(
+              Icons.history_outlined,
+              color: Theme.of(context).primaryColor,
+            ),
             title: const Text(
               '时间信息',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             children: [
-              _buildInfoRow(context, Icons.calendar_today, '创建时间:', DateFormat('yyyy-MM-dd HH:mm').format(user.created_at)),
+              _buildInfoRow(
+                context,
+                Icons.calendar_today,
+                '创建时间:',
+                DateFormat('yyyy-MM-dd HH:mm').format(user.createdAt),
+              ),
             ],
           ),
         ],
@@ -160,7 +198,12 @@ class UserDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, IconData icon, String label, String value) {
+  Widget _buildInfoRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -172,19 +215,13 @@ class UserDetailScreen extends StatelessWidget {
             width: 80,
             child: Text(
               label,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -242,9 +279,9 @@ class UserDetailScreen extends StatelessWidget {
     switch (role.toLowerCase()) {
       case 'admin':
       case 'doctor':
-        return AssetImage('assets/icons/doctor.png');
+        return const AssetImage('assets/icons/doctor.png');
       case 'user':
-        return AssetImage('assets/icons/nurse.png');
+        return const AssetImage('assets/icons/nurse.png');
       default:
         return null;
     }
@@ -257,7 +294,9 @@ class UserDetailScreen extends StatelessWidget {
     ).then((result) {
       if (result == true) {
         // 返回并传递需要刷新的信号
-        Navigator.pop(context, true);
+        if (context.mounted) {
+          Navigator.pop(context, true);
+        }
       }
     });
   }
@@ -267,8 +306,9 @@ class UserDetailScreen extends StatelessWidget {
       context,
       username: user.username,
     );
-    
+
     if (confirmed == true) {
+      if (!context.mounted) return;
       _confirmDeleteUser(context);
     }
   }
@@ -277,20 +317,15 @@ class UserDetailScreen extends StatelessWidget {
     try {
       final provider = Provider.of<UserProvider>(context, listen: false);
       await provider.deleteUser(user.id!);
-      
-      // 使用 `mounted` 检查是 `StatefulWidget` 的 `State` 才有的特性。
-      // 在 `StatelessWidget` 中，我们假设如果能执行到这里，`context` 仍然是有效的。
-      DeleteSuccessToastManager.show(
-        context,
-        message: '用户删除成功',
-      );
+
+      if (!context.mounted) return;
+      DeleteSuccessToastManager.show(context, message: '用户删除成功');
       // 返回并传递需要刷新的信号
       Navigator.pop(context, true);
     } catch (e) {
-      SuccessToastManager.showError(
-        context,
-        message: '删除失败: $e',
-      );
+      if (context.mounted) {
+        SuccessToastManager.showError(context, message: '删除失败: $e');
+      }
     }
   }
 }

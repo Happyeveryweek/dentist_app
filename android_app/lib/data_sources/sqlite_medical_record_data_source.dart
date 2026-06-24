@@ -12,7 +12,9 @@ class SqliteMedicalRecordDataSource implements MedicalRecordDataSource {
   Database get database => _database;
 
   @override
-  Future<List<PatientMedicalRecord>> getPatientMedicalRecords(int patientId) async {
+  Future<List<PatientMedicalRecord>> getPatientMedicalRecords(
+    int patientId,
+  ) async {
     final result = await _database.rawQuery(
       'SELECT * FROM patient_medical_records WHERE patient_id = ? ORDER BY record_date DESC, created_at DESC',
       [patientId],
@@ -74,7 +76,9 @@ class SqliteMedicalRecordDataSource implements MedicalRecordDataSource {
   }
 
   @override
-  Future<List<MedicalRecordTemplate>> getTemplatesByCategory(String category) async {
+  Future<List<MedicalRecordTemplate>> getTemplatesByCategory(
+    String category,
+  ) async {
     final result = await _database.rawQuery(
       'SELECT * FROM medical_record_templates WHERE category = ? AND is_active = 1 ORDER BY sort_order ASC, name ASC',
       [category],
@@ -107,5 +111,4 @@ class SqliteMedicalRecordDataSource implements MedicalRecordDataSource {
     );
     return count > 0;
   }
-
 }

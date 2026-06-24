@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
 import '../models/user.dart';
 import '../models/database_models.dart' show DatabaseHelper;
-import '../providers/database_provider.dart';
 import '../utils/database_operation_wrapper.dart';
 import '../data_sources/user_data_source.dart';
 import '../data_sources/sqlite_user_data_source.dart';
@@ -19,22 +18,24 @@ import '../features/users/services/user_crud_service.dart';
 import '../features/users/services/user_validation_service.dart';
 import '../features/users/services/user_permission_service.dart';
 import '../features/users/services/user_current_permission_service.dart';
+import '../utils/app_logger.dart';
 
 class UserProvider extends ChangeNotifier {
   // 数据库连接
   Database? _database;
   MySqlConnection? _mysqlConnection;
   String _dataSourceType = 'sqlite';
-  
+
   // 数据库提供者引用（用于获取最新连接）
   dynamic _databaseProvider;
-  
+
   // 数据库操作包装器
   DatabaseOperationWrapper? _dbWrapper;
 
   // 用户缓存/权限服务
   final UserCacheService _cacheService = UserCacheService();
-  final UserInitializationService _initializationService = UserInitializationService();
+  final UserInitializationService _initializationService =
+      UserInitializationService();
   final UserConnectionService _connectionService = UserConnectionService();
   UserAuthenticationService? _authenticationService;
   UserStatisticsService? _statisticsService;
@@ -43,23 +44,23 @@ class UserProvider extends ChangeNotifier {
   UserPermissionService? _permissionService;
   UserCurrentPermissionService? _currentPermissionService;
   UserCrudService? _crudService;
-  
+
   // 数据源具体实现
   SqliteUserDataSource? _sqliteDataSource;
   MySqlUserDataSource? _mysqlDataSource;
-  
+
   // 初始化标志
   bool _isInitializedFlag = false;
-  
+
   // 当前用户信息
   User? _currentUser;
-  
+
   // 刷新标志
   bool _usersNeedRefresh = false;
-  
+
   // 用户列表缓存
   List<User> _users = [];
-  
+
   // 错误信息
   String? _error;
 
@@ -72,7 +73,7 @@ class UserProvider extends ChangeNotifier {
   bool get isConnected => _connectionService.isConnected;
   bool get isReconnecting => _connectionService.isReconnecting;
   String? get lastError => _connectionService.lastError;
-  
+
   // 缓存相关方法
   bool get hasValidCache => _cacheService.hasValidCache;
   DateTime? get lastCacheTime => _cacheService.lastCacheTime;
@@ -95,7 +96,9 @@ class UserProvider extends ChangeNotifier {
 
   // 设置MySQL数据源（使用动态连接获取）
   void setMySqlDataSource(MySqlConnection connection) {
-    _mysqlDataSource = MySqlUserDataSource.withConnectionGetter(() => _currentMysqlConnection);
+    _mysqlDataSource = MySqlUserDataSource.withConnectionGetter(
+      () => _currentMysqlConnection,
+    );
     _refreshUserServices();
   }
 
@@ -189,7 +192,7 @@ class UserProvider extends ChangeNotifier {
     // 延迟通知以避免在build阶段调用setState
     Future.microtask(() => notifyListeners());
   }
-  
+
   // 构造函数
   UserProvider({
     Database? database,
@@ -202,7 +205,7 @@ class UserProvider extends ChangeNotifier {
     _dataSourceType = dataSourceType;
     _currentUser = currentUser;
   }
-  
+
   // 设置数据库连接
   void setDatabaseConnection({
     Database? database,
@@ -222,7 +225,7 @@ class UserProvider extends ChangeNotifier {
     );
     _connectionService.resetConnectionState();
   }
-  
+
   // 获取最新的MySQL连接（防止连接过期）
   MySqlConnection? get _currentMysqlConnection {
     if (_dataSourceType != 'mysql' || _databaseProvider == null) {
@@ -237,7 +240,7 @@ class UserProvider extends ChangeNotifier {
         return latestConnection;
       }
     } catch (e) {
-      print('获取最新MySQL连接失败: $e');
+      AppLogger.info('获取最新MySQL连接失败: $e');
     }
 
     return _mysqlConnection;
@@ -248,7 +251,7 @@ class UserProvider extends ChangeNotifier {
     if (_isInitializedFlag) return;
 
     try {
-      print('UserProvider开始初始化...');
+      AppLogger.info('UserProvider开始初始化...');
 
       // 保存DatabaseProvider引用
       _databaseProvider = dbProvider;
@@ -270,15 +273,15 @@ class UserProvider extends ChangeNotifier {
       try {
         _dbWrapper = DatabaseOperationWrapper(dbProvider);
       } catch (e) {
-        print('数据库操作包装器初始化失败: $e');
+        AppLogger.info('数据库操作包装器初始化失败: $e');
         // 不抛出异常，继续执行
       }
 
       _refreshUserServices();
 
-      print('UserProvider初始化完成');
+      AppLogger.info('UserProvider初始化完成');
     } catch (e) {
-      print('UserProvider初始化失败: $e');
+      AppLogger.info('UserProvider初始化失败: $e');
       _isInitializedFlag = false;
     }
 
@@ -286,22 +289,20 @@ class UserProvider extends ChangeNotifier {
     Future.microtask(() => notifyListeners());
   }
 
-
-  
   // 标记刷新
   void markUsersNeedRefresh() {
     _usersNeedRefresh = true;
     notifyListeners();
   }
-  
+
   // 重置刷新标志
   void resetUsersRefreshFlag() {
     _usersNeedRefresh = false;
   }
-  
+
   // 强制刷新用户数据缓存
   Future<void> forceRefreshUsers() async {
-    print('强制刷新用户数据缓存');
+    AppLogger.info('强制刷新用户数据缓存');
     clearCache();
     // 通知监听器
     notifyListeners();
@@ -339,28 +340,31 @@ class UserProvider extends ChangeNotifier {
 
   // 用户登录
   Future<bool> login(String username, String password) async {
-    return await UserSessionService.login(
-      username,
-      password,
-      authenticateUser,
-    );
+    return await UserSessionService.login(username, password, authenticateUser);
   }
 
   // 用户认证
   Future<User?> authenticateUser(String username, String password) async {
     if (_authenticationService == null) return null;
-    final user = await _authenticationService!.authenticateUser(username, password);
+    final user = await _authenticationService!.authenticateUser(
+      username,
+      password,
+    );
     if (user != null) {
       _currentUser = user;
     }
     return user;
   }
 
-  Future<User?> _authenticateWithLocalSqliteFallback(String username, String password) async {
+  Future<User?> _authenticateWithLocalSqliteFallback(
+    String username,
+    String password,
+  ) async {
     try {
-      final sqliteDataSource = _sqliteDataSource ?? await _loadLocalSqliteDataSource();
+      final sqliteDataSource =
+          _sqliteDataSource ?? await _loadLocalSqliteDataSource();
       if (sqliteDataSource == null) {
-        print('离线认证失败：本地SQLite数据源不可用');
+        AppLogger.info('离线认证失败：本地SQLite数据源不可用');
         return null;
       }
 
@@ -369,11 +373,11 @@ class UserProvider extends ChangeNotifier {
         _sqliteDataSource = sqliteDataSource;
         _dataSourceType = 'sqlite';
         _currentUser = user;
-        print('离线SQLite认证成功，已切换到本地数据源');
+        AppLogger.info('离线SQLite认证成功，已切换到本地数据源');
       }
       return user;
     } catch (e) {
-      print('离线SQLite认证异常: $e');
+      AppLogger.info('离线SQLite认证异常: $e');
       return null;
     }
   }
@@ -384,31 +388,38 @@ class UserProvider extends ChangeNotifier {
       _database = database;
       return SqliteUserDataSource(database);
     } catch (e) {
-      print('加载本地SQLite数据源失败: $e');
+      AppLogger.info('加载本地SQLite数据源失败: $e');
       return null;
     }
   }
 
   // 用户登出
   void logout() {
-    UserSessionService.logout(_currentUser, clearPermissionsCache, notifyListeners);
+    UserSessionService.logout(
+      _currentUser,
+      clearPermissionsCache,
+      notifyListeners,
+    );
     _currentUser = null;
   }
 
   // 搜索用户
   List<User> searchUsers(String query, List<User> users) {
     if (query.isEmpty) return users;
-    
+
     return users.where((user) {
       return user.username.toLowerCase().contains(query.toLowerCase()) ||
-             (user.email?.toLowerCase().contains(query.toLowerCase()) ?? false);
+          (user.email?.toLowerCase().contains(query.toLowerCase()) ?? false);
     }).toList();
   }
 
   // 检查用户名是否存在
   Future<bool> isUsernameExists(String username, {int? excludeId}) async {
     if (_validationService == null) return false;
-    return await _validationService!.isUsernameExists(username, excludeId: excludeId);
+    return await _validationService!.isUsernameExists(
+      username,
+      excludeId: excludeId,
+    );
   }
 
   // 检查邮箱是否存在
@@ -436,7 +447,7 @@ class UserProvider extends ChangeNotifier {
   /// 获取用户权限配置
   Future<Map<String, bool>?> getUserPermissions(int userId) async {
     if (!initialized) {
-      print('UserProvider未初始化，无法获取用户权限');
+      AppLogger.info('UserProvider未初始化，无法获取用户权限');
       return null;
     }
 
@@ -456,9 +467,12 @@ class UserProvider extends ChangeNotifier {
   }
 
   /// 更新用户权限配置
-  Future<bool> updateUserPermissions(int userId, Map<String, bool> permissions) async {
+  Future<bool> updateUserPermissions(
+    int userId,
+    Map<String, bool> permissions,
+  ) async {
     if (!initialized) {
-      print('UserProvider未初始化，无法更新用户权限');
+      AppLogger.info('UserProvider未初始化，无法更新用户权限');
       return false;
     }
 
@@ -487,7 +501,9 @@ class UserProvider extends ChangeNotifier {
   /// 检查当前用户是否有特定模块的权限
   Future<bool> hasCurrentUserModulePermission(String module) async {
     if (_currentPermissionService == null) return false;
-    return await _currentPermissionService!.hasCurrentUserModulePermission(module);
+    return await _currentPermissionService!.hasCurrentUserModulePermission(
+      module,
+    );
   }
 
   /// 获取当前用户权限配置

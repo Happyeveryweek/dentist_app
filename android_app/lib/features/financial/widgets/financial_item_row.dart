@@ -32,15 +32,12 @@ class FinancialItemRow extends StatelessWidget {
             flex: 3,
             child: Text(
               item.itemName,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 11,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          
+
           // 数量列
           SizedBox(
             width: 50,
@@ -54,7 +51,7 @@ class FinancialItemRow extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // 单价列
           SizedBox(
             width: 60,
@@ -68,7 +65,7 @@ class FinancialItemRow extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // 总价列
           SizedBox(
             width: 60,
@@ -82,7 +79,7 @@ class FinancialItemRow extends StatelessWidget {
               ),
             ),
           ),
-          
+
           // 操作列
           SizedBox(
             width: 60,
@@ -93,7 +90,10 @@ class FinancialItemRow extends StatelessWidget {
                   icon: const Icon(Icons.delete, size: 16, color: Colors.red),
                   onPressed: onRemove,
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                  constraints: const BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
                 ),
               ],
             ),

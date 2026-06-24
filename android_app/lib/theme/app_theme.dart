@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 
 // 全局样式变量
 class AppTheme {
@@ -38,7 +37,7 @@ class AppTheme {
   static const double smallBorderRadius = 8.0;
   static List<BoxShadow> cardShadow = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.05),
+      color: Colors.black.withValues(alpha: 0.05),
       blurRadius: 10,
       offset: const Offset(0, 4),
     ),
@@ -118,11 +117,11 @@ class AppTheme {
       fillColor: backgroundColor,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(smallBorderRadius),
-        borderSide: BorderSide(color: lightText.withOpacity(0.3)),
+        borderSide: BorderSide(color: lightText.withValues(alpha: 0.3)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(smallBorderRadius),
-        borderSide: BorderSide(color: lightText.withOpacity(0.3)),
+        borderSide: BorderSide(color: lightText.withValues(alpha: 0.3)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(smallBorderRadius),
@@ -148,7 +147,7 @@ class AppTheme {
       primary: primaryColor,
       secondary: secondaryColor,
       tertiary: accentColor,
-      background: backgroundColor,
+      surface: backgroundColor,
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: cardBackground,
@@ -182,11 +181,11 @@ class AppTheme {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(smallBorderRadius),
-        borderSide: BorderSide(color: lightText.withOpacity(0.3)),
+        borderSide: BorderSide(color: lightText.withValues(alpha: 0.3)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(smallBorderRadius),
-        borderSide: BorderSide(color: lightText.withOpacity(0.3)),
+        borderSide: BorderSide(color: lightText.withValues(alpha: 0.3)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(smallBorderRadius),
@@ -211,7 +210,7 @@ class AppTheme {
       primary: primaryColor,
       secondary: secondaryColor,
       tertiary: accentColor,
-      background: darkBackground,
+      surface: darkBackground,
       brightness: Brightness.dark,
     ),
     appBarTheme: const AppBarTheme(
@@ -255,11 +254,11 @@ class AppTheme {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(smallBorderRadius),
-        borderSide: BorderSide(color: darkLightText.withOpacity(0.3)),
+        borderSide: BorderSide(color: darkLightText.withValues(alpha: 0.3)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(smallBorderRadius),
-        borderSide: BorderSide(color: darkLightText.withOpacity(0.3)),
+        borderSide: BorderSide(color: darkLightText.withValues(alpha: 0.3)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(smallBorderRadius),

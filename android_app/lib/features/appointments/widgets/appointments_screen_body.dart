@@ -68,72 +68,75 @@ class AppointmentsScreenBody extends StatelessWidget {
       children: [
         _buildHeader(),
         Expanded(
-          child: isLoading
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppTheme.primaryColor,
+          child:
+              isLoading
+                  ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppTheme.primaryColor,
+                          ),
                         ),
+                        SizedBox(height: 16),
+                        Text(
+                          '加载预约数据中...',
+                          style: TextStyle(color: AppTheme.secondaryText),
+                        ),
+                      ],
+                    ),
+                  )
+                  : Column(
+                    children: [
+                      AppointmentSearchFilterBar(
+                        searchController: searchController,
+                        searchQuery: searchQuery,
+                        onSearchChanged: onSearchChanged,
+                        onSearchSubmitted: onSearchSubmitted,
+                        onClearSearch: onClearSearch,
+                        onFilterPressed: onFilterPressed,
                       ),
-                      SizedBox(height: 16),
-                      Text(
-                        '加载预约数据中...',
-                        style: TextStyle(color: AppTheme.secondaryText),
+                      Expanded(
+                        child:
+                            showCalendar
+                                ? AppointmentCalendarView(
+                                  focusedDay: focusedDay,
+                                  selectedDay: selectedDay,
+                                  calendarFormat: calendarFormat,
+                                  appointmentsByDay: appointmentsByDay,
+                                  selectedDayAppointments:
+                                      selectedDayAppointments,
+                                  onDaySelected: onDaySelected,
+                                  buildAppointmentCard: _buildAppointmentCard,
+                                  onAddAppointment: onAddAppointment,
+                                )
+                                : TabBarView(
+                                  controller: tabController,
+                                  children: [
+                                    RefreshIndicator(
+                                      onRefresh: onRefreshAll,
+                                      child: _buildAppointmentList(
+                                        context,
+                                        filteredAppointments,
+                                        emptyIcon: Icons.search_off,
+                                        emptyText: '没有找到符合条件的预约',
+                                      ),
+                                    ),
+                                    RefreshIndicator(
+                                      onRefresh: onRefreshAll,
+                                      child: _buildAppointmentList(
+                                        context,
+                                        todayAppointments,
+                                        emptyIcon: Icons.today,
+                                        emptyText: '今日无预约',
+                                      ),
+                                    ),
+                                  ],
+                                ),
                       ),
                     ],
                   ),
-                )
-              : Column(
-                  children: [
-                    AppointmentSearchFilterBar(
-                      searchController: searchController,
-                      searchQuery: searchQuery,
-                      onSearchChanged: onSearchChanged,
-                      onSearchSubmitted: onSearchSubmitted,
-                      onClearSearch: onClearSearch,
-                      onFilterPressed: onFilterPressed,
-                    ),
-                    Expanded(
-                      child: showCalendar
-                          ? AppointmentCalendarView(
-                              focusedDay: focusedDay,
-                              selectedDay: selectedDay,
-                              calendarFormat: calendarFormat,
-                              appointmentsByDay: appointmentsByDay,
-                              selectedDayAppointments: selectedDayAppointments,
-                              onDaySelected: onDaySelected,
-                              buildAppointmentCard: _buildAppointmentCard,
-                              onAddAppointment: onAddAppointment,
-                            )
-                          : TabBarView(
-                              controller: tabController,
-                              children: [
-                                RefreshIndicator(
-                                  onRefresh: onRefreshAll,
-                                  child: _buildAppointmentList(
-                                    context,
-                                    filteredAppointments,
-                                    emptyIcon: Icons.search_off,
-                                    emptyText: '没有找到符合条件的预约',
-                                  ),
-                                ),
-                                RefreshIndicator(
-                                  onRefresh: onRefreshAll,
-                                  child: _buildAppointmentList(
-                                    context,
-                                    todayAppointments,
-                                    emptyIcon: Icons.today,
-                                    emptyText: '今日无预约',
-                                  ),
-                                ),
-                              ],
-                            ),
-                    ),
-                  ],
-                ),
         ),
       ],
     );
@@ -171,7 +174,7 @@ class AppointmentsScreenBody extends StatelessWidget {
           const SizedBox(height: 8),
           Container(
             height: 1,
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
           ),
           const SizedBox(height: 12),
           TabBar(
@@ -204,7 +207,7 @@ class AppointmentsScreenBody extends StatelessWidget {
                 Icon(
                   emptyIcon,
                   size: 64,
-                  color: AppTheme.lightText.withOpacity(0.5),
+                  color: AppTheme.lightText.withValues(alpha: 0.5),
                 ),
                 const SizedBox(height: 16),
                 Text(

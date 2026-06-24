@@ -16,7 +16,7 @@ class PaymentStatusChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalAmount = totalCollected + totalOutstanding;
-    
+
     if (totalAmount <= 0) {
       return Container(
         height: 200,
@@ -61,7 +61,7 @@ class PaymentStatusChart extends StatelessWidget {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 24),
-          
+
           // 已收费进度条
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,9 +96,9 @@ class PaymentStatusChart extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // 欠费进度条
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,9 +133,9 @@ class PaymentStatusChart extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // 总计信息
           Container(
             padding: const EdgeInsets.all(12),

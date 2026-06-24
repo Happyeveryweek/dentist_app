@@ -21,13 +21,7 @@ class PurchaseAmountItem extends StatelessWidget {
       children: [
         Icon(icon, color: color, size: 32),
         const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 12,
-          ),
-        ),
+        Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
         const SizedBox(height: 4),
         Text(
           value,

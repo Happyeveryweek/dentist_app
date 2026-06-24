@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'user_connection_service.dart';
+import '../../../utils/app_logger.dart';
 
 /// 用户存在性查询服务
 class UserExistenceQueryService {
@@ -11,9 +12,9 @@ class UserExistenceQueryService {
     required UserConnectionService connectionService,
     required Database? database,
     required String dataSourceType,
-  })  : _connectionService = connectionService,
-        _database = database,
-        _dataSourceType = dataSourceType;
+  }) : _connectionService = connectionService,
+       _database = database,
+       _dataSourceType = dataSourceType;
 
   Future<bool> exists(
     String table,
@@ -50,7 +51,7 @@ class UserExistenceQueryService {
 
       return false;
     } catch (e) {
-      print('存在性查询失败: $e');
+      AppLogger.info('存在性查询失败: $e');
       return false;
     }
   }

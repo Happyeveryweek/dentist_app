@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:mysql1/mysql1.dart';
 import '../models/database_config.dart';
+import '../utils/app_logger.dart';
 
 /// MySQL连接池管理器
 class MySQLConnectionPool {
@@ -12,29 +12,28 @@ class MySQLConnectionPool {
   // 连接池配置
   final int _maxConnections = 5; // 最大连接数
   final int _minConnections = 2; // 最小连接数
-  final Duration _idleTimeout = const Duration(minutes: 5); // 空闲超时
   final Duration _maxWaitTime = const Duration(seconds: 30); // 最大等待时间
 
   // 连接池状态
   final List<MySqlConnection> _availableConnections = [];
   final List<MySqlConnection> _busyConnections = [];
   final List<Completer<MySqlConnection>> _waitingQueue = [];
-  
+
   // 连接统计
   int _totalConnections = 0;
   int _activeConnections = 0;
-  
+
   // 配置信息
   ConnectionSettings? _settings;
   bool _isInitialized = false;
-  
+
   // 定时器
   Timer? _cleanupTimer;
 
   /// 初始化连接池
   Future<void> initialize(DatabaseConfig config) async {
     if (_isInitialized) return;
-    
+
     _settings = ConnectionSettings(
       host: config.mysql.host,
       port: int.parse(config.mysql.port),
@@ -46,12 +45,12 @@ class MySQLConnectionPool {
 
     // 创建最小连接数
     await _createInitialConnections();
-    
+
     // 启动清理定时器
     _startCleanupTimer();
-    
+
     _isInitialized = true;
-    print('MySQL连接池已初始化，当前连接数: $_totalConnections');
+    AppLogger.info('MySQL连接池已初始化，当前连接数: $_totalConnections');
   }
 
   /// 创建初始连接
@@ -62,7 +61,7 @@ class MySQLConnectionPool {
         _availableConnections.add(connection);
         _totalConnections++;
       } catch (e) {
-        print('创建初始连接失败: $e');
+        AppLogger.info('创建初始连接失败: $e');
       }
     }
   }
@@ -71,15 +70,15 @@ class MySQLConnectionPool {
   Future<MySqlConnection> _createConnection() async {
     try {
       final connection = await MySqlConnection.connect(_settings!);
-      
+
       // 设置字符编码
       await connection.query("SET NAMES 'utf8mb4'");
       await connection.query("SET CHARACTER SET utf8mb4");
       await connection.query("SET character_set_connection=utf8mb4");
-      
+
       return connection;
     } catch (e) {
-      print('创建MySQL连接失败: $e');
+      AppLogger.info('创建MySQL连接失败: $e');
       throw Exception('创建MySQL连接失败: $e');
     }
   }
@@ -91,7 +90,7 @@ class MySQLConnectionPool {
     }
 
     final completer = Completer<MySqlConnection>();
-    
+
     // 如果有可用连接，直接返回
     if (_availableConnections.isNotEmpty) {
       final connection = _availableConnections.removeAt(0);
@@ -109,13 +108,13 @@ class MySQLConnectionPool {
         _activeConnections++;
         return connection;
       } catch (e) {
-        print('创建新连接失败，加入等待队列: $e');
+        AppLogger.info('创建新连接失败，加入等待队列: $e');
       }
     }
 
     // 加入等待队列
     _waitingQueue.add(completer);
-    
+
     // 设置超时
     Timer(_maxWaitTime, () {
       if (!completer.isCompleted) {
@@ -139,7 +138,7 @@ class MySQLConnectionPool {
     // 检查连接是否仍然有效
     try {
       await connection.query('SELECT 1');
-      
+
       // 如果有等待的客户端，直接分配
       if (_waitingQueue.isNotEmpty) {
         final completer = _waitingQueue.removeAt(0);
@@ -158,7 +157,7 @@ class MySQLConnectionPool {
         await connection.close();
       } catch (_) {}
       _totalConnections--;
-      
+
       // 补充连接池
       if (_totalConnections < _minConnections) {
         try {
@@ -210,11 +209,10 @@ class MySQLConnectionPool {
 
   /// 清理空闲连接
   Future<void> _cleanupIdleConnections() async {
-    final now = DateTime.now();
-    
     // 清理过期的可用连接
     if (_availableConnections.length > _minConnections) {
-      final connectionsToRemove = _availableConnections.length - _minConnections;
+      final connectionsToRemove =
+          _availableConnections.length - _minConnections;
       for (int i = 0; i < connectionsToRemove; i++) {
         final connection = _availableConnections.removeAt(0);
         try {
@@ -236,27 +234,27 @@ class MySQLConnectionPool {
   /// 关闭连接池
   Future<void> close() async {
     _cleanupTimer?.cancel();
-    
+
     // 关闭所有连接
     for (final connection in _availableConnections) {
       try {
         await connection.close();
       } catch (_) {}
     }
-    
+
     for (final connection in _busyConnections) {
       try {
         await connection.close();
       } catch (_) {}
     }
-    
+
     _availableConnections.clear();
     _busyConnections.clear();
     _totalConnections = 0;
     _activeConnections = 0;
     _isInitialized = false;
-    
-    print('MySQL连接池已关闭');
+
+    AppLogger.info('MySQL连接池已关闭');
   }
 
   /// 检查连接池健康状态
@@ -290,7 +288,8 @@ class MySQLConnectionPool {
       }
 
       // 确保最小连接数
-      if (_availableConnections.isEmpty && _totalConnections < _minConnections) {
+      if (_availableConnections.isEmpty &&
+          _totalConnections < _minConnections) {
         try {
           final newConnection = await _createConnection();
           _availableConnections.add(newConnection);
@@ -300,15 +299,15 @@ class MySQLConnectionPool {
 
       return _totalConnections > 0;
     } catch (e) {
-      print('连接池健康检查失败: $e');
+      AppLogger.info('连接池健康检查失败: $e');
       return false;
     }
   }
 
   /// 强制刷新所有连接（用于网络恢复后）
   Future<void> refreshAllConnections() async {
-    print('强制刷新所有连接...');
-    
+    AppLogger.info('强制刷新所有连接...');
+
     // 关闭所有现有连接
     for (final connection in List.from(_availableConnections)) {
       try {
@@ -316,20 +315,20 @@ class MySQLConnectionPool {
       } catch (_) {}
     }
     _availableConnections.clear();
-    
+
     for (final connection in List.from(_busyConnections)) {
       try {
         await connection.close();
       } catch (_) {}
     }
     _busyConnections.clear();
-    
+
     _totalConnections = 0;
     _activeConnections = 0;
-    
+
     // 重新创建初始连接
     await _createInitialConnections();
-    print('连接池已刷新，当前连接数: $_totalConnections');
+    AppLogger.info('连接池已刷新，当前连接数: $_totalConnections');
   }
 
   /// 获取详细的连接状态
@@ -337,11 +336,14 @@ class MySQLConnectionPool {
     return {
       ...getPoolStats(),
       'isInitialized': _isInitialized,
-      'settings': _settings != null ? {
-        'host': _settings!.host,
-        'port': _settings!.port,
-        'database': _settings!.db,
-      } : null,
+      'settings':
+          _settings != null
+              ? {
+                'host': _settings!.host,
+                'port': _settings!.port,
+                'database': _settings!.db,
+              }
+              : null,
     };
   }
 }

@@ -1,6 +1,7 @@
 import 'package:mysql1/mysql1.dart';
 import 'package:dentist_app/providers/database_provider.dart';
 import 'dart:async';
+import '../../../utils/app_logger.dart';
 
 /// 患者图片连接管理服务
 ///
@@ -45,7 +46,7 @@ class PatientImageConnectionService {
   Future<bool> ensureConnection() async {
     final connection = currentMysqlConnection;
     if (connection == null) {
-      print('PatientImageConnectionService: MySQL连接对象为null');
+      AppLogger.info('PatientImageConnectionService: MySQL连接对象为null');
       return false;
     }
 
@@ -59,11 +60,11 @@ class PatientImageConnectionService {
               throw TimeoutException('连接测试超时', const Duration(seconds: 10));
             },
           );
-      print('PatientImageConnectionService: MySQL连接检查成功');
+      AppLogger.info('PatientImageConnectionService: MySQL连接检查成功');
       _isConnected = true;
       return true;
     } catch (e) {
-      print('PatientImageConnectionService: 连接检查失败: $e');
+      AppLogger.info('PatientImageConnectionService: 连接检查失败: $e');
       _isConnected = false;
       return false;
     }
@@ -72,7 +73,7 @@ class PatientImageConnectionService {
   /// 自动重连
   Future<bool> autoReconnect() async {
     try {
-      print('PatientImageConnectionService: 尝试自动重连MySQL...');
+      AppLogger.info('PatientImageConnectionService: 尝试自动重连MySQL...');
       _isReconnecting = true;
 
       // 等待一段时间后重试
@@ -84,7 +85,9 @@ class PatientImageConnectionService {
       _mysqlConnection = currentMysqlConnection;
 
       if (_mysqlConnection == null) {
-        print('PatientImageConnectionService: 无法自动重连，DatabaseProvider返回null');
+        AppLogger.info(
+          'PatientImageConnectionService: 无法自动重连，DatabaseProvider返回null',
+        );
         _isReconnecting = false;
         return false;
       }
@@ -93,14 +96,14 @@ class PatientImageConnectionService {
       final success = await ensureConnection();
 
       if (success) {
-        print('PatientImageConnectionService: 自动重连成功');
+        AppLogger.info('PatientImageConnectionService: 自动重连成功');
         _isReconnecting = false;
         return true;
       } else {
         throw Exception('重连失败');
       }
     } catch (e) {
-      print('PatientImageConnectionService: 自动重连失败: $e');
+      AppLogger.info('PatientImageConnectionService: 自动重连失败: $e');
       _isReconnecting = false;
       return false;
     }
@@ -110,16 +113,16 @@ class PatientImageConnectionService {
   Future<bool> checkSQLiteConnection(dynamic sqliteDatabase) async {
     try {
       if (sqliteDatabase == null) {
-        print('PatientImageConnectionService: SQLite数据库对象为null');
+        AppLogger.info('PatientImageConnectionService: SQLite数据库对象为null');
         return false;
       }
 
       await sqliteDatabase.rawQuery('SELECT 1');
-      print('PatientImageConnectionService: SQLite连接检查成功');
+      AppLogger.info('PatientImageConnectionService: SQLite连接检查成功');
       _isConnected = true;
       return true;
     } catch (e) {
-      print('PatientImageConnectionService: SQLite连接检查失败: $e');
+      AppLogger.info('PatientImageConnectionService: SQLite连接检查失败: $e');
       _isConnected = false;
       return false;
     }
@@ -129,17 +132,17 @@ class PatientImageConnectionService {
   Future<void> checkConnectionOnResume() async {
     if (_mysqlConnection != null) {
       try {
-        print('PatientImageConnectionService: 检查MySQL连接状态...');
+        AppLogger.info('PatientImageConnectionService: 检查MySQL连接状态...');
         final isHealthy = await ensureConnection();
 
         if (!isHealthy) {
-          print('PatientImageConnectionService: 连接异常，尝试重连...');
+          AppLogger.info('PatientImageConnectionService: 连接异常，尝试重连...');
           await autoReconnect();
         } else {
-          print('PatientImageConnectionService: 连接状态正常');
+          AppLogger.info('PatientImageConnectionService: 连接状态正常');
         }
       } catch (e) {
-        print('PatientImageConnectionService: 检查连接状态失败: $e');
+        AppLogger.info('PatientImageConnectionService: 检查连接状态失败: $e');
       }
     }
   }

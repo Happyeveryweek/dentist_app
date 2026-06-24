@@ -41,24 +41,17 @@ class _ModernDateRangePickerState extends State<ModernDateRangePicker> {
       backgroundColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
       child: Container(
-        constraints: const BoxConstraints(
-          maxWidth: 500,
-          maxHeight: 650,
-        ),
+        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 650),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-              Colors.purple.shade50,
-            ],
+            colors: [Colors.blue.shade50, Colors.white, Colors.purple.shade50],
           ),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.15),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 30,
               offset: const Offset(0, 10),
             ),
@@ -69,15 +62,13 @@ class _ModernDateRangePickerState extends State<ModernDateRangePicker> {
           children: [
             // 标题栏
             _buildHeader(),
-            
+
             // 日期范围显示
             _buildDateRangeDisplay(),
-            
+
             // 日历选择器
-            Expanded(
-              child: _buildCalendar(),
-            ),
-            
+            Expanded(child: _buildCalendar()),
+
             // 操作按钮
             _buildActionButtons(),
           ],
@@ -92,10 +83,7 @@ class _ModernDateRangePickerState extends State<ModernDateRangePicker> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Colors.blue.shade600,
-            Colors.purple.shade600,
-          ],
+          colors: [Colors.blue.shade600, Colors.purple.shade600],
         ),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
@@ -107,14 +95,10 @@ class _ModernDateRangePickerState extends State<ModernDateRangePicker> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.date_range,
-              color: Colors.white,
-              size: 24,
-            ),
+            child: const Icon(Icons.date_range, color: Colors.white, size: 24),
           ),
           const SizedBox(width: 16),
           const Expanded(
@@ -132,10 +116,7 @@ class _ModernDateRangePickerState extends State<ModernDateRangePicker> {
                 SizedBox(height: 4),
                 Text(
                   '点击日期选择开始和结束时间',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.white70,
-                  ),
+                  style: TextStyle(fontSize: 13, color: Colors.white70),
                 ),
               ],
             ),
@@ -144,7 +125,7 @@ class _ModernDateRangePickerState extends State<ModernDateRangePicker> {
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(Icons.close, color: Colors.white),
             style: IconButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
             ),
           ),
         ],
@@ -160,13 +141,10 @@ class _ModernDateRangePickerState extends State<ModernDateRangePicker> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.blue.shade200,
-          width: 2,
-        ),
+        border: Border.all(color: Colors.blue.shade200, width: 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.shade100.withOpacity(0.3),
+            color: Colors.blue.shade100.withValues(alpha: 0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -197,16 +175,11 @@ class _ModernDateRangePickerState extends State<ModernDateRangePicker> {
                 ),
               ),
               Expanded(
-                child: _buildDateCard(
-                  '结束日期',
-                  _endDate,
-                  !_isSelectingStart,
-                  () {
-                    setState(() {
-                      _isSelectingStart = false;
-                    });
-                  },
-                ),
+                child: _buildDateCard('结束日期', _endDate, !_isSelectingStart, () {
+                  setState(() {
+                    _isSelectingStart = false;
+                  });
+                }),
               ),
             ],
           ),
@@ -220,11 +193,7 @@ class _ModernDateRangePickerState extends State<ModernDateRangePicker> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 16,
-                  color: Colors.blue.shade700,
-                ),
+                Icon(Icons.info_outline, size: 16, color: Colors.blue.shade700),
                 const SizedBox(width: 8),
                 Text(
                   '共 ${_endDate.difference(_startDate).inDays + 1} 天',
@@ -243,20 +212,23 @@ class _ModernDateRangePickerState extends State<ModernDateRangePicker> {
   }
 
   /// 构建日期卡片
-  Widget _buildDateCard(String label, DateTime date, bool isSelected, VoidCallback onTap) {
+  Widget _buildDateCard(
+    String label,
+    DateTime date,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          gradient: isSelected
-              ? LinearGradient(
-                  colors: [
-                    Colors.blue.shade400,
-                    Colors.purple.shade400,
-                  ],
-                )
-              : null,
+          gradient:
+              isSelected
+                  ? LinearGradient(
+                    colors: [Colors.blue.shade400, Colors.purple.shade400],
+                  )
+                  : null,
           color: isSelected ? null : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
@@ -332,7 +304,7 @@ class _ModernDateRangePickerState extends State<ModernDateRangePicker> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -378,10 +350,7 @@ class _ModernDateRangePickerState extends State<ModernDateRangePicker> {
               ),
               child: const Text(
                 '确定',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
           ),

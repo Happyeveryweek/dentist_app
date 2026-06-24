@@ -29,26 +29,40 @@ class SqliteMaterialDataSource implements MaterialDataSource {
 
   @override
   Future<bool> deleteMaterial(int id) async {
-    final count = await _database.delete('materials', where: 'id = ?', whereArgs: [id]);
+    final count = await _database.delete(
+      'materials',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
     return count > 0;
   }
 
   @override
   Future<List<DentalMaterial>> getAllMaterials() async {
-    final result = await _database.rawQuery('SELECT * FROM materials ORDER BY updated_at DESC, created_at DESC');
+    final result = await _database.rawQuery(
+      'SELECT * FROM materials ORDER BY updated_at DESC, created_at DESC',
+    );
     return result.map((e) => DentalMaterial.fromMap(e)).toList();
   }
 
   @override
   Future<DentalMaterial?> getMaterialById(int id) async {
-    final result = await _database.rawQuery('SELECT * FROM materials WHERE id = ?', [id]);
+    final result = await _database.rawQuery(
+      'SELECT * FROM materials WHERE id = ?',
+      [id],
+    );
     if (result.isEmpty) return null;
     return DentalMaterial.fromMap(result.first);
   }
 
   @override
   Future<bool> updateMaterial(DentalMaterial material) async {
-    final count = await _database.update('materials', material.toMap(), where: 'id = ?', whereArgs: [material.id]);
+    final count = await _database.update(
+      'materials',
+      material.toMap(),
+      where: 'id = ?',
+      whereArgs: [material.id],
+    );
     return count > 0;
   }
 
@@ -56,7 +70,7 @@ class SqliteMaterialDataSource implements MaterialDataSource {
   Future<List<DentalMaterial>> searchMaterials(String keyword) async {
     final result = await _database.rawQuery(
       'SELECT * FROM materials WHERE material_name LIKE ? OR material_code LIKE ? ORDER BY updated_at DESC, created_at DESC',
-      ['%$keyword%', '%$keyword%']
+      ['%$keyword%', '%$keyword%'],
     );
     return result.map((e) => DentalMaterial.fromMap(e)).toList();
   }
@@ -97,13 +111,15 @@ class MySqlMaterialDataSource implements MaterialDataSource {
       } else if (value is Blob) {
         try {
           final bytes = value.toBytes();
-          map[field] = bytes.isNotEmpty ? utf8.decode(bytes, allowMalformed: true) : '';
+          map[field] =
+              bytes.isNotEmpty ? utf8.decode(bytes, allowMalformed: true) : '';
         } catch (e) {
           map[field] = '';
         }
       } else if (value is Uint8List) {
         try {
-          map[field] = value.isNotEmpty ? utf8.decode(value, allowMalformed: true) : '';
+          map[field] =
+              value.isNotEmpty ? utf8.decode(value, allowMalformed: true) : '';
         } catch (e) {
           map[field] = '';
         }
@@ -118,21 +134,24 @@ class MySqlMaterialDataSource implements MaterialDataSource {
   Future<int> createMaterial(DentalMaterial material) async {
     final conn = _getConnection();
     if (conn == null) throw Exception('MySQL连接不可用');
-    final results = await conn.query('''
+    final results = await conn.query(
+      '''
       INSERT INTO materials (material_name, material_code, material_type, specification, unit, default_price, stock_quantity, min_stock, supplier, description, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-    ''', [
-      material.materialName,
-      material.materialCode,
-      material.materialType,
-      material.specification,
-      material.unit,
-      material.defaultPrice,
-      material.stockQuantity,
-      material.minStock,
-      material.supplier,
-      material.description,
-    ]);
+    ''',
+      [
+        material.materialName,
+        material.materialCode,
+        material.materialType,
+        material.specification,
+        material.unit,
+        material.defaultPrice,
+        material.stockQuantity,
+        material.minStock,
+        material.supplier,
+        material.description,
+      ],
+    );
     return results.insertId ?? 0;
   }
 
@@ -140,7 +159,9 @@ class MySqlMaterialDataSource implements MaterialDataSource {
   Future<bool> deleteMaterial(int id) async {
     final conn = _getConnection();
     if (conn == null) throw Exception('MySQL连接不可用');
-    final results = await conn.query('DELETE FROM materials WHERE id = ?', [id]);
+    final results = await conn.query('DELETE FROM materials WHERE id = ?', [
+      id,
+    ]);
     return results.affectedRows! > 0;
   }
 
@@ -148,15 +169,21 @@ class MySqlMaterialDataSource implements MaterialDataSource {
   Future<List<DentalMaterial>> getAllMaterials() async {
     final conn = _getConnection();
     if (conn == null) throw Exception('MySQL连接不可用');
-    final results = await conn.query('SELECT * FROM materials ORDER BY updated_at DESC, created_at DESC');
-    return results.map((row) => DentalMaterial.fromMap(_convertMySqlRow(row))).toList();
+    final results = await conn.query(
+      'SELECT * FROM materials ORDER BY updated_at DESC, created_at DESC',
+    );
+    return results
+        .map((row) => DentalMaterial.fromMap(_convertMySqlRow(row)))
+        .toList();
   }
 
   @override
   Future<DentalMaterial?> getMaterialById(int id) async {
     final conn = _getConnection();
     if (conn == null) throw Exception('MySQL连接不可用');
-    final results = await conn.query('SELECT * FROM materials WHERE id = ?', [id]);
+    final results = await conn.query('SELECT * FROM materials WHERE id = ?', [
+      id,
+    ]);
     if (results.isEmpty) return null;
     return DentalMaterial.fromMap(_convertMySqlRow(results.first));
   }
@@ -165,21 +192,24 @@ class MySqlMaterialDataSource implements MaterialDataSource {
   Future<bool> updateMaterial(DentalMaterial material) async {
     final conn = _getConnection();
     if (conn == null) throw Exception('MySQL连接不可用');
-    final results = await conn.query('''
+    final results = await conn.query(
+      '''
       UPDATE materials SET material_name = ?, material_code = ?, material_type = ?, specification = ?, unit = ?, default_price = ?, stock_quantity = ?, min_stock = ?, supplier = ?, description = ?, updated_at = NOW() WHERE id = ?
-    ''', [
-      material.materialName,
-      material.materialCode,
-      material.materialType,
-      material.specification,
-      material.unit,
-      material.defaultPrice,
-      material.stockQuantity,
-      material.minStock,
-      material.supplier,
-      material.description,
-      material.id,
-    ]);
+    ''',
+      [
+        material.materialName,
+        material.materialCode,
+        material.materialType,
+        material.specification,
+        material.unit,
+        material.defaultPrice,
+        material.stockQuantity,
+        material.minStock,
+        material.supplier,
+        material.description,
+        material.id,
+      ],
+    );
     return results.affectedRows! > 0;
   }
 
@@ -187,16 +217,25 @@ class MySqlMaterialDataSource implements MaterialDataSource {
   Future<List<DentalMaterial>> searchMaterials(String keyword) async {
     final conn = _getConnection();
     if (conn == null) throw Exception('MySQL连接不可用');
-    final results = await conn.query('SELECT * FROM materials WHERE material_name LIKE ? OR material_code LIKE ? ORDER BY updated_at DESC, created_at DESC', ['%$keyword%', '%$keyword%']);
-    return results.map((row) => DentalMaterial.fromMap(_convertMySqlRow(row))).toList();
+    final results = await conn.query(
+      'SELECT * FROM materials WHERE material_name LIKE ? OR material_code LIKE ? ORDER BY updated_at DESC, created_at DESC',
+      ['%$keyword%', '%$keyword%'],
+    );
+    return results
+        .map((row) => DentalMaterial.fromMap(_convertMySqlRow(row)))
+        .toList();
   }
 
   @override
   Future<Map<String, dynamic>> getMaterialStatistics() async {
     final conn = _getConnection();
     if (conn == null) throw Exception('MySQL连接不可用');
-    final results = await conn.query('SELECT COUNT(*) as total_materials, SUM(default_price) as total_value, COUNT(DISTINCT supplier) as supplier_count FROM materials');
-    if (results.isEmpty) return {'totalMaterials': 0, 'totalValue': 0.0, 'supplierCount': 0};
+    final results = await conn.query(
+      'SELECT COUNT(*) as total_materials, SUM(default_price) as total_value, COUNT(DISTINCT supplier) as supplier_count FROM materials',
+    );
+    if (results.isEmpty) {
+      return {'totalMaterials': 0, 'totalValue': 0.0, 'supplierCount': 0};
+    }
     final row = results.first;
     return {
       'totalMaterials': row['total_materials'] ?? 0,

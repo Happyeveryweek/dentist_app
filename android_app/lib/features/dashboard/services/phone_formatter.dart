@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../../utils/app_logger.dart';
 
 /// 电话号码格式化辅助类
 class PhoneFormatter {
@@ -11,7 +12,7 @@ class PhoneFormatter {
           return phones[0].toString();
         }
       } catch (e) {
-        print('解析电话号码JSON失败: $e');
+        AppLogger.info('解析电话号码JSON失败: $e');
       }
     }
     return phone;

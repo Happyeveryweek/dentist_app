@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
 import '../../../data_sources/appointment_data_source.dart';
+import '../../../utils/app_logger.dart';
 
 /// 预约数据库连接管理 mixin
 /// 提供数据库连接管理和数据源切换功能
@@ -74,7 +75,7 @@ mixin AppointmentDatabaseMixin {
         return latestConnection;
       }
     } catch (e) {
-      print('获取最新MySQL连接失败: $e');
+      AppLogger.info('获取最新MySQL连接失败: $e');
     }
 
     return _mysqlConnection;

@@ -18,10 +18,7 @@ class PurchaseErrorState extends StatelessWidget {
         children: [
           Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
           const SizedBox(height: 8),
-          Text(
-            '加载失败',
-            style: TextStyle(color: Colors.red[300]),
-          ),
+          Text('加载失败', style: TextStyle(color: Colors.red[300])),
           const SizedBox(height: 8),
           Text(
             errorMessage,
@@ -29,10 +26,7 @@ class PurchaseErrorState extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: onRetry,
-            child: const Text('重试'),
-          ),
+          ElevatedButton(onPressed: onRetry, child: const Text('重试')),
         ],
       ),
     );

@@ -1,7 +1,6 @@
-import 'package:intl/intl.dart';
 import 'dart:convert';
-import 'dart:typed_data';
 import '../utils/datetime_formatter.dart';
+import '../utils/app_logger.dart';
 
 class User {
   final int? id;
@@ -9,7 +8,7 @@ class User {
   final String? email;
   final String password;
   final String role;
-  final DateTime created_at;
+  final DateTime createdAt;
   final String? doctor;
   final String? avatar;
   final String? modulePermissions;
@@ -21,29 +20,30 @@ class User {
     this.email,
     required this.password,
     required this.role,
-    DateTime? created_at,
+    DateTime? createdAt,
     this.doctor,
     this.avatar,
     this.modulePermissions,
     this.imageData, // 头像图片数据参数
-  }) : created_at = created_at ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now();
 
-  factory User.fromMap(Map<String, dynamic> map, {String dataSource = 'sqlite'}) {
+  factory User.fromMap(
+    Map<String, dynamic> map, {
+    String dataSource = 'sqlite',
+  }) {
     return User(
       id: map['id'] as int?,
       username: map['username']?.toString() ?? '',
       email: map['email']?.toString(),
       password: map['password']?.toString() ?? '',
       role: map['role']?.toString() ?? '',
-      created_at: _parseDateTime(map['created_at'], dataSource),
+      createdAt: _parseDateTime(map['created_at'], dataSource),
       doctor: map['doctor']?.toString(), // 医生姓名直接使用原始值，不转换
       avatar: map['avatar']?.toString(),
       modulePermissions: map['module_permissions']?.toString(),
       imageData: _safeBlobData(map['image_data']), // 头像图片数据映射
     );
   }
-
-
 
   Map<String, dynamic> toMap({String dataSource = 'sqlite'}) {
     if (dataSource == 'mysql') {
@@ -53,7 +53,7 @@ class User {
         if (email != null) 'email': email,
         'password': password,
         'role': role,
-        'created_at': DateTimeFormatter.toDbString(created_at),
+        'created_at': DateTimeFormatter.toDbString(createdAt),
         if (doctor != null) 'doctor': doctor,
         if (avatar != null) 'avatar': avatar,
         if (modulePermissions != null) 'module_permissions': modulePermissions,
@@ -67,7 +67,7 @@ class User {
         if (email != null) 'email': email,
         'password': password,
         'role': role,
-        'created_at': DateTimeFormatter.toDbString(created_at),
+        'created_at': DateTimeFormatter.toDbString(createdAt),
         if (doctor != null) 'doctor': doctor,
         if (avatar != null) 'avatar': avatar,
         if (modulePermissions != null) 'module_permissions': modulePermissions,
@@ -82,7 +82,7 @@ class User {
     String? email,
     String? password,
     String? role,
-    DateTime? created_at,
+    DateTime? createdAt,
     String? doctor,
     String? avatar,
     String? modulePermissions,
@@ -94,7 +94,7 @@ class User {
       email: email ?? this.email,
       password: password ?? this.password,
       role: role ?? this.role,
-      created_at: created_at ?? this.created_at,
+      createdAt: createdAt ?? this.createdAt,
       doctor: doctor ?? this.doctor,
       avatar: avatar ?? this.avatar,
       modulePermissions: modulePermissions ?? this.modulePermissions,
@@ -105,62 +105,72 @@ class User {
   // 安全地处理BLOB数据
   static List<int>? _safeBlobData(dynamic value) {
     if (value == null) return null;
-    
+
     // 如果已经是List<int>类型，直接返回
     if (value is List<int>) return value;
-    
+
     // 如果是Uint8List类型，转换为List<int>
     if (value is List) {
       try {
         return List<int>.from(value);
       } catch (e) {
-        print('转换BLOB数据失败: $e');
+        AppLogger.info('转换BLOB数据失败: $e');
         return null;
       }
     }
-    
+
     return null;
   }
 
   // 权限相关的辅助方法
-  
+
   /// 获取用户允许访问的模块列表
   List<String> get allowedModules {
     if (role == 'admin') {
       // 管理员拥有所有权限
-      return ['dashboard', 'patients', 'appointments', 'financial', 'materials', 'purchase', 'users', 'settings'];
+      return [
+        'dashboard',
+        'patients',
+        'appointments',
+        'financial',
+        'materials',
+        'purchase',
+        'users',
+        'settings',
+      ];
     }
-    
+
     if (modulePermissions == null || modulePermissions!.isEmpty) {
       // 如果没有权限配置，返回默认的基础权限
       return ['dashboard'];
     }
-    
+
     try {
-      final permissions = jsonDecode(modulePermissions!) as Map<String, dynamic>;
+      final permissions =
+          jsonDecode(modulePermissions!) as Map<String, dynamic>;
       return permissions.entries
           .where((entry) => entry.value == true)
           .map((entry) => entry.key)
           .toList();
     } catch (e) {
-      print('解析权限配置失败: $e');
+      AppLogger.info('解析权限配置失败: $e');
       return ['dashboard']; // 默认只有仪表盘权限
     }
   }
-  
+
   /// 检查用户是否有特定模块的权限
   bool hasModulePermission(String module) {
     if (role == 'admin') {
       return true; // 管理员拥有所有权限
     }
-    
+
     if (module == 'dashboard') {
       return true; // 仪表盘对所有用户可见
     }
-    
+
     return allowedModules.contains(module);
   }
-  
+
   /// 获取权限映射
   Map<String, bool> get permissionMap {
     if (role == 'admin') {
@@ -176,7 +186,7 @@ class User {
         'settings': true,
       };
     }
-    
+
     if (modulePermissions == null || modulePermissions!.isEmpty) {
       // 如果没有权限配置，返回默认权限
       return {
@@ -190,9 +200,10 @@ class User {
         'settings': false,
       };
     }
-    
+
     try {
-      final permissions = jsonDecode(modulePermissions!) as Map<String, dynamic>;
+      final permissions =
+          jsonDecode(modulePermissions!) as Map<String, dynamic>;
       return {
         'dashboard': true, // 仪表盘始终可访问
         'patients': permissions['patients'] == true,
@@ -204,7 +215,7 @@ class User {
         'settings': permissions['settings'] == true,
       };
     } catch (e) {
-      print('解析权限配置失败: $e');
+      AppLogger.info('解析权限配置失败: $e');
       return {
         'dashboard': true,
         'patients': false,
@@ -245,7 +256,7 @@ class User {
     }
 
     // 如果无法解析，返回当前时间
-    print('无法解析日期时间: $dateTime，使用当前时间');
+    AppLogger.info('无法解析日期时间: $dateTime，使用当前时间');
     return DateTime.now();
   }
 }

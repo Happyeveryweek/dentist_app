@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_state.dart';
 import '../utils/message_toast_helper.dart';
 import '../features/users/widgets/login_header.dart';
 import '../features/users/widgets/login_form.dart';
@@ -42,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // 等待数据库初始化完成
     _waitForInitialization();
   }
-  
+
   /// 加载保存的登录信息
   Future<void> _loadSavedCredentials() async {
     final credentials = await LoginCredentialsService.loadSavedCredentials();
@@ -52,19 +50,18 @@ class _LoginScreenState extends State<LoginScreen> {
       _rememberPassword = credentials.rememberPassword;
     });
   }
-  
+
   // 等待数据库和用户表初始化完成
   Future<void> _waitForInitialization() async {
-    await LoginInitializationService.waitForInitialization(
-      context,
-      (initialized) {
-        if (mounted) {
-          setState(() {
-            _isInitializing = !initialized;
-          });
-        }
-      },
-    );
+    await LoginInitializationService.waitForInitialization(context, (
+      initialized,
+    ) {
+      if (mounted) {
+        setState(() {
+          _isInitializing = !initialized;
+        });
+      }
+    });
   }
 
   @override
@@ -75,10 +72,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     // 添加安全区域检查
     if (!mounted) return const SizedBox.shrink();
-    
+
     return Scaffold(
       resizeToAvoidBottomInset: true, // 允许键盘弹出时调整布局
       body: LayoutBuilder(
@@ -89,7 +86,7 @@ Widget build(BuildContext context) {
           final verticalSpacing = isSmallScreen ? 20.0 : 40.0;
           final logoSize = isSmallScreen ? 80.0 : 100.0;
           final fontSize = isSmallScreen ? 24.0 : 28.0;
-          
+
           return Stack(
             children: [
               // 背景图片层
@@ -101,7 +98,7 @@ Widget build(BuildContext context) {
                       fit: BoxFit.cover,
                       alignment: Alignment.center,
                       colorFilter: ColorFilter.mode(
-                        Colors.black.withOpacity(0.15),
+                        Colors.black.withValues(alpha: 0.15),
                         BlendMode.darken,
                       ),
                     ),
@@ -111,12 +108,16 @@ Widget build(BuildContext context) {
               // 内容层 - 使用可滚动但智能适配的布局
               SafeArea(
                 child: SingleChildScrollView(
-                  physics: screenHeight > 700 
-                      ? const NeverScrollableScrollPhysics() // 大屏幕禁止滚动
-                      : const ClampingScrollPhysics(), // 小屏幕允许必要滚动
+                  physics:
+                      screenHeight > 700
+                          ? const NeverScrollableScrollPhysics() // 大屏幕禁止滚动
+                          : const ClampingScrollPhysics(), // 小屏幕允许必要滚动
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      minHeight: screenHeight - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom,
+                      minHeight:
+                          screenHeight -
+                          MediaQuery.of(context).padding.top -
+                          MediaQuery.of(context).padding.bottom,
                     ),
                     child: Container(
                       padding: EdgeInsets.all(isSmallScreen ? 16 : 24),
@@ -124,13 +125,10 @@ Widget build(BuildContext context) {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           // Logo和标题 - 根据屏幕大小调整
-                          LoginHeader(
-                            logoSize: logoSize,
-                            fontSize: fontSize,
-                          ),
-                          
+                          LoginHeader(logoSize: logoSize, fontSize: fontSize),
+
                           SizedBox(height: verticalSpacing),
-                          
+
                           // 登录表单 - 根据屏幕大小调整
                           LoginForm(
                             formKey: _formKey,
@@ -152,13 +150,11 @@ Widget build(BuildContext context) {
                             },
                             onLogin: _handleLogin,
                           ),
-                          
+
                           SizedBox(height: verticalSpacing * 0.6),
-                          
+
                           // 底部装饰元素 - 根据屏幕大小调整
-                          LoginBottomDecorations(
-                            isSmallScreen: isSmallScreen,
-                          ),
+                          LoginBottomDecorations(isSmallScreen: isSmallScreen),
                         ],
                       ),
                     ),

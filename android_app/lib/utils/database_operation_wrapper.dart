@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../providers/database_provider.dart';
+import './app_logger.dart';
 
 /// 数据库操作包装器
 /// 在每次数据库操作前自动检查和恢复连接
@@ -39,16 +40,18 @@ class DatabaseOperationWrapper {
 
         // 操作成功，仅在重试成功时打印
         if (attempt > 1) {
-          print('✅ MySQL操作重试成功: $operationName (尝试 $attempt 次)');
+          AppLogger.info('✅ MySQL操作重试成功: $operationName (尝试 $attempt 次)');
         }
 
         return result;
       } catch (e) {
-        print('❌ MySQL操作失败: $operationName (尝试 $attempt/$maxRetries) - $e');
+        AppLogger.info(
+          '❌ MySQL操作失败: $operationName (尝试 $attempt/$maxRetries) - $e',
+        );
 
         // 检查是否是连接相关的错误
         if (isConnectionError(e) && attempt < maxRetries) {
-          print('🔄 检测到MySQL连接错误，强制重连后重试...');
+          AppLogger.info('🔄 检测到MySQL连接错误，强制重连后重试...');
           final reconnected = await _databaseProvider.forceReconnect();
           if (!reconnected) {
             throw DatabaseOperationException(

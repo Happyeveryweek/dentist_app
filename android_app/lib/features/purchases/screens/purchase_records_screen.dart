@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dentist_app/providers/purchase_provider.dart';
-import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/screens/purchase_detail_screen.dart';
 import '../widgets/purchase_statistics_dialog.dart';
 import 'package:dentist_app/widgets/toast_manager.dart';
@@ -17,6 +16,7 @@ import '../widgets/purchase_search_bar.dart';
 import '../widgets/purchase_record_card.dart';
 import '../widgets/purchase_records_empty_state.dart';
 import '../services/purchase_statistics_service.dart';
+import '../../../utils/app_logger.dart';
 
 /// 采购记录管理主页面
 class PurchaseRecordsScreen extends StatefulWidget {
@@ -34,7 +34,6 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   Map<String, dynamic> _statistics = {};
-  bool _hasInitialized = false;
   late FocusNode _focusNode;
   Timer? _searchDebounce;
 
@@ -45,7 +44,6 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
     _focusNode = FocusNode();
     _focusNode.addListener(_onFocusChange);
     _loadData(showToast: false); // 初始加载时不显示提示
-    _hasInitialized = true;
   }
 
   @override
@@ -128,7 +126,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
                       : RefreshIndicator(
                         onRefresh: () async {
                           await _loadData(showToast: false, forceRefresh: true);
-                          if (mounted) {
+                          if (context.mounted) {
                             SuccessToastManager.show(context, message: '刷新成功');
                           }
                         },
@@ -194,11 +192,11 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
         }
       }
 
-      print('🔄 开始${forceRefresh ? "强制" : ""}刷新采购记录数据...');
+      AppLogger.info('🔄 开始${forceRefresh ? "强制" : ""}刷新采购记录数据...');
 
       // 如果不是强制刷新且有缓存，使用缓存
       if (!forceRefresh && provider.hasCache) {
-        print('✅ 使用缓存的采购数据，跳过重新加载');
+        AppLogger.info('✅ 使用缓存的采购数据，跳过重新加载');
         final records = provider.cachedRecords;
         final filteredRecords =
             _searchQuery.isEmpty
@@ -217,7 +215,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
 
       // 只在强制刷新时清除缓存
       if (forceRefresh) {
-        print('🔄 强制刷新：清除缓存');
+        AppLogger.info('🔄 强制刷新：清除缓存');
         provider.clearCache();
       }
 
@@ -238,7 +236,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
         // 异步更新统计信息
         _updateStatistics();
 
-        print('✅ 采购记录数据刷新完成: ${records.length} 条记录');
+        AppLogger.info('✅ 采购记录数据刷新完成: ${records.length} 条记录');
 
         // 只有在showToast为true时才显示刷新成功提示
         if (mounted && showToast) {
@@ -246,7 +244,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
         }
       }
     } catch (e) {
-      print('❌ 刷新采购记录数据失败: $e');
+      AppLogger.info('❌ 刷新采购记录数据失败: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -319,7 +317,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ 搜索采购记录失败: $e');
+      AppLogger.info('❌ 搜索采购记录失败: $e');
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -357,7 +355,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
         });
       }
     } catch (e) {
-      print('❌ 更新统计信息失败: $e');
+      AppLogger.info('❌ 更新统计信息失败: $e');
 
       // 如果完全失败，使用基础统计计算
       final statistics = PurchaseStatisticsService.calculateBasicStatistics(
@@ -380,7 +378,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
       builder: (context) => const PurchaseRecordDialog(),
     ).then((result) {
       if (result == true) {
-        print('🔄 采购记录添加成功，正在刷新数据...');
+        AppLogger.info('🔄 采购记录添加成功，正在刷新数据...');
         // 延迟刷新，确保数据库操作完成
         Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
@@ -402,7 +400,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
         .then((result) {
           // 如果从详情页返回true，说明有数据变更，需要刷新
           if (result == true) {
-            print('🔄 从详情页返回，检测到数据变更，正在刷新...');
+            AppLogger.info('🔄 从详情页返回，检测到数据变更，正在刷新...');
             // 延迟刷新，确保数据库操作完成
             Future.delayed(const Duration(milliseconds: 300), () {
               if (mounted) {
@@ -411,25 +409,6 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
             });
           }
         });
-  }
-
-  /// 编辑采购记录
-  void _editPurchaseRecord(PurchaseRecord record) {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // 防止误触关闭
-      builder: (context) => PurchaseRecordDialog(record: record),
-    ).then((result) {
-      if (result == true) {
-        print('🔄 采购记录编辑成功，正在刷新数据...');
-        // 延迟刷新，确保数据库操作完成
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            _loadData(showToast: true); // 编辑成功后显示提示
-          }
-        });
-      }
-    });
   }
 
   /// 删除采购记录
@@ -476,7 +455,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
         }
       }
     } catch (e) {
-      print('删除采购记录时出错: $e');
+      AppLogger.info('删除采购记录时出错: $e');
       if (mounted) {
         SuccessToastManager.showError(context, message: '删除失败: $e');
       }
@@ -504,7 +483,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
             final items = await provider.getPurchaseItemsByRecordId(record.id!);
             recordItemsMap[record.id!] = items;
           } catch (e) {
-            print('加载采购记录 ${record.id} 的项目失败: $e');
+            AppLogger.info('加载采购记录 ${record.id} 的项目失败: $e');
             recordItemsMap[record.id!] = [];
           }
         }
@@ -533,7 +512,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
         Navigator.of(context).pop();
       }
 
-      print('显示采购统计图表失败: $e');
+      AppLogger.info('显示采购统计图表失败: $e');
       if (mounted) {
         SuccessToastManager.showError(context, message: '加载统计数据失败: $e');
       }

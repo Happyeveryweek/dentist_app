@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import '../utils/datetime_formatter.dart';
+import '../utils/app_logger.dart';
 
 class MaterialImage {
   final int? id;
@@ -43,7 +44,7 @@ class MaterialImage {
           // 尝试直接处理字符串中的字节数据
           final stringData = map['image_data'] as String;
           final bytes = <int>[];
-          
+
           // 处理可能包含特殊字符的二进制字符串
           // 对于JPEG等二进制数据，直接使用字符代码
           for (int i = 0; i < stringData.length; i++) {
@@ -51,18 +52,18 @@ class MaterialImage {
             // 对于二进制数据，直接添加字符代码，不过滤
             bytes.add(charCode);
           }
-          
+
           if (bytes.isNotEmpty) {
             imageData = bytes;
           } else {
             imageData = <int>[];
           }
         } catch (e) {
-          print('MaterialImage: 二进制字符串处理失败: $e');
+          AppLogger.info('MaterialImage: 二进制字符串处理失败: $e');
           imageData = <int>[];
         }
       } else {
-        print('MaterialImage: 未知的图片数据类型: ${map['image_data'].runtimeType}');
+        AppLogger.info('MaterialImage: 未知的图片数据类型: ${map['image_data'].runtimeType}');
         imageData = <int>[];
       }
     }
@@ -80,7 +81,7 @@ class MaterialImage {
           // 尝试直接处理字符串中的字节数据
           final stringData = map['thumbnail_data'] as String;
           final bytes = <int>[];
-          
+
           // 处理可能包含特殊字符的二进制字符串
           // 对于JPEG等二进制数据，直接使用字符代码
           for (int i = 0; i < stringData.length; i++) {
@@ -88,18 +89,20 @@ class MaterialImage {
             // 对于二进制数据，直接添加字符代码，不过滤
             bytes.add(charCode);
           }
-          
+
           if (bytes.isNotEmpty) {
             thumbnailData = bytes;
           } else {
             thumbnailData = <int>[];
           }
         } catch (e) {
-          print('MaterialImage: 二进制字符串处理缩略图失败: $e');
+          AppLogger.info('MaterialImage: 二进制字符串处理缩略图失败: $e');
           thumbnailData = <int>[];
         }
       } else {
-        print('MaterialImage: 未知的缩略图数据类型: ${map['thumbnail_data'].runtimeType}');
+        AppLogger.info(
+          'MaterialImage: 未知的缩略图数据类型: ${map['thumbnail_data'].runtimeType}',
+        );
         thumbnailData = <int>[];
       }
     }
@@ -137,8 +140,8 @@ class MaterialImage {
       }
     }
 
-    final looksLikeMojibake = value.contains('�') ||
-        RegExp(r'[ÃÂÄÅÆÇÐÑØÙÚÛÜÝÞßà-ÿ]').hasMatch(value);
+    final looksLikeMojibake =
+        value.contains('�') || RegExp(r'[ÃÂÄÅÆÇÐÑØÙÚÛÜÝÞßà-ÿ]').hasMatch(value);
     if (!looksLikeMojibake) {
       return value;
     }

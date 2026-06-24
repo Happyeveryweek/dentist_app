@@ -31,10 +31,11 @@ class PatientBasicInfoWidget extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _PatientBasicInfoWidgetState createState() => _PatientBasicInfoWidgetState();
+  PatientBasicInfoWidgetState createState() =>
+      PatientBasicInfoWidgetState();
 }
 
-class _PatientBasicInfoWidgetState extends State<PatientBasicInfoWidget> {
+class PatientBasicInfoWidgetState extends State<PatientBasicInfoWidget> {
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
   String _gender = '男';
@@ -210,7 +211,10 @@ class _PatientBasicInfoWidgetState extends State<PatientBasicInfoWidget> {
                 decoration: InputDecoration(
                   labelText: '首诊日期',
                   labelStyle: TextStyle(color: Colors.grey.shade600),
-                  prefixIcon: Icon(Icons.calendar_today, color: Colors.orange.shade700),
+                  prefixIcon: Icon(
+                    Icons.calendar_today,
+                    color: Colors.orange.shade700,
+                  ),
                   suffixIcon: const Icon(Icons.arrow_drop_down),
                   filled: true,
                   fillColor: Colors.grey.shade50,
@@ -230,7 +234,10 @@ class _PatientBasicInfoWidgetState extends State<PatientBasicInfoWidget> {
                 controller: TextEditingController(
                   text: DateFormat('yyyy-MM-dd').format(_firstVisitDate),
                 ),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
@@ -264,39 +271,49 @@ class _PatientBasicInfoWidgetState extends State<PatientBasicInfoWidget> {
           ),
           filled: true,
           fillColor: Colors.grey.shade50,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
         ),
         child: Row(
           children: [
             Expanded(
-              child: Row(
-                children: [
-                  Radio<String>(
-                    value: '男',
-                    groupValue: _gender,
-                    activeColor: Colors.blue,
-                    onChanged: (value) {
-                      setState(() {
-                        _gender = value!;
-                      });
-                      _notifyChange();
-                    },
-                  ),
-                  const Text('男', style: TextStyle(fontSize: 16)),
-                  const SizedBox(width: 24),
-                  Radio<String>(
-                    value: '女',
-                    groupValue: _gender,
-                    activeColor: Colors.pink,
-                    onChanged: (value) {
-                      setState(() {
-                        _gender = value!;
-                      });
-                      _notifyChange();
-                    },
-                  ),
-                  const Text('女', style: TextStyle(fontSize: 16)),
-                ],
+              child: RadioGroup<String>(
+                groupValue: _gender,
+                onChanged: (String? value) {
+                  if (value != null) {
+                    setState(() {
+                      _gender = value;
+                    });
+                    _notifyChange();
+                  }
+                },
+                child: Row(
+                  children: [
+                    Radio<String>(
+                      value: '男',
+                      fillColor: WidgetStateProperty.resolveWith<Color?>(
+                        (states) =>
+                            states.contains(WidgetState.selected)
+                                ? Colors.blue
+                                : null,
+                      ),
+                    ),
+                    const Text('男', style: TextStyle(fontSize: 16)),
+                    const SizedBox(width: 24),
+                    Radio<String>(
+                      value: '女',
+                      fillColor: WidgetStateProperty.resolveWith<Color?>(
+                        (states) =>
+                            states.contains(WidgetState.selected)
+                                ? Colors.pink
+                                : null,
+                      ),
+                    ),
+                    const Text('女', style: TextStyle(fontSize: 16)),
+                  ],
+                ),
               ),
             ),
           ],
@@ -327,7 +344,11 @@ class _PatientBasicInfoWidgetState extends State<PatientBasicInfoWidget> {
           labelText: label,
           labelStyle: TextStyle(color: Colors.grey.shade600),
           alignLabelWithHint: maxLines > 1,
-          prefixIcon: Icon(icon, color: iconColor.withOpacity(0.8), size: 22),
+          prefixIcon: Icon(
+            icon,
+            color: iconColor.withValues(alpha: 0.8),
+            size: 22,
+          ),
           filled: true,
           fillColor: Colors.grey.shade50,
           border: OutlineInputBorder(

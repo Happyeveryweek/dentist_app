@@ -35,10 +35,7 @@ class PurchaseItemsCard extends StatelessWidget {
             children: [
               const Text(
                 '采购项目明细',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               TextButton.icon(
                 onPressed: onAddItem,
@@ -48,14 +45,11 @@ class PurchaseItemsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           if (isLoading)
             const Center(child: CircularProgressIndicator())
           else if (hasError)
-            PurchaseErrorState(
-              errorMessage: errorMessage,
-              onRetry: onRetry,
-            )
+            PurchaseErrorState(errorMessage: errorMessage, onRetry: onRetry)
           else if (purchaseItems.isEmpty)
             const PurchaseEmptyState()
           else
@@ -63,24 +57,78 @@ class PurchaseItemsCard extends StatelessWidget {
               children: [
                 // 表头
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
                     children: [
-                      Expanded(flex: 3, child: Text('材料名称', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]))),
-                      Expanded(flex: 1, child: Text('数量', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]), textAlign: TextAlign.center)),
-                      Expanded(flex: 1, child: Text('单价', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]), textAlign: TextAlign.center)),
-                      Expanded(flex: 1, child: Text('单位', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]), textAlign: TextAlign.center)),
-                      Expanded(flex: 1, child: Text('总价', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[700]), textAlign: TextAlign.center)),
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          '材料名称',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          '数量',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          '单价',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          '单位',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          '总价',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 8),
                 // 项目列表
-                ...purchaseItems.map((item) => PurchaseItemRow(item: item)).toList(),
+                ...purchaseItems
+                    .map((item) => PurchaseItemRow(item: item))
+                    .toList(),
               ],
             ),
         ],

@@ -30,7 +30,7 @@ class FinancialPaymentMethodHelper {
     if (normalized.contains('cash') || normalized.contains('现金')) {
       return 'cash';
     }
-    if (normalized != null && supportedMethods.contains(normalized)) {
+    if (supportedMethods.contains(normalized)) {
       return normalized;
     }
     return defaultPaymentMethod;

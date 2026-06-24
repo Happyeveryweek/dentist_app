@@ -1,5 +1,6 @@
 import '../../../models/financial_item.dart';
 import '../../../models/financial_record.dart';
+import '../../../utils/app_logger.dart';
 
 /// 财务缓存管理助手
 /// 职责：管理财务数据的缓存、缓存刷新、缓存有效性检查
@@ -22,21 +23,16 @@ class FinancialCacheHelper {
 
   /// 检查缓存是否有效
   bool _isCacheValid() {
-    return _cachedRecords != null && 
-           _lastCacheTime != null &&
-           DateTime.now().difference(_lastCacheTime!) < _cacheValidDuration;
-  }
-
-  /// 更新缓存
-  void _updateCache(List<FinancialRecord> records, Map<int, List<FinancialItem>> itemsMap) {
-    _cachedRecords = List.from(records);
-    _cachedItemsMap = Map.from(itemsMap);
-    _lastCacheTime = DateTime.now();
-    print('财务数据缓存已更新: ${records.length} 条记录, ${itemsMap.length} 个明细项');
+    return _cachedRecords != null &&
+        _lastCacheTime != null &&
+        DateTime.now().difference(_lastCacheTime!) < _cacheValidDuration;
   }
 
   /// 更新缓存（供外部调用，用于后台加载过程中实时更新）
-  void updateCacheManually(List<FinancialRecord> records, Map<int, List<FinancialItem>> itemsMap) {
+  void updateCacheManually(
+    List<FinancialRecord> records,
+    Map<int, List<FinancialItem>> itemsMap,
+  ) {
     _cachedRecords = List.from(records);
     _cachedItemsMap = Map.from(itemsMap);
     _lastCacheTime = DateTime.now();
@@ -66,14 +62,15 @@ class FinancialCacheHelper {
     _cachedRecords = null;
     _cachedItemsMap = null;
     _lastCacheTime = null;
-    print('财务数据缓存已清除');
+    AppLogger.info('财务数据缓存已清除');
   }
 
   /// 是否有有效的统计缓存
   bool get hasValidStatsCache =>
       _cachedStats != null &&
       _lastStatsCacheTime != null &&
-      DateTime.now().difference(_lastStatsCacheTime!) < _statsCacheValidDuration;
+      DateTime.now().difference(_lastStatsCacheTime!) <
+          _statsCacheValidDuration;
 
   /// 是否有完整的 itemsMap 缓存（记录数与全量记录一致）
   bool get hasFullItemsCache =>
@@ -110,7 +107,8 @@ class FinancialCacheHelper {
   void ensureFullDataCached({
     bool forceRefresh = false,
     required Future<List<FinancialRecord>> Function() getAllRecords,
-    required Future<List<FinancialItem>> Function(int recordId) getItemsByRecordId,
+    required Future<List<FinancialItem>> Function(int recordId)
+    getItemsByRecordId,
     required Function() notifyListeners,
   }) {
     if (!forceRefresh && hasFullItemsCache) return;
@@ -125,7 +123,7 @@ class FinancialCacheHelper {
     Function() notifyListeners,
   ) async {
     try {
-      print('📦 后台全量加载开始...');
+      AppLogger.info('📦 后台全量加载开始...');
       final allRecords = await getAllRecords();
       final allItemsMap = <int, List<FinancialItem>>{};
 
@@ -135,7 +133,10 @@ class FinancialCacheHelper {
       }
 
       const batchSize = 20;
-      final missing = allRecords.where((r) => r.id != null && !allItemsMap.containsKey(r.id)).toList();
+      final missing =
+          allRecords
+              .where((r) => r.id != null && !allItemsMap.containsKey(r.id))
+              .toList();
 
       for (int i = 0; i < missing.length; i += batchSize) {
         final batch = missing.skip(i).take(batchSize).toList();
@@ -162,9 +163,9 @@ class FinancialCacheHelper {
       updateStatsCache(finalStats);
       _isBackgroundLoadingFull = false;
       notifyListeners();
-      print('✅ 后台全量加载完成，共 ${allRecords.length} 条记录，${allItemsMap.length} 个明细项');
+      AppLogger.info('✅ 后台全量加载完成，共 ${allRecords.length} 条记录，${allItemsMap.length} 个明细项');
     } catch (e) {
-      print('❌ 后台全量加载失败: $e');
+      AppLogger.info('❌ 后台全量加载失败: $e');
       _isBackgroundLoadingFull = false;
     }
   }
@@ -197,10 +198,12 @@ class FinancialCacheHelper {
     }
 
     double totalOutstanding = 0;
-    receivableByPatient.forEach((pid, receivable) {
+    for (final entry in receivableByPatient.entries) {
+      final pid = entry.key;
+      final receivable = entry.value;
       final debt = receivable - (receivedByPatient[pid] ?? 0.0);
       if (debt > 0) totalOutstanding += debt;
-    });
+    }
 
     return {
       'patientCount': patientIds.length,

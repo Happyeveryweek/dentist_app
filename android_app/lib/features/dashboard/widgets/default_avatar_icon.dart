@@ -8,14 +8,10 @@ class DefaultAvatarIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: const Icon(
-        Icons.person_rounded,
-        color: Colors.white,
-        size: 28,
-      ),
+      child: const Icon(Icons.person_rounded, color: Colors.white, size: 28),
     );
   }
 }

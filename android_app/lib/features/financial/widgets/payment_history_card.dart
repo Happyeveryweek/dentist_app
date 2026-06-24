@@ -41,7 +41,10 @@ class PaymentHistoryCard extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).primaryColor,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -58,10 +61,7 @@ class PaymentHistoryCard extends StatelessWidget {
                   children: [
                     Icon(Icons.receipt_long, size: 48, color: Colors.grey),
                     SizedBox(height: 16),
-                    Text(
-                      '暂无收费记录',
-                      style: TextStyle(color: Colors.grey),
-                    ),
+                    Text('暂无收费记录', style: TextStyle(color: Colors.grey)),
                   ],
                 ),
               ),

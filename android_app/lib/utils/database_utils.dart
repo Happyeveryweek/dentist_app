@@ -1,11 +1,11 @@
 import 'dart:io';
-import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/utils/datetime_formatter.dart';
+import './app_logger.dart';
 
 class DatabaseUtils {
   /// 初始化空数据库
@@ -29,7 +29,7 @@ class DatabaseUtils {
 
       return dbPath;
     } catch (e) {
-      print('初始化空数据库错误: $e');
+      AppLogger.info('初始化空数据库错误: $e');
       return '';
     }
   }
@@ -48,51 +48,51 @@ class DatabaseUtils {
         await dir.create(recursive: true);
       }
 
-      print('准备复制测试数据库到: $testDbPath');
+      AppLogger.info('准备复制测试数据库到: $testDbPath');
 
       // 先尝试关闭可能存在的数据库实例
       try {
-        print('尝试关闭所有打开的数据库连接');
+        AppLogger.info('尝试关闭所有打开的数据库连接');
         // 注意：sqflite不提供关闭所有数据库的方法，因此这里只能尝试关闭特定的数据库实例
         final db = await openDatabase(testDbPath, readOnly: true);
         await db.close();
         await Future.delayed(const Duration(milliseconds: 300));
-        print('已关闭指定的数据库连接');
+        AppLogger.info('已关闭指定的数据库连接');
       } catch (e) {
-        print('关闭数据库连接时发生错误: $e');
+        AppLogger.info('关闭数据库连接时发生错误: $e');
       }
 
       // 检查测试数据库是否已经存在
       final testDbFile = File(testDbPath);
       if (await testDbFile.exists()) {
-        print('测试数据库已存在: $testDbPath');
+        AppLogger.info('测试数据库已存在: $testDbPath');
 
         // 先删除现有测试数据库文件
         try {
-          print('删除现有测试数据库文件');
+          AppLogger.info('删除现有测试数据库文件');
           await testDbFile.delete();
           await Future.delayed(const Duration(milliseconds: 300));
-          print('成功删除现有测试数据库文件');
+          AppLogger.info('成功删除现有测试数据库文件');
         } catch (e) {
-          print('删除现有测试数据库文件失败: $e');
+          AppLogger.info('删除现有测试数据库文件失败: $e');
         }
       }
 
       // 使用DatabaseHelper创建测试数据库
       try {
-        print('测试数据库不存在，通过DatabaseHelper自动创建');
-        
+        AppLogger.info('测试数据库不存在，通过DatabaseHelper自动创建');
+
         // 使用DatabaseHelper创建数据库
         DatabaseHelper.setCustomDbPath(testDbPath);
         final dbHelper = DatabaseHelper();
         final db = await dbHelper.database;
         await db.close();
-        
-        print('成功通过DatabaseHelper创建测试数据库: $testDbPath');
+
+        AppLogger.info('成功通过DatabaseHelper创建测试数据库: $testDbPath');
 
         // 验证文件可访问性
         if (await testDbFile.exists()) {
-          print('测试数据库文件已成功创建和验证');
+          AppLogger.info('测试数据库文件已成功创建和验证');
 
           // 验证数据库完整性
           try {
@@ -100,33 +100,33 @@ class DatabaseUtils {
             try {
               // 测试查询
               final result = await testDb.rawQuery('SELECT 1');
-              print('测试数据库连接测试成功: $result');
+              AppLogger.info('测试数据库连接测试成功: $result');
               await testDb.close();
             } catch (e) {
-              print('测试数据库初始查询失败: $e');
+              AppLogger.info('测试数据库初始查询失败: $e');
               await testDb.close();
-              throw e;
+              rethrow;
             }
           } catch (e) {
-            print('测试数据库完整性验证失败: $e');
-            throw e;
+            AppLogger.info('测试数据库完整性验证失败: $e');
+            rethrow;
           }
         } else {
-          print('无法验证测试数据库文件存在');
+          AppLogger.info('无法验证测试数据库文件存在');
           throw Exception('测试数据库文件创建失败');
         }
 
         return testDbPath;
       } catch (e) {
-        print('从assets加载测试数据库失败: $e，将创建新的测试数据库');
+        AppLogger.info('从assets加载测试数据库失败: $e，将创建新的测试数据库');
 
         // 如果从assets加载失败，创建一个带有测试数据的测试数据库
-        print('开始创建新的测试数据库...');
+        AppLogger.info('开始创建新的测试数据库...');
         final db = await openDatabase(
           testDbPath,
           version: 1,
           onCreate: (Database db, int version) async {
-            print('创建测试数据库表结构...');
+            AppLogger.info('创建测试数据库表结构...');
             // 创建患者表 - 确保与models.py完全一致
             await db.execute('''
             CREATE TABLE patients (
@@ -177,14 +177,14 @@ class DatabaseUtils {
             )
             ''');
 
-            print('测试数据库表结构创建完成，开始插入测试数据...');
+            AppLogger.info('测试数据库表结构创建完成，开始插入测试数据...');
 
             // 插入测试数据
             final now = DateTime.now();
             final yesterday = now.subtract(const Duration(days: 1));
             final tomorrow = now.add(const Duration(days: 1));
 
-            print('插入测试患者数据...');
+            AppLogger.info('插入测试患者数据...');
             // 添加测试患者
             await db.insert('patients', {
               'medical_record_number': 10001,
@@ -243,7 +243,7 @@ class DatabaseUtils {
               'name': '赵六',
               'age': 42,
               'gender': '男',
-              'phone': '[\"13600136000\",\"13600136001\"]', // JSON格式保存多个号码
+              'phone': '["13600136000","13600136001"]', // JSON格式保存多个号码
               'address': '北京市东城区东长安街4号',
               'identification_number': '110101198001010004',
               'doctor': '钱医生',
@@ -255,7 +255,7 @@ class DatabaseUtils {
               'updated_at': DateTimeFormatter.toDbString(now),
             });
 
-            print('插入测试预约数据...');
+            AppLogger.info('插入测试预约数据...');
             // 添加测试预约
             await db.insert('appointments', {
               'patient_id': 1,
@@ -281,8 +281,9 @@ class DatabaseUtils {
 
             await db.insert('appointments', {
               'patient_id': 3,
-              'appointment_date':
-                  DateTimeFormatter.toDbString(tomorrow.add(const Duration(days: 1))),
+              'appointment_date': DateTimeFormatter.toDbString(
+                tomorrow.add(const Duration(days: 1)),
+              ),
               'status': '已预约',
               'treatment_type': '正畸调整',
               'notes': '定期调整牙套',
@@ -294,8 +295,9 @@ class DatabaseUtils {
             // 预约给有多电话号码的患者
             await db.insert('appointments', {
               'patient_id': 4,
-              'appointment_date':
-                  DateTimeFormatter.toDbString(tomorrow.add(const Duration(days: 2))),
+              'appointment_date': DateTimeFormatter.toDbString(
+                tomorrow.add(const Duration(days: 2)),
+              ),
               'status': '已预约',
               'treatment_type': '美白治疗',
               'notes': '第二次美白',
@@ -304,12 +306,13 @@ class DatabaseUtils {
               'updated_at': DateTimeFormatter.toDbString(now),
             });
 
-            print('插入测试复诊记录...');
+            AppLogger.info('插入测试复诊记录...');
             // 添加测试复诊记录
             await db.insert('follow_up_visits', {
               'patient_id': 1,
-              'follow_up_date':
-                  DateTimeFormatter.toDbString(tomorrow.add(const Duration(days: 30))),
+              'follow_up_date': DateTimeFormatter.toDbString(
+                tomorrow.add(const Duration(days: 30)),
+              ),
               'notes': '一个月后复查',
               'created_at': DateTimeFormatter.toDbString(now),
               'updated_at': DateTimeFormatter.toDbString(now),
@@ -317,8 +320,9 @@ class DatabaseUtils {
 
             await db.insert('follow_up_visits', {
               'patient_id': 2,
-              'follow_up_date':
-                  DateTimeFormatter.toDbString(tomorrow.add(const Duration(days: 14))),
+              'follow_up_date': DateTimeFormatter.toDbString(
+                tomorrow.add(const Duration(days: 14)),
+              ),
               'notes': '两周后复查根管治疗效果',
               'created_at': DateTimeFormatter.toDbString(now),
               'updated_at': DateTimeFormatter.toDbString(now),
@@ -328,11 +332,11 @@ class DatabaseUtils {
 
         await db.close();
 
-        print('测试数据库已创建: $testDbPath');
+        AppLogger.info('测试数据库已创建: $testDbPath');
         return testDbPath;
       }
     } catch (e) {
-      print('复制测试数据库错误: $e');
+      AppLogger.info('复制测试数据库错误: $e');
       return '';
     }
   }
@@ -362,9 +366,9 @@ class DatabaseUtils {
       }
 
       // 构建备份文件路径，添加时间戳
-      final timestamp = DateTimeFormatter.toDbString(DateTime.now())
-          .replaceAll(':', '-')
-          .replaceAll(' ', '_');
+      final timestamp = DateTimeFormatter.toDbString(
+        DateTime.now(),
+      ).replaceAll(':', '-').replaceAll(' ', '_');
       final filename = 'dental_clinic_backup_$timestamp.db';
       final destPath = join(destinationDir, filename);
 
@@ -534,22 +538,22 @@ class DatabaseUtils {
 
       // 如果数据库不存在，使用DatabaseHelper创建完整的数据库
       if (!await File(defaultDbPath).exists()) {
-        print('默认数据库不存在，创建新的数据库: $defaultDbPath');
-        
+        AppLogger.info('默认数据库不存在，创建新的数据库: $defaultDbPath');
+
         // 设置自定义数据库路径
         DatabaseHelper.setCustomDbPath(defaultDbPath);
-        
+
         // 通过DatabaseHelper创建数据库，这会自动创建所有表和默认用户
         final dbHelper = DatabaseHelper();
         final db = await dbHelper.database;
         await db.close();
-        
-        print('✅ 默认数据库创建完成，包含所有表和默认用户');
+
+        AppLogger.info('✅ 默认数据库创建完成，包含所有表和默认用户');
       }
 
       return defaultDbPath;
     } catch (e) {
-      print('获取默认数据库路径错误: $e');
+      AppLogger.info('获取默认数据库路径错误: $e');
       return 'dental_clinic.db'; // 返回一个相对路径作为备用
     }
   }
@@ -567,9 +571,9 @@ class DatabaseUtils {
       final List<Map<String, dynamic>> patients = await db.query('patients');
 
       // 构建备份文件路径，添加时间戳
-      final timestamp = DateTimeFormatter.toDbString(DateTime.now())
-          .replaceAll(':', '-')
-          .replaceAll(' ', '_');
+      final timestamp = DateTimeFormatter.toDbString(
+        DateTime.now(),
+      ).replaceAll(':', '-').replaceAll(' ', '_');
       final filename = 'patients_backup_$timestamp.db';
       final destPath = join(destinationDir, filename);
 
@@ -625,7 +629,7 @@ class DatabaseUtils {
     String password,
   ) async {
     try {
-      print('测试MySQL连接 $host:$port/$database');
+      AppLogger.info('测试MySQL连接 $host:$port/$database');
       final socket = await Socket.connect(
         host,
         int.parse(port),
@@ -635,7 +639,7 @@ class DatabaseUtils {
       socket.destroy();
       return true;
     } catch (e) {
-      print('MySQL连接测试失败: $e');
+      AppLogger.info('MySQL连接测试失败: $e');
       return false;
     }
   }

@@ -1,5 +1,5 @@
-import 'package:intl/intl.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/app_logger.dart';
 
 // 材料信息模型
 class DentalMaterial {
@@ -31,11 +31,14 @@ class DentalMaterial {
     this.description,
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   // 从Map构造DentalMaterial对象
-  factory DentalMaterial.fromMap(Map<String, dynamic> map, {String dataSource = 'sqlite'}) {
+  factory DentalMaterial.fromMap(
+    Map<String, dynamic> map, {
+    String dataSource = 'sqlite',
+  }) {
     DateTime created = DateTime.now();
     if (map['created_at'] != null) {
       try {
@@ -45,7 +48,7 @@ class DentalMaterial {
           created = DateTimeFormatter.fromDbString(map['created_at']);
         }
       } catch (e) {
-        print('解析created_at错误: ${map['created_at']}');
+        AppLogger.info('解析created_at错误: ${map['created_at']}');
       }
     }
 
@@ -58,7 +61,7 @@ class DentalMaterial {
           updated = DateTimeFormatter.fromDbString(map['updated_at']);
         }
       } catch (e) {
-        print('解析updated_at错误: ${map['updated_at']}');
+        AppLogger.info('解析updated_at错误: ${map['updated_at']}');
       }
     }
 

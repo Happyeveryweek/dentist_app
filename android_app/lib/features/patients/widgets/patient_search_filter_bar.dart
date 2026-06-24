@@ -161,7 +161,7 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
             children: [
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.calendar_today,
                     size: 18,
                     color: AppTheme.primaryColor,
@@ -290,15 +290,15 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.3),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.schedule_rounded,
                       size: 16,
                       color: AppTheme.primaryColor,
@@ -307,7 +307,7 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
                     Expanded(
                       child: Text(
                         '当前筛选: ${DateFormat('yyyy-MM-dd').format(widget.startDate!)} 至 ${DateFormat('yyyy-MM-dd').format(widget.endDate!)} (${widget.dateFilterType == 'first_visit_date' ? '首诊时间' : '更新时间'})',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 13,
                           color: AppTheme.primaryColor,
                           fontWeight: FontWeight.w500,
@@ -414,7 +414,7 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
             ),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.calendar_today,
                   size: 18,
                   color: AppTheme.primaryColor,

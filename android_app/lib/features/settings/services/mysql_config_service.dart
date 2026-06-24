@@ -1,14 +1,15 @@
 import 'dart:io';
 import 'package:mysql1/mysql1.dart';
+import '../../../utils/app_logger.dart';
 
 /// MySQL 配置管理服务
 /// 负责测试 MySQL 连接、保存配置、测试网络连接
 class MysqlConfigService {
   /// 测试网络连接
-  /// 
+  ///
   /// [host] - 主机地址
   /// [port] - 端口号
-  /// 
+  ///
   /// 返回 true 表示连接成功，false 表示连接失败
   static Future<bool> testNetworkConnection(String host, String port) async {
     try {
@@ -16,10 +17,10 @@ class MysqlConfigService {
       String effectiveHost = host;
       if (Platform.isAndroid && (host == 'localhost' || host == '127.0.0.1')) {
         effectiveHost = '10.0.2.2';
-        print('Android模拟器检测到，网络测试将localhost转换为10.0.2.2');
+        AppLogger.info('Android模拟器检测到，网络测试将localhost转换为10.0.2.2');
       }
 
-      print('测试与 $effectiveHost:$port 的网络连接...');
+      AppLogger.info('测试与 $effectiveHost:$port 的网络连接...');
 
       // 使用Socket尝试连接
       try {
@@ -31,27 +32,27 @@ class MysqlConfigService {
 
         // 如果能连接成功，关闭Socket
         await socket.close();
-        print('网络连接测试成功：可以连接到 $effectiveHost:$port');
+        AppLogger.info('网络连接测试成功：可以连接到 $effectiveHost:$port');
 
         return true;
       } catch (e) {
-        print('网络连接测试失败: $e');
+        AppLogger.info('网络连接测试失败: $e');
         return false;
       }
     } catch (e) {
-      print('网络测试错误: $e');
+      AppLogger.info('网络测试错误: $e');
       return false;
     }
   }
 
   /// 测试 MySQL 连接
-  /// 
+  ///
   /// [host] - 主机地址
   /// [port] - 端口号
   /// [database] - 数据库名称
   /// [username] - 用户名
   /// [password] - 密码
-  /// 
+  ///
   /// 返回 true 表示连接成功，false 表示连接失败
   static Future<bool> testMySqlConnection({
     required String host,
@@ -61,17 +62,17 @@ class MysqlConfigService {
     required String password,
   }) async {
     try {
-      print('测试MySQL连接...');
+      AppLogger.info('测试MySQL连接...');
 
       // 检查并转换localhost为10.0.2.2（如果在Android平台）
       String effectiveHost = host;
       if (Platform.isAndroid && (host == 'localhost' || host == '127.0.0.1')) {
-        print('Android连接检测到localhost参数，自动转换为10.0.2.2');
+        AppLogger.info('Android连接检测到localhost参数，自动转换为10.0.2.2');
         effectiveHost = '10.0.2.2';
       }
 
       // 先测试Socket连接
-      print('测试Socket连接到MySQL: $effectiveHost:$port');
+      AppLogger.info('测试Socket连接到MySQL: $effectiveHost:$port');
       try {
         final socket = await Socket.connect(
           effectiveHost,
@@ -79,10 +80,10 @@ class MysqlConfigService {
           timeout: const Duration(seconds: 15),
           sourceAddress: InternetAddress.anyIPv4, // 指定使用IPv4地址
         );
-        print('Socket连接成功，销毁临时Socket');
+        AppLogger.info('Socket连接成功，销毁临时Socket');
         socket.destroy();
       } catch (socketError) {
-        print('Socket连接测试失败: $socketError');
+        AppLogger.info('Socket连接测试失败: $socketError');
         throw Exception('无法连接到MySQL服务器: $socketError');
       }
 
@@ -97,7 +98,9 @@ class MysqlConfigService {
       );
 
       // 尝试连接
-      print('尝试连接到MySQL: $effectiveHost:$port/$database (用户名: $username)');
+      AppLogger.info(
+        '尝试连接到MySQL: $effectiveHost:$port/$database (用户名: $username)',
+      );
 
       MySqlConnection? connection;
 
@@ -107,12 +110,12 @@ class MysqlConfigService {
 
       while (retryCount <= maxRetries) {
         try {
-          print('连接尝试 ${retryCount + 1}/$maxRetries');
+          AppLogger.info('连接尝试 ${retryCount + 1}/$maxRetries');
           connection = await MySqlConnection.connect(settings);
           break; // 连接成功，跳出循环
         } catch (e) {
           retryCount++;
-          print('MySQL连接错误(尝试 $retryCount): $e');
+          AppLogger.info('MySQL连接错误(尝试 $retryCount): $e');
 
           if (retryCount > maxRetries) {
             // 所有重试都失败
@@ -140,7 +143,7 @@ class MysqlConfigService {
       try {
         final results = await connection.query('SELECT 1');
         if (results.isNotEmpty) {
-          print('MySQL连接测试成功');
+          AppLogger.info('MySQL连接测试成功');
           // 关闭连接
           await connection.close();
           return true;
@@ -148,23 +151,21 @@ class MysqlConfigService {
           throw Exception('MySQL连接测试失败: 查询返回空结果');
         }
       } catch (e) {
-        print('MySQL查询测试错误: $e');
+        AppLogger.info('MySQL查询测试错误: $e');
         // 关闭连接
-        if (connection != null) {
-          await connection.close();
-        }
+        await connection.close();
         throw Exception('MySQL连接成功但查询测试失败: $e');
       }
     } catch (e) {
-      print('MySQL连接测试错误: $e');
+      AppLogger.info('MySQL连接测试错误: $e');
       return false;
     }
   }
 
   /// 获取有效的 MySQL 主机地址
-  /// 
+  ///
   /// [host] - 原始主机地址
-  /// 
+  ///
   /// 返回转换后的主机地址（Android模拟器 localhost 转换为 10.0.2.2）
   static String getEffectiveHost(String host) {
     if (Platform.isAndroid && (host == 'localhost' || host == '127.0.0.1')) {
@@ -174,10 +175,10 @@ class MysqlConfigService {
   }
 
   /// 检查是否使用了转换后的主机地址
-  /// 
+  ///
   /// [originalHost] - 原始主机地址
   /// [effectiveHost] - 转换后的主机地址
-  /// 
+  ///
   /// 返回 true 表示使用了转换，false 表示未使用
   static bool isHostConverted(String originalHost, String effectiveHost) {
     return effectiveHost != originalHost;

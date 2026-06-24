@@ -19,10 +19,12 @@ class ProgressiveStatisticsDialog extends StatefulWidget {
   });
 
   @override
-  State<ProgressiveStatisticsDialog> createState() => ProgressiveStatisticsDialogState();
+  State<ProgressiveStatisticsDialog> createState() =>
+      ProgressiveStatisticsDialogState();
 }
 
-class ProgressiveStatisticsDialogState extends State<ProgressiveStatisticsDialog> {
+class ProgressiveStatisticsDialogState
+    extends State<ProgressiveStatisticsDialog> {
   late List<FinancialRecord> _records;
   late Map<int, List<FinancialItem>> _itemsMap;
 
@@ -97,10 +99,16 @@ class ProgressiveStatisticsDialogState extends State<ProgressiveStatisticsDialog
                   SizedBox(
                     width: 12,
                     height: 12,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
                   ),
                   SizedBox(width: 6),
-                  Text('加载中...', style: TextStyle(color: Colors.white, fontSize: 11)),
+                  Text(
+                    '加载中...',
+                    style: TextStyle(color: Colors.white, fontSize: 11),
+                  ),
                 ],
               ),
             ),

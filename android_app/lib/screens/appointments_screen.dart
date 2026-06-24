@@ -15,6 +15,7 @@ import 'package:dentist_app/features/appointments/widgets/appointments_screen_bo
 import 'dart:convert';
 import 'package:dentist_app/widgets/toast_manager.dart';
 import 'package:dentist_app/widgets/confirm_dialogs.dart';
+import '../utils/app_logger.dart';
 import 'package:dentist_app/widgets/modern_date_picker.dart'; // 添加新的公共日期时间选择器
 import 'package:dentist_app/utils/pinyin_util.dart'; // 添加拼音工具类
 import 'package:dentist_app/utils/permission_utils.dart'; // 添加权限工具类导入
@@ -41,7 +42,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   late String _filterStatus;
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
-  bool _showCalendar = false;
+  final bool _showCalendar = false;
   bool _isInitialLoad = true;
 
   // 新增：用于日期范围筛选
@@ -117,7 +118,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     bool isRefresh = false,
     bool forceReload = false,
   }) async {
-    print(
+    AppLogger.info(
       '_loadAppointments 被调用，isRefresh: $isRefresh, forceReload: $forceReload',
     ); // 调试输出
 
@@ -187,11 +188,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
       // 快速关联患者信息
       final List<Appointment> appointmentsWithPatients =
           appointments.map((appointment) {
-            if (appointment.patientId != null) {
-              final patient = patientMap[appointment.patientId];
-              if (patient != null) {
-                return appointment.copyWith(patientName: patient.name);
-              }
+            final patient = patientMap[appointment.patientId];
+            if (patient != null) {
+              return appointment.copyWith(patientName: patient.name);
             }
             return appointment;
           }).toList();
@@ -217,12 +216,12 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
           _isLoading = false;
         });
         if (isRefresh && mounted) {
-          print('显示刷新成功提示'); // 调试输出
+          AppLogger.info('显示刷新成功提示'); // 调试输出
           SuccessToastManager.show(context, message: '刷新成功');
         }
       }
     } catch (e) {
-      print('加载预约数据错误: $e');
+      AppLogger.info('加载预约数据错误: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -319,7 +318,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         pinyinMatch = pinyin.contains(query);
         initialsMatch = initials.contains(query);
       } catch (e) {
-        print('拼音搜索错误: $e');
+        AppLogger.info('拼音搜索错误: $e');
       }
     }
 
@@ -383,7 +382,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
 
         return '常规复诊';
       } catch (e) {
-        print('解析治疗类型JSON失败: $e');
+        AppLogger.info('解析治疗类型JSON失败: $e');
         return treatmentType;
       }
     }
@@ -548,7 +547,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
       if (!mounted) return;
       SuccessToastManager.show(context, message: '预约已删除');
     } catch (e) {
-      print('删除预约错误: $e');
+      AppLogger.info('删除预约错误: $e');
 
       if (!mounted) return;
       SuccessToastManager.showError(context, message: '删除预约失败: $e');
@@ -743,13 +742,13 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                               tempFilterStatus = '全部';
                             });
                           },
-                          child: const Text('重置'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: AppTheme.primaryText,
                             side: const BorderSide(
                               color: AppTheme.dividerColor,
                             ),
                           ),
+                          child: const Text('重置'),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -763,11 +762,11 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                             });
                             Navigator.pop(context);
                           },
-                          child: const Text('应用筛选'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
                             foregroundColor: Colors.white,
                           ),
+                          child: const Text('应用筛选'),
                         ),
                       ),
                     ],
@@ -784,8 +783,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   /// 获取预约关联患者的医生字段，用于权限检查
   Future<String?> _getAppointmentPatientDoctor(Appointment appointment) async {
     try {
-      if (appointment.patientId == null) return null;
-
       final patientProvider = Provider.of<PatientProvider>(
         context,
         listen: false,
@@ -796,7 +793,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
 
       return patient?.doctor;
     } catch (e) {
-      print('获取预约患者医生信息失败: $e');
+      AppLogger.info('获取预约患者医生信息失败: $e');
       return null;
     }
   }

@@ -124,9 +124,7 @@ class DatabaseSourceSection extends StatelessWidget {
                               ElevatedButton.icon(
                                 onPressed: onToggleMysqlEdit,
                                 icon: Icon(
-                                  isEditingMysql
-                                      ? Icons.lock_open
-                                      : Icons.edit,
+                                  isEditingMysql ? Icons.lock_open : Icons.edit,
                                   size: 16,
                                 ),
                                 label: Text(isEditingMysql ? '完成编辑' : '编辑配置'),
@@ -198,15 +196,15 @@ class DatabaseSourceSection extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
+                                const Row(
                                   children: [
                                     Icon(
                                       Icons.folder_open,
                                       color: AppTheme.primaryColor,
                                       size: 18,
                                     ),
-                                    const SizedBox(width: 8),
-                                    const Text(
+                                    SizedBox(width: 8),
+                                    Text(
                                       '当前数据库路径:',
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
@@ -334,7 +332,12 @@ class DatabaseSourceSection extends StatelessWidget {
                                   Colors.purple,
                                 ),
                                 const Divider(),
-                                _buildConfigItem('密码', '••••••••', Icons.lock, Colors.red),
+                                _buildConfigItem(
+                                  '密码',
+                                  '••••••••',
+                                  Icons.lock,
+                                  Colors.red,
+                                ),
                               ],
                             ),
                           ),
@@ -383,7 +386,7 @@ class DatabaseSourceSection extends StatelessWidget {
         decoration: BoxDecoration(
           color:
               isSelected
-                  ? AppTheme.primaryColor.withOpacity(0.1)
+                  ? AppTheme.primaryColor.withValues(alpha: 0.1)
                   : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(

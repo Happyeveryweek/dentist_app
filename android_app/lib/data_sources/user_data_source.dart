@@ -13,7 +13,7 @@ abstract class UserDataSource {
   Future<bool> isUsernameExists(String username, {int? excludeId});
   Future<bool> isEmailExists(String email, {int? excludeId});
   Future<Map<String, dynamic>> getUserStatistics();
-  
+
   // 权限相关方法
   Future<Map<String, bool>?> getUserPermissions(int userId);
   Future<bool> updateUserPermissions(int userId, Map<String, bool> permissions);
@@ -54,7 +54,7 @@ class SqliteUserDataSource implements UserDataSource {
     final digest = sha256.convert(bytes);
     final hashedPassword = digest.toString();
     
-    print('创建用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
+    AppLogger.info('创建用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
 
     // 创建用户数据，使用加密后的密码
     final userData = user.toMap();
@@ -81,7 +81,7 @@ class SqliteUserDataSource implements UserDataSource {
     final digest = sha256.convert(bytes);
     final hashedPassword = digest.toString();
     
-    print('更新用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
+    AppLogger.info('更新用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
 
     // 创建更新数据，使用加密后的密码
     final updateData = user.toMap();
@@ -136,7 +136,7 @@ class SqliteUserDataSource implements UserDataSource {
 
   @override
   Future<User?> authenticateUser(String username, String password) async {
-    print('用户认证 - 用户名: $username, 原始密码: $password');
+    AppLogger.info('用户认证 - 用户名: $username, 原始密码: $password');
 
     final bytes = utf8.encode(password);
     
@@ -144,8 +144,8 @@ class SqliteUserDataSource implements UserDataSource {
     final md5Hash = md5.convert(bytes).toString();
     final sha256Hash = sha256.convert(bytes).toString();
     
-    print('尝试MD5加密密码: $md5Hash');
-    print('尝试SHA-256加密密码: $sha256Hash');
+    AppLogger.info('尝试MD5加密密码: $md5Hash');
+    AppLogger.info('尝试SHA-256加密密码: $sha256Hash');
     
     // 首先尝试SHA-256加密后的密码（Windows端使用的格式）
     var result = await _database.rawQuery(
@@ -155,7 +155,7 @@ class SqliteUserDataSource implements UserDataSource {
     
     // 如果SHA-256密码失败，尝试MD5加密后的密码
     if (result.isEmpty) {
-      print('SHA-256密码认证失败，尝试MD5密码');
+      AppLogger.info('SHA-256密码认证失败，尝试MD5密码');
       result = await _database.rawQuery(
         'SELECT * FROM users WHERE username = ? AND password = ?',
         [username, md5Hash]
@@ -164,47 +164,47 @@ class SqliteUserDataSource implements UserDataSource {
     
     // 如果MD5密码也失败，尝试明文密码（兼容旧数据）
     if (result.isEmpty) {
-      print('MD5密码认证失败，尝试明文密码');
+      AppLogger.info('MD5密码认证失败，尝试明文密码');
       result = await _database.rawQuery(
         'SELECT * FROM users WHERE username = ? AND password = ?',
         [username, password]
       );
     }
     
-    print('SQLite查询结果: ${result.length} 行');
+    AppLogger.info('SQLite查询结果: ${result.length} 行');
     if (result.isNotEmpty) {
       final user = User.fromMap(result.first);
-      print('SQLite认证成功，用户: ${user.username}');
+      AppLogger.info('SQLite认证成功，用户: ${user.username}');
       
       final currentPassword = result.first['password'] as String;
       
       // 如果使用明文密码登录成功，自动更新为SHA-256密码
       if (currentPassword == password) {
-        print('检测到明文密码，自动更新为SHA-256密码');
+        AppLogger.info('检测到明文密码，自动更新为SHA-256密码');
         await _database.update(
           'users',
           {'password': sha256Hash},
           where: 'id = ?',
           whereArgs: [user.id]
         );
-        print('密码已更新为SHA-256格式');
+        AppLogger.info('密码已更新为SHA-256格式');
       }
       // 如果使用MD5密码登录成功，自动更新为SHA-256密码
       else if (currentPassword == md5Hash) {
-        print('检测到MD5密码，自动更新为SHA-256密码');
+        AppLogger.info('检测到MD5密码，自动更新为SHA-256密码');
         await _database.update(
           'users',
           {'password': sha256Hash},
           where: 'id = ?',
           whereArgs: [user.id]
         );
-        print('密码已更新为SHA-256格式');
+        AppLogger.info('密码已更新为SHA-256格式');
       }
       
       return user;
     }
     
-    print('用户认证失败: 用户名或密码错误');
+    AppLogger.info('用户认证失败: 用户名或密码错误');
     return null;
   }
 
@@ -276,7 +276,7 @@ class SqliteUserDataSource implements UserDataSource {
       final permissions = jsonDecode(permissionsJson) as Map<String, dynamic>;
       return permissions.map((key, value) => MapEntry(key, value == true));
     } catch (e) {
-      print('获取用户权限失败: $e');
+      AppLogger.info('获取用户权限失败: $e');
       return null;
     }
   }
@@ -293,7 +293,7 @@ class SqliteUserDataSource implements UserDataSource {
       );
       return count > 0;
     } catch (e) {
-      print('更新用户权限失败: $e');
+      AppLogger.info('更新用户权限失败: $e');
       return false;
     }
   }
@@ -328,7 +328,7 @@ class MySqlUserDataSource implements UserDataSource {
             final bytes = value.toBytes();
             map[field] = bytes.isNotEmpty ? bytes : null;
           } catch (e) {
-            print('图片Blob转换失败: $e');
+            AppLogger.info('图片Blob转换失败: $e');
             map[field] = null;
           }
         } else if (field == 'username' || field == 'email' || field == 'role' || field == 'doctor' || field == 'avatar') {
@@ -342,7 +342,7 @@ class MySqlUserDataSource implements UserDataSource {
               map[field] = '';
             }
           } catch (e) {
-            print('Blob转换失败: $e');
+            AppLogger.info('Blob转换失败: $e');
             map[field] = '';
           }
         } else {
@@ -363,7 +363,7 @@ class MySqlUserDataSource implements UserDataSource {
               map[field] = '';
             }
           } catch (e) {
-            print('Uint8List转换失败: $e');
+            AppLogger.info('Uint8List转换失败: $e');
             map[field] = '';
           }
         } else {
@@ -412,7 +412,7 @@ class MySqlUserDataSource implements UserDataSource {
     final digest = sha256.convert(bytes);
     final hashedPassword = digest.toString();
     
-    print('创建用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
+    AppLogger.info('创建用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
 
     // 处理权限字段
     String? permissionsJson;
@@ -455,7 +455,7 @@ class MySqlUserDataSource implements UserDataSource {
     final digest = sha256.convert(bytes);
     final hashedPassword = digest.toString();
     
-    print('更新用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
+    AppLogger.info('更新用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
 
     // 处理权限字段
     String? permissionsJson;
@@ -528,7 +528,7 @@ class MySqlUserDataSource implements UserDataSource {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
     
-    print('用户认证 - 用户名: $username, 原始密码: $password');
+    AppLogger.info('用户认证 - 用户名: $username, 原始密码: $password');
 
     final bytes = utf8.encode(password);
     
@@ -536,8 +536,8 @@ class MySqlUserDataSource implements UserDataSource {
     final md5Hash = md5.convert(bytes).toString();
     final sha256Hash = sha256.convert(bytes).toString();
     
-    print('尝试MD5加密密码: $md5Hash');
-    print('尝试SHA-256加密密码: $sha256Hash');
+    AppLogger.info('尝试MD5加密密码: $md5Hash');
+    AppLogger.info('尝试SHA-256加密密码: $sha256Hash');
     
     // 首先尝试SHA-256加密后的密码（Windows端使用的格式）
     var results = await connection.query(
@@ -547,7 +547,7 @@ class MySqlUserDataSource implements UserDataSource {
     
     // 如果SHA-256密码失败，尝试MD5加密后的密码
     if (results.isEmpty) {
-      print('SHA-256密码认证失败，尝试MD5密码');
+      AppLogger.info('SHA-256密码认证失败，尝试MD5密码');
       results = await connection.query(
         'SELECT * FROM users WHERE username = ? AND password = ?',
         [username, md5Hash]
@@ -556,18 +556,18 @@ class MySqlUserDataSource implements UserDataSource {
     
     // 如果MD5密码也失败，尝试明文密码
     if (results.isEmpty) {
-      print('MD5密码认证失败，尝试明文密码');
+      AppLogger.info('MD5密码认证失败，尝试明文密码');
       results = await connection.query(
         'SELECT * FROM users WHERE username = ? AND password = ?',
         [username, password]
       );
     }
     
-    print('MySQL查询结果: ${results.length} 行');
+    AppLogger.info('MySQL查询结果: ${results.length} 行');
     if (results.isNotEmpty) {
       final row = results.first;
       final user = User.fromMap(_convertMySqlRow(row));
-      print('MySQL认证成功，用户: ${user.username}');
+      AppLogger.info('MySQL认证成功，用户: ${user.username}');
       
       // 获取当前密码值
       String currentPassword;
@@ -585,27 +585,27 @@ class MySqlUserDataSource implements UserDataSource {
       
       // 如果使用明文密码登录成功，自动更新为SHA-256密码
       if (currentPassword == password) {
-        print('检测到明文密码，自动更新为SHA-256密码');
+        AppLogger.info('检测到明文密码，自动更新为SHA-256密码');
         await connection.query(
           'UPDATE users SET password = ? WHERE id = ?',
           [sha256Hash, user.id]
         );
-        print('密码已更新为SHA-256格式');
+        AppLogger.info('密码已更新为SHA-256格式');
       }
       // 如果使用MD5密码登录成功，自动更新为SHA-256密码
       else if (currentPassword == md5Hash) {
-        print('检测到MD5密码，自动更新为SHA-256密码');
+        AppLogger.info('检测到MD5密码，自动更新为SHA-256密码');
         await connection.query(
           'UPDATE users SET password = ? WHERE id = ?',
           [sha256Hash, user.id]
         );
-        print('密码已更新为SHA-256格式');
+        AppLogger.info('密码已更新为SHA-256格式');
       }
       
       return user;
     }
     
-    print('用户认证失败: 用户名或密码错误');
+    AppLogger.info('用户认证失败: 用户名或密码错误');
     return null;
   }
 
@@ -707,7 +707,7 @@ class MySqlUserDataSource implements UserDataSource {
       final permissions = jsonDecode(permissionsJson) as Map<String, dynamic>;
       return permissions.map((key, value) => MapEntry(key, value == true));
     } catch (e) {
-      print('获取用户权限失败: $e');
+      AppLogger.info('获取用户权限失败: $e');
       return null;
     }
   }
@@ -725,7 +725,7 @@ class MySqlUserDataSource implements UserDataSource {
       );
       return result.affectedRows! > 0;
     } catch (e) {
-      print('更新用户权限失败: $e');
+      AppLogger.info('更新用户权限失败: $e');
       return false;
     }
   }

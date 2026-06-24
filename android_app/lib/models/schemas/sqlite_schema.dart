@@ -40,13 +40,13 @@ class SQLitePatientsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     final parts = <String>[columns];
-    
+
     if (indexDefinitions.isNotEmpty) {
       parts.add(indexDefinitions.join(',\n  '));
     }
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
 ${parts.join(',\n')}
@@ -124,7 +124,7 @@ class SQLiteFinancialRecordsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -210,7 +210,7 @@ class SQLiteMaterialsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -248,7 +248,7 @@ class SQLiteMaterialImagesTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -280,7 +280,7 @@ class SQLitePatientMaterialsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -316,7 +316,7 @@ class SQLitePurchaseRecordsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -368,7 +368,6 @@ ${parts.join(',\n')}
 )''';
   }
 }
-
 
 class SQLitePatientMedicalRecordsTableSchema implements TableSchema {
   @override
@@ -496,4 +495,3 @@ CREATE TABLE IF NOT EXISTS $tableName (
 )''';
   }
 }
-

@@ -61,6 +61,8 @@ dependencies:
   pdf: ^3.11.1              # PDF生成库
   file_picker: ^9.2.1       # 文件选择器
   image: ^4.1.7             # 图片处理库
+  path: ^1.9.1
+  cross_file: ^0.3.4+2
 
 dev_dependencies:
   flutter_test:
@@ -139,3 +141,4 @@ flutter_launcher_icons:
 #     image: "assets/icons/app_icon.png"
 #     icon_background_color: "#FFFFFF"
 #   fullscreen: true
+

@@ -6,15 +6,12 @@ import 'package:intl/intl.dart';
 class MonthlyTrendChart extends StatelessWidget {
   final Map<String, Map<String, double>> monthlyData;
 
-  const MonthlyTrendChart({
-    super.key,
-    required this.monthlyData,
-  });
+  const MonthlyTrendChart({super.key, required this.monthlyData});
 
   @override
   Widget build(BuildContext context) {
     final sortedMonths = monthlyData.keys.toList()..sort();
-    
+
     if (sortedMonths.isEmpty) {
       return Container(
         decoration: BoxDecoration(
@@ -70,7 +67,7 @@ class MonthlyTrendChart extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // 使用紧凑的列表布局
           Expanded(
             child: ListView.builder(
@@ -82,12 +79,15 @@ class MonthlyTrendChart extends StatelessWidget {
                 final data = monthlyData[month]!;
                 final collected = data['collected']!;
                 final records = data['records']!.toInt();
-                
+
                 final collectedRate = maxValue > 0 ? collected / maxValue : 0.0;
-                
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 6),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.blue.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(8),
@@ -117,9 +117,9 @@ class MonthlyTrendChart extends StatelessWidget {
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(width: 12),
-                      
+
                       // 中间：进度条和金额
                       Expanded(
                         child: Column(
@@ -150,18 +150,23 @@ class MonthlyTrendChart extends StatelessWidget {
                             LinearProgressIndicator(
                               value: collectedRate,
                               backgroundColor: Colors.grey[200],
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[600]!),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.blue[600]!,
+                              ),
                               minHeight: 3,
                             ),
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(width: 8),
-                      
+
                       // 右侧：记录数
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.blue.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(4),

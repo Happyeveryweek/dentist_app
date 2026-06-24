@@ -1,13 +1,11 @@
 import 'table_schema.dart';
-import 'mysql_schema.dart';
-import 'sqlite_schema.dart';
 
 /// 数据库表结构验证器
 class SchemaValidator {
   /// 验证MySQL和SQLite表结构的一致性
   static Map<String, List<String>> validateSchemas() {
     final Map<String, List<String>> validationResults = {};
-    
+
     // 获取所有表名
     final tableNames = [
       'patients',
@@ -23,9 +21,15 @@ class SchemaValidator {
     ];
 
     for (final tableName in tableNames) {
-      final mysqlSchema = TableSchemaFactory.getSchema(tableName, DatabaseType.mysql);
-      final sqliteSchema = TableSchemaFactory.getSchema(tableName, DatabaseType.sqlite);
-      
+      final mysqlSchema = TableSchemaFactory.getSchema(
+        tableName,
+        DatabaseType.mysql,
+      );
+      final sqliteSchema = TableSchemaFactory.getSchema(
+        tableName,
+        DatabaseType.sqlite,
+      );
+
       final issues = _compareSchemas(mysqlSchema, sqliteSchema);
       if (issues.isNotEmpty) {
         validationResults[tableName] = issues;
@@ -36,17 +40,25 @@ class SchemaValidator {
   }
 
   /// 比较两个表结构的差异
-  static List<String> _compareSchemas(TableSchema mysqlSchema, TableSchema sqliteSchema) {
+  static List<String> _compareSchemas(
+    TableSchema mysqlSchema,
+    TableSchema sqliteSchema,
+  ) {
     final List<String> issues = [];
-    
+
     // 验证表名一致性
     if (mysqlSchema.tableName != sqliteSchema.tableName) {
-      issues.add('表名不一致: MySQL=${mysqlSchema.tableName}, SQLite=${sqliteSchema.tableName}');
+      issues.add(
+        '表名不一致: MySQL=${mysqlSchema.tableName}, SQLite=${sqliteSchema.tableName}',
+      );
     }
 
     // 验证索引数量一致性
-    if (mysqlSchema.indexDefinitions.length != sqliteSchema.indexDefinitions.length) {
-      issues.add('索引数量不一致: MySQL=${mysqlSchema.indexDefinitions.length}, SQLite=${sqliteSchema.indexDefinitions.length}');
+    if (mysqlSchema.indexDefinitions.length !=
+        sqliteSchema.indexDefinitions.length) {
+      issues.add(
+        '索引数量不一致: MySQL=${mysqlSchema.indexDefinitions.length}, SQLite=${sqliteSchema.indexDefinitions.length}',
+      );
     }
 
     return issues;
@@ -56,26 +68,28 @@ class SchemaValidator {
   static String generateSchemaReport() {
     final validationResults = validateSchemas();
     final StringBuffer report = StringBuffer();
-    
+
     report.writeln('=== 数据库表结构验证报告 ===');
     report.writeln('生成时间: ${DateTime.now()}');
     report.writeln('');
-    
+
     if (validationResults.isEmpty) {
       report.writeln('✅ 所有表结构验证通过！');
     } else {
       report.writeln('❌ 发现以下表结构问题:');
       report.writeln('');
-      
-      validationResults.forEach((tableName, issues) {
+
+      for (final entry in validationResults.entries) {
+        final tableName = entry.key;
+        final issues = entry.value;
         report.writeln('📋 表: $tableName');
         for (final issue in issues) {
           report.writeln('   ⚠️  $issue');
         }
         report.writeln('');
-      });
+      }
     }
-    
+
     return report.toString();
   }
 
@@ -92,7 +106,10 @@ class SchemaValidator {
   }
 
   /// 获取表的所有索引SQL
-  static List<String> getTableIndexes(String tableName, DatabaseType databaseType) {
+  static List<String> getTableIndexes(
+    String tableName,
+    DatabaseType databaseType,
+  ) {
     final schema = TableSchemaFactory.getSchema(tableName, databaseType);
     return schema.indexDefinitions;
   }

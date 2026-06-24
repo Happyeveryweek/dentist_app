@@ -47,7 +47,7 @@ class PasswordField extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.shade100.withOpacity(0.2),
+                    color: Colors.blue.shade100.withValues(alpha: 0.2),
                     blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
@@ -108,7 +108,7 @@ class PasswordField extends StatelessWidget {
                     ),
                   ),
                   filled: true,
-                  fillColor: Colors.blue.shade50.withOpacity(0.4),
+                  fillColor: Colors.blue.shade50.withValues(alpha: 0.4),
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: isSmall ? 12 : 16,
                     vertical: isSmall ? 12 : 14,

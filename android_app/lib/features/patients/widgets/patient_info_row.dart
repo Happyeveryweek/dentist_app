@@ -42,41 +42,42 @@ class PatientInfoRow extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: isPhone
-              ? InkWell(
-                  onTap: onPhoneCall,
-                  borderRadius: BorderRadius.circular(4),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text(
-                      value,
-                      style: const TextStyle(
-                        color: AppTheme.primaryColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        decoration: TextDecoration.underline,
+          child:
+              isPhone
+                  ? InkWell(
+                    onTap: onPhoneCall,
+                    borderRadius: BorderRadius.circular(4),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Text(
+                        value,
+                        style: const TextStyle(
+                          color: AppTheme.primaryColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          decoration: TextDecoration.underline,
+                        ),
                       ),
                     ),
+                  )
+                  : Text(
+                    value,
+                    style: TextStyle(
+                      color:
+                          onTap != null
+                              ? AppTheme.primaryColor
+                              : (valueColor ?? AppTheme.textColor),
+                      fontSize: 14,
+                      fontWeight:
+                          onTap != null || valueColor != null
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                      decoration:
+                          onTap != null
+                              ? TextDecoration.underline
+                              : TextDecoration.none,
+                    ),
                   ),
-                )
-              : Text(
-                  value,
-                  style: TextStyle(
-                    color:
-                        onTap != null
-                            ? AppTheme.primaryColor
-                            : (valueColor ?? AppTheme.textColor),
-                    fontSize: 14,
-                    fontWeight:
-                        onTap != null || valueColor != null
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                    decoration:
-                        onTap != null
-                            ? TextDecoration.underline
-                            : TextDecoration.none,
-                  ),
-                ),
         ),
         if (onTap != null) ...[
           const SizedBox(width: 8),

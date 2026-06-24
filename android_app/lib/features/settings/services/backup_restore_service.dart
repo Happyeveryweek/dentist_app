@@ -1,21 +1,18 @@
 import 'dart:io';
-import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:file_selector/file_selector.dart';
-import 'package:cross_file/cross_file.dart';
 import 'package:dentist_app/utils/database_utils.dart';
-import 'package:dentist_app/models/database_config.dart';
+import '../../../utils/app_logger.dart';
 
 /// 备份恢复服务
 /// 负责数据库备份、恢复、导入导出
 class BackupRestoreService {
-
   /// 备份数据库
-  /// 
+  ///
   /// [backupPath] - 备份文件路径
   /// [currentDbPath] - 当前数据库路径
   /// [dbType] - 数据库类型
-  /// 
+  ///
   /// 返回 true 表示备份成功，false 表示备份失败
   static Future<bool> backupDatabase(
     String backupPath,
@@ -23,30 +20,30 @@ class BackupRestoreService {
     String dbType,
   ) async {
     try {
-      print('开始备份SQLite数据库到: $backupPath');
+      AppLogger.info('开始备份SQLite数据库到: $backupPath');
 
       // 确认当前是SQLite数据库类型
       if (dbType != 'sqlite') {
-        print('错误：只能备份SQLite数据库');
+        AppLogger.info('错误：只能备份SQLite数据库');
         return false;
       }
 
       // 获取SQLite数据库文件路径
       final dbPath = currentDbPath.isNotEmpty ? currentDbPath : '';
       if (dbPath.isEmpty) {
-        print('错误：无法获取SQLite数据库路径');
+        AppLogger.info('错误：无法获取SQLite数据库路径');
         return false;
       }
 
       // 复制数据库文件
       final sourceFile = File(dbPath);
       if (!await sourceFile.exists()) {
-        print('错误：源数据库文件不存在');
+        AppLogger.info('错误：源数据库文件不存在');
         return false;
       }
 
       await sourceFile.copy(backupPath);
-      print('数据库文件已备份到: $backupPath');
+      AppLogger.info('数据库文件已备份到: $backupPath');
 
       // 创建目标目录（如果不存在）
       final dir = File(backupPath).parent;
@@ -56,17 +53,17 @@ class BackupRestoreService {
 
       return true;
     } catch (e) {
-      print('备份数据库错误: $e');
+      AppLogger.info('备份数据库错误: $e');
       return false;
     }
   }
 
   /// 从备份恢复数据库
-  /// 
+  ///
   /// [backupPath] - 备份文件路径
   /// [currentDbPath] - 当前数据库路径
   /// [dbType] - 数据库类型
-  /// 
+  ///
   /// 返回 true 表示恢复成功，false 表示恢复失败
   static Future<bool> restoreDatabaseFromBackup(
     String backupPath,
@@ -74,43 +71,43 @@ class BackupRestoreService {
     String dbType,
   ) async {
     try {
-      print('开始从备份恢复SQLite数据库: $backupPath');
+      AppLogger.info('开始从备份恢复SQLite数据库: $backupPath');
 
       // 确认当前是SQLite数据库类型
       if (dbType != 'sqlite') {
-        print('错误：只能恢复到SQLite数据库');
+        AppLogger.info('错误：只能恢复到SQLite数据库');
         return false;
       }
 
       // 检查备份文件是否存在
       final backupFile = File(backupPath);
       if (!await backupFile.exists()) {
-        print('错误：备份文件不存在');
+        AppLogger.info('错误：备份文件不存在');
         return false;
       }
 
       // 获取SQLite数据库文件路径
       final dbPath = currentDbPath.isNotEmpty ? currentDbPath : '';
       if (dbPath.isEmpty) {
-        print('错误：无法获取SQLite数据库路径');
+        AppLogger.info('错误：无法获取SQLite数据库路径');
         return false;
       }
 
       // 复制备份文件到数据库位置
       await backupFile.copy(dbPath);
-      print('备份文件已恢复到数据库');
+      AppLogger.info('备份文件已恢复到数据库');
 
       return true;
     } catch (e) {
-      print('恢复数据库错误: $e');
+      AppLogger.info('恢复数据库错误: $e');
       return false;
     }
   }
 
   /// 导出数据库
-  /// 
+  ///
   /// [currentDbPath] - 当前数据库路径
-  /// 
+  ///
   /// 返回导出文件的路径
   static Future<String> exportDatabase(String currentDbPath) async {
     try {
@@ -128,16 +125,16 @@ class BackupRestoreService {
 
       return exportPath;
     } catch (e) {
-      print('导出数据库错误: $e');
+      AppLogger.info('导出数据库错误: $e');
       return '';
     }
   }
 
   /// 导入数据库
-  /// 
+  ///
   /// [path] - 导入文件路径
   /// [currentDbPath] - 当前数据库路径
-  /// 
+  ///
   /// 返回 true 表示导入成功，false 表示导入失败
   static Future<bool> importDatabase(String path, String currentDbPath) async {
     try {
@@ -152,15 +149,15 @@ class BackupRestoreService {
 
       return true;
     } catch (e) {
-      print('导入数据库错误: $e');
+      AppLogger.info('导入数据库错误: $e');
       return false;
     }
   }
 
   /// 恢复出厂设置（重置数据库）
-  /// 
+  ///
   /// [currentDbPath] - 当前数据库路径
-  /// 
+  ///
   /// 返回 true 表示重置成功，false 表示重置失败
   static Future<bool> resetToFactorySettings(String currentDbPath) async {
     try {
@@ -173,13 +170,13 @@ class BackupRestoreService {
       final success = await DatabaseUtils.resetDatabase(dbPath);
       return success;
     } catch (e) {
-      print('重置数据库错误: $e');
+      AppLogger.info('重置数据库错误: $e');
       rethrow;
     }
   }
 
   /// 选择备份文件
-  /// 
+  ///
   /// 返回选择的文件路径，如果用户取消则返回 null
   static Future<String?> selectBackupFile() async {
     try {
@@ -202,13 +199,13 @@ class BackupRestoreService {
 
       return null;
     } catch (e) {
-      print('选择备份文件错误: $e');
+      AppLogger.info('选择备份文件错误: $e');
       return null;
     }
   }
 
   /// 选择输出目录
-  /// 
+  ///
   /// 返回选择的目录路径，如果用户取消则返回 null
   static Future<String?> selectOutputDirectory() async {
     try {
@@ -249,13 +246,13 @@ class BackupRestoreService {
       final directory = await getApplicationDocumentsDirectory();
       return directory.path;
     } catch (e) {
-      print('选择目录错误: $e');
+      AppLogger.info('选择目录错误: $e');
       return null;
     }
   }
 
   /// 生成默认备份文件名
-  /// 
+  ///
   /// 格式：dentist_backup_年月日_时分秒.db
   static String generateBackupFilename() {
     final now = DateTime.now();
@@ -263,7 +260,7 @@ class BackupRestoreService {
   }
 
   /// 生成默认 Excel 文件名
-  /// 
+  ///
   /// 格式：患者信息_年月日_时分秒.xlsx
   static String generateExcelFilename() {
     final now = DateTime.now();

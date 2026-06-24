@@ -1,12 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:dentist_app/models/financial_item.dart';
 import 'package:dentist_app/models/financial_record.dart';
-import 'package:dentist_app/models/database_models.dart';
-import 'package:dentist_app/providers/database_provider.dart';
 import 'package:dentist_app/providers/user_provider.dart';
 import 'package:dentist_app/utils/database_operation_wrapper.dart';
 import 'package:dentist_app/data_sources/financial_data_source.dart';
-import 'package:dentist_app/utils/datetime_formatter.dart';
 import 'package:dentist_app/features/financial/helpers/financial_cache_helper.dart';
 import 'package:dentist_app/features/financial/services/financial_permission_service.dart';
 import 'package:dentist_app/features/financial/services/financial_connection_service.dart';
@@ -19,20 +16,13 @@ import 'package:dentist_app/features/financial/services/financial_query_service.
 import 'package:dentist_app/features/financial/services/financial_initialization_service.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
-import 'package:intl/intl.dart';
 import 'dart:async';
+import '../utils/app_logger.dart';
 
 class FinancialProvider extends ChangeNotifier {
   // 数据库连接
   Database? _database;
-  MySqlConnection? _mysqlConnection;
   String _dataSourceType = 'sqlite';
-
-  // 数据库提供者引用（用于获取最新连接）
-  dynamic _databaseProvider;
-
-  // 用户提供者引用（用于权限控制）
-  UserProvider? _userProvider;
 
   // 数据库操作包装器
   DatabaseOperationWrapper? _dbWrapper;
@@ -40,10 +30,6 @@ class FinancialProvider extends ChangeNotifier {
   // 初始化标志
   bool _isInitializedFlag = false;
   Future<void>? _initializationFuture;
-
-  // 数据列表
-  List<FinancialRecord> _financialRecords = [];
-  List<FinancialItem> _financialItems = [];
 
   // 刷新标志
   bool _financialsNeedRefresh = false;
@@ -105,7 +91,6 @@ class FinancialProvider extends ChangeNotifier {
 
   // 设置用户提供者（用于权限控制）
   void setUserProvider(UserProvider userProvider) {
-    _userProvider = userProvider;
     _permissionService.setUserProvider(userProvider);
   }
 
@@ -139,7 +124,7 @@ class FinancialProvider extends ChangeNotifier {
   void clearCache() {
     _cacheHelper.clearCache();
     _financialsNeedRefresh = true; // 标记需要刷新
-    print('财务数据缓存已清除，标记需要刷新');
+    AppLogger.info('财务数据缓存已清除，标记需要刷新');
     notifyListeners();
   }
 
@@ -182,11 +167,9 @@ class FinancialProvider extends ChangeNotifier {
   }
 
   Future<void> _initializeFromDatabaseInternal(dynamic dbProvider) async {
-    print('FinancialProvider开始初始化...');
+    AppLogger.info('FinancialProvider开始初始化...');
 
     try {
-      // 保存DatabaseProvider引用
-      _databaseProvider = dbProvider;
       final result = await _initializationService.initializeFromDatabase(
         dbProvider: dbProvider,
         dataSourceService: _dataSourceService,
@@ -196,7 +179,6 @@ class FinancialProvider extends ChangeNotifier {
       // 初始化数据库操作包装器
       _dbWrapper = DatabaseOperationWrapper(dbProvider);
       _database = result.database;
-      _mysqlConnection = result.mysqlConnection;
       _dataSourceType = result.dataSourceType;
 
       // 同步所有 Service 的数据库连接信息
@@ -212,27 +194,18 @@ class FinancialProvider extends ChangeNotifier {
       }
 
       _isInitializedFlag = result.initialized;
-      print(
+      AppLogger.info(
         'FinancialProvider初始化完成: _isInitializedFlag = $_isInitializedFlag, _dataSourceType = $_dataSourceType',
       );
       // 延迟通知以避免在build阶段调用setState
       Future.microtask(() => notifyListeners());
     } catch (e) {
-      print('FinancialProvider初始化失败: $e');
+      AppLogger.info('FinancialProvider初始化失败: $e');
       // 设置默认值
       _dataSourceType = 'sqlite';
       _isInitializedFlag = true; // 标记为已初始化，避免重复尝试
       // 延迟通知以避免在build阶段调用setState
       Future.microtask(() => notifyListeners());
-    }
-  }
-
-  // 监听数据库状态变化
-  void _onDatabaseStateChanged() {
-    if (_dataSourceType == 'mysql') {
-      // 由于我们无法直接获取DatabaseProvider实例，这里暂时跳过状态同步
-      // 实际使用时，可以通过依赖注入或其他方式获取DatabaseProvider
-      print('FinancialProvider: 数据库状态变化通知');
     }
   }
 
@@ -243,7 +216,6 @@ class FinancialProvider extends ChangeNotifier {
     String dataSourceType = 'sqlite',
   }) {
     _database = database;
-    _mysqlConnection = mysqlConnection;
     _dataSourceType = dataSourceType;
   }
 
@@ -254,7 +226,6 @@ class FinancialProvider extends ChangeNotifier {
     String? dataSourceType,
   }) {
     if (database != null) _database = database;
-    if (mysqlConnection != null) _mysqlConnection = mysqlConnection;
     if (dataSourceType != null) {
       _dataSourceType = dataSourceType;
       _dataSourceService.setDataSourceType(dataSourceType);
@@ -313,11 +284,11 @@ class FinancialProvider extends ChangeNotifier {
 
     return await _dbWrapper!.wrapOperation('getAllFinancialRecords', () async {
       try {
-        print('🔄 从数据库获取最新财务记录...');
+        AppLogger.info('🔄 从数据库获取最新财务记录...');
 
         // 优先检查缓存，避免不必要的数据库访问
         if (_cacheHelper.hasValidCache) {
-          print('使用缓存的财务记录数据');
+          AppLogger.info('使用缓存的财务记录数据');
           return _cacheHelper.cachedRecords;
         }
 
@@ -340,11 +311,11 @@ class FinancialProvider extends ChangeNotifier {
             _database,
             _currentMysqlConnection,
           );
-          print('✅ 权限过滤查询成功，获取到 ${records.length} 条财务记录（医生: $doctorFilter）');
+          AppLogger.info('✅ 权限过滤查询成功，获取到 ${records.length} 条财务记录（医生: $doctorFilter）');
         } else {
           // 使用数据源模式（统一接口）
           records = await _currentDataSource.getAllFinancialRecords();
-          print('✅ 数据源模式查询成功，获取到 ${records.length} 条财务记录');
+          AppLogger.info('✅ 数据源模式查询成功，获取到 ${records.length} 条财务记录');
         }
 
         // 以下代码保留作为参考，但不再使用
@@ -355,14 +326,14 @@ class FinancialProvider extends ChangeNotifier {
 
         // 更新缓存
         _cacheHelper.updateCacheManually(records, {});
-        print('✅ 财务记录缓存已更新');
+        AppLogger.info('✅ 财务记录缓存已更新');
         return records;
       } catch (e) {
-        print('❌ 获取财务记录失败: $e');
+        AppLogger.info('❌ 获取财务记录失败: $e');
 
         // 如果有缓存数据，返回缓存
         if (_cacheHelper.hasValidCache) {
-          print('使用缓存的财务记录数据，查询失败: $e');
+          AppLogger.info('使用缓存的财务记录数据，查询失败: $e');
           return _cacheHelper.cachedRecords;
         }
 
@@ -381,7 +352,7 @@ class FinancialProvider extends ChangeNotifier {
         try {
           // 优先检查缓存（像患者管理一样）
           if (_cacheHelper.hasValidCache) {
-            print('使用缓存的财务记录数据: ${_cacheHelper.cachedRecords.length} 条');
+            AppLogger.info('使用缓存的财务记录数据: ${_cacheHelper.cachedRecords.length} 条');
             return _cacheHelper.cachedRecords;
           }
 
@@ -389,10 +360,10 @@ class FinancialProvider extends ChangeNotifier {
           final records = await getAllFinancialRecords();
           return records;
         } catch (e) {
-          print('获取财务记录失败: $e');
+          AppLogger.info('获取财务记录失败: $e');
           // 优雅降级：如果有缓存就返回缓存，否则返回空列表（像患者管理一样）
           if (_cacheHelper.cachedRecords.isNotEmpty) {
-            print('使用缓存的财务记录数据，连接异常: $e');
+            AppLogger.info('使用缓存的财务记录数据，连接异常: $e');
             return _cacheHelper.cachedRecords;
           }
           return []; // 返回空列表而不是抛出异常

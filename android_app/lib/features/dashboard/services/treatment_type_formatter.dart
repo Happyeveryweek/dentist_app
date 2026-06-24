@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../../../utils/app_logger.dart';
 
 /// 治疗类型格式化辅助类
 class TreatmentTypeFormatter {
@@ -30,14 +31,16 @@ class TreatmentTypeFormatter {
           final List<String> positions = [];
 
           // 获取各个牙位的值
-          teethData.forEach((key, value) {
+          for (final entry in teethData.entries) {
+            final key = entry.key;
+            final value = entry.value;
             if (value != null && value.toString().isNotEmpty) {
               // 使用牙位映射表转换位置名称
               if (positionMap.containsKey(key)) {
                 positions.add('${positionMap[key]} $value');
               }
             }
-          });
+          }
 
           if (positions.isNotEmpty) {
             displayParts.add('牙位${i + 1}: ${positions.join('，')}');
@@ -60,7 +63,7 @@ class TreatmentTypeFormatter {
       // 返回格式化后的显示文本
       return displayParts.isEmpty ? '常规复诊' : displayParts.join(' ');
     } catch (e) {
-      print('解析治疗类型JSON失败: $e');
+      AppLogger.info('解析治疗类型JSON失败: $e');
       return treatmentType; // 如果解析失败，直接返回原始字符串
     }
   }

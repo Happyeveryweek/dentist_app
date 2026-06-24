@@ -1,4 +1,5 @@
 import '../../../models/user.dart';
+import '../../../utils/app_logger.dart';
 
 /// 用户会话服务
 class UserSessionService {
@@ -8,19 +9,19 @@ class UserSessionService {
     String password,
     Future<User?> Function(String, String) authenticateUser,
   ) async {
-    print('开始用户登录 - 用户名: $username');
+    AppLogger.info('开始用户登录 - 用户名: $username');
 
     try {
       final user = await authenticateUser(username, password);
       if (user != null) {
-        print('登录成功，用户: ${user.username}');
+        AppLogger.info('登录成功，用户: ${user.username}');
         return true;
       } else {
-        print('登录失败，用户认证返回null');
+        AppLogger.info('登录失败，用户认证返回null');
         return false;
       }
     } catch (e) {
-      print('登录失败: $e');
+      AppLogger.info('登录失败: $e');
       return false;
     }
   }

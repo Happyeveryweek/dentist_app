@@ -19,7 +19,7 @@ class PatientInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // 优先使用FinancialRecord中的patientName，如果为空再使用patient
     final displayName = record.patientName ?? patient?.name ?? '未知患者';
-    
+
     return AppCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -60,28 +60,19 @@ class PatientInfoCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     '病历号: ${patient?.medicalRecordNumber ?? patient?.id ?? record.patientId}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '首诊日期: ${patient?.firstVisitDate != null ? _formatDate(patient!.firstVisitDate) : '未知'}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                   // 添加备注字段显示
                   if (record.notes?.isNotEmpty == true) ...[
                     const SizedBox(height: 4),
                     Text(
                       '备注: ${record.notes}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ],
                 ],

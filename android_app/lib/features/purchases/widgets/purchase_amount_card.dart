@@ -23,10 +23,7 @@ class PurchaseAmountCard extends StatelessWidget {
         children: [
           const Text(
             '金额信息',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
           Row(

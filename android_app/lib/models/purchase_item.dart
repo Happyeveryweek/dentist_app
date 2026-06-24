@@ -1,5 +1,5 @@
-import 'package:intl/intl.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/app_logger.dart';
 
 // 采购项目明细模型
 class PurchaseItem {
@@ -29,18 +29,41 @@ class PurchaseItem {
        updatedAt = updatedAt ?? DateTimeFormatter.nowLocal();
 
   // 从Map构造PurchaseItem对象
-  factory PurchaseItem.fromMap(Map<String, dynamic> map, {String dataSource = 'sqlite'}) {
+  factory PurchaseItem.fromMap(
+    Map<String, dynamic> map, {
+    String dataSource = 'sqlite',
+  }) {
     DateTime created = _parseDateTimeFlexible(map['created_at']);
     DateTime updated = _parseDateTimeFlexible(map['updated_at']);
 
     return PurchaseItem(
-      id: map['id'] is int ? map['id'] : int.tryParse(map['id']?.toString() ?? '0'),
-      purchaseRecordId: map['purchase_record_id'] is int ? map['purchase_record_id'] : int.tryParse(map['purchase_record_id']?.toString() ?? '0'),
-      materialId: map['material_id'] != null ? (map['material_id'] is int ? map['material_id'] : int.tryParse(map['material_id']?.toString() ?? '0')) : null,
+      id:
+          map['id'] is int
+              ? map['id']
+              : int.tryParse(map['id']?.toString() ?? '0'),
+      purchaseRecordId:
+          map['purchase_record_id'] is int
+              ? map['purchase_record_id']
+              : int.tryParse(map['purchase_record_id']?.toString() ?? '0'),
+      materialId:
+          map['material_id'] != null
+              ? (map['material_id'] is int
+                  ? map['material_id']
+                  : int.tryParse(map['material_id']?.toString() ?? '0'))
+              : null,
       materialName: map['material_name']?.toString() ?? '',
-      quantity: map['quantity'] is int ? map['quantity'] : int.tryParse(map['quantity']?.toString() ?? '0'),
-      unitPrice: map['unit_price'] is double ? map['unit_price'] : double.tryParse(map['unit_price']?.toString() ?? '0.0'),
-      totalPrice: map['total_price'] is double ? map['total_price'] : double.tryParse(map['total_price']?.toString() ?? '0.0'),
+      quantity:
+          map['quantity'] is int
+              ? map['quantity']
+              : int.tryParse(map['quantity']?.toString() ?? '0'),
+      unitPrice:
+          map['unit_price'] is double
+              ? map['unit_price']
+              : double.tryParse(map['unit_price']?.toString() ?? '0.0'),
+      totalPrice:
+          map['total_price'] is double
+              ? map['total_price']
+              : double.tryParse(map['total_price']?.toString() ?? '0.0'),
       unit: map['unit']?.toString(), // 材料单位
       createdAt: created,
       updatedAt: updated,
@@ -52,7 +75,7 @@ class PurchaseItem {
     if (value == null) return DateTimeFormatter.nowLocal();
     try {
       if (value is DateTime) {
-        final dt = value as DateTime;
+        final dt = value;
         return dt.isUtc ? dt.toLocal() : dt;
       }
       final s = value.toString();
@@ -67,11 +90,11 @@ class PurchaseItem {
         return DateTimeFormatter.fromDbString(s);
       } catch (_) {
         // 最后回退到当前时间
-        print('PurchaseItem._parseDateTimeFlexible: 无法解析时间字符串: $s, 使用当前时间');
+        AppLogger.info('PurchaseItem._parseDateTimeFlexible: 无法解析时间字符串: $s, 使用当前时间');
         return DateTimeFormatter.nowLocal();
       }
     } catch (e) {
-      print('PurchaseItem._parseDateTimeFlexible 异常: $e');
+      AppLogger.info('PurchaseItem._parseDateTimeFlexible 异常: $e');
       return DateTimeFormatter.nowLocal();
     }
   }

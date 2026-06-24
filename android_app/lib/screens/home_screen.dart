@@ -13,7 +13,7 @@ import '../providers/app_state.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
-  
+
   const HomeScreen({Key? key, this.initialIndex = 0}) : super(key: key);
 
   @override
@@ -23,7 +23,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late int _selectedIndex;
   final ValueNotifier<int> _appointmentsRefreshNotifier = ValueNotifier<int>(0);
-  
+
   // 缓存页面实例，避免重复创建
   late final List<Widget> _pages = [
     const _KeepAlivePage(child: DashboardScreen()),
@@ -69,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -128,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required Color color,
   }) {
     final isSelected = _selectedIndex == index;
-    
+
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -145,7 +145,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 duration: const Duration(milliseconds: 200),
                 padding: EdgeInsets.all(isSelected ? 8 : 6),
                 decoration: BoxDecoration(
-                  color: isSelected ? color.withOpacity(0.15) : Colors.transparent,
+                  color:
+                      isSelected
+                          ? color.withValues(alpha: 0.15)
+                          : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -185,14 +188,15 @@ class _HomeScreenState extends State<HomeScreen> {
 /// 保持页面状态的包装器
 class _KeepAlivePage extends StatefulWidget {
   final Widget child;
-  
+
   const _KeepAlivePage({required this.child});
 
   @override
   State<_KeepAlivePage> createState() => _KeepAlivePageState();
 }
 
-class _KeepAlivePageState extends State<_KeepAlivePage> with AutomaticKeepAliveClientMixin {
+class _KeepAlivePageState extends State<_KeepAlivePage>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
@@ -208,14 +212,15 @@ class _BusinessManagementScreen extends StatefulWidget {
   const _BusinessManagementScreen();
 
   @override
-  State<_BusinessManagementScreen> createState() => _BusinessManagementScreenState();
+  State<_BusinessManagementScreen> createState() =>
+      _BusinessManagementScreenState();
 }
 
-class _BusinessManagementScreenState extends State<_BusinessManagementScreen> 
+class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
     with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-  
+
   int _selectedTabIndex = 0;
   late TabController _tabController;
 
@@ -226,7 +231,6 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
     const _KeepAlivePage(child: UsersScreen()),
   ];
 
-  final List<String> _tabTitles = ['财务管理', '采购管理', '用户管理'];
 
   @override
   void initState() {
@@ -260,7 +264,7 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -269,7 +273,10 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     _buildCompactTab(
@@ -316,7 +323,7 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
     required Color color,
   }) {
     final isSelected = _selectedTabIndex == index;
-    
+
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -329,20 +336,24 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
           decoration: BoxDecoration(
-            gradient: isSelected
-                ? LinearGradient(
-                    colors: [
-                      color.withOpacity(0.15),
-                      color.withOpacity(0.1),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
+            gradient:
+                isSelected
+                    ? LinearGradient(
+                      colors: [
+                        color.withValues(alpha: 0.15),
+                        color.withValues(alpha: 0.1),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                    : null,
             color: isSelected ? null : Colors.grey.shade50,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected ? color.withOpacity(0.3) : Colors.grey.shade200,
+              color:
+                  isSelected
+                      ? color.withValues(alpha: 0.3)
+                      : Colors.grey.shade200,
               width: isSelected ? 1.5 : 1,
             ),
           ),

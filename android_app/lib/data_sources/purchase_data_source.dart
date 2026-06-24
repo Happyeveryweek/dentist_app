@@ -1,9 +1,9 @@
 import 'package:mysql1/mysql1.dart';
-import 'package:sqflite/sqflite.dart';
 import '../models/purchase_record.dart';
 import '../utils/datetime_formatter.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import '../utils/app_logger.dart';
 
 // 抽象采购数据源接口
 abstract class PurchaseDataSource {
@@ -12,11 +12,18 @@ abstract class PurchaseDataSource {
   Future<int> createPurchase(PurchaseRecord purchase);
   Future<bool> updatePurchase(PurchaseRecord purchase);
   Future<bool> deletePurchase(int id);
-  Future<List<PurchaseRecord>> searchPurchases(String keyword, {String? doctorFilter});
+  Future<List<PurchaseRecord>> searchPurchases(
+    String keyword, {
+    String? doctorFilter,
+  });
   Future<double> getTotalPurchaseAmount({String? doctorFilter});
-  Future<List<PurchaseRecord>> getPurchasesByDateRange(DateTime startDate, DateTime endDate, {String? doctorFilter});
-  
-// 采购项目明细相关方法
+  Future<List<PurchaseRecord>> getPurchasesByDateRange(
+    DateTime startDate,
+    DateTime endDate, {
+    String? doctorFilter,
+  });
+
+  // 采购项目明细相关方法
   Future<List<dynamic>> getPurchaseItemsByRecordId(int recordId);
   Future<int> createPurchaseItem(dynamic item);
   Future<bool> updatePurchaseItem(dynamic item);
@@ -191,9 +198,11 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
     final map = <String, dynamic>{};
     for (var field in row.fields.keys) {
       var value = row[field];
-      
+
       // 处理日期字段 - 使用统一格式，确保转换为本地时间
-      if (field == 'purchase_date' || field == 'created_at' || field == 'updated_at') {
+      if (field == 'purchase_date' ||
+          field == 'created_at' ||
+          field == 'updated_at') {
         if (value is DateTime) {
           // 如果MySQL返回的是UTC时间，转换为本地时间
           final localDateTime = value.isUtc ? value.toLocal() : value;
@@ -213,7 +222,7 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
               map[field] = '';
             }
           } catch (e) {
-            print('Blob转换失败: $e');
+            AppLogger.info('Blob转换失败: $e');
             map[field] = '';
           }
         } else {
@@ -230,7 +239,7 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
               map[field] = '';
             }
           } catch (e) {
-            print('Uint8List转换失败: $e');
+            AppLogger.info('Uint8List转换失败: $e');
             map[field] = '';
           }
         } else {
@@ -247,38 +256,48 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
   Future<List<PurchaseRecord>> getAllPurchases({String? doctorFilter}) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
+
     String query = '''
       SELECT id, purchase_date, total_quantity, total_amount, supplier, notes, doctor, created_at, updated_at
       FROM purchase_records
     ''';
     List<dynamic> queryArgs = [];
-    
+
     if (doctorFilter != null) {
       query += ' WHERE doctor = ?';
       queryArgs.add(doctorFilter);
     }
-    
+
     query += ' ORDER BY purchase_date DESC';
-    
+
     final results = await connection.query(query, queryArgs);
-    
-    return results.map((row) => PurchaseRecord.fromMap(_convertMySqlRow(row), dataSource: 'mysql')).toList();
+
+    return results
+        .map(
+          (row) => PurchaseRecord.fromMap(
+            _convertMySqlRow(row),
+            dataSource: 'mysql',
+          ),
+        )
+        .toList();
   }
 
   @override
   Future<PurchaseRecord?> getPurchaseById(int id) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final results = await connection.query('''
+
+    final results = await connection.query(
+      '''
       SELECT id, purchase_date, total_quantity, total_amount, supplier, notes, doctor, created_at, updated_at
       FROM purchase_records 
       WHERE id = ?
-    ''', [id]);
-    
+    ''',
+      [id],
+    );
+
     if (results.isEmpty) return null;
-    
+
     final row = results.first;
     return PurchaseRecord.fromMap(_convertMySqlRow(row), dataSource: 'mysql');
   }
@@ -287,21 +306,24 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
   Future<int> createPurchase(PurchaseRecord purchase) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final result = await connection.query('''
+
+    final result = await connection.query(
+      '''
       INSERT INTO purchase_records (purchase_date, total_quantity, total_amount, supplier, notes, doctor, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', [
-      DateTimeFormatter.toDbString(purchase.purchaseDate),
-      purchase.totalQuantity,
-      purchase.totalAmount,
-      purchase.supplier,
-      purchase.notes,
-      purchase.doctor,
-      DateTimeFormatter.toDbString(purchase.createdAt),
-      DateTimeFormatter.toDbString(purchase.updatedAt),
-    ]);
-    
+    ''',
+      [
+        DateTimeFormatter.toDbString(purchase.purchaseDate),
+        purchase.totalQuantity,
+        purchase.totalAmount,
+        purchase.supplier,
+        purchase.notes,
+        purchase.doctor,
+        DateTimeFormatter.toDbString(purchase.createdAt),
+        DateTimeFormatter.toDbString(purchase.updatedAt),
+      ],
+    );
+
     return result.insertId!;
   }
 
@@ -309,22 +331,25 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
   Future<bool> updatePurchase(PurchaseRecord purchase) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final result = await connection.query('''
+
+    final result = await connection.query(
+      '''
       UPDATE purchase_records 
       SET purchase_date = ?, total_quantity = ?, total_amount = ?, supplier = ?, notes = ?, doctor = ?, updated_at = ?
       WHERE id = ?
-    ''', [
-      DateTimeFormatter.toDbString(purchase.purchaseDate),
-      purchase.totalQuantity,
-      purchase.totalAmount,
-      purchase.supplier,
-      purchase.notes,
-      purchase.doctor,
-      DateTimeFormatter.toDbString(purchase.updatedAt),
-      purchase.id,
-    ]);
-    
+    ''',
+      [
+        DateTimeFormatter.toDbString(purchase.purchaseDate),
+        purchase.totalQuantity,
+        purchase.totalAmount,
+        purchase.supplier,
+        purchase.notes,
+        purchase.doctor,
+        DateTimeFormatter.toDbString(purchase.updatedAt),
+        purchase.id,
+      ],
+    );
+
     return result.affectedRows! > 0;
   }
 
@@ -332,79 +357,106 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
   Future<bool> deletePurchase(int id) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
+
     // 先删除相关的采购项目（级联删除）
-    await connection.query('DELETE FROM purchase_items WHERE purchase_record_id = ?', [id]);
-    
+    await connection.query(
+      'DELETE FROM purchase_items WHERE purchase_record_id = ?',
+      [id],
+    );
+
     // 再删除采购记录
-    final result = await connection.query('DELETE FROM purchase_records WHERE id = ?', [id]);
+    final result = await connection.query(
+      'DELETE FROM purchase_records WHERE id = ?',
+      [id],
+    );
     return result.affectedRows! > 0;
   }
 
   @override
-  Future<List<PurchaseRecord>> searchPurchases(String keyword, {String? doctorFilter}) async {
+  Future<List<PurchaseRecord>> searchPurchases(
+    String keyword, {
+    String? doctorFilter,
+  }) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
+
     String query = '''
       SELECT id, purchase_date, total_quantity, total_amount, supplier, notes, doctor, created_at, updated_at
       FROM purchase_records 
       WHERE (supplier LIKE ? OR notes LIKE ? OR doctor LIKE ?)
     ''';
     List<dynamic> queryArgs = ['%$keyword%', '%$keyword%', '%$keyword%'];
-    
+
     if (doctorFilter != null) {
       query += ' AND doctor = ?';
       queryArgs.add(doctorFilter);
     }
-    
+
     query += ' ORDER BY purchase_date DESC';
-    
+
     final results = await connection.query(query, queryArgs);
-    
-    return results.map((row) => PurchaseRecord.fromMap(_convertMySqlRow(row), dataSource: 'mysql')).toList();
+
+    return results
+        .map(
+          (row) => PurchaseRecord.fromMap(
+            _convertMySqlRow(row),
+            dataSource: 'mysql',
+          ),
+        )
+        .toList();
   }
 
   @override
   Future<double> getTotalPurchaseAmount({String? doctorFilter}) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
+
     String query = 'SELECT SUM(total_amount) as total FROM purchase_records';
     List<dynamic> queryArgs = [];
-    
+
     if (doctorFilter != null) {
       query += ' WHERE doctor = ?';
       queryArgs.add(doctorFilter);
     }
-    
+
     final results = await connection.query(query, queryArgs);
     final row = results.first;
     return (row['total'] as num?)?.toDouble() ?? 0.0;
   }
 
   @override
-  Future<List<PurchaseRecord>> getPurchasesByDateRange(DateTime startDate, DateTime endDate, {String? doctorFilter}) async {
+  Future<List<PurchaseRecord>> getPurchasesByDateRange(
+    DateTime startDate,
+    DateTime endDate, {
+    String? doctorFilter,
+  }) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
+
     String query = '''
       SELECT id, purchase_date, total_quantity, total_amount, supplier, notes, doctor, created_at, updated_at
       FROM purchase_records 
       WHERE purchase_date BETWEEN ? AND ?
     ''';
     List<dynamic> queryArgs = [startDate, endDate];
-    
+
     if (doctorFilter != null) {
       query += ' AND doctor = ?';
       queryArgs.add(doctorFilter);
     }
-    
+
     query += ' ORDER BY purchase_date DESC';
-    
+
     final results = await connection.query(query, queryArgs);
-    
-    return results.map((row) => PurchaseRecord.fromMap(_convertMySqlRow(row), dataSource: 'mysql')).toList();
+
+    return results
+        .map(
+          (row) => PurchaseRecord.fromMap(
+            _convertMySqlRow(row),
+            dataSource: 'mysql',
+          ),
+        )
+        .toList();
   }
 
   // 采购项目明细相关方法
@@ -412,12 +464,12 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
   Future<List<dynamic>> getPurchaseItemsByRecordId(int recordId) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
+
     final results = await connection.query(
       'SELECT * FROM purchase_items WHERE purchase_record_id = ? ORDER BY id',
-      [recordId]
+      [recordId],
     );
-    
+
     return results.map((row) => _convertMySqlRow(row)).toList();
   }
 
@@ -425,23 +477,26 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
   Future<int> createPurchaseItem(dynamic item) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final result = await connection.query('''
+
+    final result = await connection.query(
+      '''
       INSERT INTO purchase_items 
       (purchase_record_id, material_id, material_name, quantity, unit_price, total_price, unit, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', [
-      item.purchaseRecordId,
-      item.materialId,
-      item.materialName,
-      item.quantity,
-      item.unitPrice,
-      item.totalPrice,
-      item.unit,
-      DateTimeFormatter.toDbString(item.createdAt),
-      DateTimeFormatter.toDbString(item.updatedAt),
-    ]);
-    
+    ''',
+      [
+        item.purchaseRecordId,
+        item.materialId,
+        item.materialName,
+        item.quantity,
+        item.unitPrice,
+        item.totalPrice,
+        item.unit,
+        DateTimeFormatter.toDbString(item.createdAt),
+        DateTimeFormatter.toDbString(item.updatedAt),
+      ],
+    );
+
     return result.insertId ?? 0;
   }
 
@@ -449,24 +504,27 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
   Future<bool> updatePurchaseItem(dynamic item) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final result = await connection.query('''
+
+    final result = await connection.query(
+      '''
       UPDATE purchase_items SET 
       purchase_record_id = ?, material_id = ?, material_name = ?, quantity = ?,
       unit_price = ?, total_price = ?, unit = ?, updated_at = ? 
       WHERE id = ?
-    ''', [
-      item.purchaseRecordId,
-      item.materialId,
-      item.materialName,
-      item.quantity,
-      item.unitPrice,
-      item.totalPrice,
-      item.unit,
-      DateTimeFormatter.toDbString(item.updatedAt),
-      item.id,
-    ]);
-    
+    ''',
+      [
+        item.purchaseRecordId,
+        item.materialId,
+        item.materialName,
+        item.quantity,
+        item.unitPrice,
+        item.totalPrice,
+        item.unit,
+        DateTimeFormatter.toDbString(item.updatedAt),
+        item.id,
+      ],
+    );
+
     return result.affectedRows! > 0;
   }
 
@@ -474,12 +532,12 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
   Future<bool> deletePurchaseItem(int itemId) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
+
     final result = await connection.query(
       'DELETE FROM purchase_items WHERE id = ?',
-      [itemId]
+      [itemId],
     );
-    
+
     return result.affectedRows! > 0;
   }
 }

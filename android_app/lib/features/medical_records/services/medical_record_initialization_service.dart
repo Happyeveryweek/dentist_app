@@ -1,5 +1,6 @@
 import 'package:mysql1/mysql1.dart';
 import 'package:sqflite/sqflite.dart';
+import '../../../utils/app_logger.dart';
 
 /// 病历 Provider 初始化结果
 class MedicalRecordInitializationResult {
@@ -35,7 +36,7 @@ class MedicalRecordInitializationService {
         throw Exception('MySQL连接为null，无法创建数据源');
       }
 
-      print('✅ MedicalRecordProvider MySQL数据源设置成功');
+      AppLogger.info('✅ MedicalRecordProvider MySQL数据源设置成功');
       return MedicalRecordInitializationResult(
         database: null,
         mysqlConnection: mysqlConnection,
@@ -47,12 +48,12 @@ class MedicalRecordInitializationService {
     Database? database;
     try {
       database = await dbProvider.sqliteDatabase;
-      print('✅ MedicalRecordProvider SQLite数据源设置成功');
+      AppLogger.info('✅ MedicalRecordProvider SQLite数据源设置成功');
     } catch (e) {
-      print('获取SQLite数据库失败: $e');
+      AppLogger.info('获取SQLite数据库失败: $e');
       if (dbProvider.database != null) {
         database = dbProvider.database;
-        print('通过备用方式获取SQLite数据库: ${database != null ? "成功" : "失败"}');
+        AppLogger.info('通过备用方式获取SQLite数据库: ${database != null ? "成功" : "失败"}');
       }
     }
 

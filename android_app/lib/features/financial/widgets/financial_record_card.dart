@@ -30,7 +30,10 @@ class FinancialRecordCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final patientName = record.patientName?.trim().isNotEmpty == true ? record.patientName! : '未知患者';
+    final patientName =
+        record.patientName?.trim().isNotEmpty == true
+            ? record.patientName!
+            : '未知患者';
     final isSettled = totalOutstanding <= 0;
 
     return Container(
@@ -65,13 +68,17 @@ class FinancialRecordCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: isSettled ? Colors.green[100] : Colors.orange[100],
+                        color:
+                            isSettled ? Colors.green[100] : Colors.orange[100],
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         isSettled ? '已结清' : '未结清',
                         style: TextStyle(
-                          color: isSettled ? Colors.green[800] : Colors.orange[800],
+                          color:
+                              isSettled
+                                  ? Colors.green[800]
+                                  : Colors.orange[800],
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -82,7 +89,11 @@ class FinancialRecordCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.attach_money, size: 16, color: Theme.of(context).primaryColor),
+                    Icon(
+                      Icons.attach_money,
+                      size: 16,
+                      color: Theme.of(context).primaryColor,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '应收费: ¥${NumberFormat('#,##0').format(totalReceivable)}',
@@ -93,7 +104,11 @@ class FinancialRecordCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Icon(Icons.check_circle, size: 16, color: Colors.green[600]),
+                    Icon(
+                      Icons.check_circle,
+                      size: 16,
+                      color: Colors.green[600],
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '已收费: ¥${NumberFormat('#,##0').format(totalCollected)}',
@@ -113,7 +128,10 @@ class FinancialRecordCard extends StatelessWidget {
                     Text(
                       '欠费: ¥${NumberFormat('#,##0').format(totalOutstanding)}',
                       style: TextStyle(
-                        color: totalOutstanding > 0 ? Colors.red[600] : Colors.grey[600],
+                        color:
+                            totalOutstanding > 0
+                                ? Colors.red[600]
+                                : Colors.grey[600],
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -140,7 +158,10 @@ class FinancialRecordCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           '备注: ${record.notes}',
-                          style: TextStyle(color: Colors.grey[700], fontSize: 12),
+                          style: TextStyle(
+                            color: Colors.grey[700],
+                            fontSize: 12,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -159,14 +180,22 @@ class FinancialRecordCard extends StatelessWidget {
                     Row(
                       children: [
                         IconButton(
-                          icon: Icon(Icons.visibility, color: Theme.of(context).primaryColor, size: 20),
+                          icon: Icon(
+                            Icons.visibility,
+                            color: Theme.of(context).primaryColor,
+                            size: 20,
+                          ),
                           onPressed: onViewDetails,
                           tooltip: '查看详情',
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                          icon: const Icon(
+                            Icons.delete,
+                            color: Colors.red,
+                            size: 20,
+                          ),
                           onPressed: onDelete,
                           tooltip: '删除记录',
                           padding: EdgeInsets.zero,

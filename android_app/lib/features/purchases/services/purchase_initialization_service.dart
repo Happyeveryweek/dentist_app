@@ -1,19 +1,14 @@
-import 'package:dentist_app/models/database_models.dart';
-import 'package:dentist_app/models/purchase_item.dart';
-import 'package:dentist_app/models/purchase_record.dart';
-import 'package:dentist_app/providers/database_provider.dart';
 import 'package:dentist_app/providers/user_provider.dart';
 import 'package:dentist_app/utils/database_operation_wrapper.dart';
 import 'package:mysql1/mysql1.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../../../data_sources/sqlite_purchase_data_source.dart';
+import '../../../data_sources/mysql_purchase_data_source.dart';
 import 'purchase_cache_service.dart';
 import 'purchase_connection_service.dart';
 import 'purchase_permission_service.dart';
 import 'purchase_statistics_service.dart';
-import '../../../data_sources/purchase_data_source.dart' hide SqlitePurchaseDataSource, MySqlPurchaseDataSource;
-import '../../../data_sources/sqlite_purchase_data_source.dart';
-import '../../../data_sources/mysql_purchase_data_source.dart';
 
 class PurchaseInitializationResult {
   final Database? database;
@@ -72,7 +67,9 @@ class PurchaseInitializationService {
       if (mysqlConn != null) {
         currentMysqlConnection = mysqlConn;
         currentDataSourceType = 'mysql';
-        mysqlDataSource = MySqlPurchaseDataSource.withConnectionGetter(() => currentMysqlConnection);
+        mysqlDataSource = MySqlPurchaseDataSource.withConnectionGetter(
+          () => currentMysqlConnection,
+        );
         log('✅ PurchaseProvider MySQL数据源设置成功');
       } else {
         log('警告：MySQL连接为null，尝试SQLite');
@@ -91,14 +88,25 @@ class PurchaseInitializationService {
             initialized: false,
             dbWrapper: DatabaseOperationWrapper(dbProvider),
             cacheService: PurchaseCacheService(),
-            permissionService: PurchasePermissionService(userProvider: userProvider),
+            permissionService: PurchasePermissionService(
+              userProvider: userProvider,
+            ),
             connectionService: PurchaseConnectionService(),
             statisticsService: PurchaseDatabaseStatisticsService(
               sqliteDatabase: currentDatabase,
               mysqlConnection: currentMysqlConnection,
               dataSourceType: currentDataSourceType,
-              getDoctorFilter: () => userProvider == null ? null : userProvider.buildDoctorFilter(userProvider.currentUser),
-              shouldFilterByDoctor: () => userProvider != null && userProvider.currentUser != null && userProvider.currentUser!.role != 'admin' && userProvider.currentUser!.doctor != null && userProvider.currentUser!.doctor!.isNotEmpty,
+              getDoctorFilter:
+                  () => userProvider?.buildDoctorFilter(
+                        userProvider.currentUser,
+                      ),
+              shouldFilterByDoctor:
+                  () =>
+                      userProvider != null &&
+                      userProvider.currentUser != null &&
+                      userProvider.currentUser!.role != 'admin' &&
+                      userProvider.currentUser!.doctor != null &&
+                      userProvider.currentUser!.doctor!.isNotEmpty,
               testMySqlConnection: () => Future.value(false),
             ),
             sqliteDataSource: sqliteDataSource,
@@ -123,14 +131,25 @@ class PurchaseInitializationService {
             initialized: false,
             dbWrapper: DatabaseOperationWrapper(dbProvider),
             cacheService: PurchaseCacheService(),
-            permissionService: PurchasePermissionService(userProvider: userProvider),
+            permissionService: PurchasePermissionService(
+              userProvider: userProvider,
+            ),
             connectionService: PurchaseConnectionService(),
             statisticsService: PurchaseDatabaseStatisticsService(
               sqliteDatabase: currentDatabase,
               mysqlConnection: currentMysqlConnection,
               dataSourceType: currentDataSourceType,
-              getDoctorFilter: () => userProvider == null ? null : userProvider.buildDoctorFilter(userProvider.currentUser),
-              shouldFilterByDoctor: () => userProvider != null && userProvider.currentUser != null && userProvider.currentUser!.role != 'admin' && userProvider.currentUser!.doctor != null && userProvider.currentUser!.doctor!.isNotEmpty,
+              getDoctorFilter:
+                  () => userProvider?.buildDoctorFilter(
+                        userProvider.currentUser,
+                      ),
+              shouldFilterByDoctor:
+                  () =>
+                      userProvider != null &&
+                      userProvider.currentUser != null &&
+                      userProvider.currentUser!.role != 'admin' &&
+                      userProvider.currentUser!.doctor != null &&
+                      userProvider.currentUser!.doctor!.isNotEmpty,
               testMySqlConnection: () => Future.value(false),
             ),
             sqliteDataSource: sqliteDataSource,
@@ -153,14 +172,25 @@ class PurchaseInitializationService {
             initialized: false,
             dbWrapper: DatabaseOperationWrapper(dbProvider),
             cacheService: PurchaseCacheService(),
-            permissionService: PurchasePermissionService(userProvider: userProvider),
+            permissionService: PurchasePermissionService(
+              userProvider: userProvider,
+            ),
             connectionService: PurchaseConnectionService(),
             statisticsService: PurchaseDatabaseStatisticsService(
               sqliteDatabase: currentDatabase,
               mysqlConnection: currentMysqlConnection,
               dataSourceType: currentDataSourceType,
-              getDoctorFilter: () => userProvider == null ? null : userProvider.buildDoctorFilter(userProvider.currentUser),
-              shouldFilterByDoctor: () => userProvider != null && userProvider.currentUser != null && userProvider.currentUser!.role != 'admin' && userProvider.currentUser!.doctor != null && userProvider.currentUser!.doctor!.isNotEmpty,
+              getDoctorFilter:
+                  () => userProvider?.buildDoctorFilter(
+                        userProvider.currentUser,
+                      ),
+              shouldFilterByDoctor:
+                  () =>
+                      userProvider != null &&
+                      userProvider.currentUser != null &&
+                      userProvider.currentUser!.role != 'admin' &&
+                      userProvider.currentUser!.doctor != null &&
+                      userProvider.currentUser!.doctor!.isNotEmpty,
               testMySqlConnection: () => Future.value(false),
             ),
             sqliteDataSource: sqliteDataSource,
@@ -171,7 +201,9 @@ class PurchaseInitializationService {
     }
 
     final connectionService = PurchaseConnectionService();
-    final permissionService = PurchasePermissionService(userProvider: userProvider);
+    final permissionService = PurchasePermissionService(
+      userProvider: userProvider,
+    );
     final cacheService = PurchaseCacheService();
     final statisticsService = PurchaseDatabaseStatisticsService(
       sqliteDatabase: currentDatabase,
@@ -179,7 +211,8 @@ class PurchaseInitializationService {
       dataSourceType: currentDataSourceType,
       getDoctorFilter: () => permissionService.getDoctorFilter(),
       shouldFilterByDoctor: () => permissionService.shouldFilterByDoctor(),
-      testMySqlConnection: () => connectionService.testMySqlConnection(currentMysqlConnection),
+      testMySqlConnection:
+          () => connectionService.testMySqlConnection(currentMysqlConnection),
     );
 
     return PurchaseInitializationResult(

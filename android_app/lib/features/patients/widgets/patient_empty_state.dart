@@ -25,7 +25,7 @@ class PatientEmptyState extends StatelessWidget {
           Icon(
             Icons.people_outline,
             size: 80,
-            color: AppTheme.lightText.withOpacity(0.5),
+            color: AppTheme.lightText.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(

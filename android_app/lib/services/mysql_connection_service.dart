@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:mysql1/mysql1.dart';
 import '../models/database_config.dart';
+import '../utils/app_logger.dart';
 
 /// MySQL 连接管理服务
 /// 职责：MySQL 连接创建、关闭、参数配置、localhost 转换、字符编码设置
@@ -28,18 +29,18 @@ class MySQLConnectionService {
 
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        print('配置MySQL连接参数... 尝试第 $attempt/$maxRetries 次');
+        AppLogger.info('配置MySQL连接参数... 尝试第 $attempt/$maxRetries 次');
 
         // 检查并转换localhost为10.0.2.2（如果在Android平台）
         if (Platform.isAndroid &&
             (_dbConfig!.mysql.host == 'localhost' ||
                 _dbConfig!.mysql.host == '127.0.0.1')) {
-          print('Android平台检测到localhost配置，自动转换为10.0.2.2');
+          AppLogger.info('Android平台检测到localhost配置，自动转换为10.0.2.2');
           _dbConfig!.mysql.host = '10.0.2.2';
 
           // 保存更新后的配置
           await _dbConfig!.saveConfig();
-          print('已自动更新配置文件中的MySQL主机为10.0.2.2');
+          AppLogger.info('已自动更新配置文件中的MySQL主机为10.0.2.2');
         }
 
         final host = _dbConfig!.mysql.host;
@@ -48,11 +49,13 @@ class MySQLConnectionService {
         final username = _dbConfig!.mysql.username;
         final password = _dbConfig!.mysql.password;
 
-        print('MySQL连接参数: $host:$port/$database, 用户: $username');
+        AppLogger.info('MySQL连接参数: $host:$port/$database, 用户: $username');
 
         // 设置连接参数 - 启动时快速失败，应用恢复时允许更长时间
         final connectionTimeout =
-            isStartup ? const Duration(seconds: 2) : const Duration(seconds: 10);
+            isStartup
+                ? const Duration(seconds: 2)
+                : const Duration(seconds: 10);
         final settings = ConnectionSettings(
           host: host,
           port: int.parse(port),
@@ -66,22 +69,24 @@ class MySQLConnectionService {
 
         // 先测试Socket连接
         try {
-          print('测试Socket连接到MySQL: $host:$port');
+          AppLogger.info('测试Socket连接到MySQL: $host:$port');
           // 启动时快速失败（1秒），应用恢复时允许更长时间（3秒）
           final socketTimeout =
-              isStartup ? const Duration(seconds: 1) : const Duration(seconds: 3);
+              isStartup
+                  ? const Duration(seconds: 1)
+                  : const Duration(seconds: 3);
           final socket = await Socket.connect(
             host,
             int.parse(port),
             timeout: socketTimeout,
             sourceAddress: InternetAddress.anyIPv4,
           );
-          print('Socket连接成功，销毁临时Socket');
+          AppLogger.info('Socket连接成功，销毁临时Socket');
           socket.destroy();
         } catch (socketError) {
-          print('Socket连接测试失败: $socketError');
+          AppLogger.info('Socket连接测试失败: $socketError');
           if (attempt < maxRetries) {
-            print('等待 ${retryDelay.inSeconds} 秒后重试...');
+            AppLogger.info('等待 ${retryDelay.inSeconds} 秒后重试...');
             await Future.delayed(retryDelay);
             continue;
           }
@@ -89,7 +94,7 @@ class MySQLConnectionService {
         }
 
         // 尝试连接
-        print('准备连接到MySQL: $host:$port/$database');
+        AppLogger.info('准备连接到MySQL: $host:$port/$database');
 
         try {
           _mysqlConnection = await MySqlConnection.connect(settings);
@@ -97,18 +102,18 @@ class MySQLConnectionService {
           // 设置会话字符编码，确保中文字符正确显示
           await _mysqlConnection!.query("SET NAMES 'utf8mb4'");
           await _mysqlConnection!.query("SET CHARACTER SET utf8mb4");
-          await _mysqlConnection!
-              .query("SET character_set_connection=utf8mb4");
+          await _mysqlConnection!.query("SET character_set_connection=utf8mb4");
 
           // 设置连接保持参数
           await _mysqlConnection!.query("SET wait_timeout = 28800"); // 8小时
-          await _mysqlConnection!
-              .query("SET interactive_timeout = 28800"); // 8小时
-          print('MySQL字符编码和连接超时已设置');
+          await _mysqlConnection!.query(
+            "SET interactive_timeout = 28800",
+          ); // 8小时
+          AppLogger.info('MySQL字符编码和连接超时已设置');
         } catch (e) {
-          print('MySQL连接错误: $e');
+          AppLogger.info('MySQL连接错误: $e');
           if (attempt < maxRetries) {
-            print('等待 ${retryDelay.inSeconds} 秒后重试...');
+            AppLogger.info('等待 ${retryDelay.inSeconds} 秒后重试...');
             await Future.delayed(retryDelay);
             continue;
           }
@@ -128,26 +133,26 @@ class MySQLConnectionService {
         try {
           final results = await _mysqlConnection!.query('SELECT 1');
           if (results.isNotEmpty) {
-            print('MySQL连接测试成功');
+            AppLogger.info('MySQL连接测试成功');
             break; // 连接成功，退出重试循环
           } else {
             if (attempt < maxRetries) {
-              print('连接测试失败，重试中...');
+              AppLogger.info('连接测试失败，重试中...');
               continue;
             }
             throw Exception('MySQL连接测试失败: 查询返回空结果');
           }
         } catch (e) {
-          print('MySQL查询测试错误: $e');
+          AppLogger.info('MySQL查询测试错误: $e');
           if (attempt < maxRetries) {
-            print('等待 ${retryDelay.inSeconds} 秒后重试...');
+            AppLogger.info('等待 ${retryDelay.inSeconds} 秒后重试...');
             await Future.delayed(retryDelay);
             continue;
           }
           throw Exception('MySQL连接成功但查询测试失败: $e');
         }
       } catch (e) {
-        print('MySQL连接尝试 $attempt/$maxRetries 失败: $e');
+        AppLogger.info('MySQL连接尝试 $attempt/$maxRetries 失败: $e');
         if (attempt == maxRetries) {
           _mysqlConnection = null;
           throw Exception('MySQL连接失败: $e');
@@ -166,7 +171,7 @@ class MySQLConnectionService {
     String password,
   ) async {
     try {
-      print('使用参数初始化MySQL连接...');
+      AppLogger.info('使用参数初始化MySQL连接...');
 
       // 首先关闭已有连接
       if (_mysqlConnection != null) {
@@ -182,22 +187,22 @@ class MySQLConnectionService {
       // 检查并转换localhost为10.0.2.2（如果在Android平台）
       String effectiveHost = host;
       if (Platform.isAndroid && (host == 'localhost' || host == '127.0.0.1')) {
-        print('Android连接检测到localhost参数，自动转换为10.0.2.2');
+        AppLogger.info('Android连接检测到localhost参数，自动转换为10.0.2.2');
         effectiveHost = '10.0.2.2';
       }
 
       // 打印所有连接参数，帮助调试
-      print(
+      AppLogger.info(
         'MySQL连接参数: host=$effectiveHost (原始值:$host), port=$port, db=$database, user=$username',
       );
 
       // 对于Android模拟器，如果使用10.0.2.2，记录下来
       if (effectiveHost == "10.0.2.2") {
-        print('使用Android模拟器特殊主机: 10.0.2.2 (模拟器中的localhost)');
+        AppLogger.info('使用Android模拟器特殊主机: 10.0.2.2 (模拟器中的localhost)');
       }
 
       // 先测试Socket连接
-      print('测试Socket连接到MySQL: $effectiveHost:$port');
+      AppLogger.info('测试Socket连接到MySQL: $effectiveHost:$port');
       try {
         final socket = await Socket.connect(
           effectiveHost,
@@ -205,10 +210,10 @@ class MySQLConnectionService {
           timeout: const Duration(seconds: 15),
           sourceAddress: InternetAddress.anyIPv4,
         );
-        print('Socket连接成功，销毁临时Socket');
+        AppLogger.info('Socket连接成功，销毁临时Socket');
         socket.destroy();
       } catch (socketError) {
-        print('Socket连接测试失败: $socketError');
+        AppLogger.info('Socket连接测试失败: $socketError');
         throw Exception('无法连接到MySQL服务器: $socketError');
       }
 
@@ -223,7 +228,7 @@ class MySQLConnectionService {
       );
 
       // 尝试连接
-      print('准备连接到MySQL: $effectiveHost:$port/$database');
+      AppLogger.info('准备连接到MySQL: $effectiveHost:$port/$database');
 
       try {
         _mysqlConnection = await MySqlConnection.connect(settings);
@@ -232,9 +237,9 @@ class MySQLConnectionService {
         await _mysqlConnection!.query("SET NAMES 'utf8mb4'");
         await _mysqlConnection!.query("SET CHARACTER SET utf8mb4");
         await _mysqlConnection!.query("SET character_set_connection=utf8mb4");
-        print('MySQL字符编码已设置为utf8mb4');
+        AppLogger.info('MySQL字符编码已设置为utf8mb4');
       } catch (e) {
-        print('MySQL连接错误: $e');
+        AppLogger.info('MySQL连接错误: $e');
         if (e.toString().contains('SocketException')) {
           throw Exception('无法连接到MySQL服务器，请检查主机名和端口是否正确');
         } else if (e.toString().contains('Access denied')) {
@@ -250,16 +255,16 @@ class MySQLConnectionService {
       try {
         final results = await _mysqlConnection!.query('SELECT 1');
         if (results.isNotEmpty) {
-          print('MySQL连接测试成功');
+          AppLogger.info('MySQL连接测试成功');
         } else {
           throw Exception('MySQL连接测试失败: 查询返回空结果');
         }
       } catch (e) {
-        print('MySQL查询测试错误: $e');
+        AppLogger.info('MySQL查询测试错误: $e');
         throw Exception('MySQL连接成功但查询测试失败: $e');
       }
     } catch (e) {
-      print('MySQL连接错误: $e');
+      AppLogger.info('MySQL连接错误: $e');
       _mysqlConnection = null;
       throw Exception('MySQL连接失败: $e');
     }
@@ -268,7 +273,7 @@ class MySQLConnectionService {
   /// 测试MySQL连接（初始化时使用）
   Future<bool> testConnection(DatabaseConfig config) async {
     try {
-      print('正在测试MySQL连接...');
+      AppLogger.info('正在测试MySQL连接...');
       String host = config.mysql.host;
       final port = int.parse(config.mysql.port);
       final database = config.mysql.database;
@@ -278,21 +283,21 @@ class MySQLConnectionService {
       // 在Android模拟器上自动转换localhost为10.0.2.2
       if (Platform.isAndroid && (host == 'localhost' || host == '127.0.0.1')) {
         host = '10.0.2.2';
-        print('Android模拟器检测到localhost，自动转换为10.0.2.2');
+        AppLogger.info('Android模拟器检测到localhost，自动转换为10.0.2.2');
       }
 
       // 先快速测试Socket连接（1秒超时）- 快速失败
       try {
-        print('快速测试Socket连接: $host:$port');
+        AppLogger.info('快速测试Socket连接: $host:$port');
         final socket = await Socket.connect(
           host,
           port,
           timeout: const Duration(seconds: 1),
         );
         socket.destroy();
-        print('Socket连接测试成功');
+        AppLogger.info('Socket连接测试成功');
       } catch (e) {
-        print('Socket连接测试失败（快速失败）: $e');
+        AppLogger.info('Socket连接测试失败（快速失败）: $e');
         return false;
       }
 
@@ -311,7 +316,7 @@ class MySQLConnectionService {
 
       return results.isNotEmpty;
     } catch (e) {
-      print('MySQL连接测试失败: $e');
+      AppLogger.info('MySQL连接测试失败: $e');
       return false;
     }
   }
@@ -320,11 +325,11 @@ class MySQLConnectionService {
   Future<void> closeConnection() async {
     if (_mysqlConnection != null) {
       try {
-        print('关闭MySQL连接');
+        AppLogger.info('关闭MySQL连接');
         await _mysqlConnection!.close();
-        print('MySQL连接已关闭');
+        AppLogger.info('MySQL连接已关闭');
       } catch (e) {
-        print('关闭MySQL连接时出错: $e');
+        AppLogger.info('关闭MySQL连接时出错: $e');
       } finally {
         _mysqlConnection = null;
       }

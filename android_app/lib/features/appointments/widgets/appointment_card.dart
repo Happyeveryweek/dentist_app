@@ -6,7 +6,6 @@ import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/screens/appointment_detail_screen.dart';
 import 'package:dentist_app/utils/permission_utils.dart';
 import 'package:dentist_app/features/appointments/widgets/appointment_status_info.dart';
-import 'dart:convert';
 
 class AppointmentCard extends StatelessWidget {
   final Appointment appointment;
@@ -17,7 +16,7 @@ class AppointmentCard extends StatelessWidget {
   final Function(Appointment) onDelete;
   final VoidCallback onDetailUpdated;
 
-  const AppointmentCard({
+  const AppointmentCard({super.key, 
     required this.appointment,
     required this.formatTreatmentType,
     required this.getPatientAvatarColor,
@@ -29,14 +28,14 @@ class AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusInfo = getStatusInfo(appointment.status ?? '');
+    final statusInfo = getStatusInfo(appointment.status);
     final patientName = appointment.patientName ?? '未知患者';
     final avatarColor = getPatientAvatarColor(patientName);
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       elevation: 1,
-      shadowColor: AppTheme.lightText.withOpacity(0.1),
+      shadowColor: AppTheme.lightText.withValues(alpha: 0.1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.borderRadius),
       ),
@@ -45,10 +44,12 @@ class AppointmentCard extends StatelessWidget {
           final result = await Navigator.push(
             context,
             CupertinoPageRoute(
-              builder: (context) => AppointmentDetailScreen(appointment: appointment),
+              builder:
+                  (context) =>
+                      AppointmentDetailScreen(appointment: appointment),
             ),
           );
-          
+
           if (result == true) {
             onDetailUpdated();
           }
@@ -63,9 +64,11 @@ class AppointmentCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CircleAvatar(
-                    backgroundColor: avatarColor.withOpacity(0.2),
+                    backgroundColor: avatarColor.withValues(alpha: 0.2),
                     child: Text(
-                      patientName.isNotEmpty ? patientName.substring(0, 1) : '?',
+                      patientName.isNotEmpty
+                          ? patientName.substring(0, 1)
+                          : '?',
                       style: TextStyle(
                         color: avatarColor,
                         fontWeight: FontWeight.bold,
@@ -97,14 +100,21 @@ class AppointmentCard extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: statusInfo.color.withOpacity(0.1),
+                      color: statusInfo.color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        Icon(statusInfo.icon, color: statusInfo.color, size: 14),
+                        Icon(
+                          statusInfo.icon,
+                          color: statusInfo.color,
+                          size: 14,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           statusInfo.text,
@@ -142,7 +152,8 @@ class AppointmentCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (appointment.notes != null && appointment.notes!.isNotEmpty) ...[
+              if (appointment.notes != null &&
+                  appointment.notes!.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [

@@ -37,7 +37,7 @@ class DashboardHeader extends StatelessWidget {
           const SizedBox(height: 8),
           Container(
             height: 1,
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
           ),
         ],
       ),

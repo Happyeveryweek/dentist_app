@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import '../models/purchase_record.dart';
 import '../utils/datetime_formatter.dart';
 import 'purchase_data_source.dart';
+import '../utils/app_logger.dart';
 
 class MySqlPurchaseDataSource implements PurchaseDataSource {
   final MySqlConnection? Function() _getConnection;
@@ -34,7 +35,7 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
                     ? utf8.decode(bytes, allowMalformed: true)
                     : '';
           } catch (e) {
-            print('Blob转换失败: $e');
+            AppLogger.info('Blob转换失败: $e');
             map[field] = '';
           }
         } else {
@@ -48,7 +49,7 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
                     ? utf8.decode(value, allowMalformed: true)
                     : '';
           } catch (e) {
-            print('Uint8List转换失败: $e');
+            AppLogger.info('Uint8List转换失败: $e');
             map[field] = '';
           }
         } else {

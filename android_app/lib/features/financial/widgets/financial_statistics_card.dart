@@ -21,7 +21,8 @@ class FinancialStatisticsCard extends StatelessWidget {
     final itemCount = globalStats['itemCount'] ?? 0;
     final totalCollected = (globalStats['totalCollected'] ?? 0.0) as double;
     final totalOutstanding = (globalStats['totalOutstanding'] ?? 0.0) as double;
-    final totalProcessingFee = (globalStats['totalProcessingFee'] ?? 0.0) as double;
+    final totalProcessingFee =
+        (globalStats['totalProcessingFee'] ?? 0.0) as double;
     final isFirstLoad = globalStats.isEmpty;
 
     return Container(
@@ -30,99 +31,108 @@ class FinancialStatisticsCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.1),
+        shadowColor: Colors.black.withValues(alpha: 0.1),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: isFirstLoad
-                ? const SizedBox(
-                    height: 56,
-                    child: Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+            child:
+                isFirstLoad
+                    ? const SizedBox(
+                      height: 56,
+                      child: Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                       ),
-                    ),
-                  )
-                : Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatItem(
-                              '患者数',
-                              '$patientCount',
-                              Icons.people,
-                              Colors.purple,
-                            ),
-                          ),
-                          Expanded(
-                            child: _buildStatItem(
-                              '记录数',
-                              '$itemCount',
-                              Icons.receipt_long,
-                              Colors.green,
-                            ),
-                          ),
-                          Expanded(
-                            child: _buildStatItem(
-                              '已收费',
-                              '¥${NumberFormat('#,##0').format(totalCollected)}',
-                              Icons.payment,
-                              Colors.orange,
-                            ),
-                          ),
-                          Expanded(
-                            child: _buildStatItem(
-                              '总欠费',
-                              '¥${NumberFormat('#,##0').format(totalOutstanding)}',
-                              Icons.money_off,
-                              Colors.red[700]!,
-                            ),
-                          ),
-                          Expanded(
-                            child: _buildStatItem(
-                              '加工费',
-                              '¥${NumberFormat('#,##0').format(totalProcessingFee)}',
-                              Icons.build,
-                              Colors.teal,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (isStatsLoading) ...[
-                        const SizedBox(height: 6),
+                    )
+                    : Column(
+                      children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            SizedBox(
-                              width: 10,
-                              height: 10,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 1.5,
-                                color: Colors.grey[400],
+                            Expanded(
+                              child: _buildStatItem(
+                                '患者数',
+                                '$patientCount',
+                                Icons.people,
+                                Colors.purple,
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '统计数据加载中...',
-                              style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                            Expanded(
+                              child: _buildStatItem(
+                                '记录数',
+                                '$itemCount',
+                                Icons.receipt_long,
+                                Colors.green,
+                              ),
+                            ),
+                            Expanded(
+                              child: _buildStatItem(
+                                '已收费',
+                                '¥${NumberFormat('#,##0').format(totalCollected)}',
+                                Icons.payment,
+                                Colors.orange,
+                              ),
+                            ),
+                            Expanded(
+                              child: _buildStatItem(
+                                '总欠费',
+                                '¥${NumberFormat('#,##0').format(totalOutstanding)}',
+                                Icons.money_off,
+                                Colors.red[700]!,
+                              ),
+                            ),
+                            Expanded(
+                              child: _buildStatItem(
+                                '加工费',
+                                '¥${NumberFormat('#,##0').format(totalProcessingFee)}',
+                                Icons.build,
+                                Colors.teal,
+                              ),
                             ),
                           ],
                         ),
+                        if (isStatsLoading) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 10,
+                                height: 10,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '统计数据加载中...',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[400],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
+                    ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       children: [
         Icon(icon, color: color, size: 18),
@@ -144,10 +154,7 @@ class FinancialStatisticsCard extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 10,
-            color: Colors.grey,
-          ),
+          style: const TextStyle(fontSize: 10, color: Colors.grey),
           textAlign: TextAlign.center,
         ),
       ],

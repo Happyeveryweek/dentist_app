@@ -1,5 +1,6 @@
 import 'package:mysql1/mysql1.dart';
 import 'package:sqflite/sqflite.dart';
+import '../../../utils/app_logger.dart';
 
 /// 材料 Provider 初始化结果
 class MaterialInitializationResult {
@@ -35,7 +36,7 @@ class MaterialInitializationService {
         throw Exception('MySQL连接为null，无法创建材料数据源');
       }
 
-      print('✅ MaterialProvider MySQL 数据源设置成功');
+      AppLogger.info('✅ MaterialProvider MySQL 数据源设置成功');
       return MaterialInitializationResult(
         database: null,
         mysqlConnection: mysqlConnection,
@@ -47,12 +48,14 @@ class MaterialInitializationService {
     Database? database;
     try {
       database = await dbProvider.sqliteDatabase;
-      print('MaterialProvider SQLite 数据源设置成功: ${database != null ? "成功" : "失败"}');
+      AppLogger.info(
+        'MaterialProvider SQLite 数据源设置成功: ${database != null ? "成功" : "失败"}',
+      );
     } catch (e) {
-      print('获取SQLite数据库失败: $e');
+      AppLogger.info('获取SQLite数据库失败: $e');
       if (dbProvider.database != null) {
         database = dbProvider.database;
-        print('通过备用方式获取SQLite数据库: ${database != null ? "成功" : "失败"}');
+        AppLogger.info('通过备用方式获取SQLite数据库: ${database != null ? "成功" : "失败"}');
       }
     }
 

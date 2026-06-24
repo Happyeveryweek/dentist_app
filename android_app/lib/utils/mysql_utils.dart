@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'package:mysql1/mysql1.dart';
 import 'datetime_formatter.dart';
 import 'package:dentist_app/models/database_config.dart';
 import 'dart:async';
+import './app_logger.dart';
 
 /// MySQL连接工具类
 class MySqlUtils {
@@ -22,7 +22,7 @@ class MySqlUtils {
       await conn.close();
       return true;
     } catch (e) {
-      print('MySQL连接测试失败: $e');
+      AppLogger.info('MySQL连接测试失败: $e');
       return false;
     }
   }
@@ -45,54 +45,62 @@ class MySqlUtils {
         await conn.query("SET character_set_connection = 'utf8mb4'");
         await conn.query("SET character_set_results = 'utf8mb4'");
       } catch (e) {
-        print('设置MySQL会话字符集失败: $e');
+        AppLogger.info('设置MySQL会话字符集失败: $e');
       }
 
       return conn;
     } catch (e) {
-      print('MySQL连接失败: $e');
+      AppLogger.info('MySQL连接失败: $e');
       return null;
     }
   }
 
   /// 检查MySQL表是否存在
-  static Future<bool> checkTablesExist(MySqlConnection conn, List<String> tableNames) async {
+  static Future<bool> checkTablesExist(
+    MySqlConnection conn,
+    List<String> tableNames,
+  ) async {
     try {
       for (final tableName in tableNames) {
-        final result = await conn.query(
-          'SHOW TABLES LIKE ?',
-          [tableName],
-        );
+        final result = await conn.query('SHOW TABLES LIKE ?', [tableName]);
         if (result.isEmpty) {
-          print('表 $tableName 不存在');
+          AppLogger.info('表 $tableName 不存在');
           return false;
         }
       }
       return true;
     } catch (e) {
-      print('检查表存在性失败: $e');
+      AppLogger.info('检查表存在性失败: $e');
       return false;
     }
   }
 
   /// 获取表记录数量
-  static Future<int> getTableCount(MySqlConnection conn, String tableName) async {
+  static Future<int> getTableCount(
+    MySqlConnection conn,
+    String tableName,
+  ) async {
     try {
-      final result = await conn.query('SELECT COUNT(*) as count FROM $tableName');
+      final result = await conn.query(
+        'SELECT COUNT(*) as count FROM $tableName',
+      );
       return result.first['count'] as int;
     } catch (e) {
-      print('获取表记录数量失败: $e');
+      AppLogger.info('获取表记录数量失败: $e');
       return 0;
     }
   }
 
   /// 获取表的最后更新时间
-  static Future<DateTime?> getLastUpdateTime(MySqlConnection conn, String tableName) async {
+  static Future<DateTime?> getLastUpdateTime(
+    MySqlConnection conn,
+    String tableName,
+  ) async {
     try {
       final result = await conn.query(
         'SELECT MAX(updated_at) as last_update FROM $tableName',
       );
-      
+
       if (result.isNotEmpty && result.first['last_update'] != null) {
         final lastUpdate = result.first['last_update'];
         if (lastUpdate is DateTime) {
@@ -103,7 +111,7 @@ class MySqlUtils {
       }
       return null;
     } catch (e) {
-      print('获取最后更新时间失败: $e');
+      AppLogger.info('获取最后更新时间失败: $e');
       return null;
     }
   }

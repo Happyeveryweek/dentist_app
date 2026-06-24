@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import '../../../utils/app_logger.dart';
 
 /// 患者牙齿状况显示组件
 /// 职责：显示患者牙齿状况的十字图表和备注
@@ -14,7 +15,7 @@ class PatientDentalConditionDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     try {
-      print('准备解析牙齿数据: $dentalConditionJson');
+      AppLogger.info('准备解析牙齿数据: $dentalConditionJson');
 
       Map<String, dynamic> dentalData = Map<String, dynamic>.from(
         jsonDecode(dentalConditionJson),
@@ -25,7 +26,7 @@ class PatientDentalConditionDisplay extends StatelessWidget {
       Set<String> allIndexes = {};
 
       // 首先获取所有的索引
-      dentalData.keys.forEach((key) {
+      for (final key in dentalData.keys) {
         if (key.startsWith('date-')) {
           String index = key.split('-').last;
           allIndexes.add(index);
@@ -36,9 +37,9 @@ class PatientDentalConditionDisplay extends StatelessWidget {
             allIndexes.add(dataIndex);
           }
         }
-      });
+      }
 
-      print('找到的索引列表: $allIndexes');
+      AppLogger.info('找到的索引列表: $allIndexes');
 
       // 初始化所有组的数据
       for (String index in allIndexes) {
@@ -46,7 +47,9 @@ class PatientDentalConditionDisplay extends StatelessWidget {
       }
 
       // 处理所有数据
-      dentalData.forEach((key, value) {
+      for (final entry in dentalData.entries) {
+        final key = entry.key;
+        final value = entry.value;
         if (key.startsWith('date-')) {
           String index = key.split('-').last;
           groupedData[index]!['date'] = value?.toString() ?? '';
@@ -73,26 +76,26 @@ class PatientDentalConditionDisplay extends StatelessWidget {
             }
           }
         }
-      });
+      }
 
-      print('分组后的牙齿数据: $groupedData');
+      AppLogger.info('分组后的牙齿数据: $groupedData');
 
       // 过滤出有内容的日期记录，并按日期倒序排序（最新的在前）
       List<Widget> dateRecords = [];
-      
+
       // 将记录转换为列表并按日期排序
-      List<MapEntry<String, Map<String, String>>> sortedEntries = groupedData.entries.toList();
+      List<MapEntry<String, Map<String, String>>> sortedEntries =
+          groupedData.entries.toList();
       sortedEntries.sort((a, b) {
         String dateA = a.value['date'] ?? '';
         String dateB = b.value['date'] ?? '';
         // 倒序排序，最新日期在前
         return dateB.compareTo(dateA);
       });
-      
+
       for (var entry in sortedEntries) {
-        String index = entry.key;
         Map<String, String> data = entry.value;
-        
+
         // 检查该日期是否有任何图表内容
         bool hasAnyContent = false;
         for (int i = 1; i <= 3; i++) {
@@ -101,17 +104,17 @@ class PatientDentalConditionDisplay extends StatelessWidget {
             break;
           }
         }
-        
+
         // 只有当该日期有内容时才添加到显示列表
         if (hasAnyContent) {
           if (dateRecords.isNotEmpty) {
             dateRecords.add(const SizedBox(height: 16)); // 日期记录之间的间距
           }
-          
+
           dateRecords.add(_buildDateRecordCard(data));
         }
       }
-      
+
       // 如果没有任何日期有内容，显示提示信息
       if (dateRecords.isEmpty) {
         dateRecords.add(
@@ -141,23 +144,20 @@ class PatientDentalConditionDisplay extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   '请在编辑患者信息时添加牙齿状况',
-                  style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
                 ),
               ],
             ),
           ),
         );
       }
-      
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: dateRecords,
       );
     } catch (e) {
-      print('解析牙齿状况数据错误: $e');
+      AppLogger.info('解析牙齿状况数据错误: $e');
       return Center(child: Text('牙齿状况数据格式错误: $e'));
     }
   }
@@ -171,7 +171,7 @@ class PatientDentalConditionDisplay extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -182,10 +182,7 @@ class PatientDentalConditionDisplay extends StatelessWidget {
         children: [
           // 日期栏
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.green.shade50,
               borderRadius: const BorderRadius.only(
@@ -249,7 +246,7 @@ class PatientDentalConditionDisplay extends StatelessWidget {
   // 构建非空的牙齿图表列表
   List<Widget> _buildNonEmptyDentalCharts(Map<String, String> data) {
     List<Widget> charts = [];
-    
+
     // 检查并添加有内容的图表
     for (int i = 1; i <= 3; i++) {
       String title = '图表$i';
@@ -260,7 +257,7 @@ class PatientDentalConditionDisplay extends StatelessWidget {
         charts.add(_buildDentalChartInfo(title, data));
       }
     }
-    
+
     // 如果没有任何图表有内容，显示提示信息
     if (charts.isEmpty) {
       charts.add(
@@ -273,19 +270,12 @@ class PatientDentalConditionDisplay extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.info_outline,
-                color: Colors.grey.shade600,
-                size: 20,
-              ),
+              Icon(Icons.info_outline, color: Colors.grey.shade600, size: 20),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   '该日期暂无牙齿状况记录',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                 ),
               ),
             ],
@@ -293,33 +283,33 @@ class PatientDentalConditionDisplay extends StatelessWidget {
         ),
       );
     }
-    
+
     return charts;
   }
 
   // 检查图表是否有内容（包括四个象限和备注）
   bool _hasChartContent(String title, Map<String, String> data) {
     final chartPrefix = "chart${title.substring(2, 3)}"; // 从"图表1"提取为"chart1"
-    
+
     // 检查四个象限是否有内容
     final topLeft = data['$chartPrefix-top-left'] ?? '';
     final topRight = data['$chartPrefix-top-right'] ?? '';
     final bottomLeft = data['$chartPrefix-bottom-left'] ?? '';
     final bottomRight = data['$chartPrefix-bottom-right'] ?? '';
-    
+
     // 检查备注是否有有效内容
     String noteValue = data['$chartPrefix-note'] ?? '';
     // 过滤掉默认提示文本
     if (noteValue.startsWith('请在此输入') && noteValue.endsWith('的备注')) {
       noteValue = '';
     }
-    
+
     // 只要有任何一个字段有内容就显示该图表
-    return topLeft.trim().isNotEmpty || 
-           topRight.trim().isNotEmpty || 
-           bottomLeft.trim().isNotEmpty || 
-           bottomRight.trim().isNotEmpty || 
-           noteValue.trim().isNotEmpty;
+    return topLeft.trim().isNotEmpty ||
+        topRight.trim().isNotEmpty ||
+        bottomLeft.trim().isNotEmpty ||
+        bottomRight.trim().isNotEmpty ||
+        noteValue.trim().isNotEmpty;
   }
 
   // 辅助方法：构建单个牙齿图表的信息显示 - 十字图表版本
@@ -338,11 +328,12 @@ class PatientDentalConditionDisplay extends StatelessWidget {
     final topRight = data['$chartPrefix-top-right'] ?? '';
     final bottomLeft = data['$chartPrefix-bottom-left'] ?? '';
     final bottomRight = data['$chartPrefix-bottom-right'] ?? '';
-    
-    final hasChartData = topLeft.trim().isNotEmpty || 
-                        topRight.trim().isNotEmpty || 
-                        bottomLeft.trim().isNotEmpty || 
-                        bottomRight.trim().isNotEmpty;
+
+    final hasChartData =
+        topLeft.trim().isNotEmpty ||
+        topRight.trim().isNotEmpty ||
+        bottomLeft.trim().isNotEmpty ||
+        bottomRight.trim().isNotEmpty;
 
     // 如果只有备注没有图表数据，使用紧凑显示
     if (!hasChartData && noteValue.trim().isNotEmpty) {
@@ -410,7 +401,9 @@ class PatientDentalConditionDisplay extends StatelessWidget {
                             child: Container(
                               alignment: Alignment.centerRight,
                               padding: const EdgeInsets.only(right: 6, top: 12),
-                              child: _buildQuadrantText(data['$chartPrefix-top-left'] ?? ''),
+                              child: _buildQuadrantText(
+                                data['$chartPrefix-top-left'] ?? '',
+                              ),
                             ),
                           ),
                           // 右上象限 (患者左上)
@@ -418,7 +411,9 @@ class PatientDentalConditionDisplay extends StatelessWidget {
                             child: Container(
                               alignment: Alignment.centerLeft,
                               padding: const EdgeInsets.only(left: 6, top: 12),
-                              child: _buildQuadrantText(data['$chartPrefix-top-right'] ?? ''),
+                              child: _buildQuadrantText(
+                                data['$chartPrefix-top-right'] ?? '',
+                              ),
                             ),
                           ),
                         ],
@@ -433,16 +428,26 @@ class PatientDentalConditionDisplay extends StatelessWidget {
                           Expanded(
                             child: Container(
                               alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 6, bottom: 12),
-                              child: _buildQuadrantText(data['$chartPrefix-bottom-left'] ?? ''),
+                              padding: const EdgeInsets.only(
+                                right: 6,
+                                bottom: 12,
+                              ),
+                              child: _buildQuadrantText(
+                                data['$chartPrefix-bottom-left'] ?? '',
+                              ),
                             ),
                           ),
                           // 右下象限 (患者左下)
                           Expanded(
                             child: Container(
                               alignment: Alignment.centerLeft,
-                              padding: const EdgeInsets.only(left: 6, bottom: 12),
-                              child: _buildQuadrantText(data['$chartPrefix-bottom-right'] ?? ''),
+                              padding: const EdgeInsets.only(
+                                left: 6,
+                                bottom: 12,
+                              ),
+                              child: _buildQuadrantText(
+                                data['$chartPrefix-bottom-right'] ?? '',
+                              ),
                             ),
                           ),
                         ],
@@ -470,7 +475,11 @@ class PatientDentalConditionDisplay extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.note_alt, size: 14, color: Colors.amber.shade700),
+                      Icon(
+                        Icons.note_alt,
+                        size: 14,
+                        color: Colors.amber.shade700,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         '备注',
@@ -483,10 +492,7 @@ class PatientDentalConditionDisplay extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    noteValue,
-                    style: const TextStyle(fontSize: 13),
-                  ),
+                  Text(noteValue, style: const TextStyle(fontSize: 13)),
                 ],
               ),
             ),
@@ -508,7 +514,7 @@ class PatientDentalConditionDisplay extends StatelessWidget {
         ),
       );
     }
-    
+
     return Text(
       text,
       style: const TextStyle(
@@ -558,19 +564,12 @@ class PatientDentalConditionDisplay extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   noteValue,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black87,
-                  ),
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
                 ),
               ],
             ),
           ),
-          Icon(
-            Icons.note_alt,
-            size: 16,
-            color: Colors.amber.shade600,
-          ),
+          Icon(Icons.note_alt, size: 16, color: Colors.amber.shade600),
         ],
       ),
     );

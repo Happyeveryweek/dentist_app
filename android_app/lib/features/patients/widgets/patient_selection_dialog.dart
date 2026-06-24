@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/theme/app_theme.dart';
-import 'package:dentist_app/features/patients/widgets/patient_form_sheet.dart';
 import 'package:dentist_app/utils/pinyin_util.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
+import '../../../utils/app_logger.dart';
 
 class PatientSelectionDialog extends StatefulWidget {
   final List<Patient> patients;
@@ -12,7 +12,7 @@ class PatientSelectionDialog extends StatefulWidget {
   final Future<List<Patient>> Function()? onLoadPatients;
   final Future<List<Patient>> Function(String query)? onSearchPatients;
 
-  const PatientSelectionDialog({
+  const PatientSelectionDialog({super.key, 
     required this.patients,
     this.onPatientAdded,
     this.onLoadPatients,
@@ -72,7 +72,7 @@ class PatientSelectionDialogState extends State<PatientSelectionDialog> {
         _isLoading = false;
         _errorMessage = '加载患者失败';
       });
-      print('加载患者列表失败: $e');
+      AppLogger.info('加载患者列表失败: $e');
     }
   }
 
@@ -107,7 +107,7 @@ class PatientSelectionDialogState extends State<PatientSelectionDialog> {
             _isLoading = false;
             _errorMessage = '搜索患者失败';
           });
-          print('搜索患者失败: $e');
+          AppLogger.info('搜索患者失败: $e');
         }
       });
       return;
@@ -142,7 +142,7 @@ class PatientSelectionDialogState extends State<PatientSelectionDialog> {
                   pinyinMatch = pinyin.contains(queryLower);
                   initialsMatch = initials.contains(queryLower);
                 } catch (e) {
-                  print('拼音搜索错误: $e');
+                  AppLogger.info('拼音搜索错误: $e');
                 }
               }
 
@@ -166,9 +166,9 @@ class PatientSelectionDialogState extends State<PatientSelectionDialog> {
           children: [
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.primaryColor,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
@@ -228,11 +228,11 @@ class PatientSelectionDialogState extends State<PatientSelectionDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  Icon(Icons.people, color: AppTheme.primaryColor, size: 18),
+                  const Icon(Icons.people, color: AppTheme.primaryColor, size: 18),
                   const SizedBox(width: 8),
                   Text(
                     '患者列表 (${_filteredPatients.length})',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.primaryColor,
@@ -399,37 +399,5 @@ class PatientSelectionDialogState extends State<PatientSelectionDialog> {
         ],
       ),
     );
-  }
-
-  Future<void> _addNewPatient() async {
-    Navigator.of(context).pop();
-
-    await Future.delayed(const Duration(milliseconds: 100));
-
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => PatientFormSheet(
-            onSaved: (isSuccess, message) {
-              if (isSuccess) {
-                widget.onPatientAdded?.call();
-              }
-              return isSuccess;
-            },
-          ),
-    );
-
-    if (result == true) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('患者添加成功！'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    }
   }
 }

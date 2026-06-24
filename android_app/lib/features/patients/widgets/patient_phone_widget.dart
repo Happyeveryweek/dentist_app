@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import '../../../utils/app_logger.dart';
 
 /// 电话号码管理组件
 /// 职责：管理电话号码的输入和管理
@@ -14,10 +15,10 @@ class PatientPhoneWidget extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _PatientPhoneWidgetState createState() => _PatientPhoneWidgetState();
+  PatientPhoneWidgetState createState() => PatientPhoneWidgetState();
 }
 
-class _PatientPhoneWidgetState extends State<PatientPhoneWidget> {
+class PatientPhoneWidgetState extends State<PatientPhoneWidget> {
   final _phoneController = TextEditingController();
   final List<TextEditingController> _additionalPhoneControllers = [];
 
@@ -46,17 +47,17 @@ class _PatientPhoneWidgetState extends State<PatientPhoneWidget> {
 
   // 专门处理电话号码的辅助方法
   void _processPhoneNumbers(String phoneStr) {
-    print('处理电话号码: $phoneStr');
-    print('电话号码类型: ${phoneStr.runtimeType}');
-    print('电话号码长度: ${phoneStr.length}');
+    AppLogger.info('处理电话号码: $phoneStr');
+    AppLogger.info('电话号码类型: ${phoneStr.runtimeType}');
+    AppLogger.info('电话号码长度: ${phoneStr.length}');
 
     // 原始格式判断
     if (phoneStr.startsWith('[') && phoneStr.endsWith(']')) {
-      print('电话号码原始格式: JSON数组格式');
+      AppLogger.info('电话号码原始格式: JSON数组格式');
     } else if (phoneStr.contains(',')) {
-      print('电话号码原始格式: 逗号分隔格式');
+      AppLogger.info('电话号码原始格式: 逗号分隔格式');
     } else {
-      print('电话号码原始格式: 单个电话号码');
+      AppLogger.info('电话号码原始格式: 单个电话号码');
     }
 
     if (phoneStr.isEmpty) {
@@ -68,7 +69,7 @@ class _PatientPhoneWidgetState extends State<PatientPhoneWidget> {
     String cleanPhoneStr = phoneStr;
     if (phoneStr.contains('\\')) {
       cleanPhoneStr = phoneStr.replaceAll('\\', '');
-      print('移除转义字符后: $cleanPhoneStr');
+      AppLogger.info('移除转义字符后: $cleanPhoneStr');
     }
 
     // 尝试直接解析多个电话号码
@@ -76,38 +77,38 @@ class _PatientPhoneWidgetState extends State<PatientPhoneWidget> {
 
     // 检查是否为JSON格式
     if (cleanPhoneStr.startsWith('[') && cleanPhoneStr.endsWith(']')) {
-      print('检测到JSON格式电话号码: $cleanPhoneStr');
+      AppLogger.info('检测到JSON格式电话号码: $cleanPhoneStr');
 
       try {
         // 尝试标准JSON解析
         final parsed = jsonDecode(cleanPhoneStr);
-        print('JSON解析结果类型: ${parsed.runtimeType}');
+        AppLogger.info('JSON解析结果类型: ${parsed.runtimeType}');
 
         if (parsed is List) {
-          print('成功解析为JSON数组: $parsed');
+          AppLogger.info('成功解析为JSON数组: $parsed');
           if (parsed.isNotEmpty) {
             phoneNumbers = parsed.map((p) => p.toString()).toList();
-            print('从JSON提取的电话号码列表: $phoneNumbers');
+            AppLogger.info('从JSON提取的电话号码列表: $phoneNumbers');
           }
         } else if (parsed is String) {
           // 处理嵌套JSON字符串的情况
-          print('JSON解析结果是字符串，尝试再次解析');
+          AppLogger.info('JSON解析结果是字符串，尝试再次解析');
           try {
             final nestedParsed = jsonDecode(parsed);
             if (nestedParsed is List) {
               phoneNumbers = nestedParsed.map((p) => p.toString()).toList();
-              print('从嵌套JSON提取的电话号码列表: $phoneNumbers');
+              AppLogger.info('从嵌套JSON提取的电话号码列表: $phoneNumbers');
             } else {
               // 单个电话号码
               phoneNumbers = [parsed];
             }
           } catch (e) {
-            print('嵌套JSON解析失败: $e，当作单个电话号码处理');
+            AppLogger.info('嵌套JSON解析失败: $e，当作单个电话号码处理');
             phoneNumbers = [parsed];
           }
         }
       } catch (e) {
-        print('标准JSON解析失败: $e，类型: ${e.runtimeType}');
+        AppLogger.info('标准JSON解析失败: $e，类型: ${e.runtimeType}');
 
         // 使用正则表达式提取电话号码
         final RegExp regex = RegExp(r'"([^"]*)"');
@@ -119,7 +120,7 @@ class _PatientPhoneWidgetState extends State<PatientPhoneWidget> {
               phoneNumbers.add(match.group(1)!);
             }
           }
-          print('通过正则表达式提取的电话: $phoneNumbers');
+          AppLogger.info('通过正则表达式提取的电话: $phoneNumbers');
         }
 
         // 如果正则表达式没有匹配到，尝试直接分割字符串
@@ -138,33 +139,33 @@ class _PatientPhoneWidgetState extends State<PatientPhoneWidget> {
               phoneNumbers.add(clean);
             }
           }
-          print('通过分割字符串提取的电话: $phoneNumbers');
+          AppLogger.info('通过分割字符串提取的电话: $phoneNumbers');
         }
       }
     } else if (cleanPhoneStr.contains(',')) {
       // 处理逗号分隔的电话号码
-      print('处理逗号分隔的电话号码: $cleanPhoneStr');
+      AppLogger.info('处理逗号分隔的电话号码: $cleanPhoneStr');
       phoneNumbers =
           cleanPhoneStr
               .split(',')
               .map((p) => p.trim())
               .where((p) => p.isNotEmpty)
               .toList();
-      print('通过逗号分割提取的电话: $phoneNumbers');
+      AppLogger.info('通过逗号分割提取的电话: $phoneNumbers');
     } else {
       // 单个电话号码
       phoneNumbers = [cleanPhoneStr];
-      print('单个电话号码: $cleanPhoneStr');
+      AppLogger.info('单个电话号码: $cleanPhoneStr');
     }
 
     // 设置电话号码到输入框
     if (phoneNumbers.isNotEmpty) {
       _phoneController.text = phoneNumbers[0];
-      print('设置主电话: ${phoneNumbers[0]}');
+      AppLogger.info('设置主电话: ${phoneNumbers[0]}');
 
       // 清理之前的额外电话控制器
       if (_additionalPhoneControllers.isNotEmpty) {
-        print('清理之前的额外电话控制器: ${_additionalPhoneControllers.length}个');
+        AppLogger.info('清理之前的额外电话控制器: ${_additionalPhoneControllers.length}个');
         for (var controller in _additionalPhoneControllers) {
           controller.dispose();
         }
@@ -173,19 +174,19 @@ class _PatientPhoneWidgetState extends State<PatientPhoneWidget> {
 
       // 添加额外电话
       for (int i = 1; i < phoneNumbers.length; i++) {
-        print('添加备用电话 $i: ${phoneNumbers[i]}');
+        AppLogger.info('添加备用电话 $i: ${phoneNumbers[i]}');
         _additionalPhoneControllers.add(
           TextEditingController(text: phoneNumbers[i]),
         );
       }
 
-      print(
+      AppLogger.info(
         '设置了${phoneNumbers.length}个电话号码，主电话:${_phoneController.text}，额外电话:${_additionalPhoneControllers.length}个',
       );
     } else {
       // 无法解析，使用原始字符串
       _phoneController.text = phoneStr;
-      print('无法解析电话号码，使用原始字符串: $phoneStr');
+      AppLogger.info('无法解析电话号码，使用原始字符串: $phoneStr');
     }
   }
 
@@ -234,10 +235,7 @@ class _PatientPhoneWidgetState extends State<PatientPhoneWidget> {
             ),
             // 添加按钮
             Padding(
-              padding: const EdgeInsets.only(
-                left: 12.0,
-                top: 8.0,
-              ),
+              padding: const EdgeInsets.only(left: 12.0, top: 8.0),
               child: IconButton(
                 onPressed: _addAdditionalPhone,
                 icon: Container(
@@ -279,10 +277,7 @@ class _PatientPhoneWidgetState extends State<PatientPhoneWidget> {
                 ),
                 // 删除按钮
                 Padding(
-                  padding: const EdgeInsets.only(
-                    left: 12.0,
-                    top: 8.0,
-                  ),
+                  padding: const EdgeInsets.only(left: 12.0, top: 8.0),
                   child: IconButton(
                     onPressed: () => _removeAdditionalPhone(index),
                     icon: Container(
@@ -326,7 +321,11 @@ class _PatientPhoneWidgetState extends State<PatientPhoneWidget> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(color: Colors.grey.shade600),
-          prefixIcon: Icon(icon, color: iconColor.withOpacity(0.8), size: 22),
+          prefixIcon: Icon(
+            icon,
+            color: iconColor.withValues(alpha: 0.8),
+            size: 22,
+          ),
           filled: true,
           fillColor: Colors.grey.shade50,
           border: OutlineInputBorder(

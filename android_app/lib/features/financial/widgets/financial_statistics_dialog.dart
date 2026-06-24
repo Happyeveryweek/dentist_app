@@ -8,7 +8,6 @@ import '../../../utils/datetime_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import '../../../widgets/modern_date_range_picker.dart';
 import 'compact_stat_card.dart';
-import 'stat_card.dart';
 import 'payment_status_chart.dart';
 import 'monthly_trend_chart.dart';
 import 'monthly_processing_chart.dart';
@@ -27,16 +26,19 @@ class FinancialStatisticsDialog extends StatefulWidget {
   });
 
   @override
-  State<FinancialStatisticsDialog> createState() => _FinancialStatisticsDialogState();
+  State<FinancialStatisticsDialog> createState() =>
+      _FinancialStatisticsDialogState();
 }
 
 class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     with SingleTickerProviderStateMixin {
-  DateTime _startDate = DateTimeFormatter.nowLocal().subtract(const Duration(days: 180)); // 初始化为6个月前
+  DateTime _startDate = DateTimeFormatter.nowLocal().subtract(
+    const Duration(days: 180),
+  ); // 初始化为6个月前
   DateTime _endDate = DateTimeFormatter.nowLocal();
-  
+
   late TabController _tabController;
-  
+
   // 预设时间范围
   final List<Map<String, dynamic>> _presets = [
     {'label': '本月', 'key': 'this_month'},
@@ -71,32 +73,40 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
       final now = DateTimeFormatter.nowLocal();
       return DateTime(now.year, now.month - 11, 1);
     }
-    
+
     DateTime earliest = DateTime(9999);
-    
+
     // 遍历所有财务项目，找到最早的收费日期
     for (final record in widget.financialRecords) {
       if (record.id != null && widget.recordItemsMap.containsKey(record.id)) {
         final items = widget.recordItemsMap[record.id]!;
         for (final item in items) {
-          final date = DateTime(item.chargeDate.year, item.chargeDate.month, item.chargeDate.day);
+          final date = DateTime(
+            item.chargeDate.year,
+            item.chargeDate.month,
+            item.chargeDate.day,
+          );
           if (date.isBefore(earliest)) {
             earliest = date;
           }
         }
       }
     }
-    
+
     // 如果没有找到任何项目，使用记录创建时间作为后备
     if (earliest.year == 9999) {
       for (final record in widget.financialRecords) {
-        final date = DateTime(record.createdAt.year, record.createdAt.month, record.createdAt.day);
+        final date = DateTime(
+          record.createdAt.year,
+          record.createdAt.month,
+          record.createdAt.day,
+        );
         if (date.isBefore(earliest)) {
           earliest = date;
         }
       }
     }
-    
+
     return earliest;
   }
 
@@ -105,7 +115,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     final now = DateTimeFormatter.nowLocal();
     DateTime start;
     DateTime end = DateTime(now.year, now.month, now.day);
-    
+
     switch (preset) {
       case 'this_month':
         start = DateTime(now.year, now.month, 1);
@@ -129,7 +139,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
       default:
         start = DateTime(now.year, now.month - 2, 1);
     }
-    
+
     setState(() {
       _startDate = start;
       _endDate = end;
@@ -141,7 +151,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     final now = DateTimeFormatter.nowLocal();
     final s = DateTime(_startDate.year, _startDate.month, _startDate.day);
     final e = DateTime(_endDate.year, _endDate.month, _endDate.day);
-    
+
     switch (preset) {
       case 'this_month':
         final ps = DateTime(now.year, now.month, 1);
@@ -176,25 +186,28 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     final d = DateTime(date.year, date.month, date.day);
     final s = DateTime(_startDate.year, _startDate.month, _startDate.day);
     final e = DateTime(_endDate.year, _endDate.month, _endDate.day);
-    return (d.isAtSameMomentAs(s) || d.isAfter(s)) && (d.isAtSameMomentAs(e) || d.isBefore(e));
+    return (d.isAtSameMomentAs(s) || d.isAfter(s)) &&
+        (d.isAtSameMomentAs(e) || d.isBefore(e));
   }
 
   /// 获取过滤后的记录
   List<FinancialRecord> _getFilteredRecords() {
-    return widget.financialRecords.where((record) => _isWithinRange(record.createdAt)).toList();
+    return widget.financialRecords
+        .where((record) => _isWithinRange(record.createdAt))
+        .toList();
   }
 
   /// 获取过滤后的财务项目（按收费日期过滤，与Windows端逻辑一致）
   List<FinancialItem> _getFilteredItems() {
     final List<FinancialItem> allItems = [];
-    
+
     // 获取所有财务项目
     for (final record in widget.financialRecords) {
       if (record.id != null && widget.recordItemsMap.containsKey(record.id)) {
         allItems.addAll(widget.recordItemsMap[record.id]!);
       }
     }
-    
+
     // 按收费日期过滤（与Windows端一致）
     return allItems.where((item) {
       return _isWithinRange(item.chargeDate);
@@ -220,11 +233,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
               indicatorWeight: 3,
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white70,
-              tabs: const [
-                Tab(text: '概览'),
-                Tab(text: '趋势'),
-                Tab(text: '排行'),
-              ],
+              tabs: const [Tab(text: '概览'), Tab(text: '趋势'), Tab(text: '排行')],
             ),
           ),
         ),
@@ -233,7 +242,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
         children: [
           // 时间范围选择器
           _buildDateRangeSelector(),
-          
+
           // 内容区域
           Expanded(
             child: TabBarView(
@@ -266,7 +275,10 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
               Expanded(
                 child: Text(
                   '${DateFormat('yyyy-MM-dd').format(_startDate)} 至 ${DateFormat('yyyy-MM-dd').format(_endDate)}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               TextButton(
@@ -275,37 +287,42 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
               ),
             ],
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // 预设时间范围按钮 - 调整为单行显示
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: _presets.map((preset) {
-                final isActive = _isPresetActive(preset['key']);
-                return Container(
-                  margin: const EdgeInsets.only(right: 8),
-                  child: FilterChip(
-                    label: Text(
-                      preset['label'],
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    selected: isActive,
-                    onSelected: (_) => _applyPreset(preset['key']),
-                    selectedColor: Colors.blue.shade100,
-                    checkmarkColor: Colors.blue.shade600,
-                    backgroundColor: Colors.grey.shade100,
-                    labelStyle: TextStyle(
-                      color: isActive ? Colors.blue.shade600 : Colors.grey.shade700,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                      fontSize: 12,
-                    ),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                  ),
-                );
-              }).toList(),
+              children:
+                  _presets.map((preset) {
+                    final isActive = _isPresetActive(preset['key']);
+                    return Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      child: FilterChip(
+                        label: Text(
+                          preset['label'],
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        selected: isActive,
+                        onSelected: (_) => _applyPreset(preset['key']),
+                        selectedColor: Colors.blue.shade100,
+                        checkmarkColor: Colors.blue.shade600,
+                        backgroundColor: Colors.grey.shade100,
+                        labelStyle: TextStyle(
+                          color:
+                              isActive
+                                  ? Colors.blue.shade600
+                                  : Colors.grey.shade700,
+                          fontWeight:
+                              isActive ? FontWeight.w600 : FontWeight.normal,
+                          fontSize: 12,
+                        ),
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    );
+                  }).toList(),
             ),
           ),
         ],
@@ -317,29 +334,38 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
   Future<void> _showCustomDatePicker() async {
     await showDialog(
       context: context,
-      builder: (context) => ModernDateRangePicker(
-        initialStartDate: _startDate,
-        initialEndDate: _endDate,
-        firstDate: DateTime(2020),
-        lastDate: DateTimeFormatter.nowLocal().add(const Duration(days: 365)),
-        onDateRangeSelected: (startDate, endDate) {
-          setState(() {
-            _startDate = startDate;
-            _endDate = endDate;
-          });
-        },
-      ),
+      builder:
+          (context) => ModernDateRangePicker(
+            initialStartDate: _startDate,
+            initialEndDate: _endDate,
+            firstDate: DateTime(2020),
+            lastDate: DateTimeFormatter.nowLocal().add(
+              const Duration(days: 365),
+            ),
+            onDateRangeSelected: (startDate, endDate) {
+              setState(() {
+                _startDate = startDate;
+                _endDate = endDate;
+              });
+            },
+          ),
     );
   }
 
   /// 构建概览标签页
   Widget _buildOverviewTab() {
     final filteredItems = _getFilteredItems();
-    
+
     final totalItems = filteredItems.length; // 改为统计财务项目数量，与Windows端保持一致
-    final totalCollected = filteredItems.fold<double>(0.0, (sum, item) => sum + item.totalPrice);
+    final totalCollected = filteredItems.fold<double>(
+      0.0,
+      (sum, item) => sum + item.totalPrice,
+    );
     final totalOutstanding = _calculateTotalDebtByPatient(); // 使用按患者维度计算的欠费
-    final totalProcessingFee = filteredItems.fold<double>(0.0, (sum, item) => sum + item.processingFee);
+    final totalProcessingFee = filteredItems.fold<double>(
+      0.0,
+      (sum, item) => sum + item.processingFee,
+    );
     final uniquePatients = _calculateTotalPatients(); // 修改为使用与Windows端一致的计算方法
     final paymentMethodTotals = _calculatePaymentMethodTotals();
 
@@ -388,9 +414,9 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // 分割线
                 Container(
                   height: 1,
@@ -405,9 +431,9 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // 第二排：金额统计 (财务数据)
                 Row(
                   children: [
@@ -447,11 +473,14 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // 收费状态图表
-          PaymentStatusChart(totalCollected: totalCollected, totalOutstanding: totalOutstanding),
+          PaymentStatusChart(
+            totalCollected: totalCollected,
+            totalOutstanding: totalOutstanding,
+          ),
         ],
       ),
     );
@@ -462,14 +491,12 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     final filteredRecords = _getFilteredRecords();
     final monthlyData = _calculateMonthlyData(filteredRecords);
     final monthlyProcessingData = _calculateMonthlyProcessingFee();
-    
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          Expanded(
-            child: MonthlyTrendChart(monthlyData: monthlyData),
-          ),
+          Expanded(child: MonthlyTrendChart(monthlyData: monthlyData)),
           const SizedBox(height: 16),
           Expanded(
             child: MonthlyProcessingChart(monthlyData: monthlyProcessingData),
@@ -480,15 +507,18 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
   }
 
   /// 计算月度数据（与Windows端逻辑完全一致）
-  Map<String, Map<String, double>> _calculateMonthlyData(List<FinancialRecord> records) {
+  Map<String, Map<String, double>> _calculateMonthlyData(
+    List<FinancialRecord> records,
+  ) {
     final Map<String, Map<String, double>> monthlyData = {};
     final filteredItems = _getFilteredItems();
-    
+
     // 生成时间范围内的所有月份
     DateTime currentMonth = DateTime(_startDate.year, _startDate.month, 1);
     final endMonth = DateTime(_endDate.year, _endDate.month, 1);
-    
-    while (currentMonth.isBefore(endMonth) || currentMonth.isAtSameMomentAs(endMonth)) {
+
+    while (currentMonth.isBefore(endMonth) ||
+        currentMonth.isAtSameMomentAs(endMonth)) {
       final monthKey = DateFormat('yyyy-MM').format(currentMonth);
       monthlyData[monthKey] = {
         'receivable': 0.0,
@@ -498,18 +528,23 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
       };
       currentMonth = DateTime(currentMonth.year, currentMonth.month + 1, 1);
     }
-    
+
     // 填充实际数据（按收费日期分组，与Windows端一致）
     for (final item in filteredItems) {
       final monthKey = DateFormat('yyyy-MM').format(item.chargeDate);
       if (monthlyData.containsKey(monthKey)) {
-        monthlyData[monthKey]!['receivable'] = (monthlyData[monthKey]!['receivable'] ?? 0) + item.itemPrice;
-        monthlyData[monthKey]!['collected'] = (monthlyData[monthKey]!['collected'] ?? 0) + item.totalPrice;
-        monthlyData[monthKey]!['outstanding'] = (monthlyData[monthKey]!['outstanding'] ?? 0) + (item.itemPrice - item.totalPrice);
-        monthlyData[monthKey]!['records'] = (monthlyData[monthKey]!['records'] ?? 0) + 1;
+        monthlyData[monthKey]!['receivable'] =
+            (monthlyData[monthKey]!['receivable'] ?? 0) + item.itemPrice;
+        monthlyData[monthKey]!['collected'] =
+            (monthlyData[monthKey]!['collected'] ?? 0) + item.totalPrice;
+        monthlyData[monthKey]!['outstanding'] =
+            (monthlyData[monthKey]!['outstanding'] ?? 0) +
+            (item.itemPrice - item.totalPrice);
+        monthlyData[monthKey]!['records'] =
+            (monthlyData[monthKey]!['records'] ?? 0) + 1;
       }
     }
-    
+
     return monthlyData;
   }
 
@@ -517,25 +552,27 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
   Map<String, double> _calculateMonthlyProcessingFee() {
     final Map<String, double> monthlyData = {};
     final filteredItems = _getFilteredItems();
-    
+
     // 生成时间范围内的所有月份
     DateTime currentMonth = DateTime(_startDate.year, _startDate.month, 1);
     final endMonth = DateTime(_endDate.year, _endDate.month, 1);
-    
-    while (currentMonth.isBefore(endMonth) || currentMonth.isAtSameMomentAs(endMonth)) {
+
+    while (currentMonth.isBefore(endMonth) ||
+        currentMonth.isAtSameMomentAs(endMonth)) {
       final monthKey = DateFormat('yyyy-MM').format(currentMonth);
       monthlyData[monthKey] = 0.0;
       currentMonth = DateTime(currentMonth.year, currentMonth.month + 1, 1);
     }
-    
+
     // 填充实际数据
     for (final item in filteredItems) {
       final monthKey = DateFormat('yyyy-MM').format(item.chargeDate);
       if (monthlyData.containsKey(monthKey)) {
-        monthlyData[monthKey] = (monthlyData[monthKey] ?? 0) + (item.processingFee ?? 0.0);
+        monthlyData[monthKey] =
+            (monthlyData[monthKey] ?? 0) + item.processingFee;
       }
     }
-    
+
     return monthlyData;
   }
 
@@ -547,7 +584,9 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     };
 
     for (final item in _getFilteredItems()) {
-      final methodName = FinancialPaymentMethodHelper.displayName(item.paymentMethod);
+      final methodName = FinancialPaymentMethodHelper.displayName(
+        item.paymentMethod,
+      );
       if (methodName.isEmpty) {
         continue;
       }
@@ -557,76 +596,19 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     return totals;
   }
 
-  /// 构建月度统计表格
-  Widget _buildMonthlyStatsTable(Map<String, Map<String, double>> monthlyData) {
-    final sortedMonths = monthlyData.keys.toList()..sort();
-    
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              '月度统计详情',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columns: const [
-                DataColumn(label: Text('月份')),
-                DataColumn(label: Text('记录数')),
-                DataColumn(label: Text('应收费')),
-                DataColumn(label: Text('已收费')),
-                DataColumn(label: Text('收费率')),
-              ],
-              rows: sortedMonths.map((month) {
-                final data = monthlyData[month]!;
-                final receivable = data['receivable']!;
-                final collected = data['collected']!;
-                final records = data['records']!.toInt();
-                final rate = receivable > 0 ? (collected / receivable) * 100 : 0.0;
-                
-                return DataRow(
-                  cells: [
-                    DataCell(Text(month)),
-                    DataCell(Text(records.toString())),
-                    DataCell(Text('¥${NumberFormat('#,##0').format(receivable)}')),
-                    DataCell(Text('¥${NumberFormat('#,##0').format(collected)}')),
-                    DataCell(Text('${rate.toStringAsFixed(1)}%')),
-                  ],
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// 构建排行标签页
   Widget _buildRankingTab() {
     final topPatientsByOutstanding = _calculateTopPatientsByOutstanding();
     final topPatientsByAmount = _calculateTopPatientsByAmount();
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildTopPatientsOutstandingCard(topPatientsByOutstanding, '患者欠费排行 (前20名)'),
+          _buildTopPatientsOutstandingCard(
+            topPatientsByOutstanding,
+            '患者欠费排行 (前20名)',
+          ),
           const SizedBox(height: 24),
           _buildTopPatientsCard(topPatientsByAmount, '患者收费排行 (按金额)'),
         ],
@@ -634,7 +616,9 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     );
   }
 
-  Widget _buildPaymentMethodSummaryCard(Map<String, double> paymentMethodTotals) {
+  Widget _buildPaymentMethodSummaryCard(
+    Map<String, double> paymentMethodTotals,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -665,21 +649,33 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
               Expanded(
                 child: _buildPaymentMethodItem(
                   method: 'wechat',
-                  amount: paymentMethodTotals[FinancialPaymentMethodHelper.displayName('wechat')] ?? 0.0,
+                  amount:
+                      paymentMethodTotals[FinancialPaymentMethodHelper.displayName(
+                        'wechat',
+                      )] ??
+                      0.0,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _buildPaymentMethodItem(
                   method: 'alipay',
-                  amount: paymentMethodTotals[FinancialPaymentMethodHelper.displayName('alipay')] ?? 0.0,
+                  amount:
+                      paymentMethodTotals[FinancialPaymentMethodHelper.displayName(
+                        'alipay',
+                      )] ??
+                      0.0,
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: _buildPaymentMethodItem(
                   method: 'cash',
-                  amount: paymentMethodTotals[FinancialPaymentMethodHelper.displayName('cash')] ?? 0.0,
+                  amount:
+                      paymentMethodTotals[FinancialPaymentMethodHelper.displayName(
+                        'cash',
+                      )] ??
+                      0.0,
                 ),
               ),
             ],
@@ -712,10 +708,8 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
                   iconPath,
                   width: 16,
                   height: 16,
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.payment,
-                    size: 16,
-                  ),
+                  errorBuilder:
+                      (_, __, ___) => const Icon(Icons.payment, size: 16),
                 ),
                 const SizedBox(width: 6),
               ],
@@ -747,7 +741,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
   double _calculateTotalDebtByPatient() {
     final Map<int, double> receivableByPatient = {};
     final Map<int, double> receivedByPatient = {};
-    
+
     // 获取所有财务项目
     final List<FinancialItem> allItems = [];
     for (final record in widget.financialRecords) {
@@ -755,35 +749,51 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
         allItems.addAll(widget.recordItemsMap[record.id]!);
       }
     }
-    
+
     // 按截止日期过滤：只计算结束日期之前的所有财务项目
     final endDate = DateTime(_endDate.year, _endDate.month, _endDate.day);
-    final itemsBeforeEndDate = allItems.where((item) {
-      final itemDate = DateTime(item.chargeDate.year, item.chargeDate.month, item.chargeDate.day);
-      return itemDate.isBefore(endDate) || itemDate.isAtSameMomentAs(endDate);
-    }).toList();
+    final itemsBeforeEndDate =
+        allItems.where((item) {
+          final itemDate = DateTime(
+            item.chargeDate.year,
+            item.chargeDate.month,
+            item.chargeDate.day,
+          );
+          return itemDate.isBefore(endDate) ||
+              itemDate.isAtSameMomentAs(endDate);
+        }).toList();
 
     // 按患者分组计算应收和实收
     for (final item in itemsBeforeEndDate) {
       // 找到对应的财务记录获取患者ID
       final record = widget.financialRecords.firstWhere(
         (r) => r.id == item.financialRecordId,
-        orElse: () => FinancialRecord(id: 0, patientId: 0, totalQuantity: 0, createdAt: DateTimeFormatter.nowLocal(), updatedAt: DateTimeFormatter.nowLocal()),
+        orElse:
+            () => FinancialRecord(
+              id: 0,
+              patientId: 0,
+              totalQuantity: 0,
+              createdAt: DateTimeFormatter.nowLocal(),
+              updatedAt: DateTimeFormatter.nowLocal(),
+            ),
       );
       final pid = record.patientId;
-      receivableByPatient[pid] = (receivableByPatient[pid] ?? 0) + item.itemPrice;
+      receivableByPatient[pid] =
+          (receivableByPatient[pid] ?? 0) + item.itemPrice;
       receivedByPatient[pid] = (receivedByPatient[pid] ?? 0) + item.totalPrice;
     }
 
     // 计算每个患者的欠费，只累加正数欠费
     double totalDebt = 0.0;
-    receivableByPatient.forEach((pid, receivable) {
+    for (final entry in receivableByPatient.entries) {
+      final pid = entry.key;
+      final receivable = entry.value;
       final received = receivedByPatient[pid] ?? 0.0;
       final debt = receivable - received;
       if (debt > 0) {
         totalDebt += debt;
       }
-    });
+    }
 
     return totalDebt;
   }
@@ -792,7 +802,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
   List<MapEntry<String, double>> _calculateTopPatientsByOutstanding() {
     final Map<int, double> receivableByPatient = {};
     final Map<int, double> receivedByPatient = {};
-    
+
     // 获取所有财务项目
     final List<FinancialItem> allItems = [];
     for (final record in widget.financialRecords) {
@@ -800,28 +810,44 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
         allItems.addAll(widget.recordItemsMap[record.id]!);
       }
     }
-    
+
     // 按截止日期过滤：只计算结束日期之前的所有财务项目
     final endDate = DateTime(_endDate.year, _endDate.month, _endDate.day);
-    final itemsBeforeEndDate = allItems.where((item) {
-      final itemDate = DateTime(item.chargeDate.year, item.chargeDate.month, item.chargeDate.day);
-      return itemDate.isBefore(endDate) || itemDate.isAtSameMomentAs(endDate);
-    }).toList();
+    final itemsBeforeEndDate =
+        allItems.where((item) {
+          final itemDate = DateTime(
+            item.chargeDate.year,
+            item.chargeDate.month,
+            item.chargeDate.day,
+          );
+          return itemDate.isBefore(endDate) ||
+              itemDate.isAtSameMomentAs(endDate);
+        }).toList();
 
     // 按患者分组计算应收和实收
     for (final item in itemsBeforeEndDate) {
       final record = widget.financialRecords.firstWhere(
         (r) => r.id == item.financialRecordId,
-        orElse: () => FinancialRecord(id: 0, patientId: 0, totalQuantity: 0, createdAt: DateTimeFormatter.nowLocal(), updatedAt: DateTimeFormatter.nowLocal()),
+        orElse:
+            () => FinancialRecord(
+              id: 0,
+              patientId: 0,
+              totalQuantity: 0,
+              createdAt: DateTimeFormatter.nowLocal(),
+              updatedAt: DateTimeFormatter.nowLocal(),
+            ),
       );
       final pid = record.patientId;
-      receivableByPatient[pid] = (receivableByPatient[pid] ?? 0) + item.itemPrice;
+      receivableByPatient[pid] =
+          (receivableByPatient[pid] ?? 0) + item.itemPrice;
       receivedByPatient[pid] = (receivedByPatient[pid] ?? 0) + item.totalPrice;
     }
 
     // 计算欠费金额（只包含有欠费的患者）
     final Map<String, double> patientDebts = {};
-    receivableByPatient.forEach((pid, receivable) {
+    for (final entry in receivableByPatient.entries) {
+      final pid = entry.key;
+      final receivable = entry.value;
       final received = receivedByPatient[pid] ?? 0.0;
       final debt = receivable - received;
       if (debt > 0) {
@@ -835,10 +861,11 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
         }
         patientDebts[patientName] = debt;
       }
-    });
+    }
 
-    final sortedDebtors = patientDebts.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final sortedDebtors =
+        patientDebts.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
 
     return sortedDebtors.take(30).toList();
   }
@@ -852,26 +879,38 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     for (final item in filteredItems) {
       final record = widget.financialRecords.firstWhere(
         (r) => r.id == item.financialRecordId,
-        orElse: () => FinancialRecord(id: 0, patientId: 0, totalQuantity: 0, createdAt: DateTimeFormatter.nowLocal(), updatedAt: DateTimeFormatter.nowLocal()),
+        orElse:
+            () => FinancialRecord(
+              id: 0,
+              patientId: 0,
+              totalQuantity: 0,
+              createdAt: DateTimeFormatter.nowLocal(),
+              updatedAt: DateTimeFormatter.nowLocal(),
+            ),
       );
-      
+
       // 找到患者姓名
       String patientName = '未知患者';
       if (record.patientName != null && record.patientName!.isNotEmpty) {
         patientName = record.patientName!;
       }
-      
-      patientTotals[patientName] = (patientTotals[patientName] ?? 0) + item.totalPrice;
+
+      patientTotals[patientName] =
+          (patientTotals[patientName] ?? 0) + item.totalPrice;
     }
 
-    final sortedPatients = patientTotals.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    
+    final sortedPatients =
+        patientTotals.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+
     return sortedPatients.take(20).toList();
   }
 
   /// 构建患者欠费排行卡片
-  Widget _buildTopPatientsOutstandingCard(List<MapEntry<String, double>> topPatients, String title) {
+  Widget _buildTopPatientsOutstandingCard(
+    List<MapEntry<String, double>> topPatients,
+    String title,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -920,7 +959,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
               itemBuilder: (context, index) {
                 final patient = topPatients[index];
                 final rank = index + 1;
-                
+
                 return ListTile(
                   leading: Container(
                     width: 32,
@@ -960,7 +999,10 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
   }
 
   /// 构建患者排行卡片
-  Widget _buildTopPatientsCard(List<MapEntry<String, double>> topPatients, String title) {
+  Widget _buildTopPatientsCard(
+    List<MapEntry<String, double>> topPatients,
+    String title,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1009,7 +1051,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
               itemBuilder: (context, index) {
                 final patient = topPatients[index];
                 final rank = index + 1;
-                
+
                 return ListTile(
                   leading: Container(
                     width: 32,
@@ -1052,15 +1094,22 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
   int _calculateTotalPatients() {
     final filteredItems = _getFilteredItems();
     final Set<int> patientIds = {};
-    
+
     for (final item in filteredItems) {
       final record = widget.financialRecords.firstWhere(
         (r) => r.id == item.financialRecordId,
-        orElse: () => FinancialRecord(id: 0, patientId: 0, totalQuantity: 0, createdAt: DateTimeFormatter.nowLocal(), updatedAt: DateTimeFormatter.nowLocal()),
+        orElse:
+            () => FinancialRecord(
+              id: 0,
+              patientId: 0,
+              totalQuantity: 0,
+              createdAt: DateTimeFormatter.nowLocal(),
+              updatedAt: DateTimeFormatter.nowLocal(),
+            ),
       );
       patientIds.add(record.patientId);
     }
-    
+
     return patientIds.length;
   }
 

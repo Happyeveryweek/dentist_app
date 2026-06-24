@@ -3,6 +3,7 @@ import 'package:mysql1/mysql1.dart';
 import '../../../models/purchase_record.dart';
 import '../../../models/purchase_item.dart';
 import '../../../utils/datetime_formatter.dart';
+import '../../../utils/app_logger.dart';
 
 /// 统计信息数据类
 class PurchaseStatistics {
@@ -31,12 +32,11 @@ class PurchaseStatistics {
 /// 采购统计计算服务
 /// 职责：计算采购记录的统计信息（总记录数、总金额、总采购量、材料种类）
 class PurchaseStatisticsService {
-
   /// 计算采购记录的统计信息
-  /// 
+  ///
   /// [records] 采购记录列表
   /// [getItemsCallback] 获取采购项目的回调函数，用于计算实际数量和材料种类
-  /// 
+  ///
   /// 返回统计信息对象
   static Future<PurchaseStatistics> calculateStatistics(
     List<PurchaseRecord> records,
@@ -68,7 +68,7 @@ class PurchaseStatisticsService {
             materials.add(item.materialName); // 收集材料种类
           }
         } catch (e) {
-          print('获取采购记录 ${record.id} 的项目失败: $e');
+          AppLogger.info('获取采购记录 ${record.id} 的项目失败: $e');
           // 如果获取项目失败，使用记录的总数量作为备用
           totalQuantity += record.totalQuantity;
         }
@@ -78,7 +78,9 @@ class PurchaseStatisticsService {
       }
     }
 
-    print('✅ 统计信息计算完成: 记录数=${records.length}, 总金额=$totalAmount, 总数量=$totalQuantity, 材料种类=${materials.length}');
+    AppLogger.info(
+      '✅ 统计信息计算完成: 记录数=${records.length}, 总金额=$totalAmount, 总数量=$totalQuantity, 材料种类=${materials.length}',
+    );
 
     return PurchaseStatistics(
       totalRecords: records.length,
@@ -89,9 +91,11 @@ class PurchaseStatisticsService {
   }
 
   /// 计算基础统计信息（不获取采购项目，仅使用记录本身的字段）
-  /// 
+  ///
   /// 这是一个降级方案，当获取采购项目失败时使用
-  static PurchaseStatistics calculateBasicStatistics(List<PurchaseRecord> records) {
+  static PurchaseStatistics calculateBasicStatistics(
+    List<PurchaseRecord> records,
+  ) {
     if (records.isEmpty) {
       return PurchaseStatistics(
         totalRecords: 0,
@@ -135,12 +139,12 @@ class PurchaseDatabaseStatisticsService {
     String? Function()? getDoctorFilter,
     bool Function()? shouldFilterByDoctor,
     Future<bool> Function()? testMySqlConnection,
-  })  : _sqliteDatabase = sqliteDatabase,
-        _mysqlConnection = mysqlConnection,
-        _dataSourceType = dataSourceType,
-        _getDoctorFilter = getDoctorFilter,
-        _shouldFilterByDoctor = shouldFilterByDoctor,
-        _testMySqlConnection = testMySqlConnection;
+  }) : _sqliteDatabase = sqliteDatabase,
+       _mysqlConnection = mysqlConnection,
+       _dataSourceType = dataSourceType,
+       _getDoctorFilter = getDoctorFilter,
+       _shouldFilterByDoctor = shouldFilterByDoctor,
+       _testMySqlConnection = testMySqlConnection;
 
   /// 获取采购统计信息
   Future<Map<String, dynamic>> getPurchaseStatistics() async {
@@ -154,7 +158,7 @@ class PurchaseDatabaseStatisticsService {
     if (_dataSourceType == 'sqlite') {
       final db = _sqliteDatabase;
       if (db == null) return stats;
-      
+
       // 权限过滤：基于医生字段
       final doctorFilter = _getDoctorFilter?.call();
       String query = '''
@@ -166,30 +170,33 @@ class PurchaseDatabaseStatisticsService {
         FROM purchase_records
       ''';
       List<dynamic> queryArgs = [];
-      
+
       if (doctorFilter != null && (_shouldFilterByDoctor?.call() ?? false)) {
         query += ' WHERE doctor = ?';
         queryArgs.add(doctorFilter);
       }
-      
+
       final result = await db.rawQuery(query, queryArgs);
-      
+
       if (result.isNotEmpty) {
-        stats['totalRecords'] = int.tryParse(result.first['total_records'].toString()) ?? 0;
-        stats['totalAmount'] = (result.first['total_amount'] as num?)?.toDouble() ?? 0.0;
-        stats['totalQuantity'] = int.tryParse(result.first['total_quantity'].toString()) ?? 0;
+        stats['totalRecords'] =
+            int.tryParse(result.first['total_records'].toString()) ?? 0;
+        stats['totalAmount'] =
+            (result.first['total_amount'] as num?)?.toDouble() ?? 0.0;
+        stats['totalQuantity'] =
+            int.tryParse(result.first['total_quantity'].toString()) ?? 0;
         stats['supplierCount'] = result.first['supplier_count'] ?? 0;
       }
     } else if (_dataSourceType == 'mysql') {
       final conn = _mysqlConnection;
       if (conn == null) return stats;
-      
+
       // 测试连接是否有效
       final isConnected = await _testMySqlConnection?.call() ?? false;
       if (!isConnected) {
         return stats;
       }
-      
+
       // 权限过滤：基于医生字段
       final doctorFilter = _getDoctorFilter?.call();
       String query = '''
@@ -201,20 +208,23 @@ class PurchaseDatabaseStatisticsService {
         FROM purchase_records
       ''';
       List<dynamic> queryArgs = [];
-      
+
       if (doctorFilter != null && (_shouldFilterByDoctor?.call() ?? false)) {
         query += ' WHERE doctor = ?';
         queryArgs.add(doctorFilter);
       }
-      
+
       final results = await conn.query(query, queryArgs);
-      
+
       if (results.isNotEmpty) {
         final row = results.first;
-        stats['totalRecords'] = int.tryParse(row['total_records'].toString()) ?? 0;
+        stats['totalRecords'] =
+            int.tryParse(row['total_records'].toString()) ?? 0;
         stats['totalAmount'] = (row['total_amount'] as num?)?.toDouble() ?? 0.0;
-        stats['totalQuantity'] = int.tryParse(row['total_quantity'].toString()) ?? 0;
-        stats['supplierCount'] = int.tryParse(row['supplier_count'].toString()) ?? 0;
+        stats['totalQuantity'] =
+            int.tryParse(row['total_quantity'].toString()) ?? 0;
+        stats['supplierCount'] =
+            int.tryParse(row['supplier_count'].toString()) ?? 0;
       }
     }
 
@@ -222,7 +232,10 @@ class PurchaseDatabaseStatisticsService {
   }
 
   /// 根据日期范围获取采购统计
-  Future<Map<String, dynamic>> getPurchaseStatisticsByDateRange(DateTime startDate, DateTime endDate) async {
+  Future<Map<String, dynamic>> getPurchaseStatisticsByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
     Map<String, dynamic> stats = {
       'totalRecords': 0,
       'totalAmount': 0.0,
@@ -232,7 +245,7 @@ class PurchaseDatabaseStatisticsService {
     if (_dataSourceType == 'sqlite') {
       final db = _sqliteDatabase;
       if (db == null) return stats;
-      
+
       // 权限过滤：基于医生字段
       final doctorFilter = _getDoctorFilter?.call();
       String query = '''
@@ -243,30 +256,34 @@ class PurchaseDatabaseStatisticsService {
         FROM purchase_records 
         WHERE purchase_date BETWEEN ? AND ?
       ''';
-      List<dynamic> queryArgs = [DateTimeFormatter.toDbString(startDate), DateTimeFormatter.toDbString(endDate)];
-      
+      List<dynamic> queryArgs = [
+        DateTimeFormatter.toDbString(startDate),
+        DateTimeFormatter.toDbString(endDate),
+      ];
+
       if (doctorFilter != null && (_shouldFilterByDoctor?.call() ?? false)) {
         query += ' AND doctor = ?';
         queryArgs.add(doctorFilter);
       }
-      
+
       final result = await db.rawQuery(query, queryArgs);
-      
+
       if (result.isNotEmpty) {
         stats['totalRecords'] = result.first['total_records'] ?? 0;
-        stats['totalAmount'] = (result.first['total_amount'] as num?)?.toDouble() ?? 0.0;
+        stats['totalAmount'] =
+            (result.first['total_amount'] as num?)?.toDouble() ?? 0.0;
         stats['totalQuantity'] = result.first['total_quantity'] ?? 0;
       }
     } else if (_dataSourceType == 'mysql') {
       final conn = _mysqlConnection;
       if (conn == null) return stats;
-      
+
       // 测试连接是否有效
       final isConnected = await _testMySqlConnection?.call() ?? false;
       if (!isConnected) {
         return stats;
       }
-      
+
       // 权限过滤：基于医生字段
       final doctorFilter = _getDoctorFilter?.call();
       String query = '''
@@ -277,20 +294,25 @@ class PurchaseDatabaseStatisticsService {
         FROM purchase_records 
         WHERE purchase_date BETWEEN ? AND ?
       ''';
-      List<dynamic> queryArgs = [DateTimeFormatter.toDbString(startDate), DateTimeFormatter.toDbString(endDate)];
-      
+      List<dynamic> queryArgs = [
+        DateTimeFormatter.toDbString(startDate),
+        DateTimeFormatter.toDbString(endDate),
+      ];
+
       if (doctorFilter != null && (_shouldFilterByDoctor?.call() ?? false)) {
         query += ' AND doctor = ?';
         queryArgs.add(doctorFilter);
       }
-      
+
       final results = await conn.query(query, queryArgs);
-      
+
       if (results.isNotEmpty) {
         final row = results.first;
-        stats['totalRecords'] = int.tryParse(row['total_records'].toString()) ?? 0;
+        stats['totalRecords'] =
+            int.tryParse(row['total_records'].toString()) ?? 0;
         stats['totalAmount'] = (row['total_amount'] as num?)?.toDouble() ?? 0.0;
-        stats['totalQuantity'] = int.tryParse(row['total_quantity'].toString()) ?? 0;
+        stats['totalQuantity'] =
+            int.tryParse(row['total_quantity'].toString()) ?? 0;
       }
     }
 

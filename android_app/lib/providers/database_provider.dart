@@ -12,14 +12,17 @@ import '../services/mysql_reconnect_service.dart';
 import '../services/sqlite_initialization_service.dart';
 import '../services/database_sync_service.dart';
 import '../services/database_bootstrap_service.dart';
+import '../utils/app_logger.dart';
 
 // 数据库提供者，用于管理应用程序与数据库的交互
 class DatabaseProvider extends ChangeNotifier {
   // 服务实例
-  final MySQLConnectionService _mysqlConnectionService = MySQLConnectionService();
+  final MySQLConnectionService _mysqlConnectionService =
+      MySQLConnectionService();
   final DatabaseHealthService _healthService = DatabaseHealthService();
   late MySQLReconnectService _reconnectService;
-  final SQLiteInitializationService _sqliteInitService = SQLiteInitializationService();
+  final SQLiteInitializationService _sqliteInitService =
+      SQLiteInitializationService();
   final DatabaseSyncService _syncService = DatabaseSyncService();
   final DatabaseBootstrapService _bootstrapService = DatabaseBootstrapService();
 
@@ -35,17 +38,15 @@ class DatabaseProvider extends ChangeNotifier {
   bool _dashboardNeedsRefresh = false;
   bool get dashboardNeedsRefresh => _dashboardNeedsRefresh;
 
-  // 缓存数据
-  List<String>? _cachedDoctors;
-
   // MySQL连接池
   MySQLConnectionPool? _connectionPool;
 
   // 获取连接状态（从健康服务获取）
   bool get isConnected => _healthService.isConnected;
   bool get isReconnecting => _healthService.isReconnecting;
-  bool get hasConnectionIssues => !_healthService.isConnected && _dbType == 'mysql';
-  
+  bool get hasConnectionIssues =>
+      !_healthService.isConnected && _dbType == 'mysql';
+
   // 获取连接状态描述
   String get connectionStatusText {
     if (_dbType != 'mysql') return '本地数据库';
@@ -64,16 +65,16 @@ class DatabaseProvider extends ChangeNotifier {
 
   // 获取数据库类型
   String get dbType => _dbType.isEmpty ? 'initializing' : _dbType;
-  
+
   // 获取MySQL连接池
   MySQLConnectionPool? get connectionPool => _connectionPool;
 
   // 获取MySQL连接（从连接服务获取）
   MySqlConnection? get mysqlConnection => _mysqlConnectionService.connection;
-  
+
   // 获取配置文件中设置的数据库类型（不受自动切换影响）
   String get configDbType => _dbConfig.dbType;
-  
+
   // 获取当前实际使用的数据库类型描述
   String get currentDbTypeDescription {
     if (_isAutoSwitchedToSQLite && _dbConfig.dbType == 'mysql') {
@@ -81,14 +82,10 @@ class DatabaseProvider extends ChangeNotifier {
     }
     return _dbType == 'mysql' ? 'MySQL' : 'SQLite';
   }
-  
+
   // 用于记录之前的数据库类型
-  String _previousDbType = 'sqlite';
-  String get previousDbType => _previousDbType;
-  set previousDbType(String value) {
-    _previousDbType = value;
-  }
-  
+  String previousDbType = 'sqlite';
+
   // 标记是否是自动切换到SQLite（MySQL连接失败时）
   bool _isAutoSwitchedToSQLite = false;
   bool get isAutoSwitchedToSQLite => _isAutoSwitchedToSQLite;
@@ -129,7 +126,6 @@ class DatabaseProvider extends ChangeNotifier {
   Future<bool> forceDataSync() async {
     return await _syncService.forceDataSync();
   }
-
 
   // 标记数据需要刷新
   void _markDataNeedsRefresh() {
@@ -180,16 +176,16 @@ class DatabaseProvider extends ChangeNotifier {
     _databaseChanged = false;
     _shouldNavigateToDashboard = false;
   }
-  
+
   // 重置自动切换状态（用于下次启动时重新尝试MySQL）
   void resetAutoSwitchState() {
     _isAutoSwitchedToSQLite = false;
     // 不重置_dbType，让它从配置文件重新加载
   }
-  
+
   // 强制设置数据库变更标志
   void forceDataChanged({bool navigateToDashboard = false}) {
-    print('强制设置数据变更标志, 导航到仪表盘: $navigateToDashboard');
+    AppLogger.info('强制设置数据变更标志, 导航到仪表盘: $navigateToDashboard');
 
     // 只有明确要求导航到仪表盘时才设置全局变更标志
     if (navigateToDashboard) {
@@ -206,18 +202,16 @@ class DatabaseProvider extends ChangeNotifier {
 
   // 患者数据刷新操作已迁移到 PatientProvider
 
-
-
   // 重置仪表盘刷新标志
   void resetDashboardRefreshFlag() {
-    print('重置仪表盘刷新标志');
+    AppLogger.info('重置仪表盘刷新标志');
     _dashboardNeedsRefresh = false;
   }
 
   // 初始化数据库
   Future<void> initDatabase() async {
     if (_initialized) {
-      print('数据库已经初始化，跳过初始化过程');
+      AppLogger.info('数据库已经初始化，跳过初始化过程');
       return;
     }
 
@@ -236,59 +230,51 @@ class DatabaseProvider extends ChangeNotifier {
       _databaseChanged = result.databaseChanged;
       _shouldNavigateToDashboard = result.shouldNavigateToDashboard;
       _isAutoSwitchedToSQLite = result.isAutoSwitchedToSQLite;
-      _previousDbType = result.previousDbType;
+      previousDbType = result.previousDbType;
 
       notifyListeners();
 
       if (_databaseChanged) {
         Future.delayed(const Duration(milliseconds: 100), () {
           if (_initialized && _databaseChanged) {
-            print('延迟通知数据库切换完成');
+            AppLogger.info('延迟通知数据库切换完成');
             notifyListeners();
           }
         });
       }
 
       await _initializeAllProviders();
-      
     } catch (e) {
       debugPrint('初始化数据库错误: $e');
-      print('错误堆栈: ${StackTrace.current}');
+      AppLogger.info('错误堆栈: ${StackTrace.current}');
       _initialized = false;
       throw Exception('数据库初始化失败: $e');
     }
   }
 
-
   // 初始化所有Provider
   Future<void> _initializeAllProviders() async {
     try {
-      print('开始初始化所有Provider...');
-      
+      AppLogger.info('开始初始化所有Provider...');
+
       // 延迟执行以确保BuildContext可用
       Future.delayed(const Duration(milliseconds: 500), () async {
         try {
           // 通知所有Provider数据库已就绪
           notifyListeners();
-          print('所有Provider将通过监听器获取数据库实例');
+          AppLogger.info('所有Provider将通过监听器获取数据库实例');
         } catch (e) {
-          print('初始化Provider时出错: $e');
+          AppLogger.info('初始化Provider时出错: $e');
         }
       });
-      
     } catch (e) {
-      print('初始化Provider时出错: $e');
+      AppLogger.info('初始化Provider时出错: $e');
     }
   }
 
-
-
-
   // 强制使所有缓存失效并重建
   void _forceInvalidateCache() {
-    print('强制清除所有缓存数据');
-    // 清空所有缓存数据
-    _cachedDoctors = null;
+    AppLogger.info('强制清除所有缓存数据');
 
     // 其他可能的缓存数据
     // 修改为仅标记仪表盘需要刷新，不设置全局变更标志
@@ -298,7 +284,7 @@ class DatabaseProvider extends ChangeNotifier {
     // 主动加载一些数据以刷新缓存
     Future.delayed(Duration.zero, () async {
       try {
-        print('主动重新加载数据以更新缓存');
+        AppLogger.info('主动重新加载数据以更新缓存');
         if (_dbType == 'sqlite') {
           final db = await _sqliteInitService.getDatabase();
           // 执行一些简单查询以确保数据库连接正常
@@ -310,20 +296,16 @@ class DatabaseProvider extends ChangeNotifier {
           notifyListeners();
         }
       } catch (e) {
-        print('主动加载数据失败: $e');
+        AppLogger.info('主动加载数据失败: $e');
       }
     });
   }
 
   // 数据库配置相关操作
 
-
-
-
-
   // 关闭数据库连接
   Future<void> closeDatabase() async {
-    print('显式关闭数据库连接');
+    AppLogger.info('显式关闭数据库连接');
     try {
       // 关闭SQLite连接
       await _sqliteInitService.closeDatabase();
@@ -336,15 +318,12 @@ class DatabaseProvider extends ChangeNotifier {
       _reconnectService.dispose();
 
       // 清除缓存
-      _cachedDoctors = null;
 
-      print('所有数据库连接已关闭');
+      AppLogger.info('所有数据库连接已关闭');
     } catch (e) {
-      print('关闭数据库连接错误: $e');
+      AppLogger.info('关闭数据库连接错误: $e');
     }
   }
-
-
 
   // 获取SQLite数据库实例（供其他Provider使用）
   Future<Database?> get sqliteDatabase async {

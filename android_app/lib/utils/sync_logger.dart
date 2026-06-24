@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:intl/intl.dart';
+import './app_logger.dart';
 
 /// 同步日志模型
 class SyncLog {
@@ -112,7 +113,7 @@ class SyncLogger {
 
       await _saveLogs(logs);
     } catch (e) {
-      print('记录同步日志失败: $e');
+      AppLogger.info('记录同步日志失败: $e');
     }
   }
 
@@ -126,7 +127,7 @@ class SyncLogger {
         return jsonList.map((json) => SyncLog.fromJson(json)).toList();
       }
     } catch (e) {
-      print('读取同步日志失败: $e');
+      AppLogger.info('读取同步日志失败: $e');
     }
     return [];
   }
@@ -149,7 +150,7 @@ class SyncLogger {
         await logFile.delete();
       }
     } catch (e) {
-      print('清除同步日志失败: $e');
+      AppLogger.info('清除同步日志失败: $e');
     }
   }
 
@@ -160,7 +161,7 @@ class SyncLogger {
       final jsonList = logs.map((log) => log.toJson()).toList();
       await logFile.writeAsString(jsonEncode(jsonList));
     } catch (e) {
-      print('保存同步日志失败: $e');
+      AppLogger.info('保存同步日志失败: $e');
     }
   }
 
@@ -170,12 +171,15 @@ class SyncLogger {
       final logs = await getAllLogs();
       final successCount = logs.where((log) => log.success).length;
       final failureCount = logs.length - successCount;
-      
+
       return {
         'total_count': logs.length,
         'success_count': successCount,
         'failure_count': failureCount,
-        'success_rate': logs.isEmpty ? 0 : (successCount / logs.length * 100).toStringAsFixed(1),
+        'success_rate':
+            logs.isEmpty
+                ? 0
+                : (successCount / logs.length * 100).toStringAsFixed(1),
         'last_sync_time': logs.isEmpty ? null : logs.first.formattedTime,
       };
     } catch (e) {

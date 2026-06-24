@@ -6,19 +6,16 @@ import '../../../models/purchase_item.dart';
 import '../../../providers/purchase_provider.dart';
 import '../../../providers/material_provider.dart';
 import '../../../providers/user_provider.dart';
-import '../../../models/material.dart';
 import 'purchase_item_dialog.dart';
 import '../../../widgets/toast_manager.dart';
 import '../../../widgets/modern_date_picker.dart';
 import '../../../utils/datetime_formatter.dart';
+import '../../../utils/app_logger.dart';
 
 class PurchaseRecordDialog extends StatefulWidget {
   final PurchaseRecord? record;
-  
-  const PurchaseRecordDialog({
-    super.key,
-    this.record,
-  });
+
+  const PurchaseRecordDialog({super.key, this.record});
 
   @override
   State<PurchaseRecordDialog> createState() => _PurchaseRecordDialogState();
@@ -30,10 +27,8 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
   final _supplierController = TextEditingController();
   final _notesController = TextEditingController();
   final _doctorController = TextEditingController();
-  
+
   List<PurchaseItem> _purchaseItems = [];
-  List<DentalMaterial> _availableMaterials = [];
-  bool _isLoading = false;
   bool _isEditing = false;
 
   @override
@@ -56,12 +51,16 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
 
   void _initializeControllers() {
     if (_isEditing) {
-      _purchaseDateController.text = DateFormat('yyyy-MM-dd').format(widget.record!.purchaseDate);
+      _purchaseDateController.text = DateFormat(
+        'yyyy-MM-dd',
+      ).format(widget.record!.purchaseDate);
       _supplierController.text = widget.record!.supplier ?? '';
       _notesController.text = widget.record!.notes ?? '';
       _doctorController.text = widget.record!.doctor ?? '';
     } else {
-      _purchaseDateController.text = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      _purchaseDateController.text = DateFormat(
+        'yyyy-MM-dd',
+      ).format(DateTime.now());
       _notesController.text =
           '${DateFormat('yyyyMMdd').format(DateTime.now())}采购单';
       // 设置医生字段的默认值为当前登录用户的医生姓名
@@ -74,42 +73,49 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
-      
-      if (currentUser != null && currentUser.doctor != null && currentUser.doctor!.isNotEmpty) {
+
+      if (currentUser != null &&
+          currentUser.doctor != null &&
+          currentUser.doctor!.isNotEmpty) {
         _doctorController.text = currentUser.doctor!;
-        print('设置采购医生默认值: ${currentUser.doctor}');
+        AppLogger.info('设置采购医生默认值: ${currentUser.doctor}');
       } else {
-        print('当前用户未设置医生姓名，采购医生字段保持为空');
+        AppLogger.info('当前用户未设置医生姓名，采购医生字段保持为空');
       }
     } catch (e) {
-      print('设置采购医生默认值失败: $e');
+      AppLogger.info('设置采购医生默认值失败: $e');
       // 如果获取失败，保持字段为空
     }
   }
 
   Future<void> _loadMaterials() async {
     try {
-      final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
-      final materials = await materialProvider.getAllMaterials();
-      setState(() {
-        _availableMaterials = materials;
-      });
+      final materialProvider = Provider.of<MaterialProvider>(
+        context,
+        listen: false,
+      );
+      await materialProvider.getAllMaterials();
     } catch (e) {
-      print('加载材料失败: $e');
+      AppLogger.info('加载材料失败: $e');
     }
   }
 
   Future<void> _loadPurchaseItems() async {
     if (!_isEditing) return;
-    
+
     try {
-      final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
-      final items = await purchaseProvider.getPurchaseItemsByRecordId(widget.record!.id!);
+      final purchaseProvider = Provider.of<PurchaseProvider>(
+        context,
+        listen: false,
+      );
+      final items = await purchaseProvider.getPurchaseItemsByRecordId(
+        widget.record!.id!,
+      );
       setState(() {
         _purchaseItems = items;
       });
     } catch (e) {
-      print('加载采购项目失败: $e');
+      AppLogger.info('加载采购项目失败: $e');
     }
   }
 
@@ -118,7 +124,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
       context: context,
       builder: (context) => const PurchaseItemDialog(),
     );
-    
+
     if (result != null) {
       // ✅ 确保新项目没有ID，避免意外保存
       final newItem = result.copyWith(
@@ -127,14 +133,14 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
         createdAt: DateTimeFormatter.nowLocal(),
         updatedAt: DateTimeFormatter.nowLocal(),
       );
-      
+
       setState(() {
         _purchaseItems.add(newItem);
         // 按创建时间降序排序，确保最新的在最前面
         _purchaseItems.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       });
-      
-      print('🔄 添加采购项目到内存: ${newItem.materialName}');
+
+      AppLogger.info('🔄 添加采购项目到内存: ${newItem.materialName}');
       _debugPurchaseItems(); // 调试信息
     }
   }
@@ -144,10 +150,12 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
       context: context,
       builder: (context) => PurchaseItemDialog(item: item, isEditing: true),
     );
-    
+
     if (result != null) {
       setState(() {
-        final index = _purchaseItems.indexWhere((element) => element.id == item.id);
+        final index = _purchaseItems.indexWhere(
+          (element) => element.id == item.id,
+        );
         if (index != -1) {
           _purchaseItems[index] = result;
         }
@@ -159,7 +167,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
     setState(() {
       _purchaseItems.remove(item);
     });
-    print('🗑️ 从内存中移除采购项目: ${item.materialName}');
+    AppLogger.info('🗑️ 从内存中移除采购项目: ${item.materialName}');
   }
 
   /// 验证采购项目数据
@@ -167,30 +175,31 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
     if (_purchaseItems.isEmpty) {
       return false;
     }
-    
+
     for (int i = 0; i < _purchaseItems.length; i++) {
       final item = _purchaseItems[i];
       if (item.materialName.isEmpty || item.quantity <= 0) {
-        print('❌ 采购项目 ${i + 1} 数据无效: ${item.materialName}');
+        AppLogger.info('❌ 采购项目 ${i + 1} 数据无效: ${item.materialName}');
         return false;
       }
-      
+
       // 确保新项目没有ID
       if (item.id != null) {
-        print('⚠️ 警告：采购项目 ${i + 1} 已有ID: ${item.id}');
+        AppLogger.info('⚠️ 警告：采购项目 ${i + 1} 已有ID: ${item.id}');
       }
     }
-    
+
     return true;
   }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 24), // 设置更小的边距让宽度生效
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 24,
+      ), // 设置更小的边距让宽度生效
       child: Container(
         width: MediaQuery.of(context).size.width * 0.92, // 从0.96改为0.92
         constraints: BoxConstraints(
@@ -227,15 +236,22 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                 ],
               ),
             ),
-            
+
             // 表单内容 - 减少padding和间距
             Expanded(
               child: SingleChildScrollView(
@@ -250,26 +266,39 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                         controller: _purchaseDateController,
                         decoration: const InputDecoration(
                           labelText: '采购日期 *',
-                          prefixIcon: Icon(Icons.calendar_today, color: Colors.blue),
+                          prefixIcon: Icon(
+                            Icons.calendar_today,
+                            color: Colors.blue,
+                          ),
                           border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12), // 减少内边距
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ), // 减少内边距
                         ),
                         readOnly: true,
                         onTap: () async {
-                                                     final date = await showDialog<DateTime>(
-                             context: context,
-                             builder: (BuildContext context) {
-                               return ModernDatePickerDialog(
-                                 initialDate: _isEditing ? widget.record!.purchaseDate : DateTime.now(),
-                                 firstDate: DateTime(2020),
-                                 lastDate: DateTime.now().add(const Duration(days: 365)),
-                                 title: '选择采购日期',
-                               );
-                             },
-                           );
+                          final date = await showDialog<DateTime>(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return ModernDatePickerDialog(
+                                initialDate:
+                                    _isEditing
+                                        ? widget.record!.purchaseDate
+                                        : DateTime.now(),
+                                firstDate: DateTime(2020),
+                                lastDate: DateTime.now().add(
+                                  const Duration(days: 365),
+                                ),
+                                title: '选择采购日期',
+                              );
+                            },
+                          );
                           if (date != null) {
                             setState(() {
-                              _purchaseDateController.text = DateFormat('yyyy-MM-dd').format(date);
+                              _purchaseDateController.text = DateFormat(
+                                'yyyy-MM-dd',
+                              ).format(date);
                             });
                           }
                         },
@@ -280,9 +309,8 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                           return null;
                         },
                       ),
-                      
+
                       const SizedBox(height: 12), // 从16减少到12
-                      
                       // 供应商
                       TextFormField(
                         controller: _supplierController,
@@ -291,7 +319,10 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                           prefixIcon: Icon(Icons.business, color: Colors.green),
                           border: OutlineInputBorder(),
                           hintText: '请输入供应商名称',
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12), // 减少内边距
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ), // 减少内边距
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -300,9 +331,8 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                           return null;
                         },
                       ),
-                      
+
                       const SizedBox(height: 12), // 从16减少到12
-                      
                       // 采购医生
                       TextFormField(
                         controller: _doctorController,
@@ -311,12 +341,15 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                           prefixIcon: Icon(Icons.person, color: Colors.teal),
                           border: OutlineInputBorder(),
                           hintText: '请输入采购医生姓名（可选）',
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 12),
-                      
+
                       // 备注
                       TextFormField(
                         controller: _notesController,
@@ -325,20 +358,26 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                           prefixIcon: Icon(Icons.note, color: Colors.orange),
                           border: OutlineInputBorder(),
                           hintText: '请输入备注信息（可选）',
-                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12), // 减少内边距
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ), // 减少内边距
                         ),
                         maxLines: 2,
                       ),
-                      
+
                       const SizedBox(height: 16), // 从24减少到16
-                      
                       // 采购项目明细
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.shopping_cart, color: Colors.blue, size: 20),
+                              const Icon(
+                                Icons.shopping_cart,
+                                color: Colors.blue,
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 '采购项目明细',
@@ -352,22 +391,29 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                               ElevatedButton.icon(
                                 onPressed: _addPurchaseItem,
                                 icon: const Icon(Icons.add, size: 16),
-                                label: const Text('添加项目', style: TextStyle(fontSize: 12)),
+                                label: const Text(
+                                  '添加项目',
+                                  style: TextStyle(fontSize: 12),
+                                ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blue,
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), // 减少padding
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ), // 减少padding
                                   minimumSize: const Size(0, 28), // 减少最小高度
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 8), // 从12减少到8
-                          
-                          
                           // 表头 - 平衡的布局设计
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.grey[100],
                               borderRadius: BorderRadius.circular(8),
@@ -441,9 +487,8 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                               ],
                             ),
                           ),
-                          
+
                           const SizedBox(height: 6), // 从8减少到6
-                          
                           // 采购项目列表
                           if (_purchaseItems.isEmpty)
                             Container(
@@ -464,15 +509,20 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                               final item = entry.value;
                               return _buildPurchaseItemRow(item, index);
                             }).toList()),
-                          
+
                           // 合计行
                           if (_purchaseItems.isNotEmpty)
                             Container(
                               margin: const EdgeInsets.only(top: 8), // 从6增加到8
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // 增加padding
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ), // 增加padding
                               decoration: BoxDecoration(
                                 color: Colors.green[50],
-                                borderRadius: BorderRadius.circular(10), // 从8增加到10
+                                borderRadius: BorderRadius.circular(
+                                  10,
+                                ), // 从8增加到10
                                 border: Border.all(color: Colors.green[200]!),
                               ),
                               child: Row(
@@ -504,7 +554,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                 ),
               ),
             ),
-            
+
             // 底部按钮 - 减少padding
             Container(
               padding: const EdgeInsets.all(12), // 从16减少到12
@@ -542,7 +592,10 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
   Widget _buildPurchaseItemRow(PurchaseItem item, int index) {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10), // 适中的padding
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 10,
+      ), // 适中的padding
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
@@ -563,7 +616,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          
+
           // 数量列
           SizedBox(
             width: 45,
@@ -577,7 +630,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
               ),
             ),
           ),
-          
+
           // 单价列
           SizedBox(
             width: 55,
@@ -591,7 +644,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
               ),
             ),
           ),
-          
+
           // 总价列
           SizedBox(
             width: 55,
@@ -605,7 +658,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
               ),
             ),
           ),
-          
+
           // 操作列 - 适中但足够大的按钮
           SizedBox(
             width: 75, // 适中的宽度
@@ -629,9 +682,8 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 6), // 适中的间距
-                
                 // 删除按钮 - 适中但足够大
                 GestureDetector(
                   onTap: () => _removePurchaseItem(item),
@@ -657,7 +709,10 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
   }
 
   String _calculateTotalAmount() {
-    final totalAmount = _purchaseItems.fold<double>(0.0, (sum, item) => sum + item.totalPrice);
+    final totalAmount = _purchaseItems.fold<double>(
+      0.0,
+      (sum, item) => sum + item.totalPrice,
+    );
     return NumberFormat('#,##0.00').format(totalAmount);
   }
 
@@ -667,65 +722,81 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
     }
 
     if (!_validatePurchaseItems()) {
-      SuccessToastManager.showError(
-        context,
-        message: '请添加至少一个有效的采购项目',
-      );
+      SuccessToastManager.showError(context, message: '请添加至少一个有效的采购项目');
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
-      final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
-      
+      final purchaseProvider = Provider.of<PurchaseProvider>(
+        context,
+        listen: false,
+      );
+
       // 计算总计
-      final totalQuantity = _purchaseItems.fold<int>(0, (sum, item) => sum + item.quantity);
-      final totalAmount = _purchaseItems.fold<double>(0.0, (sum, item) => sum + item.totalPrice);
+      final totalQuantity = _purchaseItems.fold<int>(
+        0,
+        (sum, item) => sum + item.quantity,
+      );
+      final totalAmount = _purchaseItems.fold<double>(
+        0.0,
+        (sum, item) => sum + item.totalPrice,
+      );
 
       final purchaseRecord = PurchaseRecord(
         id: widget.record?.id,
-        purchaseDate: DateTimeFormatter.fromDbString('${_purchaseDateController.text} 00:00:00'),
+        purchaseDate: DateTimeFormatter.fromDbString(
+          '${_purchaseDateController.text} 00:00:00',
+        ),
         totalQuantity: totalQuantity,
         totalAmount: totalAmount,
         supplier: _supplierController.text.trim(),
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-        doctor: _doctorController.text.trim().isEmpty ? null : _doctorController.text.trim(),
-        createdAt: _isEditing ? widget.record!.createdAt : DateTimeFormatter.nowLocal(),
+        notes:
+            _notesController.text.trim().isEmpty
+                ? null
+                : _notesController.text.trim(),
+        doctor:
+            _doctorController.text.trim().isEmpty
+                ? null
+                : _doctorController.text.trim(),
+        createdAt:
+            _isEditing
+                ? widget.record!.createdAt
+                : DateTimeFormatter.nowLocal(),
         updatedAt: DateTimeFormatter.nowLocal(),
       );
 
       int? recordId;
       int success;
-      
+
       if (_isEditing) {
         success = await purchaseProvider.updatePurchaseRecord(purchaseRecord);
-        recordId = widget.record?.id;
+        recordId = widget.record!.id;
       } else {
         recordId = await purchaseProvider.addPurchaseRecord(purchaseRecord);
-        success = recordId ?? 0;
+        success = recordId;
       }
 
       if (success > 0 && recordId != null) {
-        print('🔄 采购记录保存成功，ID: $recordId');
-        
+        AppLogger.info('🔄 采购记录保存成功，ID: $recordId');
+
         if (_isEditing) {
           // 🔧 编辑模式：智能处理采购项目，避免删除所有项目
-          print('🔧 编辑模式：智能处理采购项目...');
-          
+          AppLogger.info('🔧 编辑模式：智能处理采购项目...');
+
           // 获取数据库中现有的项目
-          final existingItems = await purchaseProvider.getPurchaseItemsByRecordId(recordId!);
-          final existingItemsMap = {for (var item in existingItems) item.id: item};
-          
+          final existingItems = await purchaseProvider
+              .getPurchaseItemsByRecordId(recordId);
+          final existingItemsMap = {
+            for (var item in existingItems) item.id: item,
+          };
+
           // 处理当前界面中的项目
           for (final currentItem in _purchaseItems) {
             if (currentItem.id == null) {
               // 新增的项目
-              print('➕ 新增项目: ${currentItem.materialName}');
+              AppLogger.info('➕ 新增项目: ${currentItem.materialName}');
               final newItem = PurchaseItem(
-                purchaseRecordId: recordId!,
+                purchaseRecordId: recordId,
                 materialId: currentItem.materialId,
                 materialName: currentItem.materialName,
                 quantity: currentItem.quantity,
@@ -739,19 +810,19 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
             } else if (existingItemsMap.containsKey(currentItem.id)) {
               // 可能修改过的现有项目 - 检查是否需要更新
               final existingItem = existingItemsMap[currentItem.id]!;
-              bool hasChanged = 
+              bool hasChanged =
                   existingItem.materialName != currentItem.materialName ||
                   existingItem.quantity != currentItem.quantity ||
                   existingItem.unitPrice != currentItem.unitPrice ||
                   existingItem.totalPrice != currentItem.totalPrice ||
                   existingItem.unit != currentItem.unit ||
                   existingItem.materialId != currentItem.materialId;
-                  
+
               if (hasChanged) {
-                print('✏️ 更新项目: ${currentItem.materialName}');
+                AppLogger.info('✏️ 更新项目: ${currentItem.materialName}');
                 final updatedItem = PurchaseItem(
                   id: currentItem.id,
-                  purchaseRecordId: recordId!,
+                  purchaseRecordId: recordId,
                   materialId: currentItem.materialId,
                   materialName: currentItem.materialName,
                   quantity: currentItem.quantity,
@@ -763,27 +834,30 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                 );
                 await purchaseProvider.updatePurchaseItem(updatedItem);
               } else {
-                print('⏭️ 跳过未修改的项目: ${currentItem.materialName}');
+                AppLogger.info('⏭️ 跳过未修改的项目: ${currentItem.materialName}');
                 // 不更新时间，保持原有updatedAt
               }
             }
           }
-          
+
           // 删除界面中已移除的项目
-          final currentItemIds = _purchaseItems.where((item) => item.id != null).map((item) => item.id!).toSet();
+          final currentItemIds =
+              _purchaseItems
+                  .where((item) => item.id != null)
+                  .map((item) => item.id!)
+                  .toSet();
           for (final existingItem in existingItems) {
             if (!currentItemIds.contains(existingItem.id)) {
-              print('🗑️ 删除已移除的项目: ${existingItem.materialName}');
+              AppLogger.info('🗑️ 删除已移除的项目: ${existingItem.materialName}');
               await purchaseProvider.deletePurchaseItem(existingItem.id!);
             }
           }
-          
         } else {
           // 新增模式：添加所有项目
-          print('🔄 新增模式：添加所有 ${_purchaseItems.length} 个采购项目...');
+          AppLogger.info('🔄 新增模式：添加所有 ${_purchaseItems.length} 个采购项目...');
           for (final item in _purchaseItems) {
             final purchaseItem = PurchaseItem(
-              purchaseRecordId: recordId!,
+              purchaseRecordId: recordId,
               materialId: item.materialId,
               materialName: item.materialName,
               quantity: item.quantity,
@@ -806,24 +880,12 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
         }
       } else {
         if (mounted) {
-          SuccessToastManager.showError(
-            context,
-            message: '保存失败',
-          );
+          SuccessToastManager.showError(context, message: '保存失败');
         }
       }
     } catch (e) {
       if (mounted) {
-        SuccessToastManager.showError(
-          context,
-          message: '保存失败: $e',
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        SuccessToastManager.showError(context, message: '保存失败: $e');
       }
     }
   }
@@ -839,18 +901,18 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
 
   /// 测试方法：验证采购项目数据
   void _debugPurchaseItems() {
-    print('🔍 调试采购项目数据:');
-    print('总数量: ${_purchaseItems.length}');
-    
+    AppLogger.info('🔍 调试采购项目数据:');
+    AppLogger.info('总数量: ${_purchaseItems.length}');
+
     for (int i = 0; i < _purchaseItems.length; i++) {
       final item = _purchaseItems[i];
-      print('项目 ${i + 1}:');
-      print('  ID: ${item.id}');
-      print('  材料名称: ${item.materialName}');
-      print('  数量: ${item.quantity}');
-      print('  单价: ${item.unitPrice}');
-      print('  采购记录ID: ${item.purchaseRecordId}');
-      print('  ---');
+      AppLogger.info('项目 ${i + 1}:');
+      AppLogger.info('  ID: ${item.id}');
+      AppLogger.info('  材料名称: ${item.materialName}');
+      AppLogger.info('  数量: ${item.quantity}');
+      AppLogger.info('  单价: ${item.unitPrice}');
+      AppLogger.info('  采购记录ID: ${item.purchaseRecordId}');
+      AppLogger.info('  ---');
     }
   }
 }

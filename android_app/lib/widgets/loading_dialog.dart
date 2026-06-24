@@ -14,10 +14,7 @@ class LoadingDialog {
               const CircularProgressIndicator(),
               const SizedBox(width: 20),
               Expanded(
-                child: Text(
-                  message,
-                  style: const TextStyle(fontSize: 16),
-                ),
+                child: Text(message, style: const TextStyle(fontSize: 16)),
               ),
             ],
           ),
@@ -47,10 +44,7 @@ class LoadingDialog {
               const CircularProgressIndicator(),
               const SizedBox(width: 20),
               Expanded(
-                child: Text(
-                  message,
-                  style: const TextStyle(fontSize: 16),
-                ),
+                child: Text(message, style: const TextStyle(fontSize: 16)),
               ),
             ],
           ),

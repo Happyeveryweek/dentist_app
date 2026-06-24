@@ -73,10 +73,7 @@ class PurchaseRecordCard extends StatelessWidget {
               const SizedBox(height: 3),
               Text(
                 '采购日期: ${DateFormat('yyyy-MM-dd').format(record.purchaseDate)}',
-                style: const TextStyle(
-                  color: Colors.grey,
-                  fontSize: 11,
-                ),
+                style: const TextStyle(color: Colors.grey, fontSize: 11),
               ),
             ],
           ),
@@ -108,14 +105,22 @@ class PurchaseRecordCard extends StatelessWidget {
         const SizedBox(width: 3),
         Text(
           '总数量: ${record.totalQuantity}',
-          style: TextStyle(color: Colors.blue[600], fontSize: 11, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            color: Colors.blue[600],
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(width: 12),
         Icon(Icons.list, size: 14, color: Colors.orange[600]),
         const SizedBox(width: 3),
         Text(
           '项目数: ${record.totalQuantity > 0 ? record.totalQuantity : '待定'}',
-          style: TextStyle(color: Colors.orange[600], fontSize: 11, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            color: Colors.orange[600],
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -130,7 +135,11 @@ class PurchaseRecordCard extends StatelessWidget {
         Expanded(
           child: Text(
             '供应商: ${record.supplier}',
-            style: TextStyle(color: Colors.purple[600], fontSize: 11, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: Colors.purple[600],
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -148,7 +157,11 @@ class PurchaseRecordCard extends StatelessWidget {
         Expanded(
           child: Text(
             '采购医生: ${record.doctor}',
-            style: TextStyle(color: Colors.teal[600], fontSize: 11, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: Colors.teal[600],
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -166,7 +179,11 @@ class PurchaseRecordCard extends StatelessWidget {
         Expanded(
           child: Text(
             '备注: ${record.notes}',
-            style: TextStyle(color: Colors.grey[600], fontSize: 11, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+            ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -205,21 +222,15 @@ class PurchaseRecordCard extends StatelessWidget {
                 ),
               ),
             ),
-            Container(
-              child: Material(
-                color: Colors.red[50],
+            Material(
+              color: Colors.red[50],
+              borderRadius: BorderRadius.circular(6),
+              child: InkWell(
                 borderRadius: BorderRadius.circular(6),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(6),
-                  onTap: onDelete,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      Icons.delete,
-                      color: Colors.red[700],
-                      size: 18,
-                    ),
-                  ),
+                onTap: onDelete,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(Icons.delete, color: Colors.red[700], size: 18),
                 ),
               ),
             ),

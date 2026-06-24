@@ -2,14 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import '../models/patient_medical_record.dart';
 import '../models/medical_record_template.dart';
-import '../data_sources/medical_record_data_source.dart'
-    hide SqliteMedicalRecordDataSource, MySqlMedicalRecordDataSource;
+import '../data_sources/medical_record_data_source.dart';
 import '../data_sources/sqlite_medical_record_data_source.dart';
 import '../data_sources/mysql_medical_record_data_source.dart';
 import '../utils/database_operation_wrapper.dart';
 import '../features/medical_records/services/medical_record_initialization_service.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
+import '../utils/app_logger.dart';
 
 /// 病历管理提供者，专门处理病历相关的数据库操作
 /// Android端专注于查看和PDF导出功能，不包含编辑权限控制
@@ -105,7 +105,7 @@ class MedicalRecordProvider extends ChangeNotifier {
       final latestConnection = _databaseProvider.mysqlConnection;
       return latestConnection;
     } catch (e) {
-      print('获取最新MySQL连接失败: $e');
+      AppLogger.info('获取最新MySQL连接失败: $e');
       return null;
     }
   }
@@ -115,7 +115,7 @@ class MedicalRecordProvider extends ChangeNotifier {
     if (initialized) return;
 
     try {
-      print('MedicalRecordProvider 开始初始化...');
+      AppLogger.info('MedicalRecordProvider 开始初始化...');
 
       // 保存DatabaseProvider引用
       _databaseProvider = dbProvider;
@@ -128,19 +128,19 @@ class MedicalRecordProvider extends ChangeNotifier {
         _mysqlDataSource = MySqlMedicalRecordDataSource.withConnectionGetter(
           () => _currentMysqlConnection,
         );
-        print('✅ MedicalRecordProvider MySQL数据源设置成功');
+        AppLogger.info('✅ MedicalRecordProvider MySQL数据源设置成功');
       } else {
         _sqliteDataSource = SqliteMedicalRecordDataSource(result.database!);
-        print('✅ MedicalRecordProvider SQLite数据源设置成功');
+        AppLogger.info('✅ MedicalRecordProvider SQLite数据源设置成功');
       }
 
       // 初始化数据库操作包装器
       _dbWrapper = DatabaseOperationWrapper(dbProvider);
       initialized = result.initialized;
 
-      print('MedicalRecordProvider 初始化完成');
+      AppLogger.info('MedicalRecordProvider 初始化完成');
     } catch (e) {
-      print('MedicalRecordProvider 初始化失败: $e');
+      AppLogger.info('MedicalRecordProvider 初始化失败: $e');
       initialized = false;
     }
   }
@@ -202,7 +202,7 @@ class MedicalRecordProvider extends ChangeNotifier {
 
           return records;
         } catch (e) {
-          print('获取患者病历记录失败: $e');
+          AppLogger.info('获取患者病历记录失败: $e');
           _setError('获取病历记录失败: $e');
           if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
           return [];
@@ -221,7 +221,7 @@ class MedicalRecordProvider extends ChangeNotifier {
       // 直接使用数据源，不触发连接管理
       return await _currentDataSource.getPatientMedicalRecords(patientId);
     } catch (e) {
-      print('简单获取患者病历记录失败: $e');
+      AppLogger.info('简单获取患者病历记录失败: $e');
       if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
       return [];
     }
@@ -239,7 +239,7 @@ class MedicalRecordProvider extends ChangeNotifier {
         final record = await _currentDataSource.getMedicalRecord(recordId);
         return record;
       } catch (e) {
-        print('获取病历记录失败: $e');
+        AppLogger.info('获取病历记录失败: $e');
         _setError('获取病历记录失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return null;
@@ -257,7 +257,7 @@ class MedicalRecordProvider extends ChangeNotifier {
       try {
         return await _currentDataSource.hasMedicalRecords(patientId);
       } catch (e) {
-        print('检查患者病历记录失败: $e');
+        AppLogger.info('检查患者病历记录失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return false;
       }
@@ -289,7 +289,7 @@ class MedicalRecordProvider extends ChangeNotifier {
 
           return templates;
         } catch (e) {
-          print('获取病历模板失败: $e');
+          AppLogger.info('获取病历模板失败: $e');
           _setError('获取病历模板失败: $e');
           if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
           return [];
@@ -316,7 +316,7 @@ class MedicalRecordProvider extends ChangeNotifier {
         );
         return templates;
       } catch (e) {
-        print('获取分类病历模板失败: $e');
+        AppLogger.info('获取分类病历模板失败: $e');
         _setError('获取分类病历模板失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return [];
@@ -339,11 +339,11 @@ class MedicalRecordProvider extends ChangeNotifier {
         final existingTemplates =
             await _currentDataSource.getMedicalRecordTemplates();
         if (existingTemplates.isNotEmpty) {
-          print('模板数据已存在，跳过初始化');
+          AppLogger.info('模板数据已存在，跳过初始化');
           return;
         }
 
-        print('开始初始化默认模板数据...');
+        AppLogger.info('开始初始化默认模板数据...');
 
         // 获取所有默认模板
         final defaultTemplates =
@@ -356,16 +356,16 @@ class MedicalRecordProvider extends ChangeNotifier {
             await _currentDataSource.createTemplate(template);
             insertedCount++;
           } catch (e) {
-            print('插入模板失败: ${template.name}, 错误: $e');
+            AppLogger.info('插入模板失败: ${template.name}, 错误: $e');
           }
         }
 
-        print('成功初始化 $insertedCount 个默认模板');
+        AppLogger.info('成功初始化 $insertedCount 个默认模板');
 
         // 清除缓存以便重新加载
         _cachedTemplates = null;
       } catch (e) {
-        print('初始化默认模板失败: $e');
+        AppLogger.info('初始化默认模板失败: $e');
         _setError('初始化默认模板失败: $e');
       } finally {
         _setLoading(false);

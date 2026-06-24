@@ -1,5 +1,6 @@
 import 'package:mysql1/mysql1.dart';
 import 'package:sqflite/sqflite.dart';
+import '../../../utils/app_logger.dart';
 
 /// 预约 Provider 初始化结果
 class AppointmentInitializationResult {
@@ -32,7 +33,7 @@ class AppointmentInitializationService {
     if (dbType == 'mysql') {
       final mysqlConnection = dbProvider.mysqlConnection;
       if (mysqlConnection != null) {
-        print('✅ AppointmentsProvider MySQL数据源设置成功');
+        AppLogger.info('✅ AppointmentsProvider MySQL数据源设置成功');
         return AppointmentInitializationResult(
           database: null,
           mysqlConnection: mysqlConnection,
@@ -41,10 +42,10 @@ class AppointmentInitializationService {
         );
       }
 
-      print('警告：MySQL连接为null，尝试SQLite');
+      AppLogger.info('警告：MySQL连接为null，尝试SQLite');
       final database = await _loadSqliteDatabase(dbProvider);
       if (database != null) {
-        print('AppointmentsProvider 回退到SQLite数据源设置成功');
+        AppLogger.info('AppointmentsProvider 回退到SQLite数据源设置成功');
         return AppointmentInitializationResult(
           database: database,
           mysqlConnection: null,
@@ -58,7 +59,7 @@ class AppointmentInitializationService {
 
     final database = await _loadSqliteDatabase(dbProvider);
     if (database != null) {
-      print('✅ AppointmentsProvider SQLite数据源设置成功');
+      AppLogger.info('✅ AppointmentsProvider SQLite数据源设置成功');
       return AppointmentInitializationResult(
         database: database,
         mysqlConnection: null,
@@ -75,7 +76,7 @@ class AppointmentInitializationService {
       final database = await dbProvider.sqliteDatabase;
       return database;
     } catch (e) {
-      print('获取SQLite数据库失败: $e');
+      AppLogger.info('获取SQLite数据库失败: $e');
       if (dbProvider.database != null) {
         return dbProvider.database;
       }

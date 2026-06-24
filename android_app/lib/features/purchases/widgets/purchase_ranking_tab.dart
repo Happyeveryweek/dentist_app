@@ -18,17 +18,35 @@ class PurchaseRankingTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final topMaterialsByAmount = PurchaseStatisticsCalculator.calculateTopMaterialsByAmount(filteredItems);
-    final topMaterialsByQuantity = PurchaseStatisticsCalculator.calculateTopMaterialsByQuantity(filteredItems);
-    final topSuppliers = PurchaseStatisticsCalculator.calculateTopSuppliers(filteredRecords);
-    
+    final topMaterialsByAmount =
+        PurchaseStatisticsCalculator.calculateTopMaterialsByAmount(
+          filteredItems,
+        );
+    final topMaterialsByQuantity =
+        PurchaseStatisticsCalculator.calculateTopMaterialsByQuantity(
+          filteredItems,
+        );
+    final topSuppliers = PurchaseStatisticsCalculator.calculateTopSuppliers(
+      filteredRecords,
+    );
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildTopMaterialsCard(topMaterialsByAmount, '材料采购排行 (按金额)', '¥', Colors.green),
+          _buildTopMaterialsCard(
+            topMaterialsByAmount,
+            '材料采购排行 (按金额)',
+            '¥',
+            Colors.green,
+          ),
           const SizedBox(height: 24),
-          _buildTopMaterialsCard(topMaterialsByQuantity, '材料采购排行 (按数量)', '', Colors.orange),
+          _buildTopMaterialsCard(
+            topMaterialsByQuantity,
+            '材料采购排行 (按数量)',
+            '',
+            Colors.orange,
+          ),
           const SizedBox(height: 24),
           _buildTopSuppliersCard(topSuppliers, '供应商排行 (按金额)'),
         ],
@@ -37,9 +55,17 @@ class PurchaseRankingTab extends StatelessWidget {
   }
 
   /// 构建材料排行卡片
-  Widget _buildTopMaterialsCard(List<MapEntry<String, num>> topMaterials, String title, String prefix, Color color) {
-    final double totalValue = topMaterials.fold(0.0, (sum, item) => sum + item.value.toDouble());
-    
+  Widget _buildTopMaterialsCard(
+    List<MapEntry<String, num>> topMaterials,
+    String title,
+    String prefix,
+    Color color,
+  ) {
+    final double totalValue = topMaterials.fold(
+      0.0,
+      (sum, item) => sum + item.value.toDouble(),
+    );
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -88,8 +114,11 @@ class PurchaseRankingTab extends StatelessWidget {
               itemBuilder: (context, index) {
                 final material = topMaterials[index];
                 final rank = index + 1;
-                final percentage = totalValue == 0 ? 0.0 : (material.value.toDouble() / totalValue) * 100;
-                
+                final percentage =
+                    totalValue == 0
+                        ? 0.0
+                        : (material.value.toDouble() / totalValue) * 100;
+
                 return ListTile(
                   leading: Container(
                     width: 32,
@@ -134,7 +163,10 @@ class PurchaseRankingTab extends StatelessWidget {
                       ),
                       Text(
                         '${percentage.toStringAsFixed(1)}%',
-                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
                       ),
                     ],
                   ),
@@ -147,7 +179,10 @@ class PurchaseRankingTab extends StatelessWidget {
   }
 
   /// 构建供应商排行卡片
-  Widget _buildTopSuppliersCard(List<MapEntry<String, double>> topSuppliers, String title) {
+  Widget _buildTopSuppliersCard(
+    List<MapEntry<String, double>> topSuppliers,
+    String title,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -196,20 +231,24 @@ class PurchaseRankingTab extends StatelessWidget {
               itemBuilder: (context, index) {
                 final supplier = topSuppliers[index];
                 final rank = index + 1;
-                
+
                 return ListTile(
                   leading: Container(
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: PurchaseStatisticsCalculator.getRankColor(rank).withValues(alpha: 0.1),
+                      color: PurchaseStatisticsCalculator.getRankColor(
+                        rank,
+                      ).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Center(
                       child: Text(
                         rank.toString(),
                         style: TextStyle(
-                          color: PurchaseStatisticsCalculator.getRankColor(rank),
+                          color: PurchaseStatisticsCalculator.getRankColor(
+                            rank,
+                          ),
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),

@@ -1,6 +1,7 @@
 import 'package:mysql1/mysql1.dart';
 import 'package:sqflite/sqflite.dart';
 import 'user_connection_state_service.dart';
+import '../../../utils/app_logger.dart';
 
 /// 用户连接检查服务
 class UserConnectionHealthService {
@@ -16,11 +17,11 @@ class UserConnectionHealthService {
     Database? database,
     String dataSourceType = 'sqlite',
     dynamic databaseProvider,
-  })  : _stateService = stateService,
-        _mysqlConnection = mysqlConnection,
-        _database = database,
-        _dataSourceType = dataSourceType,
-        _databaseProvider = databaseProvider;
+  }) : _stateService = stateService,
+       _mysqlConnection = mysqlConnection,
+       _database = database,
+       _dataSourceType = dataSourceType,
+       _databaseProvider = databaseProvider;
 
   String get dataSourceType => _dataSourceType;
 
@@ -48,7 +49,7 @@ class UserConnectionHealthService {
         return latestConnection;
       }
     } catch (e) {
-      print('获取最新MySQL连接失败: $e');
+      AppLogger.info('获取最新MySQL连接失败: $e');
     }
 
     return _mysqlConnection;

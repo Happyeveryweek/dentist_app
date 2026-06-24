@@ -23,7 +23,9 @@ class AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusInfo = AppointmentStatusHelper.getStatusInfo(appointment.status);
+    final statusInfo = AppointmentStatusHelper.getStatusInfo(
+      appointment.status,
+    );
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -32,13 +34,13 @@ class AppointmentCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
         border: Border.all(
-          color: statusInfo.color.withOpacity(0.2),
+          color: statusInfo.color.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -51,9 +53,9 @@ class AppointmentCard extends StatelessWidget {
             final result = await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => AppointmentDetailScreen(
-                  appointment: appointment,
-                ),
+                builder:
+                    (context) =>
+                        AppointmentDetailScreen(appointment: appointment),
               ),
             );
 
@@ -74,8 +76,8 @@ class AppointmentCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            statusInfo.color.withOpacity(0.2),
-                            statusInfo.color.withOpacity(0.1),
+                            statusInfo.color.withValues(alpha: 0.2),
+                            statusInfo.color.withValues(alpha: 0.1),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -139,7 +141,8 @@ class AppointmentCard extends StatelessWidget {
                         color: AppTheme.infoColor,
                         expanded: true,
                       ),
-                      if (patient?.phone != null && patient!.phone.isNotEmpty) ...[
+                      if (patient?.phone != null &&
+                          patient!.phone.isNotEmpty) ...[
                         const SizedBox(width: 16),
                         InfoItem(
                           icon: Icons.phone_rounded,
@@ -155,11 +158,14 @@ class AppointmentCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   InfoItem(
                     icon: Icons.medical_services_rounded,
-                    text: TreatmentTypeFormatter.formatTreatmentType(appointment.treatmentType),
+                    text: TreatmentTypeFormatter.formatTreatmentType(
+                      appointment.treatmentType,
+                    ),
                     color: AppTheme.primaryColor,
                   ),
                 ],
-                if (appointment.notes != null && appointment.notes!.isNotEmpty) ...[
+                if (appointment.notes != null &&
+                    appointment.notes!.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   InfoItem(
                     icon: Icons.notes_rounded,

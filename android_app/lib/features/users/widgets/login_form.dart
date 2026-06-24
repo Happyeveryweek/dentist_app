@@ -38,9 +38,7 @@ class LoginForm extends StatelessWidget {
     final fieldSpacing = isSmallScreen ? 12.0 : 16.0;
 
     return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(24)),
       clipBehavior: Clip.antiAlias,
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
@@ -49,24 +47,24 @@ class LoginForm extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 400),
           padding: EdgeInsets.all(formPadding),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.45),
+            color: Colors.white.withValues(alpha: 0.45),
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
                 spreadRadius: 1,
               ),
               BoxShadow(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 blurRadius: 10,
                 offset: const Offset(0, -1),
                 spreadRadius: 0,
               ),
             ],
             border: Border.all(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withValues(alpha: 0.6),
               width: 1.5,
             ),
           ),
@@ -83,8 +81,8 @@ class LoginForm extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Colors.blue.shade50.withOpacity(0.6),
-                            Colors.indigo.shade50.withOpacity(0.6),
+                            Colors.blue.shade50.withValues(alpha: 0.6),
+                            Colors.indigo.shade50.withValues(alpha: 0.6),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),

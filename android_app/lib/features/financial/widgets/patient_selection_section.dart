@@ -42,10 +42,14 @@ class PatientSelectionSection extends StatelessWidget {
               borderSide: BorderSide(color: Colors.grey[300]!),
             ),
             filled: true,
-            fillColor: selectedPatient != null
-                ? Theme.of(context).primaryColor.withOpacity(0.1)
-                : Colors.grey[50],
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            fillColor:
+                selectedPatient != null
+                    ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+                    : Colors.grey[50],
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
             suffixIcon: Icon(
               Icons.search,
               color: Theme.of(context).primaryColor,

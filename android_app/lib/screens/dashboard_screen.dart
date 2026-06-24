@@ -10,6 +10,7 @@ import '../features/dashboard/widgets/statistics_cards.dart';
 import '../features/dashboard/widgets/today_appointments_section.dart';
 import '../features/dashboard/services/dashboard_data_loader.dart';
 import '../widgets/toast_manager.dart';
+import '../utils/app_logger.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -52,7 +53,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     // 延迟加载数据，确保Provider完全初始化
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print('DashboardScreen 初始化完成，开始加载数据');
+      AppLogger.info('DashboardScreen 初始化完成，开始加载数据');
       _loadDataWithRetry();
     });
   }
@@ -73,11 +74,11 @@ class _DashboardScreenState extends State<DashboardScreen>
       try {
         await _loadData();
         success = true;
-        print('数据加载成功，无需重试');
+        AppLogger.info('数据加载成功，无需重试');
         break; // 成功后直接跳出循环
       } catch (e) {
         retryCount++;
-        print('加载数据失败 (尝试 $retryCount/$maxRetries): $e');
+        AppLogger.info('加载数据失败 (尝试 $retryCount/$maxRetries): $e');
 
         if (retryCount < maxRetries) {
           // 增加延迟时间，以便后续尝试更可能成功
@@ -88,7 +89,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     // 只有在真正失败且不是"数据库未初始化"错误时才显示错误信息
     if (!success && mounted) {
-      print('多次重试后数据加载仍然失败');
+      AppLogger.info('多次重试后数据加载仍然失败');
       setState(() {
         _isLoading = false;
       });
@@ -116,7 +117,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   Future<void> _loadData() async {
     if (!mounted) return;
 
-    print('开始加载仪表盘数据');
+    AppLogger.info('开始加载仪表盘数据');
     setState(() {
       _isLoading = true;
     });
@@ -125,18 +126,20 @@ class _DashboardScreenState extends State<DashboardScreen>
       // 获取UserProvider和当前用户信息
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
-      
+
       // 获取用户头像和医生姓名
-      if (currentUser?.imageData != null && currentUser!.imageData!.isNotEmpty) {
+      if (currentUser?.imageData != null &&
+          currentUser!.imageData!.isNotEmpty) {
         _currentUserAvatar = Uint8List.fromList(currentUser.imageData!);
       } else {
         _currentUserAvatar = null;
       }
-      
+
       // 获取医生姓名，优先使用 doctor 字段，否则使用 username
-      _currentUserName = currentUser?.doctor?.isNotEmpty == true 
-          ? currentUser!.doctor! 
-          : (currentUser?.username ?? '');
+      _currentUserName =
+          currentUser?.doctor?.isNotEmpty == true
+              ? currentUser!.doctor!
+              : (currentUser?.username ?? '');
 
       // 使用数据加载服务加载数据
       final data = await DashboardDataLoader.loadData(context);
@@ -144,7 +147,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       // 确保组件还在挂载状态
       if (!mounted) return;
 
-      print('更新UI状态');
+      AppLogger.info('更新UI状态');
       setState(() {
         _patientCount = data.patientCount;
         _appointmentCount = data.appointmentCount;
@@ -158,10 +161,10 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (mounted) {
         _animationController.reset();
         _animationController.forward();
-        print('仪表盘数据加载完成');
+        AppLogger.info('仪表盘数据加载完成');
       }
     } catch (e) {
-      print('加载仪表盘数据错误: $e');
+      AppLogger.info('加载仪表盘数据错误: $e');
       // 确保组件还在挂载状态
       if (!mounted) return;
 
@@ -181,12 +184,12 @@ class _DashboardScreenState extends State<DashboardScreen>
         // 检查是否是"数据库未初始化"错误，如果是则不显示错误信息
         if (!e.toString().contains('数据库未初始化')) {
           String errorMessage = '数据加载遇到问题，请稍后重试';
-          
+
           // 如果不是"数据库未初始化"错误，显示具体错误信息
           if (!e.toString().contains('数据库未初始化')) {
             errorMessage = '加载数据出错，请尝试刷新: $e';
           }
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMessage),
@@ -200,12 +203,11 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
           );
         } else {
-          print('检测到"数据库未初始化"错误，但不显示给用户，因为数据库实际已初始化');
+          AppLogger.info('检测到"数据库未初始化"错误，但不显示给用户，因为数据库实际已初始化');
         }
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -252,11 +254,8 @@ class _DashboardScreenState extends State<DashboardScreen>
               : RefreshIndicator(
                 onRefresh: () async {
                   await _loadData();
-                  if (mounted) {
-                    SuccessToastManager.show(
-                      context,
-                      message: '刷新成功',
-                    );
+                  if (context.mounted) {
+                    SuccessToastManager.show(context, message: '刷新成功');
                   }
                 },
                 color: AppTheme.primaryColor,
@@ -296,23 +295,11 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-
-
-
-
-
-
-
-
-
-
-
   // 公共方法：允许外部调用刷新仪表盘数据
   void refreshDashboardData() {
-    print('外部请求刷新仪表盘数据');
+    AppLogger.info('外部请求刷新仪表盘数据');
     if (mounted) {
       _loadDataWithRetry();
     }
   }
-
 }

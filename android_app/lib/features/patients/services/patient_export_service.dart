@@ -3,6 +3,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 import '../../../utils/database_utils.dart';
+import '../../../utils/app_logger.dart';
 
 /// 患者导出和备份服务
 /// 职责：患者数据导出、备份功能
@@ -19,7 +20,7 @@ class PatientExportService {
         throw Exception('目前只支持导出SQLite数据库患者表');
       }
 
-      print('开始导出患者表数据');
+      AppLogger.info('开始导出患者表数据');
 
       // 使用数据库工具类导出患者表
       final exportPath = await DatabaseUtils.exportPatientsTable(
@@ -31,10 +32,10 @@ class PatientExportService {
         throw Exception('导出过程中发生错误');
       }
 
-      print('患者表已成功导出到: $exportPath');
+      AppLogger.info('患者表已成功导出到: $exportPath');
       return exportPath;
     } catch (e) {
-      print('导出患者表错误: $e');
+      AppLogger.info('导出患者表错误: $e');
       throw Exception('患者表导出失败: $e');
     }
   }
@@ -76,7 +77,7 @@ class PatientExportService {
 
       return '患者数据已备份到: $filePath';
     } catch (e) {
-      print('SAF备份患者数据错误: $e');
+      AppLogger.info('SAF备份患者数据错误: $e');
       throw Exception('备份患者数据失败：$e');
     }
   }

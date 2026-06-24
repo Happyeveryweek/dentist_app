@@ -81,13 +81,14 @@ class FinancialSortDialogContent extends StatelessWidget {
         color: isSelected ? Colors.purple[600] : Colors.grey[600],
       ),
       title: Text(title),
-      trailing: isSelected
-          ? Icon(
-              isAscending ? Icons.arrow_upward : Icons.arrow_downward,
-              color: Colors.purple[600],
-              size: 18,
-            )
-          : null,
+      trailing:
+          isSelected
+              ? Icon(
+                isAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                color: Colors.purple[600],
+                size: 18,
+              )
+              : null,
       onTap: onTap,
       selected: isSelected,
       selectedColor: Colors.purple[600],

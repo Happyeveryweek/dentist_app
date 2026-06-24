@@ -23,7 +23,12 @@ class RememberPasswordCheckbox extends StatelessWidget {
             onChanged: (value) {
               onChanged(value ?? false);
             },
-            activeColor: Colors.blue.shade600,
+            fillColor: WidgetStateProperty.resolveWith<Color?>(
+              (states) =>
+                  states.contains(WidgetState.selected)
+                      ? Colors.blue.shade600
+                      : null,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(4),
             ),

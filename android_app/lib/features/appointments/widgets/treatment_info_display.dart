@@ -6,7 +6,7 @@ import 'package:dentist_app/theme/app_theme.dart';
 class TreatmentInfoDisplay extends StatelessWidget {
   final String treatmentTypeJson;
 
-  const TreatmentInfoDisplay({required this.treatmentTypeJson});
+  const TreatmentInfoDisplay({super.key, required this.treatmentTypeJson});
 
   @override
   Widget build(BuildContext context) {
@@ -16,15 +16,15 @@ class TreatmentInfoDisplay extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 CupertinoIcons.bandage,
                 size: 18,
                 color: AppTheme.secondaryTextColor,
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 '治疗信息:',
                 style: TextStyle(
                   color: AppTheme.secondaryTextColor,
@@ -41,9 +41,9 @@ class TreatmentInfoDisplay extends StatelessWidget {
               margin: const EdgeInsets.only(left: 26),
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.05),
+                color: Colors.blue.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,13 +74,19 @@ class TreatmentInfoDisplay extends StatelessWidget {
                       if ((treatmentData['teethData'] as List).isNotEmpty &&
                           _hasTeethData(treatmentData['teethData'][0]))
                         Expanded(
-                          child: _buildTeethDataRow(treatmentData['teethData'][0], 1),
+                          child: _buildTeethDataRow(
+                            treatmentData['teethData'][0],
+                            1,
+                          ),
                         ),
                       if ((treatmentData['teethData'] as List).length > 1 &&
                           _hasTeethData(treatmentData['teethData'][1])) ...[
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _buildTeethDataRow(treatmentData['teethData'][1], 2),
+                          child: _buildTeethDataRow(
+                            treatmentData['teethData'][1],
+                            2,
+                          ),
                         ),
                       ],
                     ],
@@ -161,7 +167,7 @@ class TreatmentInfoDisplay extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -169,7 +175,7 @@ class TreatmentInfoDisplay extends StatelessWidget {
           final height = constraints.maxHeight;
           final centerX = width / 2;
           final centerY = height / 2;
-          
+
           return CustomPaint(
             painter: _TeethCrossPainter(),
             child: Stack(
@@ -262,24 +268,17 @@ class TreatmentInfoDisplay extends StatelessWidget {
 class _TeethCrossPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.blue.shade600
-      ..strokeWidth = 2.0;
+    final paint =
+        Paint()
+          ..color = Colors.blue.shade600
+          ..strokeWidth = 2.0;
 
     final centerX = size.width / 2;
     final centerY = size.height / 2;
 
-    canvas.drawLine(
-      Offset(0, centerY),
-      Offset(size.width, centerY),
-      paint,
-    );
+    canvas.drawLine(Offset(0, centerY), Offset(size.width, centerY), paint);
 
-    canvas.drawLine(
-      Offset(centerX, 0),
-      Offset(centerX, size.height),
-      paint,
-    );
+    canvas.drawLine(Offset(centerX, 0), Offset(centerX, size.height), paint);
   }
 
   @override

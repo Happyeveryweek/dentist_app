@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 class CustomTimePickerDialog extends StatefulWidget {
   final TimeOfDay initialTime;
 
-  const CustomTimePickerDialog({
-    required this.initialTime,
-  });
+  const CustomTimePickerDialog({super.key, required this.initialTime});
 
   @override
   State<CustomTimePickerDialog> createState() => CustomTimePickerDialogState();
@@ -39,21 +37,18 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.shade50,
-              Colors.purple.shade50,
-            ],
+            colors: [Colors.blue.shade50, Colors.purple.shade50],
           ),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
               spreadRadius: 0,
             ),
             BoxShadow(
-              color: Colors.blue.withOpacity(0.1),
+              color: Colors.blue.withValues(alpha: 0.1),
               blurRadius: 40,
               offset: const Offset(0, 20),
               spreadRadius: 0,
@@ -68,10 +63,7 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Colors.blue.shade400,
-                    Colors.purple.shade400,
-                  ],
+                  colors: [Colors.blue.shade400, Colors.purple.shade400],
                 ),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(24),
@@ -79,12 +71,12 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                 ),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Row(
+              child: const Row(
                 children: [
                   Expanded(
                     child: Text(
                       '选择时间',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -94,7 +86,7 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                 ],
               ),
             ),
-            
+
             Padding(
               padding: const EdgeInsets.all(20),
               child: StatefulBuilder(
@@ -115,7 +107,7 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                           border: Border.all(color: Colors.grey.shade200),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 2),
                             ),
@@ -142,18 +134,27 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.blue.shade300),
+                                    borderSide: BorderSide(
+                                      color: Colors.blue.shade300,
+                                    ),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.blue.shade300),
+                                    borderSide: BorderSide(
+                                      color: Colors.blue.shade300,
+                                    ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.blue, width: 2),
+                                    borderSide: const BorderSide(
+                                      color: Colors.blue,
+                                      width: 2,
+                                    ),
                                   ),
                                   hintText: '时',
-                                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey.shade400,
+                                  ),
                                   filled: true,
                                   fillColor: Colors.blue.shade50,
                                 ),
@@ -196,18 +197,27 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.blue.shade300),
+                                    borderSide: BorderSide(
+                                      color: Colors.blue.shade300,
+                                    ),
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.blue.shade300),
+                                    borderSide: BorderSide(
+                                      color: Colors.blue.shade300,
+                                    ),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(color: Colors.blue, width: 2),
+                                    borderSide: const BorderSide(
+                                      color: Colors.blue,
+                                      width: 2,
+                                    ),
                                   ),
                                   hintText: '分',
-                                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey.shade400,
+                                  ),
                                   filled: true,
                                   fillColor: Colors.blue.shade50,
                                 ),
@@ -231,7 +241,11 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.access_time, color: Colors.blue.shade600, size: 20),
+                              Icon(
+                                Icons.access_time,
+                                color: Colors.blue.shade600,
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 '小时',
@@ -253,7 +267,7 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                               border: Border.all(color: Colors.grey.shade200),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 2),
                                 ),
@@ -285,9 +299,10 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                                               : Colors.transparent,
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
-                                        color: hour == index
-                                            ? Colors.blue.shade400
-                                            : Colors.grey.shade300,
+                                        color:
+                                            hour == index
+                                                ? Colors.blue.shade400
+                                                : Colors.grey.shade300,
                                         width: hour == index ? 2 : 1,
                                       ),
                                     ),
@@ -314,13 +329,17 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      
+
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.timer, color: Colors.blue.shade600, size: 20),
+                              Icon(
+                                Icons.timer,
+                                color: Colors.blue.shade600,
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Text(
                                 '分钟',
@@ -342,7 +361,7 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                               border: Border.all(color: Colors.grey.shade200),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 10,
                                   offset: const Offset(0, 2),
                                 ),
@@ -359,7 +378,21 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                               itemCount: 12,
                               padding: const EdgeInsets.all(8),
                               itemBuilder: (context, index) {
-                                final m = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55][index];
+                                final m =
+                                    [
+                                      0,
+                                      5,
+                                      10,
+                                      15,
+                                      20,
+                                      25,
+                                      30,
+                                      35,
+                                      40,
+                                      45,
+                                      50,
+                                      55,
+                                    ][index];
                                 return InkWell(
                                   onTap: () {
                                     setState(() {
@@ -375,9 +408,10 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                                               : Colors.transparent,
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
-                                        color: minute == m
-                                            ? Colors.blue.shade400
-                                            : Colors.grey.shade300,
+                                        color:
+                                            minute == m
+                                                ? Colors.blue.shade400
+                                                : Colors.grey.shade300,
                                         width: minute == m ? 2 : 1,
                                       ),
                                     ),
@@ -408,7 +442,7 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                 },
               ),
             ),
-            
+
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
@@ -439,7 +473,9 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.of(context).pop(TimeOfDay(hour: hour, minute: minute));
+                        Navigator.of(
+                          context,
+                        ).pop(TimeOfDay(hour: hour, minute: minute));
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue.shade400,
@@ -450,9 +486,9 @@ class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
                         ),
                         elevation: 0,
                       ),
-                      child: Text(
+                      child: const Text(
                         '确定',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),

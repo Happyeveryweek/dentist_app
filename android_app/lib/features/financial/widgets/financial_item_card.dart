@@ -51,50 +51,65 @@ class FinancialItemCard extends StatelessWidget {
               Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.edit, size: 18, color: Theme.of(context).primaryColor),
+                    icon: Icon(
+                      Icons.edit,
+                      size: 18,
+                      color: Theme.of(context).primaryColor,
+                    ),
                     onPressed: onEdit,
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete, size: 18, color: Colors.red),
                     onPressed: onDelete,
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                 ],
               ),
             ],
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // 第二行：收费项目名称
           Text(
             item.itemName,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
 
           const SizedBox(height: 8),
 
-          if (FinancialPaymentMethodHelper.displayName(item.paymentMethod).isNotEmpty)
+          if (FinancialPaymentMethodHelper.displayName(
+            item.paymentMethod,
+          ).isNotEmpty)
             Row(
               children: [
                 Icon(Icons.payment, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 6),
-                if (FinancialPaymentMethodHelper.iconAssetPathOrNull(item.paymentMethod) != null) ...[
+                if (FinancialPaymentMethodHelper.iconAssetPathOrNull(
+                      item.paymentMethod,
+                    ) !=
+                    null) ...[
                   Image.asset(
-                    FinancialPaymentMethodHelper.iconAssetPathOrNull(item.paymentMethod)!,
+                    FinancialPaymentMethodHelper.iconAssetPathOrNull(
+                      item.paymentMethod,
+                    )!,
                     width: 16,
                     height: 16,
-                    errorBuilder: (_, __, ___) => Icon(
-                      Icons.payment,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
+                    errorBuilder:
+                        (_, __, ___) => Icon(
+                          Icons.payment,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
                   ),
                   const SizedBox(width: 6),
                 ],
@@ -108,20 +123,32 @@ class FinancialItemCard extends StatelessWidget {
                 ),
               ],
             ),
-          
+
           const SizedBox(height: 12),
-          
+
           // 第三行：金额信息（已移除每行欠费列，保留应收费/已收费/加工费）
           Row(
             children: [
               Expanded(
-                child: _buildAmountInfo('应收费', '¥${NumberFormat('#,##0').format((item.itemPrice * (item.quantity ?? 1)))}', Theme.of(context).primaryColor),
+                child: _buildAmountInfo(
+                  '应收费',
+                  '¥${NumberFormat('#,##0').format(item.itemPrice * item.quantity)}',
+                  Theme.of(context).primaryColor,
+                ),
               ),
               Expanded(
-                child: _buildAmountInfo('已收费', '¥${NumberFormat('#,##0').format(item.totalPrice)}', Colors.orange[600]!),
+                child: _buildAmountInfo(
+                  '已收费',
+                  '¥${NumberFormat('#,##0').format(item.totalPrice)}',
+                  Colors.orange[600]!,
+                ),
               ),
               Expanded(
-                child: _buildAmountInfo('加工费', '¥${NumberFormat('#,##0').format(item.processingFee)}', Colors.green[600]!),
+                child: _buildAmountInfo(
+                  '加工费',
+                  '¥${NumberFormat('#,##0').format(item.processingFee)}',
+                  Colors.green[600]!,
+                ),
               ),
             ],
           ),
@@ -134,13 +161,7 @@ class FinancialItemCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         const SizedBox(height: 4),
         Text(
           value,

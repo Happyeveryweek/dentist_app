@@ -61,7 +61,7 @@ class PatientListCard extends StatelessWidget {
                     // 头像
                     CircleAvatar(
                       radius: 28,
-                      backgroundColor: patientColor.withOpacity(0.15),
+                      backgroundColor: patientColor.withValues(alpha: 0.15),
                       child: Text(
                         patient.name.isNotEmpty
                             ? patient.name.characters.first
@@ -97,9 +97,11 @@ class PatientListCard extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color:
                                       patient.gender == '男'
-                                          ? AppTheme.infoColor.withOpacity(0.1)
-                                          : AppTheme.accentColor.withOpacity(
-                                            0.1,
+                                          ? AppTheme.infoColor.withValues(
+                                            alpha: 0.1,
+                                          )
+                                          : AppTheme.accentColor.withValues(
+                                            alpha: 0.1,
                                           ),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -200,7 +202,8 @@ class PatientListCard extends StatelessWidget {
                         Expanded(
                           child: _buildInfoItem(
                             icon: Icons.badge_outlined,
-                            text: '病历号: ${patient.medicalRecordNumber ?? "未分配"}',
+                            text:
+                                '病历号: ${patient.medicalRecordNumber ?? "未分配"}',
                             color: AppTheme.infoColor,
                           ),
                         ),
@@ -219,32 +222,34 @@ class PatientListCard extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: (patient.doctor != null &&
-                                  patient.doctor!.isNotEmpty)
-                              ? _buildInfoItem(
-                                  icon: Icons.medical_services_outlined,
-                                  text: '医生: ${patient.doctor}',
-                                  color: AppTheme.secondaryColor,
-                                )
-                              : _buildInfoItem(
-                                  icon: Icons.medical_services_outlined,
-                                  text: '医生: 未分配',
-                                  color: AppTheme.secondaryColor,
-                                ),
+                          child:
+                              (patient.doctor != null &&
+                                      patient.doctor!.isNotEmpty)
+                                  ? _buildInfoItem(
+                                    icon: Icons.medical_services_outlined,
+                                    text: '医生: ${patient.doctor}',
+                                    color: AppTheme.secondaryColor,
+                                  )
+                                  : _buildInfoItem(
+                                    icon: Icons.medical_services_outlined,
+                                    text: '医生: 未分配',
+                                    color: AppTheme.secondaryColor,
+                                  ),
                         ),
                         Expanded(
-                          child: (patient.address != null &&
-                                  patient.address!.isNotEmpty)
-                              ? _buildInfoItem(
-                                  icon: Icons.location_on_outlined,
-                                  text: patient.address!,
-                                  color: AppTheme.accentColor,
-                                )
-                              : _buildInfoItem(
-                                  icon: Icons.location_on_outlined,
-                                  text: '未填写',
-                                  color: AppTheme.lightText,
-                                ),
+                          child:
+                              (patient.address != null &&
+                                      patient.address!.isNotEmpty)
+                                  ? _buildInfoItem(
+                                    icon: Icons.location_on_outlined,
+                                    text: patient.address!,
+                                    color: AppTheme.accentColor,
+                                  )
+                                  : _buildInfoItem(
+                                    icon: Icons.location_on_outlined,
+                                    text: '未填写',
+                                    color: AppTheme.lightText,
+                                  ),
                         ),
                       ],
                     ),

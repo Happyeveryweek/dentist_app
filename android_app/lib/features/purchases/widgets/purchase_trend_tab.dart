@@ -24,7 +24,7 @@ class PurchaseTrendTab extends StatelessWidget {
       startDate,
       endDate,
     );
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -40,7 +40,7 @@ class PurchaseTrendTab extends StatelessWidget {
   /// 构建月度趋势图表
   Widget _buildMonthlyTrendChart(Map<String, Map<String, double>> monthlyData) {
     final sortedMonths = monthlyData.keys.toList()..sort();
-    
+
     if (sortedMonths.isEmpty) {
       return Container(
         height: 250,
@@ -93,7 +93,7 @@ class PurchaseTrendTab extends StatelessWidget {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          
+
           // 简化的柱状图表示
           Expanded(
             child: ListView.builder(
@@ -106,10 +106,11 @@ class PurchaseTrendTab extends StatelessWidget {
                 final amount = data['amount']!;
                 final quantity = data['quantity']!;
                 final records = data['records']!.toInt();
-                
+
                 final amountRate = maxAmount > 0 ? amount / maxAmount : 0.0;
-                final quantityRate = maxQuantity > 0 ? quantity / maxQuantity : 0.0;
-                
+                final quantityRate =
+                    maxQuantity > 0 ? quantity / maxQuantity : 0.0;
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.all(12),
@@ -141,7 +142,7 @@ class PurchaseTrendTab extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      
+
                       // 采购金额条
                       Row(
                         children: [
@@ -159,7 +160,9 @@ class PurchaseTrendTab extends StatelessWidget {
                             child: LinearProgressIndicator(
                               value: amountRate,
                               backgroundColor: Colors.grey[200],
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.green[600]!),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.green[600]!,
+                              ),
                               minHeight: 6,
                             ),
                           ),
@@ -179,7 +182,7 @@ class PurchaseTrendTab extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      
+
                       // 采购数量条
                       Row(
                         children: [
@@ -197,7 +200,9 @@ class PurchaseTrendTab extends StatelessWidget {
                             child: LinearProgressIndicator(
                               value: quantityRate,
                               backgroundColor: Colors.grey[200],
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.orange[600]!),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.orange[600]!,
+                              ),
                               minHeight: 6,
                             ),
                           ),
@@ -232,7 +237,7 @@ class PurchaseTrendTab extends StatelessWidget {
     final sortedMonths = monthlyData.keys.toList()..sort();
     // 反转月份列表，使最近的月份显示在最上面
     final reversedMonths = sortedMonths.reversed.toList();
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -265,23 +270,26 @@ class PurchaseTrendTab extends StatelessWidget {
                 DataColumn(label: Text('采购数量')),
                 DataColumn(label: Text('平均单价')),
               ],
-              rows: reversedMonths.map((month) {
-                final data = monthlyData[month]!;
-                final amount = data['amount']!;
-                final quantity = data['quantity']!;
-                final records = data['records']!.toInt();
-                final avgPrice = quantity > 0 ? amount / quantity : 0.0;
-                
-                return DataRow(
-                  cells: [
-                    DataCell(Text(month)),
-                    DataCell(Text(records.toString())),
-                    DataCell(Text('¥${NumberFormat('#,##0').format(amount)}')),
-                    DataCell(Text(NumberFormat('#,##0').format(quantity))),
-                    DataCell(Text('¥${avgPrice.toStringAsFixed(2)}')),
-                  ],
-                );
-              }).toList(),
+              rows:
+                  reversedMonths.map((month) {
+                    final data = monthlyData[month]!;
+                    final amount = data['amount']!;
+                    final quantity = data['quantity']!;
+                    final records = data['records']!.toInt();
+                    final avgPrice = quantity > 0 ? amount / quantity : 0.0;
+
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(month)),
+                        DataCell(Text(records.toString())),
+                        DataCell(
+                          Text('¥${NumberFormat('#,##0').format(amount)}'),
+                        ),
+                        DataCell(Text(NumberFormat('#,##0').format(quantity))),
+                        DataCell(Text('¥${avgPrice.toStringAsFixed(2)}')),
+                      ],
+                    );
+                  }).toList(),
             ),
           ),
         ],

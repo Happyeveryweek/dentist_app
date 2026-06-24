@@ -2,9 +2,10 @@ import 'package:mysql1/mysql1.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:dentist_app/utils/datetime_formatter.dart';
+import './app_logger.dart';
 
 /// MySQL 查询结果行处理器
-/// 
+///
 /// 职责：
 /// - 处理 MySQL 查询结果中的 Blob 字段
 /// - 处理 DateTime 类型转换
@@ -14,17 +15,17 @@ class MysqlRowProcessor {
   /// 处理 MySQL 查询结果中的 Blob 字段和其他类型
   static Map<String, dynamic> processRow(ResultRow row) {
     final Map<String, dynamic> processedMap = {};
-    
+
     for (var entry in row.fields.entries) {
       var value = entry.value;
-      
+
       // 处理DateTime类型，将其转换为ISO字符串
       if (value is DateTime) {
         try {
           final stringValue = DateTimeFormatter.toDbString(value);
           processedMap[entry.key] = stringValue;
         } catch (e) {
-          print('MysqlRowProcessor: DateTime转换失败: $e');
+          AppLogger.info('MysqlRowProcessor: DateTime转换失败: $e');
           processedMap[entry.key] = '';
         }
       }
@@ -36,7 +37,7 @@ class MysqlRowProcessor {
             final blobString = String.fromCharCodes(value.toBytes());
             processedMap[entry.key] = blobString;
           } catch (e) {
-            print('MysqlRowProcessor: 图片字段转换失败: $e');
+            AppLogger.info('MysqlRowProcessor: 图片字段转换失败: $e');
             processedMap[entry.key] = '';
           }
         } else if (value is Uint8List) {
@@ -45,14 +46,16 @@ class MysqlRowProcessor {
             final stringValue = String.fromCharCodes(value);
             processedMap[entry.key] = stringValue;
           } catch (e) {
-            print('MysqlRowProcessor: Uint8List转换失败: $e');
+            AppLogger.info('MysqlRowProcessor: Uint8List转换失败: $e');
             processedMap[entry.key] = '';
           }
         } else if (value is String) {
           // 如果已经是String类型，直接使用
           processedMap[entry.key] = value;
         } else {
-          print('MysqlRowProcessor: 图片字段 ${entry.key} 类型异常: ${value.runtimeType}');
+          AppLogger.info(
+            'MysqlRowProcessor: 图片字段 ${entry.key} 类型异常: ${value.runtimeType}',
+          );
           processedMap[entry.key] = '';
         }
       }
@@ -68,7 +71,7 @@ class MysqlRowProcessor {
             processedMap[entry.key] = '';
           }
         } catch (e) {
-          print('MysqlRowProcessor: Blob转换失败: $e');
+          AppLogger.info('MysqlRowProcessor: Blob转换失败: $e');
           processedMap[entry.key] = '';
         }
       } else if (value is Uint8List) {
@@ -81,7 +84,7 @@ class MysqlRowProcessor {
             processedMap[entry.key] = '';
           }
         } catch (e) {
-          print('MysqlRowProcessor: Uint8List转换失败: $e');
+          AppLogger.info('MysqlRowProcessor: Uint8List转换失败: $e');
           processedMap[entry.key] = '';
         }
       } else if (value is String) {
@@ -91,7 +94,7 @@ class MysqlRowProcessor {
         processedMap[entry.key] = value;
       }
     }
-    
+
     return processedMap;
   }
 

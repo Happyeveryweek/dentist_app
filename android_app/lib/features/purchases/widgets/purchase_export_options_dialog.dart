@@ -5,10 +5,12 @@ class PurchaseExportOptionsDialog extends StatefulWidget {
   const PurchaseExportOptionsDialog({super.key});
 
   @override
-  State<PurchaseExportOptionsDialog> createState() => _PurchaseExportOptionsDialogState();
+  State<PurchaseExportOptionsDialog> createState() =>
+      _PurchaseExportOptionsDialogState();
 }
 
-class _PurchaseExportOptionsDialogState extends State<PurchaseExportOptionsDialog> {
+class _PurchaseExportOptionsDialogState
+    extends State<PurchaseExportOptionsDialog> {
   final Map<String, bool> _exportOptions = {
     'purchaseRecord': false,
     'purchaseSummary': true,
@@ -18,10 +20,8 @@ class _PurchaseExportOptionsDialogState extends State<PurchaseExportOptionsDialo
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: SizedBox(
         width: MediaQuery.of(context).size.width * 0.8,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -50,15 +50,22 @@ class _PurchaseExportOptionsDialogState extends State<PurchaseExportOptionsDialo
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints: const BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
                   ),
                 ],
               ),
             ),
-            
+
             // 选项内容
             Padding(
               padding: const EdgeInsets.all(16),
@@ -67,13 +74,10 @@ class _PurchaseExportOptionsDialogState extends State<PurchaseExportOptionsDialo
                 children: [
                   const Text(
                     '选择要导出的内容:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // 采购记录基本信息
                   CheckboxListTile(
                     title: const Text('采购记录基本信息'),
@@ -87,7 +91,7 @@ class _PurchaseExportOptionsDialogState extends State<PurchaseExportOptionsDialo
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
                   ),
-                  
+
                   // 采购汇总统计
                   CheckboxListTile(
                     title: const Text('采购汇总统计'),
@@ -101,7 +105,7 @@ class _PurchaseExportOptionsDialogState extends State<PurchaseExportOptionsDialo
                     controlAffinity: ListTileControlAffinity.leading,
                     contentPadding: EdgeInsets.zero,
                   ),
-                  
+
                   // 采购项目明细
                   CheckboxListTile(
                     title: const Text('采购项目明细'),
@@ -118,7 +122,7 @@ class _PurchaseExportOptionsDialogState extends State<PurchaseExportOptionsDialo
                 ],
               ),
             ),
-            
+
             // 底部按钮
             Container(
               padding: const EdgeInsets.all(16),
@@ -140,7 +144,8 @@ class _PurchaseExportOptionsDialogState extends State<PurchaseExportOptionsDialo
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(_exportOptions),
+                      onPressed:
+                          () => Navigator.of(context).pop(_exportOptions),
                       child: const Text('导出'),
                     ),
                   ),

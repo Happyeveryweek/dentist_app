@@ -13,10 +13,7 @@ class PurchaseRecordsEmptyState extends StatelessWidget {
         children: [
           Icon(Icons.shopping_cart, size: 64, color: Colors.grey),
           SizedBox(height: 16),
-          Text(
-            '暂无采购记录',
-            style: TextStyle(fontSize: 18, color: Colors.grey),
-          ),
+          Text('暂无采购记录', style: TextStyle(fontSize: 18, color: Colors.grey)),
         ],
       ),
     );

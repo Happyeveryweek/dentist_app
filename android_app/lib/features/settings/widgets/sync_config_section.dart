@@ -39,13 +39,10 @@ class _SyncConfigSectionState extends State<SyncConfigSection> {
                 children: [
                   const Text(
                     '数据同步配置',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 20),
-                  
+
                   // 同步开关
                   SwitchListTile(
                     title: const Text('启动时自动检查同步'),
@@ -57,9 +54,9 @@ class _SyncConfigSectionState extends State<SyncConfigSection> {
                       setState(() {});
                     },
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // 同步间隔设置
                   ListTile(
                     title: const Text('启动检查间隔'),
@@ -82,45 +79,55 @@ class _SyncConfigSectionState extends State<SyncConfigSection> {
                       },
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // 上次同步时间
                   ListTile(
                     title: const Text('上次同步时间'),
                     subtitle: Text(
-                      config.lastSyncTime.isEmpty 
-                          ? '从未同步' 
+                      config.lastSyncTime.isEmpty
+                          ? '从未同步'
                           : _formatLastSyncTime(config.lastSyncTime),
                     ),
                     leading: const Icon(Icons.access_time),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // 手动同步按钮
                   ElevatedButton.icon(
-                    onPressed: provider.isConnected && provider.dbType == 'mysql'
-                        ? () async {
-                            try {
-                              MessageToastHelper.showInfo(context, '数据同步已启动');
-                              
-                              final success = await provider.forceDataSync();
-                              
-                              if (mounted) {
-                                if (success) {
-                                  MessageToastHelper.showSuccess(context, '数据同步完成');
-                                } else {
-                                  MessageToastHelper.showError(context, '数据同步失败');
+                    onPressed:
+                        provider.isConnected && provider.dbType == 'mysql'
+                            ? () async {
+                              try {
+                                MessageToastHelper.showInfo(context, '数据同步已启动');
+
+                                final success = await provider.forceDataSync();
+
+                                if (context.mounted) {
+                                  if (success) {
+                                    MessageToastHelper.showSuccess(
+                                      context,
+                                      '数据同步完成',
+                                    );
+                                  } else {
+                                    MessageToastHelper.showError(
+                                      context,
+                                      '数据同步失败',
+                                    );
+                                  }
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  MessageToastHelper.showError(
+                                    context,
+                                    '同步失败: $e',
+                                  );
                                 }
                               }
-                            } catch (e) {
-                              if (mounted) {
-                                MessageToastHelper.showError(context, '同步失败: $e');
-                              }
                             }
-                          }
-                        : null,
+                            : null,
                     icon: const Icon(Icons.sync),
                     label: const Text('立即同步'),
                     style: ElevatedButton.styleFrom(
@@ -133,30 +140,35 @@ class _SyncConfigSectionState extends State<SyncConfigSection> {
                     onPressed: () async {
                       final shouldReset = await showDialog<bool>(
                         context: context,
-                        builder: (dialogContext) => AlertDialog(
-                          title: const Text('重置数据库'),
-                          content: const Text('确定要重置数据库吗？这将删除所有本地数据并从服务器重新同步。'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(dialogContext, false),
-                              child: const Text('取消'),
+                        builder:
+                            (dialogContext) => AlertDialog(
+                              title: const Text('重置数据库'),
+                              content: const Text(
+                                '确定要重置数据库吗？这将删除所有本地数据并从服务器重新同步。',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed:
+                                      () => Navigator.pop(dialogContext, false),
+                                  child: const Text('取消'),
+                                ),
+                                TextButton(
+                                  onPressed:
+                                      () => Navigator.pop(dialogContext, true),
+                                  child: const Text('确定'),
+                                ),
+                              ],
                             ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(dialogContext, true),
-                              child: const Text('确定'),
-                            ),
-                          ],
-                        ),
                       );
 
                       if (shouldReset == true && mounted) {
                         try {
                           await DatabaseUtils.resetDefaultDatabase();
-                          if (mounted) {
+                          if (context.mounted) {
                             ToastUtil.showSuccess(context, '数据库已重置，请重新同步数据');
                           }
                         } catch (e) {
-                          if (mounted) {
+                          if (context.mounted) {
                             ToastUtil.showError(context, '重置数据库失败: $e');
                           }
                         }
@@ -169,9 +181,9 @@ class _SyncConfigSectionState extends State<SyncConfigSection> {
                       minimumSize: const Size(double.infinity, 40),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // 查看日志按钮
                   ElevatedButton.icon(
                     onPressed: () {
@@ -202,7 +214,7 @@ class _SyncConfigSectionState extends State<SyncConfigSection> {
     try {
       final dateTime = DateTimeFormatter.fromDbString(lastSyncTime);
       return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} '
-             '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+          '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     } catch (e) {
       return '时间格式错误';
     }

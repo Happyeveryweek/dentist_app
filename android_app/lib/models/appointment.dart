@@ -1,5 +1,5 @@
-import 'package:intl/intl.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/app_logger.dart';
 
 class Appointment {
   final int? id;
@@ -24,8 +24,8 @@ class Appointment {
     this.cost,
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+  }) : createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   // 从Map创建Appointment对象
   factory Appointment.fromMap(Map<String, dynamic> map) {
@@ -38,8 +38,10 @@ class Appointment {
       treatmentType: map['treatment_type'],
       notes: map['notes'],
       cost: map['cost'] != null ? (map['cost'] as num).toDouble() : null,
-      createdAt: map['created_at'] != null ? _parseDateTime(map['created_at']) : null,
-      updatedAt: map['updated_at'] != null ? _parseDateTime(map['updated_at']) : null,
+      createdAt:
+          map['created_at'] != null ? _parseDateTime(map['created_at']) : null,
+      updatedAt:
+          map['updated_at'] != null ? _parseDateTime(map['updated_at']) : null,
     );
   }
 
@@ -99,7 +101,7 @@ class Appointment {
     }
 
     // 如果无法解析，返回当前时间
-    print('无法解析日期时间: $dateTime，使用当前时间');
+    AppLogger.info('无法解析日期时间: $dateTime，使用当前时间');
     return DateTime.now();
   }
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:dentist_app/widgets/modern_date_picker.dart';
 import 'package:dentist_app/widgets/stateful_text_field.dart';
+import '../../../utils/app_logger.dart';
 
 /// 牙齿状况记录管理组件
 /// 职责：管理牙齿状况记录的 UI 和逻辑
@@ -17,15 +18,15 @@ class PatientDentalRecordsWidget extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _PatientDentalRecordsWidgetState createState() =>
-      _PatientDentalRecordsWidgetState();
+  PatientDentalRecordsWidgetState createState() =>
+      PatientDentalRecordsWidgetState();
 }
 
-class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget> {
+class PatientDentalRecordsWidgetState
+    extends State<PatientDentalRecordsWidget> {
   // 牙齿状况相关状态
   List<Map<String, dynamic>> _dentalRecords = [];
   int _currentDentalRecordIndex = 0;
-  Map<String, bool> _expandedStates = {};
 
   @override
   void initState() {
@@ -43,22 +44,22 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
 
   // 从患者数据中加载牙齿状况数据
   void _loadDentalCondition(String? dentalCondition) {
-    print('开始加载牙齿状况数据: $dentalCondition');
+    AppLogger.info('开始加载牙齿状况数据: $dentalCondition');
 
     if (dentalCondition == null || dentalCondition.isEmpty) {
-      print('牙齿状况数据为空，创建默认记录');
+      AppLogger.info('牙齿状况数据为空，创建默认记录');
       _dentalRecords = [_createEmptyDentalRecord()];
       return;
     }
 
     try {
-      print('尝试解析牙齿状况数据: $dentalCondition');
+      AppLogger.info('尝试解析牙齿状况数据: $dentalCondition');
       Map<String, dynamic> condition = json.decode(dentalCondition);
-      print('原始牙齿状况数据: $condition');
+      AppLogger.info('原始牙齿状况数据: $condition');
 
       // 找出所有索引
       Set<int> indices = {};
-      condition.keys.forEach((key) {
+      for (final key in condition.keys) {
         if (key.contains('-')) {
           final parts = key.split('-');
           if (parts.length > 1 && parts.last.isNotEmpty) {
@@ -66,15 +67,15 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
               final index = int.parse(parts.last);
               indices.add(index);
             } catch (e) {
-              print('解析索引失败: $key');
+              AppLogger.info('解析索引失败: $key');
             }
           }
         }
-      });
+      }
 
-      print('找到的索引列表: $indices');
+      AppLogger.info('找到的索引列表: $indices');
       if (indices.isEmpty) {
-        print('未找到有效的索引，创建默认记录');
+        AppLogger.info('未找到有效的索引，创建默认记录');
         _dentalRecords = [_createEmptyDentalRecord()];
         return;
       }
@@ -109,7 +110,7 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
           record['$chartPrefix-note'] = noteValue;
         }
 
-        print('构建的记录 $i: $record');
+        AppLogger.info('构建的记录 $i: $record');
         tempRecords.add(record);
       }
 
@@ -121,13 +122,13 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
       });
 
       _dentalRecords = tempRecords;
-      print('最终设置的牙齿记录（已按日期倒序排序）: $_dentalRecords');
+      AppLogger.info('最终设置的牙齿记录（已按日期倒序排序）: $_dentalRecords');
     } catch (e) {
-      print('解析牙齿状况数据失败: $e');
+      AppLogger.info('解析牙齿状况数据失败: $e');
       _dentalRecords = [_createEmptyDentalRecord()];
     }
 
-    print('记录数量: ${_dentalRecords.length}');
+    AppLogger.info('记录数量: ${_dentalRecords.length}');
   }
 
   // 创建一个新的空记录
@@ -150,7 +151,7 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
   }
 
   void _addNewDentalRecord() {
-    print('添加新的牙齿记录...');
+    AppLogger.info('添加新的牙齿记录...');
     final currentDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
     setState(() {
@@ -177,13 +178,13 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
       // 切换到新添加的记录（索引0）
       _currentDentalRecordIndex = 0;
 
-      print('新记录已添加到列表开头:');
-      print('当前记录总数: ${_dentalRecords.length}');
-      print('新记录数据:');
-      print('  日期: ${_dentalRecords.first['date']}');
-      print('  图表1-备注: ${_dentalRecords.first['chart1-note']}');
-      print('  图表2-备注: ${_dentalRecords.first['chart2-note']}');
-      print('  图表3-备注: ${_dentalRecords.first['chart3-note']}');
+      AppLogger.info('新记录已添加到列表开头:');
+      AppLogger.info('当前记录总数: ${_dentalRecords.length}');
+      AppLogger.info('新记录数据:');
+      AppLogger.info('  日期: ${_dentalRecords.first['date']}');
+      AppLogger.info('  图表1-备注: ${_dentalRecords.first['chart1-note']}');
+      AppLogger.info('  图表2-备注: ${_dentalRecords.first['chart2-note']}');
+      AppLogger.info('  图表3-备注: ${_dentalRecords.first['chart3-note']}');
     });
 
     _notifyChange();
@@ -197,9 +198,9 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
           _currentDentalRecordIndex = _dentalRecords.length - 1;
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('至少需要保留一条牙齿状况记录')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('至少需要保留一条牙齿状况记录')));
       }
     });
 
@@ -208,14 +209,14 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
 
   // 将牙齿状况数据转换为保存格式
   String _dentalConditionToJson() {
-    print('开始转换牙齿状况数据为JSON');
-    print('当前记录数: ${_dentalRecords.length}');
+    AppLogger.info('开始转换牙齿状况数据为JSON');
+    AppLogger.info('当前记录数: ${_dentalRecords.length}');
 
     final Map<String, dynamic> result = {};
 
     for (int i = 0; i < _dentalRecords.length; i++) {
       final record = _dentalRecords[i];
-      print('处理记录 #$i: $record');
+      AppLogger.info('处理记录 #$i: $record');
 
       // 保存日期
       result['date-$i'] = record['date'];
@@ -243,7 +244,7 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
     }
 
     final jsonString = jsonEncode(result);
-    print('转换后的JSON字符串: $jsonString');
+    AppLogger.info('转换后的JSON字符串: $jsonString');
     return jsonString;
   }
 
@@ -284,14 +285,15 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton.icon(
-                  onPressed: _currentDentalRecordIndex > 0
-                      ? () {
-                          setState(() {
-                            _currentDentalRecordIndex--;
-                            print('切换到上一条记录: $_currentDentalRecordIndex');
-                          });
-                        }
-                      : null,
+                  onPressed:
+                      _currentDentalRecordIndex > 0
+                          ? () {
+                            setState(() {
+                              _currentDentalRecordIndex--;
+                              AppLogger.info('切换到上一条记录: $_currentDentalRecordIndex');
+                            });
+                          }
+                          : null,
                   icon: const Icon(Icons.arrow_back_ios, size: 16),
                   label: const Text('上一条'),
                   style: ElevatedButton.styleFrom(
@@ -326,14 +328,15 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton.icon(
-                  onPressed: _currentDentalRecordIndex < _dentalRecords.length - 1
-                      ? () {
-                          setState(() {
-                            _currentDentalRecordIndex++;
-                            print('切换到下一条记录: $_currentDentalRecordIndex');
-                          });
-                        }
-                      : null,
+                  onPressed:
+                      _currentDentalRecordIndex < _dentalRecords.length - 1
+                          ? () {
+                            setState(() {
+                              _currentDentalRecordIndex++;
+                              AppLogger.info('切换到下一条记录: $_currentDentalRecordIndex');
+                            });
+                          }
+                          : null,
                   icon: const Icon(Icons.arrow_forward_ios, size: 16),
                   label: const Text('下一条'),
                   style: ElevatedButton.styleFrom(
@@ -359,10 +362,7 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
             label: const Text('添加牙齿记录'),
             style: TextButton.styleFrom(
               foregroundColor: Colors.green.shade700,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
         ),
@@ -372,7 +372,7 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
 
   // 修复牙齿状况记录切换功能 - 将旧的底部导航栏方法替换
   Widget _buildDentalRecordSimplified(Map<String, dynamic> record, int index) {
-    print('构建牙齿记录卡片: $index, 数据: $record');
+    AppLogger.info('构建牙齿记录卡片: $index, 数据: $record');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -381,7 +381,7 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -533,7 +533,7 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -618,12 +618,16 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
                                 Expanded(
                                   child: Container(
                                     alignment: Alignment.centerRight,
-                                    padding: const EdgeInsets.only(right: 6, top: 15),
+                                    padding: const EdgeInsets.only(
+                                      right: 6,
+                                      top: 15,
+                                    ),
                                     child: _buildCrossInputField(
                                       record['$actualPrefix-top-left'] ?? '',
                                       (value) {
                                         setState(() {
-                                          _dentalRecords[recordIndex]['$actualPrefix-top-left'] = value;
+                                          _dentalRecords[recordIndex]['$actualPrefix-top-left'] =
+                                              value;
                                         });
                                         _notifyChange();
                                       },
@@ -636,12 +640,16 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
                                 Expanded(
                                   child: Container(
                                     alignment: Alignment.centerLeft,
-                                    padding: const EdgeInsets.only(left: 6, top: 15),
+                                    padding: const EdgeInsets.only(
+                                      left: 6,
+                                      top: 15,
+                                    ),
                                     child: _buildCrossInputField(
                                       record['$actualPrefix-top-right'] ?? '',
                                       (value) {
                                         setState(() {
-                                          _dentalRecords[recordIndex]['$actualPrefix-top-right'] = value;
+                                          _dentalRecords[recordIndex]['$actualPrefix-top-right'] =
+                                              value;
                                         });
                                         _notifyChange();
                                       },
@@ -661,12 +669,16 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
                                 Expanded(
                                   child: Container(
                                     alignment: Alignment.centerRight,
-                                    padding: const EdgeInsets.only(right: 6, bottom: 15),
+                                    padding: const EdgeInsets.only(
+                                      right: 6,
+                                      bottom: 15,
+                                    ),
                                     child: _buildCrossInputField(
                                       record['$actualPrefix-bottom-left'] ?? '',
                                       (value) {
                                         setState(() {
-                                          _dentalRecords[recordIndex]['$actualPrefix-bottom-left'] = value;
+                                          _dentalRecords[recordIndex]['$actualPrefix-bottom-left'] =
+                                              value;
                                         });
                                         _notifyChange();
                                       },
@@ -679,12 +691,17 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
                                 Expanded(
                                   child: Container(
                                     alignment: Alignment.centerLeft,
-                                    padding: const EdgeInsets.only(left: 6, bottom: 15),
+                                    padding: const EdgeInsets.only(
+                                      left: 6,
+                                      bottom: 15,
+                                    ),
                                     child: _buildCrossInputField(
-                                      record['$actualPrefix-bottom-right'] ?? '',
+                                      record['$actualPrefix-bottom-right'] ??
+                                          '',
                                       (value) {
                                         setState(() {
-                                          _dentalRecords[recordIndex]['$actualPrefix-bottom-right'] = value;
+                                          _dentalRecords[recordIndex]['$actualPrefix-bottom-right'] =
+                                              value;
                                         });
                                         _notifyChange();
                                       },
@@ -706,13 +723,17 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
 
                 // 备注输入框 - 位于十字图下方
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: StatefulTextField(
                     key: ValueKey('note-$recordIndex-$actualPrefix'),
                     initialValue: record['$actualPrefix-note'] ?? '',
                     onChanged: (value) {
                       setState(() {
-                        _dentalRecords[recordIndex]['$actualPrefix-note'] = value;
+                        _dentalRecords[recordIndex]['$actualPrefix-note'] =
+                            value;
                       });
                       _notifyChange();
                     },
@@ -720,7 +741,11 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
                     decoration: InputDecoration(
                       labelText: '备注',
                       labelStyle: TextStyle(color: Colors.grey.shade600),
-                      prefixIcon: Icon(Icons.note, color: Colors.blue.shade300, size: 20),
+                      prefixIcon: Icon(
+                        Icons.note,
+                        color: Colors.blue.shade300,
+                        size: 20,
+                      ),
                       filled: true,
                       fillColor: Colors.grey.shade50,
                       border: OutlineInputBorder(
@@ -733,7 +758,10 @@ class _PatientDentalRecordsWidgetState extends State<PatientDentalRecordsWidget>
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.blue.shade300, width: 2),
+                        borderSide: BorderSide(
+                          color: Colors.blue.shade300,
+                          width: 2,
+                        ),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,

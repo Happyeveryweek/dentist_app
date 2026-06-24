@@ -1,5 +1,6 @@
 import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
+import '../../../utils/app_logger.dart';
 
 /// 财务计算服务类
 /// 职责：提供财务金额计算、患者统计、欠费计算等纯计算逻辑
@@ -10,9 +11,10 @@ class FinancialCalculator {
     List<FinancialRecord> financialRecords,
   ) {
     try {
-      final patientRecords = financialRecords
-          .where((record) => record.patientId == patientId)
-          .toList();
+      final patientRecords =
+          financialRecords
+              .where((record) => record.patientId == patientId)
+              .toList();
 
       if (patientRecords.isEmpty) return null;
 
@@ -21,7 +23,7 @@ class FinancialCalculator {
 
       return patientRecords.first;
     } catch (e) {
-      print('获取患者最新财务记录失败: $e');
+      AppLogger.info('获取患者最新财务记录失败: $e');
       return null;
     }
   }
@@ -33,7 +35,10 @@ class FinancialCalculator {
     Map<int, List<FinancialItem>> recordItemsMap,
   ) {
     try {
-      final latestRecord = getLatestFinancialRecord(patientId, financialRecords);
+      final latestRecord = getLatestFinancialRecord(
+        patientId,
+        financialRecords,
+      );
       if (latestRecord == null) return 0.0;
 
       final items = recordItemsMap[latestRecord.id!] ?? [];
@@ -46,7 +51,7 @@ class FinancialCalculator {
       }
       return totalReceivable;
     } catch (e) {
-      print('计算患者最新应收费金额失败: $e');
+      AppLogger.info('计算患者最新应收费金额失败: $e');
       return 0.0;
     }
   }
@@ -58,7 +63,10 @@ class FinancialCalculator {
     Map<int, List<FinancialItem>> recordItemsMap,
   ) {
     try {
-      final latestRecord = getLatestFinancialRecord(patientId, financialRecords);
+      final latestRecord = getLatestFinancialRecord(
+        patientId,
+        financialRecords,
+      );
       if (latestRecord == null) return 0.0;
 
       final items = recordItemsMap[latestRecord.id!] ?? [];
@@ -71,7 +79,7 @@ class FinancialCalculator {
       }
       return totalCollected;
     } catch (e) {
-      print('计算患者最新已收费金额失败: $e');
+      AppLogger.info('计算患者最新已收费金额失败: $e');
       return 0.0;
     }
   }
@@ -123,13 +131,14 @@ class FinancialCalculator {
     for (final item in filteredItems) {
       final record = financialRecords.firstWhere(
         (r) => r.id == item.financialRecordId,
-        orElse: () => FinancialRecord(
-          id: 0,
-          patientId: 0,
-          totalQuantity: 0,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
+        orElse:
+            () => FinancialRecord(
+              id: 0,
+              patientId: 0,
+              totalQuantity: 0,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
       );
       if (record.patientId != 0) {
         patientIds.add(record.patientId);
@@ -164,9 +173,10 @@ class FinancialCalculator {
     // 按收费日期过滤（与统计图表逻辑完全一致）
     List<FinancialItem> timeFilteredItems = allItems;
     if (startDate != null || endDate != null) {
-      timeFilteredItems = allItems.where((item) {
-        return isWithinRange(item.chargeDate, startDate, endDate);
-      }).toList();
+      timeFilteredItems =
+          allItems.where((item) {
+            return isWithinRange(item.chargeDate, startDate, endDate);
+          }).toList();
     }
 
     // 如果有搜索条件，进一步过滤（只影响显示的记录，不影响统计数据）
@@ -183,7 +193,10 @@ class FinancialCalculator {
         if (patientName.toLowerCase().contains(lowercaseQuery) ||
             patientNamePinyin.toLowerCase().contains(lowercaseQuery) ||
             patientNamePinyin.toLowerCase().contains(noSpaceQuery) ||
-            patientNamePinyin.replaceAll(' ', '').toLowerCase().contains(lowercaseQuery) ||
+            patientNamePinyin
+                .replaceAll(' ', '')
+                .toLowerCase()
+                .contains(lowercaseQuery) ||
             patientNameInitials.toLowerCase().contains(lowercaseQuery)) {
           matchingPatientIds.add(record.patientId);
         }
@@ -193,13 +206,14 @@ class FinancialCalculator {
       return timeFilteredItems.where((item) {
         final record = financialRecords.firstWhere(
           (r) => r.id == item.financialRecordId,
-          orElse: () => FinancialRecord(
-            id: 0,
-            patientId: 0,
-            totalQuantity: 0,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          ),
+          orElse:
+              () => FinancialRecord(
+                id: 0,
+                patientId: 0,
+                totalQuantity: 0,
+                createdAt: DateTime.now(),
+                updatedAt: DateTime.now(),
+              ),
         );
         return matchingPatientIds.contains(record.patientId);
       }).toList();
@@ -241,7 +255,10 @@ class FinancialCalculator {
       endDate,
       searchQuery,
     );
-    return filteredItems.fold<double>(0.0, (sum, item) => sum + item.totalPrice);
+    return filteredItems.fold<double>(
+      0.0,
+      (sum, item) => sum + item.totalPrice,
+    );
   }
 
   /// 计算总欠费金额（按患者维度计算，与统计图表逻辑完全一致）
@@ -266,10 +283,16 @@ class FinancialCalculator {
     List<FinancialItem> itemsBeforeEndDate = allItems;
     if (endDate != null) {
       final endDateDate = DateTime(endDate.year, endDate.month, endDate.day);
-      itemsBeforeEndDate = allItems.where((item) {
-        final itemDate = DateTime(item.chargeDate.year, item.chargeDate.month, item.chargeDate.day);
-        return itemDate.isBefore(endDateDate) || itemDate.isAtSameMomentAs(endDateDate);
-      }).toList();
+      itemsBeforeEndDate =
+          allItems.where((item) {
+            final itemDate = DateTime(
+              item.chargeDate.year,
+              item.chargeDate.month,
+              item.chargeDate.day,
+            );
+            return itemDate.isBefore(endDateDate) ||
+                itemDate.isAtSameMomentAs(endDateDate);
+          }).toList();
     }
 
     // 如果有搜索条件，进一步过滤
@@ -286,57 +309,67 @@ class FinancialCalculator {
         if (patientName.toLowerCase().contains(lowercaseQuery) ||
             patientNamePinyin.toLowerCase().contains(lowercaseQuery) ||
             patientNamePinyin.toLowerCase().contains(noSpaceQuery) ||
-            patientNamePinyin.replaceAll(' ', '').toLowerCase().contains(lowercaseQuery) ||
+            patientNamePinyin
+                .replaceAll(' ', '')
+                .toLowerCase()
+                .contains(lowercaseQuery) ||
             patientNameInitials.toLowerCase().contains(lowercaseQuery)) {
           matchingPatientIds.add(record.patientId);
         }
       }
 
       // 只计算匹配患者的欠费
-      itemsBeforeEndDate = itemsBeforeEndDate.where((item) {
-        final record = financialRecords.firstWhere(
-          (r) => r.id == item.financialRecordId,
-          orElse: () => FinancialRecord(
-            id: 0,
-            patientId: 0,
-            totalQuantity: 0,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          ),
-        );
-        return matchingPatientIds.contains(record.patientId);
-      }).toList();
+      itemsBeforeEndDate =
+          itemsBeforeEndDate.where((item) {
+            final record = financialRecords.firstWhere(
+              (r) => r.id == item.financialRecordId,
+              orElse:
+                  () => FinancialRecord(
+                    id: 0,
+                    patientId: 0,
+                    totalQuantity: 0,
+                    createdAt: DateTime.now(),
+                    updatedAt: DateTime.now(),
+                  ),
+            );
+            return matchingPatientIds.contains(record.patientId);
+          }).toList();
     }
 
     // 按患者分组计算应收和实收
     for (final item in itemsBeforeEndDate) {
       final record = financialRecords.firstWhere(
         (r) => r.id == item.financialRecordId,
-        orElse: () => FinancialRecord(
-          id: 0,
-          patientId: 0,
-          totalQuantity: 0,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
+        orElse:
+            () => FinancialRecord(
+              id: 0,
+              patientId: 0,
+              totalQuantity: 0,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
       );
 
       if (record.patientId != 0) {
         final pid = record.patientId;
-        receivableByPatient[pid] = (receivableByPatient[pid] ?? 0) + item.itemPrice;
-        receivedByPatient[pid] = (receivedByPatient[pid] ?? 0) + item.totalPrice;
+        receivableByPatient[pid] =
+            (receivableByPatient[pid] ?? 0) + item.itemPrice;
+        receivedByPatient[pid] =
+            (receivedByPatient[pid] ?? 0) + item.totalPrice;
       }
     }
 
     // 计算每个患者的欠费，只累加正数欠费
     double totalDebt = 0.0;
-    receivableByPatient.forEach((pid, receivable) {
+    for (final entry in receivableByPatient.entries) {
+      final pid = entry.key;
+      final receivable = entry.value;
       final received = receivedByPatient[pid] ?? 0.0;
       final debt = receivable - received;
       if (debt > 0) {
         totalDebt += debt;
       }
-    });
+    }
 
     return totalDebt;
   }
@@ -356,11 +389,18 @@ class FinancialCalculator {
       endDate,
       searchQuery,
     );
-    return filteredItems.fold<double>(0.0, (sum, item) => sum + item.processingFee);
+    return filteredItems.fold<double>(
+      0.0,
+      (sum, item) => sum + item.processingFee,
+    );
   }
 
   /// 检查日期是否在范围内
-  static bool isWithinRange(DateTime date, DateTime? startDate, DateTime? endDate) {
+  static bool isWithinRange(
+    DateTime date,
+    DateTime? startDate,
+    DateTime? endDate,
+  ) {
     if (startDate == null && endDate == null) return true;
     final d = DateTime(date.year, date.month, date.day);
     if (startDate != null) {

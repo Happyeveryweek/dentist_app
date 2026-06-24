@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../utils/sync_logger.dart';
 import '../widgets/confirm_dialogs.dart';
 
@@ -7,10 +6,10 @@ class SyncLogsScreen extends StatefulWidget {
   const SyncLogsScreen({Key? key}) : super(key: key);
 
   @override
-  _SyncLogsScreenState createState() => _SyncLogsScreenState();
+  SyncLogsScreenState createState() => SyncLogsScreenState();
 }
 
-class _SyncLogsScreenState extends State<SyncLogsScreen> {
+class SyncLogsScreenState extends State<SyncLogsScreen> {
   List<SyncLog> _logs = [];
   bool _isLoading = true;
   String _filterLevel = 'ALL';
@@ -37,9 +36,9 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
         _isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('加载日志失败: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('加载日志失败: $e')));
       }
     }
   }
@@ -47,36 +46,6 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
   List<SyncLog> _filterLogs(List<SyncLog> logs, String level) {
     if (level == 'ALL') return logs;
     return logs.where((log) => log.success == (level == 'SUCCESS')).toList();
-  }
-
-  Color _getLogColor(String level) {
-    switch (level) {
-      case 'INFO':
-        return Colors.blue;
-      case 'WARN':
-        return Colors.orange;
-      case 'ERROR':
-        return Colors.red;
-      case 'SUCCESS':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getLogIcon(String level) {
-    switch (level) {
-      case 'INFO':
-        return Icons.info;
-      case 'WARN':
-        return Icons.warning;
-      case 'ERROR':
-        return Icons.error;
-      case 'SUCCESS':
-        return Icons.check_circle;
-      default:
-        return Icons.circle;
-    }
   }
 
   @override
@@ -92,34 +61,17 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
                 _loadLogs();
               });
             },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'ALL',
-                child: Text('全部'),
-              ),
-              const PopupMenuItem(
-                value: 'INFO',
-                child: Text('信息'),
-              ),
-              const PopupMenuItem(
-                value: 'WARN',
-                child: Text('警告'),
-              ),
-              const PopupMenuItem(
-                value: 'ERROR',
-                child: Text('错误'),
-              ),
-              const PopupMenuItem(
-                value: 'SUCCESS',
-                child: Text('成功'),
-              ),
-            ],
+            itemBuilder:
+                (context) => [
+                  const PopupMenuItem(value: 'ALL', child: Text('全部')),
+                  const PopupMenuItem(value: 'INFO', child: Text('信息')),
+                  const PopupMenuItem(value: 'WARN', child: Text('警告')),
+                  const PopupMenuItem(value: 'ERROR', child: Text('错误')),
+                  const PopupMenuItem(value: 'SUCCESS', child: Text('成功')),
+                ],
             icon: const Icon(Icons.filter_list),
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadLogs,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadLogs),
           IconButton(
             icon: const Icon(Icons.delete_outline),
             onPressed: () async {
@@ -140,152 +92,174 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _logs.isEmpty
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _logs.isEmpty
               ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        _filterLevel == 'ALL' 
-                            ? Icons.history 
-                            : Icons.filter_list_off,
-                        size: 64,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _filterLevel == 'ALL'
-                            ? '暂无同步日志'
-                            : '没有${_getLevelText(_filterLevel)}级别的日志',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _filterLevel == 'ALL'
+                          ? Icons.history
+                          : Icons.filter_list_off,
+                      size: 64,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _filterLevel == 'ALL'
+                          ? '暂无同步日志'
+                          : '没有${_getLevelText(_filterLevel)}级别的日志',
+                      style: const TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              )
               : RefreshIndicator(
-                  onRefresh: _loadLogs,
-                  child: ListView.builder(
-                    itemCount: _logs.length,
-                    itemBuilder: (context, index) {
-                      final log = _logs[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                onRefresh: _loadLogs,
+                child: ListView.builder(
+                  itemCount: _logs.length,
+                  itemBuilder: (context, index) {
+                    final log = _logs[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      child: ListTile(
+                        leading: Icon(
+                          log.success ? Icons.check_circle : Icons.error,
+                          color: log.success ? Colors.green : Colors.red,
                         ),
-                        child: ListTile(
-                          leading: Icon(
-                            log.success ? Icons.check_circle : Icons.error,
-                            color: log.success ? Colors.green : Colors.red,
+                        onTap: () => _showLogDetails(log),
+                        title: Text(
+                          log.message,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
-                          onTap: () => _showLogDetails(log),
-                          title: Text(
-                            log.message,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 4),
-                              if (log.schemaChanges != null && log.schemaChanges!.isNotEmpty)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  margin: const EdgeInsets.only(bottom: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: Colors.blue.shade200),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            if (log.schemaChanges != null &&
+                                log.schemaChanges!.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                margin: const EdgeInsets.only(bottom: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade50,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: Colors.blue.shade200,
                                   ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.schema, size: 14, color: Colors.blue.shade700),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          '表结构: ${log.schemaChanges}',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.blue.shade700,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.schema,
+                                      size: 14,
+                                      color: Colors.blue.shade700,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        '表结构: ${log.schemaChanges}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.blue.shade700,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              if (log.tableCounts.isNotEmpty)
-                                Text(
-                                  '同步统计: ${log.tableCounts.entries.map((e) => '${e.key}(${e.value})').join(', ')}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              if (log.error != null && log.error!.isNotEmpty)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  margin: const EdgeInsets.only(top: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.shade50,
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(color: Colors.red.shade200),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.error_outline, size: 14, color: Colors.red.shade700),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          '错误: ${log.error}',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.red.shade700,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              const SizedBox(height: 4),
+                              ),
+                            if (log.tableCounts.isNotEmpty)
                               Text(
-                                _formatDateTime(log.timestamp),
+                                '同步统计: ${log.tableCounts.entries.map((e) => '${e.key}(${e.value})').join(', ')}',
                                 style: const TextStyle(
-                                  fontSize: 11,
+                                  fontSize: 12,
                                   color: Colors.grey,
                                 ),
                               ),
-                            ],
-                          ),
-                          isThreeLine: log.tableDetails.isNotEmpty,
+                            if (log.error != null && log.error!.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                margin: const EdgeInsets.only(top: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: Colors.red.shade200,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.error_outline,
+                                      size: 14,
+                                      color: Colors.red.shade700,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        '错误: ${log.error}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.red.shade700,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatDateTime(log.timestamp),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                  ),
+                        isThreeLine: log.tableDetails.isNotEmpty,
+                      ),
+                    );
+                  },
                 ),
+              ),
     );
   }
 
   String _getLevelText(String level) {
     switch (level) {
-      case 'INFO': return '信息';
-      case 'WARN': return '警告';
-      case 'ERROR': return '错误';
-      case 'SUCCESS': return '成功';
-      default: return '';
+      case 'INFO':
+        return '信息';
+      case 'WARN':
+        return '警告';
+      case 'ERROR':
+        return '错误';
+      case 'SUCCESS':
+        return '成功';
+      default:
+        return '';
     }
   }
 
   String _formatDateTime(DateTime dateTime) {
     return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} '
-           '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
+        '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
   }
 
   Color _getDarkerColor(Color color) {
@@ -295,7 +269,7 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
     if (color == Colors.green) return Colors.green[700]!;
     if (color == Colors.orange) return Colors.orange[700]!;
     if (color == Colors.red) return Colors.red[700]!;
-    
+
     // 默认情况下，通过降低亮度来创建更深的颜色
     final hsl = HSLColor.fromColor(color);
     return hsl.withLightness((hsl.lightness * 0.6).clamp(0.0, 1.0)).toColor();
@@ -305,120 +279,123 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
     showDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 头部状态栏
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: log.success 
-                        ? [Colors.green.shade400, Colors.green.shade600]
-                        : [Colors.red.shade400, Colors.red.shade600],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    topRight: Radius.circular(16),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
+      builder:
+          (context) => Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 头部状态栏
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors:
+                            log.success
+                                ? [Colors.green.shade400, Colors.green.shade600]
+                                : [Colors.red.shade400, Colors.red.shade600],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      child: Icon(
-                        log.success ? Icons.check_circle : Icons.error,
-                        color: Colors.white,
-                        size: 24,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            log.success ? Icons.check_circle : Icons.error,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                log.success ? '同步成功' : '同步失败',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _formatDateTime(log.timestamp),
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 内容区域
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            log.success ? '同步成功' : '同步失败',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          // 消息卡片
+                          _buildInfoCard(
+                            icon: Icons.message,
+                            title: '同步消息',
+                            content: log.message,
+                            color: Colors.blue,
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _formatDateTime(log.timestamp),
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
-                              fontSize: 14,
+
+                          // 表结构变更卡片
+                          if (log.schemaChanges != null &&
+                              log.schemaChanges!.isNotEmpty)
+                            _buildInfoCard(
+                              icon: Icons.schema,
+                              title: '表结构变更',
+                              content: log.schemaChanges!,
+                              color: Colors.purple,
                             ),
-                          ),
+
+                          // 同步统计卡片
+                          if (log.tableCounts.isNotEmpty)
+                            _buildStatsCard(log.tableCounts),
+
+                          // 详细信息卡片
+                          if (log.tableDetails.isNotEmpty)
+                            _buildDetailsCard(log.tableDetails),
+
+                          // 错误信息卡片
+                          if (log.error != null && log.error!.isNotEmpty)
+                            _buildErrorCard(log.error!),
                         ],
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close, color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // 内容区域
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 消息卡片
-                      _buildInfoCard(
-                        icon: Icons.message,
-                        title: '同步消息',
-                        content: log.message,
-                        color: Colors.blue,
-                      ),
-                      
-                      // 表结构变更卡片
-                      if (log.schemaChanges != null && log.schemaChanges!.isNotEmpty)
-                        _buildInfoCard(
-                          icon: Icons.schema,
-                          title: '表结构变更',
-                          content: log.schemaChanges!,
-                          color: Colors.purple,
-                        ),
-                      
-                      // 同步统计卡片
-                      if (log.tableCounts.isNotEmpty)
-                        _buildStatsCard(log.tableCounts),
-                      
-                      // 详细信息卡片
-                      if (log.tableDetails.isNotEmpty)
-                        _buildDetailsCard(log.tableDetails),
-                      
-                      // 错误信息卡片
-                      if (log.error != null && log.error!.isNotEmpty)
-                        _buildErrorCard(log.error!),
-                    ],
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
     );
   }
 
@@ -432,9 +409,9 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -444,7 +421,7 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 18),
@@ -479,9 +456,9 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.05),
+        color: Colors.green.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.withOpacity(0.2)),
+        border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -491,10 +468,14 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.analytics, color: Colors.green, size: 18),
+                child: const Icon(
+                  Icons.analytics,
+                  color: Colors.green,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 8),
               Text(
@@ -511,51 +492,58 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: tableCounts.entries.map((entry) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.green.shade200),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.table_chart,
-                      size: 14,
-                      color: Colors.green[600]!,
+            children:
+                tableCounts.entries.map((entry) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      entry.key,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.green[700]!,
-                      ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.green.shade200),
                     ),
-                    const SizedBox(width: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.green[600]!,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${entry.value}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.table_chart,
+                          size: 14,
+                          color: Colors.green[600]!,
                         ),
-                      ),
+                        const SizedBox(width: 4),
+                        Text(
+                          entry.key,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.green[700]!,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green[600]!,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '${entry.value}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
           ),
         ],
       ),
@@ -567,9 +555,9 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.05),
+        color: Colors.orange.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.withOpacity(0.2)),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,10 +567,14 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.info_outline, color: Colors.orange, size: 18),
+                child: const Icon(
+                  Icons.info_outline,
+                  color: Colors.orange,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 8),
               Text(
@@ -609,7 +601,10 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.orange[200]!,
                       borderRadius: BorderRadius.circular(6),
@@ -648,9 +643,9 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.05),
+        color: Colors.red.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.withOpacity(0.2)),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -660,10 +655,14 @@ class _SyncLogsScreenState extends State<SyncLogsScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.error_outline, color: Colors.red, size: 18),
+                child: const Icon(
+                  Icons.error_outline,
+                  color: Colors.red,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 8),
               Text(

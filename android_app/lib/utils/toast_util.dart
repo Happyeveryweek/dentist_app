@@ -18,7 +18,7 @@ class ToastUtil {
       message,
       AppTheme.successColor,
       Icons.check_circle_outline,
-      Duration(seconds: 2),
+      const Duration(seconds: 2),
     );
   }
 
@@ -29,7 +29,7 @@ class ToastUtil {
       message,
       AppTheme.errorColor,
       Icons.error_outline,
-      Duration(seconds: 3),
+      const Duration(seconds: 3),
     );
   }
 
@@ -40,7 +40,7 @@ class ToastUtil {
       message,
       AppTheme.infoColor,
       Icons.info_outline,
-      Duration(seconds: 2),
+      const Duration(seconds: 2),
     );
   }
 
@@ -142,8 +142,8 @@ class _ToastWidgetState extends State<_ToastWidget>
               vertical: 12.0,
             ),
             decoration: BoxDecoration(
-              color: widget.color.withOpacity(0.1),
-              border: Border.all(color: widget.color.withOpacity(0.5)),
+              color: widget.color.withValues(alpha: 0.1),
+              border: Border.all(color: widget.color.withValues(alpha: 0.5)),
               borderRadius: BorderRadius.circular(10.0),
             ),
             child: Row(
@@ -153,7 +153,7 @@ class _ToastWidgetState extends State<_ToastWidget>
                 Expanded(
                   child: Text(
                     widget.message,
-                    style: TextStyle(color: Colors.black87, fontSize: 16.0),
+                    style: const TextStyle(color: Colors.black87, fontSize: 16.0),
                   ),
                 ),
                 GestureDetector(
@@ -163,7 +163,7 @@ class _ToastWidgetState extends State<_ToastWidget>
                   child: Container(
                     padding: const EdgeInsets.all(4.0),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.close, color: widget.color, size: 18.0),

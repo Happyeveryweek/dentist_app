@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import '../models/user.dart';
 import '../utils/datetime_formatter.dart';
 import 'user_data_source.dart';
+import '../utils/app_logger.dart';
 
 class MySqlUserDataSource implements UserDataSource {
   final MySqlConnection? Function() _getConnection;
@@ -30,10 +31,14 @@ class MySqlUserDataSource implements UserDataSource {
             final bytes = value.toBytes();
             map[field] = bytes.isNotEmpty ? bytes : null;
           } catch (e) {
-            print('图片Blob转换失败: $e');
+            AppLogger.info('图片Blob转换失败: $e');
             map[field] = null;
           }
-        } else if (field == 'username' || field == 'email' || field == 'role' || field == 'doctor' || field == 'avatar') {
+        } else if (field == 'username' ||
+            field == 'email' ||
+            field == 'role' ||
+            field == 'doctor' ||
+            field == 'avatar') {
           try {
             final bytes = value.toBytes();
             if (bytes.isNotEmpty) {
@@ -43,7 +48,7 @@ class MySqlUserDataSource implements UserDataSource {
               map[field] = '';
             }
           } catch (e) {
-            print('Blob转换失败: $e');
+            AppLogger.info('Blob转换失败: $e');
             map[field] = '';
           }
         } else {
@@ -52,7 +57,11 @@ class MySqlUserDataSource implements UserDataSource {
       } else if (value is Uint8List) {
         if (field == 'image_data') {
           map[field] = value.isNotEmpty ? value : null;
-        } else if (field == 'username' || field == 'email' || field == 'role' || field == 'doctor' || field == 'avatar') {
+        } else if (field == 'username' ||
+            field == 'email' ||
+            field == 'role' ||
+            field == 'doctor' ||
+            field == 'avatar') {
           try {
             if (value.isNotEmpty) {
               final stringValue = utf8.decode(value, allowMalformed: true);
@@ -61,7 +70,7 @@ class MySqlUserDataSource implements UserDataSource {
               map[field] = '';
             }
           } catch (e) {
-            print('Uint8List转换失败: $e');
+            AppLogger.info('Uint8List转换失败: $e');
             map[field] = '';
           }
         } else {
@@ -79,7 +88,9 @@ class MySqlUserDataSource implements UserDataSource {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
 
-    final results = await connection.query('SELECT * FROM users ORDER BY username');
+    final results = await connection.query(
+      'SELECT * FROM users ORDER BY username',
+    );
     return results.map((row) => User.fromMap(_convertMySqlRow(row))).toList();
   }
 
@@ -88,10 +99,9 @@ class MySqlUserDataSource implements UserDataSource {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
 
-    final results = await connection.query(
-      'SELECT * FROM users WHERE id = ?',
-      [id],
-    );
+    final results = await connection.query('SELECT * FROM users WHERE id = ?', [
+      id,
+    ]);
 
     if (results.isEmpty) return null;
     return User.fromMap(_convertMySqlRow(results.first));
@@ -106,13 +116,16 @@ class MySqlUserDataSource implements UserDataSource {
     final digest = sha256.convert(bytes);
     final hashedPassword = digest.toString();
 
-    print('创建用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
+    AppLogger.info(
+      '创建用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword',
+    );
 
     final userData = user.toMap();
     userData['password'] = hashedPassword;
 
     if (userData['module_permissions'] != null) {
-      userData['module_permissions'] = userData['module_permissions'].toString();
+      userData['module_permissions'] =
+          userData['module_permissions'].toString();
     }
 
     if (userData['image_data'] != null && userData['image_data'] is List<int>) {
@@ -140,13 +153,16 @@ class MySqlUserDataSource implements UserDataSource {
     final digest = sha256.convert(bytes);
     final hashedPassword = digest.toString();
 
-    print('更新用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
+    AppLogger.info(
+      '更新用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword',
+    );
 
     final userData = user.toMap();
     userData['password'] = hashedPassword;
 
     if (userData['module_permissions'] != null) {
-      userData['module_permissions'] = userData['module_permissions'].toString();
+      userData['module_permissions'] =
+          userData['module_permissions'].toString();
     }
 
     if (userData['image_data'] != null && userData['image_data'] is List<int>) {
@@ -171,10 +187,9 @@ class MySqlUserDataSource implements UserDataSource {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
 
-    final result = await connection.query(
-      'DELETE FROM users WHERE id = ?',
-      [id],
-    );
+    final result = await connection.query('DELETE FROM users WHERE id = ?', [
+      id,
+    ]);
 
     return (result.affectedRows ?? 0) > 0;
   }
@@ -197,7 +212,9 @@ class MySqlUserDataSource implements UserDataSource {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
 
-    final results = await connection.query('SELECT COUNT(*) as count FROM users');
+    final results = await connection.query(
+      'SELECT COUNT(*) as count FROM users',
+    );
     if (results.isEmpty) return 0;
 
     final row = results.first;
@@ -213,14 +230,14 @@ class MySqlUserDataSource implements UserDataSource {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
 
-    print('用户认证 - 用户名: $username, 原始密码: $password');
+    AppLogger.info('用户认证 - 用户名: $username, 原始密码: $password');
     final bytes = utf8.encode(password);
 
     final md5Hash = md5.convert(bytes).toString();
     final sha256Hash = sha256.convert(bytes).toString();
 
-    print('尝试MD5加密密码: $md5Hash');
-    print('尝试SHA-256加密密码: $sha256Hash');
+    AppLogger.info('尝试MD5加密密码: $md5Hash');
+    AppLogger.info('尝试SHA-256加密密码: $sha256Hash');
 
     var results = await connection.query(
       'SELECT * FROM users WHERE username = ? AND password = ?',
@@ -228,7 +245,7 @@ class MySqlUserDataSource implements UserDataSource {
     );
 
     if (results.isEmpty) {
-      print('SHA-256密码认证失败，尝试MD5密码');
+      AppLogger.info('SHA-256密码认证失败，尝试MD5密码');
       results = await connection.query(
         'SELECT * FROM users WHERE username = ? AND password = ?',
         [username, md5Hash],
@@ -236,39 +253,39 @@ class MySqlUserDataSource implements UserDataSource {
     }
 
     if (results.isEmpty) {
-      print('MD5密码认证失败，尝试明文密码');
+      AppLogger.info('MD5密码认证失败，尝试明文密码');
       results = await connection.query(
         'SELECT * FROM users WHERE username = ? AND password = ?',
         [username, password],
       );
     }
 
-    print('MySQL查询结果: ${results.length} 行');
+    AppLogger.info('MySQL查询结果: ${results.length} 行');
     if (results.isNotEmpty) {
       final user = User.fromMap(_convertMySqlRow(results.first));
-      print('MySQL认证成功，用户: ${user.username}');
+      AppLogger.info('MySQL认证成功，用户: ${user.username}');
       final currentPassword = results.first['password'];
 
       if (currentPassword == password) {
-        print('检测到明文密码，自动更新为SHA-256密码');
-        await connection.query(
-          'UPDATE users SET password = ? WHERE id = ?',
-          [sha256Hash, user.id],
-        );
-        print('密码已更新为SHA-256格式');
+        AppLogger.info('检测到明文密码，自动更新为SHA-256密码');
+        await connection.query('UPDATE users SET password = ? WHERE id = ?', [
+          sha256Hash,
+          user.id,
+        ]);
+        AppLogger.info('密码已更新为SHA-256格式');
       } else if (currentPassword == md5Hash) {
-        print('检测到MD5密码，自动更新为SHA-256密码');
-        await connection.query(
-          'UPDATE users SET password = ? WHERE id = ?',
-          [sha256Hash, user.id],
-        );
-        print('密码已更新为SHA-256格式');
+        AppLogger.info('检测到MD5密码，自动更新为SHA-256密码');
+        await connection.query('UPDATE users SET password = ? WHERE id = ?', [
+          sha256Hash,
+          user.id,
+        ]);
+        AppLogger.info('密码已更新为SHA-256格式');
       }
 
       return user;
     }
 
-    print('用户认证失败: 用户名或密码错误');
+    AppLogger.info('用户认证失败: 用户名或密码错误');
     return null;
   }
 
@@ -328,12 +345,7 @@ class MySqlUserDataSource implements UserDataSource {
       };
     }
 
-    return {
-      'totalUsers': 0,
-      'adminCount': 0,
-      'doctorCount': 0,
-      'userCount': 0,
-    };
+    return {'totalUsers': 0, 'adminCount': 0, 'doctorCount': 0, 'userCount': 0};
   }
 
   @override
@@ -356,13 +368,16 @@ class MySqlUserDataSource implements UserDataSource {
       final permissions = jsonDecode(permissionsJson) as Map<String, dynamic>;
       return permissions.map((key, value) => MapEntry(key, value == true));
     } catch (e) {
-      print('解析用户权限失败: $e');
+      AppLogger.info('解析用户权限失败: $e');
       return null;
     }
   }
 
   @override
-  Future<bool> updateUserPermissions(int userId, Map<String, bool> permissions) async {
+  Future<bool> updateUserPermissions(
+    int userId,
+    Map<String, bool> permissions,
+  ) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
 
@@ -375,7 +390,7 @@ class MySqlUserDataSource implements UserDataSource {
 
       return (result.affectedRows ?? 0) > 0;
     } catch (e) {
-      print('更新用户权限失败: $e');
+      AppLogger.info('更新用户权限失败: $e');
       return false;
     }
   }

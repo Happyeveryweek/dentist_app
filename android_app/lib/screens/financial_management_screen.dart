@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'package:dentist_app/providers/financial_provider.dart';
 import 'package:dentist_app/models/financial_record.dart';
 import 'package:dentist_app/models/financial_item.dart';
@@ -10,18 +9,14 @@ import 'package:dentist_app/screens/financial_detail_screen.dart';
 import 'package:dentist_app/features/financial/widgets/financial_record_dialog.dart';
 import 'package:dentist_app/widgets/toast_manager.dart';
 import 'package:dentist_app/widgets/confirm_dialogs.dart';
-import '../widgets/app_card.dart';
-import 'package:dentist_app/features/financial/widgets/financial_statistics_dialog.dart';
 import '../widgets/reusable_date_range_picker.dart';
 import '../providers/database_provider.dart';
 import '../features/financial/services/financial_calculator.dart';
-import '../features/financial/widgets/financial_search_bar.dart';
-import '../features/financial/widgets/financial_statistics_card.dart';
-import '../features/financial/widgets/financial_record_card.dart';
 import '../features/financial/widgets/financial_sort_dialog.dart'
     as sort_dialog;
 import '../features/financial/widgets/progressive_statistics_dialog.dart';
 import '../features/financial/widgets/financial_management_screen_body.dart';
+import '../utils/app_logger.dart';
 
 /// 财务管理主页面
 class FinancialManagementScreen extends StatefulWidget {
@@ -66,14 +61,11 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   FinancialProvider? _financialProviderRef;
   Timer? _searchDebounce;
 
-  bool _hasInitialized = false;
-
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_scrollListener);
     _loadData(showToast: false);
-    _hasInitialized = true;
   }
 
   void _scrollListener() {
@@ -143,7 +135,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         },
         onRefresh: () async {
           await _loadData(showToast: false, forceRefresh: true);
-          if (mounted) {
+          if (context.mounted) {
             SuccessToastManager.show(context, message: '刷新成功');
           }
         },
@@ -303,7 +295,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         SuccessToastManager.show(context, message: '数据已刷新');
       }
     } catch (e) {
-      print('❌ 加载财务数据失败: $e');
+      AppLogger.info('❌ 加载财务数据失败: $e');
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -325,10 +317,11 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     FinancialProvider financialProvider, {
     bool forceRefresh = false,
   }) async {
-    if (mounted)
+    if (mounted) {
       setState(() {
         _isStatsLoading = true;
       });
+    }
 
     await financialProvider.loadStatsProgressively(
       initialCount: 10,
@@ -423,11 +416,12 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         _sortRecords();
       }
     } catch (e) {
-      print('❌ 加载更多财务记录失败: $e');
-      if (mounted)
+      AppLogger.info('❌ 加载更多财务记录失败: $e');
+      if (mounted) {
         setState(() {
           _isLoadingMore = false;
         });
+      }
     }
   }
 
@@ -492,7 +486,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       });
       _sortRecords();
     } catch (e) {
-      print('❌ 搜索财务记录失败: $e');
+      AppLogger.info('❌ 搜索财务记录失败: $e');
       if (!mounted) return;
       setState(() {
         _isLoading = false;
@@ -678,7 +672,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       builder: (context) => const FinancialRecordDialog(),
     ).then((result) {
       if (result == true) {
-        print('🔄 财务记录添加成功，正在刷新数据...');
+        AppLogger.info('🔄 财务记录添加成功，正在刷新数据...');
         // 延迟刷新，确保数据库操作完成
         Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
@@ -702,7 +696,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     ).then((result) {
       // 如果从详情页返回true，说明有数据变更，需要刷新
       if (result == true) {
-        print('🔄 从详情页返回，检测到数据变更，正在刷新...');
+        AppLogger.info('🔄 从详情页返回，检测到数据变更，正在刷新...');
         // 延迟刷新，确保数据库操作完成
         Future.delayed(const Duration(milliseconds: 300), () {
           if (mounted) {
@@ -823,6 +817,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     );
 
     if (confirmed == true) {
+      if (!mounted) return;
       try {
         final provider = Provider.of<FinancialProvider>(context, listen: false);
         await provider.deleteFinancialRecord(record.id!);

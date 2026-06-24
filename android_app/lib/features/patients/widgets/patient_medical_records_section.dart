@@ -8,22 +8,22 @@ import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/models/patient_medical_record.dart';
 import 'package:dentist_app/widgets/app_card.dart';
 import 'package:dentist_app/screens/medical_record_detail_screen.dart';
+import '../../../utils/app_logger.dart';
 
 /// 患者病历记录显示组件
 /// 职责：显示患者的病历记录列表
 class PatientMedicalRecordsSection extends StatefulWidget {
   final Patient patient;
 
-  const PatientMedicalRecordsSection({
-    super.key,
-    required this.patient,
-  });
+  const PatientMedicalRecordsSection({super.key, required this.patient});
 
   @override
-  State<PatientMedicalRecordsSection> createState() => _PatientMedicalRecordsSectionState();
+  State<PatientMedicalRecordsSection> createState() =>
+      _PatientMedicalRecordsSectionState();
 }
 
-class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSection> {
+class _PatientMedicalRecordsSectionState
+    extends State<PatientMedicalRecordsSection> {
   List<PatientMedicalRecord>? _cachedMedicalRecords;
   bool _medicalRecordsLoaded = false;
 
@@ -41,15 +41,15 @@ class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSect
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
+              const Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.medical_information,
                     color: AppTheme.primaryColor,
                     size: 20,
                   ),
-                  const SizedBox(width: 8),
-                  const Text(
+                  SizedBox(width: 8),
+                  Text(
                     '病历记录',
                     style: TextStyle(
                       fontSize: 18,
@@ -94,30 +94,34 @@ class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSect
         });
       }
 
-      final medicalRecordProvider = Provider.of<MedicalRecordProvider>(context, listen: false);
+      final medicalRecordProvider = Provider.of<MedicalRecordProvider>(
+        context,
+        listen: false,
+      );
       final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-      
+
       // 确保数据库已初始化
       if (!dbProvider.isInitialized) {
-        print('数据库未初始化，无法加载病历记录');
+        AppLogger.info('数据库未初始化，无法加载病历记录');
         return;
       }
-      
+
       // 确保provider已初始化
       if (!medicalRecordProvider.initialized) {
         await medicalRecordProvider.initializeFromDatabase(dbProvider);
       }
-      
+
       // 像患者提供者一样，直接调用简单的查询方法
-      final records = await medicalRecordProvider.getPatientMedicalRecordsSimple(widget.patient.id!);
-      
+      final records = await medicalRecordProvider
+          .getPatientMedicalRecordsSimple(widget.patient.id!);
+
       if (mounted) {
         setState(() {
           _cachedMedicalRecords = records;
         });
       }
     } catch (e) {
-      print('加载病历记录失败: $e');
+      AppLogger.info('加载病历记录失败: $e');
       // 错误状态已经通过_medicalRecordsLoaded = true设置
     }
   }
@@ -130,7 +134,7 @@ class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSect
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadMedicalRecordsAsync();
       });
-      
+
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(20),
@@ -140,10 +144,7 @@ class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSect
               SizedBox(height: 12),
               Text(
                 '正在加载病历记录...',
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey, fontSize: 14),
               ),
             ],
           ),
@@ -160,11 +161,7 @@ class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSect
           padding: const EdgeInsets.all(20),
           child: Column(
             children: [
-              Icon(
-                Icons.error_outline,
-                color: Colors.red[400],
-                size: 48,
-              ),
+              Icon(Icons.error_outline, color: Colors.red[400], size: 48),
               const SizedBox(height: 12),
               Text(
                 '加载病历记录失败',
@@ -214,10 +211,7 @@ class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSect
               const SizedBox(height: 4),
               Text(
                 '该患者还没有创建病历记录',
-                style: TextStyle(
-                  color: Colors.grey[500],
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey[500], fontSize: 14),
               ),
             ],
           ),
@@ -226,7 +220,8 @@ class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSect
     }
 
     return Column(
-      children: records.map((record) => _buildMedicalRecordCard(record)).toList(),
+      children:
+          records.map((record) => _buildMedicalRecordCard(record)).toList(),
     );
   }
 
@@ -240,7 +235,7 @@ class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSect
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -268,9 +263,12 @@ class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSect
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -288,10 +286,7 @@ class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSect
               if (record.chiefComplaint.isNotEmpty) ...[
                 Text(
                   '主诉: ${record.chiefComplaint}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -300,10 +295,7 @@ class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSect
               if (record.diagnosis.isNotEmpty) ...[
                 Text(
                   '诊断: ${record.diagnosis}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -314,25 +306,15 @@ class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSect
                 children: [
                   Text(
                     '医生: ${record.doctorName.isNotEmpty ? record.doctorName : '未知'}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   Row(
                     children: [
-                      Icon(
-                        Icons.visibility,
-                        size: 16,
-                        color: Colors.grey[600],
-                      ),
+                      Icon(Icons.visibility, size: 16, color: Colors.grey[600]),
                       const SizedBox(width: 4),
                       Text(
                         '查看详情',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -350,10 +332,11 @@ class _PatientMedicalRecordsSectionState extends State<PatientMedicalRecordsSect
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => MedicalRecordDetailScreen(
-          patient: widget.patient,
-          record: record,
-        ),
+        builder:
+            (context) => MedicalRecordDetailScreen(
+              patient: widget.patient,
+              record: record,
+            ),
       ),
     );
   }

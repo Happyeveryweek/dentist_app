@@ -1,37 +1,32 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../utils/app_logger.dart';
 
 /// 登录凭证管理服务
 class LoginCredentialsService {
+  static const String _savedUsernameKey = 'saved_username';
+  static const String _savedPasswordKey = 'saved_password';
+  static const String _rememberPasswordKey = 'remember_password';
+
   /// 加载保存的登录信息
   static Future<LoginCredentials> loadSavedCredentials() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final savedUsername = prefs.getString('saved_username');
-      final savedPassword = prefs.getString('saved_password');
-      final rememberPassword = prefs.getBool('remember_password') ?? false;
+      final savedUsername = prefs.getString(_savedUsernameKey) ?? '';
+      final savedPassword = prefs.getString(_savedPasswordKey) ?? '';
+      final rememberPassword = prefs.getBool(_rememberPasswordKey) ?? false;
 
-      if (rememberPassword && savedUsername != null && savedPassword != null) {
+      if (rememberPassword && savedUsername.isNotEmpty) {
         return LoginCredentials(
           username: savedUsername,
           password: savedPassword,
           rememberPassword: true,
         );
-      } else {
-        // 返回默认的用户名和密码
-        return LoginCredentials(
-          username: 'admin',
-          password: '123456',
-          rememberPassword: false,
-        );
       }
+
+      return LoginCredentials.empty();
     } catch (e) {
-      print('加载保存的登录信息失败: $e');
-      // 返回默认的用户名和密码
-      return LoginCredentials(
-        username: 'admin',
-        password: '123456',
-        rememberPassword: false,
-      );
+      AppLogger.info('加载保存的登录信息失败: $e');
+      return LoginCredentials.empty();
     }
   }
 
@@ -44,16 +39,16 @@ class LoginCredentialsService {
     try {
       final prefs = await SharedPreferences.getInstance();
       if (rememberPassword) {
-        await prefs.setString('saved_username', username);
-        await prefs.setString('saved_password', password);
-        await prefs.setBool('remember_password', true);
+        await prefs.setString(_savedUsernameKey, username);
+        await prefs.setString(_savedPasswordKey, password);
+        await prefs.setBool(_rememberPasswordKey, true);
       } else {
-        await prefs.remove('saved_username');
-        await prefs.remove('saved_password');
-        await prefs.setBool('remember_password', false);
+        await prefs.remove(_savedUsernameKey);
+        await prefs.remove(_savedPasswordKey);
+        await prefs.setBool(_rememberPasswordKey, false);
       }
     } catch (e) {
-      print('保存登录信息失败: $e');
+      AppLogger.info('保存登录信息失败: $e');
     }
   }
 }
@@ -69,4 +64,12 @@ class LoginCredentials {
     required this.password,
     required this.rememberPassword,
   });
+
+  factory LoginCredentials.empty() {
+    return LoginCredentials(
+      username: '',
+      password: '',
+      rememberPassword: false,
+    );
+  }
 }

@@ -10,7 +10,7 @@ class AppointmentSearchFilterBar extends StatelessWidget {
   final Function() onClearSearch;
   final Function() onFilterPressed;
 
-  const AppointmentSearchFilterBar({
+  const AppointmentSearchFilterBar({super.key, 
     required this.searchController,
     required this.searchQuery,
     required this.onSearchChanged,
@@ -64,22 +64,22 @@ class AppointmentSearchFilterBar extends StatelessWidget {
           const SizedBox(width: 8),
           CupertinoButton(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            color: AppTheme.primaryColor.withOpacity(0.1),
-            child: Row(
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            onPressed: onFilterPressed,
+            child: const Row(
               children: [
                 Icon(
                   Icons.filter_list_alt,
                   color: AppTheme.primaryColor,
                   size: 18,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
                   '筛选',
                   style: TextStyle(color: AppTheme.primaryColor, fontSize: 14),
                 ),
               ],
             ),
-            onPressed: onFilterPressed,
           ),
         ],
       ),

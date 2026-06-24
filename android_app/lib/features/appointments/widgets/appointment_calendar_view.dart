@@ -15,7 +15,7 @@ class AppointmentCalendarView extends StatelessWidget {
   final Widget Function(Appointment) buildAppointmentCard;
   final Function(DateTime) onAddAppointment;
 
-  const AppointmentCalendarView({
+  const AppointmentCalendarView({super.key, 
     required this.focusedDay,
     required this.selectedDay,
     required this.calendarFormat,
@@ -63,7 +63,7 @@ class AppointmentCalendarView extends StatelessWidget {
               ),
               calendarStyle: CalendarStyle(
                 todayDecoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.6),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.6),
                   shape: BoxShape.circle,
                 ),
                 selectedDecoration: const BoxDecoration(
@@ -114,61 +114,62 @@ class AppointmentCalendarView extends StatelessWidget {
         ),
 
         Expanded(
-          child: selectedDayAppointments.isEmpty
-              ? SingleChildScrollView(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.event_busy,
-                          size: 48,
-                          color: AppTheme.lightText.withOpacity(0.5),
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          '当天无预约',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppTheme.secondaryText,
+          child:
+              selectedDayAppointments.isEmpty
+                  ? SingleChildScrollView(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.event_busy,
+                            size: 48,
+                            color: AppTheme.lightText.withValues(alpha: 0.5),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        PermissionWrapper(
-                          module: 'appointments',
-                          action: 'create',
-                          hideWhenDenied: true,
-                          child: ElevatedButton.icon(
-                            onPressed: () => onAddAppointment(selectedDay),
-                            icon: const Icon(Icons.add, size: 18),
-                            label: const Text('添加预约'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  AppTheme.borderRadius,
+                          const SizedBox(height: 12),
+                          const Text(
+                            '当天无预约',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppTheme.secondaryText,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          PermissionWrapper(
+                            module: 'appointments',
+                            action: 'create',
+                            hideWhenDenied: true,
+                            child: ElevatedButton.icon(
+                              onPressed: () => onAddAppointment(selectedDay),
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('添加预约'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppTheme.borderRadius,
+                                  ),
                                 ),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 10,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                  )
+                  : ListView.builder(
+                    itemCount: selectedDayAppointments.length,
+                    itemBuilder: (context, index) {
+                      final appointment = selectedDayAppointments[index];
+                      return buildAppointmentCard(appointment);
+                    },
                   ),
-                )
-              : ListView.builder(
-                  itemCount: selectedDayAppointments.length,
-                  itemBuilder: (context, index) {
-                    final appointment = selectedDayAppointments[index];
-                    return buildAppointmentCard(appointment);
-                  },
-                ),
         ),
       ],
     );

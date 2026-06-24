@@ -3,12 +3,10 @@ import 'package:path/path.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart'; // Added for kDebugMode
 import 'schemas/table_schema.dart';
-import 'schemas/mysql_schema.dart';
-import 'schemas/sqlite_schema.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/app_logger.dart';
 
 // 数据库助手类
 class DatabaseHelper {
@@ -45,10 +43,10 @@ class DatabaseHelper {
   // 获取数据库实例
   Future<Database> get database async {
     if (_database != null && _database!.isOpen) {
-      print('返回已存在的数据库实例');
+      AppLogger.info('返回已存在的数据库实例');
       return _database!;
     }
-    print('初始化新的数据库实例');
+    AppLogger.info('初始化新的数据库实例');
     _database = await _initDatabase();
     return _database!;
   }
@@ -56,7 +54,7 @@ class DatabaseHelper {
   // 关闭数据库连接
   Future<void> closeDatabase() async {
     if (_database != null && _database!.isOpen) {
-      print('关闭数据库连接');
+      AppLogger.info('关闭数据库连接');
       await _database!.close();
       _database = null;
     }
@@ -64,9 +62,9 @@ class DatabaseHelper {
 
   // 初始化数据库
   Future<Database> _initDatabase() async {
-    print('获取数据库路径');
+    AppLogger.info('获取数据库路径');
     final dbPath = await getDatabasePath();
-    print('打开数据库: $dbPath');
+    AppLogger.info('打开数据库: $dbPath');
     return await openDatabase(
       dbPath,
       version: 2,
@@ -79,7 +77,7 @@ class DatabaseHelper {
   // 数据库升级
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      print('数据库从版本1升级到版本2');
+      AppLogger.info('数据库从版本1升级到版本2');
       await _upgradeUsersTable(db);
       await _upgradePatientsTable(db);
     }
@@ -89,18 +87,20 @@ class DatabaseHelper {
     try {
       final result = await db.rawQuery("PRAGMA table_info(users)");
       final columns = result.map((e) => e['name'] as String).toList();
-      
+
       if (!columns.contains('updated_at')) {
         await db.execute('ALTER TABLE users ADD COLUMN updated_at TEXT');
-        print('users表添加updated_at列');
+        AppLogger.info('users表添加updated_at列');
       }
-      
+
       if (!columns.contains('avatar')) {
-        await db.execute("ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT 'avatar_1'");
-        print('users表添加avatar列');
+        await db.execute(
+          "ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT 'avatar_1'",
+        );
+        AppLogger.info('users表添加avatar列');
       }
     } catch (e) {
-      print('升级users表失败: $e');
+      AppLogger.info('升级users表失败: $e');
     }
   }
 
@@ -108,42 +108,44 @@ class DatabaseHelper {
     try {
       final result = await db.rawQuery("PRAGMA table_info(patients)");
       final columns = result.map((e) => e['name'] as String).toList();
-      
+
       if (!columns.contains('name_initials')) {
-        await db.execute('ALTER TABLE patients ADD COLUMN name_initials VARCHAR(200)');
-        print('patients表添加name_initials列');
+        await db.execute(
+          'ALTER TABLE patients ADD COLUMN name_initials VARCHAR(200)',
+        );
+        AppLogger.info('patients表添加name_initials列');
       }
     } catch (e) {
-      print('升级patients表失败: $e');
+      AppLogger.info('升级patients表失败: $e');
     }
   }
 
   // 数据库打开回调
   Future<void> _onOpen(Database db) async {
     try {
-      print('数据库已打开，检查必要的表');
+      AppLogger.info('数据库已打开，检查必要的表');
       // 检查tables表是否存在，不存在则创建必要的表
       var tableExists = false;
 
       try {
         // 尝试查询患者表，如果不存在会抛出异常
         await db.rawQuery('SELECT 1 FROM patients LIMIT 1');
-        print('患者表已存在');
+        AppLogger.info('患者表已存在');
         tableExists = true;
       } catch (e) {
-        print('表不存在，将创建新表: $e');
+        AppLogger.info('表不存在，将创建新表: $e');
         tableExists = false;
       }
 
       // 如果表不存在，则创建表
       if (!tableExists) {
-        print('创建必要的数据库表');
+        AppLogger.info('创建必要的数据库表');
         await _createDb(db, 1);
       } else {
-        print('所有必要的表已存在');
+        AppLogger.info('所有必要的表已存在');
       }
     } catch (e) {
-      print('数据库打开错误: $e');
+      AppLogger.info('数据库打开错误: $e');
       rethrow; // 重新抛出异常以便上层处理
     }
   }
@@ -154,7 +156,7 @@ class DatabaseHelper {
       // 使用SQLite表结构创建所有表
       final tableNames = [
         'patients',
-        'appointments', 
+        'appointments',
         'financial_records',
         'financial_items',
         'materials',
@@ -168,33 +170,35 @@ class DatabaseHelper {
       ];
 
       for (final tableName in tableNames) {
-        final schema = TableSchemaFactory.getSchema(tableName, DatabaseType.sqlite);
-        
+        final schema = TableSchemaFactory.getSchema(
+          tableName,
+          DatabaseType.sqlite,
+        );
+
         // 创建表
         await db.execute(schema.createTableSql);
-        
+
         // 创建索引
         for (final indexSql in schema.indexDefinitions) {
           await db.execute(indexSql);
         }
-        
-        print('成功创建表: ${schema.tableName}');
+
+        AppLogger.info('成功创建表: ${schema.tableName}');
       }
-      
+
       // 创建默认管理员用户
       await _createDefaultUser(db);
-      
     } catch (e) {
-      print('创建表错误: $e');
+      AppLogger.info('创建表错误: $e');
     }
   }
-  
+
   // 创建默认用户
   Future<void> _createDefaultUser(Database db) async {
     try {
       // 检查是否已存在用户
       final existingUsers = await db.query('users', limit: 1);
-      
+
       if (existingUsers.isEmpty) {
         // 创建默认管理员用户
         final now = DateTime.now();
@@ -217,10 +221,10 @@ class DatabaseHelper {
           'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(now),
           'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(now),
         };
-        
+
         await db.insert('users', defaultUser);
-        print('✅ 已创建默认管理员用户: admin/123456');
-        
+        AppLogger.info('✅ 已创建默认管理员用户: admin/123456');
+
         // 可选：创建一个普通员工用户作为示例
         final staffUser = {
           'username': 'staff',
@@ -241,15 +245,14 @@ class DatabaseHelper {
           'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(now),
           'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(now),
         };
-        
+
         await db.insert('users', staffUser);
-        print('✅ 已创建默认员工用户: staff/123456');
-        
+        AppLogger.info('✅ 已创建默认员工用户: staff/123456');
       } else {
-        print('ℹ️ 用户表已存在数据，跳过创建默认用户');
+        AppLogger.info('ℹ️ 用户表已存在数据，跳过创建默认用户');
       }
     } catch (e) {
-      print('❌ 创建默认用户失败: $e');
+      AppLogger.info('❌ 创建默认用户失败: $e');
     }
   }
 
@@ -263,7 +266,7 @@ class DatabaseHelper {
 
   // 重新打开数据库连接
   Future<void> reopenDatabase() async {
-    print('重新打开数据库连接');
+    AppLogger.info('重新打开数据库连接');
     try {
       // 如果数据库已经打开，先关闭
       if (_database != null && _database!.isOpen) {
@@ -274,9 +277,9 @@ class DatabaseHelper {
       // 重新获取数据库实例（会自动重新打开）
       await database;
 
-      print('数据库已重新打开');
+      AppLogger.info('数据库已重新打开');
     } catch (e) {
-      print('重新打开数据库错误: $e');
+      AppLogger.info('重新打开数据库错误: $e');
       rethrow;
     }
   }
@@ -388,27 +391,8 @@ class Patient {
   factory Patient.fromMap(Map<String, dynamic> map) {
     // 减少日志输出，只在调试模式下显示
     // if (kDebugMode) {
-    //   print('Patient.fromMap 调用，原始数据: $map');
+    //   AppLogger.info('Patient.fromMap 调用，原始数据: $map');
     // }
-
-    // 处理字符串字段，确保Blob类型正确转换为String
-    String safeStringFromField(dynamic field) {
-      if (field == null) return '';
-
-      // 处理Blob类型数据
-      if (field is Uint8List || field.runtimeType.toString().contains('Blob')) {
-        try {
-          return utf8.decode(field is Uint8List ? field : (field as dynamic));
-        } catch (e) {
-          if (kDebugMode) {
-            print('转换Blob为字符串失败: $e');
-          }
-          return '';
-        }
-      }
-
-      return field.toString();
-    }
 
     // 处理日期字段 - 使用统一格式
     DateTime dateFromField(dynamic field) {
@@ -423,7 +407,7 @@ class Patient {
         return DateTime.now();
       } catch (e) {
         if (kDebugMode) {
-          print('日期解析错误: $e，使用当前日期');
+          AppLogger.info('日期解析错误: $e，使用当前日期');
         }
         return DateTime.now();
       }
@@ -450,7 +434,7 @@ class Patient {
         return int.parse(value.toString());
       } catch (e) {
         if (kDebugMode) {
-          print('转换int字段 $key 错误: $e，使用默认值 $defaultValue');
+          AppLogger.info('转换int字段 $key 错误: $e，使用默认值 $defaultValue');
         }
         return defaultValue;
       }
@@ -471,7 +455,7 @@ class Patient {
         return double.parse(value.toString());
       } catch (e) {
         if (kDebugMode) {
-          print('转换double字段 $key 错误: $e，使用默认值 $defaultValue');
+          AppLogger.info('转换double字段 $key 错误: $e，使用默认值 $defaultValue');
         }
         return defaultValue;
       }
@@ -479,14 +463,14 @@ class Patient {
 
     // 检查主要字段是否有效 - 减少日志输出
     // if (kDebugMode) {
-    //   print('检查必要字段:');
-    //   print('  id: ${map['id']}');
-    //   print('  name: ${map['name']}');
-    //   print('  age: ${map['age']}');
-    //   print('  gender: ${map['age']}');
-    //   print('  phone: ${map['phone']}');
-    //   print('  doctor: ${map['doctor']}');
-    //   print('  address: ${map['address']}');
+    //   AppLogger.info('检查必要字段:');
+    //   AppLogger.info('  id: ${map['id']}');
+    //   AppLogger.info('  name: ${map['name']}');
+    //   AppLogger.info('  age: ${map['age']}');
+    //   AppLogger.info('  gender: ${map['age']}');
+    //   AppLogger.info('  phone: ${map['phone']}');
+    //   AppLogger.info('  doctor: ${map['doctor']}');
+    //   AppLogger.info('  address: ${map['address']}');
     // }
 
     // 特殊处理年龄字段 - 在某些情况下，年龄字段可能存储在gender或者其他字段中
@@ -497,7 +481,7 @@ class Patient {
         ageValue = getIntField(map, 'age');
       } catch (e) {
         if (kDebugMode) {
-          print('解析年龄字段错误: $e');
+          AppLogger.info('解析年龄字段错误: $e');
         }
       }
     }
@@ -509,11 +493,11 @@ class Patient {
         try {
           ageValue = getIntField(map, 'gender');
           if (kDebugMode) {
-            print('从gender字段中提取年龄值: $ageValue');
+            AppLogger.info('从gender字段中提取年龄值: $ageValue');
           }
         } catch (e) {
           if (kDebugMode) {
-            print('从gender提取年龄错误: $e');
+            AppLogger.info('从gender提取年龄错误: $e');
           }
         }
       }
@@ -538,19 +522,17 @@ class Patient {
       } else if (map.containsKey('phone') && map['phone'] != null) {
         // 如果gender不是有效的性别值，检查phone字段是否包含性别信息
         var phoneValue = map['phone'].toString().toLowerCase();
-        if (phoneValue == '男' ||
-            phoneValue == 'male' ||
-            phoneValue == 'm') {
+        if (phoneValue == '男' || phoneValue == 'male' || phoneValue == 'm') {
           genderValue = '男';
           if (kDebugMode) {
-            print('从phone字段中提取性别: 男');
+            AppLogger.info('从phone字段中提取性别: 男');
           }
         } else if (phoneValue == '女' ||
             phoneValue == 'female' ||
             phoneValue == 'f') {
           genderValue = '女';
           if (kDebugMode) {
-            print('从phone字段中提取性别: 女');
+            AppLogger.info('从phone字段中提取性别: 女');
           }
         }
       }
@@ -570,7 +552,7 @@ class Patient {
         if (map.containsKey('doctor') && map['doctor'] != null) {
           phoneValue = map['doctor'].toString();
           if (kDebugMode) {
-            print('从doctor字段中提取电话: $phoneValue');
+            AppLogger.info('从doctor字段中提取电话: $phoneValue');
           }
         }
       } else {
@@ -586,7 +568,7 @@ class Patient {
             }
           } catch (e) {
             if (kDebugMode) {
-              print('解析电话JSON错误: $e');
+              AppLogger.info('解析电话JSON错误: $e');
             }
           }
         }
@@ -608,7 +590,7 @@ class Patient {
         phoneValue = doctorValue;
         doctorValue = '';
         if (kDebugMode) {
-          print('doctor字段可能存储了电话号码，已调整');
+          AppLogger.info('doctor字段可能存储了电话号码，已调整');
         }
       }
     }
@@ -646,16 +628,16 @@ class Patient {
       if (phone.startsWith('[') && phone.endsWith(']')) {
         // 尝试解析JSON
         try {
-          List<dynamic> phones = jsonDecode(phone);
+          jsonDecode(phone);
           // 确保是有效的JSON格式，但不要重新编码，直接使用原始字符串
           // 避免重复编码导致格式问题
           phoneValue = phone;
           if (kDebugMode) {
-            print('Patient.toMap: 检测到有效的JSON格式电话号码，直接使用');
+            AppLogger.info('Patient.toMap: 检测到有效的JSON格式电话号码，直接使用');
           }
         } catch (e) {
           if (kDebugMode) {
-            print('Patient.toMap: JSON格式无效，需要修复: $e');
+            AppLogger.info('Patient.toMap: JSON格式无效，需要修复: $e');
           }
 
           // 特殊处理双重编码情况
@@ -684,11 +666,11 @@ class Patient {
               // 生成正确格式的JSON
               phoneValue = jsonEncode(cleanPhones);
               if (kDebugMode) {
-                print('Patient.toMap: 修复了双重编码的电话号码: $phoneValue');
+                AppLogger.info('Patient.toMap: 修复了双重编码的电话号码: $phoneValue');
               }
             } catch (e) {
               if (kDebugMode) {
-                print('Patient.toMap: 尝试修复双重编码失败: $e');
+                AppLogger.info('Patient.toMap: 尝试修复双重编码失败: $e');
               }
 
               // 解析失败，尝试使用正则表达式提取电话号码
@@ -707,7 +689,7 @@ class Patient {
               if (extractedPhones.isNotEmpty) {
                 phoneValue = jsonEncode(extractedPhones);
                 if (kDebugMode) {
-                  print('Patient.toMap: 通过正则表达式提取的电话号码: $phoneValue');
+                  AppLogger.info('Patient.toMap: 通过正则表达式提取的电话号码: $phoneValue');
                 }
               } else {
                 // 无法提取，使用原始值
@@ -728,12 +710,12 @@ class Patient {
               final List<dynamic> fixedPhones = jsonDecode(cleanedPhone);
               phoneValue = jsonEncode(fixedPhones);
               if (kDebugMode) {
-                print('Patient.toMap: 修复后的JSON格式: $phoneValue');
+                AppLogger.info('Patient.toMap: 修复后的JSON格式: $phoneValue');
               }
             } catch (fixError) {
               // 如果仍然失败，回退到简单处理
               if (kDebugMode) {
-                print('Patient.toMap: JSON修复失败: $fixError，使用简单分隔');
+                AppLogger.info('Patient.toMap: JSON修复失败: $fixError，使用简单分隔');
               }
               // 去除JSON符号，分割后重新编码
               String content = phone
@@ -749,7 +731,7 @@ class Patient {
                       .toList();
               phoneValue = jsonEncode(phoneList);
               if (kDebugMode) {
-                print('Patient.toMap: 手动分割重组后的电话号码: $phoneValue');
+                AppLogger.info('Patient.toMap: 手动分割重组后的电话号码: $phoneValue');
               }
             }
           }
@@ -759,19 +741,19 @@ class Patient {
         final phones = phone.split(',').map((p) => p.trim()).toList();
         phoneValue = jsonEncode(phones);
         if (kDebugMode) {
-          print('Patient.toMap: 多个电话号码已编码为JSON: $phoneValue');
+          AppLogger.info('Patient.toMap: 多个电话号码已编码为JSON: $phoneValue');
         }
       } else {
         // 单个电话号码 - 不需要JSON编码
         if (kDebugMode) {
-          print('Patient.toMap: 单个电话号码: $phone');
+          AppLogger.info('Patient.toMap: 单个电话号码: $phone');
         }
       }
 
       // 最后检查电话数据长度以防止DB错误
       if (phoneValue.length > 255) {
         if (kDebugMode) {
-          print('电话号码数据过长(${phoneValue.length}字符)，截断为255字符');
+          AppLogger.info('电话号码数据过长(${phoneValue.length}字符)，截断为255字符');
         }
         // 简单截断或者只保留第一个电话号码
         try {
@@ -785,12 +767,12 @@ class Patient {
           phoneValue = phoneValue.substring(0, 254);
         }
         if (kDebugMode) {
-          print('截断后的电话号码: $phoneValue');
+          AppLogger.info('截断后的电话号码: $phoneValue');
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('处理电话号码错误: $e');
+        AppLogger.info('处理电话号码错误: $e');
       }
     }
 
@@ -807,7 +789,9 @@ class Patient {
       'address_pinyin': addressPinyin,
       'identification_number': identificationNumber,
       'doctor': doctor,
-      'first_visit_date': DateFormat('yyyy-MM-dd HH:mm:ss').format(firstVisitDate),
+      'first_visit_date': DateFormat(
+        'yyyy-MM-dd HH:mm:ss',
+      ).format(firstVisitDate),
       'dental_condition': dentalCondition,
       'treatment_items': treatmentItems,
       'total_cost': totalCost,
@@ -867,13 +851,13 @@ class Patient {
   // 添加调试方法，输出电话号码格式信息
   void debugPhoneFormat() {
     if (kDebugMode) {
-      print('Patient.debugPhoneFormat: $phone (${phone.runtimeType})');
+      AppLogger.info('Patient.debugPhoneFormat: $phone (${phone.runtimeType})');
       if (phone.startsWith('[') && phone.endsWith(']')) {
-        print('Patient.debugPhoneFormat: JSON格式');
+        AppLogger.info('Patient.debugPhoneFormat: JSON格式');
       } else if (phone.contains(',')) {
-        print('Patient.debugPhoneFormat: 逗号分隔格式');
+        AppLogger.info('Patient.debugPhoneFormat: 逗号分隔格式');
       } else {
-        print('Patient.debugPhoneFormat: 单个电话号码格式');
+        AppLogger.info('Patient.debugPhoneFormat: 单个电话号码格式');
       }
     }
   }
@@ -917,7 +901,7 @@ class Appointment {
         // 只使用统一的标准格式 YYYY-MM-DD HH:MM:SS
         return DateTimeFormatter.fromDbString(value);
       }
-      print('不支持的日期类型: ${value.runtimeType}，值: $value');
+      AppLogger.info('不支持的日期类型: ${value.runtimeType}，值: $value');
       return DateTime.now();
     }
 
@@ -980,4 +964,3 @@ class Appointment {
     );
   }
 }
-

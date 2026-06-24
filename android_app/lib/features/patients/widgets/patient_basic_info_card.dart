@@ -42,14 +42,12 @@ class PatientBasicInfoCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 2,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: patient.gender == '男'
-                      ? Colors.blue.withOpacity(0.1)
-                      : Colors.pink.withOpacity(0.1),
+                  color:
+                      patient.gender == '男'
+                          ? Colors.blue.withValues(alpha: 0.1)
+                          : Colors.pink.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -143,18 +141,13 @@ class PatientBasicInfoCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.05),
+                color: Colors.orange.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Colors.orange.withOpacity(0.3),
-                ),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: Text(
                 patient.treatmentItems!,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppTheme.textColor,
-                ),
+                style: const TextStyle(fontSize: 14, color: AppTheme.textColor),
               ),
             ),
           ],

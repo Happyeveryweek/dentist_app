@@ -4,6 +4,7 @@ import '../../../utils/database_operation_wrapper.dart';
 import 'financial_data_source_service.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
+import '../../../utils/app_logger.dart';
 
 /// 财务记录 CRUD 服务
 /// 职责：管理财务记录的增删改查操作
@@ -61,18 +62,18 @@ class FinancialRecordService {
 
         // 使用数据源模式（统一接口）
         final id = await _currentDataSource.createFinancialRecord(record);
-        print('✅ 数据源模式添加成功，ID: $id');
+        AppLogger.info('✅ 数据源模式添加成功，ID: $id');
 
         if (id > 0) {
           // 清除缓存并标记需要刷新
           await clearCache();
           markFinancialsNeedRefresh();
-          print('✅ 财务记录添加成功，已清除缓存并标记刷新');
+          AppLogger.info('✅ 财务记录添加成功，已清除缓存并标记刷新');
         }
 
         return id;
       } catch (e) {
-        print('添加财务记录失败: $e');
+        AppLogger.info('添加财务记录失败: $e');
         rethrow;
       }
     });
@@ -102,18 +103,18 @@ class FinancialRecordService {
         // 使用数据源模式（统一接口）
         final success = await _currentDataSource.updateFinancialRecord(record);
         final count = success ? 1 : 0;
-        print('✅ 数据源模式更新${success ? "成功" : "失败"}');
+        AppLogger.info('✅ 数据源模式更新${success ? "成功" : "失败"}');
 
         if (count > 0) {
           // 清除缓存并标记需要刷新
           await clearCache();
           markFinancialsNeedRefresh();
-          print('✅ 财务记录更新成功，已清除缓存并标记刷新');
+          AppLogger.info('✅ 财务记录更新成功，已清除缓存并标记刷新');
         }
 
         return count;
       } catch (e) {
-        print('更新财务记录失败: $e');
+        AppLogger.info('更新财务记录失败: $e');
         rethrow;
       }
     });
@@ -146,12 +147,12 @@ class FinancialRecordService {
           // 清除缓存并标记需要刷新
           await clearCache();
           markFinancialsNeedRefresh();
-          print('✅ 财务记录删除成功，已清除缓存并标记刷新');
+          AppLogger.info('✅ 财务记录删除成功，已清除缓存并标记刷新');
         }
 
         return count;
       } catch (e) {
-        print('删除财务记录失败: $e');
+        AppLogger.info('删除财务记录失败: $e');
         rethrow;
       }
     });
@@ -163,7 +164,7 @@ class FinancialRecordService {
   ) async {
     // 如果patientId为0或无效，直接返回空列表
     if (patientId == 0) {
-      print('⚠️ 无效的patientId: $patientId，返回空列表');
+      AppLogger.info('⚠️ 无效的patientId: $patientId，返回空列表');
       return [];
     }
 
@@ -230,7 +231,7 @@ class FinancialRecordService {
 
       return records;
     } catch (e) {
-      print('获取患者财务记录失败: $e');
+      AppLogger.info('获取患者财务记录失败: $e');
       rethrow;
     }
   }

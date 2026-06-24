@@ -65,10 +65,7 @@ class SettingsHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Container(
-            height: 1,
-            color: Colors.orange.shade100,
-          ),
+          Container(height: 1, color: Colors.orange.shade100),
           const SizedBox(height: 12),
           TabBar(
             controller: tabController,

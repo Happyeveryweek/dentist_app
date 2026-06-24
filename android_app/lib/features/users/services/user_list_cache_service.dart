@@ -1,4 +1,5 @@
 import '../../../models/user.dart';
+import '../../../utils/app_logger.dart';
 
 /// 用户列表缓存服务
 class UserListCacheService {
@@ -19,7 +20,7 @@ class UserListCacheService {
   void updateCache(List<User> users) {
     _cachedUsers = List.from(users);
     _lastCacheTime = DateTime.now();
-    print('用户数据缓存已更新: ${users.length} 条记录');
+    AppLogger.info('用户数据缓存已更新: ${users.length} 条记录');
   }
 
   List<User>? getCachedUsers() {
@@ -32,6 +33,6 @@ class UserListCacheService {
   void clearCache() {
     _cachedUsers = null;
     _lastCacheTime = null;
-    print('用户数据缓存已清除');
+    AppLogger.info('用户数据缓存已清除');
   }
 }

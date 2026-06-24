@@ -1,5 +1,6 @@
 import 'package:mysql1/mysql1.dart';
 import 'package:sqflite/sqflite.dart';
+import '../../../utils/app_logger.dart';
 
 /// 用户 Provider 初始化结果
 class UserInitializationResult {
@@ -32,7 +33,7 @@ class UserInitializationService {
     if (dbType == 'mysql') {
       final mysqlConnection = dbProvider.mysqlConnection;
       if (mysqlConnection != null) {
-        print('✅ UserProvider MySQL数据源设置成功');
+        AppLogger.info('✅ UserProvider MySQL数据源设置成功');
         return UserInitializationResult(
           database: null,
           mysqlConnection: mysqlConnection,
@@ -41,10 +42,10 @@ class UserInitializationService {
         );
       }
 
-      print('警告：MySQL连接为null，尝试SQLite');
+      AppLogger.info('警告：MySQL连接为null，尝试SQLite');
       final sqliteDatabase = await _loadSqliteDatabase(dbProvider);
       if (sqliteDatabase != null) {
-        print('UserProvider 回退到SQLite数据源设置成功');
+        AppLogger.info('UserProvider 回退到SQLite数据源设置成功');
         return UserInitializationResult(
           database: sqliteDatabase,
           mysqlConnection: null,
@@ -53,13 +54,13 @@ class UserInitializationService {
         );
       }
 
-      print('警告：SQLite数据库实例为null，延迟初始化...');
+      AppLogger.info('警告：SQLite数据库实例为null，延迟初始化...');
       throw Exception('所有数据库获取方式都失败');
     }
 
     final sqliteDatabase = await _loadSqliteDatabase(dbProvider);
     if (sqliteDatabase != null) {
-      print('✅ UserProvider SQLite数据源设置成功');
+      AppLogger.info('✅ UserProvider SQLite数据源设置成功');
       return UserInitializationResult(
         database: sqliteDatabase,
         mysqlConnection: null,
@@ -68,7 +69,7 @@ class UserInitializationService {
       );
     }
 
-    print('警告：所有数据库获取方式都失败');
+    AppLogger.info('警告：所有数据库获取方式都失败');
     throw Exception('所有数据库获取方式都失败');
   }
 
@@ -76,7 +77,7 @@ class UserInitializationService {
     try {
       return await dbProvider.sqliteDatabase;
     } catch (e) {
-      print('获取SQLite数据库失败: $e');
+      AppLogger.info('获取SQLite数据库失败: $e');
       if (dbProvider.database != null) {
         return dbProvider.database;
       }

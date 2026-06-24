@@ -21,7 +21,7 @@ class PurchaseStatisticsCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.1),
+        shadowColor: Colors.black.withValues(alpha: 0.1),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
@@ -70,7 +70,12 @@ class PurchaseStatisticsCard extends StatelessWidget {
   }
 
   /// 构建统计项目
-  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
       children: [
         Icon(icon, color: color, size: 22),
@@ -83,13 +88,7 @@ class PurchaseStatisticsCard extends StatelessWidget {
             color: color,
           ),
         ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.grey,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
       ],
     );
   }

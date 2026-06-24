@@ -39,9 +39,10 @@ class PatientInfoCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: patient!.gender == '男'
-                      ? Colors.blue.withOpacity(0.1)
-                      : Colors.pink.withOpacity(0.1),
+                  color:
+                      patient!.gender == '男'
+                          ? Colors.blue.withValues(alpha: 0.1)
+                          : Colors.pink.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -84,7 +85,8 @@ class PatientInfoCard extends StatelessWidget {
               alignTop: true,
             ),
           ],
-          if (patient!.treatmentItems != null && patient!.treatmentItems!.isNotEmpty) ...[
+          if (patient!.treatmentItems != null &&
+              patient!.treatmentItems!.isNotEmpty) ...[
             const SizedBox(height: 20),
             const Text(
               '患者治疗项目',
@@ -98,9 +100,9 @@ class PatientInfoCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.05),
+                color: Colors.orange.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: Text(
                 patient!.treatmentItems!,
@@ -121,7 +123,8 @@ class PatientInfoCard extends StatelessWidget {
     Color? valueColor,
   }) {
     return Row(
-      crossAxisAlignment: alignTop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+      crossAxisAlignment:
+          alignTop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
       children: [
         Icon(icon, size: 18, color: AppTheme.secondaryTextColor),
         const SizedBox(width: 8),
@@ -138,7 +141,8 @@ class PatientInfoCard extends StatelessWidget {
             style: TextStyle(
               color: valueColor ?? AppTheme.textColor,
               fontSize: 14,
-              fontWeight: valueColor != null ? FontWeight.bold : FontWeight.normal,
+              fontWeight:
+                  valueColor != null ? FontWeight.bold : FontWeight.normal,
             ),
           ),
         ),

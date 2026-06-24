@@ -21,9 +21,9 @@ import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/settings_screen.dart';
 import 'models/sync_config.dart';
-import 'utils/notification_helper.dart';
 import 'utils/app_lifecycle_manager.dart';
 import 'utils/connection_manager.dart';
+import 'utils/app_logger.dart';
 
 // 临时声明的加载和错误页面
 class SplashScreen extends StatelessWidget {
@@ -92,11 +92,11 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    
+
     // 监听数据库提供者的初始化状态
     widget.databaseProvider.addListener(_onDatabaseProviderChanged);
-    
-    print('🚀 应用启动完成，等待数据库初始化后启动连接管理器');
+
+    AppLogger.info('🚀 应用启动完成，等待数据库初始化后启动连接管理器');
   }
 
   @override
@@ -112,21 +112,21 @@ class _MyAppState extends State<MyApp> {
     // 只有在数据库初始化完成且连接管理器还未启动时才启动
     if (widget.databaseProvider.isInitialized && !_connectionManagerStarted) {
       _connectionManagerStarted = true;
-      
-      print('📊 数据库初始化完成，最终数据库类型: ${widget.databaseProvider.dbType}');
-      
+
+      AppLogger.info('📊 数据库初始化完成，最终数据库类型: ${widget.databaseProvider.dbType}');
+
       // 延迟启动连接管理器，确保数据库类型已经确定
       Future.delayed(const Duration(milliseconds: 100), () {
         final finalDbType = widget.databaseProvider.dbType;
-        print('🔧 延迟启动连接管理器，确认数据库类型: $finalDbType');
-        
+        AppLogger.info('🔧 延迟启动连接管理器，确认数据库类型: $finalDbType');
+
         // 根据最终确定的数据库类型启动连接管理器
         ConnectionManager.instance.startMonitoring(widget.databaseProvider);
-        
+
         if (finalDbType == 'mysql') {
-          print('🌐 MySQL模式：连接管理器已启动');
+          AppLogger.info('🌐 MySQL模式：连接管理器已启动');
         } else {
-          print('📱 SQLite模式：连接管理器已启动（无网络监控）');
+          AppLogger.info('📱 SQLite模式：连接管理器已启动（无网络监控）');
         }
       });
     }
@@ -181,66 +181,74 @@ void main() async {
   await initializeDateFormatting('zh_CN', null);
 
   // 检查并执行自动同步
-  Future<void> _checkAndPerformAutoSync(DatabaseProvider dbProvider, SettingsProvider settingsProvider) async {
+  Future<void> checkAndPerformAutoSync(
+    DatabaseProvider dbProvider,
+    SettingsProvider settingsProvider,
+  ) async {
     try {
       // 检查是否启用自动同步
       final syncConfig = await SyncConfig.loadSyncConfig();
       if (!syncConfig.syncEnabled) {
-        print('自动同步已禁用，跳过启动时同步检查');
+        AppLogger.info('自动同步已禁用，跳过启动时同步检查');
         return;
       }
 
       // 检查数据源类型
       if (dbProvider.dbType != 'mysql') {
-        print('当前数据源不是MySQL，跳过启动时同步检查');
+        AppLogger.info('当前数据源不是MySQL，跳过启动时同步检查');
         return;
       }
 
-      print('检测到MySQL数据源且启用自动同步，检查是否需要执行启动时同步...');
+      AppLogger.info('检测到MySQL数据源且启用自动同步，检查是否需要执行启动时同步...');
 
       // 检查是否需要同步
       if (syncConfig.shouldSync()) {
-        print('需要执行启动时同步，开始同步数据...');
-        
+        AppLogger.info('需要执行启动时同步，开始同步数据...');
+
         // 执行同步
         final syncResult = await dbProvider.forceDataSync();
         if (syncResult) {
-          print('启动时自动同步成功完成');
+          AppLogger.info('启动时自动同步成功完成');
         } else {
-          print('启动时自动同步失败');
+          AppLogger.info('启动时自动同步失败');
         }
       } else {
-        print('距离上次同步时间不足，跳过启动时同步');
+        AppLogger.info('距离上次同步时间不足，跳过启动时同步');
       }
     } catch (e) {
-      print('检查启动时自动同步时出错: $e');
+      AppLogger.info('检查启动时自动同步时出错: $e');
     }
   }
 
   // 在后台异步初始化数据库和自动同步
-  Future<void> _initializeDatabaseInBackground(DatabaseProvider dbProvider, SettingsProvider settingsProvider) async {
+  Future<void> initializeDatabaseInBackground(
+    DatabaseProvider dbProvider,
+    SettingsProvider settingsProvider,
+  ) async {
     try {
-      print('🔄 开始在后台初始化数据库...');
+      AppLogger.info('🔄 开始在后台初始化数据库...');
       await dbProvider.initDatabase();
-      print('✅ 数据库初始化完成');
-      
+      AppLogger.info('✅ 数据库初始化完成');
+
       // 数据库初始化完成后，执行自动同步检查
-      await _checkAndPerformAutoSync(dbProvider, settingsProvider);
+      await checkAndPerformAutoSync(dbProvider, settingsProvider);
     } catch (e) {
-      print('❌ 后台数据库初始化失败: $e');
+      AppLogger.info('❌ 后台数据库初始化失败: $e');
       // 不抛出异常，让应用继续运行，错误将在登录界面处理
     }
   }
 
   // 初始化数据库提供者（异步执行，不阻塞UI）
   final databaseProvider = DatabaseProvider();
-  
+
   // 立即初始化设置提供者（不依赖数据库）
   final settingsProvider = SettingsProvider();
   await settingsProvider.init();
 
   // 在后台异步初始化数据库和自动同步
-  unawaited(_initializeDatabaseInBackground(databaseProvider, settingsProvider));
+  unawaited(
+    initializeDatabaseInBackground(databaseProvider, settingsProvider),
+  );
 
   // 创建应用状态
   final appState = AppState();
@@ -263,7 +271,11 @@ void main() async {
             return userProvider;
           },
         ),
-        ChangeNotifierProxyProvider2<DatabaseProvider, UserProvider, AppointmentsProvider>(
+        ChangeNotifierProxyProvider2<
+          DatabaseProvider,
+          UserProvider,
+          AppointmentsProvider
+        >(
           create: (_) => AppointmentsProvider(),
           update: (_, dbProvider, userProvider, appointmentsProvider) {
             appointmentsProvider ??= AppointmentsProvider();
@@ -271,13 +283,15 @@ void main() async {
               appointmentsProvider.initializeFromDatabase(dbProvider);
             }
             // 设置用户提供者用于权限控制
-            if (userProvider != null) {
-              appointmentsProvider.setUserProvider(userProvider);
-            }
+            appointmentsProvider.setUserProvider(userProvider);
             return appointmentsProvider;
           },
         ),
-        ChangeNotifierProxyProvider2<DatabaseProvider, UserProvider, FinancialProvider>(
+        ChangeNotifierProxyProvider2<
+          DatabaseProvider,
+          UserProvider,
+          FinancialProvider
+        >(
           create: (_) => FinancialProvider(),
           update: (_, dbProvider, userProvider, financialProvider) {
             financialProvider ??= FinancialProvider();
@@ -285,13 +299,15 @@ void main() async {
               financialProvider.initializeFromDatabase(dbProvider);
             }
             // 设置用户提供者用于权限控制
-            if (userProvider != null) {
-              financialProvider.setUserProvider(userProvider);
-            }
+            financialProvider.setUserProvider(userProvider);
             return financialProvider;
           },
         ),
-        ChangeNotifierProxyProvider2<DatabaseProvider, UserProvider, PatientProvider>(
+        ChangeNotifierProxyProvider2<
+          DatabaseProvider,
+          UserProvider,
+          PatientProvider
+        >(
           create: (_) => PatientProvider(),
           update: (_, dbProvider, userProvider, patientProvider) {
             patientProvider ??= PatientProvider();
@@ -299,9 +315,7 @@ void main() async {
               patientProvider.initializeFromDatabase(dbProvider);
             }
             // 设置用户提供者用于权限控制
-            if (userProvider != null) {
-              patientProvider.setUserProvider(userProvider);
-            }
+            patientProvider.setUserProvider(userProvider);
             return patientProvider;
           },
         ),
@@ -315,7 +329,11 @@ void main() async {
             return materialProvider;
           },
         ),
-        ChangeNotifierProxyProvider2<DatabaseProvider, UserProvider, PurchaseProvider>(
+        ChangeNotifierProxyProvider2<
+          DatabaseProvider,
+          UserProvider,
+          PurchaseProvider
+        >(
           create: (_) => PurchaseProvider(),
           update: (_, dbProvider, userProvider, purchaseProvider) {
             purchaseProvider ??= PurchaseProvider();
@@ -323,7 +341,7 @@ void main() async {
               purchaseProvider.initializeFromDatabase(dbProvider);
             }
             // 设置用户提供者用于权限控制
-            if (userProvider != null && userProvider.initialized) {
+            if (userProvider.initialized) {
               purchaseProvider.setUserProvider(userProvider);
             }
             return purchaseProvider;
@@ -343,7 +361,8 @@ void main() async {
           create: (_) => MedicalRecordProvider(),
           update: (_, dbProvider, medicalRecordProvider) {
             medicalRecordProvider ??= MedicalRecordProvider();
-            if (dbProvider.isInitialized && !medicalRecordProvider.initialized) {
+            if (dbProvider.isInitialized &&
+                !medicalRecordProvider.initialized) {
               medicalRecordProvider.initializeFromDatabase(dbProvider);
             }
             return medicalRecordProvider;

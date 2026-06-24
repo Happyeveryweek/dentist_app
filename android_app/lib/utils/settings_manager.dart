@@ -98,7 +98,6 @@ class SettingsManager {
         themeModeString = 'dark';
         break;
       case ThemeMode.system:
-      default:
         themeModeString = 'system';
         break;
     }

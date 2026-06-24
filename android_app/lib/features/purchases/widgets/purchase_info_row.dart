@@ -5,11 +5,7 @@ class PurchaseInfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const PurchaseInfoRow(
-    this.label,
-    this.value, {
-    super.key,
-  });
+  const PurchaseInfoRow(this.label, this.value, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -22,19 +18,13 @@ class PurchaseInfoRow extends StatelessWidget {
             width: 80,
             child: Text(
               label,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[600], fontSize: 14),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
           ),
         ],

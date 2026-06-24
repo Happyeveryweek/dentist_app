@@ -1,25 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io';
-import 'dart:typed_data';
 import 'dart:convert';
 
 import '../models/database_models.dart';
 import '../models/patient_medical_record.dart';
-import '../providers/medical_record_provider.dart';
 import '../features/medical_records/utils/medical_record_pdf_exporter.dart';
 import '../features/medical_records/utils/dental_condition_integration.dart';
 import '../utils/toast_util.dart';
 import '../widgets/app_card.dart';
+import '../utils/app_logger.dart';
 
 // 定义颜色常量
 class _AppColors {
   static const Color primaryColor = Color(0xFF2196F3);
-  static const Color secondaryTextColor = Color(0xFF757575);
   static const Color backgroundColor = Color(0xFFF5F5F5);
 }
 
@@ -34,7 +29,8 @@ class MedicalRecordDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<MedicalRecordDetailScreen> createState() => _MedicalRecordDetailScreenState();
+  State<MedicalRecordDetailScreen> createState() =>
+      _MedicalRecordDetailScreenState();
 }
 
 class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
@@ -52,22 +48,23 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
         centerTitle: true,
         title: const Text(
           '病历详情',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
-            icon: _isExporting 
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.picture_as_pdf, color: _AppColors.primaryColor),
+            icon:
+                _isExporting
+                    ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                    : const Icon(
+                      Icons.picture_as_pdf,
+                      color: _AppColors.primaryColor,
+                    ),
             onPressed: _isExporting ? null : _exportToPdf,
             tooltip: '导出PDF',
           ),
@@ -81,11 +78,11 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
             // 患者基本信息卡片
             _buildPatientInfoCard(),
             const SizedBox(height: 16),
-            
+
             // 病历基本信息卡片
             _buildRecordInfoCard(),
             const SizedBox(height: 16),
-            
+
             // 病历详细内容
             _buildRecordDetailsCard(),
           ],
@@ -101,15 +98,11 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              Icon(
-                Icons.person,
-                color: _AppColors.primaryColor,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.person, color: _AppColors.primaryColor, size: 20),
+              SizedBox(width: 8),
+              Text(
                 '患者信息',
                 style: TextStyle(
                   fontSize: 18,
@@ -122,25 +115,24 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
           const Divider(height: 24),
           Row(
             children: [
+              Expanded(child: _buildInfoItem('姓名', widget.patient.name)),
               Expanded(
-                child: _buildInfoItem('姓名', widget.patient.name),
+                child: _buildInfoItem('年龄', '${widget.patient.age}岁'),
               ),
-              Expanded(
-                child: _buildInfoItem('年龄', '${widget.patient.age ?? 0}岁'),
-              ),
-              Expanded(
-                child: _buildInfoItem('性别', widget.patient.gender),
-              ),
+              Expanded(child: _buildInfoItem('性别', widget.patient.gender)),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: _buildInfoItem('电话', widget.patient.phone ?? '未设置'),
+                child: _buildInfoItem('电话', widget.patient.phone),
               ),
               Expanded(
-                child: _buildInfoItem('病历号', widget.patient.medicalRecordNumber?.toString() ?? '无'),
+                child: _buildInfoItem(
+                  '病历号',
+                  widget.patient.medicalRecordNumber?.toString() ?? '无',
+                ),
               ),
             ],
           ),
@@ -156,15 +148,15 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.medical_information,
                 color: _AppColors.primaryColor,
                 size: 20,
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 '病历信息',
                 style: TextStyle(
                   fontSize: 18,
@@ -181,7 +173,10 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
                 child: _buildInfoItem('病历编号', widget.record.recordNumber),
               ),
               Expanded(
-                child: _buildInfoItem('病历日期', DateFormat('yyyy年MM月dd日').format(widget.record.recordDate)),
+                child: _buildInfoItem(
+                  '病历日期',
+                  DateFormat('yyyy年MM月dd日').format(widget.record.recordDate),
+                ),
               ),
             ],
           ),
@@ -189,10 +184,20 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
           Row(
             children: [
               Expanded(
-                child: _buildInfoItem('医生', widget.record.doctorName.isNotEmpty ? widget.record.doctorName : '未知'),
+                child: _buildInfoItem(
+                  '医生',
+                  widget.record.doctorName.isNotEmpty
+                      ? widget.record.doctorName
+                      : '未知',
+                ),
               ),
               Expanded(
-                child: _buildInfoItem('创建时间', DateFormat('yyyy-MM-dd HH:mm').format(widget.record.createdAt)),
+                child: _buildInfoItem(
+                  '创建时间',
+                  DateFormat(
+                    'yyyy-MM-dd HH:mm',
+                  ).format(widget.record.createdAt),
+                ),
               ),
             ],
           ),
@@ -208,15 +213,11 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              Icon(
-                Icons.description,
-                color: _AppColors.primaryColor,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.description, color: _AppColors.primaryColor, size: 20),
+              SizedBox(width: 8),
+              Text(
                 '病历详情',
                 style: TextStyle(
                   fontSize: 18,
@@ -227,44 +228,44 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
             ],
           ),
           const Divider(height: 24),
-          
+
           // 主诉
           if (widget.record.chiefComplaint.isNotEmpty)
             _buildDetailSection('主诉', widget.record.chiefComplaint),
-          
+
           // 现病史
           if (widget.record.presentIllness.isNotEmpty)
             _buildDetailSection('现病史', widget.record.presentIllness),
-          
+
           // 全身疾病既往史
           if (widget.record.pastMedicalHistory.isNotEmpty)
             _buildDetailSection('全身疾病既往史', widget.record.pastMedicalHistory),
-          
+
           // 口腔疾病既往史
           if (widget.record.pastDentalHistory.isNotEmpty)
             _buildDetailSection('口腔疾病既往史', widget.record.pastDentalHistory),
-          
+
           // 过敏史
           if (widget.record.allergyHistory.isNotEmpty)
             _buildDetailSection('过敏史', widget.record.allergyHistory),
-          
+
           // 口腔检查
           if (widget.record.oralExamination.isNotEmpty)
             _buildDetailSection('口腔检查', widget.record.oralExamination),
-          
+
           // 关联牙齿状况
-          if (widget.record.selectedDentalConditionDate != null && 
+          if (widget.record.selectedDentalConditionDate != null &&
               widget.record.selectedDentalConditionDate!.isNotEmpty)
             _buildDentalConditionSection(),
-          
+
           // 诊断
           if (widget.record.diagnosis.isNotEmpty)
             _buildDetailSection('诊断', widget.record.diagnosis),
-          
+
           // 治疗方案
           if (widget.record.treatmentPlan.isNotEmpty)
             _buildDetailSection('治疗方案', widget.record.treatmentPlan),
-          
+
           // 注意事项
           if (widget.record.notes.isNotEmpty)
             _buildDetailSection('注意事项', widget.record.notes),
@@ -337,16 +338,16 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
 
   // 牙齿状况区块
   Widget _buildDentalConditionSection() {
-    if (widget.patient.dentalCondition == null || 
+    if (widget.patient.dentalCondition == null ||
         widget.patient.dentalCondition!.isEmpty) {
       return _buildDetailSection('关联牙齿状况', '无牙齿状况数据');
     }
 
     try {
       final dentalData = DentalConditionIntegration.parseDentalCondition(
-        widget.patient.dentalCondition!
+        widget.patient.dentalCondition!,
       );
-      
+
       if (dentalData.isEmpty) {
         return _buildDetailSection('关联牙齿状况', '牙齿状况数据解析失败');
       }
@@ -354,7 +355,9 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
       // 解析选中的日期
       List<String> selectedDates = [];
       try {
-        final List<dynamic> dates = jsonDecode(widget.record.selectedDentalConditionDate!);
+        final List<dynamic> dates = jsonDecode(
+          widget.record.selectedDentalConditionDate!,
+        );
         selectedDates = dates.map((date) => date.toString()).toList();
       } catch (e) {
         selectedDates = [widget.record.selectedDentalConditionDate!];
@@ -372,7 +375,7 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          
+
           for (int i = 0; i < selectedDates.length; i++) ...[
             Container(
               width: double.infinity,
@@ -400,7 +403,7 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
               ),
             ),
           ],
-          
+
           const SizedBox(height: 16),
         ],
       );
@@ -410,30 +413,30 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
   }
 
   // 牙齿图表信息
-  Widget _buildDentalChartInfo(Map<String, dynamic> dentalData, String selectedDate) {
+  Widget _buildDentalChartInfo(
+    Map<String, dynamic> dentalData,
+    String selectedDate,
+  ) {
     final dentalRecord = DentalConditionIntegration.getDentalConditionByDate(
-      dentalData, 
-      selectedDate
+      dentalData,
+      selectedDate,
     );
-    
+
     if (dentalRecord.isEmpty) {
       return const Text(
         '该日期无牙齿状况数据',
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.grey,
-        ),
+        style: TextStyle(fontSize: 14, color: Colors.grey),
       );
     }
 
     // 构建非空的牙齿图表列表
     List<Widget> charts = [];
-    
+
     // 检查并添加有内容的图表
     for (int i = 1; i <= 3; i++) {
       String title = '图表$i';
       String chartPrefix = 'chart$i';
-      
+
       if (_hasChartContent(title, dentalRecord, chartPrefix)) {
         if (charts.isNotEmpty) {
           charts.add(const SizedBox(height: 12)); // 添加间距
@@ -441,7 +444,7 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
         charts.add(_buildSingleChart(title, dentalRecord, chartPrefix));
       }
     }
-    
+
     // 如果没有任何图表有内容，显示提示信息
     if (charts.isEmpty) {
       return Container(
@@ -453,26 +456,19 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.info_outline,
-              color: Colors.grey.shade600,
-              size: 20,
-            ),
+            Icon(Icons.info_outline, color: Colors.grey.shade600, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 '该日期暂无牙齿状况记录',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
               ),
             ),
           ],
         ),
       );
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: charts,
@@ -480,30 +476,38 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
   }
 
   // 检查图表是否有内容（包括四个象限和备注）
-  bool _hasChartContent(String title, Map<String, String> data, String chartPrefix) {
+  bool _hasChartContent(
+    String title,
+    Map<String, String> data,
+    String chartPrefix,
+  ) {
     // 检查四个象限是否有内容
     final topLeft = data['$chartPrefix-top-left'] ?? '';
     final topRight = data['$chartPrefix-top-right'] ?? '';
     final bottomLeft = data['$chartPrefix-bottom-left'] ?? '';
     final bottomRight = data['$chartPrefix-bottom-right'] ?? '';
-    
+
     // 检查备注是否有有效内容
     String noteValue = data['$chartPrefix-note'] ?? '';
     // 过滤掉默认提示文本
     if (noteValue.startsWith('请在此输入') && noteValue.endsWith('的备注')) {
       noteValue = '';
     }
-    
+
     // 只要有任何一个字段有内容就显示该图表
-    return topLeft.trim().isNotEmpty || 
-           topRight.trim().isNotEmpty || 
-           bottomLeft.trim().isNotEmpty || 
-           bottomRight.trim().isNotEmpty || 
-           noteValue.trim().isNotEmpty;
+    return topLeft.trim().isNotEmpty ||
+        topRight.trim().isNotEmpty ||
+        bottomLeft.trim().isNotEmpty ||
+        bottomRight.trim().isNotEmpty ||
+        noteValue.trim().isNotEmpty;
   }
 
   // 单个图表显示 - 使用十字图表样式
-  Widget _buildSingleChart(String title, Map<String, String> dentalRecord, String chartPrefix) {
+  Widget _buildSingleChart(
+    String title,
+    Map<String, String> dentalRecord,
+    String chartPrefix,
+  ) {
     final topLeft = dentalRecord['$chartPrefix-top-left'] ?? '';
     final topRight = dentalRecord['$chartPrefix-top-right'] ?? '';
     final bottomLeft = dentalRecord['$chartPrefix-bottom-left'] ?? '';
@@ -517,10 +521,11 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
     }
 
     // 检查四个象限是否有内容
-    final hasChartData = topLeft.trim().isNotEmpty || 
-                        topRight.trim().isNotEmpty || 
-                        bottomLeft.trim().isNotEmpty || 
-                        bottomRight.trim().isNotEmpty;
+    final hasChartData =
+        topLeft.trim().isNotEmpty ||
+        topRight.trim().isNotEmpty ||
+        bottomLeft.trim().isNotEmpty ||
+        bottomRight.trim().isNotEmpty;
 
     // 如果只有备注没有图表数据，使用紧凑显示
     if (!hasChartData && noteValue.trim().isNotEmpty) {
@@ -616,7 +621,10 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
                           Expanded(
                             child: Container(
                               alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 6, bottom: 12),
+                              padding: const EdgeInsets.only(
+                                right: 6,
+                                bottom: 12,
+                              ),
                               child: _buildQuadrantText(bottomLeft),
                             ),
                           ),
@@ -624,7 +632,10 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
                           Expanded(
                             child: Container(
                               alignment: Alignment.centerLeft,
-                              padding: const EdgeInsets.only(left: 6, bottom: 12),
+                              padding: const EdgeInsets.only(
+                                left: 6,
+                                bottom: 12,
+                              ),
                               child: _buildQuadrantText(bottomRight),
                             ),
                           ),
@@ -653,7 +664,11 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.note_alt, size: 14, color: Colors.amber.shade700),
+                      Icon(
+                        Icons.note_alt,
+                        size: 14,
+                        color: Colors.amber.shade700,
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         '备注',
@@ -666,10 +681,7 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    noteValue,
-                    style: const TextStyle(fontSize: 13),
-                  ),
+                  Text(noteValue, style: const TextStyle(fontSize: 13)),
                 ],
               ),
             ),
@@ -691,7 +703,7 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
         ),
       );
     }
-    
+
     return Text(
       text,
       style: const TextStyle(
@@ -741,19 +753,12 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
                 const SizedBox(height: 4),
                 Text(
                   noteValue,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black87,
-                  ),
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
                 ),
               ],
             ),
           ),
-          Icon(
-            Icons.note_alt,
-            size: 16,
-            color: Colors.amber.shade600,
-          ),
+          Icon(Icons.note_alt, size: 16, color: Colors.amber.shade600),
         ],
       ),
     );
@@ -793,7 +798,8 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
       );
 
       // 获取文件名
-      final fileName = '病历_${widget.patient.name}_${widget.record.recordNumber}_${DateFormat('yyyyMMdd').format(widget.record.recordDate)}.pdf';
+      final fileName =
+          '病历_${widget.patient.name}_${widget.record.recordNumber}_${DateFormat('yyyyMMdd').format(widget.record.recordDate)}.pdf';
 
       // 使用SAF保存文件
       final params = SaveFileDialogParams(
@@ -810,7 +816,7 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
         ToastUtil.showInfo(context, '用户取消了保存操作');
       }
     } catch (e) {
-      print('PDF导出失败: $e');
+      AppLogger.info('PDF导出失败: $e');
       if (mounted) {
         ToastUtil.showError(context, 'PDF导出失败: $e');
       }
@@ -828,10 +834,10 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
     try {
       // 现代Android版本使用SAF，尝试直接进行而不检查传统存储权限
       // 如果SAF可用，就不需要存储权限
-      
+
       // 首先尝试检查存储权限状态
       var status = await Permission.storage.status;
-      
+
       if (status.isGranted) {
         return true;
       }
@@ -843,7 +849,7 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
 
       // 请求权限
       status = await Permission.storage.request();
-      
+
       if (status.isGranted) {
         return true;
       } else if (status.isPermanentlyDenied) {
@@ -861,7 +867,7 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
         return false;
       }
     } catch (e) {
-      print('权限检查失败: $e');
+      AppLogger.info('权限检查失败: $e');
       // 权限检查失败，但仍然尝试使用SAF
       if (mounted) {
         ToastUtil.showInfo(context, '将使用系统文件选择器保存PDF');
@@ -879,9 +885,7 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('需要存储权限'),
-          content: const Text(
-            '为了保存PDF文件，需要访问设备存储权限。请在设置中允许此权限。',
-          ),
+          content: const Text('为了保存PDF文件，需要访问设备存储权限。请在设置中允许此权限。'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
@@ -899,7 +903,7 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
     if (result == true) {
       // 打开应用设置页面
       await openAppSettings();
-      
+
       // 等待用户返回后重新检查权限
       await Future.delayed(const Duration(seconds: 1));
       final status = await Permission.storage.status;

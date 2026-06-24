@@ -1,18 +1,12 @@
 import 'package:flutter/foundation.dart';
 import '../models/database_models.dart';
 import '../utils/database_operation_wrapper.dart';
-import '../data_sources/appointment_data_source.dart';
-import 'package:sqflite/sqflite.dart';
-import 'dart:io';
-import 'package:mysql1/mysql1.dart';
-import 'package:intl/intl.dart';
-import 'dart:convert';
-import 'dart:typed_data';
 import 'user_provider.dart'; // 导入UserProvider用于权限检查
 import '../features/appointments/providers/appointment_cache_mixin.dart';
 import '../features/appointments/providers/appointment_database_mixin.dart';
 import '../features/appointments/providers/appointment_permission_mixin.dart';
 import '../features/appointments/services/appointment_initialization_service.dart';
+import '../utils/app_logger.dart';
 
 // 预约管理提供者，用于管理应用程序与预约相关的数据库操作
 class AppointmentsProvider extends ChangeNotifier
@@ -26,8 +20,8 @@ class AppointmentsProvider extends ChangeNotifier
       AppointmentInitializationService();
 
   // 连接状态
-  bool _isConnected = true;
-  bool _isReconnecting = false;
+  final bool _isConnected = true;
+  final bool _isReconnecting = false;
   String? _lastError;
 
   // Getters
@@ -43,7 +37,7 @@ class AppointmentsProvider extends ChangeNotifier
     if (isInitializedFlag) return;
 
     try {
-      print('AppointmentsProvider开始初始化...');
+      AppLogger.info('AppointmentsProvider开始初始化...');
 
       // 保存DatabaseProvider引用
       databaseProvider = dbProvider;
@@ -68,9 +62,9 @@ class AppointmentsProvider extends ChangeNotifier
       _dbWrapper = DatabaseOperationWrapper(dbProvider);
 
       isInitializedFlag = result.initialized;
-      print('AppointmentsProvider初始化完成');
+      AppLogger.info('AppointmentsProvider初始化完成');
     } catch (e) {
-      print('AppointmentsProvider初始化失败: $e');
+      AppLogger.info('AppointmentsProvider初始化失败: $e');
       // 设置默认值，但不标记为已初始化
       dataSourceType = 'sqlite';
       isInitializedFlag = false;
@@ -78,19 +72,6 @@ class AppointmentsProvider extends ChangeNotifier
 
     // 延迟通知以避免在build阶段调用setState
     Future.microtask(() => notifyListeners());
-  }
-
-  // 清除错误状态
-  void _clearError() {
-    _lastError = null;
-    notifyListeners();
-  }
-
-  // 设置错误状态
-  void _setError(String error) {
-    _lastError = error;
-    _isConnected = false;
-    notifyListeners();
   }
 
   // 获取所有预约（带缓存）
@@ -105,11 +86,11 @@ class AppointmentsProvider extends ChangeNotifier
       try {
         // 优先检查缓存
         if (isCacheValid()) {
-          print('使用缓存的预约数据: ${cachedAppointments!.length} 条');
+          AppLogger.info('使用缓存的预约数据: ${cachedAppointments!.length} 条');
           return cachedAppointments!;
         }
 
-        print('🔄 从数据库获取最新预约数据...');
+        AppLogger.info('🔄 从数据库获取最新预约数据...');
         List<Appointment> appointments = [];
 
         // 使用数据源模式（统一接口）
@@ -120,15 +101,15 @@ class AppointmentsProvider extends ChangeNotifier
 
         // 更新缓存
         updateCache(appointments);
-        print('✅ 预约数据缓存已更新');
+        AppLogger.info('✅ 预约数据缓存已更新');
         return appointments;
       } catch (e) {
-        print('❌ 获取预约数据失败: $e');
+        AppLogger.info('❌ 获取预约数据失败: $e');
         if (_isConnectionError(e)) rethrow;
 
         // 优雅降级：如果有缓存就返回缓存，否则返回空列表
         if (isCacheValid()) {
-          print('使用缓存的预约数据，查询失败: $e');
+          AppLogger.info('使用缓存的预约数据，查询失败: $e');
           return cachedAppointments!;
         }
 
@@ -157,7 +138,7 @@ class AppointmentsProvider extends ChangeNotifier
 
     return await _dbWrapper!.wrapOperation('getAppointmentCount', () async {
       try {
-        print('正在获取预约总数...');
+        AppLogger.info('正在获取预约总数...');
 
         // 使用数据源模式（统一接口）
         // Android端：不过滤查看权限，返回所有预约总数
@@ -167,7 +148,7 @@ class AppointmentsProvider extends ChangeNotifier
 
         return count;
       } catch (e) {
-        print('获取预约总数错误: $e');
+        AppLogger.info('获取预约总数错误: $e');
         return 0;
       }
     });
@@ -198,7 +179,7 @@ class AppointmentsProvider extends ChangeNotifier
           doctorFilter: null,
         );
       } catch (e) {
-        print('获取今日预约错误: $e');
+        AppLogger.info('获取今日预约错误: $e');
         return [];
       }
     });
@@ -221,12 +202,12 @@ class AppointmentsProvider extends ChangeNotifier
           // 清除缓存并标记需要刷新
           clearCache();
           markAppointmentsNeedRefresh();
-          print('✅ 预约添加成功，已清除缓存并标记刷新');
+          AppLogger.info('✅ 预约添加成功，已清除缓存并标记刷新');
         }
 
         return id;
       } catch (e) {
-        print('添加预约失败: $e');
+        AppLogger.info('添加预约失败: $e');
         rethrow;
       }
     });
@@ -249,12 +230,12 @@ class AppointmentsProvider extends ChangeNotifier
           // 清除缓存并标记需要刷新
           clearCache();
           markAppointmentsNeedRefresh();
-          print('✅ 预约更新成功，已清除缓存并标记刷新');
+          AppLogger.info('✅ 预约更新成功，已清除缓存并标记刷新');
         }
 
         return success;
       } catch (e) {
-        print('更新预约失败: $e');
+        AppLogger.info('更新预约失败: $e');
         rethrow;
       }
     });
@@ -277,12 +258,12 @@ class AppointmentsProvider extends ChangeNotifier
           // 清除缓存并标记需要刷新
           clearCache();
           markAppointmentsNeedRefresh();
-          print('✅ 预约删除成功，已清除缓存并标记刷新');
+          AppLogger.info('✅ 预约删除成功，已清除缓存并标记刷新');
         }
 
         return success;
       } catch (e) {
-        print('删除预约失败: $e');
+        AppLogger.info('删除预约失败: $e');
         rethrow;
       }
     });
@@ -303,7 +284,7 @@ class AppointmentsProvider extends ChangeNotifier
             doctorFilter: doctorFilter,
           );
         } catch (e) {
-          print('获取患者预约错误: $e');
+          AppLogger.info('获取患者预约错误: $e');
           return [];
         }
       },
@@ -323,7 +304,7 @@ class AppointmentsProvider extends ChangeNotifier
           doctorFilter: doctorFilter,
         );
       } catch (e) {
-        print('搜索预约错误: $e');
+        AppLogger.info('搜索预约错误: $e');
         return [];
       }
     });
@@ -348,7 +329,7 @@ class AppointmentsProvider extends ChangeNotifier
             doctorFilter: doctorFilter,
           );
         } catch (e) {
-          print('根据日期范围获取预约错误: $e');
+          AppLogger.info('根据日期范围获取预约错误: $e');
           return [];
         }
       },

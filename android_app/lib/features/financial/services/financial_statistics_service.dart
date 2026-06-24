@@ -1,7 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
-import '../../../utils/datetime_formatter.dart';
-import '../../../features/financial/services/financial_permission_service.dart';
+import '../../../utils/app_logger.dart';
 
 /// 财务统计服务
 /// 职责：管理财务数据的统计计算、患者消费统计、财务统计
@@ -74,7 +73,7 @@ class FinancialStatisticsService {
 
       return totalCost;
     } catch (e) {
-      print('获取患者总消费额失败: $e');
+      AppLogger.info('获取患者总消费额失败: $e');
       return 0.0;
     }
   }
@@ -110,7 +109,8 @@ class FinancialStatisticsService {
           queryArgs.add(doctorFilter);
         }
 
-        String whereClause = conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
+        String whereClause =
+            conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
 
         // 根据实际的数据库表结构，需要通过 financial_items 表计算统计信息
         final result = await db.rawQuery('''
@@ -127,9 +127,12 @@ class FinancialStatisticsService {
 
         if (result.isNotEmpty) {
           stats['totalRecords'] = result.first['total_records'] ?? 0;
-          stats['totalAmount'] = (result.first['total_amount'] as num?)?.toDouble() ?? 0.0;
-          stats['totalPaid'] = (result.first['total_paid'] as num?)?.toDouble() ?? 0.0;
-          stats['totalOutstanding'] = (result.first['total_outstanding'] as num?)?.toDouble() ?? 0.0;
+          stats['totalAmount'] =
+              (result.first['total_amount'] as num?)?.toDouble() ?? 0.0;
+          stats['totalPaid'] =
+              (result.first['total_paid'] as num?)?.toDouble() ?? 0.0;
+          stats['totalOutstanding'] =
+              (result.first['total_outstanding'] as num?)?.toDouble() ?? 0.0;
         }
       } else if (dataSourceType == 'mysql') {
         final conn = mysqlConnection;
@@ -146,7 +149,8 @@ class FinancialStatisticsService {
           queryArgs.add(doctorFilter);
         }
 
-        String whereClause = conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
+        String whereClause =
+            conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
 
         // 根据实际的数据库表结构，需要通过 financial_items 表计算统计信息
         final results = await conn.query('''
@@ -164,15 +168,17 @@ class FinancialStatisticsService {
         if (results.isNotEmpty) {
           final row = results.first;
           stats['totalRecords'] = row['total_records'] ?? 0;
-          stats['totalAmount'] = (row['total_amount'] as num?)?.toDouble() ?? 0.0;
+          stats['totalAmount'] =
+              (row['total_amount'] as num?)?.toDouble() ?? 0.0;
           stats['totalPaid'] = (row['total_paid'] as num?)?.toDouble() ?? 0.0;
-          stats['totalOutstanding'] = (row['total_outstanding'] as num?)?.toDouble() ?? 0.0;
+          stats['totalOutstanding'] =
+              (row['total_outstanding'] as num?)?.toDouble() ?? 0.0;
         }
       }
 
       return stats;
     } catch (e) {
-      print('获取财务统计信息失败: $e');
+      AppLogger.info('获取财务统计信息失败: $e');
       return {
         'totalRecords': 0,
         'totalAmount': 0.0,

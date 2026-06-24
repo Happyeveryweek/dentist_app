@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 
 import 'financial_connection_service.dart';
 import 'financial_data_source_service.dart';
+import '../../../utils/app_logger.dart';
 
 /// 财务 Provider 初始化结果
 class FinancialInitializationResult {
@@ -36,10 +37,10 @@ class FinancialInitializationService {
       dbType = dbProvider.dataSourceType;
     }
 
-    print('检测到数据源类型: $dbType');
+    AppLogger.info('检测到数据源类型: $dbType');
 
     if (dbType == 'mysql') {
-      print('使用MySQL连接...');
+      AppLogger.info('使用MySQL连接...');
       final mysqlConnection = dbProvider.mysqlConnection;
       if (mysqlConnection == null) {
         throw Exception('MySQL连接为null，无法创建数据源');
@@ -49,7 +50,7 @@ class FinancialInitializationService {
       connectionService.setDataSourceType('mysql');
       connectionService.setMysqlConnection(mysqlConnection);
       dataSourceService.setMySqlDataSource(mysqlConnection);
-      print('✅ MySQL财务数据源创建成功');
+      AppLogger.info('✅ MySQL财务数据源创建成功');
 
       return FinancialInitializationResult(
         database: null,
@@ -59,16 +60,16 @@ class FinancialInitializationService {
       );
     }
 
-    print('使用SQLite连接...');
+    AppLogger.info('使用SQLite连接...');
     Database? database;
     try {
       database = await dbProvider.sqliteDatabase;
-      print('获取到的SQLite数据库实例: $database');
+      AppLogger.info('获取到的SQLite数据库实例: $database');
     } catch (e) {
-      print('获取SQLite数据库失败: $e');
+      AppLogger.info('获取SQLite数据库失败: $e');
       if (dbProvider.database != null) {
         database = dbProvider.database;
-        print('通过备用方式获取SQLite数据库: $database');
+        AppLogger.info('通过备用方式获取SQLite数据库: $database');
       }
     }
 
@@ -79,7 +80,7 @@ class FinancialInitializationService {
     dataSourceService.setDataSourceType('sqlite');
     connectionService.setDataSourceType('sqlite');
     dataSourceService.setSqliteDataSource(database);
-    print('✅ SQLite财务数据源创建成功');
+    AppLogger.info('✅ SQLite财务数据源创建成功');
 
     return FinancialInitializationResult(
       database: database,

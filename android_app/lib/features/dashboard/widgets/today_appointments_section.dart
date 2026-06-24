@@ -40,7 +40,11 @@ class TodayAppointmentsSection extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () async {
-                  final hasPermission = await PermissionUtils.canEdit(context, 'appointments');
+                  final hasPermission = await PermissionUtils.canEdit(
+                    context,
+                    'appointments',
+                  );
+                  if (!context.mounted) return;
                   if (hasPermission) {
                     Navigator.of(context).pushReplacement(
                       MaterialPageRoute(
@@ -56,7 +60,10 @@ class TodayAppointmentsSection extends StatelessWidget {
                 },
                 style: TextButton.styleFrom(
                   foregroundColor: AppTheme.primaryColor,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
                 child: const Row(
                   children: [
@@ -77,65 +84,66 @@ class TodayAppointmentsSection extends StatelessWidget {
           const SizedBox(height: 16),
           todayAppointments.isEmpty
               ? Container(
-                  constraints: const BoxConstraints(minHeight: 180),
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.event_available_rounded,
-                          color: AppTheme.primaryColor,
-                          size: 40,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        '今日暂无预约',
-                        style: TextStyle(
-                          color: AppTheme.secondaryText,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : Column(
-                  children: todayAppointments.map((appointment) {
-                    return FutureBuilder<Patient?>(
-                      future: Provider.of<PatientProvider>(
-                        context,
-                        listen: false,
-                      ).getPatientById(appointment.patientId),
-                      builder: (context, snapshot) {
-                        final patient = snapshot.data;
-                        return AppointmentCard(
-                          appointment: appointment,
-                          patient: patient,
-                          onDetailUpdated: onDetailUpdated,
-                        );
-                      },
-                    );
-                  }).toList(),
+                constraints: const BoxConstraints(minHeight: 180),
+                width: double.infinity,
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.event_available_rounded,
+                        color: AppTheme.primaryColor,
+                        size: 40,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '今日暂无预约',
+                      style: TextStyle(
+                        color: AppTheme.secondaryText,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+              : Column(
+                children:
+                    todayAppointments.map((appointment) {
+                      return FutureBuilder<Patient?>(
+                        future: Provider.of<PatientProvider>(
+                          context,
+                          listen: false,
+                        ).getPatientById(appointment.patientId),
+                        builder: (context, snapshot) {
+                          final patient = snapshot.data;
+                          return AppointmentCard(
+                            appointment: appointment,
+                            patient: patient,
+                            onDetailUpdated: onDetailUpdated,
+                          );
+                        },
+                      );
+                    }).toList(),
+              ),
         ],
       ),
     );

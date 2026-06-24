@@ -7,6 +7,7 @@ import 'financial_permission_service.dart';
 import 'financial_connection_service.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
+import '../../../utils/app_logger.dart';
 
 /// 财务查询服务
 /// 职责：管理财务数据的查询操作（分页、搜索、复杂查询）
@@ -17,7 +18,6 @@ class FinancialQueryService {
   DatabaseOperationWrapper? _dbWrapper;
   String _dataSourceType = 'sqlite';
   Database? _database;
-  MySqlConnection? _mysqlConnection;
 
   FinancialQueryService({
     required FinancialDataSourceService dataSourceService,
@@ -37,7 +37,6 @@ class FinancialQueryService {
     _dataSourceType = dataSourceType;
     _dataSourceService.setDataSourceType(dataSourceType);
     _database = database;
-    _mysqlConnection = mysqlConnection;
     _dbWrapper = dbWrapper;
   }
 
@@ -112,7 +111,7 @@ class FinancialQueryService {
           }
           return count;
         } catch (e) {
-          print('获取财务记录总数失败: $e');
+          AppLogger.info('获取财务记录总数失败: $e');
           if (_isConnectionError(e)) rethrow;
           return 0;
         }
@@ -131,7 +130,7 @@ class FinancialQueryService {
       'getPaginatedFinancialRecords',
       () async {
         try {
-          print('🔄 从数据库分页获取财务记录，页码: $page, 每页大小: $pageSize');
+          AppLogger.info('🔄 从数据库分页获取财务记录，页码: $page, 每页大小: $pageSize');
 
           // 确保财务记录表存在
           await _dataSourceService.ensureFinancialRecordsTableExists(
@@ -189,7 +188,7 @@ class FinancialQueryService {
                       (e) => FinancialRecord.fromMap(e, dataSource: 'sqlite'),
                     )
                     .toList();
-            print('✅ SQLite分页查询成功，获取到 ${records.length} 条记录');
+            AppLogger.info('✅ SQLite分页查询成功，获取到 ${records.length} 条记录');
           } else if (_dataSourceType == 'mysql') {
             final conn = _currentMysqlConnection;
             if (conn == null) throw Exception('MySQL连接未初始化');
@@ -248,13 +247,13 @@ class FinancialQueryService {
                       )
                       .toList();
 
-              print('✅ MySQL分页查询成功，获取到 ${records.length} 条记录');
+              AppLogger.info('✅ MySQL分页查询成功，获取到 ${records.length} 条记录');
             } catch (e) {
               // 检查是否是连接错误
               if (e.toString().contains('SocketException') ||
                   e.toString().contains('Cannot write to socket') ||
                   e.toString().contains('Connection reset')) {
-                print('检测到连接错误，尝试重连: $e');
+                AppLogger.info('检测到连接错误，尝试重连: $e');
                 await _connectionService.autoReconnect();
                 return await getPaginatedFinancialRecords(page, pageSize);
               }
@@ -264,7 +263,7 @@ class FinancialQueryService {
 
           return records;
         } catch (e) {
-          print('❌ 分页查询失败: $e');
+          AppLogger.info('❌ 分页查询失败: $e');
           rethrow;
         }
       },
@@ -394,7 +393,7 @@ class FinancialQueryService {
         }
         return [];
       } catch (e) {
-        print('❌ 搜索财务记录失败: $e');
+        AppLogger.info('❌ 搜索财务记录失败: $e');
         if (_isConnectionError(e)) rethrow;
         return [];
       }
@@ -503,7 +502,7 @@ class FinancialQueryService {
           }
           return [];
         } catch (e) {
-          print('❌ 带日期筛选分页查询失败: $e');
+          AppLogger.info('❌ 带日期筛选分页查询失败: $e');
           rethrow;
         }
       },
@@ -554,7 +553,7 @@ class FinancialQueryService {
       }
       return 0;
     } catch (e) {
-      print('❌ 带日期筛选计数失败: $e');
+      AppLogger.info('❌ 带日期筛选计数失败: $e');
       if (_isConnectionError(e)) rethrow;
       return 0;
     }
@@ -754,7 +753,7 @@ class FinancialQueryService {
 
           return results;
         } catch (e) {
-          print('❌ 获取财务项目明细失败: $e');
+          AppLogger.info('❌ 获取财务项目明细失败: $e');
           rethrow;
         }
       },

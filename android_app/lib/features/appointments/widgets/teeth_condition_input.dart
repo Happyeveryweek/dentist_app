@@ -5,10 +5,7 @@ class TeethConditionInput extends StatefulWidget {
   final List<Map<String, String>> teethData;
   final Function(List<Map<String, String>>) onChanged;
 
-  const TeethConditionInput({
-    required this.teethData,
-    required this.onChanged,
-  });
+  const TeethConditionInput({super.key, required this.teethData, required this.onChanged});
 
   @override
   State<TeethConditionInput> createState() => TeethConditionInputState();
@@ -24,10 +21,7 @@ class TeethConditionInputState extends State<TeethConditionInput> {
           children: [
             const Text(
               '从医生视角看患者',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             const SizedBox(width: 4),
             Tooltip(
@@ -58,7 +52,7 @@ class TeethConditionInputState extends State<TeethConditionInput> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
       ),
       child: Column(
         children: [
@@ -79,7 +73,7 @@ class TeethConditionInputState extends State<TeethConditionInput> {
                 final height = constraints.maxHeight;
                 final centerX = width / 2;
                 final centerY = height / 2;
-                
+
                 return CustomPaint(
                   painter: _TeethCrossPainter(),
                   child: Stack(
@@ -93,7 +87,11 @@ class TeethConditionInputState extends State<TeethConditionInput> {
                           alignment: Alignment.bottomRight,
                           child: Padding(
                             padding: const EdgeInsets.only(right: 2, bottom: 1),
-                            child: _buildTeethInput(crossIndex, 'topLeft', TextAlign.right),
+                            child: _buildTeethInput(
+                              crossIndex,
+                              'topLeft',
+                              TextAlign.right,
+                            ),
                           ),
                         ),
                       ),
@@ -106,7 +104,11 @@ class TeethConditionInputState extends State<TeethConditionInput> {
                           alignment: Alignment.bottomLeft,
                           child: Padding(
                             padding: const EdgeInsets.only(left: 2, bottom: 1),
-                            child: _buildTeethInput(crossIndex, 'topRight', TextAlign.left),
+                            child: _buildTeethInput(
+                              crossIndex,
+                              'topRight',
+                              TextAlign.left,
+                            ),
                           ),
                         ),
                       ),
@@ -119,7 +121,11 @@ class TeethConditionInputState extends State<TeethConditionInput> {
                           alignment: Alignment.topRight,
                           child: Padding(
                             padding: const EdgeInsets.only(right: 2, top: 1),
-                            child: _buildTeethInput(crossIndex, 'bottomLeft', TextAlign.right),
+                            child: _buildTeethInput(
+                              crossIndex,
+                              'bottomLeft',
+                              TextAlign.right,
+                            ),
                           ),
                         ),
                       ),
@@ -132,7 +138,11 @@ class TeethConditionInputState extends State<TeethConditionInput> {
                           alignment: Alignment.topLeft,
                           child: Padding(
                             padding: const EdgeInsets.only(left: 2, top: 1),
-                            child: _buildTeethInput(crossIndex, 'bottomRight', TextAlign.left),
+                            child: _buildTeethInput(
+                              crossIndex,
+                              'bottomRight',
+                              TextAlign.left,
+                            ),
                           ),
                         ),
                       ),
@@ -147,7 +157,11 @@ class TeethConditionInputState extends State<TeethConditionInput> {
     );
   }
 
-  Widget _buildTeethInput(int crossIndex, String position, TextAlign textAlign) {
+  Widget _buildTeethInput(
+    int crossIndex,
+    String position,
+    TextAlign textAlign,
+  ) {
     final value = widget.teethData[crossIndex][position] ?? '';
     return StatefulTextField(
       initialValue: value,
@@ -177,23 +191,20 @@ class TeethConditionInputState extends State<TeethConditionInput> {
 class _TeethCrossPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.blue.shade600
-      ..strokeWidth = 2.0;
+    final paint =
+        Paint()
+          ..color = Colors.blue.shade600
+          ..strokeWidth = 2.0;
 
     final centerX = size.width / 2;
     final centerY = size.height / 2;
 
-    canvas.drawLine(
-      Offset(0, centerY),
-      Offset(size.width, centerY),
-      paint,
-    );
+    canvas.drawLine(Offset(0, centerY), Offset(size.width, centerY), paint);
 
     final verticalLineLength = size.width / 2;
     final verticalStartY = centerY - verticalLineLength / 2;
     final verticalEndY = centerY + verticalLineLength / 2;
-    
+
     canvas.drawLine(
       Offset(centerX, verticalStartY),
       Offset(centerX, verticalEndY),

@@ -5,6 +5,7 @@ import '../models/financial_item.dart';
 import '../utils/datetime_formatter.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import '../utils/app_logger.dart';
 
 // 抽象财务数据源接口
 abstract class FinancialDataSource {
@@ -18,7 +19,10 @@ abstract class FinancialDataSource {
   Future<bool> updateFinancialItem(FinancialItem item);
   Future<bool> deleteFinancialItem(int id);
   Future<double> getTotalAmount();
-  Future<List<FinancialRecord>> getFinancialRecordsByDateRange(DateTime startDate, DateTime endDate);
+  Future<List<FinancialRecord>> getFinancialRecordsByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  );
 }
 
 // SQLite财务数据源实现
@@ -38,12 +42,15 @@ class SqliteFinancialDataSource implements FinancialDataSource {
       LEFT JOIN patients p ON fr.patient_id = p.id 
       ORDER BY fr.created_at DESC
     ''');
-    return result.map((e) => FinancialRecord.fromMap(e, dataSource: 'sqlite')).toList();
+    return result
+        .map((e) => FinancialRecord.fromMap(e, dataSource: 'sqlite'))
+        .toList();
   }
 
   @override
   Future<FinancialRecord?> getFinancialRecordById(int id) async {
-    final result = await _database.rawQuery('''
+    final result = await _database.rawQuery(
+      '''
       SELECT fr.id, fr.patient_id, fr.total_quantity, fr.notes, fr.created_at, fr.updated_at,
              COALESCE(p.name, '未知患者') as patient_name,
              p.name_pinyin as patient_name_pinyin,
@@ -51,7 +58,9 @@ class SqliteFinancialDataSource implements FinancialDataSource {
       FROM financial_records fr 
       LEFT JOIN patients p ON fr.patient_id = p.id 
       WHERE fr.id = ?
-    ''', [id]);
+    ''',
+      [id],
+    );
     if (result.isEmpty) return null;
     return FinancialRecord.fromMap(result.first, dataSource: 'sqlite');
   }
@@ -80,7 +89,7 @@ class SqliteFinancialDataSource implements FinancialDataSource {
       where: 'financial_record_id = ?',
       whereArgs: [id],
     );
-    
+
     // 然后删除财务记录
     final count = await _database.delete(
       'financial_records',
@@ -94,7 +103,7 @@ class SqliteFinancialDataSource implements FinancialDataSource {
   Future<List<FinancialItem>> getFinancialItemsByRecordId(int recordId) async {
     final result = await _database.rawQuery(
       'SELECT * FROM financial_items WHERE financial_record_id = ? ORDER BY id',
-      [recordId]
+      [recordId],
     );
     return result.map((e) => FinancialItem.fromMap(e)).toList();
   }
@@ -127,22 +136,35 @@ class SqliteFinancialDataSource implements FinancialDataSource {
 
   @override
   Future<double> getTotalAmount() async {
-    final result = await _database.rawQuery('SELECT SUM(total_quantity) as total FROM financial_records');
+    final result = await _database.rawQuery(
+      'SELECT SUM(total_quantity) as total FROM financial_records',
+    );
     final row = result.first;
     return (row['total'] as num?)?.toDouble() ?? 0.0;
   }
 
   @override
-  Future<List<FinancialRecord>> getFinancialRecordsByDateRange(DateTime startDate, DateTime endDate) async {
-    final result = await _database.rawQuery('''
+  Future<List<FinancialRecord>> getFinancialRecordsByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
+    final result = await _database.rawQuery(
+      '''
       SELECT fr.id, fr.patient_id, fr.total_quantity, fr.notes, fr.created_at, fr.updated_at,
              COALESCE(p.name, '未知患者') as patient_name
       FROM financial_records fr 
       LEFT JOIN patients p ON fr.patient_id = p.id 
       WHERE fr.created_at BETWEEN ? AND ?
       ORDER BY fr.created_at DESC
-    ''', [DateTimeFormatter.toDbString(startDate), DateTimeFormatter.toDbString(endDate)]);
-    return result.map((e) => FinancialRecord.fromMap(e, dataSource: 'sqlite')).toList();
+    ''',
+      [
+        DateTimeFormatter.toDbString(startDate),
+        DateTimeFormatter.toDbString(endDate),
+      ],
+    );
+    return result
+        .map((e) => FinancialRecord.fromMap(e, dataSource: 'sqlite'))
+        .toList();
   }
 }
 
@@ -157,7 +179,7 @@ class MySqlFinancialDataSource implements FinancialDataSource {
     final map = <String, dynamic>{};
     for (var field in row.fields.keys) {
       var value = row[field];
-      
+
       // 处理日期字段 - 使用统一格式
       if (field == 'created_at' || field == 'updated_at') {
         if (value is DateTime) {
@@ -169,7 +191,10 @@ class MySqlFinancialDataSource implements FinancialDataSource {
         }
       } else if (value is Blob) {
         // 处理Blob字段，特别是notes等文本字段
-        if (field == 'notes' || field == 'description' || field == 'patient_name' || field == 'payment_method') {
+        if (field == 'notes' ||
+            field == 'description' ||
+            field == 'patient_name' ||
+            field == 'payment_method') {
           try {
             final bytes = value.toBytes();
             if (bytes.isNotEmpty) {
@@ -179,7 +204,7 @@ class MySqlFinancialDataSource implements FinancialDataSource {
               map[field] = '';
             }
           } catch (e) {
-            print('Blob转换失败: $e');
+            AppLogger.info('Blob转换失败: $e');
             map[field] = '';
           }
         } else {
@@ -187,7 +212,10 @@ class MySqlFinancialDataSource implements FinancialDataSource {
         }
       } else if (value is Uint8List) {
         // 处理Uint8List类型
-        if (field == 'notes' || field == 'description' || field == 'patient_name' || field == 'payment_method') {
+        if (field == 'notes' ||
+            field == 'description' ||
+            field == 'patient_name' ||
+            field == 'payment_method') {
           try {
             if (value.isNotEmpty) {
               final stringValue = utf8.decode(value, allowMalformed: true);
@@ -196,7 +224,7 @@ class MySqlFinancialDataSource implements FinancialDataSource {
               map[field] = '';
             }
           } catch (e) {
-            print('Uint8List转换失败: $e');
+            AppLogger.info('Uint8List转换失败: $e');
             map[field] = '';
           }
         } else {
@@ -213,7 +241,7 @@ class MySqlFinancialDataSource implements FinancialDataSource {
   Future<List<FinancialRecord>> getAllFinancialRecords() async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
+
     final results = await connection.query('''
       SELECT fr.id, fr.patient_id, fr.total_quantity, fr.notes, fr.created_at, fr.updated_at,
              COALESCE(p.name, '未知患者') as patient_name,
@@ -223,16 +251,24 @@ class MySqlFinancialDataSource implements FinancialDataSource {
       LEFT JOIN patients p ON fr.patient_id = p.id 
       ORDER BY fr.created_at DESC
     ''');
-    
-    return results.map((row) => FinancialRecord.fromMap(_convertMySqlRow(row), dataSource: 'mysql')).toList();
+
+    return results
+        .map(
+          (row) => FinancialRecord.fromMap(
+            _convertMySqlRow(row),
+            dataSource: 'mysql',
+          ),
+        )
+        .toList();
   }
 
   @override
   Future<FinancialRecord?> getFinancialRecordById(int id) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final results = await connection.query('''
+
+    final results = await connection.query(
+      '''
       SELECT fr.id, fr.patient_id, fr.total_quantity, fr.notes, fr.created_at, fr.updated_at,
              COALESCE(p.name, '未知患者') as patient_name,
              p.name_pinyin as patient_name_pinyin,
@@ -240,10 +276,12 @@ class MySqlFinancialDataSource implements FinancialDataSource {
       FROM financial_records fr 
       LEFT JOIN patients p ON fr.patient_id = p.id 
       WHERE fr.id = ?
-    ''', [id]);
-    
+    ''',
+      [id],
+    );
+
     if (results.isEmpty) return null;
-    
+
     final row = results.first;
     return FinancialRecord.fromMap(_convertMySqlRow(row), dataSource: 'mysql');
   }
@@ -252,16 +290,15 @@ class MySqlFinancialDataSource implements FinancialDataSource {
   Future<int> createFinancialRecord(FinancialRecord record) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final result = await connection.query('''
+
+    final result = await connection.query(
+      '''
       INSERT INTO financial_records (patient_id, total_quantity, notes, created_at, updated_at)
       VALUES (?, ?, ?, NOW(), NOW())
-    ''', [
-      record.patientId,
-      record.totalQuantity,
-      record.notes,
-    ]);
-    
+    ''',
+      [record.patientId, record.totalQuantity, record.notes],
+    );
+
     return result.insertId!;
   }
 
@@ -269,18 +306,16 @@ class MySqlFinancialDataSource implements FinancialDataSource {
   Future<bool> updateFinancialRecord(FinancialRecord record) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final result = await connection.query('''
+
+    final result = await connection.query(
+      '''
       UPDATE financial_records 
       SET patient_id = ?, total_quantity = ?, notes = ?, updated_at = NOW()
       WHERE id = ?
-    ''', [
-      record.patientId,
-      record.totalQuantity,
-      record.notes,
-      record.id,
-    ]);
-    
+    ''',
+      [record.patientId, record.totalQuantity, record.notes, record.id],
+    );
+
     return result.affectedRows! > 0;
   }
 
@@ -288,12 +323,18 @@ class MySqlFinancialDataSource implements FinancialDataSource {
   Future<bool> deleteFinancialRecord(int id) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
+
     // 先删除关联的财务项目记录
-    await connection.query('DELETE FROM financial_items WHERE financial_record_id = ?', [id]);
-    
+    await connection.query(
+      'DELETE FROM financial_items WHERE financial_record_id = ?',
+      [id],
+    );
+
     // 然后删除财务记录
-    final result = await connection.query('DELETE FROM financial_records WHERE id = ?', [id]);
+    final result = await connection.query(
+      'DELETE FROM financial_records WHERE id = ?',
+      [id],
+    );
     return result.affectedRows! > 0;
   }
 
@@ -301,14 +342,17 @@ class MySqlFinancialDataSource implements FinancialDataSource {
   Future<List<FinancialItem>> getFinancialItemsByRecordId(int recordId) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final results = await connection.query('''
+
+    final results = await connection.query(
+      '''
       SELECT id, financial_record_id, item_name, payment_method, quantity, item_price, processing_fee, total_price, charge_date, created_at, updated_at
       FROM financial_items 
       WHERE financial_record_id = ? 
       ORDER BY id
-    ''', [recordId]);
-    
+    ''',
+      [recordId],
+    );
+
     return results.map((row) {
       final map = _convertMySqlRow(row);
       return FinancialItem.fromMap(map);
@@ -319,21 +363,24 @@ class MySqlFinancialDataSource implements FinancialDataSource {
   Future<int> createFinancialItem(FinancialItem item) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final result = await connection.query('''
+
+    final result = await connection.query(
+      '''
       INSERT INTO financial_items (financial_record_id, item_name, payment_method, quantity, item_price, processing_fee, total_price, charge_date, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-    ''', [
-      item.financialRecordId,
-      item.itemName,
-      item.paymentMethod,
-      item.quantity,
-      item.itemPrice,
-      item.processingFee,
-      item.totalPrice,
-      DateTimeFormatter.toDbString(item.chargeDate),
-    ]);
-    
+    ''',
+      [
+        item.financialRecordId,
+        item.itemName,
+        item.paymentMethod,
+        item.quantity,
+        item.itemPrice,
+        item.processingFee,
+        item.totalPrice,
+        DateTimeFormatter.toDbString(item.chargeDate),
+      ],
+    );
+
     return result.insertId!;
   }
 
@@ -341,23 +388,26 @@ class MySqlFinancialDataSource implements FinancialDataSource {
   Future<bool> updateFinancialItem(FinancialItem item) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final result = await connection.query('''
+
+    final result = await connection.query(
+      '''
       UPDATE financial_items 
       SET financial_record_id = ?, item_name = ?, payment_method = ?, quantity = ?, item_price = ?, processing_fee = ?, total_price = ?, charge_date = ?, updated_at = NOW()
       WHERE id = ?
-    ''', [
-      item.financialRecordId,
-      item.itemName,
-      item.paymentMethod,
-      item.quantity,
-      item.itemPrice,
-      item.processingFee,
-      item.totalPrice,
-      DateTimeFormatter.toDbString(item.chargeDate),
-      item.id,
-    ]);
-    
+    ''',
+      [
+        item.financialRecordId,
+        item.itemName,
+        item.paymentMethod,
+        item.quantity,
+        item.itemPrice,
+        item.processingFee,
+        item.totalPrice,
+        DateTimeFormatter.toDbString(item.chargeDate),
+        item.id,
+      ],
+    );
+
     return result.affectedRows! > 0;
   }
 
@@ -365,8 +415,11 @@ class MySqlFinancialDataSource implements FinancialDataSource {
   Future<bool> deleteFinancialItem(int id) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final result = await connection.query('DELETE FROM financial_items WHERE id = ?', [id]);
+
+    final result = await connection.query(
+      'DELETE FROM financial_items WHERE id = ?',
+      [id],
+    );
     return result.affectedRows! > 0;
   }
 
@@ -374,26 +427,41 @@ class MySqlFinancialDataSource implements FinancialDataSource {
   Future<double> getTotalAmount() async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final results = await connection.query('SELECT SUM(total_quantity) as total FROM financial_records');
+
+    final results = await connection.query(
+      'SELECT SUM(total_quantity) as total FROM financial_records',
+    );
     final row = results.first;
     return (row['total'] as num?)?.toDouble() ?? 0.0;
   }
 
   @override
-  Future<List<FinancialRecord>> getFinancialRecordsByDateRange(DateTime startDate, DateTime endDate) async {
+  Future<List<FinancialRecord>> getFinancialRecordsByDateRange(
+    DateTime startDate,
+    DateTime endDate,
+  ) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
-    
-    final results = await connection.query('''
+
+    final results = await connection.query(
+      '''
       SELECT fr.id, fr.patient_id, fr.total_quantity, fr.notes, fr.created_at, fr.updated_at,
              COALESCE(p.name, '未知患者') as patient_name
       FROM financial_records fr 
       LEFT JOIN patients p ON fr.patient_id = p.id 
       WHERE fr.created_at BETWEEN ? AND ?
       ORDER BY fr.created_at DESC
-    ''', [startDate, endDate]);
-    
-    return results.map((row) => FinancialRecord.fromMap(_convertMySqlRow(row), dataSource: 'mysql')).toList();
+    ''',
+      [startDate, endDate],
+    );
+
+    return results
+        .map(
+          (row) => FinancialRecord.fromMap(
+            _convertMySqlRow(row),
+            dataSource: 'mysql',
+          ),
+        )
+        .toList();
   }
 }

@@ -3,7 +3,6 @@ import 'package:dentist_app/models/patient_material.dart';
 import 'package:dentist_app/models/material_image.dart';
 import 'package:dentist_app/providers/database_provider.dart';
 import 'package:dentist_app/utils/database_operation_wrapper.dart';
-import 'package:dentist_app/utils/datetime_formatter.dart';
 import 'package:dentist_app/utils/mysql_row_processor.dart';
 import 'package:dentist_app/features/patients/services/patient_image_connection_service.dart';
 import 'package:dentist_app/features/patients/services/patient_image_cache_service.dart';
@@ -11,6 +10,7 @@ import 'package:dentist_app/features/patients/services/patient_image_initializat
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
 import 'dart:async';
+import '../utils/app_logger.dart';
 
 class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
   final DatabaseProvider _databaseProvider;
@@ -53,10 +53,10 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
     super.didChangeAppLifecycleState(state);
 
     if (state == AppLifecycleState.resumed) {
-      print('PatientImageProvider: 应用从后台恢复，检查连接状态...');
+      AppLogger.info('PatientImageProvider: 应用从后台恢复，检查连接状态...');
       _checkConnectionOnResume();
     } else if (state == AppLifecycleState.paused) {
-      print('PatientImageProvider: 应用进入后台');
+      AppLogger.info('PatientImageProvider: 应用进入后台');
     }
   }
 
@@ -70,7 +70,7 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
   // 初始化数据源
   Future<void> initializeFromDatabase(dynamic dbProvider) async {
     if (initialized) {
-      print('PatientImageProvider: 已初始化，跳过重复初始化');
+      AppLogger.info('PatientImageProvider: 已初始化，跳过重复初始化');
       return;
     }
 
@@ -92,13 +92,13 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
       if (!initialized) {
         initialized = true; // 保持原有容错行为，避免反复重试
       }
-      print(
+      AppLogger.info(
         'PatientImageProvider: 初始化完成: initialized = $initialized, _dataSourceType = $_dataSourceType',
       );
       // 延迟通知以避免在build阶段调用setState
       Future.microtask(() => notifyListeners());
     } catch (e) {
-      print('PatientImageProvider初始化失败: $e');
+      AppLogger.info('PatientImageProvider初始化失败: $e');
       // 设置默认值，避免重复尝试
       _dataSourceType = 'sqlite';
       initialized = true; // 标记为已初始化，避免重复尝试
@@ -112,38 +112,33 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
     try {
       if (_dataSourceType == 'sqlite') {
         if (_sqliteDatabase == null) {
-          print('PatientImageProvider: SQLite数据库为null，跳过连接验证');
+          AppLogger.info('PatientImageProvider: SQLite数据库为null，跳过连接验证');
           return; // 不抛出异常，允许继续初始化
         }
 
         // 测试数据库连接
         await _sqliteDatabase!.rawQuery('SELECT 1');
-        print('PatientImageProvider: SQLite连接验证成功');
+        AppLogger.info('PatientImageProvider: SQLite连接验证成功');
       } else if (_dataSourceType == 'mysql') {
         if (_mysqlConnection == null) {
-          print('PatientImageProvider: MySQL连接为null，跳过连接验证');
+          AppLogger.info('PatientImageProvider: MySQL连接为null，跳过连接验证');
           return; // 不抛出异常，允许继续初始化
         }
 
         // 测试MySQL连接
         await _mysqlConnection!.query('SELECT 1');
-        print('PatientImageProvider: MySQL连接验证成功');
+        AppLogger.info('PatientImageProvider: MySQL连接验证成功');
       }
     } catch (e) {
-      print('PatientImageProvider: 数据库连接验证失败: $e');
+      AppLogger.info('PatientImageProvider: 数据库连接验证失败: $e');
       // 不抛出异常，允许继续初始化
-      print('PatientImageProvider: 连接验证失败，但允许继续初始化');
+      AppLogger.info('PatientImageProvider: 连接验证失败，但允许继续初始化');
     }
   }
 
   // 获取当前数据库类型
   String get _currentDbType {
     return _dataSourceType;
-  }
-
-  // 检查数据库是否已初始化
-  bool get _isDatabaseInitialized {
-    return initialized;
   }
 
   MySqlConnection? get _currentMysqlConnection {
@@ -159,7 +154,7 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<List<PatientMaterial>> getPatientMaterials(int patientId) async {
     // 检查缓存
     if (_cacheService.hasPatientMaterialsCache(patientId)) {
-      print(
+      AppLogger.info(
         'PatientImageProvider: 使用缓存的患者材料数据: ${_cacheService.getPatientMaterialsCache(patientId)!.length} 条',
       );
       return _cacheService.getPatientMaterialsCache(patientId)!;
@@ -178,12 +173,12 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
 
         // 检查是否已初始化
         if (!initialized) {
-          print('PatientImageProvider: 尚未初始化，尝试自动初始化...');
+          AppLogger.info('PatientImageProvider: 尚未初始化，尝试自动初始化...');
           // 尝试自动初始化
           try {
             await initializeFromDatabase(_databaseProvider);
           } catch (e) {
-            print('PatientImageProvider: 自动初始化失败: $e');
+            AppLogger.info('PatientImageProvider: 自动初始化失败: $e');
             // 如果自动初始化失败，返回空列表而不是抛出异常
             return [];
           }
@@ -192,16 +187,16 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
         List<PatientMaterial> materials = [];
 
         if (_currentDbType == 'sqlite') {
-          print('PatientImageProvider: 使用SQLite数据源');
+          AppLogger.info('PatientImageProvider: 使用SQLite数据源');
           materials = await _getPatientMaterialsFromSQLite(patientId);
         } else if (_currentDbType == 'mysql') {
-          print('PatientImageProvider: 使用MySQL数据源');
+          AppLogger.info('PatientImageProvider: 使用MySQL数据源');
           materials = await _getPatientMaterialsFromMySQL(patientId);
         } else {
           throw Exception('未知的数据库类型: $_currentDbType');
         }
 
-        print('PatientImageProvider: 成功获取患者材料: ${materials.length} 条');
+        AppLogger.info('PatientImageProvider: 成功获取患者材料: ${materials.length} 条');
 
         // 更新缓存
         _cacheService.updatePatientMaterialsCache(patientId, materials);
@@ -210,7 +205,7 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
         for (final material in materials) {
           if (material.id != null) {
             getMaterialImages(material.id!).catchError((e) {
-              print('获取材料图片失败: $e');
+              AppLogger.info('获取材料图片失败: $e');
               return <MaterialImage>[];
             });
           }
@@ -220,7 +215,7 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
         return materials;
       } catch (e) {
         String errorMsg = '获取患者材料失败: $e';
-        print('PatientImageProvider: $errorMsg');
+        AppLogger.info('PatientImageProvider: $errorMsg');
         _cacheService.setError(patientId, errorMsg);
         _cacheService.setLoadingState(patientId, false);
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
@@ -233,7 +228,7 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<List<MaterialImage>> getMaterialImages(int materialId) async {
     // 检查缓存
     if (_cacheService.hasMaterialImagesCache(materialId)) {
-      print(
+      AppLogger.info(
         'PatientImageProvider: 使用缓存的材料图片数据: ${_cacheService.getMaterialImagesCache(materialId)!.length} 张',
       );
       return _cacheService.getMaterialImagesCache(materialId)!;
@@ -245,11 +240,11 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
       try {
         // 检查是否已初始化
         if (!initialized) {
-          print('PatientImageProvider: 获取图片时未初始化，尝试自动初始化...');
+          AppLogger.info('PatientImageProvider: 获取图片时未初始化，尝试自动初始化...');
           try {
             await initializeFromDatabase(_databaseProvider);
           } catch (e) {
-            print('PatientImageProvider: 自动初始化失败: $e');
+            AppLogger.info('PatientImageProvider: 自动初始化失败: $e');
             return [];
           }
         }
@@ -264,14 +259,14 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
           throw Exception('未知的数据库类型: $_currentDbType');
         }
 
-        print('PatientImageProvider: 成功获取材料图片: ${images.length} 张');
+        AppLogger.info('PatientImageProvider: 成功获取材料图片: ${images.length} 张');
 
         // 更新缓存
         _cacheService.updateMaterialImagesCache(materialId, images);
 
         return images;
       } catch (e) {
-        print('PatientImageProvider: 获取材料图片失败: $e');
+        AppLogger.info('PatientImageProvider: 获取材料图片失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         _cacheService.updateMaterialImagesCache(materialId, []); // 缓存空结果避免重复查询
         return []; // 返回空列表而不是抛出异常
@@ -287,7 +282,7 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
       try {
         // 检查是否有缓存的图片数据
         if (_cacheService.hasCachedData(patientId)) {
-          print('PatientImageProvider: 使用缓存的图片数据');
+          AppLogger.info('PatientImageProvider: 使用缓存的图片数据');
           return _cacheService.getCachedImages(patientId);
         }
 
@@ -297,11 +292,11 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
 
         // 检查是否已初始化
         if (!initialized) {
-          print('PatientImageProvider: 获取图片时未初始化，尝试自动初始化...');
+          AppLogger.info('PatientImageProvider: 获取图片时未初始化，尝试自动初始化...');
           try {
             await initializeFromDatabase(_databaseProvider);
           } catch (e) {
-            print('PatientImageProvider: 自动初始化失败: $e');
+            AppLogger.info('PatientImageProvider: 自动初始化失败: $e');
             return [];
           }
         }
@@ -309,10 +304,10 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
         // 获取患者材料
         List<PatientMaterial> materials = [];
         if (_currentDbType == 'sqlite') {
-          print('PatientImageProvider: 使用SQLite数据源获取患者材料');
+          AppLogger.info('PatientImageProvider: 使用SQLite数据源获取患者材料');
           materials = await _getPatientMaterialsFromSQLite(patientId);
         } else if (_currentDbType == 'mysql') {
-          print('PatientImageProvider: 使用MySQL数据源获取患者材料');
+          AppLogger.info('PatientImageProvider: 使用MySQL数据源获取患者材料');
           materials = await _getPatientMaterialsFromMySQL(patientId);
         } else {
           throw Exception('未知的数据库类型: $_currentDbType');
@@ -337,19 +332,19 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
               _cacheService.updateMaterialImagesCache(material.id!, images);
               allImages.addAll(images);
             } catch (e) {
-              print('PatientImageProvider: 获取材料 ${material.id} 的图片失败: $e');
+              AppLogger.info('PatientImageProvider: 获取材料 ${material.id} 的图片失败: $e');
             }
           }
         }
 
-        print('PatientImageProvider: 获取患者所有图片完成: ${allImages.length} 张');
+        AppLogger.info('PatientImageProvider: 获取患者所有图片完成: ${allImages.length} 张');
 
         // 清除加载状态（只清除一次）
         _cacheService.setLoadingState(patientId, false);
 
         return allImages;
       } catch (e) {
-        print('PatientImageProvider: 获取患者所有图片失败: $e');
+        AppLogger.info('PatientImageProvider: 获取患者所有图片失败: $e');
         // 如果是连接错误，尝试重新初始化
         if (e.toString().contains('database') || e.toString().contains('连接')) {
           initialized = false; // 重置初始化状态
@@ -367,26 +362,26 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
     int patientId,
   ) async {
     try {
-      print('PatientImageProvider: 开始获取SQLite数据库...');
+      AppLogger.info('PatientImageProvider: 开始获取SQLite数据库...');
 
       if (!initialized) {
-        print('PatientImageProvider: SQLite数据库尚未初始化，尝试自动初始化...');
+        AppLogger.info('PatientImageProvider: SQLite数据库尚未初始化，尝试自动初始化...');
         try {
           await initializeFromDatabase(_databaseProvider);
         } catch (e) {
-          print('PatientImageProvider: 自动初始化失败: $e');
+          AppLogger.info('PatientImageProvider: 自动初始化失败: $e');
           return [];
         }
       }
 
       final db = _sqliteDatabase;
-      print('PatientImageProvider: SQLite数据库状态: $db');
+      AppLogger.info('PatientImageProvider: SQLite数据库状态: $db');
 
       if (db == null) {
         throw Exception('SQLite数据库不可用 - 数据库对象为null');
       }
 
-      print('PatientImageProvider: 开始执行SQLite查询，患者ID: $patientId');
+      AppLogger.info('PatientImageProvider: 开始执行SQLite查询，患者ID: $patientId');
 
       try {
         final maps = await db.query(
@@ -396,16 +391,16 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
           orderBy: 'created_at DESC',
         );
 
-        print('PatientImageProvider: SQLite查询成功，结果行数: ${maps.length}');
+        AppLogger.info('PatientImageProvider: SQLite查询成功，结果行数: ${maps.length}');
 
         return maps.map((map) => PatientMaterial.fromMap(map)).toList();
       } catch (tableError) {
-        print('PatientImageProvider: SQLite查询表不存在，尝试创建表: $tableError');
+        AppLogger.info('PatientImageProvider: SQLite查询表不存在，尝试创建表: $tableError');
         // 如果表不存在，返回空列表而不是抛出异常
         return [];
       }
     } catch (e) {
-      print('PatientImageProvider: SQLite查询患者材料失败: $e');
+      AppLogger.info('PatientImageProvider: SQLite查询患者材料失败: $e');
       return []; // 返回空列表而不是抛出异常
     }
   }
@@ -415,14 +410,14 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
     int patientId,
   ) async {
     try {
-      print('PatientImageProvider: 开始获取MySQL连接...');
+      AppLogger.info('PatientImageProvider: 开始获取MySQL连接...');
 
       if (!initialized) {
-        print('PatientImageProvider: MySQL数据库尚未初始化，尝试自动初始化...');
+        AppLogger.info('PatientImageProvider: MySQL数据库尚未初始化，尝试自动初始化...');
         try {
           await initializeFromDatabase(_databaseProvider);
         } catch (e) {
-          print('PatientImageProvider: 自动初始化失败: $e');
+          AppLogger.info('PatientImageProvider: 自动初始化失败: $e');
           return [];
         }
       }
@@ -438,20 +433,20 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
 
       final conn = _currentMysqlConnection;
-      print('PatientImageProvider: MySQL连接状态: $conn');
+      AppLogger.info('PatientImageProvider: MySQL连接状态: $conn');
 
       if (conn == null) {
         throw Exception('MySQL连接不可用 - 连接对象为null');
       }
 
-      print('PatientImageProvider: 开始执行MySQL查询，患者ID: $patientId');
+      AppLogger.info('PatientImageProvider: 开始执行MySQL查询，患者ID: $patientId');
 
       final results = await conn.query(
         'SELECT * FROM patient_materials WHERE patient_id = ? ORDER BY created_at DESC',
         [patientId],
       );
 
-      print('PatientImageProvider: MySQL查询成功，结果行数: ${results.length}');
+      AppLogger.info('PatientImageProvider: MySQL查询成功，结果行数: ${results.length}');
 
       return results
           .map(
@@ -463,7 +458,7 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
       if (e.toString().contains('SocketException') ||
           e.toString().contains('Cannot write to socket') ||
           e.toString().contains('Connection reset')) {
-        print('PatientImageProvider: 检测到连接错误，尝试重连: $e');
+        AppLogger.info('PatientImageProvider: 检测到连接错误，尝试重连: $e');
 
         // 尝试重连
         final reconnected = await _connectionService.autoReconnect();
@@ -475,7 +470,7 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
         }
       }
 
-      print('PatientImageProvider: MySQL查询患者材料失败: $e');
+      AppLogger.info('PatientImageProvider: MySQL查询患者材料失败: $e');
       rethrow;
     }
   }
@@ -485,26 +480,26 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
     int materialId,
   ) async {
     try {
-      print('PatientImageProvider: 开始获取SQLite数据库...');
+      AppLogger.info('PatientImageProvider: 开始获取SQLite数据库...');
 
       if (!initialized) {
-        print('PatientImageProvider: SQLite数据库尚未初始化，尝试自动初始化...');
+        AppLogger.info('PatientImageProvider: SQLite数据库尚未初始化，尝试自动初始化...');
         try {
           await initializeFromDatabase(_databaseProvider);
         } catch (e) {
-          print('PatientImageProvider: 自动初始化失败: $e');
+          AppLogger.info('PatientImageProvider: 自动初始化失败: $e');
           return [];
         }
       }
 
       final db = _sqliteDatabase;
-      print('PatientImageProvider: SQLite数据库状态: $db');
+      AppLogger.info('PatientImageProvider: SQLite数据库状态: $db');
 
       if (db == null) {
         throw Exception('SQLite数据库不可用 - 数据库对象为null');
       }
 
-      print('PatientImageProvider: 开始执行SQLite查询，材料ID: $materialId');
+      AppLogger.info('PatientImageProvider: 开始执行SQLite查询，材料ID: $materialId');
 
       try {
         final maps = await db.query(
@@ -514,15 +509,15 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
           orderBy: 'created_at DESC',
         );
 
-        print('PatientImageProvider: SQLite查询成功，结果行数: ${maps.length}');
+        AppLogger.info('PatientImageProvider: SQLite查询成功，结果行数: ${maps.length}');
 
         return maps.map((map) => MaterialImage.fromMap(map)).toList();
       } catch (tableError) {
-        print('PatientImageProvider: SQLite查询表不存在: $tableError');
+        AppLogger.info('PatientImageProvider: SQLite查询表不存在: $tableError');
         return []; // 表不存在时返回空列表
       }
     } catch (e) {
-      print('PatientImageProvider: SQLite查询材料图片失败: $e');
+      AppLogger.info('PatientImageProvider: SQLite查询材料图片失败: $e');
       return []; // 返回空列表而不是抛出异常
     }
   }
@@ -532,14 +527,14 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
     int materialId,
   ) async {
     try {
-      print('PatientImageProvider: 开始获取MySQL连接...');
+      AppLogger.info('PatientImageProvider: 开始获取MySQL连接...');
 
       if (!initialized) {
-        print('PatientImageProvider: MySQL数据库尚未初始化，尝试自动初始化...');
+        AppLogger.info('PatientImageProvider: MySQL数据库尚未初始化，尝试自动初始化...');
         try {
           await initializeFromDatabase(_databaseProvider);
         } catch (e) {
-          print('PatientImageProvider: 自动初始化失败: $e');
+          AppLogger.info('PatientImageProvider: 自动初始化失败: $e');
           return [];
         }
       }
@@ -555,20 +550,20 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
 
       final conn = _currentMysqlConnection;
-      print('PatientImageProvider: MySQL连接状态: $conn');
+      AppLogger.info('PatientImageProvider: MySQL连接状态: $conn');
 
       if (conn == null) {
         throw Exception('MySQL连接不可用 - 连接对象为null');
       }
 
-      print('PatientImageProvider: 开始执行MySQL查询，材料ID: $materialId');
+      AppLogger.info('PatientImageProvider: 开始执行MySQL查询，材料ID: $materialId');
 
       final results = await conn.query(
         'SELECT * FROM material_images WHERE material_id = ? ORDER BY created_at DESC',
         [materialId],
       );
 
-      print('PatientImageProvider: MySQL查询成功，结果行数: ${results.length}');
+      AppLogger.info('PatientImageProvider: MySQL查询成功，结果行数: ${results.length}');
 
       return results
           .map(
@@ -580,7 +575,7 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
       if (e.toString().contains('SocketException') ||
           e.toString().contains('Cannot write to socket') ||
           e.toString().contains('Connection reset')) {
-        print('PatientImageProvider: 检测到连接错误，尝试重连: $e');
+        AppLogger.info('PatientImageProvider: 检测到连接错误，尝试重连: $e');
 
         // 尝试重连
         final reconnected = await _connectionService.autoReconnect();
@@ -592,7 +587,7 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
         }
       }
 
-      print('PatientImageProvider: MySQL查询材料图片失败: $e');
+      AppLogger.info('PatientImageProvider: MySQL查询材料图片失败: $e');
       rethrow;
     }
   }

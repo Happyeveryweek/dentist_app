@@ -16,9 +16,10 @@ class DatabaseSettingsManager extends ChangeNotifier {
   void setDbConfig(DatabaseConfig config) {
     _dbConfig = config;
     _dbType = config.dbType;
-    _dbPath = config.dbType == 'sqlite'
-        ? config.sqlite.path
-        : '${config.mysql.host}:${config.mysql.port}/${config.mysql.database}';
+    _dbPath =
+        config.dbType == 'sqlite'
+            ? config.sqlite.path
+            : '${config.mysql.host}:${config.mysql.port}/${config.mysql.database}';
     notifyListeners();
   }
 

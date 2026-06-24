@@ -1,5 +1,5 @@
-import 'package:intl/intl.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/app_logger.dart';
 
 // 采购记录模型
 class PurchaseRecord {
@@ -23,15 +23,18 @@ class PurchaseRecord {
     this.doctor,
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : createdAt = createdAt ?? DateTimeFormatter.nowLocal(),
-        updatedAt = updatedAt ?? DateTimeFormatter.nowLocal();
+  }) : createdAt = createdAt ?? DateTimeFormatter.nowLocal(),
+       updatedAt = updatedAt ?? DateTimeFormatter.nowLocal();
 
   // 从Map构造PurchaseRecord对象
-  factory PurchaseRecord.fromMap(Map<String, dynamic> map, {String dataSource = 'sqlite'}) {
+  factory PurchaseRecord.fromMap(
+    Map<String, dynamic> map, {
+    String dataSource = 'sqlite',
+  }) {
     DateTime created = DateTimeFormatter.nowLocal();
     DateTime updated = DateTimeFormatter.nowLocal();
     DateTime purchaseDate = DateTimeFormatter.nowLocal();
-    
+
     // 使用统一的时间解析方法，确保本地时间
     try {
       if (map['created_at'] is DateTime) {
@@ -41,7 +44,7 @@ class PurchaseRecord {
         created = DateTimeFormatter.fromDbString(map['created_at']);
       }
     } catch (e) {
-      print('created_at解析失败: ${map['created_at']}, 使用当前时间');
+      AppLogger.info('created_at解析失败: ${map['created_at']}, 使用当前时间');
       created = DateTimeFormatter.nowLocal();
     }
 
@@ -53,7 +56,7 @@ class PurchaseRecord {
         updated = DateTimeFormatter.fromDbString(map['updated_at']);
       }
     } catch (e) {
-      print('updated_at解析失败: ${map['updated_at']}, 使用当前时间');
+      AppLogger.info('updated_at解析失败: ${map['updated_at']}, 使用当前时间');
       updated = DateTimeFormatter.nowLocal();
     }
 
@@ -65,7 +68,7 @@ class PurchaseRecord {
         purchaseDate = DateTimeFormatter.fromDbString(map['purchase_date']);
       }
     } catch (e) {
-      print('purchase_date解析失败: ${map['purchase_date']}, 使用当前时间');
+      AppLogger.info('purchase_date解析失败: ${map['purchase_date']}, 使用当前时间');
       purchaseDate = DateTimeFormatter.nowLocal();
     }
 

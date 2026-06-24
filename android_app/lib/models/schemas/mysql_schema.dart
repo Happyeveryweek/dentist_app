@@ -16,7 +16,8 @@ class MySQLPatientsTableSchema implements TableSchema {
     'age': 'int(11) DEFAULT NULL',
     'gender': 'varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL',
     'phone': 'varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'identification_number': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+    'identification_number':
+        'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
     'doctor': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
     'address': 'varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
     'address_pinyin': 'varchar(400) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
@@ -25,7 +26,8 @@ class MySQLPatientsTableSchema implements TableSchema {
     'treatment_items': 'mediumtext COLLATE utf8mb4_unicode_ci',
     'total_cost': 'float DEFAULT NULL',
     'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+    'updated_at':
+        'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
     'medical_history': 'text COLLATE utf8mb4_unicode_ci',
   };
 
@@ -44,7 +46,7 @@ class MySQLPatientsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -62,12 +64,14 @@ class MySQLAppointmentsTableSchema implements TableSchema {
     'patient_id': 'int(11) NOT NULL',
     'appointment_date': 'datetime NOT NULL',
     'appointment_time': 'time NOT NULL',
-    'status': 'varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT \'scheduled\'',
+    'status':
+        'varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT \'scheduled\'',
     'treatment_type': 'text COLLATE utf8mb4_unicode_ci',
     'notes': 'text COLLATE utf8mb4_unicode_ci',
     'cost': 'float DEFAULT NULL',
     'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+    'updated_at':
+        'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
   };
 
   @override
@@ -87,9 +91,9 @@ class MySQLAppointmentsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     final constraints = foreignKeyConstraints.join(',\n  ');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns,
@@ -108,7 +112,8 @@ class MySQLFinancialRecordsTableSchema implements TableSchema {
     'patient_id': 'int(11) NOT NULL',
     'notes': 'text',
     'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+    'updated_at':
+        'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
     'total_quantity': 'int(11) NOT NULL DEFAULT 0',
   };
 
@@ -127,9 +132,9 @@ class MySQLFinancialRecordsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     final constraints = foreignKeyConstraints.join(',\n  ');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns,
@@ -153,7 +158,8 @@ class MySQLFinancialItemsTableSchema implements TableSchema {
     'total_price': 'decimal(10,2) NOT NULL',
     'charge_date': 'date NOT NULL',
     'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+    'updated_at':
+        'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
     'processing_fee': 'decimal(10,2) NOT NULL DEFAULT 0.00',
   };
 
@@ -172,9 +178,9 @@ class MySQLFinancialItemsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     final constraints = foreignKeyConstraints.join(',\n  ');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns,
@@ -192,7 +198,8 @@ class MySQLMaterialsTableSchema implements TableSchema {
     'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
     'material_name': 'varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL',
     'material_code': 'varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'material_type': 'varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT \'其他\'',
+    'material_type':
+        'varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT \'其他\'',
     'specification': 'text COLLATE utf8mb4_unicode_ci',
     'unit': 'varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT \'个\'',
     'default_price': 'decimal(10,2) NOT NULL DEFAULT 0.00',
@@ -201,7 +208,8 @@ class MySQLMaterialsTableSchema implements TableSchema {
     'supplier': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
     'description': 'text COLLATE utf8mb4_unicode_ci',
     'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+    'updated_at':
+        'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
   };
 
   @override
@@ -219,7 +227,7 @@ class MySQLMaterialsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -240,7 +248,8 @@ class MySQLUsersTableSchema implements TableSchema {
     'password': 'text NOT NULL',
     'role': 'varchar(20) NOT NULL',
     'created_at': 'datetime NOT NULL',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+    'updated_at':
+        'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
     'avatar': 'varchar(50) DEFAULT \'avatar_1\'',
     'image_data': 'longblob',
     'module_permissions': 'JSON',
@@ -260,7 +269,7 @@ class MySQLUsersTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -302,9 +311,9 @@ class MySQLMaterialImagesTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     final constraints = foreignKeyConstraints.join(',\n  ');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns,
@@ -323,7 +332,8 @@ class MySQLPatientMaterialsTableSchema implements TableSchema {
     'patient_id': 'int(11) NOT NULL',
     'description': 'text NOT NULL',
     'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+    'updated_at':
+        'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
   };
 
   @override
@@ -341,9 +351,9 @@ class MySQLPatientMaterialsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     final constraints = foreignKeyConstraints.join(',\n  ');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns,
@@ -366,7 +376,8 @@ class MySQLPurchaseRecordsTableSchema implements TableSchema {
     'notes': 'text',
     'doctor': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
     'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+    'updated_at':
+        'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
   };
 
   @override
@@ -380,7 +391,7 @@ class MySQLPurchaseRecordsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -419,7 +430,7 @@ class MySQLPurchaseItemsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -448,9 +459,11 @@ class MySQLPatientMedicalRecordsTableSchema implements TableSchema {
     'notes': 'text COLLATE utf8mb4_unicode_ci',
     'doctor_name': 'varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
     'created_by_doctor': 'varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'selected_dental_condition_date': 'varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+    'selected_dental_condition_date':
+        'varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
     'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+    'updated_at':
+        'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
   };
 
   @override
@@ -471,9 +484,9 @@ class MySQLPatientMedicalRecordsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     final constraints = foreignKeyConstraints.join(',\n  ');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns,
@@ -496,7 +509,8 @@ class MySQLMedicalRecordTemplatesTableSchema implements TableSchema {
     'is_active': 'tinyint(1) DEFAULT 1',
     'sort_order': 'int(11) DEFAULT 0',
     'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+    'updated_at':
+        'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
   };
 
   @override
@@ -515,11 +529,10 @@ class MySQLMedicalRecordTemplatesTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC''';
   }
 }
-

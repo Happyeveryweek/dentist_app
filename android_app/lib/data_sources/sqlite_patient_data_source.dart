@@ -1,10 +1,9 @@
 import 'package:sqflite/sqflite.dart';
-import 'dart:typed_data';
 
 import '../models/database_models.dart';
 import '../utils/pinyin_util.dart';
-import '../utils/datetime_formatter.dart';
 import 'patient_data_source.dart';
+import '../utils/app_logger.dart';
 
 class SqlitePatientDataSource implements PatientDataSource {
   final Database _database;
@@ -79,7 +78,7 @@ class SqlitePatientDataSource implements PatientDataSource {
     final lowercaseQuery = trimmed.toLowerCase();
     final noSpaceQuery = lowercaseQuery.replaceAll(' ', '');
 
-    final where = '''
+    const where = '''
       LOWER(name) LIKE ? OR
       phone LIKE ? OR
       LOWER(address) LIKE ? OR
@@ -105,14 +104,18 @@ class SqlitePatientDataSource implements PatientDataSource {
       '%$lowercaseQuery%',
     ];
 
-    final result = await _database.query('patients', where: where, whereArgs: whereArgs);
+    final result = await _database.query(
+      'patients',
+      where: where,
+      whereArgs: whereArgs,
+    );
 
     final patients = <Patient>[];
     for (var map in result) {
       try {
         patients.add(Patient.fromMap(map));
       } catch (e) {
-        print('转换患者对象错误: $e, 数据: $map');
+        AppLogger.info('转换患者对象错误: $e, 数据: $map');
       }
     }
 
@@ -128,7 +131,9 @@ class SqlitePatientDataSource implements PatientDataSource {
 
   @override
   Future<int> getPatientsCount() async {
-    final result = await _database.rawQuery('SELECT COUNT(*) as count FROM patients');
+    final result = await _database.rawQuery(
+      'SELECT COUNT(*) as count FROM patients',
+    );
     final row = result.first;
     return (row['count'] as int?) ?? 0;
   }
@@ -149,7 +154,8 @@ class SqlitePatientDataSource implements PatientDataSource {
           orderBy = 'age ${ascending == true ? 'ASC' : 'DESC'}';
           break;
         case 'medical_record':
-          orderBy = 'medical_record_number ${ascending == true ? 'ASC' : 'DESC'}';
+          orderBy =
+              'medical_record_number ${ascending == true ? 'ASC' : 'DESC'}';
           break;
         case 'updated':
           orderBy = 'updated_at ${ascending == true ? 'ASC' : 'DESC'}';
@@ -162,11 +168,14 @@ class SqlitePatientDataSource implements PatientDataSource {
       }
     }
 
-    final result = await _database.rawQuery('''
+    final result = await _database.rawQuery(
+      '''
       SELECT * FROM patients
       ORDER BY $orderBy
       LIMIT ? OFFSET ?
-    ''', [pageSize, offset]);
+    ''',
+      [pageSize, offset],
+    );
     return result.map((e) => Patient.fromMap(e)).toList();
   }
 }

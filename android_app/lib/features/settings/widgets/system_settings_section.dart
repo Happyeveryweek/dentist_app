@@ -9,10 +9,7 @@ import 'package:dentist_app/providers/app_state.dart';
 class SystemSettingsSection extends StatelessWidget {
   final VoidCallback onLogout;
 
-  const SystemSettingsSection({
-    super.key,
-    required this.onLogout,
-  });
+  const SystemSettingsSection({super.key, required this.onLogout});
 
   @override
   Widget build(BuildContext context) {
@@ -52,9 +49,9 @@ class SystemSettingsSection extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // 账户管理卡片
               Card(
                 elevation: 2,
@@ -74,7 +71,7 @@ class SystemSettingsSection extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // 当前用户信息
                       Consumer<AppState>(
                         builder: (context, appState, _) {
@@ -93,8 +90,9 @@ class SystemSettingsSection extends StatelessWidget {
                                     radius: 20,
                                     backgroundColor: AppTheme.primaryColor,
                                     child: Text(
-                                      currentUser.username.isNotEmpty 
-                                          ? currentUser.username[0].toUpperCase()
+                                      currentUser.username.isNotEmpty
+                                          ? currentUser.username[0]
+                                              .toUpperCase()
                                           : 'U',
                                       style: const TextStyle(
                                         color: Colors.white,
@@ -105,7 +103,8 @@ class SystemSettingsSection extends StatelessWidget {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           currentUser.username,
@@ -131,9 +130,9 @@ class SystemSettingsSection extends StatelessWidget {
                           return const SizedBox.shrink();
                         },
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       // 退出登录按钮
                       SizedBox(
                         width: double.infinity,

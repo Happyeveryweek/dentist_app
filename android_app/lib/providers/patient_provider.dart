@@ -5,15 +5,13 @@ import 'package:sqflite/sqflite.dart';
 import '../utils/database_operation_wrapper.dart';
 import '../data_sources/patient_data_source.dart'
     hide SqlitePatientDataSource, MySqlPatientDataSource;
-import '../data_sources/sqlite_patient_data_source.dart';
-import '../data_sources/mysql_patient_data_source.dart';
-import 'package:mysql1/mysql1.dart';
 import 'dart:async';
 import 'user_provider.dart';
 import '../features/patients/services/patient_initialization_service.dart';
 import '../features/patients/services/patient_export_service.dart';
 import '../features/patients/helpers/patient_cache_helper.dart';
 import '../features/patients/services/patient_deletion_service.dart';
+import '../utils/app_logger.dart';
 
 // 患者管理提供者，专门处理患者相关的状态管理和流程编排
 class PatientProvider extends ChangeNotifier {
@@ -33,9 +31,6 @@ class PatientProvider extends ChangeNotifier {
 
   // 初始化标志
   bool initialized = false;
-
-  // UserProvider引用（用于权限检查）
-  UserProvider? _userProvider;
 
   // 设置数据源类型
   void setDataSourceType(String dataSourceType) {
@@ -67,10 +62,7 @@ class PatientProvider extends ChangeNotifier {
     if (initialized) return;
 
     try {
-      print('PatientProvider 开始初始化...');
-
-      // 保存UserProvider引用
-      _userProvider = userProvider;
+      AppLogger.info('PatientProvider 开始初始化...');
 
       // 使用初始化服务
       final success = await _initService.initializeFromDatabase(dbProvider);
@@ -82,37 +74,19 @@ class PatientProvider extends ChangeNotifier {
         _dbWrapper = DatabaseOperationWrapper(dbProvider);
 
         initialized = true;
-        print('PatientProvider 初始化完成');
+        AppLogger.info('PatientProvider 初始化完成');
       } else {
         initialized = false;
       }
     } catch (e) {
-      print('PatientProvider 初始化失败: $e');
+      AppLogger.info('PatientProvider 初始化失败: $e');
       initialized = false;
     }
   }
 
   // 设置UserProvider引用
   void setUserProvider(UserProvider userProvider) {
-    _userProvider = userProvider;
-  }
-
-  // 获取医生过滤条件
-  String? _getDoctorFilter() {
-    if (_userProvider?.currentUser == null) {
-      return null;
-    }
-
-    return _userProvider!.buildDoctorFilter(_userProvider!.currentUser);
-  }
-
-  // 检查是否需要数据过滤
-  bool _shouldFilterByDoctor() {
-    if (_userProvider?.currentUser == null) {
-      return false;
-    }
-
-    return _userProvider!.shouldFilterByDoctor(_userProvider!.currentUser);
+    // 保留方法签名以兼容外部调用
   }
 
   // 获取数据源类型
@@ -160,21 +134,12 @@ class PatientProvider extends ChangeNotifier {
         _cacheHelper.setCachedPatients(patients); // 缓存数据
         return patients; // Android端：返回所有数据，不过滤
       } catch (e) {
-        print('获取所有患者失败: $e');
-        print('错误堆栈: ${StackTrace.current}');
+        AppLogger.info('获取所有患者失败: $e');
+        AppLogger.info('错误堆栈: ${StackTrace.current}');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return [];
       }
     });
-  }
-
-  // Android端不需要数据查看过滤 - 所有用户都能查看所有数据
-  // 权限控制只在编辑和删除操作时生效
-  List<Patient> _applyDoctorFilter(List<Patient> patients) {
-    final currentUser = _userProvider?.currentUser;
-
-    // Android端：所有用户都能查看所有数据，权限控制只在编辑/删除时生效
-    return patients;
   }
 
   // 获取患者总数（Android端不过滤查看权限）
@@ -187,7 +152,7 @@ class PatientProvider extends ChangeNotifier {
         final count = await _currentDataSource.getPatientsCount();
         return count;
       } catch (e) {
-        print('获取患者总数错误: $e');
+        AppLogger.info('获取患者总数错误: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return 0;
       }
@@ -197,7 +162,7 @@ class PatientProvider extends ChangeNotifier {
   // 获取最大病历号
   Future<int> getMaxMedicalRecordNumber() async {
     try {
-      print('正在获取最大病历号...');
+      AppLogger.info('正在获取最大病历号...');
       if (_initService.dataSourceType == 'sqlite') {
         final db = _initService.sqliteDataSource?.database;
         if (db != null) {
@@ -205,23 +170,23 @@ class PatientProvider extends ChangeNotifier {
             'SELECT MAX(medical_record_number) as max_id FROM patients',
           );
           final maxId = Sqflite.firstIntValue(result) ?? 0;
-          print('SQLite数据库中的最大病历号: $maxId');
+          AppLogger.info('SQLite数据库中的最大病历号: $maxId');
           return maxId;
         }
       } else if (_initService.dataSourceType == 'mysql') {
         final conn = _initService.mysqlDataSource;
         if (conn != null) {
           // 这里需要从 MySQL 数据源获取连接，暂时跳过
-          print('MySQL 数据源暂不支持获取最大病历号');
+          AppLogger.info('MySQL 数据源暂不支持获取最大病历号');
           return 0;
         }
       }
 
       // 如果无法获取数据，默认返回0，新病历号为1
-      print('无法获取最大病历号，使用默认值0');
+      AppLogger.info('无法获取最大病历号，使用默认值0');
       return 0;
     } catch (e) {
-      print('获取最大病历号错误: $e');
+      AppLogger.info('获取最大病历号错误: $e');
       return 0;
     }
   }
@@ -248,7 +213,7 @@ class PatientProvider extends ChangeNotifier {
         // Android端：不过滤查看权限，返回所有数据
         return patients;
       } catch (e) {
-        print('分页获取患者错误: $e');
+        AppLogger.info('分页获取患者错误: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return [];
       }
@@ -271,7 +236,7 @@ class PatientProvider extends ChangeNotifier {
 
         return patients;
       } catch (e) {
-        print('搜索患者错误: $e');
+        AppLogger.info('搜索患者错误: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return [];
       }
@@ -295,11 +260,11 @@ class PatientProvider extends ChangeNotifier {
         }
       } else if (_initService.dataSourceType == 'mysql') {
         // MySQL 暂不支持
-        print('MySQL 数据源暂不支持获取最后一位患者');
+        AppLogger.info('MySQL 数据源暂不支持获取最后一位患者');
       }
       return null;
     } catch (e) {
-      print('获取最后一位患者错误: $e');
+      AppLogger.info('获取最后一位患者错误: $e');
       return null;
     }
   }
@@ -313,7 +278,7 @@ class PatientProvider extends ChangeNotifier {
         // 使用数据源模式（统一接口）
         return await _currentDataSource.getPatientById(id);
       } catch (e) {
-        print('根据ID获取患者失败: $e');
+        AppLogger.info('根据ID获取患者失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return null;
       }
@@ -334,7 +299,7 @@ class PatientProvider extends ChangeNotifier {
         _safeNotifyListeners();
         return result;
       } catch (e) {
-        print('添加患者失败: $e');
+        AppLogger.info('添加患者失败: $e');
         rethrow;
       }
     });
@@ -346,7 +311,7 @@ class PatientProvider extends ChangeNotifier {
 
     return await _dbWrapper!.wrapOperation('updatePatient', () async {
       try {
-        print('开始更新患者数据: ${patient.toMap()}');
+        AppLogger.info('开始更新患者数据: ${patient.toMap()}');
 
         // 生成更新时间
         patient.updatedAt = DateTime.now();
@@ -362,7 +327,7 @@ class PatientProvider extends ChangeNotifier {
 
         return success;
       } catch (e) {
-        print('更新患者错误: $e');
+        AppLogger.info('更新患者错误: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
         return false;
       }

@@ -4,6 +4,7 @@ import '../../../utils/database_operation_wrapper.dart';
 import 'financial_data_source_service.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
+import '../../../utils/app_logger.dart';
 
 /// 财务项目 CRUD 服务
 /// 职责：管理财务项目的增删改查操作
@@ -59,7 +60,7 @@ class FinancialItemService {
           // 使用数据源模式（统一接口）
           return await _currentDataSource.getFinancialItemsByRecordId(recordId);
         } catch (e) {
-          print('获取财务项目明细失败: $e');
+          AppLogger.info('获取财务项目明细失败: $e');
           rethrow;
         }
       },
@@ -84,7 +85,7 @@ class FinancialItemService {
 
         return id;
       } catch (e) {
-        print('添加财务项目明细失败: $e');
+        AppLogger.info('添加财务项目明细失败: $e');
         rethrow;
       }
     });
@@ -113,7 +114,7 @@ class FinancialItemService {
 
         return count;
       } catch (e) {
-        print('更新财务项目明细失败: $e');
+        AppLogger.info('更新财务项目明细失败: $e');
         rethrow;
       }
     });
@@ -138,7 +139,7 @@ class FinancialItemService {
 
         return count;
       } catch (e) {
-        print('删除财务项目明细失败: $e');
+        AppLogger.info('删除财务项目明细失败: $e');
         rethrow;
       }
     });
