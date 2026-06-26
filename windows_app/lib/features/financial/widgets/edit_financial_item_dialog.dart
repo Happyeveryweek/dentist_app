@@ -5,11 +5,11 @@ import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../../../models/patient.dart';
 import '../../../providers/financial_provider.dart';
-import '../../../providers/settings_provider.dart';
 import '../../../widgets/modern_date_picker.dart';
-import '../../../widgets/success_toast.dart'
-    show AppToastManager;
+import '../../../widgets/success_toast.dart' show AppToastManager;
 import '../helpers/amount_input_formatter.dart';
+import '../../../utils/log_manager.dart';
+
 // 编辑财务明细项对话框
 class EditFinancialItemDialog extends StatefulWidget {
   final FinancialItem financialItem;
@@ -24,16 +24,21 @@ class EditFinancialItemDialog extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<EditFinancialItemDialog> createState() => _EditFinancialItemDialogState();
+  State<EditFinancialItemDialog> createState() =>
+      _EditFinancialItemDialogState();
 }
 
 class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
   // 表单控制器
   final TextEditingController _chargeDateController = TextEditingController();
-  final TextEditingController _treatmentItemsController = TextEditingController();
-  final TextEditingController _receivableAmountController = TextEditingController();
-  final TextEditingController _processingFeeController = TextEditingController();
-  final TextEditingController _collectedAmountController = TextEditingController();
+  final TextEditingController _treatmentItemsController =
+      TextEditingController();
+  final TextEditingController _receivableAmountController =
+      TextEditingController();
+  final TextEditingController _processingFeeController =
+      TextEditingController();
+  final TextEditingController _collectedAmountController =
+      TextEditingController();
   final TextEditingController _notesController = TextEditingController();
 
   bool _isLoading = false;
@@ -57,18 +62,19 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
 
   // 初始化表单数据
   void _initializeForm() {
-    _chargeDateController.text = DateFormat('yyyy-MM-dd').format(widget.financialItem.chargeDate);
+    _chargeDateController.text =
+        DateFormat('yyyy-MM-dd').format(widget.financialItem.chargeDate);
     _treatmentItemsController.text = widget.financialItem.itemName;
-    _receivableAmountController.text = widget.financialItem.itemPrice % 1 == 0 
-        ? widget.financialItem.itemPrice.toInt().toString() 
+    _receivableAmountController.text = widget.financialItem.itemPrice % 1 == 0
+        ? widget.financialItem.itemPrice.toInt().toString()
         : widget.financialItem.itemPrice.toString();
-    _processingFeeController.text = widget.financialItem.processingFee % 1 == 0 
-        ? widget.financialItem.processingFee.toInt().toString() 
+    _processingFeeController.text = widget.financialItem.processingFee % 1 == 0
+        ? widget.financialItem.processingFee.toInt().toString()
         : widget.financialItem.processingFee.toString();
-    _collectedAmountController.text = widget.financialItem.totalPrice % 1 == 0 
-        ? widget.financialItem.totalPrice.toInt().toString() 
+    _collectedAmountController.text = widget.financialItem.totalPrice % 1 == 0
+        ? widget.financialItem.totalPrice.toInt().toString()
         : widget.financialItem.totalPrice.toString();
-    
+
     // 获取备注信息（从关联的FinancialRecord中获取），仅在需要显示备注时加载
     if (widget.showNotesField) {
       _loadNotesFromRecord();
@@ -78,13 +84,18 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
   // 从关联的FinancialRecord中加载备注信息
   Future<void> _loadNotesFromRecord() async {
     try {
-      final financialProvider = Provider.of<FinancialProvider>(context, listen: false);
-      final record = await financialProvider.getFinancialRecordById(widget.financialItem.financialRecordId);
-      if (record != null && record.notes != null && record.notes!.isNotEmpty) {
-        _notesController.text = record.notes!;
+      final financialProvider =
+          Provider.of<FinancialProvider>(context, listen: false);
+      final record = await financialProvider
+          .getFinancialRecordById(widget.financialItem.financialRecordId);
+      if (record != null) {
+        final notes = record.notes;
+        if (notes != null && notes.isNotEmpty) {
+          _notesController.text = notes;
+        }
       }
     } catch (e) {
-      print('加载备注信息失败: $e');
+      LogManager.e('EditFinancialItemDialog', '加载备注信息失败', error: e);
     }
   }
 
@@ -98,7 +109,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.orange[600]!, Colors.red[600]!],
+            colors: [Colors.orange.shade600, Colors.red.shade600],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -112,7 +123,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(
@@ -135,7 +146,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
           ],
         ),
       ),
-      content: Container(
+      content: SizedBox(
         width: 600,
         height: 500,
         child: SingleChildScrollView(
@@ -168,7 +179,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
       decoration: BoxDecoration(
         color: Colors.blue[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!, width: 1),
+        border: Border.all(color: Colors.blue.shade200, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,10 +195,10 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
               Text(
                 '患者信息',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.blue[700],
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
               ),
             ],
           ),
@@ -199,7 +210,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                   icon: Icons.person,
                   label: '患者姓名',
                   value: widget.patient.name,
-                  color: Colors.blue[600]!,
+                  color: Colors.blue.shade600,
                 ),
               ),
               const SizedBox(width: 8),
@@ -207,8 +218,9 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                 child: _buildInfoChip(
                   icon: Icons.badge,
                   label: '病历号',
-                  value: widget.patient.medical_record_number?.toString() ?? '未设置',
-                  color: Colors.orange[600]!,
+                  value:
+                      widget.patient.medicalRecordNumber?.toString() ?? '未设置',
+                  color: Colors.orange.shade600,
                 ),
               ),
             ],
@@ -228,9 +240,9 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,10 +254,10 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11,
-                ),
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
               ),
             ],
           ),
@@ -253,10 +265,10 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
           ),
         ],
       ),
@@ -270,7 +282,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
       decoration: BoxDecoration(
         color: Colors.orange[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange[200]!, width: 1),
+        border: Border.all(color: Colors.orange.shade200, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,21 +298,21 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
               Text(
                 '收费信息',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.orange[700],
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                      color: Colors.orange[700],
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          
+
           // 收费日期
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange[200]!, width: 1),
+              border: Border.all(color: Colors.orange.shade200, width: 1),
             ),
             child: TextField(
               controller: _chargeDateController,
@@ -313,34 +325,36 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                     color: Colors.orange[50],
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Icon(Icons.calendar_month, color: Colors.orange[600], size: 18),
+                  child: Icon(Icons.calendar_month,
+                      color: Colors.orange[600], size: 18),
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.orange[200]!, width: 1),
+                  borderSide: BorderSide(color: Colors.orange.shade200, width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.orange[400]!, width: 1),
+                  borderSide: BorderSide(color: Colors.orange.shade400, width: 1),
                 ),
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                 labelStyle: TextStyle(color: Colors.orange[600]),
               ),
               readOnly: true,
               onTap: () => _selectChargeDate(),
             ),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // 收费项目
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange[200]!, width: 1),
+              border: Border.all(color: Colors.orange.shade200, width: 1),
             ),
             child: TextField(
               controller: _treatmentItemsController,
@@ -354,19 +368,21 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                     color: Colors.orange[50],
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Icon(Icons.medical_services, color: Colors.orange[600], size: 18),
+                  child: Icon(Icons.medical_services,
+                      color: Colors.orange[600], size: 18),
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.orange[200]!, width: 1),
+                  borderSide: BorderSide(color: Colors.orange.shade200, width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.orange[400]!, width: 1),
+                  borderSide: BorderSide(color: Colors.orange.shade400, width: 1),
                 ),
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                 labelStyle: TextStyle(color: Colors.orange[600]),
                 alignLabelWithHint: true,
                 isDense: true,
@@ -392,7 +408,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
       decoration: BoxDecoration(
         color: Colors.purple[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.purple[200]!, width: 1),
+        border: Border.all(color: Colors.purple.shade200, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,15 +424,15 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
               Text(
                 '金额信息',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.purple[700],
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                      color: Colors.purple[700],
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          
+
           // 第一行：应收费金额和已收费金额
           Row(
             children: [
@@ -426,7 +442,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red[200]!, width: 1),
+                    border: Border.all(color: Colors.red.shade200, width: 1),
                   ),
                   child: TextField(
                     controller: _receivableAmountController,
@@ -440,19 +456,23 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                           color: Colors.purple[50],
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Icon(Icons.description, color: Colors.purple[600], size: 18),
+                        child: Icon(Icons.description,
+                            color: Colors.purple[600], size: 18),
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.purple[200]!, width: 1),
+                        borderSide:
+                            BorderSide(color: Colors.purple.shade200, width: 1),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.purple[400]!, width: 1),
+                        borderSide:
+                            BorderSide(color: Colors.purple.shade400, width: 1),
                       ),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 2),
                       labelStyle: TextStyle(color: Colors.purple[600]),
                     ),
                     keyboardType: TextInputType.number,
@@ -465,16 +485,16 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(width: 12),
-              
+
               // 已收费金额
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red[200]!, width: 1),
+                    border: Border.all(color: Colors.red.shade200, width: 1),
                   ),
                   child: TextField(
                     controller: _collectedAmountController,
@@ -488,19 +508,23 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                           color: Colors.purple[50],
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Icon(Icons.check_circle, color: Colors.green[600], size: 18),
+                        child: Icon(Icons.check_circle,
+                            color: Colors.green[600], size: 18),
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.purple[200]!, width: 1),
+                        borderSide:
+                            BorderSide(color: Colors.purple.shade200, width: 1),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.purple[400]!, width: 1),
+                        borderSide:
+                            BorderSide(color: Colors.purple.shade400, width: 1),
                       ),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 2),
                       labelStyle: TextStyle(color: Colors.purple[600]),
                     ),
                     keyboardType: TextInputType.number,
@@ -515,9 +539,9 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // 第二行：加工费
           Row(
             children: [
@@ -527,7 +551,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red[200]!, width: 1),
+                    border: Border.all(color: Colors.red.shade200, width: 1),
                   ),
                   child: TextField(
                     controller: _processingFeeController,
@@ -541,19 +565,23 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                           color: Colors.purple[50],
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Icon(Icons.build, color: Colors.purple[600], size: 18),
+                        child: Icon(Icons.build,
+                            color: Colors.purple[600], size: 18),
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.purple[200]!, width: 1),
+                        borderSide:
+                            BorderSide(color: Colors.purple.shade200, width: 1),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.purple[400]!, width: 1),
+                        borderSide:
+                            BorderSide(color: Colors.purple.shade400, width: 1),
                       ),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 2),
                       labelStyle: TextStyle(color: Colors.purple[600]),
                     ),
                     keyboardType: TextInputType.number,
@@ -565,36 +593,22 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
               const Expanded(child: SizedBox()),
             ],
           ),
-          
+
           // 欠费金额显示已移除
         ],
       ),
     );
   }
 
-  // 计算欠费金额
-  String _calculateOutstandingAmount() {
-    try {
-      final receivableAmount = double.tryParse(_receivableAmountController.text.replaceAll('¥', '').trim()) ?? 0.0;
-      final collectedAmount = double.tryParse(_collectedAmountController.text.replaceAll('¥', '').trim()) ?? 0.0;
-      
-      // 欠费金额 = 应收费金额 - 已收费金额（不包含加工费）
-      final outstanding = receivableAmount - collectedAmount;
-      
-      return '¥${outstanding.toStringAsFixed(0)}';
-    } catch (e) {
-      return '¥0';
-    }
-  }
-
   // 构建备注信息区域
+
   Widget _buildNotesSection() {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.teal[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.teal[200]!, width: 1),
+        border: Border.all(color: Colors.teal.shade200, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -610,10 +624,10 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
               Text(
                 '备注信息',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.teal[700],
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                      color: Colors.teal[700],
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
               ),
             ],
           ),
@@ -622,7 +636,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.teal[200]!, width: 1),
+              border: Border.all(color: Colors.teal.shade200, width: 1),
             ),
             child: TextField(
               controller: _notesController,
@@ -640,15 +654,16 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.teal[200]!, width: 1),
+                  borderSide: BorderSide(color: Colors.teal.shade200, width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.teal[400]!, width: 1),
+                  borderSide: BorderSide(color: Colors.teal.shade400, width: 1),
                 ),
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                 labelStyle: TextStyle(color: Colors.teal[600]),
               ),
               maxLines: 3,
@@ -671,7 +686,8 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -697,14 +713,14 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.green[500]!, Colors.green[600]!],
+                  colors: [Colors.green.shade500, Colors.green.shade600],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.green.withOpacity(0.3),
+                    color: Colors.green.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -715,7 +731,8 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -735,24 +752,24 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(
+                      const Text(
                         '更新中...',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
                       ),
                     ] else ...[
-                      Icon(
+                      const Icon(
                         Icons.update,
                         color: Colors.white,
                         size: 18,
                       ),
                       const SizedBox(width: 8),
-                      Text(
+                      const Text(
                         '更新',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -780,7 +797,7 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
         title: '选择收费日期',
       ),
     );
-    
+
     if (date != null) {
       setState(() {
         _chargeDateController.text = DateFormat('yyyy-MM-dd').format(date);
@@ -790,6 +807,14 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
 
   // 保存记录
   Future<void> _saveRecord() async {
+    final patientId = widget.patient.id;
+    if (patientId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('患者ID为空，无法保存')),
+      );
+      return;
+    }
+
     // 验证表单
     if (_treatmentItemsController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -797,61 +822,75 @@ class _EditFinancialItemDialogState extends State<EditFinancialItemDialog> {
       );
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
-      final financialProvider = Provider.of<FinancialProvider>(context, listen: false);
-      final selectedDate = DateFormat('yyyy-MM-dd').parse(_chargeDateController.text);
-      
+      final financialProvider =
+          Provider.of<FinancialProvider>(context, listen: false);
+      final selectedDate =
+          DateFormat('yyyy-MM-dd').parse(_chargeDateController.text);
+
       // 更新财务明细项
       final updatedItem = FinancialItem(
         id: widget.financialItem.id,
         financialRecordId: widget.financialItem.financialRecordId,
         itemName: _treatmentItemsController.text.trim(),
-        itemPrice: double.tryParse(_receivableAmountController.text.replaceAll('¥', '').trim()) ?? 0.0,
-        processingFee: double.tryParse(_processingFeeController.text.replaceAll('¥', '').trim()) ?? 0.0,
+        itemPrice: double.tryParse(
+                _receivableAmountController.text.replaceAll('¥', '').trim()) ??
+            0.0,
+        processingFee: double.tryParse(
+                _processingFeeController.text.replaceAll('¥', '').trim()) ??
+            0.0,
         quantity: widget.financialItem.quantity,
-        totalPrice: double.tryParse(_collectedAmountController.text.replaceAll('¥', '').trim()) ?? 0.0,
+        totalPrice: double.tryParse(
+                _collectedAmountController.text.replaceAll('¥', '').trim()) ??
+            0.0,
         chargeDate: selectedDate,
         createdAt: widget.financialItem.createdAt,
         updatedAt: DateTime.now(),
       );
-      
+
       final success = await financialProvider.updateFinancialItem(updatedItem);
-      
+
       if (success) {
         // 更新关联的FinancialRecord的备注信息（仅在允许编辑备注时）
         if (widget.showNotesField) {
           try {
-            final record = await financialProvider.getFinancialRecordById(widget.financialItem.financialRecordId);
+            final record = await financialProvider
+                .getFinancialRecordById(widget.financialItem.financialRecordId);
             if (record != null) {
               final updatedRecord = FinancialRecord(
                 id: record.id,
                 patientId: record.patientId,
                 totalQuantity: record.totalQuantity,
-                notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+                notes: _notesController.text.trim().isEmpty
+                    ? null
+                    : _notesController.text.trim(),
                 createdAt: record.createdAt,
                 updatedAt: DateTime.now(),
               );
               await financialProvider.updateFinancialRecord(updatedRecord);
             }
           } catch (e) {
-            print('更新备注信息失败: $e');
+            LogManager.e('EditFinancialItemDialog', '更新备注信息失败', error: e);
           }
         }
-        
+
         // 更新患者的总体财务统计信息
-        await financialProvider.updatePatientFinancialSummary(widget.patient.id!);
-        
+        await financialProvider.updatePatientFinancialSummary(patientId);
+
+        if (!mounted) return;
         Navigator.of(context).pop(true);
         AppToastManager.showSuccess(context, message: '收费项目更新成功');
       } else {
+        if (!mounted) return;
         AppToastManager.showError(context, message: '更新失败，请重试');
       }
     } catch (e) {
+      if (!mounted) return;
       AppToastManager.showError(context, message: '操作出错: $e');
     } finally {
       setState(() {

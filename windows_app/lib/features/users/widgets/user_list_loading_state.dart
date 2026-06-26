@@ -17,19 +17,20 @@ class UserListLoadingState extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
               ],
             ),
-            child: Column(
+            child: const Column(
               children: [
                 CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                   strokeWidth: 3,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text(
                   '加载中...',
                   style: TextStyle(

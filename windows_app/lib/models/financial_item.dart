@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/map_parser.dart';
 
 // 收费项目明细模型
 class FinancialItem {
@@ -31,18 +32,25 @@ class FinancialItem {
 
   // 从Map创建FinancialItem
   factory FinancialItem.fromMap(Map<String, dynamic> map) {
+    final p = MapParser(map, context: 'FinancialItem');
+
+    DateTime parseDate(dynamic value) {
+      if (value is DateTime) return value;
+      return DateTimeFormatter.fromDbString(value.toString());
+    }
+
     return FinancialItem(
-      id: map['id'] as int?,
-      financialRecordId: map['financial_record_id'] as int,
-      itemName: map['item_name'] as String,
-      itemPrice: (map['item_price'] as num).toDouble(),
-      processingFee: (map['processing_fee'] as num?)?.toDouble() ?? 0.0, // 新增：加工费
-      paymentMethod: map['payment_method'] as String?,
-      quantity: map['quantity'] as int,
-      totalPrice: (map['total_price'] as num).toDouble(),
-      chargeDate: DateTimeFormatter.fromDbString(map['charge_date'] as String), // 新增：收费日期
-      createdAt: DateTimeFormatter.fromDbString(map['created_at'] as String), // 新增：创建时间
-      updatedAt: DateTimeFormatter.fromDbString(map['updated_at'] as String), // 新增：更新时间
+      id: p.optional('id', (v) => v as int),
+      financialRecordId: p.required('financial_record_id', (v) => v as int),
+      itemName: p.string('item_name'),
+      itemPrice: p.decimal('item_price'),
+      processingFee: p.decimal('processing_fee'),
+      paymentMethod: p.optional('payment_method', (v) => v.toString()),
+      quantity: p.integer('quantity'),
+      totalPrice: p.decimal('total_price'),
+      chargeDate: p.required('charge_date', parseDate),
+      createdAt: p.required('created_at', parseDate),
+      updatedAt: p.required('updated_at', parseDate),
     );
   }
 

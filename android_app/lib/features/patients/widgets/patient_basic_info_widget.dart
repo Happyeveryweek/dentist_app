@@ -57,8 +57,9 @@ class PatientBasicInfoWidgetState extends State<PatientBasicInfoWidget> {
     _doctorController.text = widget.initialDoctor ?? '';
     _medicalRecordController.text = widget.initialMedicalRecordNumber ?? '';
     _treatmentItemsController.text = widget.initialTreatmentItems ?? '';
-    if (widget.initialFirstVisitDate != null) {
-      _firstVisitDate = widget.initialFirstVisitDate!;
+    final initialFirstVisitDate = widget.initialFirstVisitDate;
+    if (initialFirstVisitDate != null) {
+      _firstVisitDate = initialFirstVisitDate;
     }
   }
 

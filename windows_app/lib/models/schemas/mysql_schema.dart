@@ -8,33 +8,36 @@ class MySQLPatientsTableSchema implements TableSchema {
 
   @override
   Map<String, String> get columnDefinitions => {
-    'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-    'medical_record_number': 'int(11) DEFAULT NULL',
-    'name': 'varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL',
-    'name_pinyin': 'varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'name_initials': 'varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'age': 'int(11) DEFAULT NULL',
-    'gender': 'varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL',
-    'phone': 'varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'identification_number': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'doctor': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'address': 'varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'address_pinyin': 'varchar(400) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'first_visit_date': 'datetime NOT NULL',
-    'dental_condition': 'text COLLATE utf8mb4_unicode_ci',
-    'treatment_items': 'mediumtext COLLATE utf8mb4_unicode_ci',
-    'total_cost': 'float DEFAULT NULL',
-    'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-    'medical_history': 'text COLLATE utf8mb4_unicode_ci',
-  };
+        'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
+        'medical_record_number': 'int(11) DEFAULT NULL',
+        'name': 'varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL',
+        'name_pinyin': 'varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+        'name_initials': 'varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+        'age': 'int(11) DEFAULT NULL',
+        'gender': 'varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL',
+        'phone': 'varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+        'identification_number':
+            'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+        'doctor': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+        'address': 'varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+        'address_pinyin':
+            'varchar(400) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+        'first_visit_date': 'datetime NOT NULL',
+        'dental_condition': 'text COLLATE utf8mb4_unicode_ci',
+        'treatment_items': 'mediumtext COLLATE utf8mb4_unicode_ci',
+        'total_cost': 'float DEFAULT NULL',
+        'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        'updated_at':
+            'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+        'medical_history': 'text COLLATE utf8mb4_unicode_ci',
+      };
 
   @override
   List<String> get indexDefinitions => [
-    'CREATE INDEX idx_patients_medical_record ON $tableName (medical_record_number)',
-    'CREATE INDEX idx_patients_name ON $tableName (name)',
-    'CREATE INDEX idx_patients_name_pinyin ON $tableName (name_pinyin)',
-  ];
+        'CREATE INDEX idx_patients_medical_record ON $tableName (medical_record_number)',
+        'CREATE INDEX idx_patients_name ON $tableName (name)',
+        'CREATE INDEX idx_patients_name_pinyin ON $tableName (name_pinyin)',
+      ];
 
   @override
   List<String> get foreignKeyConstraints => [];
@@ -44,7 +47,7 @@ class MySQLPatientsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -58,38 +61,40 @@ class MySQLAppointmentsTableSchema implements TableSchema {
 
   @override
   Map<String, String> get columnDefinitions => {
-    'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-    'patient_id': 'int(11) NOT NULL',
-    'appointment_date': 'datetime NOT NULL',
-    'appointment_time': 'time NOT NULL',
-    'status': 'varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT \'scheduled\'',
-    'treatment_type': 'text COLLATE utf8mb4_unicode_ci',
-    'notes': 'text COLLATE utf8mb4_unicode_ci',
-    'cost': 'float DEFAULT NULL',
-    'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-  };
+        'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
+        'patient_id': 'int(11) NOT NULL',
+        'appointment_date': 'datetime NOT NULL',
+        'appointment_time': 'time NOT NULL',
+        'status':
+            'varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT \'scheduled\'',
+        'treatment_type': 'text COLLATE utf8mb4_unicode_ci',
+        'notes': 'text COLLATE utf8mb4_unicode_ci',
+        'cost': 'float DEFAULT NULL',
+        'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        'updated_at':
+            'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+      };
 
   @override
   List<String> get indexDefinitions => [
-    'CREATE INDEX idx_patient_id ON $tableName (patient_id)',
-    'CREATE INDEX idx_appointment_date ON $tableName (appointment_date)',
-    'CREATE INDEX idx_appointment_status ON $tableName (status)',
-  ];
+        'CREATE INDEX idx_patient_id ON $tableName (patient_id)',
+        'CREATE INDEX idx_appointment_date ON $tableName (appointment_date)',
+        'CREATE INDEX idx_appointment_status ON $tableName (status)',
+      ];
 
   @override
   List<String> get foreignKeyConstraints => [
-    'CONSTRAINT appointments_ibfk_1 FOREIGN KEY (patient_id) REFERENCES patients (id)',
-  ];
+        'CONSTRAINT appointments_ibfk_1 FOREIGN KEY (patient_id) REFERENCES patients (id)',
+      ];
 
   @override
   String get createTableSql {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     final constraints = foreignKeyConstraints.join(',\n  ');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns,
@@ -104,32 +109,33 @@ class MySQLFinancialRecordsTableSchema implements TableSchema {
 
   @override
   Map<String, String> get columnDefinitions => {
-    'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-    'patient_id': 'int(11) NOT NULL',
-    'notes': 'text',
-    'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-    'total_quantity': 'int(11) NOT NULL DEFAULT 0',
-  };
+        'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
+        'patient_id': 'int(11) NOT NULL',
+        'notes': 'text',
+        'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        'updated_at':
+            'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+        'total_quantity': 'int(11) NOT NULL DEFAULT 0',
+      };
 
   @override
   List<String> get indexDefinitions => [
-    'CREATE INDEX idx_patient_id ON $tableName (patient_id)',
-  ];
+        'CREATE INDEX idx_patient_id ON $tableName (patient_id)',
+      ];
 
   @override
   List<String> get foreignKeyConstraints => [
-    'CONSTRAINT financial_records_ibfk_1 FOREIGN KEY (patient_id) REFERENCES patients (id)',
-  ];
+        'CONSTRAINT financial_records_ibfk_1 FOREIGN KEY (patient_id) REFERENCES patients (id)',
+      ];
 
   @override
   String get createTableSql {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     final constraints = foreignKeyConstraints.join(',\n  ');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns,
@@ -144,37 +150,38 @@ class MySQLFinancialItemsTableSchema implements TableSchema {
 
   @override
   Map<String, String> get columnDefinitions => {
-    'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-    'financial_record_id': 'int(11) NOT NULL',
-    'item_name': 'varchar(255) NOT NULL',
-    'item_price': 'decimal(10,2) NOT NULL',
-    'quantity': 'int(11) DEFAULT 1',
-    'total_price': 'decimal(10,2) NOT NULL',
-    'charge_date': 'date NOT NULL',
-    'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-    'processing_fee': 'decimal(10,2) NOT NULL DEFAULT 0.00',
-    'payment_method': 'varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-  };
+        'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
+        'financial_record_id': 'int(11) NOT NULL',
+        'item_name': 'varchar(255) NOT NULL',
+        'item_price': 'decimal(10,2) NOT NULL',
+        'quantity': 'int(11) DEFAULT 1',
+        'total_price': 'decimal(10,2) NOT NULL',
+        'charge_date': 'date NOT NULL',
+        'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        'updated_at':
+            'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+        'processing_fee': 'decimal(10,2) NOT NULL DEFAULT 0.00',
+        'payment_method': 'varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+      };
 
   @override
   List<String> get indexDefinitions => [
-    'CREATE INDEX idx_financial_record_id ON $tableName (financial_record_id)',
-  ];
+        'CREATE INDEX idx_financial_record_id ON $tableName (financial_record_id)',
+      ];
 
   @override
   List<String> get foreignKeyConstraints => [
-    'CONSTRAINT financial_items_ibfk_1 FOREIGN KEY (financial_record_id) REFERENCES financial_records (id)',
-  ];
+        'CONSTRAINT financial_items_ibfk_1 FOREIGN KEY (financial_record_id) REFERENCES financial_records (id)',
+      ];
 
   @override
   String get createTableSql {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     final constraints = foreignKeyConstraints.join(',\n  ');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns,
@@ -189,27 +196,29 @@ class MySQLMaterialsTableSchema implements TableSchema {
 
   @override
   Map<String, String> get columnDefinitions => {
-    'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-    'material_name': 'varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL',
-    'material_code': 'varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'material_type': 'varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT \'其他\'',
-    'specification': 'text COLLATE utf8mb4_unicode_ci',
-    'unit': 'varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT \'个\'',
-    'default_price': 'decimal(10,2) NOT NULL DEFAULT 0.00',
-    'stock_quantity': 'int(11) NOT NULL DEFAULT 0',
-    'min_stock': 'int(11) NOT NULL DEFAULT 0',
-    'supplier': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'description': 'text COLLATE utf8mb4_unicode_ci',
-    'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-  };
+        'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
+        'material_name': 'varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL',
+        'material_code': 'varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+        'material_type':
+            'varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT \'其他\'',
+        'specification': 'text COLLATE utf8mb4_unicode_ci',
+        'unit': 'varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT \'个\'',
+        'default_price': 'decimal(10,2) NOT NULL DEFAULT 0.00',
+        'stock_quantity': 'int(11) NOT NULL DEFAULT 0',
+        'min_stock': 'int(11) NOT NULL DEFAULT 0',
+        'supplier': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+        'description': 'text COLLATE utf8mb4_unicode_ci',
+        'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        'updated_at':
+            'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+      };
 
   @override
   List<String> get indexDefinitions => [
-    'CREATE INDEX idx_materials_name ON $tableName (material_name)',
-    'CREATE INDEX idx_materials_code ON $tableName (material_code)',
-    'CREATE INDEX idx_materials_type ON $tableName (material_type)',
-  ];
+        'CREATE INDEX idx_materials_name ON $tableName (material_name)',
+        'CREATE INDEX idx_materials_code ON $tableName (material_code)',
+        'CREATE INDEX idx_materials_type ON $tableName (material_type)',
+      ];
 
   @override
   List<String> get foreignKeyConstraints => [];
@@ -219,7 +228,7 @@ class MySQLMaterialsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -233,24 +242,25 @@ class MySQLUsersTableSchema implements TableSchema {
 
   @override
   Map<String, String> get columnDefinitions => {
-    'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-    'username': 'varchar(20) NOT NULL',
-    'email': 'varchar(120) NOT NULL',
-    'doctor': 'text',
-    'password': 'text NOT NULL',
-    'role': 'varchar(20) NOT NULL',
-    'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-    'avatar': 'varchar(50) DEFAULT \'avatar_1\'',
-    'module_permissions': 'JSON',
-    'image_data': 'LONGBLOB',
-  };
+        'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
+        'username': 'varchar(20) NOT NULL',
+        'email': 'varchar(120) NOT NULL',
+        'doctor': 'text',
+        'password': 'text NOT NULL',
+        'role': 'varchar(20) NOT NULL',
+        'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        'updated_at':
+            'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+        'avatar': 'varchar(50) DEFAULT \'avatar_1\'',
+        'module_permissions': 'JSON',
+        'image_data': 'LONGBLOB',
+      };
 
   @override
   List<String> get indexDefinitions => [
-    'CREATE UNIQUE INDEX idx_username ON $tableName (username)',
-    'CREATE UNIQUE INDEX idx_email ON $tableName (email)',
-  ];
+        'CREATE UNIQUE INDEX idx_username ON $tableName (username)',
+        'CREATE UNIQUE INDEX idx_email ON $tableName (email)',
+      ];
 
   @override
   List<String> get foreignKeyConstraints => [];
@@ -260,7 +270,7 @@ class MySQLUsersTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -275,37 +285,37 @@ class MySQLMaterialImagesTableSchema implements TableSchema {
 
   @override
   Map<String, String> get columnDefinitions => {
-    'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-    'material_id': 'int(11) DEFAULT NULL',
-    'image_data': 'longblob NOT NULL',
-    'thumbnail_data': 'longblob',
-    'image_type': 'varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL',
-    'file_size': 'int(11) DEFAULT NULL',
-    'thumbnail_size': 'int(11) DEFAULT NULL',
-    'original_name': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'has_thumbnail': 'int(11) DEFAULT NULL',
-    'image_path': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-  };
+        'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
+        'material_id': 'int(11) DEFAULT NULL',
+        'image_data': 'longblob NOT NULL',
+        'thumbnail_data': 'longblob',
+        'image_type': 'varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL',
+        'file_size': 'int(11) DEFAULT NULL',
+        'thumbnail_size': 'int(11) DEFAULT NULL',
+        'original_name': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+        'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        'has_thumbnail': 'int(11) DEFAULT NULL',
+        'image_path': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+      };
 
   @override
   List<String> get indexDefinitions => [
-    'CREATE INDEX idx_material_id ON $tableName (material_id)',
-  ];
+        'CREATE INDEX idx_material_id ON $tableName (material_id)',
+      ];
 
   @override
   List<String> get foreignKeyConstraints => [
-    'CONSTRAINT material_images_ibfk_1 FOREIGN KEY (material_id) REFERENCES patient_materials (id)',
-  ];
+        'CONSTRAINT material_images_ibfk_1 FOREIGN KEY (material_id) REFERENCES patient_materials (id)',
+      ];
 
   @override
   String get createTableSql {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     final constraints = foreignKeyConstraints.join(',\n  ');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns,
@@ -320,31 +330,32 @@ class MySQLPatientMaterialsTableSchema implements TableSchema {
 
   @override
   Map<String, String> get columnDefinitions => {
-    'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-    'patient_id': 'int(11) NOT NULL',
-    'description': 'text NOT NULL',
-    'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-  };
+        'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
+        'patient_id': 'int(11) NOT NULL',
+        'description': 'text NOT NULL',
+        'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        'updated_at':
+            'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+      };
 
   @override
   List<String> get indexDefinitions => [
-    'CREATE INDEX idx_patient_id ON $tableName (patient_id)',
-  ];
+        'CREATE INDEX idx_patient_id ON $tableName (patient_id)',
+      ];
 
   @override
   List<String> get foreignKeyConstraints => [
-    'CONSTRAINT patient_materials_ibfk_1 FOREIGN KEY (patient_id) REFERENCES patients (id)',
-  ];
+        'CONSTRAINT patient_materials_ibfk_1 FOREIGN KEY (patient_id) REFERENCES patients (id)',
+      ];
 
   @override
   String get createTableSql {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     final constraints = foreignKeyConstraints.join(',\n  ');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns,
@@ -359,16 +370,17 @@ class MySQLPurchaseRecordsTableSchema implements TableSchema {
 
   @override
   Map<String, String> get columnDefinitions => {
-    'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-    'purchase_date': 'date NOT NULL',
-    'total_quantity': 'int(11) NOT NULL',
-    'total_amount': 'decimal(10,2) NOT NULL',
-    'supplier': 'varchar(200) DEFAULT NULL',
-    'doctor': 'varchar(255) DEFAULT NULL',
-    'notes': 'text',
-    'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-  };
+        'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
+        'purchase_date': 'date NOT NULL',
+        'total_quantity': 'int(11) NOT NULL',
+        'total_amount': 'decimal(10,2) NOT NULL',
+        'supplier': 'varchar(200) DEFAULT NULL',
+        'doctor': 'varchar(255) DEFAULT NULL',
+        'notes': 'text',
+        'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        'updated_at':
+            'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+      };
 
   @override
   List<String> get indexDefinitions => [];
@@ -381,7 +393,7 @@ class MySQLPurchaseRecordsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -395,22 +407,22 @@ class MySQLPurchaseItemsTableSchema implements TableSchema {
 
   @override
   Map<String, String> get columnDefinitions => {
-    'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-    'purchase_record_id': 'int(11) DEFAULT NULL',
-    'material_id': 'int(11) DEFAULT NULL',
-    'material_name': 'varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL',
-    'quantity': 'int(11) DEFAULT NULL',
-    'unit_price': 'decimal(10,2) NOT NULL',
-    'total_price': 'decimal(10,2) NOT NULL',
-    'unit': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
-    'created_at': 'varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL',
-    'updated_at': 'varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL',
-  };
+        'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
+        'purchase_record_id': 'int(11) DEFAULT NULL',
+        'material_id': 'int(11) DEFAULT NULL',
+        'material_name': 'varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL',
+        'quantity': 'int(11) DEFAULT NULL',
+        'unit_price': 'decimal(10,2) NOT NULL',
+        'total_price': 'decimal(10,2) NOT NULL',
+        'unit': 'varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL',
+        'created_at': 'varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL',
+        'updated_at': 'varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL',
+      };
 
   @override
   List<String> get indexDefinitions => [
-    'CREATE INDEX idx_purchase_record_id ON $tableName (purchase_record_id)',
-  ];
+        'CREATE INDEX idx_purchase_record_id ON $tableName (purchase_record_id)',
+      ];
 
   @override
   List<String> get foreignKeyConstraints => [];
@@ -420,7 +432,7 @@ class MySQLPurchaseItemsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -428,56 +440,54 @@ CREATE TABLE IF NOT EXISTS $tableName (
   }
 }
 
-
-
-
-
 class MySQLPatientMedicalRecordsTableSchema implements TableSchema {
   @override
   String get tableName => 'patient_medical_records';
 
   @override
   Map<String, String> get columnDefinitions => {
-    'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-    'patient_id': 'int(11) NOT NULL',
-    'record_number': 'varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL',
-    'record_date': 'datetime NOT NULL',
-    'chief_complaint': 'text COLLATE utf8mb4_unicode_ci',
-    'present_illness': 'text COLLATE utf8mb4_unicode_ci',
-    'past_medical_history': 'text COLLATE utf8mb4_unicode_ci',
-    'past_dental_history': 'text COLLATE utf8mb4_unicode_ci',
-    'allergy_history': 'text COLLATE utf8mb4_unicode_ci',
-    'oral_examination': 'text COLLATE utf8mb4_unicode_ci',
-    'diagnosis': 'text COLLATE utf8mb4_unicode_ci',
-    'treatment_plan': 'text COLLATE utf8mb4_unicode_ci',
-    'notes': 'text COLLATE utf8mb4_unicode_ci',
-    'doctor_name': 'varchar(100) COLLATE utf8mb4_unicode_ci',
-    'created_by_doctor': 'varchar(100) COLLATE utf8mb4_unicode_ci',
-    'selected_dental_condition_date': 'varchar(50) COLLATE utf8mb4_unicode_ci',
-    'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-  };
+        'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
+        'patient_id': 'int(11) NOT NULL',
+        'record_number': 'varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL',
+        'record_date': 'datetime NOT NULL',
+        'chief_complaint': 'text COLLATE utf8mb4_unicode_ci',
+        'present_illness': 'text COLLATE utf8mb4_unicode_ci',
+        'past_medical_history': 'text COLLATE utf8mb4_unicode_ci',
+        'past_dental_history': 'text COLLATE utf8mb4_unicode_ci',
+        'allergy_history': 'text COLLATE utf8mb4_unicode_ci',
+        'oral_examination': 'text COLLATE utf8mb4_unicode_ci',
+        'diagnosis': 'text COLLATE utf8mb4_unicode_ci',
+        'treatment_plan': 'text COLLATE utf8mb4_unicode_ci',
+        'notes': 'text COLLATE utf8mb4_unicode_ci',
+        'doctor_name': 'varchar(100) COLLATE utf8mb4_unicode_ci',
+        'created_by_doctor': 'varchar(100) COLLATE utf8mb4_unicode_ci',
+        'selected_dental_condition_date':
+            'varchar(50) COLLATE utf8mb4_unicode_ci',
+        'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        'updated_at':
+            'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+      };
 
   @override
   List<String> get indexDefinitions => [
-    'CREATE INDEX idx_patient_id ON $tableName (patient_id)',
-    'CREATE INDEX idx_record_number ON $tableName (record_number)',
-    'CREATE INDEX idx_record_date ON $tableName (record_date)',
-  ];
+        'CREATE INDEX idx_patient_id ON $tableName (patient_id)',
+        'CREATE INDEX idx_record_number ON $tableName (record_number)',
+        'CREATE INDEX idx_record_date ON $tableName (record_date)',
+      ];
 
   @override
   List<String> get foreignKeyConstraints => [
-    'CONSTRAINT patient_medical_records_ibfk_1 FOREIGN KEY (patient_id) REFERENCES patients (id)',
-  ];
+        'CONSTRAINT patient_medical_records_ibfk_1 FOREIGN KEY (patient_id) REFERENCES patients (id)',
+      ];
 
   @override
   String get createTableSql {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     final constraints = foreignKeyConstraints.join(',\n  ');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns,
@@ -486,32 +496,31 @@ CREATE TABLE IF NOT EXISTS $tableName (
   }
 }
 
-
-
 class MySQLMedicalRecordTemplatesTableSchema implements TableSchema {
   @override
   String get tableName => 'medical_record_templates';
 
   @override
   Map<String, String> get columnDefinitions => {
-    'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-    'category': 'varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL',
-    'name': 'varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL',
-    'parent_name': 'varchar(100) COLLATE utf8mb4_unicode_ci',
-    'description': 'text COLLATE utf8mb4_unicode_ci',
-    'is_active': 'tinyint(1) NOT NULL DEFAULT 1',
-    'sort_order': 'int(11) NOT NULL DEFAULT 0',
-    'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-    'updated_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
-  };
+        'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
+        'category': 'varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL',
+        'name': 'varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL',
+        'parent_name': 'varchar(100) COLLATE utf8mb4_unicode_ci',
+        'description': 'text COLLATE utf8mb4_unicode_ci',
+        'is_active': 'tinyint(1) NOT NULL DEFAULT 1',
+        'sort_order': 'int(11) NOT NULL DEFAULT 0',
+        'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+        'updated_at':
+            'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+      };
 
   @override
   List<String> get indexDefinitions => [
-    'CREATE INDEX idx_category ON $tableName (category)',
-    'CREATE INDEX idx_name ON $tableName (name)',
-    'CREATE INDEX idx_parent_name ON $tableName (parent_name)',
-    'CREATE INDEX idx_sort_order ON $tableName (sort_order)',
-  ];
+        'CREATE INDEX idx_category ON $tableName (category)',
+        'CREATE INDEX idx_name ON $tableName (name)',
+        'CREATE INDEX idx_parent_name ON $tableName (parent_name)',
+        'CREATE INDEX idx_sort_order ON $tableName (sort_order)',
+      ];
 
   @override
   List<String> get foreignKeyConstraints => [];
@@ -521,7 +530,7 @@ class MySQLMedicalRecordTemplatesTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns
@@ -535,18 +544,18 @@ class MySQLBackupLogsTableSchema implements TableSchema {
 
   @override
   Map<String, String> get columnDefinitions => {
-    'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
-    'data_source_type': 'varchar(50) NOT NULL',
-    'detection_time': 'datetime NOT NULL',
-    'status': 'varchar(200) NOT NULL',
-    'required_tables': 'int(11) NOT NULL',
-    'missing_tables': 'int(11) NOT NULL',
-    'structure_changes': 'int(11) NOT NULL',
-    'errors': 'text DEFAULT NULL', // 使用TEXT替代JSON以提高兼容性
-    'details': 'text DEFAULT NULL', // 使用TEXT替代JSON以提高兼容性
-    'summary': 'text NOT NULL',
-    'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
-  };
+        'id': 'int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY',
+        'data_source_type': 'varchar(50) NOT NULL',
+        'detection_time': 'datetime NOT NULL',
+        'status': 'varchar(200) NOT NULL',
+        'required_tables': 'int(11) NOT NULL',
+        'missing_tables': 'int(11) NOT NULL',
+        'structure_changes': 'int(11) NOT NULL',
+        'errors': 'text DEFAULT NULL', // 使用TEXT替代JSON以提高兼容性
+        'details': 'text DEFAULT NULL', // 使用TEXT替代JSON以提高兼容性
+        'summary': 'text NOT NULL',
+        'created_at': 'datetime NOT NULL DEFAULT CURRENT_TIMESTAMP',
+      };
 
   @override
   List<String> get indexDefinitions => [];
@@ -559,7 +568,7 @@ class MySQLBackupLogsTableSchema implements TableSchema {
     final columns = columnDefinitions.entries
         .map((e) => '  ${e.key} ${e.value}')
         .join(',\n');
-    
+
     return '''
 CREATE TABLE IF NOT EXISTS $tableName (
   $columns

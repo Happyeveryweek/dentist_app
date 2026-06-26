@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// 治疗项目区域
-/// 
+///
 /// 显示治疗项目输入框、添加按钮、已选治疗项目列表
 class TreatmentSection extends StatelessWidget {
   final TextEditingController treatmentTypeController;
@@ -48,9 +48,9 @@ class TreatmentSection extends StatelessWidget {
   Widget _buildHeader() {
     return Row(
       children: [
-        Icon(
+        const Icon(
           Icons.healing,
-          color: const Color(0xFFFF9800),
+          color: Color(0xFFFF9800),
           size: 18,
         ),
         const SizedBox(width: 8),
@@ -65,16 +65,16 @@ class TreatmentSection extends StatelessWidget {
         const Spacer(),
         Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               colors: [
-                const Color(0xFFFF9800),
-                const Color(0xFFFFB74D),
+                Color(0xFFFF9800),
+                Color(0xFFFFB74D),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF9800).withOpacity(0.3),
+                color: const Color(0xFFFF9800).withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -129,11 +129,12 @@ class TreatmentSection extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: const Color(0xFFFF9800)),
+                borderSide: const BorderSide(color: Color(0xFFFF9800)),
               ),
               filled: true,
               fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
             onChanged: (value) {},
             onSubmitted: (value) {
@@ -144,16 +145,16 @@ class TreatmentSection extends StatelessWidget {
         const SizedBox(width: 12),
         Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
+            gradient: const LinearGradient(
               colors: [
-                const Color(0xFFFF9800),
-                const Color(0xFFFFB74D),
+                Color(0xFFFF9800),
+                Color(0xFFFFB74D),
               ],
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF9800).withOpacity(0.3),
+                color: const Color(0xFFFF9800).withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -192,25 +193,26 @@ class TreatmentSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFF9800).withOpacity(0.2)),
+        border:
+            Border.all(color: const Color(0xFFFF9800).withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.check_circle,
-                color: const Color(0xFFFF9800),
+                color: Color(0xFFFF9800),
                 size: 14,
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               Text(
                 '已选治疗项目:',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFFFF9800),
+                  color: Color(0xFFFF9800),
                 ),
               ),
             ],
@@ -233,13 +235,13 @@ class TreatmentSection extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFFFF9800).withOpacity(0.1),
-            const Color(0xFFFFB74D).withOpacity(0.05),
+            const Color(0xFFFF9800).withValues(alpha: 0.1),
+            const Color(0xFFFFB74D).withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFFF9800).withOpacity(0.3),
+          color: const Color(0xFFFF9800).withValues(alpha: 0.3),
         ),
       ),
       child: Material(
@@ -264,10 +266,10 @@ class TreatmentSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 4),
-                Icon(
+                const Icon(
                   Icons.close,
                   size: 12,
-                  color: const Color(0xFFFF9800),
+                  color: Color(0xFFFF9800),
                 ),
               ],
             ),

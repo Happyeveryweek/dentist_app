@@ -9,19 +9,19 @@ export 'mysql_appointment_data_source.dart';
 abstract class AppointmentDataSource {
   /// 设置患者提供者（用于获取患者信息）
   void setPatientProvider(PatientProvider patientProvider);
-  
+
   Future<List<Appointment>> getAllAppointments();
   Future<Appointment?> getAppointmentById(int id);
   Future<int> createAppointment(Appointment appointment);
   Future<bool> updateAppointment(Appointment appointment);
   Future<bool> deleteAppointment(int id);
-  
+
   // 查询方法
   Future<List<Appointment>> getAppointmentsByDate(DateTime date);
   Future<List<Appointment>> getAppointmentsByPatient(int patientId);
   Future<List<Appointment>> getAppointmentsByDoctor(String doctorName);
   Future<List<Appointment>> getTodayAppointments({String? doctorName});
-  
+
   // 分页查询方法
   Future<int> getAppointmentsCount({String? searchQuery});
   Future<List<Appointment>> getPaginatedAppointments({
@@ -33,7 +33,7 @@ abstract class AppointmentDataSource {
     DateTime? filterDate,
     String? filterDoctor,
   });
-  
+
   // 统计方法
   Future<Map<String, dynamic>> getAppointmentStatistics();
 }

@@ -1,5 +1,6 @@
 import '../utils/datetime_formatter.dart';
 import '../utils/app_logger.dart';
+import '../utils/map_parser.dart';
 
 /// 患者病历模型
 class PatientMedicalRecord {
@@ -46,100 +47,55 @@ class PatientMedicalRecord {
 
   /// 从Map构造PatientMedicalRecord对象
   factory PatientMedicalRecord.fromMap(Map<String, dynamic> map) {
-    // 辅助方法：安全转换字符串，处理各种数据类型
-    String safeStringFromField(dynamic field) {
-      if (field == null) return '';
-      if (field is String) return field;
-      // 处理SQLite和MySQL的Blob类型
-      if (field is List<int>) {
-        try {
-          return String.fromCharCodes(field);
-        } catch (e) {
-          AppLogger.info('PatientMedicalRecord.fromMap: Blob转换失败: $e');
-          return '';
-        }
-      }
-      try {
-        return field.toString();
-      } catch (e) {
-        AppLogger.info('PatientMedicalRecord.fromMap: 字段转换失败: $e');
-        return '';
-      }
-    }
+    final p = MapParser(map, context: 'PatientMedicalRecord');
 
-    // 处理创建时间和更新时间
-    DateTime createdAt = DateTime.now();
-    if (map['created_at'] != null) {
-      try {
-        if (map['created_at'] is DateTime) {
-          createdAt = map['created_at'];
-        } else {
-          createdAt = DateTimeFormatter.fromDbString(
-            map['created_at'].toString(),
-          );
-        }
-      } catch (e) {
-        AppLogger.info('解析created_at错误: ${map['created_at']}');
-      }
-    }
-
-    DateTime updatedAt = DateTime.now();
-    if (map['updated_at'] != null) {
-      try {
-        if (map['updated_at'] is DateTime) {
-          updatedAt = map['updated_at'];
-        } else {
-          updatedAt = DateTimeFormatter.fromDbString(
-            map['updated_at'].toString(),
-          );
-        }
-      } catch (e) {
-        AppLogger.info('解析updated_at错误: ${map['updated_at']}');
-      }
-    }
-
-    // 处理病历日期
-    DateTime recordDate = DateTime.now();
-    if (map['record_date'] != null) {
-      try {
-        if (map['record_date'] is DateTime) {
-          recordDate = map['record_date'];
-        } else {
-          recordDate = DateTimeFormatter.fromDbString(
-            map['record_date'].toString(),
-          );
-        }
-      } catch (e) {
-        AppLogger.info('解析record_date错误: ${map['record_date']}');
-      }
+    String? toNullableString(dynamic field) {
+      final s = _safeStringFromField(field);
+      return s.isEmpty ? null : s;
     }
 
     return PatientMedicalRecord(
-      id: map['id'],
-      patientId: map['patient_id'] ?? 0,
-      recordNumber: safeStringFromField(map['record_number']),
-      recordDate: recordDate,
-      chiefComplaint: safeStringFromField(map['chief_complaint']),
-      presentIllness: safeStringFromField(map['present_illness']),
-      pastMedicalHistory: safeStringFromField(map['past_medical_history']),
-      pastDentalHistory: safeStringFromField(map['past_dental_history']),
-      allergyHistory: safeStringFromField(map['allergy_history']),
-      oralExamination: safeStringFromField(map['oral_examination']),
-      diagnosis: safeStringFromField(map['diagnosis']),
-      treatmentPlan: safeStringFromField(map['treatment_plan']),
-      notes: safeStringFromField(map['notes']),
-      doctorName: safeStringFromField(map['doctor_name']),
-      createdByDoctor:
-          safeStringFromField(map['created_by_doctor']).isEmpty
-              ? null
-              : safeStringFromField(map['created_by_doctor']),
+      id: p.optional('id', (v) => v as int),
+      patientId: p.integer('patient_id'),
+      recordNumber: _safeStringFromField(map['record_number']),
+      recordDate: p.dateTime('record_date'),
+      chiefComplaint: _safeStringFromField(map['chief_complaint']),
+      presentIllness: _safeStringFromField(map['present_illness']),
+      pastMedicalHistory: _safeStringFromField(map['past_medical_history']),
+      pastDentalHistory: _safeStringFromField(map['past_dental_history']),
+      allergyHistory: _safeStringFromField(map['allergy_history']),
+      oralExamination: _safeStringFromField(map['oral_examination']),
+      diagnosis: _safeStringFromField(map['diagnosis']),
+      treatmentPlan: _safeStringFromField(map['treatment_plan']),
+      notes: _safeStringFromField(map['notes']),
+      doctorName: _safeStringFromField(map['doctor_name']),
+      createdByDoctor: toNullableString(map['created_by_doctor']),
       selectedDentalConditionDate:
-          safeStringFromField(map['selected_dental_condition_date']).isEmpty
-              ? null
-              : safeStringFromField(map['selected_dental_condition_date']),
-      createdAt: createdAt,
-      updatedAt: updatedAt,
+          toNullableString(map['selected_dental_condition_date']),
+      createdAt: p.dateTime('created_at'),
+      updatedAt: p.dateTime('updated_at'),
     );
+  }
+
+  // 辅助方法：安全转换字符串，处理各种数据类型（包括 Blob）
+  static String _safeStringFromField(dynamic field) {
+    if (field == null) return '';
+    if (field is String) return field;
+    // 处理SQLite和MySQL的Blob类型
+    if (field is List<int>) {
+      try {
+        return String.fromCharCodes(field);
+      } catch (e) {
+        AppLogger.info('PatientMedicalRecord.fromMap: Blob转换失败: $e');
+        return '';
+      }
+    }
+    try {
+      return field.toString();
+    } catch (e) {
+      AppLogger.info('PatientMedicalRecord.fromMap: 字段转换失败: $e');
+      return '';
+    }
   }
 
   /// 将PatientMedicalRecord对象转换为Map

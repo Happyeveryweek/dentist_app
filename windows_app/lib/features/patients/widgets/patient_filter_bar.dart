@@ -35,14 +35,14 @@ class PatientFilterBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: isPurpleTheme
             ? Border.all(
-                color: AppTheme.purpleLightColor.withOpacity(0.3),
+                color: AppTheme.purpleLightColor.withValues(alpha: 0.3),
                 width: 1,
               )
             : null,
         boxShadow: isPurpleTheme
             ? [
                 BoxShadow(
-                  color: AppTheme.purpleColor.withOpacity(0.1),
+                  color: AppTheme.purpleColor.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -162,9 +162,14 @@ class PatientDateFilterChip extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    startDate != null && endDate != null
-                        ? '${DateFormat('yyyy-MM-dd').format(startDate!)} 至 ${DateFormat('yyyy-MM-dd').format(endDate!)}'
-                        : '选择日期范围',
+                    () {
+                      final start = startDate;
+                      final end = endDate;
+                      if (start != null && end != null) {
+                        return '${DateFormat('yyyy-MM-dd').format(start)} 至 ${DateFormat('yyyy-MM-dd').format(end)}';
+                      }
+                      return '选择日期范围';
+                    }(),
                     style: const TextStyle(
                       fontSize: 12,
                       color: Colors.black87,
@@ -178,7 +183,8 @@ class PatientDateFilterChip extends StatelessWidget {
           if (startDate != null) ...[
             const SizedBox(width: 8),
             IconButton(
-              icon: Icon(Icons.clear, size: 18, color: AppTheme.errorColor),
+              icon:
+                  const Icon(Icons.clear, size: 18, color: AppTheme.errorColor),
               onPressed: onClearFilters,
               tooltip: '清除筛选',
               padding: const EdgeInsets.all(8),
@@ -245,15 +251,15 @@ class _SortOptions extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppTheme.primaryColor.withOpacity(0.3),
+              color: AppTheme.primaryColor.withValues(alpha: 0.3),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -262,11 +268,11 @@ class _SortOptions extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.people, size: 16, color: AppTheme.primaryColor),
+              const Icon(Icons.people, size: 16, color: AppTheme.primaryColor),
               const SizedBox(width: 8),
               Text(
                 '总患者数: $totalPatients',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.primaryColor,
@@ -305,8 +311,9 @@ class _SortButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color:
-              isActive ? AppTheme.primaryColor.withOpacity(0.1) : Colors.white,
+          color: isActive
+              ? AppTheme.primaryColor.withValues(alpha: 0.1)
+              : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isActive ? AppTheme.primaryColor : Colors.grey.shade300,

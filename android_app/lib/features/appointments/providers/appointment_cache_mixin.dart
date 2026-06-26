@@ -23,9 +23,10 @@ mixin AppointmentCacheMixin on ChangeNotifier {
 
   // 检查缓存是否有效
   bool isCacheValid() {
+    final lastCacheTime = _lastCacheTime;
     return _cachedAppointments != null &&
-        _lastCacheTime != null &&
-        DateTime.now().difference(_lastCacheTime!) < _cacheValidDuration;
+        lastCacheTime != null &&
+        DateTime.now().difference(lastCacheTime) < _cacheValidDuration;
   }
 
   // 更新缓存

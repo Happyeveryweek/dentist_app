@@ -116,8 +116,9 @@ class PatientPhoneWidgetState extends State<PatientPhoneWidget> {
 
         if (matches.isNotEmpty) {
           for (final match in matches) {
-            if (match.group(1) != null && match.group(1)!.isNotEmpty) {
-              phoneNumbers.add(match.group(1)!);
+            final phone = match.group(1);
+            if (phone != null && phone.isNotEmpty) {
+              phoneNumbers.add(phone);
             }
           }
           AppLogger.info('通过正则表达式提取的电话: $phoneNumbers');

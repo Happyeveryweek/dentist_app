@@ -337,7 +337,11 @@ class MySqlAppointmentDataSource implements AppointmentDataSource {
       ],
     );
 
-    return result.insertId!;
+    final insertId = result.insertId;
+    if (insertId == null) {
+      throw Exception('创建预约失败：无法获取插入ID');
+    }
+    return insertId;
   }
 
   @override
@@ -366,7 +370,7 @@ class MySqlAppointmentDataSource implements AppointmentDataSource {
       ],
     );
 
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -378,7 +382,7 @@ class MySqlAppointmentDataSource implements AppointmentDataSource {
       'DELETE FROM appointments WHERE id = ?',
       [id],
     );
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override

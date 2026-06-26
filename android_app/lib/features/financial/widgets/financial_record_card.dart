@@ -32,7 +32,7 @@ class FinancialRecordCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final patientName =
         record.patientName?.trim().isNotEmpty == true
-            ? record.patientName!
+            ? record.patientName ?? ''
             : '未知患者';
     final isSettled = totalOutstanding <= 0;
 

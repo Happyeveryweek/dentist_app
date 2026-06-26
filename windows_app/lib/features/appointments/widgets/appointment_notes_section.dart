@@ -20,15 +20,15 @@ class AppointmentNotesSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.note,
-                color: const Color(0xFF9C27B0),
+                color: Color(0xFF9C27B0),
                 size: 18,
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 '备注信息',
                 style: TextStyle(
                   fontSize: 16,
@@ -49,7 +49,8 @@ class AppointmentNotesSection extends StatelessWidget {
               ),
               filled: true,
               fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
             maxLines: 3,
           ),

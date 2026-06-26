@@ -44,9 +44,10 @@ class FinancialItemService {
 
   /// 根据财务记录ID获取项目明细
   Future<List<FinancialItem>> getFinancialItemsByRecordId(int recordId) async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation(
+    return await wrapper.wrapOperation(
       'getFinancialItemsByRecordId',
       () async {
         try {
@@ -72,9 +73,10 @@ class FinancialItemService {
     FinancialItem item, {
     required Function() markFinancialsNeedRefresh,
   }) async {
-    if (_dbWrapper == null) return -1;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return -1;
 
-    return await _dbWrapper!.wrapOperation('addFinancialItem', () async {
+    return await wrapper.wrapOperation('addFinancialItem', () async {
       try {
         // 使用数据源模式（统一接口）
         final id = await _currentDataSource.createFinancialItem(item);
@@ -100,9 +102,10 @@ class FinancialItemService {
       throw Exception('项目ID为空');
     }
 
-    if (_dbWrapper == null) return 0;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return 0;
 
-    return await _dbWrapper!.wrapOperation('updateFinancialItem', () async {
+    return await wrapper.wrapOperation('updateFinancialItem', () async {
       try {
         // 使用数据源模式（统一接口）
         final success = await _currentDataSource.updateFinancialItem(item);
@@ -125,9 +128,10 @@ class FinancialItemService {
     int itemId, {
     required Function() markFinancialsNeedRefresh,
   }) async {
-    if (_dbWrapper == null) return 0;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return 0;
 
-    return await _dbWrapper!.wrapOperation('deleteFinancialItem', () async {
+    return await wrapper.wrapOperation('deleteFinancialItem', () async {
       try {
         // 使用数据源模式（统一接口）
         final success = await _currentDataSource.deleteFinancialItem(itemId);

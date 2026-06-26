@@ -20,11 +20,11 @@ class BackupPathInput extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.folder, color: AppTheme.secondaryColor, size: 18),
+            const Icon(Icons.folder, color: AppTheme.secondaryColor, size: 18),
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: AppTheme.secondaryColor,
               ),
@@ -43,7 +43,8 @@ class BackupPathInput extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(color: Colors.grey.shade300),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 ),
               ),
             ),
@@ -55,7 +56,8 @@ class BackupPathInput extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.secondaryColor,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               ),
             ),
           ],

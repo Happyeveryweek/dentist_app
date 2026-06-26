@@ -49,9 +49,10 @@ class FinancialRecordService {
     required Future<void> Function() clearCache,
     required Function() markFinancialsNeedRefresh,
   }) async {
-    if (_dbWrapper == null) return -1;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return -1;
 
-    return await _dbWrapper!.wrapOperation('addFinancialRecord', () async {
+    return await wrapper.wrapOperation('addFinancialRecord', () async {
       try {
         // 确保财务记录表存在
         await _dataSourceService.ensureFinancialRecordsTableExists(
@@ -89,9 +90,10 @@ class FinancialRecordService {
       throw Exception('记录ID为空');
     }
 
-    if (_dbWrapper == null) return 0;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return 0;
 
-    return await _dbWrapper!.wrapOperation('updateFinancialRecord', () async {
+    return await wrapper.wrapOperation('updateFinancialRecord', () async {
       try {
         // 确保财务记录表存在
         await _dataSourceService.ensureFinancialRecordsTableExists(
@@ -126,9 +128,10 @@ class FinancialRecordService {
     required Future<void> Function() clearCache,
     required Function() markFinancialsNeedRefresh,
   }) async {
-    if (_dbWrapper == null) return 0;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return 0;
 
-    return await _dbWrapper!.wrapOperation('deleteFinancialRecord', () async {
+    return await wrapper.wrapOperation('deleteFinancialRecord', () async {
       try {
         // 确保财务记录表存在
         await _dataSourceService.ensureFinancialRecordsTableExists(

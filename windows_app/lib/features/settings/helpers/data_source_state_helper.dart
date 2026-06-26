@@ -2,12 +2,14 @@
 /// 负责数据源配置的原始设置备份和恢复逻辑
 class DataSourceStateHelper {
   /// 备份模块数据源配置
-  static Map<String, String> backupModuleDataSources(Map<String, String> current) {
+  static Map<String, String> backupModuleDataSources(
+      Map<String, String> current) {
     return Map<String, String>.from(current);
   }
 
   /// 恢复模块数据源配置
-  static Map<String, String> restoreModuleDataSources(Map<String, String> backup) {
+  static Map<String, String> restoreModuleDataSources(
+      Map<String, String> backup) {
     return Map<String, String>.from(backup);
   }
 
@@ -69,7 +71,8 @@ class DataSourceStateHelper {
   }
 
   /// 恢复完整的状态
-  static DataSourceStateRestore restoreFromBackup(DataSourceStateBackup backup) {
+  static DataSourceStateRestore restoreFromBackup(
+      DataSourceStateBackup backup) {
     return DataSourceStateRestore(
       moduleDataSources: restoreModuleDataSources(backup.moduleDataSources),
       dataSource: restoreDataSourceType(backup.dataSource),

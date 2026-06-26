@@ -204,8 +204,9 @@ try {
 30秒内不会重复验证同一个连接，减少不必要的网络开销：
 ```dart
 bool _isRecentlyValidated() {
-  if (_lastValidationTime == null) return false;
-  final elapsed = DateTime.now().difference(_lastValidationTime!);
+  final lastTime = _lastValidationTime;
+  if (lastTime == null) return false;
+  final elapsed = DateTime.now().difference(lastTime);
   return elapsed < Duration(seconds: 30);
 }
 ```

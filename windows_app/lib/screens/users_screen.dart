@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/user.dart';
-import '../theme/app_theme.dart';
 import '../providers/user_provider.dart';
 import '../widgets/dental_icons.dart';
 import '../widgets/success_toast.dart';
@@ -15,6 +14,7 @@ import '../features/users/widgets/user_list_error_state.dart';
 import '../features/users/widgets/user_list_header.dart';
 import '../features/users/widgets/user_form_dialog.dart';
 import '../features/users/widgets/permission_preview_dialog.dart';
+import '../utils/log_manager.dart';
 
 class UsersScreen extends StatefulWidget {
   const UsersScreen({Key? key}) : super(key: key);
@@ -69,15 +69,13 @@ class _UsersScreenState extends State<UsersScreen> {
         _users = users;
         _isLoading = false;
       });
-
-      print('用户数据加载完成: ${users.length} 个用户 (强制刷新: $forceRefresh)');
     } catch (e) {
       setState(() {
         _isLoading = false;
         _hasError = true;
         _errorMessage = '加载用户数据时出错: $e';
       });
-      print('加载用户数据失败: $e');
+      LogManager.e('UsersScreen', '加载用户数据失败', error: e);
     }
   }
 
@@ -115,14 +113,20 @@ class _UsersScreenState extends State<UsersScreen> {
 
     if (confirmed) {
       try {
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
-        await userProvider.deleteUser(user.id!);
-
+        final userId = user.id;
+        if (userId == null) {
+          if (!mounted) return;
+          AppToastManager.showError(context, message: '无法删除无 ID 的用户');
+          return;
+        }
         if (!mounted) return;
+        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        await userProvider.deleteUser(userId);
 
         // 强制刷新用户列表
         await _loadUsers(forceRefresh: true);
 
+        if (!mounted) return;
         // 使用公用删除成功提示组件
         AppToastManager.showDelete(context, message: '用户已删除');
       } catch (e) {
@@ -148,7 +152,7 @@ class _UsersScreenState extends State<UsersScreen> {
                 gradient: DentalColors.primaryGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.people_rounded,
                 color: Colors.white,
                 size: 24,
@@ -171,21 +175,21 @@ class _UsersScreenState extends State<UsersScreen> {
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: DentalColors.info.withOpacity(0.1),
+              color: DentalColors.info.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.info.withOpacity(0.3),
+                color: DentalColors.info.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.refresh_rounded,
                 color: DentalColors.info,
               ),
               onPressed: () async {
                 // 强制刷新数据
                 await _loadUsers(forceRefresh: true);
-                if (!mounted) return;
+                if (!context.mounted) return;
                 AppToastManager.showSuccess(context, message: '刷新数据成功');
               },
               tooltip: '刷新数据',

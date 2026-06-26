@@ -32,10 +32,10 @@ class PurchaseStatisticsDialog extends StatefulWidget {
 
 class _PurchaseStatisticsDialogState extends State<PurchaseStatisticsDialog>
     with SingleTickerProviderStateMixin {
-  late DateTime _startDate;
-  late DateTime _endDate;
-  late DateTime _earliestDate;
-  late TabController _tabController;
+  DateTime _startDate = DateTime.now();
+  DateTime _endDate = DateTime.now();
+  DateTime _earliestDate = DateTime.now();
+  TabController? _tabController;
 
   @override
   void initState() {
@@ -46,14 +46,19 @@ class _PurchaseStatisticsDialogState extends State<PurchaseStatisticsDialog>
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
   void _initializeDateRange() {
     final defaultRange = PurchaseDateRangeService.getDefaultDateRange();
-    _startDate = defaultRange['start']!;
-    _endDate = defaultRange['end']!;
+    final start = defaultRange['start'];
+    final end = defaultRange['end'];
+    if (start == null || end == null) {
+      throw Exception('默认日期范围无效');
+    }
+    _startDate = start;
+    _endDate = end;
     _earliestDate = PurchaseDateRangeService.getEarliestPurchaseDate(
       widget.purchaseRecords.map((r) => r.purchaseDate).toList(),
     );
@@ -65,9 +70,14 @@ class _PurchaseStatisticsDialogState extends State<PurchaseStatisticsDialog>
       preset,
       _earliestDate,
     );
+    final start = newRange['start'];
+    final end = newRange['end'];
+    if (start == null || end == null) {
+      throw Exception('预设日期范围无效');
+    }
     setState(() {
-      _startDate = newRange['start']!;
-      _endDate = newRange['end']!;
+      _startDate = start;
+      _endDate = end;
     });
   }
 

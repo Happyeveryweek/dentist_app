@@ -1,7 +1,7 @@
 import '../../../models/material.dart' as material_models;
 
 /// 材料筛选和分页服务
-/// 
+///
 /// 负责材料数据的筛选和分页逻辑，包括：
 /// - 按类型筛选
 /// - 按搜索关键词筛选
@@ -23,25 +23,26 @@ class MaterialFilterPaginationService {
     // 类型筛选和搜索关键词筛选
     final filteredMaterials = materials.where((material) {
       // 类型筛选
-      bool typeMatch = selectedType == '全部' || (material.materialType == selectedType);
-      
+      bool typeMatch =
+          selectedType == '全部' || (material.materialType == selectedType);
+
       // 搜索关键词筛选
       bool searchMatch = searchQuery.isEmpty;
       if (!searchMatch) {
         final query = searchQuery.toLowerCase();
-        searchMatch = (material.materialName?.toLowerCase().contains(query) ?? false) ||
-                     (material.materialCode?.toLowerCase().contains(query) ?? false) ||
-                     (material.supplier?.toLowerCase().contains(query) ?? false) ||
-                     (material.description?.toLowerCase().contains(query) ?? false);
+        searchMatch = (material.materialName.toLowerCase().contains(query)) ||
+            (material.materialCode?.toLowerCase().contains(query) ?? false) ||
+            (material.supplier?.toLowerCase().contains(query) ?? false) ||
+            (material.description?.toLowerCase().contains(query) ?? false);
       }
-      
+
       return typeMatch && searchMatch;
     }).toList();
-    
+
     // 更新分页信息
     final totalMaterials = filteredMaterials.length;
     final totalPages = (totalMaterials / materialsPerPage).ceil();
-    
+
     // 计算当前页
     int newCurrentPage = currentPage;
     if (resetPage) {
@@ -52,13 +53,13 @@ class MaterialFilterPaginationService {
         newCurrentPage = totalPages;
       }
     }
-    
+
     // 更新当前页面显示的数据
     final displayedMaterials = _getDisplayedMaterials(
       filteredMaterials,
       newCurrentPage,
     );
-    
+
     return FilterResult(
       filteredMaterials: filteredMaterials,
       displayedMaterials: displayedMaterials,
@@ -75,7 +76,7 @@ class MaterialFilterPaginationService {
   ) {
     final startIndex = (currentPage - 1) * materialsPerPage;
     final endIndex = startIndex + materialsPerPage;
-    
+
     return filteredMaterials.sublist(
       startIndex,
       endIndex > filteredMaterials.length ? filteredMaterials.length : endIndex,
@@ -92,7 +93,7 @@ class MaterialFilterPaginationService {
         currentResult.filteredMaterials,
         page,
       );
-      
+
       return FilterResult(
         filteredMaterials: currentResult.filteredMaterials,
         displayedMaterials: displayedMaterials,

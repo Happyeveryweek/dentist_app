@@ -100,13 +100,14 @@ class PurchaseInitializationService {
                   () => userProvider?.buildDoctorFilter(
                         userProvider.currentUser,
                       ),
-              shouldFilterByDoctor:
-                  () =>
-                      userProvider != null &&
-                      userProvider.currentUser != null &&
-                      userProvider.currentUser!.role != 'admin' &&
-                      userProvider.currentUser!.doctor != null &&
-                      userProvider.currentUser!.doctor!.isNotEmpty,
+              shouldFilterByDoctor: () {
+                final currentUser = userProvider?.currentUser;
+                final doctor = currentUser?.doctor;
+                return currentUser != null &&
+                    currentUser.role != 'admin' &&
+                    doctor != null &&
+                    doctor.isNotEmpty;
+              },
               testMySqlConnection: () => Future.value(false),
             ),
             sqliteDataSource: sqliteDataSource,
@@ -143,13 +144,14 @@ class PurchaseInitializationService {
                   () => userProvider?.buildDoctorFilter(
                         userProvider.currentUser,
                       ),
-              shouldFilterByDoctor:
-                  () =>
-                      userProvider != null &&
-                      userProvider.currentUser != null &&
-                      userProvider.currentUser!.role != 'admin' &&
-                      userProvider.currentUser!.doctor != null &&
-                      userProvider.currentUser!.doctor!.isNotEmpty,
+              shouldFilterByDoctor: () {
+                final currentUser = userProvider?.currentUser;
+                final doctor = currentUser?.doctor;
+                return currentUser != null &&
+                    currentUser.role != 'admin' &&
+                    doctor != null &&
+                    doctor.isNotEmpty;
+              },
               testMySqlConnection: () => Future.value(false),
             ),
             sqliteDataSource: sqliteDataSource,
@@ -184,13 +186,14 @@ class PurchaseInitializationService {
                   () => userProvider?.buildDoctorFilter(
                         userProvider.currentUser,
                       ),
-              shouldFilterByDoctor:
-                  () =>
-                      userProvider != null &&
-                      userProvider.currentUser != null &&
-                      userProvider.currentUser!.role != 'admin' &&
-                      userProvider.currentUser!.doctor != null &&
-                      userProvider.currentUser!.doctor!.isNotEmpty,
+              shouldFilterByDoctor: () {
+                final currentUser = userProvider?.currentUser;
+                final doctor = currentUser?.doctor;
+                return currentUser != null &&
+                    currentUser.role != 'admin' &&
+                    doctor != null &&
+                    doctor.isNotEmpty;
+              },
               testMySqlConnection: () => Future.value(false),
             ),
             sqliteDataSource: sqliteDataSource,

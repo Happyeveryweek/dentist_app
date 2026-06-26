@@ -18,6 +18,7 @@ class InfoSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final actionWidget = action;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -25,7 +26,7 @@ class InfoSectionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -39,7 +40,7 @@ class InfoSectionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 20),
@@ -54,7 +55,7 @@ class InfoSectionCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              if (action != null) action!,
+              if (actionWidget != null) actionWidget,
             ],
           ),
           const SizedBox(height: 20),
@@ -81,6 +82,7 @@ class StatusRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final valueWidgetLocal = valueWidget;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -93,8 +95,8 @@ class StatusRow extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        if (valueWidget != null)
-          valueWidget!
+        if (valueWidgetLocal != null)
+          valueWidgetLocal
         else
           Container(
             width: double.infinity,
@@ -104,7 +106,7 @@ class StatusRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
               border: Border.all(color: Colors.grey.shade200),
             ),
-             child: SelectableText(
+            child: SelectableText(
               value ?? '-',
               style: TextStyle(
                 fontSize: 13,
@@ -122,7 +124,9 @@ class ToolStatusChip extends StatelessWidget {
   final String label;
   final bool isAvailable;
 
-  const ToolStatusChip({Key? key, required this.label, required this.isAvailable}) : super(key: key);
+  const ToolStatusChip(
+      {Key? key, required this.label, required this.isAvailable})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +155,8 @@ class StatBox extends StatelessWidget {
   final String label;
   final String value;
 
-  const StatBox({Key? key, required this.label, required this.value}) : super(key: key);
+  const StatBox({Key? key, required this.label, required this.value})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -163,8 +168,11 @@ class StatBox extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+          Text(value,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(label,
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
         ],
       ),
     );

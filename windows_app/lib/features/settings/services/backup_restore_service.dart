@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'package:mysql1/mysql1.dart';
 
 import '../../../providers/database_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../models/backup_log.dart';
+import 'package:dentist_app_windows/utils/log_manager.dart';
 
 /// 备份恢复服务
 /// 负责数据库备份和恢复的业务逻辑
@@ -19,18 +19,16 @@ class BackupRestoreService {
         _settingsProvider = settingsProvider;
 
   /// 执行备份操作
-  /// 
+  ///
   /// [path1] 第一个备份路径
   /// [path2] 第二个备份路径
-  /// 
+  ///
   /// 返回备份成功的路径列表
   Future<BackupResult> performBackup({
     required String path1,
     required String path2,
   }) async {
-    print('开始执行备份操作');
-    print('备份目录1: $path1');
-    print('备份目录2: $path2');
+    LogManager.i('BackupRestoreService', '开始执行备份操作，路径1: $path1, 路径2: $path2');
 
     // 如果两个路径都为空，提示用户至少设置一个
     if (path1.isEmpty && path2.isEmpty) {
@@ -48,29 +46,24 @@ class BackupRestoreService {
     // 执行备份到第一个目录
     if (path1.isNotEmpty) {
       try {
-        print('开始备份到目录1: $path1');
-        
         // 确保目录存在
         Directory directory = Directory(path1);
         if (!directory.existsSync()) {
           try {
             directory.createSync(recursive: true);
-            print('创建目录1: $path1');
           } catch (e) {
             throw Exception('无法创建目录: $e');
           }
         }
 
         await _settingsProvider.setBackupPath(path1);
-        print('已设置备份路径1: $path1');
-        
+
         // 先验证备份路径
         final isValid = await _settingsProvider.validateBackupPath(path1);
         if (!isValid) {
           throw Exception('备份路径无效: $path1');
         }
-        print('备份路径1验证通过');
-        
+
         // 执行备份
         final backupPath = await _dbProvider.backupDatabase(
           backupPath: path1,
@@ -78,18 +71,15 @@ class BackupRestoreService {
           onLogFailure: (error) => _settingsProvider.logBackupFailure(error),
           backupDataSource: _settingsProvider.backupDataSource,
         );
-        
-        print('备份到目录1成功: $backupPath');
-        
+
         // 更新备份日期
         await _settingsProvider.updateLastBackupDate(DateTime.now());
         backupSuccess = true;
         successPaths.add(backupPath);
       } catch (e) {
-        print('备份到目录1失败: $e');
+        LogManager.e('BackupRestoreService', '备份到目录1失败', error: e);
         errorMessage = '备份到目录1失败: $e';
-        print(errorMessage);
-        
+
         // 记录失败日志
         await BackupLog.addLog(BackupLog(
           backupDate: DateTime.now(),
@@ -99,7 +89,6 @@ class BackupRestoreService {
         ));
       }
     } else {
-      print('备份目录1为空，跳过备份');
       // 备份目录1为空，记录日志
       await BackupLog.addLog(BackupLog(
         backupDate: DateTime.now(),
@@ -112,29 +101,24 @@ class BackupRestoreService {
     // 执行备份到第二个目录
     if (path2.isNotEmpty) {
       try {
-        print('开始备份到目录2: $path2');
-        
         // 确保目录存在
         Directory directory = Directory(path2);
         if (!directory.existsSync()) {
           try {
             directory.createSync(recursive: true);
-            print('创建目录2: $path2');
           } catch (e) {
             throw Exception('无法创建目录: $e');
           }
         }
 
         await _settingsProvider.setBackupPath(path2);
-        print('已设置备份路径2: $path2');
-        
+
         // 先验证备份路径
         final isValid = await _settingsProvider.validateBackupPath(path2);
         if (!isValid) {
           throw Exception('备份路径无效: $path2');
         }
-        print('备份路径2验证通过');
-        
+
         // 执行备份到第二个目录
         final backupPath2 = await _dbProvider.backupDatabase(
           backupPath: path2,
@@ -142,22 +126,19 @@ class BackupRestoreService {
           onLogFailure: (error) => _settingsProvider.logBackupFailure(error),
           backupDataSource: _settingsProvider.backupDataSource,
         );
-        
-        print('备份到目录2成功: $backupPath2');
-        
+
         // 更新备份日期
         await _settingsProvider.updateLastBackupDate(DateTime.now());
-        
+
         backupSuccess = true;
         successPaths.add(backupPath2);
       } catch (e) {
-        print('备份到目录2失败: $e');
+        LogManager.e('BackupRestoreService', '备份到目录2失败', error: e);
         if (errorMessage.isNotEmpty) {
           errorMessage += '\n';
         }
         errorMessage += '备份到目录2失败: $e';
-        print(errorMessage);
-        
+
         // 记录失败日志
         await BackupLog.addLog(BackupLog(
           backupDate: DateTime.now(),
@@ -167,7 +148,6 @@ class BackupRestoreService {
         ));
       }
     } else {
-      print('备份目录2为空，跳过备份');
       // 备份目录2为空，记录日志
       await BackupLog.addLog(BackupLog(
         backupDate: DateTime.now(),
@@ -186,7 +166,7 @@ class BackupRestoreService {
 
     // 根据备份结果显示不同的提示
     if (!backupSuccess) {
-      print('备份失败，错误信息: $errorMessage');
+      LogManager.e('BackupRestoreService', '备份失败，错误信息', error: errorMessage);
       return BackupResult(
         success: false,
         errorMessage: errorMessage.isEmpty ? '备份失败' : errorMessage,
@@ -194,7 +174,6 @@ class BackupRestoreService {
       );
     }
 
-    print('备份完成，成功路径: ${successPaths.join(", ")}');
     return BackupResult(
       success: true,
       errorMessage: null,
@@ -203,7 +182,7 @@ class BackupRestoreService {
   }
 
   /// 选择备份文件
-  /// 
+  ///
   /// 返回选中的文件路径，如果用户取消则返回 null
   Future<String?> selectBackupFile() async {
     final isMySQL = _settingsProvider.dataSourceType == 'mysql';
@@ -228,9 +207,9 @@ class BackupRestoreService {
   }
 
   /// 验证备份文件
-  /// 
+  ///
   /// [filePath] 文件路径
-  /// 
+  ///
   /// 返回验证结果，如果验证失败则返回错误信息
   Future<String?> validateBackupFile(String filePath) async {
     // 检查文件是否存在
@@ -255,9 +234,9 @@ class BackupRestoreService {
   }
 
   /// 执行恢复操作
-  /// 
+  ///
   /// [filePath] 备份文件路径
-  /// 
+  ///
   /// 返回恢复结果
   Future<RestoreResult> performRestore(String filePath) async {
     final isMySQL = _settingsProvider.dataSourceType == 'mysql';
@@ -266,37 +245,35 @@ class BackupRestoreService {
       if (isMySQL) {
         // MySQL 恢复使用 mysql.exe
         final mysqlSettings = _settingsProvider.getCompleteMySQLSettings();
-        
+
         // 先验证还原策略
         final isValid = await _settingsProvider.validateRestoreStrategy(
           filePath: filePath,
           targetDataSource: 'mysql',
         );
-        
+
         if (!isValid) {
           throw Exception('还原策略验证失败');
         }
-        
+
         // 创建还原前备份
         final preBackup = await _settingsProvider.createPreRestoreBackup();
-        if (preBackup != null) {
-          print('已创建还原前备份: $preBackup');
-        }
-        
+
         // 执行还原
         await _dbProvider.restoreFromMySQLDump(
-          filePath, 
+          filePath,
           mysqlSettings: mysqlSettings,
-          onLogOperation: (message) => print(message),
+          onLogOperation: (message) =>
+              LogManager.i('BackupRestoreService', 'MySQL还原: $message'),
         );
-        
+
         // 还原后清理
         await _settingsProvider.cleanupAfterRestore(
           success: true,
           restorePath: filePath,
           preRestoreBackupPath: preBackup,
         );
-        
+
         // 记录还原操作
         await _settingsProvider.logRestoreOperation(
           operation: 'MySQL还原完成',

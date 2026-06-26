@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import 'dart:typed_data';
@@ -7,12 +6,11 @@ import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
 import '../../../models/patient_material.dart';
 import '../../../models/material_image.dart';
-import '../../../models/patient_material_with_images.dart';
 import '../../../providers/patient_provider.dart';
-import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../utils/image_compressor.dart';
 import '../../../widgets/success_toast.dart';
+import '../../../utils/log_manager.dart';
 
 /// 单组材料编辑器
 /// 用于添加新材料组或编辑现有材料组
@@ -37,11 +35,11 @@ class SingleMaterialEditor extends StatefulWidget {
 class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
   final TextEditingController _descriptionController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  
+
   List<MaterialImage> _images = [];
   bool _isLoading = false;
   bool _isSaving = false;
-  
+
   // 记录要删除的图片ID（仅编辑模式）
   final Set<int> _imagesToDelete = {};
 
@@ -58,10 +56,11 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
   }
 
   void _initializeData() {
-    if (widget.material != null) {
+    final material = widget.material;
+    if (material != null) {
       // 编辑模式：加载现有数据
-      _descriptionController.text = widget.material!.material.description;
-      _images = List.from(widget.material!.images);
+      _descriptionController.text = material.material.description;
+      _images = List.from(material.images);
     }
   }
 
@@ -79,17 +78,21 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
         });
 
         for (PlatformFile file in result.files) {
-          if (file.path != null) {
+          final filePath = file.path;
+          if (filePath != null) {
             // 创建临时的MaterialImage对象，用于预览
             final materialImage = MaterialImage(
               materialId: 0, // 临时ID
               imageData: Uint8List(0), // 临时数据
-              imageType: path.extension(file.path!).toLowerCase().replaceFirst('.', ''),
+              imageType: path
+                  .extension(filePath)
+                  .toLowerCase()
+                  .replaceFirst('.', ''),
               fileSize: file.size,
-              originalName: file.path!, // 存储文件路径用于后续处理
+              originalName: filePath, // 存储文件路径用于后续处理
               hasThumbnail: false,
             );
-            
+
             _images.add(materialImage);
           }
         }
@@ -102,7 +105,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
       setState(() {
         _isLoading = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -116,19 +119,21 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
 
   void _removeImage(int index) {
     final image = _images[index];
-    
+    final imageId = image.id;
+
     setState(() {
       // 如果是现有图片（有ID），记录到删除列表
-      if (image.id != null && image.id! > 0) {
-        _imagesToDelete.add(image.id!);
+      if (imageId != null && imageId > 0) {
+        _imagesToDelete.add(imageId);
       }
-      
+
       _images.removeAt(index);
     });
   }
 
   Future<void> _saveMaterial() async {
-    if (!_formKey.currentState!.validate()) {
+    final formState = _formKey.currentState;
+    if (formState == null || !formState.validate()) {
       return;
     }
 
@@ -147,13 +152,15 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
     });
 
     try {
-      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
-      
+      final patientProvider =
+          Provider.of<PatientProvider>(context, listen: false);
+
       // 创建或更新材料对象
+      final existingMaterial = widget.material;
       PatientMaterial material;
-      if (widget.material != null) {
+      if (existingMaterial != null) {
         // 编辑模式：更新现有材料
-        material = widget.material!.material.copyWith(
+        material = existingMaterial.material.copyWith(
           description: _descriptionController.text.trim(),
         );
       } else {
@@ -179,44 +186,54 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
         try {
           await patientProvider.deleteMaterialImage(imageId);
         } catch (e) {
-          print('删除图片失败: ID=$imageId, 错误=$e');
+          LogManager.e('SingleMaterialEditor', '删除图片失败: ID=$imageId, 错误=$e');
         }
       }
 
       // 处理新添加的图片
       List<MaterialImage> finalImages = [];
-      
+      final savedMaterialId = savedMaterial.id;
+      if (savedMaterialId == null) {
+        throw Exception('保存材料后ID为空');
+      }
+
       for (MaterialImage image in _images) {
-        if (image.id != null && image.id! > 0) {
+        final imageId = image.id;
+        final originalName = image.originalName;
+        if (imageId != null && imageId > 0) {
           // 现有图片，直接添加到最终列表
           finalImages.add(image);
-        } else if (image.originalName != null && 
-                   image.originalName!.isNotEmpty && 
-                   !image.originalName!.startsWith('http')) {
+        } else if (originalName != null &&
+            originalName.isNotEmpty &&
+            !originalName.startsWith('http')) {
           // 新图片，需要处理和保存
           try {
-            final file = File(image.originalName!);
+            final file = File(originalName);
             if (await file.exists()) {
               // 压缩图片并生成缩略图
-              final compressedResult = await ImageCompressor.compressImageFile(file);
-              final thumbnailBytes = await ImageCompressor.generateThumbnail(compressedResult.compressedBytes);
-              
+              final compressedResult =
+                  await ImageCompressor.compressImageFile(file);
+              final thumbnailBytes = await ImageCompressor.generateThumbnail(
+                  compressedResult.compressedBytes);
+
               final materialImage = MaterialImage(
-                materialId: savedMaterial.id!,
+                materialId: savedMaterialId,
                 imageData: compressedResult.compressedBytes,
                 imageType: compressedResult.imageType,
                 fileSize: compressedResult.compressedSize,
                 thumbnailData: thumbnailBytes,
                 thumbnailSize: thumbnailBytes.length,
-                originalName: path.basename(image.originalName!),
+                originalName: path.basename(originalName),
                 hasThumbnail: true,
               );
-              
-              final savedImage = await patientProvider.addMaterialImage(materialImage);
+
+              final savedImage =
+                  await patientProvider.addMaterialImage(materialImage);
               finalImages.add(savedImage);
             }
           } catch (e) {
-            print('保存图片失败: ${image.originalName}, 错误=$e');
+            LogManager.e(
+                'SingleMaterialEditor', '保存图片失败: ${image.originalName}, 错误=$e');
           }
         }
       }
@@ -232,7 +249,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
 
       if (mounted) {
         AppToastManager.showSuccess(
-          context, 
+          context,
           message: widget.material != null ? '材料更新成功' : '材料添加成功',
         );
         Navigator.of(context).pop();
@@ -267,7 +284,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -278,9 +295,9 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
             // 标题栏
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: DentalColors.primaryGradient,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
@@ -290,11 +307,13 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
-                      widget.material != null ? Icons.edit : Icons.add_photo_alternate,
+                      widget.material != null
+                          ? Icons.edit
+                          : Icons.add_photo_alternate,
                       color: Colors.white,
                       size: 20,
                     ),
@@ -328,7 +347,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 材料描述输入
-                      Text(
+                      const Text(
                         '材料描述',
                         style: TextStyle(
                           fontSize: 16,
@@ -346,7 +365,8 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: DentalColors.primary, width: 2),
+                            borderSide: const BorderSide(
+                                color: DentalColors.primary, width: 2),
                           ),
                           filled: true,
                           fillColor: Colors.grey.shade50,
@@ -366,7 +386,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
+                          const Text(
                             '图片管理',
                             style: TextStyle(
                               fontSize: 16,
@@ -376,13 +396,15 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                           ),
                           ElevatedButton.icon(
                             onPressed: _isLoading ? null : _pickImages,
-                            icon: _isLoading 
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.add_photo_alternate, size: 18),
+                            icon: _isLoading
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.add_photo_alternate,
+                                    size: 18),
                             label: Text(_isLoading ? '处理中...' : '添加图片'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: DentalColors.primary,
@@ -421,12 +443,12 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: _isSaving ? null : () {
-                      if (widget.onCancel != null) {
-                        widget.onCancel!();
-                      }
-                      Navigator.of(context).pop();
-                    },
+                    onPressed: _isSaving
+                        ? null
+                        : () {
+                            widget.onCancel?.call();
+                            Navigator.of(context).pop();
+                          },
                     child: const Text('取消'),
                   ),
                   const SizedBox(width: 12),
@@ -435,28 +457,29 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: DentalColors.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     child: _isSaving
-                      ? const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
+                        ? const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
                               ),
-                            ),
-                            SizedBox(width: 8),
-                            Text('保存中...'),
-                          ],
-                        )
-                      : Text(widget.material != null ? '更新' : '保存'),
+                              SizedBox(width: 8),
+                              Text('保存中...'),
+                            ],
+                          )
+                        : Text(widget.material != null ? '更新' : '保存'),
                   ),
                 ],
               ),
@@ -473,7 +496,8 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
         decoration: BoxDecoration(
           color: Colors.grey.shade100,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+          border:
+              Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
         ),
         child: Center(
           child: Column(
@@ -528,7 +552,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
         border: Border.all(color: Colors.grey.shade300, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 2, // 从4减少到2
             offset: const Offset(0, 1), // 从(0,2)减少到(0,1)
           ),
@@ -560,7 +584,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                   width: 16, // 从24减少到16
                   height: 16, // 从24减少到16
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.8),
+                    color: Colors.red.withValues(alpha: 0.8),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -580,7 +604,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
+                  color: Colors.black.withValues(alpha: 0.7),
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(6),
                     bottomRight: Radius.circular(6),
@@ -606,13 +630,15 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
   }
 
   Widget _buildImageWidget(MaterialImage image) {
+    final originalName = image.originalName;
+    final thumbnailData = image.thumbnailData;
+
     // 如果是新选择的图片（有文件路径）
-    if (image.originalName != null && 
-        image.originalName!.isNotEmpty && 
-        !image.originalName!.startsWith('http') &&
+    if (originalName != null &&
+        originalName.isNotEmpty &&
+        !originalName.startsWith('http') &&
         (image.id == null || image.id == 0)) {
-      
-      final file = File(image.originalName!);
+      final file = File(originalName);
       if (file.existsSync()) {
         return Image.file(
           file,
@@ -632,9 +658,9 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
     }
 
     // 如果是现有图片（有缩略图数据）
-    if (image.thumbnailData != null && image.thumbnailData!.isNotEmpty) {
+    if (thumbnailData != null && thumbnailData.isNotEmpty) {
       return Image.memory(
-        image.thumbnailData!,
+        thumbnailData,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return Container(
@@ -680,14 +706,15 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
 
   // 获取图片显示名称
   String _getImageDisplayName(MaterialImage image, int index) {
-    if (image.originalName != null && image.originalName!.isNotEmpty) {
+    final originalName = image.originalName;
+    if (originalName != null && originalName.isNotEmpty) {
       // 如果是文件路径，提取文件名
-      if (image.originalName!.contains('/') || image.originalName!.contains('\\')) {
-        return path.basename(image.originalName!);
+      if (originalName.contains('/') || originalName.contains('\\')) {
+        return path.basename(originalName);
       }
-      return image.originalName!;
+      return originalName;
     }
-    
+
     return '图片${index + 1}';
   }
 
@@ -695,25 +722,26 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
   void _showImageDetail(MaterialImage image, int index) async {
     // 如果是已保存的图片且有ID，重新从数据库加载完整的原图数据
     MaterialImage fullImage = image;
-    
-    if (image.id != null && image.id! > 0) {
+    final imageId = image.id;
+
+    if (imageId != null && imageId > 0) {
       try {
-        print('加载图片详情: ID=${image.id}，重新从数据库获取原图数据');
-        final patientProvider = Provider.of<PatientProvider>(context, listen: false);
-        
+        final patientProvider =
+            Provider.of<PatientProvider>(context, listen: false);
+
         // 重新加载完整的图片数据（包含原图）
-        final fullImageData = await patientProvider.getMaterialImage(image.id!);
+        final fullImageData = await patientProvider.getMaterialImage(imageId);
         if (fullImageData != null) {
           fullImage = fullImageData;
-          print('成功加载原图数据: 大小=${fullImage.imageData.length} bytes');
         } else {
-          print('无法加载原图数据，使用缓存的图片');
+          LogManager.e('SingleMaterialEditor', '无法加载原图数据，使用缓存的图片');
         }
       } catch (e) {
-        print('加载原图数据失败: $e，使用缓存的图片');
+        LogManager.e('SingleMaterialEditor', '加载原图数据失败，使用缓存的图片', error: e);
       }
     }
 
+    if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -729,7 +757,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.25),
+                color: Colors.black.withValues(alpha: 0.25),
                 blurRadius: 15,
                 spreadRadius: 2,
                 offset: const Offset(0, 8),
@@ -741,10 +769,11 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
             children: [
               // 标题栏 - 使用蓝色横条
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.blue[600]!, Colors.blue[700]!],
+                    colors: [Colors.blue.shade600, Colors.blue.shade700],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -755,7 +784,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.photo,
                       color: Colors.white,
                       size: 20,
@@ -773,16 +802,18 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 20),
                       onPressed: () => Navigator.of(context).pop(),
                       tooltip: '关闭',
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints:
+                          const BoxConstraints(minWidth: 32, minHeight: 32),
                     ),
                   ],
                 ),
               ),
-              
+
               // 图片内容 - 直接显示原图数据
               Expanded(
                 child: InteractiveViewer(
@@ -791,10 +822,11 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                   child: _buildFullSizeImage(fullImage),
                 ),
               ),
-              
+
               // 底部信息栏
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: const BorderRadius.only(
@@ -824,9 +856,12 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor.withOpacity(0.15),
+                        color: Theme.of(context)
+                            .primaryColor
+                            .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -850,13 +885,15 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
 
   // 构建全尺寸图片
   Widget _buildFullSizeImage(MaterialImage image) {
+    final originalName = image.originalName;
+    final thumbnailData = image.thumbnailData;
+
     // 如果是新选择的图片（有文件路径）
-    if (image.originalName != null && 
-        image.originalName!.isNotEmpty && 
-        !image.originalName!.startsWith('http') &&
+    if (originalName != null &&
+        originalName.isNotEmpty &&
+        !originalName.startsWith('http') &&
         (image.id == null || image.id == 0)) {
-      
-      final file = File(image.originalName!);
+      final file = File(originalName);
       if (file.existsSync()) {
         return Image.file(
           file,
@@ -880,9 +917,9 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
     }
 
     // 如果只有缩略图数据
-    if (image.thumbnailData != null && image.thumbnailData!.isNotEmpty) {
+    if (thumbnailData != null && thumbnailData.isNotEmpty) {
       return Image.memory(
-        image.thumbnailData!,
+        thumbnailData,
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
           return _buildErrorWidget();

@@ -17,12 +17,12 @@ class ResetPasswordDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final _formKey = GlobalKey<FormState>();
-    final _passwordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final passwordController = TextEditingController();
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final isPurpleTheme = Theme.of(context).scaffoldBackgroundColor ==
-        AppTheme.purpleBackground;
+    final isPurpleTheme =
+        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
 
     final accentColor = isPurpleTheme
         ? AppTheme.purpleColor
@@ -41,14 +41,15 @@ class ResetPasswordDialog extends StatelessWidget {
         children: [
           Icon(Icons.lock_reset, color: accentColor, size: 24),
           const SizedBox(width: 12),
-          Text('修改${user.username}的密码', 
-            style: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.bold)),
+          Text('修改${user.username}的密码',
+              style: TextStyle(
+                  color: textColor, fontSize: 20, fontWeight: FontWeight.bold)),
         ],
       ),
       content: Form(
-        key: _formKey,
+        key: formKey,
         child: UserFormField(
-          controller: _passwordController,
+          controller: passwordController,
           label: '新密码',
           hint: '请输入新密码',
           icon: Icons.lock,
@@ -65,16 +66,28 @@ class ResetPasswordDialog extends StatelessWidget {
         DentalGradientButton(
           text: '保存',
           onPressed: () async {
-            if (_formKey.currentState!.validate()) {
-              try {
-                final userProvider =
-                    Provider.of<UserProvider>(context, listen: false);
+            if (formKey.currentState?.validate() != true) {
+              return;
+            }
 
-                // 使用专用的密码更新方法，而不是通用的updateUser方法
-                await userProvider.updateUserPassword(
-                  user.id!,
-                  _passwordController.text,
-                );
+            final userId = user.id;
+            if (userId == null) {
+              AppToastManager.showError(
+                context,
+                message: '用户ID为空，无法修改密码',
+              );
+              return;
+            }
+
+            try {
+              final userProvider =
+                  Provider.of<UserProvider>(context, listen: false);
+
+              // 使用专用的密码更新方法，而不是通用的updateUser方法
+              await userProvider.updateUserPassword(
+                userId,
+                passwordController.text,
+              );
 
                 if (!context.mounted) return;
                 Navigator.of(context).pop();
@@ -92,9 +105,8 @@ class ResetPasswordDialog extends StatelessWidget {
                 );
               }
             }
-          },
-        ),
-      ],
+          ),
+        ],
     );
   }
 }

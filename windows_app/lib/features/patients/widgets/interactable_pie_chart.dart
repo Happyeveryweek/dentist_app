@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
 
 class InteractablePieChart extends StatefulWidget {
@@ -16,10 +15,10 @@ class InteractablePieChart extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _InteractablePieChartState createState() => _InteractablePieChartState();
+  InteractablePieChartState createState() => InteractablePieChartState();
 }
 
-class _InteractablePieChartState extends State<InteractablePieChart> {
+class InteractablePieChartState extends State<InteractablePieChart> {
   int touchedIndex = -1;
 
   @override
@@ -58,7 +57,7 @@ class _InteractablePieChartState extends State<InteractablePieChart> {
 
       // Show title if touched OR if percentage >= 5
       final showTitle = isTouched || percentage >= 5;
-      
+
       return PieChartSectionData(
         color: colors[index % colors.length],
         value: dataEntry.value.toDouble(),
@@ -91,11 +90,16 @@ class _InteractablePieChartState extends State<InteractablePieChart> {
                       touchedIndex = -1;
                       return;
                     }
-                    touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
-                    
+                    final touchedSection = pieTouchResponse.touchedSection;
+                    if (touchedSection == null) {
+                      touchedIndex = -1;
+                      return;
+                    }
+                    touchedIndex = touchedSection.touchedSectionIndex;
+
                     // 处理点击事件
                     if (event is FlTapUpEvent) {
-                      final tappedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+                      final tappedIndex = touchedSection.touchedSectionIndex;
                       final category = sortedEntries[tappedIndex].key;
                       widget.onSectionTap(category);
                     }
@@ -116,16 +120,19 @@ class _InteractablePieChartState extends State<InteractablePieChart> {
                 final dataEntry = entry.value;
                 final percentage = (dataEntry.value / total * 100);
                 final isTouched = index == touchedIndex;
-                
+
                 return InkWell(
                   onTap: () {
                     widget.onSectionTap(dataEntry.key);
                   },
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                     decoration: BoxDecoration(
-                      color: isTouched ? colors[index % colors.length].withOpacity(0.1) : Colors.transparent,
+                      color: isTouched
+                          ? colors[index % colors.length].withValues(alpha: 0.1)
+                          : Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -144,8 +151,12 @@ class _InteractablePieChartState extends State<InteractablePieChart> {
                             '${dataEntry.key}: ${dataEntry.value}人 (${percentage.toStringAsFixed(1)}%)',
                             style: TextStyle(
                               fontSize: 11,
-                              fontWeight: isTouched ? FontWeight.bold : FontWeight.normal,
-                              color: isTouched ? colors[index % colors.length] : Colors.black87,
+                              fontWeight: isTouched
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: isTouched
+                                  ? colors[index % colors.length]
+                                  : Colors.black87,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),

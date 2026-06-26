@@ -1,4 +1,5 @@
 import 'package:lpinyin/lpinyin.dart';
+import '../utils/log_manager.dart';
 
 class PinyinUtil {
   // 将中文文本转换为拼音，支持简体和繁体中文
@@ -10,7 +11,7 @@ class PinyinUtil {
       return PinyinHelper.getPinyin(text,
           separator: ' ', format: PinyinFormat.WITHOUT_TONE);
     } catch (e) {
-      print('中文转拼音出错: $e');
+      LogManager.e('PinyinUtil', '中文转拼音出错', error: e);
       return text; // 转换失败则返回原文本
     }
   }
@@ -33,7 +34,7 @@ class PinyinUtil {
       }
       return initials.toLowerCase();
     } catch (e) {
-      print('获取拼音首字母缩写出错: $e');
+      LogManager.e('PinyinUtil', '获取拼音首字母缩写出错', error: e);
       return '';
     }
   }
@@ -46,7 +47,7 @@ class PinyinUtil {
       // 获取每个汉字的拼音首字母
       return PinyinHelper.getShortPinyin(text).toLowerCase();
     } catch (e) {
-      print('中文转拼音首字母出错: $e');
+      LogManager.e('PinyinUtil', '中文转拼音首字母出错', error: e);
       return text; // 转换失败则返回原文本
     }
   }

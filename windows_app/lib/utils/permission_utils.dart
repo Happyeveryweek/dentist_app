@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
-import '../models/user.dart';
 
 /// 权限工具类
 /// 提供通用的权限检查方法和UI组件
@@ -10,100 +9,101 @@ class PermissionUtils {
   static bool canEdit(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final currentUser = userProvider.currentUser;
-    
+
     // 管理员可以编辑
     if (currentUser?.isAdmin == true) {
       return true;
     }
-    
+
     // 普通用户不能编辑
     return false;
   }
-  
+
   /// 检查当前用户是否可以编辑特定医生的数据
   static bool canEditDoctor(BuildContext context, String? doctorName) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final currentUser = userProvider.currentUser;
-    
+
     // 管理员可以编辑所有数据
     if (currentUser?.isAdmin == true) {
       return true;
     }
-    
+
     // 普通用户只能编辑自己医生的数据
     if (currentUser?.doctor != null && currentUser?.doctor == doctorName) {
       return true;
     }
-    
+
     return false;
   }
-  
+
   /// 检查当前用户是否可以删除（通用权限）
   static bool canDelete(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final currentUser = userProvider.currentUser;
-    
+
     // 管理员可以删除
     if (currentUser?.isAdmin == true) {
       return true;
     }
-    
+
     // 普通用户不能删除
     return false;
   }
-  
+
   /// 检查当前用户是否可以删除特定医生的数据
   static bool canDeleteDoctor(BuildContext context, String? doctorName) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final currentUser = userProvider.currentUser;
-    
+
     // 管理员可以删除所有数据
     if (currentUser?.isAdmin == true) {
       return true;
     }
-    
+
     // 普通用户只能删除自己医生的数据
     if (currentUser?.doctor != null && currentUser?.doctor == doctorName) {
       return true;
     }
-    
+
     return false;
   }
-  
+
   /// 检查当前用户是否可以创建
   static bool canCreate(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final currentUser = userProvider.currentUser;
-    
+
     // 所有登录用户都可以创建（管理员和普通用户）
     return currentUser != null;
   }
-  
+
   /// 检查当前用户是否可以查看
   static bool canView(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final currentUser = userProvider.currentUser;
-    
+
     // 所有登录用户都可以查看
     return currentUser != null;
   }
-  
+
   /// 检查当前用户是否有特定模块权限
   static bool hasModulePermission(BuildContext context, String module) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     final currentUser = userProvider.currentUser;
-    
+
     if (currentUser == null) return false;
-    
+
     // 管理员有所有权限
     if (currentUser.isAdmin) return true;
-    
+
     // 检查模块权限
     return currentUser.hasModulePermission(module);
   }
-  
+
   /// 显示权限不足提示
-  static void showPermissionDeniedDialog(BuildContext context, {String? message}) {
+  static void showPermissionDeniedDialog(BuildContext context,
+      {String? message}) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -124,9 +124,10 @@ class PermissionUtils {
       ),
     );
   }
-  
+
   /// 显示权限不足的SnackBar
-  static void showPermissionDeniedSnackBar(BuildContext context, {String? message}) {
+  static void showPermissionDeniedSnackBar(BuildContext context,
+      {String? message}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -156,7 +157,7 @@ class PermissionWrapper extends StatelessWidget {
   final Widget? fallback;
   final VoidCallback? onPermissionDenied;
   final bool showPermissionDeniedMessage;
-  
+
   const PermissionWrapper({
     Key? key,
     required this.child,
@@ -168,45 +169,48 @@ class PermissionWrapper extends StatelessWidget {
     this.onPermissionDenied,
     this.showPermissionDeniedMessage = false,
   }) : super(key: key);
-  
+
   @override
   Widget build(BuildContext context) {
     bool hasPermission = true;
-    
+
     // 检查编辑权限
     if (requireEdit && !PermissionUtils.canEdit(context)) {
       hasPermission = false;
     }
-    
+
     // 检查删除权限
     if (requireDelete && !PermissionUtils.canDelete(context)) {
       hasPermission = false;
     }
-    
+
     // 检查创建权限
     if (requireCreate && !PermissionUtils.canCreate(context)) {
       hasPermission = false;
     }
-    
+
     // 检查模块权限
-    if (requiredModule != null && !PermissionUtils.hasModulePermission(context, requiredModule!)) {
+    final module = requiredModule;
+    if (module != null &&
+        !PermissionUtils.hasModulePermission(context, module)) {
       hasPermission = false;
     }
-    
+
     if (!hasPermission) {
-      if (onPermissionDenied != null) {
-        onPermissionDenied!();
+      final onDenied = onPermissionDenied;
+      if (onDenied != null) {
+        onDenied();
       }
-      
+
       if (showPermissionDeniedMessage) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           PermissionUtils.showPermissionDeniedSnackBar(context);
         });
       }
-      
+
       return fallback ?? const SizedBox.shrink();
     }
-    
+
     return child;
   }
 }
@@ -223,7 +227,7 @@ class PermissionButton extends StatelessWidget {
   final String? permissionDeniedMessage;
   final ButtonStyle? style;
   final ButtonStyle? disabledStyle;
-  
+
   const PermissionButton({
     Key? key,
     required this.child,
@@ -236,43 +240,47 @@ class PermissionButton extends StatelessWidget {
     this.style,
     this.disabledStyle,
   }) : super(key: key);
-  
+
   @override
   Widget build(BuildContext context) {
     bool hasPermission = true;
-    
+
     // 检查编辑权限
     if (requireEdit && !PermissionUtils.canEdit(context)) {
       hasPermission = false;
     }
-    
+
     // 检查删除权限
     if (requireDelete && !PermissionUtils.canDelete(context)) {
       hasPermission = false;
     }
-    
+
     // 检查创建权限
     if (requireCreate && !PermissionUtils.canCreate(context)) {
       hasPermission = false;
     }
-    
+
     // 检查模块权限
-    if (requiredModule != null && !PermissionUtils.hasModulePermission(context, requiredModule!)) {
+    final module = requiredModule;
+    if (module != null &&
+        !PermissionUtils.hasModulePermission(context, module)) {
       hasPermission = false;
     }
-    
+
     return ElevatedButton(
-      onPressed: hasPermission ? onPressed : () {
-        PermissionUtils.showPermissionDeniedSnackBar(
-          context,
-          message: permissionDeniedMessage,
-        );
-      },
+      onPressed: hasPermission
+          ? onPressed
+          : () {
+              PermissionUtils.showPermissionDeniedSnackBar(
+                context,
+                message: permissionDeniedMessage,
+              );
+            },
       style: hasPermission ? style : (disabledStyle ?? _getDisabledStyle()),
       child: hasPermission ? child : _getDisabledChild(),
     );
   }
-  
+
   ButtonStyle _getDisabledStyle() {
     return ElevatedButton.styleFrom(
       backgroundColor: Colors.grey[300],
@@ -280,17 +288,14 @@ class PermissionButton extends StatelessWidget {
       elevation: 0,
     );
   }
-  
+
   Widget _getDisabledChild() {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         const Icon(Icons.lock, size: 16),
         const SizedBox(width: 4),
-        if (child is Text) 
-          Text((child as Text).data ?? '')
-        else 
-          child,
+        if (child is Text) Text((child as Text).data ?? '') else child,
       ],
     );
   }
@@ -306,7 +311,7 @@ class PermissionIconButton extends StatelessWidget {
   final String? requiredModule;
   final String? permissionDeniedMessage;
   final String? tooltip;
-  
+
   const PermissionIconButton({
     Key? key,
     required this.icon,
@@ -318,39 +323,43 @@ class PermissionIconButton extends StatelessWidget {
     this.permissionDeniedMessage,
     this.tooltip,
   }) : super(key: key);
-  
+
   @override
   Widget build(BuildContext context) {
     bool hasPermission = true;
-    
+
     // 检查编辑权限
     if (requireEdit && !PermissionUtils.canEdit(context)) {
       hasPermission = false;
     }
-    
+
     // 检查删除权限
     if (requireDelete && !PermissionUtils.canDelete(context)) {
       hasPermission = false;
     }
-    
+
     // 检查创建权限
     if (requireCreate && !PermissionUtils.canCreate(context)) {
       hasPermission = false;
     }
-    
+
     // 检查模块权限
-    if (requiredModule != null && !PermissionUtils.hasModulePermission(context, requiredModule!)) {
+    final module = requiredModule;
+    if (module != null &&
+        !PermissionUtils.hasModulePermission(context, module)) {
       hasPermission = false;
     }
-    
+
     return IconButton(
       icon: hasPermission ? icon : const Icon(Icons.lock, color: Colors.grey),
-      onPressed: hasPermission ? onPressed : () {
-        PermissionUtils.showPermissionDeniedSnackBar(
-          context,
-          message: permissionDeniedMessage,
-        );
-      },
+      onPressed: hasPermission
+          ? onPressed
+          : () {
+              PermissionUtils.showPermissionDeniedSnackBar(
+                context,
+                message: permissionDeniedMessage,
+              );
+            },
       tooltip: hasPermission ? tooltip : '权限不足',
       color: hasPermission ? null : Colors.grey,
     );

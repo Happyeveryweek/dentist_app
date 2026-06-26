@@ -7,6 +7,7 @@ import '../../../models/patient.dart';
 import '../../../models/patient_medical_record.dart';
 import '../../../utils/dental_condition_integration.dart';
 import '../../../widgets/dental_icons.dart';
+import '../../../utils/log_manager.dart';
 
 class PatientMedicalRecordDetailDialog extends StatelessWidget {
   final Patient patient;
@@ -179,7 +180,7 @@ class _MedicalRecordDetailHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: DentalColors.primary.withOpacity(0.1),
+        color: DentalColors.primary.withValues(alpha: 0.1),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(16),
           topRight: Radius.circular(16),
@@ -191,10 +192,10 @@ class _MedicalRecordDetailHeader extends StatelessWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: DentalColors.primary.withOpacity(0.2),
+              color: DentalColors.primary.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: const Icon(
               Icons.description_rounded,
               color: DentalColors.primary,
               size: 24,
@@ -205,7 +206,7 @@ class _MedicalRecordDetailHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   '病历详情',
                   style: TextStyle(
                     fontSize: 20,
@@ -251,15 +252,15 @@ class _MedicalRecordBasicInfoSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(Icons.info_outline, size: 20, color: DentalColors.primary),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 '基本信息',
                 style: TextStyle(
@@ -291,8 +292,8 @@ class _PatientInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return _InfoCard(
       title: '患者信息',
-      backgroundColor: Colors.blue.withOpacity(0.1),
-      borderColor: Colors.blue.withOpacity(0.3),
+      backgroundColor: Colors.blue.withValues(alpha: 0.1),
+      borderColor: Colors.blue.withValues(alpha: 0.3),
       rows: [
         [
           _CompactInfoCell(label: '姓名', value: patient.name),
@@ -303,17 +304,17 @@ class _PatientInfoCard extends StatelessWidget {
           _CompactInfoCell(label: '电话', value: patient.displayPhone()),
           _CompactInfoCell(
             label: '病历号',
-            value: patient.medical_record_number?.toString() ?? '无',
+            value: patient.medicalRecordNumber?.toString() ?? '无',
           ),
           _CompactInfoCell(
             label: '首诊',
-            value: DateFormat('yyyy-MM-dd').format(patient.first_visit_date),
+            value: DateFormat('yyyy-MM-dd').format(patient.firstVisitDate),
           ),
         ],
         [
           _CompactInfoCell(
             label: '身份证号',
-            value: patient.identification_number ?? '无',
+            value: patient.identificationNumber ?? '无',
             flex: 2,
           ),
           _CompactInfoCell(
@@ -338,8 +339,8 @@ class _MedicalRecordInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return _InfoCard(
       title: '病历信息',
-      backgroundColor: Colors.orange.withOpacity(0.1),
-      borderColor: Colors.orange.withOpacity(0.3),
+      backgroundColor: Colors.orange.withValues(alpha: 0.1),
+      borderColor: Colors.orange.withValues(alpha: 0.3),
       rows: [
         [
           _CompactInfoCell(
@@ -465,17 +466,17 @@ class _MedicalRecordContentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color backgroundColor = Colors.grey[50]!;
-    Color borderColor = Colors.grey[200]!;
+    Color backgroundColor = Colors.grey.shade50;
+    Color borderColor = Colors.grey.shade200;
     Color iconColor = DentalColors.primary;
 
     if (isWarning) {
-      backgroundColor = Colors.orange[50]!;
-      borderColor = Colors.orange[200]!;
+      backgroundColor = Colors.orange.shade50;
+      borderColor = Colors.orange.shade200;
       iconColor = Colors.orange;
     } else if (isHighlight) {
-      backgroundColor = DentalColors.success.withOpacity(0.05);
-      borderColor = DentalColors.success.withOpacity(0.2);
+      backgroundColor = DentalColors.success.withValues(alpha: 0.05);
+      borderColor = DentalColors.success.withValues(alpha: 0.2);
       iconColor = DentalColors.success;
     }
 
@@ -580,16 +581,17 @@ class _MedicalRecordDentalConditionsSection extends StatelessWidget {
   }
 
   Map<String, dynamic> _parseDentalData() {
-    if (patient.dental_condition == null || patient.dental_condition!.isEmpty) {
+    final dentalCondition = patient.dentalCondition;
+    if (dentalCondition == null || dentalCondition.isEmpty) {
       return {};
     }
 
     try {
       return DentalConditionIntegration.parseDentalCondition(
-        patient.dental_condition!,
+        dentalCondition,
       );
     } catch (e) {
-      debugPrint('解析牙齿状况数据失败: $e');
+      LogManager.e('PatientMedicalRecordDetailDialog', '解析牙齿状况数据失败', error: e);
       return {};
     }
   }
@@ -613,10 +615,11 @@ class _DentalConditionRecordCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.teal.withOpacity(0.3), width: 1.5),
+        border:
+            Border.all(color: Colors.teal.withValues(alpha: 0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.teal.withOpacity(0.1),
+            color: Colors.teal.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -633,7 +636,7 @@ class _DentalConditionRecordCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.teal.withOpacity(0.05),
+              color: Colors.teal.withValues(alpha: 0.05),
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(12),
                 bottomRight: Radius.circular(12),
@@ -685,8 +688,8 @@ class _DentalConditionRecordHeader extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.teal.withOpacity(0.8),
-            Colors.teal.withOpacity(0.6),
+            Colors.teal.withValues(alpha: 0.8),
+            Colors.teal.withValues(alpha: 0.6),
           ],
         ),
         borderRadius: const BorderRadius.only(
@@ -716,7 +719,7 @@ class _DentalConditionRecordHeader extends StatelessWidget {
             '关联日期: ${DentalConditionIntegration.formatDateForDisplay(selectedDate)}',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               fontWeight: FontWeight.w500,
             ),
           ),

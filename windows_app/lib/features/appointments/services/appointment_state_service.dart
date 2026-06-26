@@ -21,13 +21,13 @@ class AppointmentStateService extends ChangeNotifier {
   void _sortAppointmentsInPlace() {
     appointments.sort((a, b) {
       final now = DateTime.now();
-      final diffA = a.appointment_date.difference(now).inMinutes.abs();
-      final diffB = b.appointment_date.difference(now).inMinutes.abs();
+      final diffA = a.appointmentDate.difference(now).inMinutes.abs();
+      final diffB = b.appointmentDate.difference(now).inMinutes.abs();
 
-      if (a.appointment_date.isAfter(now) && b.appointment_date.isBefore(now)) {
+      if (a.appointmentDate.isAfter(now) && b.appointmentDate.isBefore(now)) {
         return -1;
       }
-      if (a.appointment_date.isBefore(now) && b.appointment_date.isAfter(now)) {
+      if (a.appointmentDate.isBefore(now) && b.appointmentDate.isAfter(now)) {
         return 1;
       }
       return diffA.compareTo(diffB);
@@ -61,7 +61,7 @@ class AppointmentStateService extends ChangeNotifier {
     _syncFilteredAppointments();
   }
 
-  Future<void> loadAppointments() async {
+  Future<void> loadAppointments({bool forceRefresh = false}) async {
     isLoading = true;
     notifyListeners();
 
@@ -74,7 +74,8 @@ class AppointmentStateService extends ChangeNotifier {
       if (!isAdmin && doctorName != null && doctorName.isNotEmpty) {
         loaded = await appointmentProvider.getAppointmentsByDoctor(doctorName);
       } else {
-        loaded = await appointmentProvider.getAllAppointments();
+        loaded = await appointmentProvider.getAllAppointments(
+            forceRefresh: forceRefresh);
       }
 
       setAppointments(loaded);
@@ -91,19 +92,24 @@ class AppointmentStateService extends ChangeNotifier {
     List<Appointment> base;
     if (!isFiltering) {
       base = List.from(appointments);
-    } else if (isDateRangeFiltering && endDate != null) {
-      base = appointments.where((appointment) {
-        final d = appointment.appointment_date;
-        final startDateTime =
-            DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
-        final endDateTime =
-            DateTime(endDate!.year, endDate!.month, endDate!.day, 23, 59, 59);
-        return d.isAfter(startDateTime.subtract(const Duration(seconds: 1))) &&
-            d.isBefore(endDateTime.add(const Duration(seconds: 1)));
-      }).toList();
+    } else if (isDateRangeFiltering) {
+      final rangeEnd = endDate;
+      if (rangeEnd == null) {
+        base = List.from(appointments);
+      } else {
+        base = appointments.where((appointment) {
+          final d = appointment.appointmentDate;
+          final startDateTime =
+              DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+          final endDateTime =
+              DateTime(rangeEnd.year, rangeEnd.month, rangeEnd.day, 23, 59, 59);
+          return d.isAfter(startDateTime.subtract(const Duration(seconds: 1))) &&
+              d.isBefore(endDateTime.add(const Duration(seconds: 1)));
+        }).toList();
+      }
     } else {
       base = appointments.where((appointment) {
-        final d = appointment.appointment_date;
+        final d = appointment.appointmentDate;
         return d.year == selectedDate.year &&
             d.month == selectedDate.month &&
             d.day == selectedDate.day;
@@ -155,7 +161,7 @@ class AppointmentStateService extends ChangeNotifier {
     if (query.isEmpty) return true;
 
     final patient = appointment.patient;
-    final date = appointment.appointment_date;
+    final date = appointment.appointmentDate;
     final dateText =
         '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     final slashDateText = dateText.replaceAll('-', '/');
@@ -166,28 +172,28 @@ class AppointmentStateService extends ChangeNotifier {
 
     final values = <String?>[
       appointment.id?.toString(),
-      appointment.patient_id?.toString(),
+      appointment.patientId?.toString(),
       appointment.status,
       appointment.statusDisplay,
-      appointment.treatment_type,
+      appointment.treatmentType,
       appointment.notes,
       appointment.cost?.toString(),
-      appointment.appointment_time,
+      appointment.appointmentTime,
       dateText,
       slashDateText,
       monthDayText,
       timeText,
       patient?.name,
-      patient?.name_pinyin,
+      patient?.namePinyin,
       if (patient != null) PinyinUtil.toPinyin(patient.name),
       if (patient != null)
         PinyinUtil.toPinyin(patient.name).replaceAll(' ', ''),
-      patient?.name_initials,
+      patient?.nameInitials,
       if (patient != null) PinyinUtil.getInitials(patient.name),
       if (patient != null) PinyinUtil.getFirstLetters(patient.name),
       patient?.mainPhone,
       patient?.backupPhone,
-      patient?.medical_record_number?.toString(),
+      patient?.medicalRecordNumber?.toString(),
       patient?.doctor,
     ];
 

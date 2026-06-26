@@ -34,24 +34,28 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   Map<String, dynamic> _statistics = {};
-  late FocusNode _focusNode;
+  FocusNode? _focusNode;
   Timer? _searchDebounce;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _focusNode = FocusNode();
-    _focusNode.addListener(_onFocusChange);
+    final focusNode = FocusNode();
+    focusNode.addListener(_onFocusChange);
+    _focusNode = focusNode;
     _loadData(showToast: false); // 初始加载时不显示提示
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _focusNode.removeListener(_onFocusChange);
+    final focusNode = _focusNode;
+    if (focusNode != null) {
+      focusNode.removeListener(_onFocusChange);
+      focusNode.dispose();
+    }
     _searchDebounce?.cancel();
-    _focusNode.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -426,9 +430,16 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
 
   /// 确认删除采购记录
   Future<void> _confirmDeletePurchaseRecord(PurchaseRecord record) async {
+    final recordId = record.id;
+    if (recordId == null) {
+      if (mounted) {
+        SuccessToastManager.showError(context, message: '记录ID无效');
+      }
+      return;
+    }
     try {
       final provider = Provider.of<PurchaseProvider>(context, listen: false);
-      final result = await provider.deletePurchaseRecord(record.id!);
+      final result = await provider.deletePurchaseRecord(recordId);
 
       if (mounted) {
         if (result > 0) {
@@ -478,13 +489,14 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
       final Map<int, List<PurchaseItem>> recordItemsMap = {};
 
       for (final record in _purchaseRecords) {
-        if (record.id != null) {
+        final recordId = record.id;
+        if (recordId != null) {
           try {
-            final items = await provider.getPurchaseItemsByRecordId(record.id!);
-            recordItemsMap[record.id!] = items;
+            final items = await provider.getPurchaseItemsByRecordId(recordId);
+            recordItemsMap[recordId] = items;
           } catch (e) {
-            AppLogger.info('加载采购记录 ${record.id} 的项目失败: $e');
-            recordItemsMap[record.id!] = [];
+            AppLogger.info('加载采购记录 $recordId 的项目失败: $e');
+            recordItemsMap[recordId] = [];
           }
         }
       }

@@ -4,7 +4,7 @@ import '../../../models/patient.dart';
 import '../widgets/financial_date_range_selector.dart';
 
 /// 财务数据过滤辅助类
-/// 
+///
 /// 提供财务数据过滤、排序、搜索的纯函数
 class FinancialDataFilterHelper {
   /// 过滤和排序财务数据
@@ -27,14 +27,16 @@ class FinancialDataFilterHelper {
       // - 患者模式：用聚合后的 patientLatestChargeDate。
       DateTime dateToCheck;
       if (displayMode == 'patient') {
-        dateToCheck = (data['patientLatestChargeDate'] as DateTime?) ?? record.createdAt;
+        dateToCheck =
+            (data['patientLatestChargeDate'] as DateTime?) ?? record.createdAt;
       } else if (item != null) {
         dateToCheck = item.chargeDate;
       } else {
         dateToCheck = record.createdAt;
       }
 
-      return FinancialDateRangeSelector.isWithinRange(dateToCheck, startDate, endDate);
+      return FinancialDateRangeSelector.isWithinRange(
+          dateToCheck, startDate, endDate);
     }).toList();
 
     // 在搜索之前进行排序
@@ -45,16 +47,20 @@ class FinancialDataFilterHelper {
       final itemB = b['item'] as FinancialItem?;
 
       // 根据显示模式和排序字段决定比较值
-      int compareNum(num va, num vb) => sortAscending ? va.compareTo(vb) : vb.compareTo(va);
-      int compareDate(DateTime da, DateTime db) => sortAscending ? da.compareTo(db) : db.compareTo(da);
+      int compareNum(num va, num vb) =>
+          sortAscending ? va.compareTo(vb) : vb.compareTo(va);
+      int compareDate(DateTime da, DateTime db) =>
+          sortAscending ? da.compareTo(db) : db.compareTo(da);
 
       // 患者模式：按患者聚合后的日期排序（已在 _getFinancialData() 中计算）
       if (displayMode == 'patient') {
         final pa = a['patientLastUpdated'] as DateTime? ?? recordA.updatedAt;
         final pb = b['patientLastUpdated'] as DateTime? ?? recordB.updatedAt;
         if (sortBy == 'charge_date') {
-          final ca = a['patientLatestChargeDate'] as DateTime? ?? recordA.createdAt;
-          final cb = b['patientLatestChargeDate'] as DateTime? ?? recordB.createdAt;
+          final ca =
+              a['patientLatestChargeDate'] as DateTime? ?? recordA.createdAt;
+          final cb =
+              b['patientLatestChargeDate'] as DateTime? ?? recordB.createdAt;
           return compareDate(ca, cb);
         }
         return compareDate(pa, pb);
@@ -106,9 +112,12 @@ class FinancialDataFilterHelper {
       final item = data['item'] as FinancialItem?;
 
       final nameMatch = patient.name.toLowerCase().contains(query);
-      final pinyinMatch = patient.name_pinyin?.toLowerCase().contains(query) ?? false;
-      final pinyinInitialMatch = patient.name_initials?.toLowerCase().contains(query) ?? false;
-      final medicalRecordMatch = patient.medical_record_number?.toString().contains(query) ?? false;
+      final pinyinMatch =
+          patient.namePinyin?.toLowerCase().contains(query) ?? false;
+      final pinyinInitialMatch =
+          patient.nameInitials?.toLowerCase().contains(query) ?? false;
+      final medicalRecordMatch =
+          patient.medicalRecordNumber?.toString().contains(query) ?? false;
       final notesMatch = record.notes?.toLowerCase().contains(query) ?? false;
 
       // 如果是按收费记录显示模式，还要搜索收费项目名称
@@ -117,7 +126,12 @@ class FinancialDataFilterHelper {
         itemNameMatch = item.itemName.toLowerCase().contains(query);
       }
 
-      return nameMatch || pinyinMatch || pinyinInitialMatch || medicalRecordMatch || notesMatch || itemNameMatch;
+      return nameMatch ||
+          pinyinMatch ||
+          pinyinInitialMatch ||
+          medicalRecordMatch ||
+          notesMatch ||
+          itemNameMatch;
     }).toList();
   }
 }

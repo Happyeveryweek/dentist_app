@@ -20,7 +20,7 @@ class AppointmentDetailsTreatmentSection extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: DentalColors.divider.withOpacity(0.5),
+          color: DentalColors.divider.withValues(alpha: 0.5),
           width: 1,
         ),
       ),
@@ -29,14 +29,14 @@ class AppointmentDetailsTreatmentSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.medical_services_rounded,
                   size: 18,
                   color: Colors.green,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   '治疗项目',
                   style: TextStyle(
@@ -57,13 +57,16 @@ class AppointmentDetailsTreatmentSection extends StatelessWidget {
 
   Widget _buildTreatmentContent() {
     try {
-      final treatmentData = jsonDecode(appointment.treatment_type ?? '[]');
+      final treatmentData = jsonDecode(appointment.treatmentType ?? '[]');
 
       if (treatmentData is Map<String, dynamic>) {
         final List<Widget> contentWidgets = [];
 
-        if (treatmentData.containsKey('treatments') && treatmentData['treatments'] is List && (treatmentData['treatments'] as List).isNotEmpty) {
-          List<String> treatments = List<String>.from(treatmentData['treatments']);
+        if (treatmentData.containsKey('treatments') &&
+            treatmentData['treatments'] is List &&
+            (treatmentData['treatments'] as List).isNotEmpty) {
+          List<String> treatments =
+              List<String>.from(treatmentData['treatments']);
           contentWidgets.add(
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,7 +120,7 @@ class AppointmentDetailsTreatmentSection extends StatelessWidget {
       }
     } catch (e) {
       return Text(
-        appointment.treatment_type ?? '无治疗项目',
+        appointment.treatmentType ?? '无治疗项目',
         style: const TextStyle(fontSize: 14.0),
       );
     }

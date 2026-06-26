@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import '../../../models/patient.dart';
-import '../../../models/patient_material.dart';
 import '../../../models/material_image.dart';
-import '../../../models/patient_material_with_images.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/user_provider.dart';
 import '../../../theme/app_theme.dart';
-import '../../../widgets/dental_icons.dart';
 import '../../../widgets/success_toast.dart';
 import 'single_material_editor.dart';
 import 'material_detail_card.dart';
 import 'material_empty_state.dart';
-import '../../../utils/permission_utils.dart';
+import '../../../utils/log_manager.dart';
 
 /// 详情页材料管理器
 /// 在患者详情页的材料标签页中使用
@@ -46,31 +42,32 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
-      
+
       if (currentUser == null) {
         return false;
       }
-      
+
       // 管理员拥有所有权限
       if (currentUser.isAdmin) {
         return true;
       }
-      
+
       // 普通医生只能编辑自己的患者的材料
       // 如果患者没有指定医生，或者当前用户的医生与患者的医生匹配，则允许编辑
-      if (widget.patient.doctor == null || widget.patient.doctor!.isEmpty) {
+      if (widget.patient.doctor?.isNotEmpty != true) {
         // 如果患者没有指定医生，所有用户都可以编辑
         return true;
       }
-      
+
       // 检查当前用户的医生是否与患者的医生匹配
-      final currentDoctorName = currentUser.doctor?.isNotEmpty == true 
-          ? currentUser.doctor! 
+      final currentUserDoctor = currentUser.doctor;
+      final currentDoctorName = currentUserDoctor?.isNotEmpty == true
+          ? currentUserDoctor
           : currentUser.username;
-      
+
       return widget.patient.doctor == currentDoctorName;
     } catch (e) {
-      print('检查患者材料编辑权限时出错: $e');
+      LogManager.e('MaterialDetailManager', '检查患者材料编辑权限时出错', error: e);
       return false;
     }
   }
@@ -84,22 +81,30 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
   Future<void> _loadMaterials({bool showSuccessMessage = false}) async {
     if (!mounted) return;
 
+    final patientId = widget.patient.id;
+    if (patientId == null) {
+      LogManager.w('MaterialDetailManager', '加载材料时患者ID为空');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
-      
+      final patientProvider =
+          Provider.of<PatientProvider>(context, listen: false);
+
       // 使用缩略图模式加载，提升性能
-      final materials = await patientProvider.getPatientMaterialsWithThumbnails(widget.patient.id!);
-      
+      final materials = await patientProvider
+          .getPatientMaterialsWithThumbnails(patientId);
+
       if (mounted) {
         setState(() {
           _materials = materials;
           _isLoading = false;
         });
-        
+
         // 如果是手动刷新，显示成功提示
         if (showSuccessMessage) {
           AppToastManager.showSuccess(
@@ -109,16 +114,14 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
           );
         }
       }
-      
-      print('成功加载患者材料信息，共 ${materials.length} 个材料');
     } catch (e) {
-      print('加载患者材料信息失败: $e');
+      LogManager.e('MaterialDetailManager', '加载患者材料信息失败', error: e);
       if (mounted) {
         setState(() {
           _materials = [];
           _isLoading = false;
         });
-        
+
         AppToastManager.showError(
           context,
           message: '加载材料信息失败: $e',
@@ -137,17 +140,25 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
       return;
     }
 
+    final patientId = widget.patient.id;
+    if (patientId == null) {
+      AppToastManager.showError(
+        context,
+        message: '患者ID为空，无法添加材料',
+      );
+      return;
+    }
+
+    final onMaterialsChanged = widget.onMaterialsChanged;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => SingleMaterialEditor(
-        patientId: widget.patient.id!,
+        patientId: patientId,
         onSave: (material) {
           // 添加成功后刷新列表
           _loadMaterials();
-          if (widget.onMaterialsChanged != null) {
-            widget.onMaterialsChanged!();
-          }
+          onMaterialsChanged?.call();
         },
       ),
     );
@@ -163,18 +174,26 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
       return;
     }
 
+    final patientId = widget.patient.id;
+    if (patientId == null) {
+      AppToastManager.showError(
+        context,
+        message: '患者ID为空，无法编辑材料',
+      );
+      return;
+    }
+
+    final onMaterialsChanged = widget.onMaterialsChanged;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => SingleMaterialEditor(
         material: material,
-        patientId: widget.patient.id!,
+        patientId: patientId,
         onSave: (updatedMaterial) {
           // 编辑成功后刷新列表
           _loadMaterials();
-          if (widget.onMaterialsChanged != null) {
-            widget.onMaterialsChanged!();
-          }
+          onMaterialsChanged?.call();
         },
       ),
     );
@@ -194,7 +213,8 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('确认删除'),
-        content: Text('确定要删除材料"${material.material.description}"吗？\n此操作将同时删除该材料的所有图片，且无法撤销。'),
+        content: Text(
+            '确定要删除材料"${material.material.description}"吗？\n此操作将同时删除该材料的所有图片，且无法撤销。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -212,20 +232,23 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
       ),
     );
 
-    if (confirmed == true && material.material.id != null) {
+    final materialId = material.material.id;
+    if (confirmed == true && materialId != null) {
       try {
-        final patientProvider = Provider.of<PatientProvider>(context, listen: false);
-        
+        if (!mounted) return;
+        final patientProvider =
+            Provider.of<PatientProvider>(context, listen: false);
+        final onMaterialsChanged = widget.onMaterialsChanged;
+
         // 删除材料（会级联删除相关图片）
-        final success = await patientProvider.deletePatientMaterial(material.material.id!);
-        
+        final success =
+            await patientProvider.deletePatientMaterial(materialId);
+
         if (success) {
           // 删除成功后刷新列表
           await _loadMaterials();
-          if (widget.onMaterialsChanged != null) {
-            widget.onMaterialsChanged!();
-          }
-          
+          onMaterialsChanged?.call();
+
           if (mounted) {
             AppToastManager.showDelete(context, message: '材料已删除');
           }
@@ -262,14 +285,14 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 blurRadius: 20,
                 spreadRadius: 2,
                 offset: const Offset(0, 8),
               ),
             ],
             border: Border.all(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               width: 1,
             ),
           ),
@@ -283,7 +306,7 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                   gradient: LinearGradient(
                     colors: [
                       AppTheme.primaryColor,
-                      AppTheme.primaryColor.withOpacity(0.8),
+                      AppTheme.primaryColor.withValues(alpha: 0.8),
                     ],
                   ),
                   shape: BoxShape.circle,
@@ -299,7 +322,7 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       '患者材料',
                       style: TextStyle(
                         fontSize: 24,
@@ -312,7 +335,7 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                       children: [
                         Text(
                           '共 ${_materials.length} 项材料',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             color: AppTheme.secondaryText,
                           ),
@@ -320,12 +343,13 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                         if (!_canEditPatientMaterials()) ...[
                           const SizedBox(width: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.orange.withOpacity(0.1),
+                              color: Colors.orange.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.orange.withOpacity(0.3),
+                                color: Colors.orange.withValues(alpha: 0.3),
                               ),
                             ),
                             child: Row(
@@ -358,15 +382,15 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
               // 刷新按钮
               Container(
                 decoration: BoxDecoration(
-                  color: AppTheme.infoColor.withOpacity(0.1),
+                  color: AppTheme.infoColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.infoColor.withOpacity(0.3),
+                    color: AppTheme.infoColor.withValues(alpha: 0.3),
                   ),
                 ),
                 child: IconButton(
                   onPressed: () => _loadMaterials(showSuccessMessage: true),
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.refresh,
                     color: AppTheme.infoColor,
                   ),
@@ -376,71 +400,73 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
               const SizedBox(width: 12),
               // 添加材料按钮 - 根据权限显示不同状态
               _canEditPatientMaterials()
-                ? Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AppTheme.primaryColor,
-                          AppTheme.primaryColor.withOpacity(0.8),
+                  ? Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.primaryColor,
+                            AppTheme.primaryColor.withValues(alpha: 0.8),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
                         ],
                       ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                      child: ElevatedButton.icon(
+                        onPressed: _addMaterial,
+                        icon: const Icon(Icons.add, color: Colors.white),
+                        label: const Text(
+                          '添加材料',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ],
-                    ),
-                    child: ElevatedButton.icon(
-                      onPressed: _addMaterial,
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      label: const Text(
-                        '添加材料',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
-                    ),
-                  )
-                : Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: ElevatedButton.icon(
-                      onPressed: () => AppToastManager.showError(
-                        context,
-                        message: '您只能为自己医生的患者添加材料',
+                    )
+                  : Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      icon: const Icon(Icons.lock, color: Colors.grey),
-                      label: const Text(
-                        '权限不足',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w600,
+                      child: ElevatedButton.icon(
+                        onPressed: () => AppToastManager.showError(
+                          context,
+                          message: '您只能为自己医生的患者添加材料',
                         ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        icon: const Icon(Icons.lock, color: Colors.grey),
+                        label: const Text(
+                          '权限不足',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
                     ),
-                  ),
             ],
           ),
         ),
@@ -486,25 +512,26 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
   void _showImageDetail(MaterialImage image) async {
     // 如果图片ID存在，重新从数据库加载完整的原图数据
     MaterialImage fullImage = image;
-    
-    if (image.id != null) {
+    final imageId = image.id;
+
+    if (imageId != null) {
       try {
-        print('加载图片详情: ID=${image.id}，重新从数据库获取原图数据');
-        final patientProvider = Provider.of<PatientProvider>(context, listen: false);
-        
+        final patientProvider =
+            Provider.of<PatientProvider>(context, listen: false);
+
         // 重新加载完整的图片数据（包含原图）
-        final fullImageData = await patientProvider.getMaterialImage(image.id!);
+        final fullImageData = await patientProvider.getMaterialImage(imageId);
         if (fullImageData != null) {
           fullImage = fullImageData;
-          print('成功加载原图数据: 大小=${fullImage.imageData.length} bytes');
         } else {
-          print('无法加载原图数据，使用缓存的图片');
+          LogManager.e('MaterialDetailManager', '无法加载原图数据，使用缓存的图片');
         }
       } catch (e) {
-        print('加载原图数据失败: $e，使用缓存的图片');
+        LogManager.e('MaterialDetailManager', '加载原图数据失败，使用缓存的图片', error: e);
       }
     }
 
+    if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -520,7 +547,7 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.25),
+                color: Colors.black.withValues(alpha: 0.25),
                 blurRadius: 15,
                 spreadRadius: 2,
                 offset: const Offset(0, 8),
@@ -532,10 +559,11 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
             children: [
               // 标题栏 - 使用蓝色横条
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Colors.blue[600]!, Colors.blue[700]!],
+                    colors: [Colors.blue.shade600, Colors.blue.shade700],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -546,7 +574,7 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.photo,
                       color: Colors.white,
                       size: 20,
@@ -564,16 +592,18 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 20),
                       onPressed: () => Navigator.of(context).pop(),
                       tooltip: '关闭',
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints:
+                          const BoxConstraints(minWidth: 32, minHeight: 32),
                     ),
                   ],
                 ),
               ),
-              
+
               // 图片内容 - 直接显示原图数据
               Expanded(
                 child: InteractiveViewer(
@@ -584,7 +614,8 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                           fullImage.imageData,
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
-                            print('原图显示失败: $error');
+                            LogManager.e('MaterialDetailManager', '原图显示失败',
+                                error: error);
                             return Container(
                               width: 400,
                               height: 300,
@@ -635,10 +666,11 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                         ),
                 ),
               ),
-              
+
               // 底部信息栏
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: const BorderRadius.only(
@@ -668,14 +700,15 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.15),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         fullImage.imageType.toUpperCase(),
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 11,
                           color: AppTheme.primaryColor,
                           fontWeight: FontWeight.w600,

@@ -27,6 +27,8 @@ class AvatarUploadSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageData = uploadedImageData;
+    final hasImageData = imageData != null && imageData.isNotEmpty;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -37,11 +39,12 @@ class AvatarUploadSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              Icon(Icons.account_circle, color: AppTheme.primaryColor, size: 20),
-              const SizedBox(width: 12),
-              const Text(
+              Icon(Icons.account_circle,
+                  color: AppTheme.primaryColor, size: 20),
+              SizedBox(width: 12),
+              Text(
                 '头像设置',
                 style: TextStyle(
                   fontSize: 16,
@@ -51,9 +54,9 @@ class AvatarUploadSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // 头像预览
-          if (uploadedImageData != null && uploadedImageData!.isNotEmpty) ...[
+          if (hasImageData) ...[
             Center(
               child: Container(
                 width: 120,
@@ -65,7 +68,7 @@ class AvatarUploadSection extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: Image.memory(
-                    Uint8List.fromList(uploadedImageData!),
+                    Uint8List.fromList(imageData),
                     width: 120,
                     height: 120,
                     fit: BoxFit.cover,
@@ -85,20 +88,18 @@ class AvatarUploadSection extends StatelessWidget {
             ),
             const SizedBox(height: 16),
           ],
-          
+
           // 上传按钮
           Row(
             children: [
               Expanded(
                 child: DentalGradientButton(
-                  text: (uploadedImageData != null && uploadedImageData!.isNotEmpty) 
-                      ? '更换头像' 
-                      : '上传头像',
+                  text: hasImageData ? '更换头像' : '上传头像',
                   icon: Icons.upload_file,
                   onPressed: onPickImage ?? () {},
                 ),
               ),
-              if (uploadedImageData != null && uploadedImageData!.isNotEmpty) ...[
+              if (hasImageData) ...[
                 const SizedBox(width: 12),
                 DentalGradientButton(
                   text: '删除',
@@ -109,8 +110,8 @@ class AvatarUploadSection extends StatelessWidget {
               ],
             ],
           ),
-          
-          if (uploadedImageData == null || uploadedImageData!.isEmpty) ...[
+
+          if (!hasImageData) ...[
             const SizedBox(height: 12),
             Text(
               '未上传头像时将使用默认头像',

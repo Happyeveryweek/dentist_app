@@ -22,7 +22,7 @@ class FinancialDetailStatsSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.green[50],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.green[200]!),
+        border: Border.all(color: Colors.green.shade200),
       ),
       child: Row(
         children: [
@@ -30,24 +30,28 @@ class FinancialDetailStatsSection extends StatelessWidget {
             child: FinancialStatItem(
               icon: Icons.square,
               label: '应收费',
-              value: '¥${(totalReceivable % 1 == 0 ? totalReceivable.toInt().toString() : totalReceivable.toStringAsFixed(2))}',
-              color: Colors.blue[700]!,
+              value:
+                  '¥${(totalReceivable % 1 == 0 ? totalReceivable.toInt().toString() : totalReceivable.toStringAsFixed(2))}',
+              color: Colors.blue.shade700,
             ),
           ),
           Expanded(
             child: FinancialStatItem(
               icon: Icons.check_circle,
               label: '已收费',
-              value: '¥${(totalPaid % 1 == 0 ? totalPaid.toInt().toString() : totalPaid.toStringAsFixed(2))}',
-              color: Colors.green[700]!,
+              value:
+                  '¥${(totalPaid % 1 == 0 ? totalPaid.toInt().toString() : totalPaid.toStringAsFixed(2))}',
+              color: Colors.green.shade700,
             ),
           ),
           Expanded(
             child: FinancialStatItem(
               icon: Icons.more_horiz,
               label: '欠费金额',
-              value: '¥${(totalOutstanding % 1 == 0 ? totalOutstanding.toInt().toString() : totalOutstanding.toStringAsFixed(2))}',
-              color: totalOutstanding > 0 ? Colors.red[700]! : Colors.grey[600]!,
+              value:
+                  '¥${(totalOutstanding % 1 == 0 ? totalOutstanding.toInt().toString() : totalOutstanding.toStringAsFixed(2))}',
+              color:
+                  totalOutstanding > 0 ? Colors.red.shade700 : Colors.grey.shade600,
             ),
           ),
         ],

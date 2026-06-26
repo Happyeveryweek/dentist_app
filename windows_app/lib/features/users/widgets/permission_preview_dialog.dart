@@ -19,18 +19,46 @@ class PermissionPreviewDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final moduleInfo = {
-      'dashboard': {'name': '仪表盘', 'icon': Icons.dashboard, 'color': AppTheme.primaryColor},
-      'patients': {'name': '患者管理', 'icon': Icons.people, 'color': AppTheme.successColor},
-      'appointments': {'name': '预约管理', 'icon': Icons.calendar_today, 'color': AppTheme.infoColor},
-      'financial': {'name': '财务管理', 'icon': Icons.account_balance_wallet, 'color': AppTheme.warningColor},
-      'materials': {'name': '材料管理', 'icon': Icons.inventory, 'color': AppTheme.primaryColor},
-      'purchase': {'name': '采购管理', 'icon': Icons.shopping_cart, 'color': AppTheme.errorColor},
-      'medical_records': {'name': '病历管理', 'icon': Icons.medical_services, 'color': Colors.teal},
+      'dashboard': {
+        'name': '仪表盘',
+        'icon': Icons.dashboard,
+        'color': AppTheme.primaryColor
+      },
+      'patients': {
+        'name': '患者管理',
+        'icon': Icons.people,
+        'color': AppTheme.successColor
+      },
+      'appointments': {
+        'name': '预约管理',
+        'icon': Icons.calendar_today,
+        'color': AppTheme.infoColor
+      },
+      'financial': {
+        'name': '财务管理',
+        'icon': Icons.account_balance_wallet,
+        'color': AppTheme.warningColor
+      },
+      'materials': {
+        'name': '材料管理',
+        'icon': Icons.inventory,
+        'color': AppTheme.primaryColor
+      },
+      'purchase': {
+        'name': '采购管理',
+        'icon': Icons.shopping_cart,
+        'color': AppTheme.errorColor
+      },
+      'medical_records': {
+        'name': '病历管理',
+        'icon': Icons.medical_services,
+        'color': Colors.teal
+      },
     };
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final isPurpleTheme = Theme.of(context).scaffoldBackgroundColor ==
-        AppTheme.purpleBackground;
+    final isPurpleTheme =
+        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
 
     final accentColor = isPurpleTheme
         ? AppTheme.purpleColor
@@ -87,12 +115,12 @@ class PermissionPreviewDialog extends StatelessWidget {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: hasPermission
-                          ? (info['color'] as Color).withOpacity(0.1)
+                          ? (info['color'] as Color).withValues(alpha: 0.1)
                           : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: hasPermission
-                            ? (info['color'] as Color).withOpacity(0.3)
+                            ? (info['color'] as Color).withValues(alpha: 0.3)
                             : Colors.grey.shade300,
                       ),
                     ),
@@ -111,7 +139,9 @@ class PermissionPreviewDialog extends StatelessWidget {
                             info['name'] as String,
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight: hasPermission ? FontWeight.w600 : FontWeight.normal,
+                              fontWeight: hasPermission
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
                               color: hasPermission
                                   ? (info['color'] as Color)
                                   : Colors.grey.shade600,

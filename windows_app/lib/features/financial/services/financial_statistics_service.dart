@@ -8,7 +8,7 @@ import '../../../providers/patient_provider.dart';
 import '../../../providers/settings_provider.dart';
 
 /// 财务统计服务
-/// 
+///
 /// 提供财务统计数据获取逻辑
 class FinancialStatisticsService {
   /// 获取财务统计数据
@@ -27,14 +27,19 @@ class FinancialStatisticsService {
     required double? processingMin,
     required double? processingMax,
   }) async {
-    final financialProvider = Provider.of<FinancialProvider>(context, listen: false);
-    final patientProvider = Provider.of<PatientProvider>(context, listen: false);
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    final financialProvider =
+        Provider.of<FinancialProvider>(context, listen: false);
+    final patientProvider =
+        Provider.of<PatientProvider>(context, listen: false);
+    final settingsProvider =
+        Provider.of<SettingsProvider>(context, listen: false);
 
     // 依据设置确定"患者管理"数据源（用于按姓名搜索患者ID）
-    final String patientsDataSource = settingsProvider.dataSourceMode == 'modular'
-        ? (settingsProvider.moduleDataSources['patients'] ?? settingsProvider.dataSourceType)
-        : settingsProvider.dataSourceType;
+    final String patientsDataSource =
+        settingsProvider.dataSourceMode == 'modular'
+            ? (settingsProvider.moduleDataSources['patients'] ??
+                settingsProvider.dataSourceType)
+            : settingsProvider.dataSourceType;
 
     // 若有搜索词，先在SQLite中查患者ID；否则不限制
     List<int>? filterPatientIds;
@@ -49,8 +54,9 @@ class FinancialStatisticsService {
       }
     }
 
-    // 取全量（当前筛选）收费明细，包含 patient_id
-    final itemsWithDetails = await financialProvider.getAllFinancialItemsWithDetailsFiltered(
+    // 取全量（当前筛选）收费明细，包含 patientId
+    final itemsWithDetails =
+        await financialProvider.getAllFinancialItemsWithDetailsFiltered(
       sortBy: sortBy,
       sortOrder: sortAscending ? 'ASC' : 'DESC',
       startDate: startDate,

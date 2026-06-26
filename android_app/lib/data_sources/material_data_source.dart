@@ -162,7 +162,7 @@ class MySqlMaterialDataSource implements MaterialDataSource {
     final results = await conn.query('DELETE FROM materials WHERE id = ?', [
       id,
     ]);
-    return results.affectedRows! > 0;
+    return (results.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -210,7 +210,7 @@ class MySqlMaterialDataSource implements MaterialDataSource {
         material.id,
       ],
     );
-    return results.affectedRows! > 0;
+    return (results.affectedRows ?? 0) > 0;
   }
 
   @override

@@ -22,6 +22,22 @@ class PurchaseRecordDialog extends StatefulWidget {
 }
 
 class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
+  PurchaseRecord get _record {
+    final record = widget.record;
+    if (record == null) {
+      throw Exception('采购记录不能为空');
+    }
+    return record;
+  }
+
+  int get _recordId {
+    final id = _record.id;
+    if (id == null) {
+      throw Exception('采购记录ID无效');
+    }
+    return id;
+  }
+
   final _formKey = GlobalKey<FormState>();
   final _purchaseDateController = TextEditingController();
   final _supplierController = TextEditingController();
@@ -51,12 +67,13 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
 
   void _initializeControllers() {
     if (_isEditing) {
+      final record = _record;
       _purchaseDateController.text = DateFormat(
         'yyyy-MM-dd',
-      ).format(widget.record!.purchaseDate);
-      _supplierController.text = widget.record!.supplier ?? '';
-      _notesController.text = widget.record!.notes ?? '';
-      _doctorController.text = widget.record!.doctor ?? '';
+      ).format(record.purchaseDate);
+      _supplierController.text = record.supplier ?? '';
+      _notesController.text = record.notes ?? '';
+      _doctorController.text = record.doctor ?? '';
     } else {
       _purchaseDateController.text = DateFormat(
         'yyyy-MM-dd',
@@ -74,11 +91,10 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
 
-      if (currentUser != null &&
-          currentUser.doctor != null &&
-          currentUser.doctor!.isNotEmpty) {
-        _doctorController.text = currentUser.doctor!;
-        AppLogger.info('设置采购医生默认值: ${currentUser.doctor}');
+      final doctorName = currentUser?.doctor;
+      if (doctorName != null && doctorName.isNotEmpty) {
+        _doctorController.text = doctorName;
+        AppLogger.info('设置采购医生默认值: $doctorName');
       } else {
         AppLogger.info('当前用户未设置医生姓名，采购医生字段保持为空');
       }
@@ -109,7 +125,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
         listen: false,
       );
       final items = await purchaseProvider.getPurchaseItemsByRecordId(
-        widget.record!.id!,
+        _recordId,
       );
       setState(() {
         _purchaseItems = items;
@@ -284,7 +300,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                               return ModernDatePickerDialog(
                                 initialDate:
                                     _isEditing
-                                        ? widget.record!.purchaseDate
+                                        ? _record.purchaseDate
                                         : DateTime.now(),
                                 firstDate: DateTime(2020),
                                 lastDate: DateTime.now().add(
@@ -523,7 +539,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                                 borderRadius: BorderRadius.circular(
                                   10,
                                 ), // 从8增加到10
-                                border: Border.all(color: Colors.green[200]!),
+                                border: Border.all(color: Colors.green.shade200),
                               ),
                               child: Row(
                                 children: [
@@ -599,7 +615,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: Colors.grey.shade300),
       ),
       child: Row(
         children: [
@@ -717,7 +733,8 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
   }
 
   Future<void> _savePurchaseRecord() async {
-    if (!_formKey.currentState!.validate()) {
+    final formState = _formKey.currentState;
+    if (formState == null || !formState.validate()) {
       return;
     }
 
@@ -760,23 +777,24 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                 : _doctorController.text.trim(),
         createdAt:
             _isEditing
-                ? widget.record!.createdAt
+                ? _record.createdAt
                 : DateTimeFormatter.nowLocal(),
         updatedAt: DateTimeFormatter.nowLocal(),
       );
 
-      int? recordId;
+      int recordId;
       int success;
 
       if (_isEditing) {
         success = await purchaseProvider.updatePurchaseRecord(purchaseRecord);
-        recordId = widget.record!.id;
+        recordId = _recordId;
       } else {
-        recordId = await purchaseProvider.addPurchaseRecord(purchaseRecord);
-        success = recordId;
+        final newRecordId = await purchaseProvider.addPurchaseRecord(purchaseRecord);
+        recordId = newRecordId;
+        success = newRecordId;
       }
 
-      if (success > 0 && recordId != null) {
+      if (success > 0 && recordId > 0) {
         AppLogger.info('🔄 采购记录保存成功，ID: $recordId');
 
         if (_isEditing) {
@@ -809,7 +827,8 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
               await purchaseProvider.addPurchaseItem(newItem);
             } else if (existingItemsMap.containsKey(currentItem.id)) {
               // 可能修改过的现有项目 - 检查是否需要更新
-              final existingItem = existingItemsMap[currentItem.id]!;
+              final existingItem = existingItemsMap[currentItem.id];
+              if (existingItem == null) continue;
               bool hasChanged =
                   existingItem.materialName != currentItem.materialName ||
                   existingItem.quantity != currentItem.quantity ||
@@ -844,12 +863,14 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
           final currentItemIds =
               _purchaseItems
                   .where((item) => item.id != null)
-                  .map((item) => item.id!)
+                  .map((item) => item.id)
+                  .whereType<int>()
                   .toSet();
           for (final existingItem in existingItems) {
-            if (!currentItemIds.contains(existingItem.id)) {
+            final existingItemId = existingItem.id;
+            if (existingItemId != null && !currentItemIds.contains(existingItemId)) {
               AppLogger.info('🗑️ 删除已移除的项目: ${existingItem.materialName}');
-              await purchaseProvider.deletePurchaseItem(existingItem.id!);
+              await purchaseProvider.deletePurchaseItem(existingItemId);
             }
           }
         } else {

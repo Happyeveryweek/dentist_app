@@ -22,13 +22,13 @@ class PatientFloatingAddButton extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: [
               AppTheme.primaryColor,
-              AppTheme.primaryColor.withOpacity(0.8),
+              AppTheme.primaryColor.withValues(alpha: 0.8),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryColor.withOpacity(0.4),
+              color: AppTheme.primaryColor.withValues(alpha: 0.4),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),

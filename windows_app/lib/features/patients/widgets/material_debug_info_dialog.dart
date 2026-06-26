@@ -3,7 +3,7 @@ import '../../../models/patient_material_with_images.dart';
 import '../../../theme/app_theme.dart';
 
 /// 材料调试信息弹窗组件
-/// 
+///
 /// 用于显示材料数据的调试信息，帮助排查问题
 class MaterialDebugInfoDialog extends StatelessWidget {
   final int? patientId;
@@ -33,7 +33,7 @@ class MaterialDebugInfoDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 10,
               spreadRadius: 1,
               offset: const Offset(0, 4),
@@ -45,9 +45,9 @@ class MaterialDebugInfoDialog extends StatelessWidget {
             // 标题栏
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppTheme.primaryColor,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(8),
                   topRight: Radius.circular(8),
                 ),
@@ -71,16 +71,18 @@ class MaterialDebugInfoDialog extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                    icon:
+                        const Icon(Icons.close, color: Colors.white, size: 20),
                     onPressed: () => Navigator.of(context).pop(),
                     tooltip: '关闭',
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                 ],
               ),
             ),
-            
+
             // 内容区域
             Expanded(
               child: SingleChildScrollView(
@@ -114,7 +116,7 @@ class MaterialDebugInfoDialog extends StatelessWidget {
                         ],
                       ),
                     ),
-                     
+
                     // 材料详细信息
                     if (materials.isNotEmpty) ...[
                       Container(
@@ -138,19 +140,31 @@ class MaterialDebugInfoDialog extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             for (int i = 0; i < materials.length; i++) ...[
-                              _buildDebugRow('材料 $i', 'ID=${materials[i].material.id ?? "新"}'),
-                              _buildDebugRow('  描述', '${materials[i].material.description}'),
-                              _buildDebugRow('  图片数量', '${materials[i].images.length}'),
+                              _buildDebugRow('材料 $i',
+                                  'ID=${materials[i].material.id ?? "新"}'),
+                              _buildDebugRow(
+                                  '  描述', materials[i].material.description),
+                              _buildDebugRow(
+                                  '  图片数量', '${materials[i].images.length}'),
                               if (materials[i].images.isNotEmpty) ...[
-                                for (int j = 0; j < materials[i].images.length; j++) ...[
-                                  _buildDebugRow('    图片 $j', 'ID=${materials[i].images[j].id}'),
-                                  _buildDebugRow('      类型', '${materials[i].images[j].imageType}'),
-                                  _buildDebugRow('      大小', '${(materials[i].images[j].fileSize / 1024).toStringAsFixed(1)} KB'),
-                                  _buildDebugRow('      原始名称', '${materials[i].images[j].originalName ?? "未知"}'),
+                                for (int j = 0;
+                                    j < materials[i].images.length;
+                                    j++) ...[
+                                  _buildDebugRow('    图片 $j',
+                                      'ID=${materials[i].images[j].id}'),
+                                  _buildDebugRow('      类型',
+                                      materials[i].images[j].imageType),
+                                  _buildDebugRow('      大小',
+                                      '${(materials[i].images[j].fileSize / 1024).toStringAsFixed(1)} KB'),
+                                  _buildDebugRow(
+                                      '      原始名称',
+                                      materials[i].images[j].originalName ??
+                                          "未知"),
                                   const SizedBox(height: 4),
                                 ],
                               ],
-                              if (i < materials.length - 1) const SizedBox(height: 8),
+                              if (i < materials.length - 1)
+                                const SizedBox(height: 8),
                             ],
                           ],
                         ),
@@ -171,7 +185,7 @@ class MaterialDebugInfoDialog extends StatelessWidget {
                         ),
                       ),
                     ],
-                     
+
                     // 系统信息
                     Container(
                       padding: const EdgeInsets.all(12),

@@ -14,6 +14,7 @@ class PatientDetailOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final identificationNumber = patient.identificationNumber;
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -22,26 +23,26 @@ class PatientDetailOverviewCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             Colors.white,
-            DentalColors.background.withOpacity(0.5),
+            DentalColors.background.withValues(alpha: 0.5),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: DentalColors.primary.withOpacity(0.1),
+            color: DentalColors.primary.withValues(alpha: 0.1),
             blurRadius: 20,
             spreadRadius: 2,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 8,
             spreadRadius: 1,
             offset: const Offset(0, 3),
           ),
         ],
         border: Border.all(
-          color: DentalColors.primary.withOpacity(0.1),
+          color: DentalColors.primary.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -71,24 +72,26 @@ class PatientDetailOverviewCard extends StatelessWidget {
                       const SizedBox(width: 12),
                       _AgeBadge(age: patient.age),
                       const Spacer(),
-                      _FirstVisitBadge(date: patient.first_visit_date),
+                      _FirstVisitBadge(date: patient.firstVisitDate),
                     ],
                   ),
                   const SizedBox(height: 8),
                   _OverviewTextRow(
                     icon: Icons.phone_rounded,
                     iconColor: DentalColors.primary,
-                    backgroundColor: DentalColors.primary.withOpacity(0.1),
+                    backgroundColor:
+                        DentalColors.primary.withValues(alpha: 0.1),
                     text: patient.displayPhone(),
                     textColor: DentalColors.onSurface,
                   ),
                   const SizedBox(height: 6),
-                  if (patient.identification_number != null)
+                  if (identificationNumber != null)
                     _OverviewTextRow(
                       icon: Icons.credit_card_rounded,
                       iconColor: DentalColors.secondary,
-                      backgroundColor: DentalColors.secondary.withOpacity(0.1),
-                      text: patient.identification_number!,
+                      backgroundColor:
+                          DentalColors.secondary.withValues(alpha: 0.1),
+                      text: identificationNumber,
                       textColor: DentalColors.onSurfaceVariant,
                     ),
                 ],
@@ -135,7 +138,8 @@ class _PatientAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: (isFemale ? Colors.pink : Colors.blue).withOpacity(0.3),
+            color:
+                (isFemale ? Colors.pink : Colors.blue).withValues(alpha: 0.3),
             blurRadius: 12,
             spreadRadius: 2,
             offset: const Offset(0, 4),
@@ -189,7 +193,8 @@ class _GenderBadge extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: (isFemale ? Colors.pink : Colors.blue).withOpacity(0.2),
+            color:
+                (isFemale ? Colors.pink : Colors.blue).withValues(alpha: 0.2),
             blurRadius: 8,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -235,18 +240,18 @@ class _AgeBadge extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            DentalColors.success.withOpacity(0.1),
-            DentalColors.success.withOpacity(0.2),
+            DentalColors.success.withValues(alpha: 0.1),
+            DentalColors.success.withValues(alpha: 0.2),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: DentalColors.success.withOpacity(0.3),
+          color: DentalColors.success.withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: DentalColors.success.withOpacity(0.15),
+            color: DentalColors.success.withValues(alpha: 0.15),
             blurRadius: 8,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -256,7 +261,7 @@ class _AgeBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          const Icon(
             Icons.event_available_rounded,
             size: 16,
             color: DentalColors.success,
@@ -264,7 +269,7 @@ class _AgeBadge extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             '$age岁',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: DentalColors.success,
@@ -292,18 +297,18 @@ class _FirstVisitBadge extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            DentalColors.info.withOpacity(0.1),
-            DentalColors.info.withOpacity(0.2),
+            DentalColors.info.withValues(alpha: 0.1),
+            DentalColors.info.withValues(alpha: 0.2),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: DentalColors.info.withOpacity(0.3),
+          color: DentalColors.info.withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: DentalColors.info.withOpacity(0.15),
+            color: DentalColors.info.withValues(alpha: 0.15),
             blurRadius: 8,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -313,7 +318,7 @@ class _FirstVisitBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          const Icon(
             Icons.calendar_today_rounded,
             size: 16,
             color: DentalColors.info,
@@ -321,7 +326,7 @@ class _FirstVisitBadge extends StatelessWidget {
           const SizedBox(width: 6),
           Text(
             '首诊: ${DateFormat('yyyy-MM-dd').format(date)}',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: DentalColors.info,

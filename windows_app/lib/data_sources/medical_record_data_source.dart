@@ -15,13 +15,15 @@ abstract class MedicalRecordDataSource {
   Future<bool> deleteMedicalRecord(int id);
 
   // 搜索和统计功能
-  Future<List<PatientMedicalRecord>> searchMedicalRecords(String query, {int? patientId});
+  Future<List<PatientMedicalRecord>> searchMedicalRecords(String query,
+      {int? patientId});
   Future<int> getMedicalRecordsCount(int patientId);
-  
+
   // 基于医生的查询方法
-  Future<List<PatientMedicalRecord>> getDoctorMedicalRecords(String doctorName, {int? patientId});
+  Future<List<PatientMedicalRecord>> getDoctorMedicalRecords(String doctorName,
+      {int? patientId});
   Future<int> getDoctorMedicalRecordsCount(String doctorName, {int? patientId});
-  
+
   // 分页查询
   Future<Map<String, dynamic>> getMedicalRecordsPage({
     required int patientId,
@@ -38,16 +40,17 @@ abstract class MedicalRecordDataSource {
   Future<int> createTemplate(MedicalRecordTemplate template);
   Future<bool> updateTemplate(MedicalRecordTemplate template);
   Future<bool> deleteTemplate(int id);
-  
+
   // 初始化预设数据
   Future<bool> initializeDefaultTemplates();
   Future<bool> hasTemplateData();
-  
+
   // 检查关联数据
   Future<bool> hasRelatedRecords(int templateId);
-  
+
   // 模板数据搜索和过滤
-  Future<List<MedicalRecordTemplate>> searchTemplates(String category, String query);
+  Future<List<MedicalRecordTemplate>> searchTemplates(
+      String category, String query);
   Future<Map<String, List<String>>> getDiseaseOptions(String category);
 
   /// 确保病历相关表存在（DDL）

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../utils/datetime_formatter.dart';
 import '../utils/app_logger.dart';
+import '../utils/map_parser.dart';
 
 class User {
   final int? id;
@@ -31,17 +32,18 @@ class User {
     Map<String, dynamic> map, {
     String dataSource = 'sqlite',
   }) {
+    final p = MapParser(map, context: 'User');
     return User(
-      id: map['id'] as int?,
-      username: map['username']?.toString() ?? '',
-      email: map['email']?.toString(),
-      password: map['password']?.toString() ?? '',
-      role: map['role']?.toString() ?? '',
+      id: p.optional('id', (v) => v as int),
+      username: p.string('username'),
+      email: p.stringOptional('email'),
+      password: p.string('password'),
+      role: p.string('role'),
       createdAt: _parseDateTime(map['created_at'], dataSource),
-      doctor: map['doctor']?.toString(), // 医生姓名直接使用原始值，不转换
-      avatar: map['avatar']?.toString(),
-      modulePermissions: map['module_permissions']?.toString(),
-      imageData: _safeBlobData(map['image_data']), // 头像图片数据映射
+      doctor: p.stringOptional('doctor'),
+      avatar: p.stringOptional('avatar'),
+      modulePermissions: p.stringOptional('module_permissions'),
+      imageData: _safeBlobData(map['image_data']),
     );
   }
 

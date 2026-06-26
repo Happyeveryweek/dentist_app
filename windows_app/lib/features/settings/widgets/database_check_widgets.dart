@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/database_structure_log.dart';
-import '../../../theme/app_theme.dart';
 
 /// 数据库结构检测相关的 UI 组件集合
 class DatabaseCheckWidgets {
   /// 构建统计卡片
-  static Widget buildStatCard(String label, String value, IconData icon, Color color, String unit) {
+  static Widget buildStatCard(
+      String label, String value, IconData icon, Color color, String unit) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -56,7 +56,8 @@ class DatabaseCheckWidgets {
 
   /// 构建表检测汇总
   static Widget buildTableSummary(Map<String, dynamic> result) {
-    final details = (result['details'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    final details = (result['details'] as Map?)?.cast<String, dynamic>() ??
+        const <String, dynamic>{};
     final systemTables = details['systemTables'] as List? ?? [];
     final detectedTables = details['detectedTables'] as List? ?? [];
     final missingTables = details['missingTableNames'] as List? ?? [];
@@ -152,13 +153,14 @@ class DatabaseCheckWidgets {
   }
 
   /// 构建汇总项
-  static Widget buildSummaryItem(String title, String count, IconData icon, Color color, String details) {
+  static Widget buildSummaryItem(
+      String title, String count, IconData icon, Color color, String details) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,7 +181,7 @@ class DatabaseCheckWidgets {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -211,13 +213,18 @@ class DatabaseCheckWidgets {
 
   /// 构建详细变化信息
   static Widget buildDetailedChanges(Map<String, dynamic> result) {
-    final details = (result['details'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
-    final errors = (result['errors'] as List?)?.cast<String>() ?? const <String>[];
+    final details = (result['details'] as Map?)?.cast<String, dynamic>() ??
+        const <String, dynamic>{};
+    final errors =
+        (result['errors'] as List?)?.cast<String>() ?? const <String>[];
     final columnsAdded = (details['columnsAdded'] as List?) ?? const [];
     final columnsModified = (details['columnsModified'] as List?) ?? const [];
-    final structureLogs = _filterActionableStructureLogs((details['structureChanges'] as List?) ?? const []);
-    final hasAnyDetails =
-        columnsAdded.isNotEmpty || columnsModified.isNotEmpty || structureLogs.isNotEmpty || errors.isNotEmpty;
+    final structureLogs = _filterActionableStructureLogs(
+        (details['structureChanges'] as List?) ?? const []);
+    final hasAnyDetails = columnsAdded.isNotEmpty ||
+        columnsModified.isNotEmpty ||
+        structureLogs.isNotEmpty ||
+        errors.isNotEmpty;
 
     return Container(
       width: double.infinity,
@@ -228,7 +235,7 @@ class DatabaseCheckWidgets {
         border: Border.all(color: Colors.grey.shade300),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -259,9 +266,10 @@ class DatabaseCheckWidgets {
               '新增字段',
               Icons.add_box,
               Colors.green,
-              columnsAdded.map((column) =>
-                '${column['table']}.${column['column']} (${column['type']})'
-              ).toList(),
+              columnsAdded
+                  .map((column) =>
+                      '${column['table']}.${column['column']} (${column['type']})')
+                  .toList(),
             ),
             const SizedBox(height: 16),
           ],
@@ -272,9 +280,10 @@ class DatabaseCheckWidgets {
               '修改字段',
               Icons.edit,
               Colors.orange,
-              columnsModified.map((column) =>
-                '${column['table']}.${column['column']} (${column['oldType']} → ${column['newType']})'
-              ).toList(),
+              columnsModified
+                  .map((column) =>
+                      '${column['table']}.${column['column']} (${column['oldType']} → ${column['newType']})')
+                  .toList(),
             ),
             const SizedBox(height: 16),
           ],
@@ -323,7 +332,8 @@ class DatabaseCheckWidgets {
   }
 
   /// 构建变化部分
-  static Widget buildChangeSection(String title, IconData icon, Color color, List<String> items) {
+  static Widget buildChangeSection(
+      String title, IconData icon, Color color, List<String> items) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -343,7 +353,7 @@ class DatabaseCheckWidgets {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -362,34 +372,37 @@ class DatabaseCheckWidgets {
           width: double.infinity,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.05),
+            color: color.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: color.withOpacity(0.2)),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: items.map((item) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '• ',
-                    style: TextStyle(color: color, fontWeight: FontWeight.bold),
-                  ),
-                  Expanded(
-                    child: Text(
-                      item,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
-                        height: 1.3,
+            children: items
+                .map((item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '• ',
+                            style: TextStyle(
+                                color: color, fontWeight: FontWeight.bold),
+                          ),
+                          Expanded(
+                            child: Text(
+                              item,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade700,
+                                height: 1.3,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            )).toList(),
+                    ))
+                .toList(),
           ),
         ),
       ],
@@ -397,8 +410,10 @@ class DatabaseCheckWidgets {
   }
 
   /// 构建日志项
-  static Widget buildLogItem(BuildContext context, DatabaseStructureLog log, VoidCallback onTap) {
-    final actionableChangeCount = _getActionableStructureChangeCountFromLog(log);
+  static Widget buildLogItem(
+      BuildContext context, DatabaseStructureLog log, VoidCallback onTap) {
+    final actionableChangeCount =
+        _getActionableStructureChangeCountFromLog(log);
     final state = _evaluateLogStateWithCount(log, actionableChangeCount);
     final displaySummary = _getDisplaySummary(log, actionableChangeCount);
 
@@ -407,7 +422,7 @@ class DatabaseCheckWidgets {
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: state.color.withOpacity(0.3), width: 1),
+        side: BorderSide(color: state.color.withValues(alpha: 0.3), width: 1),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -423,7 +438,7 @@ class DatabaseCheckWidgets {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: state.color.withOpacity(0.1),
+                      color: state.color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(state.icon, color: state.color, size: 20),
@@ -446,9 +461,10 @@ class DatabaseCheckWidgets {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: state.color.withOpacity(0.1),
+                                color: state.color.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -462,9 +478,10 @@ class DatabaseCheckWidgets {
                             ),
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
+                                color: Colors.blue.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -490,11 +507,14 @@ class DatabaseCheckWidgets {
               // 统计信息
               Row(
                 children: [
-                  buildLogStatChip('必需表', log.requiredTables, Icons.table_chart, Colors.blue),
+                  buildLogStatChip('必需表', log.requiredTables, Icons.table_chart,
+                      Colors.blue),
                   const SizedBox(width: 8),
-                  buildLogStatChip('缺失表', log.missingTables, Icons.table_rows_outlined, Colors.orange),
+                  buildLogStatChip('缺失表', log.missingTables,
+                      Icons.table_rows_outlined, Colors.orange),
                   const SizedBox(width: 8),
-                  buildLogStatChip('变更', actionableChangeCount, Icons.update, Colors.green),
+                  buildLogStatChip(
+                      '变更', actionableChangeCount, Icons.update, Colors.green),
                 ],
               ),
 
@@ -503,7 +523,8 @@ class DatabaseCheckWidgets {
               // 时间信息
               Row(
                 children: [
-                  Icon(Icons.access_time, size: 14, color: Colors.grey.shade600),
+                  Icon(Icons.access_time,
+                      size: 14, color: Colors.grey.shade600),
                   const SizedBox(width: 4),
                   Text(
                     DateFormat('yyyy-MM-dd HH:mm:ss').format(log.detectionTime),
@@ -530,13 +551,14 @@ class DatabaseCheckWidgets {
   }
 
   /// 构建日志统计芯片
-  static Widget buildLogStatChip(String label, int value, IconData icon, Color color) {
+  static Widget buildLogStatChip(
+      String label, int value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -557,8 +579,10 @@ class DatabaseCheckWidgets {
   }
 
   /// 显示日志详情对话框
-  static void showLogDetails(BuildContext context, DatabaseStructureLog log, VoidCallback onRefresh) {
-    final actionableChangeCount = _getActionableStructureChangeCountFromLog(log);
+  static void showLogDetails(
+      BuildContext context, DatabaseStructureLog log, VoidCallback onRefresh) {
+    final actionableChangeCount =
+        _getActionableStructureChangeCountFromLog(log);
     final state = _evaluateLogStateWithCount(log, actionableChangeCount);
     final displaySummary = _getDisplaySummary(log, actionableChangeCount);
 
@@ -584,9 +608,10 @@ class DatabaseCheckWidgets {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: state.color.withOpacity(0.1),
+                    color: state.color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: state.color.withOpacity(0.3)),
+                    border:
+                        Border.all(color: state.color.withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     children: [
@@ -638,9 +663,24 @@ class DatabaseCheckWidgets {
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Expanded(child: buildDetailStatItem('必需表', log.requiredTables, Icons.table_chart, Colors.blue)),
-                          Expanded(child: buildDetailStatItem('缺失表', log.missingTables, Icons.table_rows_outlined, Colors.orange)),
-                          Expanded(child: buildDetailStatItem('结构变更', actionableChangeCount, Icons.update, Colors.green)),
+                          Expanded(
+                              child: buildDetailStatItem(
+                                  '必需表',
+                                  log.requiredTables,
+                                  Icons.table_chart,
+                                  Colors.blue)),
+                          Expanded(
+                              child: buildDetailStatItem(
+                                  '缺失表',
+                                  log.missingTables,
+                                  Icons.table_rows_outlined,
+                                  Colors.orange)),
+                          Expanded(
+                              child: buildDetailStatItem(
+                                  '结构变更',
+                                  actionableChangeCount,
+                                  Icons.update,
+                                  Colors.green)),
                         ],
                       ),
                     ],
@@ -673,7 +713,9 @@ class DatabaseCheckWidgets {
                         const SizedBox(height: 12),
 
                         // 检测到的表
-                        if (log.details['detectedTables'] != null && (log.details['detectedTables'] as List).isNotEmpty) ...[
+                        if (log.details['detectedTables'] != null &&
+                            (log.details['detectedTables'] as List)
+                                .isNotEmpty) ...[
                           buildDetailInfoItem(
                             '检测到的表',
                             (log.details['detectedTables'] as List).join(', '),
@@ -684,10 +726,13 @@ class DatabaseCheckWidgets {
                         ],
 
                         // 缺失的表
-                        if (log.details['missingTableNames'] != null && (log.details['missingTableNames'] as List).isNotEmpty) ...[
+                        if (log.details['missingTableNames'] != null &&
+                            (log.details['missingTableNames'] as List)
+                                .isNotEmpty) ...[
                           buildDetailInfoItem(
                             '缺失的表',
-                            (log.details['missingTableNames'] as List).join(', '),
+                            (log.details['missingTableNames'] as List)
+                                .join(', '),
                             Icons.error,
                             Colors.red,
                           ),
@@ -695,7 +740,9 @@ class DatabaseCheckWidgets {
                         ],
 
                         // 新创建的表
-                        if (log.details['tablesCreated'] != null && (log.details['tablesCreated'] as List).isNotEmpty) ...[
+                        if (log.details['tablesCreated'] != null &&
+                            (log.details['tablesCreated'] as List)
+                                .isNotEmpty) ...[
                           buildDetailInfoItem(
                             '新创建的表',
                             (log.details['tablesCreated'] as List).join(', '),
@@ -706,7 +753,9 @@ class DatabaseCheckWidgets {
                         ],
 
                         // 更新的表
-                        if (log.details['tablesUpdated'] != null && (log.details['tablesUpdated'] as List).isNotEmpty) ...[
+                        if (log.details['tablesUpdated'] != null &&
+                            (log.details['tablesUpdated'] as List)
+                                .isNotEmpty) ...[
                           buildDetailInfoItem(
                             '结构更新的表',
                             (log.details['tablesUpdated'] as List).join(', '),
@@ -717,12 +766,15 @@ class DatabaseCheckWidgets {
                         ],
 
                         // 新增的字段
-                        if (log.details['columnsAdded'] != null && (log.details['columnsAdded'] as List).isNotEmpty) ...[
+                        if (log.details['columnsAdded'] != null &&
+                            (log.details['columnsAdded'] as List)
+                                .isNotEmpty) ...[
                           buildDetailInfoItem(
                             '新增字段',
-                            (log.details['columnsAdded'] as List).map((column) =>
-                              '${column['table']}.${column['column']} (${column['type']})'
-                            ).join(', '),
+                            (log.details['columnsAdded'] as List)
+                                .map((column) =>
+                                    '${column['table']}.${column['column']} (${column['type']})')
+                                .join(', '),
                             Icons.add_box,
                             Colors.green,
                           ),
@@ -730,13 +782,15 @@ class DatabaseCheckWidgets {
 
                         // 只显示真正需要关注的结构日志
                         if (_filterActionableStructureLogs(
-                          (log.details['structureChanges'] as List?) ?? const [],
+                          (log.details['structureChanges'] as List?) ??
+                              const [],
                         ).isNotEmpty) ...[
                           const SizedBox(height: 8),
                           buildDetailInfoItem(
                             '需要关注',
                             _filterActionableStructureLogs(
-                              (log.details['structureChanges'] as List?) ?? const [],
+                              (log.details['structureChanges'] as List?) ??
+                                  const [],
                             ).join('\n'),
                             Icons.report,
                             Colors.orange,
@@ -763,7 +817,8 @@ class DatabaseCheckWidgets {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.error_outline, color: Colors.red.shade700),
+                            Icon(Icons.error_outline,
+                                color: Colors.red.shade700),
                             const SizedBox(width: 8),
                             Text(
                               '错误信息',
@@ -777,20 +832,25 @@ class DatabaseCheckWidgets {
                         ),
                         const SizedBox(height: 12),
                         ...log.errors.map((error) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('• ', style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold)),
-                              Expanded(
-                                child: Text(
-                                  error,
-                                  style: TextStyle(color: Colors.red.shade700, fontSize: 14),
-                                ),
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('• ',
+                                      style: TextStyle(
+                                          color: Colors.red.shade700,
+                                          fontWeight: FontWeight.bold)),
+                                  Expanded(
+                                    child: Text(
+                                      error,
+                                      style: TextStyle(
+                                          color: Colors.red.shade700,
+                                          fontSize: 14),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        )),
+                            )),
                       ],
                     ),
                   ),
@@ -811,7 +871,8 @@ class DatabaseCheckWidgets {
   }
 
   /// 构建详细统计项
-  static Widget buildDetailStatItem(String label, int value, IconData icon, Color color) {
+  static Widget buildDetailStatItem(
+      String label, int value, IconData icon, Color color) {
     return Column(
       children: [
         Icon(icon, size: 24, color: color),
@@ -828,7 +889,7 @@ class DatabaseCheckWidgets {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: color.withOpacity(0.8),
+            color: color.withValues(alpha: 0.8),
           ),
         ),
       ],
@@ -836,13 +897,14 @@ class DatabaseCheckWidgets {
   }
 
   /// 构建详细信息项
-  static Widget buildDetailInfoItem(String title, String content, IconData icon, Color color) {
+  static Widget buildDetailInfoItem(
+      String title, String content, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -875,13 +937,10 @@ class DatabaseCheckWidgets {
     );
   }
 
-  static _LogDisplayState _evaluateLogState(DatabaseStructureLog log) {
-    final actionableChangeCount = _getActionableStructureChangeCountFromLog(log);
-    return _evaluateLogStateWithCount(log, actionableChangeCount);
-  }
-
-  static _LogDisplayState _evaluateLogStateWithCount(DatabaseStructureLog log, int actionableChangeCount) {
-    final hasStructuralIssues = log.missingTables > 0 || actionableChangeCount > 0;
+  static _LogDisplayState _evaluateLogStateWithCount(
+      DatabaseStructureLog log, int actionableChangeCount) {
+    final hasStructuralIssues =
+        log.missingTables > 0 || actionableChangeCount > 0;
     final hasWarnings = !hasStructuralIssues && log.errors.isNotEmpty;
 
     if (!hasStructuralIssues && !hasWarnings) {
@@ -916,7 +975,8 @@ class DatabaseCheckWidgets {
   }
 
   static int getActionableStructureChangeCount(Map<String, dynamic> result) {
-    final details = (result['details'] as Map?)?.cast<String, dynamic>() ?? const <String, dynamic>{};
+    final details = (result['details'] as Map?)?.cast<String, dynamic>() ??
+        const <String, dynamic>{};
     final tablesCreated = (details['tablesCreated'] as List?)?.length ?? 0;
     final columnsAdded = (details['columnsAdded'] as List?)?.length ?? 0;
     return tablesCreated + columnsAdded;
@@ -925,7 +985,8 @@ class DatabaseCheckWidgets {
   static bool hasActionableStructureIssues(Map<String, dynamic> result) {
     final actionableCount = getActionableStructureChangeCount(result);
     final missingTables = (result['missingTables'] as int?) ?? 0;
-    final errors = (result['errors'] as List?)?.cast<String>() ?? const <String>[];
+    final errors =
+        (result['errors'] as List?)?.cast<String>() ?? const <String>[];
     return missingTables > 0 || actionableCount > 0 || errors.isNotEmpty;
   }
 
@@ -958,18 +1019,22 @@ class DatabaseCheckWidgets {
       '需要关注',
     ];
 
-    return actionableKeywords.any((keyword) => lower.contains(keyword.toLowerCase()));
+    return actionableKeywords
+        .any((keyword) => lower.contains(keyword.toLowerCase()));
   }
 
-  static int _getActionableStructureChangeCountFromLog(DatabaseStructureLog log) {
-    final logs = _filterActionableStructureLogs((log.details['structureChanges'] as List?) ?? const []);
+  static int _getActionableStructureChangeCountFromLog(
+      DatabaseStructureLog log) {
+    final logs = _filterActionableStructureLogs(
+        (log.details['structureChanges'] as List?) ?? const []);
     final tablesCreated = (log.details['tablesCreated'] as List?)?.length ?? 0;
     final tablesUpdated = (log.details['tablesUpdated'] as List?)?.length ?? 0;
     final columnsAdded = (log.details['columnsAdded'] as List?)?.length ?? 0;
     return logs.length + tablesCreated + tablesUpdated + columnsAdded;
   }
 
-  static String _getDisplaySummary(DatabaseStructureLog log, int actionableChangeCount) {
+  static String _getDisplaySummary(
+      DatabaseStructureLog log, int actionableChangeCount) {
     if (log.errors.isNotEmpty) {
       return log.summary.isNotEmpty ? log.summary : '检测发现问题';
     }

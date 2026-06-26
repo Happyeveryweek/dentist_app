@@ -105,10 +105,17 @@ class DatabaseBootstrapService {
       AppLogger.info('开始测试数据库连接...');
       if (dbType == 'sqlite') {
         final db = await sqliteInitService.getDatabase();
-        await db!.rawQuery('SELECT 1');
+        if (db == null) {
+          throw Exception('SQLite数据库未初始化');
+        }
+        await db.rawQuery('SELECT 1');
         AppLogger.info('数据库连接测试成功');
       } else if (dbType == 'mysql') {
-        final results = await mysqlConnectionService.connection!.query(
+        final connection = mysqlConnectionService.connection;
+        if (connection == null) {
+          throw Exception('MySQL连接未建立');
+        }
+        final results = await connection.query(
           'SELECT 1',
         );
         if (results.isNotEmpty) {

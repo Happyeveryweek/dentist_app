@@ -24,15 +24,15 @@ class AppointmentCostStatusSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.attach_money,
-                color: const Color(0xFF4CAF50),
+                color: Color(0xFF4CAF50),
                 size: 18,
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 '费用与状态',
                 style: TextStyle(
                   fontSize: 16,
@@ -57,7 +57,8 @@ class AppointmentCostStatusSection extends StatelessWidget {
                     ),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 16),
                   ),
                   keyboardType: TextInputType.number,
                 ),
@@ -75,9 +76,11 @@ class AppointmentCostStatusSection extends StatelessWidget {
                     ),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 16),
                   ),
-                  value: status,
+                  key: ValueKey<String?>(status),
+                  initialValue: status,
                   items: const [
                     DropdownMenuItem(value: '已预约', child: Text('已预约')),
                     DropdownMenuItem(value: '已完成', child: Text('已完成')),

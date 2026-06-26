@@ -1,4 +1,5 @@
 import 'package:mysql1/mysql1.dart';
+import '../../../utils/log_manager.dart';
 
 /// 财务同步服务
 /// 负责处理 SQLite → MySQL 的数据同步逻辑（从 FinancialProvider 中提取）
@@ -21,7 +22,8 @@ class FinancialSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过财务记录同步(id=$recordId)');
+          LogManager.w(
+              'FinancialSyncService', 'MySQL连接不可用，跳过财务记录同步(id=$recordId)');
           return;
         }
 
@@ -45,7 +47,8 @@ class FinancialSyncService {
               recordMap['updated_at'],
               recordId,
             ]);
-            print('成功更新MySQL财务记录(id=$recordId)，影响行数: ${result.affectedRows}');
+            LogManager.i('FinancialSyncService',
+                '成功更新MySQL财务记录(id=$recordId)，影响行数: ${result.affectedRows}');
           } else {
             final result = await conn.query('''
               INSERT INTO financial_records
@@ -59,13 +62,14 @@ class FinancialSyncService {
               recordMap['created_at'],
               recordMap['updated_at'],
             ]);
-            print('成功将财务记录(id=$recordId)同步到MySQL，插入ID: ${result.insertId}');
+            LogManager.i('FinancialSyncService',
+                '成功将财务记录(id=$recordId)同步到MySQL，插入ID: ${result.insertId}');
           }
         } catch (e) {
-          print('同步财务记录到MySQL时出错: $e');
+          LogManager.e('FinancialSyncService', '同步财务记录到MySQL时出错', error: e);
         }
       } catch (e) {
-        print('财务记录同步到MySQL发生不可预期错误: $e');
+        LogManager.e('FinancialSyncService', '财务记录同步到MySQL发生不可预期错误', error: e);
       }
     });
   }
@@ -76,7 +80,8 @@ class FinancialSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过财务记录删除同步(id=$recordId)');
+          LogManager.w(
+              'FinancialSyncService', 'MySQL连接不可用，跳过财务记录删除同步(id=$recordId)');
           return;
         }
 
@@ -86,19 +91,23 @@ class FinancialSyncService {
             'DELETE FROM financial_items WHERE financial_record_id = ?',
             [recordId],
           );
-          print('成功从MySQL删除财务项目，影响行数: ${itemsResult.affectedRows}');
+          LogManager.i('FinancialSyncService',
+              '成功从MySQL删除财务项目，影响行数: ${itemsResult.affectedRows}');
 
           // 再删除财务记录
           final recordResult = await conn.query(
             'DELETE FROM financial_records WHERE id = ?',
             [recordId],
           );
-          print('成功从MySQL删除财务记录(id=$recordId)，影响行数: ${recordResult.affectedRows}');
+          LogManager.i('FinancialSyncService',
+              '成功从MySQL删除财务记录(id=$recordId)，影响行数: ${recordResult.affectedRows}');
         } catch (e) {
-          print('从MySQL删除财务记录(id=$recordId)时出错: $e');
+          LogManager.e('FinancialSyncService', '从MySQL删除财务记录(id=$recordId)时出错',
+              error: e);
         }
       } catch (e) {
-        print('财务记录删除同步到MySQL发生不可预期错误: $e');
+        LogManager.e('FinancialSyncService', '财务记录删除同步到MySQL发生不可预期错误',
+            error: e);
       }
     });
   }
@@ -110,7 +119,8 @@ class FinancialSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过财务项目同步(id=$itemId)');
+          LogManager.w(
+              'FinancialSyncService', 'MySQL连接不可用，跳过财务项目同步(id=$itemId)');
           return;
         }
 
@@ -139,7 +149,8 @@ class FinancialSyncService {
             itemMap['payment_method'],
             itemId,
           ]);
-          print('成功更新MySQL财务项目(id=$itemId)，影响行数: ${result.affectedRows}');
+          LogManager.i('FinancialSyncService',
+              '成功更新MySQL财务项目(id=$itemId)，影响行数: ${result.affectedRows}');
         } else {
           final result = await conn.query('''
             INSERT INTO financial_items
@@ -158,10 +169,11 @@ class FinancialSyncService {
             itemMap['updated_at'],
             itemMap['payment_method'],
           ]);
-          print('成功将财务项目(id=$itemId)同步到MySQL，插入ID: ${result.insertId}');
+          LogManager.i('FinancialSyncService',
+              '成功将财务项目(id=$itemId)同步到MySQL，插入ID: ${result.insertId}');
         }
       } catch (e) {
-        print('财务项目同步到MySQL发生不可预期错误: $e');
+        LogManager.e('FinancialSyncService', '财务项目同步到MySQL发生不可预期错误', error: e);
       }
     });
   }
@@ -172,7 +184,8 @@ class FinancialSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过财务项目删除同步(id=$itemId)');
+          LogManager.w(
+              'FinancialSyncService', 'MySQL连接不可用，跳过财务项目删除同步(id=$itemId)');
           return;
         }
 
@@ -180,9 +193,11 @@ class FinancialSyncService {
           'DELETE FROM financial_items WHERE id = ?',
           [itemId],
         );
-        print('成功从MySQL删除财务项目(id=$itemId)，影响行数: ${result.affectedRows}');
+        LogManager.i('FinancialSyncService',
+            '成功从MySQL删除财务项目(id=$itemId)，影响行数: ${result.affectedRows}');
       } catch (e) {
-        print('财务项目删除同步到MySQL发生不可预期错误: $e');
+        LogManager.e('FinancialSyncService', '财务项目删除同步到MySQL发生不可预期错误',
+            error: e);
       }
     });
   }

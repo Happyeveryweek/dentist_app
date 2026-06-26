@@ -66,7 +66,8 @@ class PatientListQueryService {
     final end = start + pageSize;
     final pagePatients = start >= patients.length
         ? <Patient>[]
-        : patients.sublist(start, end > patients.length ? patients.length : end);
+        : patients.sublist(
+            start, end > patients.length ? patients.length : end);
 
     return PatientListPageResult(
       patients: pagePatients,

@@ -13,6 +13,7 @@ class PatientPersonalInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final patientAddress = patient.address;
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -24,7 +25,7 @@ class PatientPersonalInfoCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -39,7 +40,7 @@ class PatientPersonalInfoCard extends StatelessWidget {
               child: PatientCompactPersonalInfoItem(
                 icon: Icons.badge,
                 label: '病历号',
-                value: patient.medical_record_number?.toString() ?? '无',
+                value: patient.medicalRecordNumber?.toString() ?? '无',
                 color: const Color(0xFF2ecc71),
               ),
             ),
@@ -67,14 +68,14 @@ class PatientPersonalInfoCard extends StatelessWidget {
                 color: const Color(0xFF2ecc71),
               ),
             ),
-            if (patient.address != null && patient.address!.isNotEmpty) ...[
+            if (patientAddress != null && patientAddress.isNotEmpty) ...[
               const SizedBox(width: 16),
               Expanded(
                 flex: 4,
                 child: PatientCompactPersonalInfoItem(
                   icon: Icons.home,
                   label: '住址',
-                  value: patient.address!,
+                  value: patientAddress,
                   color: const Color(0xFF2ecc71),
                 ),
               ),

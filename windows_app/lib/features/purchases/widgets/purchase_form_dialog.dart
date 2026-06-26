@@ -7,12 +7,12 @@ import '../../../models/purchase_item.dart';
 import '../../../providers/purchase_provider.dart';
 import '../../../providers/user_provider.dart';
 import '../../../widgets/dental_icons.dart';
-import '../../../widgets/modern_date_picker.dart';
 import '../../../widgets/success_toast.dart';
 import '../widgets/material_selection_dialog.dart';
 import 'purchase_form_basic_info_section.dart';
 import 'purchase_form_item_list_section.dart';
 import 'purchase_form_actions_section.dart';
+import '../../../utils/log_manager.dart';
 
 /// 采购记录表单对话框
 /// 用于新增或编辑采购记录
@@ -36,25 +36,27 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
   late TextEditingController _doctorController;
   late TextEditingController _notesController;
 
-  List<Map<String, dynamic>> _purchaseItems = [];
-  List<TextEditingController> _materialNameControllers = [];
-  List<TextEditingController> _quantityControllers = [];
-  List<TextEditingController> _unitPriceControllers = [];
-  List<TextEditingController> _unitControllers = [];
+  final List<Map<String, dynamic>> _purchaseItems = [];
+  final List<TextEditingController> _materialNameControllers = [];
+  final List<TextEditingController> _quantityControllers = [];
+  final List<TextEditingController> _unitPriceControllers = [];
+  final List<TextEditingController> _unitControllers = [];
 
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    final isEditing = widget.record != null;
+    final existingRecord = widget.record;
+    final isEditing = existingRecord != null;
 
     _dateController = TextEditingController(
       text: isEditing
-          ? DateFormat('yyyy-MM-dd').format(widget.record!.purchaseDate)
+          ? DateFormat('yyyy-MM-dd').format(existingRecord.purchaseDate)
           : DateFormat('yyyy-MM-dd').format(DateTime.now()),
     );
-    _supplierController = TextEditingController(text: widget.record?.supplier ?? '');
+    _supplierController =
+        TextEditingController(text: widget.record?.supplier ?? '');
 
     // 设置医生字段的初始值
     String initialDoctorName = '';
@@ -66,19 +68,20 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         final currentUser = userProvider.currentUser;
 
-        if (currentUser != null && currentUser.doctor != null && currentUser.doctor!.isNotEmpty) {
-          initialDoctorName = currentUser.doctor!;
+        final doctorName = currentUser?.doctor;
+        if (doctorName != null && doctorName.isNotEmpty) {
+          initialDoctorName = doctorName;
         } else if (currentUser != null && currentUser.role == 'doctor') {
           initialDoctorName = currentUser.username;
         }
       } catch (e) {
-        print('通过UserProvider获取当前用户信息失败: $e');
+        LogManager.e('PurchaseFormDialog', '通过UserProvider获取当前用户信息失败',
+            error: e);
       }
     }
 
     _doctorController = TextEditingController(text: initialDoctorName);
-    final defaultNotes =
-        '${DateFormat('yyyyMMdd').format(DateTime.now())}采购单';
+    final defaultNotes = '${DateFormat('yyyyMMdd').format(DateTime.now())}采购单';
     _notesController = TextEditingController(
       text: isEditing ? (widget.record?.notes ?? '') : defaultNotes,
     );
@@ -90,9 +93,17 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
 
   Future<void> _loadExistingItems() async {
     try {
-      final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
-      final items = await purchaseProvider.getPurchaseItemsByRecordId(widget.record!.id!);
-      print('编辑模式：成功加载采购项目 ${items.length} 项');
+      final purchaseProvider =
+          Provider.of<PurchaseProvider>(context, listen: false);
+      final existingRecord = widget.record;
+      final recordId = existingRecord?.id;
+      if (existingRecord == null || recordId == null) {
+        LogManager.w('PurchaseFormDialog', '加载采购明细时记录或ID为空');
+        return;
+      }
+      final items =
+          await purchaseProvider.getPurchaseItemsByRecordId(recordId);
+
       for (final item in items) {
         _purchaseItems.add({
           'materialId': item.materialId,
@@ -102,14 +113,17 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
           'totalPrice': item.totalPrice,
           'unit': item.unit ?? '个',
         });
-        _materialNameControllers.add(TextEditingController(text: item.materialName));
-        _quantityControllers.add(TextEditingController(text: item.quantity.toString()));
-        _unitPriceControllers.add(TextEditingController(text: item.unitPrice == 0.0 ? '' : item.unitPrice.toString()));
+        _materialNameControllers
+            .add(TextEditingController(text: item.materialName));
+        _quantityControllers
+            .add(TextEditingController(text: item.quantity.toString()));
+        _unitPriceControllers.add(TextEditingController(
+            text: item.unitPrice == 0.0 ? '' : item.unitPrice.toString()));
         _unitControllers.add(TextEditingController(text: item.unit ?? '个'));
       }
       setState(() {});
     } catch (e) {
-      print('加载采购项目失败: $e');
+      LogManager.e('PurchaseFormDialog', '加载采购项目失败', error: e);
       _purchaseItems.add({
         'materialId': null,
         'materialName': '加载失败，请重新添加',
@@ -166,7 +180,8 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
   void _onQuantityChanged(int index, int quantity) {
     setState(() {
       _purchaseItems[index]['quantity'] = quantity;
-      _purchaseItems[index]['totalPrice'] = quantity * (_purchaseItems[index]['unitPrice'] as double);
+      _purchaseItems[index]['totalPrice'] =
+          quantity * (_purchaseItems[index]['unitPrice'] as double);
     });
   }
 
@@ -179,7 +194,8 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
   void _onUnitPriceChanged(int index, double unitPrice) {
     setState(() {
       _purchaseItems[index]['unitPrice'] = unitPrice;
-      _purchaseItems[index]['totalPrice'] = (_purchaseItems[index]['quantity'] as int) * unitPrice;
+      _purchaseItems[index]['totalPrice'] =
+          (_purchaseItems[index]['quantity'] as int) * unitPrice;
     });
   }
 
@@ -192,12 +208,15 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
         _purchaseItems[index]['unit'] = selectedMaterial.unit;
         if (selectedMaterial.defaultPrice > 0) {
           _purchaseItems[index]['unitPrice'] = selectedMaterial.defaultPrice;
-          _purchaseItems[index]['totalPrice'] = (_purchaseItems[index]['quantity'] as int) * selectedMaterial.defaultPrice;
+          _purchaseItems[index]['totalPrice'] =
+              (_purchaseItems[index]['quantity'] as int) *
+                  selectedMaterial.defaultPrice;
         }
         _materialNameControllers[index].text = selectedMaterial.materialName;
-        _unitControllers[index].text = selectedMaterial.unit ?? '个';
+        _unitControllers[index].text = selectedMaterial.unit;
         if (selectedMaterial.defaultPrice > 0) {
-          _unitPriceControllers[index].text = selectedMaterial.defaultPrice.toString();
+          _unitPriceControllers[index].text =
+              selectedMaterial.defaultPrice.toString();
         }
       });
     }
@@ -263,36 +282,47 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
     });
 
     try {
-      final purchaseProvider = Provider.of<PurchaseProvider>(context, listen: false);
+      final purchaseProvider =
+          Provider.of<PurchaseProvider>(context, listen: false);
 
-      final totalQuantity = _purchaseItems.fold<int>(0, (sum, item) => sum + (item['quantity'] as int));
-      final totalAmount = _purchaseItems.fold<double>(0.0, (sum, item) => sum + (item['totalPrice'] as double));
+      final totalQuantity = _purchaseItems.fold<int>(
+          0, (sum, item) => sum + (item['quantity'] as int));
+      final totalAmount = _purchaseItems.fold<double>(
+          0.0, (sum, item) => sum + (item['totalPrice'] as double));
 
       final purchaseRecord = PurchaseRecord(
         id: widget.record?.id,
         purchaseDate: DateFormat('yyyy-MM-dd').parse(_dateController.text),
         totalQuantity: totalQuantity,
         totalAmount: totalAmount,
-        supplier: _supplierController.text.trim().isEmpty ? null : _supplierController.text.trim(),
-        doctor: _doctorController.text.trim().isEmpty ? null : _doctorController.text.trim(),
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        supplier: _supplierController.text.trim().isEmpty
+            ? null
+            : _supplierController.text.trim(),
+        doctor: _doctorController.text.trim().isEmpty
+            ? null
+            : _doctorController.text.trim(),
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
       );
 
       bool success;
       int? recordId;
+      final existingRecord = widget.record;
 
-      if (widget.record != null) {
+      if (existingRecord != null) {
         success = await purchaseProvider.updatePurchaseRecord(purchaseRecord);
-        recordId = widget.record?.id;
+        recordId = existingRecord.id;
       } else {
         recordId = await purchaseProvider.addPurchaseRecord(purchaseRecord);
-        success = recordId != null && recordId > 0;
+        success = recordId > 0;
       }
 
       if (success && recordId != null) {
         List<PurchaseItem> oldItems = [];
         if (widget.record != null) {
-          oldItems = await purchaseProvider.getPurchaseItemsByRecordId(recordId!);
+          oldItems =
+              await purchaseProvider.getPurchaseItemsByRecordId(recordId);
         }
 
         List<Map<String, dynamic>> itemsToAdd = [];
@@ -307,16 +337,17 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
 
           bool foundMatch = false;
           for (final oldItem in oldItems) {
-            if (oldItem.materialName == newItem['materialName'].toString().trim()) {
+            if (oldItem.materialName ==
+                newItem['materialName'].toString().trim()) {
               bool hasChanges = oldItem.quantity != newItem['quantity'] ||
-                              oldItem.unitPrice != newItem['unitPrice'] ||
-                              oldItem.unit != newItem['unit'] ||
-                              oldItem.materialId != newItem['materialId'];
+                  oldItem.unitPrice != newItem['unitPrice'] ||
+                  oldItem.unit != newItem['unit'] ||
+                  oldItem.materialId != newItem['materialId'];
 
               if (hasChanges) {
                 final updatedItem = PurchaseItem(
                   id: oldItem.id,
-                  purchaseRecordId: recordId!,
+                  purchaseRecordId: recordId,
                   materialId: newItem['materialId'] as int?,
                   materialName: newItem['materialName'].toString().trim(),
                   quantity: newItem['quantity'] as int,
@@ -343,7 +374,9 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
         itemsToDelete.addAll(oldItems);
 
         for (final itemToDelete in itemsToDelete) {
-          await purchaseProvider.deletePurchaseItem(itemToDelete.id!);
+          final itemId = itemToDelete.id;
+          if (itemId == null) continue;
+          await purchaseProvider.deletePurchaseItem(itemId);
         }
 
         for (final itemToUpdate in itemsToUpdate) {
@@ -352,7 +385,7 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
 
         for (final itemToAdd in itemsToAdd) {
           final purchaseItem = PurchaseItem(
-            purchaseRecordId: recordId!,
+            purchaseRecordId: recordId,
             materialId: itemToAdd['materialId'] as int?,
             materialName: itemToAdd['materialName'].toString().trim(),
             quantity: itemToAdd['quantity'] as int,
@@ -365,14 +398,18 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
           await purchaseProvider.addPurchaseItem(purchaseItem);
         }
 
+        if (!mounted) return;
         Navigator.of(context).pop(true);
-        AppToastManager.showSuccess(context, message: widget.record != null ? '采购记录更新成功' : '采购记录添加成功');
+        AppToastManager.showSuccess(context,
+            message: widget.record != null ? '采购记录更新成功' : '采购记录添加成功');
         widget.onSaved?.call();
       } else {
+        if (!mounted) return;
         Navigator.of(context).pop();
         AppToastManager.showError(context, message: '保存失败');
       }
     } catch (e) {
+      if (!mounted) return;
       Navigator.of(context).pop();
       AppToastManager.showError(context, message: '保存失败: $e');
     } finally {
@@ -421,7 +458,8 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
           maxHeight: screenSize.height * 0.9,
         ),
         child: Material(
-          color: Theme.of(context).dialogBackgroundColor,
+          color: Theme.of(context).dialogTheme.backgroundColor ??
+              Theme.of(context).colorScheme.surface,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
             child: Column(
@@ -430,14 +468,15 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
               children: [
                 Row(
                   children: [
-                    Icon(DentalIcons.shoppingCart, color: Theme.of(context).primaryColor, size: 20),
+                    Icon(DentalIcons.shoppingCart,
+                        color: Theme.of(context).primaryColor, size: 20),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         isEditing ? '编辑采购记录' : '新增采购记录',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
                     ),
                     IconButton(

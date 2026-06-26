@@ -28,7 +28,8 @@ class MedicalTemplateTypeCard extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<MedicalTemplateTypeCard> createState() => _MedicalTemplateTypeCardState();
+  State<MedicalTemplateTypeCard> createState() =>
+      _MedicalTemplateTypeCardState();
 }
 
 class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
@@ -47,7 +48,7 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -121,7 +122,7 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: categoryColor.withOpacity(0.1),
+                        color: categoryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -152,7 +153,8 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                     color: Colors.blue,
                     tooltip: '编辑',
                     padding: const EdgeInsets.all(4),
-                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                    constraints:
+                        const BoxConstraints(minWidth: 28, minHeight: 28),
                   ),
                   IconButton(
                     onPressed: widget.onDelete,
@@ -160,7 +162,8 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                     color: Colors.red,
                     tooltip: '删除',
                     padding: const EdgeInsets.all(4),
-                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                    constraints:
+                        const BoxConstraints(minWidth: 28, minHeight: 28),
                   ),
                   AnimatedRotation(
                     turns: _isExpanded ? 0.5 : 0,
@@ -210,10 +213,10 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.05),
+                    color: Colors.blue.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.blue.withOpacity(0.2),
+                      color: Colors.blue.withValues(alpha: 0.2),
                       style: BorderStyle.solid,
                     ),
                   ),
@@ -222,7 +225,7 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: Colors.blue.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(

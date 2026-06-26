@@ -20,7 +20,7 @@ class UserListHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
+            color: AppTheme.primaryColor.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -28,7 +28,7 @@ class UserListHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.people,
             color: Colors.white,
             size: 24,
@@ -48,7 +48,7 @@ class UserListHeader extends StatelessWidget {
               Text(
                 '共 $userCount 个用户账户',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 13,
                 ),
               ),
@@ -58,16 +58,20 @@ class UserListHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               children: [
-                Icon(Icons.admin_panel_settings, color: Colors.white, size: 16),
+                const Icon(Icons.admin_panel_settings,
+                    color: Colors.white, size: 16),
                 const SizedBox(width: 6),
                 Text(
                   '$adminCount 管理员',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 13),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13),
                 ),
               ],
             ),

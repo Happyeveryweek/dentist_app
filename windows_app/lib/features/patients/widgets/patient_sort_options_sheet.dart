@@ -102,7 +102,8 @@ class _PatientSortOption extends StatelessWidget {
               Icon(
                 icon,
                 size: 20,
-                color: isSelected ? AppTheme.primaryColor : AppTheme.secondaryText,
+                color:
+                    isSelected ? AppTheme.primaryColor : AppTheme.secondaryText,
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -110,7 +111,8 @@ class _PatientSortOption extends StatelessWidget {
                   title,
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
               ),

@@ -41,11 +41,13 @@ class PatientSearchService {
     );
 
     final filtered = patients.where((patient) {
-      if (normalizedQuery.isNotEmpty && !_matchesText(patient, normalizedQuery)) {
+      if (normalizedQuery.isNotEmpty &&
+          !_matchesText(patient, normalizedQuery)) {
         return false;
       }
 
-      if (hasAdvancedCriteria && !_matchesAdvancedCriteria(patient, advancedCriteria)) {
+      if (hasAdvancedCriteria &&
+          !_matchesAdvancedCriteria(patient, advancedCriteria)) {
         return false;
       }
 
@@ -114,17 +116,18 @@ class PatientSearchService {
 
   bool _matchesName(Patient patient, String query) {
     return _contains(patient.name, query) ||
-        _contains(patient.name_pinyin, query) ||
+        _contains(patient.namePinyin, query) ||
         _contains(PinyinUtil.toPinyin(patient.name), query) ||
-        _contains(PinyinUtil.toPinyin(patient.name).replaceAll(' ', ''), query) ||
-        _contains(patient.name_initials, query) ||
+        _contains(
+            PinyinUtil.toPinyin(patient.name).replaceAll(' ', ''), query) ||
+        _contains(patient.nameInitials, query) ||
         _contains(PinyinUtil.getInitials(patient.name), query) ||
         _contains(PinyinUtil.getFirstLetters(patient.name), query);
   }
 
   bool _matchesAddress(Patient patient, String query) {
     return _contains(patient.address, query) ||
-        _contains(patient.address_pinyin, query);
+        _contains(patient.addressPinyin, query);
   }
 
   bool _matchesPhone(Patient patient, String query) {
@@ -135,11 +138,11 @@ class PatientSearchService {
   }
 
   bool _matchesMedicalRecord(Patient patient, String query) {
-    return _contains(patient.medical_record_number?.toString(), query);
+    return _contains(patient.medicalRecordNumber?.toString(), query);
   }
 
   bool _matchesIdentificationNumber(Patient patient, String query) {
-    return _contains(patient.identification_number, query);
+    return _contains(patient.identificationNumber, query);
   }
 
   bool _contains(String? source, String query) {
@@ -152,10 +155,10 @@ class PatientSearchService {
   DateTime? _getDateForFilter(Patient patient, String dateFilterType) {
     switch (dateFilterType) {
       case 'updated_at':
-        return _dateOnly(patient.updated_at);
+        return _dateOnly(patient.updatedAt);
       case 'first_visit_date':
       default:
-        return _dateOnly(patient.first_visit_date);
+        return _dateOnly(patient.firstVisitDate);
     }
   }
 
@@ -180,18 +183,18 @@ class PatientSearchService {
           break;
         case 'medical_record_number':
           result = _compareNullableInt(
-            a.medical_record_number,
-            b.medical_record_number,
+            a.medicalRecordNumber,
+            b.medicalRecordNumber,
           );
           break;
         case 'first_visit_date':
-          result = a.first_visit_date.compareTo(b.first_visit_date);
+          result = a.firstVisitDate.compareTo(b.firstVisitDate);
           break;
         case 'updated_at':
-          result = a.updated_at.compareTo(b.updated_at);
+          result = a.updatedAt.compareTo(b.updatedAt);
           break;
         default:
-          result = a.updated_at.compareTo(b.updated_at);
+          result = a.updatedAt.compareTo(b.updatedAt);
       }
       return sortAscending ? result : -result;
     }

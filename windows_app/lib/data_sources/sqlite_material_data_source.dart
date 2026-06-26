@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import '../models/material.dart' as material_models;
 import '../utils/datetime_formatter.dart';
+import '../utils/log_manager.dart';
 import 'material_data_source.dart';
 
 /// SQLite 材料数据源实现
@@ -225,7 +226,7 @@ class SqliteMaterialDataSource implements MaterialDataSource {
 
       return 'M301';
     } catch (e) {
-      print('SQLite获取下一个材料编码失败: $e');
+      LogManager.e('SqliteMaterialDataSource', '获取下一个材料编码失败', error: e);
       return 'M301';
     }
   }
@@ -236,7 +237,7 @@ class SqliteMaterialDataSource implements MaterialDataSource {
       final count = await _database.delete('materials');
       return count > 0;
     } catch (e) {
-      print('SQLite清空所有材料失败: $e');
+      LogManager.e('SqliteMaterialDataSource', '清空所有材料失败', error: e);
       return false;
     }
   }

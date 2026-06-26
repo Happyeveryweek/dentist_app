@@ -4,6 +4,7 @@ import 'package:mysql1/mysql1.dart';
 
 import '../../../providers/database_provider.dart';
 import '../../../utils/mysql_sync_connection_helper.dart';
+import '../../../utils/log_manager.dart';
 
 /// 材料模块 MySQL 连接服务
 ///
@@ -30,6 +31,7 @@ class MaterialMysqlConnectionService {
   Future<MySqlConnection?> getCurrentConnection() async {
     final databaseProvider = _getDatabaseProvider();
     if (_getEffectiveDataSourceType() != 'mysql' || databaseProvider == null) {
+      LogManager.d('MaterialMysqlConnectionService', '当前数据源不是MySQL，返回缓存连接');
       return _getCachedConnection();
     }
 
@@ -42,16 +44,19 @@ class MaterialMysqlConnectionService {
           return latestConnection;
         }
 
-        print('⚠️ MySQL连接已失效，尝试重新获取...');
+        LogManager.w('MaterialMysqlConnectionService', 'MySQL连接已失效，尝试重新获取...');
         await databaseProvider.initializeMySQL();
         final newConnection = databaseProvider.mysqlConnection;
         if (newConnection != null) {
+          LogManager.i('MaterialMysqlConnectionService', 'MySQL连接重新获取成功');
           _setCachedConnection(newConnection);
           return newConnection;
+        } else {
+          LogManager.e('MaterialMysqlConnectionService', 'MySQL连接重新获取失败');
         }
       }
     } catch (e) {
-      print('获取最新MySQL连接失败: $e');
+      LogManager.e('MaterialMysqlConnectionService', '获取最新MySQL连接失败', error: e);
     }
 
     return _getCachedConnection();
@@ -67,7 +72,7 @@ class MaterialMysqlConnectionService {
       );
       return true;
     } catch (e) {
-      print('MySQL连接验证失败: $e');
+      LogManager.e('MaterialMysqlConnectionService', 'MySQL连接验证失败', error: e);
       return false;
     }
   }
@@ -90,12 +95,12 @@ class MaterialMysqlConnectionService {
       await conn.query('SELECT 1').timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          throw TimeoutException('连接测试超时', Duration(seconds: 10));
+          throw TimeoutException('连接测试超时', const Duration(seconds: 10));
         },
       );
       return true;
     } catch (e) {
-      print('MySQL连接测试失败: $e');
+      LogManager.e('MaterialMysqlConnectionService', 'MySQL连接测试失败', error: e);
       _setCachedConnection(null);
       return false;
     }

@@ -1,53 +1,42 @@
-import 'dart:io';
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:intl/intl.dart';
-import 'package:flutter/foundation.dart';
 import 'package:mysql1/mysql1.dart';
-import 'dart:math';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/services.dart';
-import 'dart:math' as math;
-import 'dart:typed_data';
-import 'package:crypto/crypto.dart';
-import 'package:file_picker/file_picker.dart';
-import '../utils/datetime_formatter.dart';
 
 // 移除随访记录相关导入
 import '../models/user.dart';
 
-import '../models/material_image.dart';
 // 移除对SettingsProvider的引用，避免循环依赖
-import '../utils/pinyin_util.dart';
-import 'package:dentist_app_windows/models/backup_log.dart';
-import 'patient_provider.dart';
 import '../utils/app_paths.dart';
-import '../models/database_structure_log.dart';
-import '../models/schemas/table_schema.dart';
-import '../models/schemas/mysql_schema.dart';
-import '../models/schemas/sqlite_schema.dart';
 
 // 导入新的服务类
 import '../services/sqlite_database_service.dart';
 import '../services/mysql_connection_service.dart';
 import '../services/database_backup_service.dart';
 import '../services/database_schema_service.dart';
-
+import '../utils/log_manager.dart';
 
 class DatabaseProvider extends ChangeNotifier {
-  static const String DB_NAME = 'dentist_clinic.db';
-  static const int DB_VERSION = 3;
+  static const String dbName = 'dentist_clinic.db';
+  static const int dbVersion = 3;
 
   // 服务实例
-  late SqliteDatabaseService _sqliteService;
-  late MysqlConnectionService _mysqlService;
-  late DatabaseBackupService _backupService;
-  late DatabaseSchemaService _schemaService;
+  SqliteDatabaseService? _sqliteServiceInstance;
+  SqliteDatabaseService get _sqliteService =>
+      _sqliteServiceInstance ??= SqliteDatabaseService();
+  MysqlConnectionService? _mysqlServiceInstance;
+  MysqlConnectionService get _mysqlService =>
+      _mysqlServiceInstance ??= MysqlConnectionService();
+  DatabaseBackupService? _backupServiceInstance;
+  DatabaseBackupService get _backupService => _backupServiceInstance ??= DatabaseBackupService(
+        dataSourceType: _dataSourceType,
+      );
+  DatabaseSchemaService? _schemaServiceInstance;
+  DatabaseSchemaService get _schemaService => _schemaServiceInstance ??= DatabaseSchemaService(
+        dataSourceType: _dataSourceType,
+      );
 
   // 数据库实例（保留用于兼容）
   Database? _database;
@@ -67,7 +56,7 @@ class DatabaseProvider extends ChangeNotifier {
   String? _customSqliteDbPath;
   String? _databasePath; // 添加缺失的字段
   Map<String, dynamic>? _mysqlSettings; // MySQL连接设置
-  
+
   // MySQL连接参数 - 用于内部操作
   String _mysqlHost = 'localhost';
   String _mysqlPort = '3306';
@@ -82,6 +71,7 @@ class DatabaseProvider extends ChangeNotifier {
     _syncMysqlConnectionFromService();
     return _mysqlConnection;
   }
+
   Map<String, dynamic>? get mysqlSettings => _mysqlSettings;
   String get dataSourceType => _dataSourceType;
 
@@ -98,19 +88,7 @@ class DatabaseProvider extends ChangeNotifier {
 
   // 构造函数
   DatabaseProvider() {
-    _initializeServices();
-  }
-
-  // 初始化服务实例
-  void _initializeServices() {
-    _sqliteService = SqliteDatabaseService();
-    _mysqlService = MysqlConnectionService();
-    _backupService = DatabaseBackupService(
-      dataSourceType: _dataSourceType,
-    );
-    _schemaService = DatabaseSchemaService(
-      dataSourceType: _dataSourceType,
-    );
+    // 服务实例通过 getter 懒加载
   }
 
   // 获取当前用户
@@ -131,53 +109,55 @@ class DatabaseProvider extends ChangeNotifier {
   // 初始化数据库
   Future<void> initDatabase(
       {String? customPath, Map<String, dynamic>? mysqlSettings}) async {
-    print('开始初始化数据库...');
-    print('当前数据源类型: $_dataSourceType');
-    print('当前工作目录: ${Directory.current.path}');
-    print('可执行文件路径: ${Platform.resolvedExecutable}');
+    LogManager.w('DatabaseProvider', '开始初始化数据库...');
+    LogManager.w('DatabaseProvider', '当前数据源类型: $_dataSourceType');
+    LogManager.w('DatabaseProvider', '当前工作目录');
+    LogManager.w('DatabaseProvider', '可执行文件路径');
 
     try {
       // 关闭现有连接
       if (_dataSourceType == 'sqlite') {
-        if (_database != null) {
-          await _database!.close();
+        final db = _database;
+        if (db != null) {
+          await db.close();
           _database = null;
         }
 
         // 设置自定义路径
         if (customPath != null && customPath.isNotEmpty) {
-          print('自定义路径: $customPath');
+          LogManager.w('DatabaseProvider', '自定义路径: $customPath');
           _customSqliteDbPath = customPath;
           _sqliteService.setCustomSqliteDbPath(customPath);
         }
 
-        print('初始化SQLite数据库...');
+        LogManager.w('DatabaseProvider', '初始化SQLite数据库...');
         _database = await _sqliteService.initSQLiteDatabase();
-        
+
         // 同步服务中的数据库实例
         _updateServiceConnections();
-        
-        print('SQLite数据库初始化完成，路径: ${_database!.path}');
+
+        LogManager.i('DatabaseProvider', 'SQLite数据库初始化完成，路径');
       } else if (_dataSourceType == 'mysql') {
         // 检查是否已经有有效的MySQL连接
         _syncMysqlConnectionFromService();
-        if (_mysqlConnection != null) {
+        final existingConnection = _mysqlConnection;
+        if (existingConnection != null) {
           try {
             // 测试现有连接是否仍然有效
-            await _mysqlConnection!.query('SELECT 1');
-            print('现有MySQL连接仍然有效，无需重新初始化');
+            await existingConnection.query('SELECT 1');
+            LogManager.w('DatabaseProvider', '现有MySQL连接仍然有效，无需重新初始化');
             // 数据库初始化完成，表结构检测由SettingsProvider统一管理
             _markAllDataForRefresh();
             notifyListeners();
-            print('数据库初始化完成（使用现有连接）');
+            LogManager.i('DatabaseProvider', '数据库初始化完成（使用现有连接）');
             return;
           } catch (e) {
-            print('现有MySQL连接已失效，需要重新建立: $e');
+            LogManager.w('DatabaseProvider', '现有MySQL连接已失效，需要重新建立');
             // 关闭失效的连接
             try {
-              await _mysqlConnection!.close();
+              await existingConnection.close();
             } catch (closeError) {
-              print('关闭失效MySQL连接时出错: $closeError');
+              LogManager.e('DatabaseProvider', '关闭失效MySQL连接时出错: $closeError');
             }
             _mysqlConnection = null;
           }
@@ -187,28 +167,27 @@ class DatabaseProvider extends ChangeNotifier {
         if (mysqlSettings == null) {
           throw Exception('MySQL设置不能为空，请先配置MySQL连接参数');
         }
-        
+
         final normalizedMySQLSettings = _normalizeMySQLSettings(mysqlSettings);
         final host = normalizedMySQLSettings.host;
         final port = normalizedMySQLSettings.port;
         final database = normalizedMySQLSettings.database;
         final username = normalizedMySQLSettings.username;
         final password = normalizedMySQLSettings.password;
-        
+
         // 验证必要的参数
-        if (host == null || host.isEmpty || 
-            database == null || database.isEmpty || 
-            username == null || username.isEmpty) {
+        if (host.isEmpty || database.isEmpty || username.isEmpty) {
           throw Exception('MySQL连接参数不完整，请检查host、database和username设置');
         }
 
-        print('MySQL连接参数: $host:$port/$database 用户:$username');
+        LogManager.w('DatabaseProvider',
+            'MySQL连接参数: $host:$port/$database 用户:$username');
 
         // MySQL设置已移动到SettingsProvider，不再需要保存到内部变量
-        print('使用SettingsProvider中的MySQL设置进行连接');
+        LogManager.w('DatabaseProvider', '使用SettingsProvider中的MySQL设置进行连接');
 
         try {
-          print('正在连接MySQL数据库...');
+          LogManager.w('DatabaseProvider', '正在连接MySQL数据库...');
           _mysqlConnection = await _mysqlService.initMySQLConnection(
             host: host,
             port: port,
@@ -217,22 +196,25 @@ class DatabaseProvider extends ChangeNotifier {
             password: password,
           );
 
-          print('MySQL数据库连接成功');
+          LogManager.i('DatabaseProvider', 'MySQL数据库连接成功');
 
           // 验证连接是否正常
+          final mysqlConnection = _mysqlConnection;
+          if (mysqlConnection == null) {
+            throw Exception('MySQL连接未初始化');
+          }
           try {
-            final results = await _mysqlConnection!.query('SELECT 1');
-            print('MySQL连接测试: ${results.isNotEmpty ? '成功' : '失败'}');
-            
+            await mysqlConnection.query('SELECT 1');
+
             // 连接成功后，创建MySQL表结构
             _updateServiceConnections();
             await _schemaService.createMySQLTables();
           } catch (e) {
-            print('MySQL连接测试失败: $e');
+            LogManager.e('DatabaseProvider', 'MySQL连接测试失败', error: e);
             throw Exception('MySQL连接测试失败: $e');
           }
         } catch (e) {
-          print('MySQL连接初始化失败: $e');
+          LogManager.e('DatabaseProvider', 'MySQL连接初始化失败', error: e);
           throw Exception('MySQL数据库连接失败: $e');
         }
       }
@@ -241,24 +223,24 @@ class DatabaseProvider extends ChangeNotifier {
       // 标记所有数据需要刷新
       _markAllDataForRefresh();
       notifyListeners();
-      print('数据库初始化完成');
-      
+      LogManager.i('DatabaseProvider', '数据库初始化完成');
+
       // 在数据库初始化完成后，可以在这里添加自动表结构检测的逻辑
       // 但为了避免循环依赖，这里暂时不直接调用SettingsProvider
     } catch (e) {
-      print('初始化数据库时出错: $e');
+      LogManager.e('DatabaseProvider', '初始化数据库时出错', error: e);
       rethrow;
     }
   }
 
   // 更新服务中的连接实例
   void _updateServiceConnections() {
-    _backupService = DatabaseBackupService(
+    _backupServiceInstance = DatabaseBackupService(
       sqliteDatabase: _database,
       mysqlConnection: _mysqlConnection,
       dataSourceType: _dataSourceType,
     );
-    _schemaService = DatabaseSchemaService(
+    _schemaServiceInstance = DatabaseSchemaService(
       sqliteDatabase: _database,
       mysqlConnection: _mysqlConnection,
       dataSourceType: _dataSourceType,
@@ -267,12 +249,14 @@ class DatabaseProvider extends ChangeNotifier {
 
   void _syncMysqlConnectionFromService() {
     final serviceConnection = _mysqlService.connection;
-    if (serviceConnection != null && !identical(serviceConnection, _mysqlConnection)) {
+    if (serviceConnection != null &&
+        !identical(serviceConnection, _mysqlConnection)) {
       _mysqlConnection = serviceConnection;
     }
   }
 
-  _MySQLConnectionInfo _normalizeMySQLSettings(Map<String, dynamic> mysqlSettings) {
+  _MySQLConnectionInfo _normalizeMySQLSettings(
+      Map<String, dynamic> mysqlSettings) {
     final connectionInfo = _MySQLConnectionInfo(
       host: (mysqlSettings['host'] ?? 'localhost').toString(),
       port: int.tryParse(mysqlSettings['port']?.toString() ?? '3306') ?? 3306,
@@ -297,7 +281,8 @@ class DatabaseProvider extends ChangeNotifier {
     if (mysqlSettings != null) {
       return _MySQLConnectionInfo(
         host: (mysqlSettings['host'] ?? _mysqlHost).toString(),
-        port: int.tryParse(mysqlSettings['port']?.toString() ?? _mysqlPort) ?? 3306,
+        port: int.tryParse(mysqlSettings['port']?.toString() ?? _mysqlPort) ??
+            3306,
         database: (mysqlSettings['database'] ?? _mysqlDatabase).toString(),
         username: (mysqlSettings['username'] ?? _mysqlUsername).toString(),
         password: (mysqlSettings['password'] ?? _mysqlPassword).toString(),
@@ -325,114 +310,14 @@ class DatabaseProvider extends ChangeNotifier {
     _updateServiceConnections();
   }
 
-  // 确保所有必要的表都存在
-  Future<void> _ensureTablesExist() async {
-    if (_database == null) return;
-    
-    print('检查并确保所有必要的表都存在...');
-    
-    try {
-
-      
-      // 财务相关表由FinancialProvider负责创建
-      
-      print('所有必要的表检查完成');
-    } catch (e) {
-      print('检查表存在性时出错: $e');
-    }
-  }
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-
-  // _createDatabase 已移至 DatabaseSchemaService
-
-  // _createMySQLTables 已移至 DatabaseSchemaService
-
-  // _upgradeDatabase 已移至 DatabaseSchemaService
-
-  // 重置数据库（删除现有数据库文件，重新创建）
-  Future<void> resetDatabase() async {
-    print('正在重置数据库...');
-    
-    try {
-      // 关闭现有连接
-      await closeDatabase();
-      
-      // 删除数据库文件
-      if (_sqliteDbPath != null) {
-        final dbFile = File(_sqliteDbPath!);
-        if (await dbFile.exists()) {
-          await dbFile.delete();
-          print('已删除数据库文件: $_sqliteDbPath');
-        }
-      }
-      
-      // 重新初始化数据库
-      await initDatabase();
-      print('数据库重置完成');
-    } catch (e) {
-      print('重置数据库时出错: $e');
-      rethrow;
-    }
-  }
-
-  // 关闭数据库连接
-  Future<void> closeDatabase() async {
-    print('正在关闭数据库连接...');
-
-    try {
-      _syncMysqlConnectionFromService();
-      if (_database != null) {
-        print('关闭SQLite数据库连接');
-        await _database!.close();
-        _database = null;
-        print('SQLite数据库连接已关闭');
-      }
-
-      if (_mysqlConnection != null) {
-        print('关闭MySQL数据库连接');
-        try {
-          await _mysqlConnection!.close();
-          print('MySQL数据库连接已关闭');
-        } catch (e) {
-          print('关闭MySQL连接时出错: $e');
-          // 继续执行，即使关闭时出错
-        }
-        _mysqlConnection = null;
-      }
-      print('所有数据库连接已关闭');
-    } catch (e) {
-      print('关闭数据库连接时出错: $e');
-      // 继续执行，不阻止程序运行
-    }
-  }
-
-  // 密码哈希方法
-  String _hashPassword(String password) {
-    var bytes = utf8.encode(password);
-    var digest = md5.convert(bytes);
-    return digest.toString();
-  }
-
   // 标记刷新
+
   void markDashboardNeedRefresh() {
     _dashboardNeedRefresh = true;
     notifyListeners();
   }
 
   // 重置刷新标志
-
-
 
   void resetDashboardRefreshFlag() {
     _dashboardNeedRefresh = false;
@@ -447,7 +332,7 @@ class DatabaseProvider extends ChangeNotifier {
   }) async {
     _syncMysqlConnectionFromService();
     _updateServiceConnections();
-    
+
     // 如果备份 MySQL，需要传递连接参数
     final targetDataSource = backupDataSource ?? _dataSourceType;
     if (targetDataSource == 'mysql') {
@@ -463,7 +348,7 @@ class DatabaseProvider extends ChangeNotifier {
         mysqlPassword: _mysqlPassword,
       );
     }
-    
+
     return await _backupService.backupDatabase(
       backupPath: backupPath,
       onLogSuccess: onLogSuccess,
@@ -488,11 +373,11 @@ class DatabaseProvider extends ChangeNotifier {
 
   // 数据库恢复方法（委托给 DatabaseBackupService）
   Future<void> restoreDatabase(String filePath) async {
-    print('开始从备份文件恢复数据库: $filePath');
+    LogManager.w('DatabaseProvider', '开始从备份文件恢复数据库: $filePath');
     _syncMysqlConnectionFromService();
     _updateServiceConnections();
     await _backupService.restoreDatabase(filePath);
-    
+
     // 标记数据需要刷新
     _markAllDataForRefresh();
     notifyListeners();
@@ -505,45 +390,43 @@ class DatabaseProvider extends ChangeNotifier {
   // _executeMySQLImport 已移至 DatabaseBackupService
   // _fixDateTimeFormatsInSQL 已移至 DatabaseBackupService
 
-
-
-
-
   // 设置数据源类型
   Future<void> setDataSourceType(
     String type, {
     Map<String, dynamic>? mysqlSettings,
     String? customSqlitePath,
   }) async {
-    print('开始切换数据源类型到: $type');
-    print('当前数据源类型: $_dataSourceType');
+    LogManager.w('DatabaseProvider', '开始切换数据源类型到: $type');
+    LogManager.w('DatabaseProvider', '当前数据源类型: $_dataSourceType');
 
     try {
       // 如果切换到相同的数据源类型，检查是否需要重新初始化
       if (_dataSourceType == type) {
-        print('数据源类型未改变，检查连接状态...');
-        
+        LogManager.w('DatabaseProvider', '数据源类型未改变，检查连接状态...');
+
         if (type == 'sqlite') {
           // 检查SQLite连接是否有效
-          if (_database != null) {
+          final db = _database;
+          if (db != null) {
             try {
-              await _database!.query('SELECT 1');
-              print('SQLite连接仍然有效，无需重新初始化');
+              await db.query('SELECT 1');
+              LogManager.w('DatabaseProvider', 'SQLite连接仍然有效，无需重新初始化');
               return;
             } catch (e) {
-              print('SQLite连接已失效，需要重新初始化: $e');
+              LogManager.w('DatabaseProvider', 'SQLite连接已失效，需要重新初始化');
             }
           }
         } else if (type == 'mysql') {
           // 检查MySQL连接是否有效
           _syncMysqlConnectionFromService();
-          if (_mysqlConnection != null) {
+          final mysqlConnection = _mysqlConnection;
+          if (mysqlConnection != null) {
             try {
-              await _mysqlConnection!.query('SELECT 1');
-              print('MySQL连接仍然有效，无需重新初始化');
+              await mysqlConnection.query('SELECT 1');
+              LogManager.w('DatabaseProvider', 'MySQL连接仍然有效，无需重新初始化');
               return;
             } catch (e) {
-              print('MySQL连接已失效，需要重新初始化: $e');
+              LogManager.w('DatabaseProvider', 'MySQL连接已失效，需要重新初始化');
             }
           }
         }
@@ -553,19 +436,19 @@ class DatabaseProvider extends ChangeNotifier {
       if (type == 'sqlite') {
         // 从设置中获取SQLite路径
         String? sqliteDbPath = customSqlitePath;
-        print('从设置中获取的SQLite路径: $sqliteDbPath');
+        LogManager.w('DatabaseProvider', '从设置中获取的SQLite路径: $sqliteDbPath');
 
         // 如果自定义路径为空，使用默认路径
         if (sqliteDbPath == null || sqliteDbPath.isEmpty) {
-          print('使用默认SQLite路径');
+          LogManager.w('DatabaseProvider', '使用默认SQLite路径');
           try {
             // 使用应用数据目录
             sqliteDbPath = AppPaths.databasePath;
-            print('使用应用数据目录: $sqliteDbPath');
+            LogManager.w('DatabaseProvider', '使用应用数据目录: $sqliteDbPath');
           } catch (e) {
-            print('AppPaths未初始化，使用系统默认路径: $e');
+            LogManager.w('DatabaseProvider', 'AppPaths未初始化，使用系统默认路径');
             final dbPath = await getDatabasesPath();
-            sqliteDbPath = path.join(dbPath, DB_NAME);
+            sqliteDbPath = path.join(dbPath, dbName);
           }
         }
 
@@ -579,7 +462,7 @@ class DatabaseProvider extends ChangeNotifier {
       }
 
       // 关闭现有数据库连接
-      print('关闭现有数据库连接...');
+      LogManager.w('DatabaseProvider', '关闭现有数据库连接...');
       if (_dataSourceType != type) {
         // 只有在真正切换数据源类型时才关闭连接
         await closeDatabase();
@@ -587,25 +470,25 @@ class DatabaseProvider extends ChangeNotifier {
 
       // 更新数据源类型
       _dataSourceType = type;
-      print('数据源类型已切换为: $type');
+      LogManager.w('DatabaseProvider', '数据源类型已切换为: $type');
 
       // 如果是MySQL，保存设置
       if (type == 'mysql' && mysqlSettings != null) {
         // 保存完整的MySQL设置
         _normalizeMySQLSettings(mysqlSettings);
 
-        print(
-            '已保存MySQL设置到_mysqlSettings: ${_mysqlSettings.toString().replaceAll(_mysqlPassword, '******')}');
+        LogManager.i('DatabaseProvider', '已保存MySQL设置到_mysqlSettings');
       }
 
       // 初始化新数据源连接
-      print('初始化新数据源连接...');
+      LogManager.w('DatabaseProvider', '初始化新数据源连接...');
       if (type == 'sqlite') {
         try {
-          print('使用自定义SQLite路径初始化数据库: $_customSqliteDbPath');
+          LogManager.w(
+              'DatabaseProvider', '使用自定义SQLite路径初始化数据库: $_customSqliteDbPath');
           await initDatabase(customPath: _customSqliteDbPath);
         } catch (e) {
-          print('常规SQLite初始化失败，尝试紧急初始化: $e');
+          LogManager.e('DatabaseProvider', '常规SQLite初始化失败，尝试紧急初始化', error: e);
           // 如果常规初始化失败，尝试紧急初始化
           await ensureSQLiteDatabase();
         }
@@ -616,15 +499,13 @@ class DatabaseProvider extends ChangeNotifier {
       // 标记所有数据需要刷新
       _markAllDataForRefresh();
 
-      print('数据源切换完成');
+      LogManager.i('DatabaseProvider', '数据源切换完成');
       notifyListeners();
     } catch (e) {
-      print('切换数据源类型时出错: $e');
+      LogManager.e('DatabaseProvider', '切换数据源类型时出错', error: e);
       rethrow;
     }
   }
-
-
 
   // 测试MySQL连接（委托给 MysqlConnectionService）
   Future<bool> testMySQLConnection({
@@ -644,7 +525,8 @@ class DatabaseProvider extends ChangeNotifier {
   }
 
   // 初始化MySQL连接（委托给 MysqlConnectionService）
-  Future<void> initializeMySQLConnection(Map<String, dynamic> mysqlSettings) async {
+  Future<void> initializeMySQLConnection(
+      Map<String, dynamic> mysqlSettings) async {
     final connectionInfo = _normalizeMySQLSettings(mysqlSettings);
 
     await _mysqlService.initializeMySQLConnection(
@@ -654,7 +536,7 @@ class DatabaseProvider extends ChangeNotifier {
       username: connectionInfo.username,
       password: connectionInfo.password,
     );
-    
+
     // 同步连接实例
     _mysqlConnection = _mysqlService.connection;
     _updateServiceConnections();
@@ -682,28 +564,25 @@ class DatabaseProvider extends ChangeNotifier {
     }
 
     if (_dataSourceType == 'sqlite') {
-      if (_database == null) {
-        _database = await initSQLiteDatabase();
-      }
+      _database ??= await initSQLiteDatabase();
       return _database;
     }
     return null;
   }
 
-  
-
-
   // MySQL数据库还原方法
   // 注意：此方法执行实际的数据库还原操作，设置管理由SettingsProvider负责
 
   // restoreFromMySQLDump 已移至 DatabaseBackupService
-  Future<void> restoreFromMySQLDump(String dumpFilePath, {
+  Future<void> restoreFromMySQLDump(
+    String dumpFilePath, {
     Map<String, dynamic>? mysqlSettings,
     Function(String)? onLogOperation,
   }) async {
     _syncMysqlConnectionFromService();
     _updateServiceConnections();
-    await _backupService.restoreFromMySQLDump(dumpFilePath, onLogOperation: onLogOperation);
+    await _backupService.restoreFromMySQLDump(dumpFilePath,
+        onLogOperation: onLogOperation);
   }
 
   // MySQL备份功能已移动到SettingsProvider
@@ -719,10 +598,10 @@ class DatabaseProvider extends ChangeNotifier {
   }) async {
     _syncMysqlConnectionFromService();
     _updateServiceConnections();
-    
+
     // 从内部变量或传入的设置获取连接参数
     final credentials = _resolveMySQLCredentials(mysqlSettings: mysqlSettings);
-    
+
     return await _backupService.backupMySQLDatabase(
       backupPath: backupPath,
       host: credentials.host,
@@ -736,21 +615,43 @@ class DatabaseProvider extends ChangeNotifier {
   // _convertResultRowToMap 已移至 DatabaseBackupService
   // _formatDateTime 已移至 DatabaseBackupService
 
-  // _getTableNames 已移至 DatabaseSchemaService
-  Future<List<String>> _getTableNames() async {
-    _syncMysqlConnectionFromService();
-    _updateServiceConnections();
-    return await _schemaService.getTableNames();
-  }
-
   // _parseDateTime 已移至 DatabaseBackupService
 
   /// 获取数据库文件路径
   String get databasePath => _databasePath ?? _sqliteDbPath ?? '';
 
-  
+  // 关闭数据库连接
+  Future<void> closeDatabase() async {
+    LogManager.w('DatabaseProvider', '正在关闭数据库连接...');
 
+    try {
+      _syncMysqlConnectionFromService();
+      final db = _database;
+      if (db != null) {
+        LogManager.w('DatabaseProvider', '关闭SQLite数据库连接');
+        await db.close();
+        _database = null;
+        LogManager.w('DatabaseProvider', 'SQLite数据库连接已关闭');
+      }
 
+      final mysqlConnection = _mysqlConnection;
+      if (mysqlConnection != null) {
+        LogManager.w('DatabaseProvider', '关闭MySQL数据库连接');
+        try {
+          await mysqlConnection.close();
+          LogManager.w('DatabaseProvider', 'MySQL数据库连接已关闭');
+        } catch (e) {
+          LogManager.e('DatabaseProvider', '关闭MySQL连接时出错', error: e);
+          // 继续执行，即使关闭时出错
+        }
+        _mysqlConnection = null;
+      }
+      LogManager.w('DatabaseProvider', '所有数据库连接已关闭');
+    } catch (e) {
+      LogManager.e('DatabaseProvider', '关闭数据库连接时出错', error: e);
+      // 继续执行，不阻止程序运行
+    }
+  }
 }
 
 class _MySQLConnectionInfo {

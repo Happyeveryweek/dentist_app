@@ -16,7 +16,7 @@ class PurchaseItemRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: Colors.grey.shade300),
       ),
       child: Row(
         children: [

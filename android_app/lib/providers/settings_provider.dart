@@ -3,7 +3,15 @@ import '../utils/settings_manager.dart';
 
 /// 设置提供者 - 用于在应用程序中共享设置状态
 class SettingsProvider extends ChangeNotifier {
-  late SettingsManager _settingsManager;
+  SettingsManager? _settingsManager;
+
+  SettingsManager get _requireSettingsManager {
+    final manager = _settingsManager;
+    if (manager == null) {
+      throw StateError('SettingsProvider 尚未初始化，请先调用 init()');
+    }
+    return manager;
+  }
 
   // 通知设置
   bool _appointmentReminder = true;
@@ -28,15 +36,16 @@ class SettingsProvider extends ChangeNotifier {
   // 初始化设置
   Future<void> init() async {
     // 获取单例
-    _settingsManager = await SettingsManager.getInstance();
+    final manager = await SettingsManager.getInstance();
+    _settingsManager = manager;
 
     // 加载所有设置
-    _appointmentReminder = _settingsManager.getAppointmentReminder();
-    _systemNotification = _settingsManager.getSystemNotification();
-    _language = _settingsManager.getLanguage();
-    _timeFormat = _settingsManager.getTimeFormat();
-    _themeMode = _settingsManager.getThemeMode();
-    _fontSize = _settingsManager.getFontSize();
+    _appointmentReminder = manager.getAppointmentReminder();
+    _systemNotification = manager.getSystemNotification();
+    _language = manager.getLanguage();
+    _timeFormat = manager.getTimeFormat();
+    _themeMode = manager.getThemeMode();
+    _fontSize = manager.getFontSize();
 
     // 通知监听器
     notifyListeners();
@@ -44,7 +53,7 @@ class SettingsProvider extends ChangeNotifier {
 
   // 更新预约提醒设置
   Future<void> updateAppointmentReminder(bool value) async {
-    if (await _settingsManager.setAppointmentReminder(value)) {
+    if (await _requireSettingsManager.setAppointmentReminder(value)) {
       _appointmentReminder = value;
       notifyListeners();
     }
@@ -52,7 +61,7 @@ class SettingsProvider extends ChangeNotifier {
 
   // 更新系统通知设置
   Future<void> updateSystemNotification(bool value) async {
-    if (await _settingsManager.setSystemNotification(value)) {
+    if (await _requireSettingsManager.setSystemNotification(value)) {
       _systemNotification = value;
       notifyListeners();
     }
@@ -60,7 +69,7 @@ class SettingsProvider extends ChangeNotifier {
 
   // 更新语言设置
   Future<void> updateLanguage(String value) async {
-    if (await _settingsManager.setLanguage(value)) {
+    if (await _requireSettingsManager.setLanguage(value)) {
       _language = value;
       notifyListeners();
     }
@@ -68,7 +77,7 @@ class SettingsProvider extends ChangeNotifier {
 
   // 更新时间格式设置
   Future<void> updateTimeFormat(String value) async {
-    if (await _settingsManager.setTimeFormat(value)) {
+    if (await _requireSettingsManager.setTimeFormat(value)) {
       _timeFormat = value;
       notifyListeners();
     }
@@ -76,7 +85,7 @@ class SettingsProvider extends ChangeNotifier {
 
   // 更新主题模式
   Future<void> updateThemeMode(ThemeMode value) async {
-    if (await _settingsManager.setThemeMode(value)) {
+    if (await _requireSettingsManager.setThemeMode(value)) {
       _themeMode = value;
       notifyListeners();
     }
@@ -84,7 +93,7 @@ class SettingsProvider extends ChangeNotifier {
 
   // 更新字体大小
   Future<void> updateFontSize(String value) async {
-    if (await _settingsManager.setFontSize(value)) {
+    if (await _requireSettingsManager.setFontSize(value)) {
       _fontSize = value;
       notifyListeners();
     }

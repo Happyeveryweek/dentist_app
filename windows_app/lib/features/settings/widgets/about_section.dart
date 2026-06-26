@@ -6,7 +6,6 @@ import '../../../providers/settings_provider.dart';
 import '../../../widgets/dental_icons.dart';
 import '../widgets/settings_section_header.dart';
 import '../widgets/setting_item.dart';
-import '../widgets/reset_data_item.dart';
 import '../../../screens/app_info_screen.dart';
 
 class AboutSection extends StatelessWidget {
@@ -28,7 +27,7 @@ class AboutSection extends StatelessWidget {
     final settingsProvider = Provider.of<SettingsProvider>(context);
     return Column(
       children: [
-        SettingsSectionHeader(
+        const SettingsSectionHeader(
           title: '关于',
           icon: Icons.info_outline,
           color: AppTheme.accentColor,
@@ -40,7 +39,7 @@ class AboutSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -82,7 +81,7 @@ class AboutSection extends StatelessWidget {
                   ),
                 ),
                 const Divider(height: 20),
-                SettingItem(
+                const SettingItem(
                   icon: Icons.code,
                   title: '开发者',
                   subtitle: 'Dr. Dentist Software 牙医软件团队',

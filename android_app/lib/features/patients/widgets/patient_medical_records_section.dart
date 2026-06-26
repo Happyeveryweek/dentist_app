@@ -111,9 +111,14 @@ class _PatientMedicalRecordsSectionState
         await medicalRecordProvider.initializeFromDatabase(dbProvider);
       }
 
+      final patientId = widget.patient.id;
+      if (patientId == null) {
+        throw Exception('患者ID无效');
+      }
+
       // 像患者提供者一样，直接调用简单的查询方法
       final records = await medicalRecordProvider
-          .getPatientMedicalRecordsSimple(widget.patient.id!);
+          .getPatientMedicalRecordsSimple(patientId);
 
       if (mounted) {
         setState(() {

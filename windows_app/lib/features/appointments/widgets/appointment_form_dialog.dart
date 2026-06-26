@@ -15,6 +15,7 @@ import './appointment_date_time_section.dart';
 import './appointment_cost_status_section.dart';
 import './appointment_notes_section.dart';
 import './appointment_patient_search_dialog.dart';
+import '../../../utils/log_manager.dart';
 
 class AppointmentFormDialog extends StatefulWidget {
   final DateTime initialDate;
@@ -61,21 +62,23 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
   void initState() {
     super.initState();
 
-    if (widget.appointment != null) {
-      final appointmentDate = widget.appointment!.appointment_date;
+    final existingAppointment = widget.appointment;
+    if (existingAppointment != null) {
+      final appointmentDate = existingAppointment.appointmentDate;
       _date = DateTime(
           appointmentDate.year, appointmentDate.month, appointmentDate.day);
       _time =
           TimeOfDay(hour: appointmentDate.hour, minute: appointmentDate.minute);
-      _status = widget.appointment!.status;
+      _status = existingAppointment.statusDisplay;
 
       // 解析 treatment_type 字段
-      if (widget.appointment!.treatment_type != null) {
-        _parseTreatmentTypeData(widget.appointment!.treatment_type!);
+      final treatmentType = existingAppointment.treatmentType;
+      if (treatmentType != null) {
+        _parseTreatmentTypeData(treatmentType);
       }
 
-      _notesController.text = widget.appointment!.notes ?? '';
-      _costController.text = widget.appointment!.cost?.toString() ?? '';
+      _notesController.text = existingAppointment.notes ?? '';
+      _costController.text = existingAppointment.cost?.toString() ?? '';
     } else {
       _date = widget.initialDate;
       _time = TimeOfDay.now();
@@ -99,7 +102,13 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
   void _parseTreatmentTypeData(String treatmentTypeStr) {
     try {
       // 尝试解析为JSON
-      Map<String, dynamic> data = json.decode(treatmentTypeStr);
+      final decoded = json.decode(treatmentTypeStr);
+      if (decoded is! Map<String, dynamic>) {
+        _selectedTreatments = _extractTreatmentItems(treatmentTypeStr);
+        _updateTreatmentTypeController();
+        return;
+      }
+      final data = decoded;
 
       // 提取牙齿情况数据
       if (data.containsKey('teethData')) {
@@ -109,15 +118,11 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
       }
 
       // 提取治疗项目数据
-      if (data.containsKey('treatments')) {
-        _selectedTreatments = _normalizeTreatmentItems(
-          List<String>.from(data['treatments']),
-        );
-        _updateTreatmentTypeController();
-      }
+      _selectedTreatments = _extractTreatmentItemsFromDecodedData(data);
+      _updateTreatmentTypeController();
     } catch (e) {
       // 如果解析失败，可能是旧数据格式，直接设为治疗项目
-      print('解析treatment_type失败: $e');
+      LogManager.e('AppointmentFormDialog', '解析treatment_type失败', error: e);
       _selectedTreatments = _extractTreatmentItems(treatmentTypeStr);
       _updateTreatmentTypeController();
     }
@@ -152,14 +157,47 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
 
     try {
       final decoded = json.decode(trimmed);
-      if (decoded is Map<String, dynamic> && decoded['treatments'] is List) {
+      if (decoded is Map<String, dynamic>) {
+        final extracted = _extractTreatmentItemsFromDecodedData(decoded);
+        if (extracted.isNotEmpty) {
+          return extracted;
+        }
+        return [];
+      }
+      if (decoded is List) {
         return _normalizeTreatmentItems(
-          List<String>.from(decoded['treatments']),
+          decoded.map((item) => item.toString()).toList(),
         );
       }
     } catch (_) {}
 
     return _normalizeTreatmentItems(trimmed.split(RegExp(r'[、,，\n]')));
+  }
+
+  List<String> _extractTreatmentItemsFromDecodedData(Map<String, dynamic> data) {
+    if (data['treatments'] is List) {
+      return _normalizeTreatmentItems(
+        List<String>.from(
+          (data['treatments'] as List).map((item) => item.toString()),
+        ),
+      );
+    }
+
+    if (data['treatmentTypes'] is List) {
+      return _normalizeTreatmentItems(
+        List<String>.from(
+          (data['treatmentTypes'] as List).map((item) => item.toString()),
+        ),
+      );
+    }
+
+    if (data['treatmentType'] is String) {
+      return _normalizeTreatmentItems([
+        data['treatmentType'].toString(),
+      ]);
+    }
+
+    return [];
   }
 
   Future<void> _loadTreatmentSuggestions() async {
@@ -169,10 +207,10 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
         listen: false,
       );
       final appointments = await appointmentProvider.getAllAppointments();
-      final suggestions = LinkedHashSet<String>();
+      final suggestions = <String>{};
 
       for (final appointment in appointments) {
-        for (final item in _extractTreatmentItems(appointment.treatment_type)) {
+        for (final item in _extractTreatmentItems(appointment.treatmentType)) {
           suggestions.add(item);
         }
       }
@@ -185,7 +223,7 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
         _treatmentSuggestions = suggestions.toList();
       });
     } catch (e) {
-      print('加载治疗项目下拉数据失败: $e');
+      LogManager.e('AppointmentFormDialog', '加载治疗项目下拉数据失败', error: e);
       if (!mounted) {
         return;
       }
@@ -221,25 +259,48 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
     setState(() => _isLoadingPatients = true);
 
     try {
-      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
-      final patients = await patientProvider.getAllPatients();
+      final appointmentProvider =
+          Provider.of<AppointmentProvider>(context, listen: false);
+      final patientProvider =
+          Provider.of<PatientProvider>(context, listen: false);
+      final patientsDataSourceType = appointmentProvider.dataSourceType;
+      final patients = await patientProvider.getAllPatientsInDataSource(
+        patientsDataSourceType,
+      );
 
       // 按最近更新时间倒序排序
-      patients.sort((a, b) => b.updated_at.compareTo(a.updated_at));
+      patients.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+      Patient? resolvedSelectedPatient;
+      final preselectedPatient = widget.preselectedPatient;
+      if (preselectedPatient != null) {
+        resolvedSelectedPatient = await patientProvider.resolvePatientForDataSource(
+          preselectedPatient,
+          targetDataSourceType: patientsDataSourceType,
+        );
+      }
 
       setState(() {
         _patients = patients;
         _isLoadingPatients = false;
+        _selectedPatient = resolvedSelectedPatient;
 
-        if (widget.appointment != null &&
-            widget.appointment!.patient_id != null) {
+        final selectedPatient = _selectedPatient;
+        if (selectedPatient != null) {
+          _patientSearchController.text = selectedPatient.name;
+        }
+
+        final existingAppointment = widget.appointment;
+        final existingPatientId = existingAppointment?.patientId;
+        if (existingPatientId != null) {
           try {
             _selectedPatient = _patients.firstWhere(
-              (p) => p.id == widget.appointment!.patient_id,
+              (p) => p.id == existingPatientId,
             );
             // 选中后设置搜索框文本
-            if (_selectedPatient != null) {
-              _patientSearchController.text = _selectedPatient!.name;
+            final selectedPatient = _selectedPatient;
+            if (selectedPatient != null) {
+              _patientSearchController.text = selectedPatient.name;
             }
           } catch (e) {
             _selectedPatient = null;
@@ -304,28 +365,28 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       backgroundColor: Colors.transparent,
-             child: Container(
-         width: MediaQuery.of(context).size.width * 0.4, // 从0.3增加到0.4，增加三分之一
-         height: MediaQuery.of(context).size.height * 0.95,
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.4, // 从0.3增加到0.4，增加三分之一
+        height: MediaQuery.of(context).size.height * 0.95,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF667eea),
-              const Color(0xFF764ba2),
+              Color(0xFF667eea),
+              Color(0xFF764ba2),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF667eea).withOpacity(0.2),
+              color: const Color(0xFF667eea).withValues(alpha: 0.2),
               blurRadius: 20,
               offset: const Offset(0, 10),
               spreadRadius: 0,
             ),
             BoxShadow(
-              color: const Color(0xFF667eea).withOpacity(0.1),
+              color: const Color(0xFF667eea).withValues(alpha: 0.1),
               blurRadius: 40,
               offset: const Offset(0, 20),
               spreadRadius: 0,
@@ -334,10 +395,10 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.95),
+            color: Colors.white.withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFF667eea).withOpacity(0.1),
+              color: const Color(0xFF667eea).withValues(alpha: 0.1),
               width: 1,
             ),
           ),
@@ -347,21 +408,22 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
             children: [
               // 标题行 - 带渐变背景
               Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      const Color(0xFF667eea),
-                      const Color(0xFF764ba2),
+                      Color(0xFF667eea),
+                      Color(0xFF764ba2),
                     ],
                   ),
-                  borderRadius: const BorderRadius.only(
+                  borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -370,11 +432,13 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
-                            widget.appointment != null ? Icons.edit : Icons.add_circle_outline,
+                            widget.appointment != null
+                                ? Icons.edit
+                                : Icons.add_circle_outline,
                             color: Colors.white,
                             size: 18,
                           ),
@@ -399,106 +463,110 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                        icon: const Icon(Icons.close,
+                            color: Colors.white, size: 18),
                         onPressed: () => Navigator.of(context).pop(),
                         splashRadius: 16,
                         tooltip: '关闭',
                         padding: const EdgeInsets.all(4),
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        constraints:
+                            const BoxConstraints(minWidth: 32, minHeight: 32),
                       ),
                     ),
                   ],
                 ),
               ),
-            
-                             // 表单内容
-               Expanded(
-                 child: SingleChildScrollView(
-                   padding: const EdgeInsets.all(12),
+
+              // 表单内容
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(12),
                   child: Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                                                 // 患者选择区域
-                         AppointmentPatientSelectionSection(
-                           selectedPatient: _selectedPatient,
-                           hasPreselectedPatient: widget.preselectedPatient != null,
-                           isLoadingPatients: _isLoadingPatients,
-                           onSelectPatient: () => _showPatientSearchDialog(context),
-                         ),
-                          
-                         const SizedBox(height: 12),
-                          
-                         // 时间选择区域
-                         AppointmentDateTimeSection(
-                           date: _date,
-                           time: _time,
-                           onSelectDate: () => _selectDate(context),
-                           onSelectTime: () => _selectTime(context),
-                         ),
-                          
-                         const SizedBox(height: 12),
-                          
-                         // 牙齿情况区域 - 使用新的独立组件
-                         TeethConditionWidget(
-                           teethData: _teethData,
-                           onChanged: (newTeethData) {
-                             setState(() {
-                               _teethData = newTeethData;
-                             });
-                           },
-                         ),
-                          
-                         const SizedBox(height: 12),
-                          
-                         // 治疗项目区域 - 使用新的独立组件
-                         TreatmentSectionWidget(
-                           selectedTreatments: _selectedTreatments,
-                           treatmentTypeController: _treatmentTypeController,
-                           suggestions: _treatmentSuggestions,
-                           onTreatmentsChanged: (treatments) {
-                             setState(() {
-                               _selectedTreatments =
-                                   _normalizeTreatmentItems(treatments);
-                             });
-                           },
-                         ),
-                          
-                         const SizedBox(height: 12),
-                          
-                         // 费用和状态区域
-                         AppointmentCostStatusSection(
-                           costController: _costController,
-                           status: _status,
-                           onStatusChanged: (value) {
-                             if (value != null) {
-                               setState(() {
-                                 _status = value;
-                               });
-                             }
-                           },
-                         ),
-                          
-                         const SizedBox(height: 12),
-                          
-                         // 备注区域
-                         AppointmentNotesSection(
-                           notesController: _notesController,
-                         ),
+                        // 患者选择区域
+                        AppointmentPatientSelectionSection(
+                          selectedPatient: _selectedPatient,
+                          hasPreselectedPatient:
+                              widget.preselectedPatient != null,
+                          isLoadingPatients: _isLoadingPatients,
+                          onSelectPatient: () =>
+                              _showPatientSearchDialog(context),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // 时间选择区域
+                        AppointmentDateTimeSection(
+                          date: _date,
+                          time: _time,
+                          onSelectDate: () => _selectDate(context),
+                          onSelectTime: () => _selectTime(context),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // 牙齿情况区域 - 使用新的独立组件
+                        TeethConditionWidget(
+                          teethData: _teethData,
+                          onChanged: (newTeethData) {
+                            setState(() {
+                              _teethData = newTeethData;
+                            });
+                          },
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // 治疗项目区域 - 使用新的独立组件
+                        TreatmentSectionWidget(
+                          selectedTreatments: _selectedTreatments,
+                          treatmentTypeController: _treatmentTypeController,
+                          suggestions: _treatmentSuggestions,
+                          onTreatmentsChanged: (treatments) {
+                            setState(() {
+                              _selectedTreatments =
+                                  _normalizeTreatmentItems(treatments);
+                            });
+                          },
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // 费用和状态区域
+                        AppointmentCostStatusSection(
+                          costController: _costController,
+                          status: _status,
+                          onStatusChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _status = value;
+                              });
+                            }
+                          },
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // 备注区域
+                        AppointmentNotesSection(
+                          notesController: _notesController,
+                        ),
                       ],
                     ),
                   ),
                 ),
               ),
-              
-                             // 底部操作按钮
-               Container(
-                 padding: const EdgeInsets.all(12),
+
+              // 底部操作按钮
+              Container(
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
                   borderRadius: const BorderRadius.only(
@@ -512,7 +580,8 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -529,41 +598,47 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
                     const SizedBox(width: 16),
                     ElevatedButton(
                       onPressed: () {
-                        if (_formKey.currentState!.validate() && _selectedPatient != null) {
-                          _ensurePendingTreatmentInputIncluded();
-                          final appointmentDateTime = DateTime(
-                            _date.year,
-                            _date.month,
-                            _date.day,
-                            _time.hour,
-                            _time.minute,
-                          );
-                           
-                          // 构建预约对象
-                          final appointment = Appointment(
-                            id: widget.appointment?.id,
-                            patient_id: _selectedPatient!.id,
-                            patient: _selectedPatient,
-                            appointment_date: appointmentDateTime,
-                            status: _status,
-                            treatment_type: _buildTreatmentTypeData(),
-                            notes: _notesController.text.isEmpty ? null : _notesController.text,
-                            cost: _costController.text.isEmpty ? null : double.tryParse(_costController.text),
-                            created_at: widget.appointment?.created_at ?? DateTime.now(),
-                            updated_at: DateTime.now(),
-                          );
-
-                          Navigator.of(context).pop(appointment);
-                        } else if (_selectedPatient == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('请选择患者')),
-                          );
+                        final selectedPatient = _selectedPatient;
+                        if (_formKey.currentState?.validate() != true ||
+                            selectedPatient == null) {
+                          return;
                         }
+                        _ensurePendingTreatmentInputIncluded();
+                        final appointmentDateTime = DateTime(
+                          _date.year,
+                          _date.month,
+                          _date.day,
+                          _time.hour,
+                          _time.minute,
+                        );
+
+                        // 构建预约对象
+                        final appointment = Appointment(
+                          id: widget.appointment?.id,
+                          patientId: selectedPatient.id,
+                          patient: selectedPatient,
+                          appointmentDate: appointmentDateTime,
+                          status: _status,
+                          treatmentType: _buildTreatmentTypeData(),
+                          notes: _notesController.text.isEmpty
+                              ? null
+                              : _notesController.text,
+                          cost: _costController.text.isEmpty
+                              ? null
+                              : double.tryParse(_costController.text),
+                          createdAt:
+                              widget.appointment?.createdAt ?? DateTime.now(),
+                          updatedAt: DateTime.now(),
+                        );
+
+                        Navigator.of(context).pop(appointment);
+                        return;
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF667eea),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

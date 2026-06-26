@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:mysql1/mysql1.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/log_manager.dart';
 
 /// MySQL 连接工具类
 /// 从 SharedPreferences 读取 MySQL 配置并建立连接，消除各 Provider 中的重复代码
@@ -20,9 +21,10 @@ class MySqlConnectionHelper {
       if (mysqlJson != null && mysqlJson.isNotEmpty) {
         try {
           settings = Map<String, dynamic>.from(jsonDecode(mysqlJson));
-          print('从 SharedPreferences mysqlSettings 读取 MySQL 配置');
         } catch (e) {
-          print('解析 SharedPreferences 中 mysqlSettings 失败: $e');
+          LogManager.e('MysqlConnectionHelper',
+              '解析 SharedPreferences 中 mysqlSettings 失败',
+              error: e);
           settings = null;
         }
       }
@@ -38,14 +40,14 @@ class MySqlConnectionHelper {
             'username': prefs.getString('mysqlUsername') ?? '',
             'password': prefs.getString('mysqlPassword') ?? '',
           };
-          print('从 SharedPreferences 单独键读取 MySQL 配置');
         }
       }
 
       if (settings != null) {
         try {
           final host = settings['host'];
-          final port = int.tryParse(settings['port']?.toString() ?? '3306') ?? 3306;
+          final port =
+              int.tryParse(settings['port']?.toString() ?? '3306') ?? 3306;
           final database = settings['database'];
           final username = settings['username'];
           final password = settings['password'];
@@ -64,17 +66,19 @@ class MySqlConnectionHelper {
             await conn.query("SET character_set_connection = 'utf8mb4'");
             await conn.query("SET character_set_results = 'utf8mb4'");
           } catch (e) {
-            print('设置MySQL会话字符集失败: $e');
+            LogManager.e('MySqlConnectionHelper', '设置MySQL会话字符集失败', error: e);
           }
 
+          LogManager.i('MySqlConnectionHelper', 'MySQL连接建立成功');
           return conn;
         } catch (e) {
-          print('尝试初始化MySQL连接失败: $e');
+          LogManager.e('MysqlConnectionHelper', '尝试初始化MySQL连接失败', error: e);
           return null;
         }
       }
     } catch (e) {
-      print('读取SharedPreferences以获取MySQL设置失败: $e');
+      LogManager.e('MysqlConnectionHelper', '读取SharedPreferences以获取MySQL设置失败',
+          error: e);
     }
     return null;
   }

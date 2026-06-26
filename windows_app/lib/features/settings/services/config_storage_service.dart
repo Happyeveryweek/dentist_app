@@ -5,13 +5,14 @@ import 'package:path/path.dart' as path;
 import 'package:dentist_app_windows/utils/config_manager.dart';
 import 'package:dentist_app_windows/utils/app_paths.dart';
 import 'package:dentist_app_windows/utils/datetime_formatter.dart';
+import '../../../utils/log_manager.dart';
 
 /// 配置存储服务
 /// 负责应用的配置存储管理，包括文件存储和SharedPreferences存储
 class ConfigStorageService {
   final ConfigManager _configManager = ConfigManager.instance;
   static const String _migrationCompletedKey = '__config_migration_completed__';
-  
+
   // 配置存储模式
   bool _useFileStorage = true;
   bool get useFileStorage => _useFileStorage;
@@ -21,67 +22,67 @@ class ConfigStorageService {
     try {
       // 检查是否可以使用应用目录存储
       final canUseFileStorage = await _checkFileStorageAvailability();
-      
+
       if (canUseFileStorage) {
         _useFileStorage = true;
         _configManager.setStorageMode(StorageMode.hybrid);
-        
+
         // 只在第一次发现旧配置时迁移，避免每次启动重复执行
-        final migrationCompleted =
-            await _configManager.loadConfig<bool>(_migrationCompletedKey, defaultValue: false) ??
-                false;
+        final migrationCompleted = await _configManager.loadConfig<bool>(
+                _migrationCompletedKey,
+                defaultValue: false) ??
+            false;
         if (!migrationCompleted) {
           await _migrateConfigsToFile();
         }
       } else {
         _useFileStorage = false;
         _configManager.setStorageMode(StorageMode.preferences);
-        print('使用SharedPreferences配置存储模式');
       }
     } catch (e) {
-      print('初始化配置存储失败: $e');
+      LogManager.e('ConfigStorageService', '初始化配置存储失败', error: e);
       _useFileStorage = false;
       _configManager.setStorageMode(StorageMode.preferences);
     }
   }
-  
+
   /// 检查文件存储可用性
   Future<bool> _checkFileStorageAvailability() async {
     try {
       // 检查AppPaths是否已初始化
       final testPath = AppPaths.configPath;
-      
+
       // 尝试创建配置目录
       final configDir = Directory(path.dirname(testPath));
       if (!await configDir.exists()) {
         await configDir.create(recursive: true);
       }
-      
+
       // 尝试写入测试文件
       final testFile = File(path.join(configDir.path, 'test_write.tmp'));
       await testFile.writeAsString('test');
       await testFile.delete();
-      
+
       return true;
     } catch (e) {
-      print('文件存储不可用: $e');
+      LogManager.e('ConfigStorageService', '文件存储不可用', error: e);
       return false;
     }
   }
-  
+
   /// 迁移配置到文件存储
   Future<void> _migrateConfigsToFile() async {
     try {
       await _configManager.migrateToFile();
     } catch (e) {
-      print('配置迁移失败: $e');
+      LogManager.e('ConfigStorageService', '配置迁移失败', error: e);
     }
   }
 
   /// 从SharedPreferences加载设置
   Future<Map<String, dynamic>> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     return {
       'extendedThemeMode': prefs.getInt('extendedThemeMode') ?? 0,
       'themeMode': prefs.getInt('themeMode') ?? 0,
@@ -150,12 +151,13 @@ class ConfigStorageService {
     if (settings.containsKey('backupInterval')) {
       await prefs.setInt('backupInterval', settings['backupInterval']);
     }
-    
+
     // 保存上次备份日期
     if (settings.containsKey('lastBackupDate')) {
       final lastBackupDate = settings['lastBackupDate'];
       if (lastBackupDate != null) {
-        await prefs.setString('lastBackupDate', DateTimeFormatter.toDbString(lastBackupDate));
+        await prefs.setString(
+            'lastBackupDate', DateTimeFormatter.toDbString(lastBackupDate));
       }
     }
 
@@ -163,7 +165,7 @@ class ConfigStorageService {
     if (settings.containsKey('dataSourceType')) {
       await prefs.setString('dataSourceType', settings['dataSourceType']);
     }
-    
+
     // 保存数据源模式设置
     if (settings.containsKey('dataSourceMode')) {
       await prefs.setString('dataSourceMode', settings['dataSourceMode']);
@@ -193,7 +195,8 @@ class ConfigStorageService {
 
     // 保存自定义SQLite数据库路径
     if (settings.containsKey('customSqliteDbPath')) {
-      await prefs.setString('customSqliteDbPath', settings['customSqliteDbPath']);
+      await prefs.setString(
+          'customSqliteDbPath', settings['customSqliteDbPath']);
     }
 
     // 保存MySQL设置映射
@@ -208,7 +211,8 @@ class ConfigStorageService {
     if (settings.containsKey('lastMySQLSettings')) {
       final lastMySQLSettings = settings['lastMySQLSettings'];
       if (lastMySQLSettings != null) {
-        await prefs.setString('lastMySQLSettings', jsonEncode(lastMySQLSettings));
+        await prefs.setString(
+            'lastMySQLSettings', jsonEncode(lastMySQLSettings));
       }
     }
 
@@ -221,7 +225,8 @@ class ConfigStorageService {
     if (settings.containsKey('moduleDataSources')) {
       final moduleDataSources = settings['moduleDataSources'];
       if (moduleDataSources != null) {
-        await prefs.setString('moduleDataSources', jsonEncode(moduleDataSources));
+        await prefs.setString(
+            'moduleDataSources', jsonEncode(moduleDataSources));
       }
     }
 
@@ -251,7 +256,7 @@ class ConfigStorageService {
       }
       return false;
     } catch (e) {
-      print('切换到文件存储失败: $e');
+      LogManager.e('ConfigStorageService', '切换到文件存储失败', error: e);
       return false;
     }
   }
@@ -298,13 +303,11 @@ class ConfigStorageService {
       // 清除SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      
+
       // 清除ConfigManager中的配置
       await _configManager.clearAllConfigs();
-      
-      print('所有设置已清除');
     } catch (e) {
-      print('清除设置失败: $e');
+      LogManager.e('ConfigStorageService', '清除设置失败', error: e);
       throw Exception('清除设置失败: $e');
     }
   }

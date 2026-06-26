@@ -47,29 +47,27 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
 
   Future<void> _loadPatientData() async {
     try {
-      if (widget.patient.id != null) {
+      final patientId = widget.patient.id;
+      if (patientId != null) {
         final imageProvider = Provider.of<PatientImageProvider>(
           context,
           listen: false,
         );
 
-        // 清除可能的缓存 - 避免在构建过程中触发状态更新
-        // await Provider.of<PatientProvider>(context, listen: false).forceRefreshPatients();
-
         // 强制刷新图片数据缓存
-        if (imageProvider.hasCachedData(widget.patient.id!)) {
+        if (imageProvider.hasCachedData(patientId)) {
           AppLogger.info('清除患者图片缓存，强制重新获取最新数据');
-          imageProvider.clearPatientCache(widget.patient.id!);
+          imageProvider.clearPatientCache(patientId);
         }
 
         try {
-          AppLogger.info('强制重新获取患者数据 ID: ${widget.patient.id}');
+          AppLogger.info('强制重新获取患者数据 ID: $patientId');
           final freshPatient = await Provider.of<PatientProvider>(
             context,
             listen: false,
-          ).getPatientById(widget.patient.id!);
+          ).getPatientById(patientId);
           final totalCollectedAmount = await _loadTotalCollectedAmount(
-            widget.patient.id!,
+            patientId,
           );
 
           if (freshPatient != null && mounted) {
@@ -82,7 +80,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
 
             // 强制重新获取图片数据
             AppLogger.info('开始强制重新获取患者图片数据');
-            await imageProvider.getPatientImages(widget.patient.id!);
+            await imageProvider.getPatientImages(patientId);
 
             AppLogger.info('成功更新患者数据: ${freshPatient.toMap()}');
           } else {
@@ -129,11 +127,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
 
       double totalCollected = 0.0;
       for (final record in records) {
-        if (record.id == null) {
+        final recordId = record.id;
+        if (recordId == null) {
           continue;
         }
         final items = await financialProvider.getFinancialItemsByRecordId(
-          record.id!,
+          recordId,
         );
         for (final item in items) {
           totalCollected += item.totalPrice;
@@ -241,8 +240,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
 
           if (matches.isNotEmpty) {
             for (final match in matches) {
-              if (match.group(1)?.isNotEmpty == true) {
-                phones.add(match.group(1)!);
+              final group = match.group(1);
+              if (group != null && group.isNotEmpty) {
+                phones.add(group);
               }
             }
           }
@@ -312,6 +312,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
       if (_phoneNumbers.isEmpty) {
         _initPhoneNumbers(_currentPatient);
       }
+
+      final currentPatient = _currentPatient;
+      final currentPatientId = currentPatient.id;
+      final dentalCondition = currentPatient.dentalCondition;
 
       return Scaffold(
         backgroundColor: AppTheme.backgroundColor,
@@ -464,8 +468,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                 const SizedBox(height: 16),
 
                 // 牙齿状况显示
-                if (_currentPatient.dentalCondition != null &&
-                    _currentPatient.dentalCondition!.isNotEmpty) ...[
+                if (dentalCondition != null && dentalCondition.isNotEmpty) ...[
                   AppCard(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -525,7 +528,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                           ),
                         ),
                         PatientDentalConditionDisplay(
-                          dentalConditionJson: _currentPatient.dentalCondition!,
+                          dentalConditionJson: dentalCondition,
                         ),
                       ],
                     ),
@@ -536,8 +539,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                 // 患者图片查看器
                 Consumer<PatientImageProvider>(
                   builder: (context, imageProvider, child) {
+                    if (currentPatientId == null) {
+                      return const SizedBox.shrink();
+                    }
                     // 检查是否有错误
-                    final error = imageProvider.getError(_currentPatient.id!);
+                    final error = imageProvider.getError(currentPatientId);
                     if (error != null) {
                       return Card(
                         margin: const EdgeInsets.symmetric(
@@ -574,7 +580,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                               ElevatedButton(
                                 onPressed:
                                     () => imageProvider.refreshPatientData(
-                                      _currentPatient.id!,
+                                      currentPatientId,
                                     ),
                                 child: const Text('重试'),
                               ),
@@ -587,12 +593,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                     return Consumer<PatientImageProvider>(
                       builder: (context, imageProvider, child) {
                         // 检查是否有缓存数据
-                        if (imageProvider.hasCachedData(_currentPatient.id!)) {
+                        if (imageProvider.hasCachedData(currentPatientId)) {
                           final materials = imageProvider.getCachedMaterials(
-                            _currentPatient.id!,
+                            currentPatientId,
                           );
                           final images = imageProvider.getCachedImages(
-                            _currentPatient.id!,
+                            currentPatientId,
                           );
                           return PatientImageViewer(
                             materials: materials,
@@ -601,14 +607,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                         }
 
                         // 如果没有缓存数据，触发加载（只触发一次）
-                        if (!imageProvider.isLoading(_currentPatient.id!) &&
-                            !imageProvider.hasCachedData(_currentPatient.id!)) {
+                        if (!imageProvider.isLoading(currentPatientId) &&
+                            !imageProvider.hasCachedData(currentPatientId)) {
                           WidgetsBinding.instance.addPostFrameCallback((_) {
-                            imageProvider.getPatientImages(_currentPatient.id!);
+                            imageProvider.getPatientImages(currentPatientId);
                           });
                         }
 
-                        if (imageProvider.isLoading(_currentPatient.id!)) {
+                        if (imageProvider.isLoading(currentPatientId)) {
                           return const Card(
                             margin: EdgeInsets.symmetric(
                               horizontal: 16,
@@ -622,7 +628,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                         }
 
                         final error = imageProvider.getError(
-                          _currentPatient.id!,
+                          currentPatientId,
                         );
                         if (error != null) {
                           return Card(
@@ -660,7 +666,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                                   ElevatedButton(
                                     onPressed:
                                         () => imageProvider.refreshPatientData(
-                                          _currentPatient.id!,
+                                          currentPatientId,
                                         ),
                                     child: const Text('重试'),
                                   ),

@@ -9,20 +9,19 @@ import '../../../utils/app_logger.dart';
 class UserDataRepairService {
   final String _dataSourceType;
   final Future<void> Function() refreshUsers;
-  late final UserMySqlRoleRepairService _mySqlRoleRepairService;
-  late final UserSqliteRoleRepairService _sqliteRoleRepairService;
+  final UserMySqlRoleRepairService _mySqlRoleRepairService;
+  final UserSqliteRoleRepairService _sqliteRoleRepairService;
 
   UserDataRepairService({
     required UserConnectionService connectionService,
     required Database? database,
     required String dataSourceType,
     required this.refreshUsers,
-  }) : _dataSourceType = dataSourceType {
-    _mySqlRoleRepairService = UserMySqlRoleRepairService(
-      connectionService: connectionService,
-    );
-    _sqliteRoleRepairService = UserSqliteRoleRepairService(database: database);
-  }
+  }) : _dataSourceType = dataSourceType,
+       _mySqlRoleRepairService = UserMySqlRoleRepairService(
+         connectionService: connectionService,
+       ),
+       _sqliteRoleRepairService = UserSqliteRoleRepairService(database: database);
 
   /// 修复数据库中的无效角色值
   Future<void> fixInvalidRoles() async {

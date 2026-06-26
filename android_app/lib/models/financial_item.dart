@@ -1,4 +1,5 @@
 import '../utils/datetime_formatter.dart';
+import '../utils/map_parser.dart';
 
 // 收费项目明细模型
 class FinancialItem {
@@ -28,63 +29,24 @@ class FinancialItem {
     required this.updatedAt, // 新增：更新时间
   });
 
-  // 辅助方法：安全解析日期 - 使用统一格式
-  static DateTime _parseDateTime(dynamic value, String fieldName) {
-    if (value == null) return DateTime.now();
-
-    if (value is DateTime) {
-      return value;
-    }
-
-    if (value is String) {
-      return DateTimeFormatter.fromDbString(value);
-    }
-
-    return DateTime.now();
-  }
-
   // 从Map创建FinancialItem
   factory FinancialItem.fromMap(
     Map<String, dynamic> map, {
     String dataSource = 'sqlite',
   }) {
-    DateTime chargeDate = _parseDateTime(map['charge_date'], 'charge_date');
-    DateTime created = _parseDateTime(map['created_at'], 'created_at');
-    DateTime updated = _parseDateTime(map['updated_at'], 'updated_at');
-
+    final p = MapParser(map, context: 'FinancialItem');
     return FinancialItem(
-      id: map['id'] != null ? int.tryParse(map['id'].toString()) : null,
-      financialRecordId:
-          map['financial_record_id'] != null
-              ? int.tryParse(map['financial_record_id'].toString()) ?? 0
-              : 0,
-      itemName: map['item_name']?.toString() ?? '',
-      paymentMethod: map['payment_method']?.toString(),
-      itemPrice:
-          map['item_price'] != null
-              ? (map['item_price'] is double
-                  ? map['item_price']
-                  : double.tryParse(map['item_price'].toString()) ?? 0.0)
-              : 0.0,
-      processingFee:
-          map['processing_fee'] != null
-              ? (map['processing_fee'] is double
-                  ? map['processing_fee']
-                  : double.tryParse(map['processing_fee'].toString()) ?? 0.0)
-              : 0.0,
-      quantity:
-          map['quantity'] != null
-              ? int.tryParse(map['quantity'].toString()) ?? 0
-              : 0,
-      totalPrice:
-          map['total_price'] != null
-              ? (map['total_price'] is double
-                  ? map['total_price']
-                  : double.tryParse(map['total_price'].toString()) ?? 0.0)
-              : 0.0,
-      chargeDate: chargeDate, // 新增：收费日期
-      createdAt: created, // 新增：创建时间
-      updatedAt: updated, // 新增：更新时间
+      id: p.optional('id', (v) => v as int),
+      financialRecordId: p.integer('financial_record_id'),
+      itemName: p.string('item_name'),
+      paymentMethod: p.stringOptional('payment_method'),
+      itemPrice: p.doubleValue('item_price'),
+      processingFee: p.doubleValue('processing_fee'),
+      quantity: p.integer('quantity'),
+      totalPrice: p.doubleValue('total_price'),
+      chargeDate: p.dateTime('charge_date'), // 新增：收费日期
+      createdAt: p.dateTime('created_at'), // 新增：创建时间
+      updatedAt: p.dateTime('updated_at'), // 新增：更新时间
     );
   }
 

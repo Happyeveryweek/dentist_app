@@ -25,7 +25,7 @@ class MedicalRecordFormDateField extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(
+            const Icon(
               Icons.calendar_today_rounded,
               size: 18,
               color: DentalColors.primary,
@@ -43,19 +43,21 @@ class MedicalRecordFormDateField extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         InkWell(
-          onTap: enabled ? () async {
-            final date = await showDialog<DateTime>(
-              context: context,
-              builder: (context) => ModernDatePickerDialog(
-                initialDate: value,
-                firstDate: DateTime(2000),
-                lastDate: DateTime.now().add(const Duration(days: 365)),
-              ),
-            );
-            if (date != null) {
-              onChanged(date);
-            }
-          } : null,
+          onTap: enabled
+              ? () async {
+                  final date = await showDialog<DateTime>(
+                    context: context,
+                    builder: (context) => ModernDatePickerDialog(
+                      initialDate: value,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                    ),
+                  );
+                  if (date != null) {
+                    onChanged(date);
+                  }
+                }
+              : null,
           child: Container(
             padding: const EdgeInsets.symmetric(
               horizontal: 16,
@@ -80,7 +82,7 @@ class MedicalRecordFormDateField extends StatelessWidget {
                     ),
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.arrow_drop_down_rounded,
                   color: DentalColors.onSurfaceVariant,
                 ),

@@ -29,7 +29,8 @@ class DashboardStatusHelper {
 
   static bool isCompleted(String status) => normalizeStatus(status) == '已完成';
 
-  static bool isUnfinished(String status) => !isScheduled(status) && !isCompleted(status);
+  static bool isUnfinished(String status) =>
+      !isScheduled(status) && !isCompleted(status);
 
   /// 根据预约状态获取对应的颜色
   static Color getStatusColor(String status) {

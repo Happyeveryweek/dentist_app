@@ -69,6 +69,8 @@ class PatientAppointmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusColor = _getStatusColor(appointment.status);
+    final treatmentType = appointment.treatmentType;
+    final notes = appointment.notes;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
@@ -91,7 +93,7 @@ class PatientAppointmentCard extends StatelessWidget {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
+                      color: statusColor.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -110,7 +112,7 @@ class PatientAppointmentCard extends StatelessWidget {
                           children: [
                             Text(
                               DateFormat('yyyy-MM-dd HH:mm')
-                                  .format(appointment.appointment_date),
+                                  .format(appointment.appointmentDate),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -123,7 +125,7 @@ class PatientAppointmentCard extends StatelessWidget {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: statusColor.withOpacity(0.1),
+                                color: statusColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
@@ -138,8 +140,8 @@ class PatientAppointmentCard extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        if (appointment.treatment_type != null &&
-                            appointment.treatment_type!.isNotEmpty)
+                        if (treatmentType != null &&
+                            treatmentType.isNotEmpty)
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
@@ -180,13 +182,12 @@ class PatientAppointmentCard extends StatelessWidget {
                               ],
                             ),
                           ),
-                        if (appointment.treatment_type != null &&
-                            appointment.treatment_type!.isNotEmpty)
+                        if (treatmentType != null &&
+                            treatmentType.isNotEmpty)
                           const SizedBox(height: 4),
-                        if (appointment.notes != null &&
-                            appointment.notes!.isNotEmpty)
+                        if (notes != null && notes.isNotEmpty)
                           Text(
-                            '备注: ${appointment.notes}',
+                            '备注: $notes',
                             style: TextStyle(color: Colors.grey[600]),
                           ),
                       ],

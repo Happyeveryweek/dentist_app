@@ -1,5 +1,6 @@
 // 采购项目明细模型
 import '../utils/datetime_formatter.dart';
+
 class PurchaseItem {
   final int? id;
   final int purchaseRecordId;
@@ -23,24 +24,52 @@ class PurchaseItem {
     this.unit, // 新增：材料单位
     DateTime? createdAt,
     DateTime? updatedAt,
-  }) : createdAt = createdAt ?? DateTime.now(),
-       updatedAt = updatedAt ?? DateTime.now();
+  })  : createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
 
   // 从Map构造PurchaseItem对象
   factory PurchaseItem.fromMap(Map<String, dynamic> map) {
     return PurchaseItem(
-      id: map['id'],
-      purchaseRecordId: map['purchase_record_id'],
-      materialId: map['material_id'],
-      materialName: map['material_name'] ?? '',
-      quantity: map['quantity'] ?? 0,
-      unitPrice: map['unit_price']?.toDouble() ?? 0.0,
-      totalPrice: map['total_price']?.toDouble() ?? 0.0,
-      unit: map['unit'], // 新增：材料单位
+      id: _parseIntOrNull(map['id']),
+      purchaseRecordId: _parseInt(map['purchase_record_id']),
+      materialId: _parseIntOrNull(map['material_id']),
+      materialName: map['material_name']?.toString() ?? '',
+      quantity: _parseInt(map['quantity']),
+      unitPrice: _parseDouble(map['unit_price']),
+      totalPrice: _parseDouble(map['total_price']),
+      unit: _parseStringOrNull(map['unit']), // 新增：材料单位
       // 如果数据库中没有时间字符串字段，使用当前时间
       createdAt: _parseDateTimeFlexible(map['created_at']),
       updatedAt: _parseDateTimeFlexible(map['updated_at']),
     );
+  }
+
+  static int _parseInt(dynamic value, {int defaultValue = 0}) {
+    if (value == null) return defaultValue;
+    if (value is int) return value;
+    if (value is BigInt) return value.toInt();
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? defaultValue;
+  }
+
+  static int? _parseIntOrNull(dynamic value) {
+    if (value == null) return null;
+    return _parseInt(value);
+  }
+
+  static double _parseDouble(dynamic value, {double defaultValue = 0.0}) {
+    if (value == null) return defaultValue;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is BigInt) return value.toDouble();
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? defaultValue;
+  }
+
+  static String? _parseStringOrNull(dynamic value) {
+    if (value == null) return null;
+    final text = value.toString();
+    return text.isEmpty ? null : text;
   }
 
   // 统一使用DateTimeFormatter处理时间格式

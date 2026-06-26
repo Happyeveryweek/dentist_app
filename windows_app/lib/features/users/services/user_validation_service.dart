@@ -1,7 +1,7 @@
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
-import '../../../models/user.dart';
 import '../../../providers/user_provider.dart';
+import '../../../utils/log_manager.dart';
 
 /// 用户验证服务
 /// 负责密码加密、邮箱验证等业务逻辑
@@ -38,7 +38,7 @@ class UserValidationService {
 
       return false; // 邮箱不存在
     } catch (e) {
-      print('检查邮箱是否存在时出错: $e');
+      LogManager.e('UserValidationService', '检查邮箱是否存在时出错', error: e);
       return false; // 出错时默认返回不存在
     }
   }
@@ -60,7 +60,7 @@ class UserValidationService {
 
       return false;
     } catch (e) {
-      print('检查用户名是否存在时出错: $e');
+      LogManager.e('UserValidationService', '检查用户名是否存在时出错', error: e);
       return false;
     }
   }

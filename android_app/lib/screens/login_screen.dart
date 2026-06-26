@@ -26,10 +26,14 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isInitializing = true;
   bool _rememberPassword = false;
+  bool _isRestoringCredentials = false;
 
   @override
   void initState() {
     super.initState();
+
+    _usernameController.addListener(_handleCredentialsDraftChanged);
+    _passwordController.addListener(_handleCredentialsDraftChanged);
 
     // 加载保存的登录信息
     _loadSavedCredentials();
@@ -43,12 +47,47 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// 加载保存的登录信息
   Future<void> _loadSavedCredentials() async {
+    _isRestoringCredentials = true;
     final credentials = await LoginCredentialsService.loadSavedCredentials();
+    if (!mounted) {
+      _isRestoringCredentials = false;
+      return;
+    }
     setState(() {
       _usernameController.text = credentials.username;
       _passwordController.text = credentials.password;
       _rememberPassword = credentials.rememberPassword;
     });
+    _isRestoringCredentials = false;
+  }
+
+  Future<void> _handleCredentialsDraftChanged() async {
+    if (_isRestoringCredentials || !_rememberPassword) {
+      return;
+    }
+
+    await LoginCredentialsService.saveCredentials(
+      _usernameController.text.trim(),
+      _passwordController.text,
+      true,
+    );
+  }
+
+  Future<void> _handleRememberPasswordChanged(bool value) async {
+    setState(() {
+      _rememberPassword = value;
+    });
+
+    if (value) {
+      await LoginCredentialsService.saveCredentials(
+        _usernameController.text.trim(),
+        _passwordController.text,
+        true,
+      );
+      return;
+    }
+
+    await LoginCredentialsService.clearSavedCredentials();
   }
 
   // 等待数据库和用户表初始化完成
@@ -66,6 +105,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _usernameController.removeListener(_handleCredentialsDraftChanged);
+    _passwordController.removeListener(_handleCredentialsDraftChanged);
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -143,11 +184,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 _obscurePassword = value;
                               });
                             },
-                            onRememberPasswordChanged: (value) {
-                              setState(() {
-                                _rememberPassword = value;
-                              });
-                            },
+                            onRememberPasswordChanged:
+                                _handleRememberPasswordChanged,
                             onLogin: _handleLogin,
                           ),
 

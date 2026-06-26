@@ -10,15 +10,16 @@ class LoadingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayMessage = message;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const CircularProgressIndicator(),
-        if (message != null)
+        if (displayMessage != null)
           Padding(
             padding: const EdgeInsets.only(top: 16.0),
             child: Text(
-              message!,
+              displayMessage,
               style: const TextStyle(
                 fontSize: 16.0,
                 color: Colors.grey,

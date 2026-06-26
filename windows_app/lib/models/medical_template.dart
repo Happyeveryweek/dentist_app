@@ -28,11 +28,11 @@ class MedicalTemplate {
       content: map['content'] ?? '',
       type: map['type'] ?? 'treatment',
       sortOrder: map['sortOrder'] ?? 0,
-      createdAt: map['createdAt'] != null 
-          ? DateTime.parse(map['createdAt']) 
+      createdAt: map['createdAt'] != null
+          ? DateTime.parse(map['createdAt'])
           : DateTime.now(),
-      updatedAt: map['updatedAt'] != null 
-          ? DateTime.parse(map['updatedAt']) 
+      updatedAt: map['updatedAt'] != null
+          ? DateTime.parse(map['updatedAt'])
           : DateTime.now(),
     );
   }
@@ -89,8 +89,8 @@ class MedicalTemplate {
 
 /// 医疗模板类型常量
 class MedicalTemplateType {
-  static const String treatment = 'treatment';  // 治疗方案模板
-  static const String notes = 'notes';          // 医嘱模板
+  static const String treatment = 'treatment'; // 治疗方案模板
+  static const String notes = 'notes'; // 医嘱模板
 
   static const List<String> all = [treatment, notes];
 

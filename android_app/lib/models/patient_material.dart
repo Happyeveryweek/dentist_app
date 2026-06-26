@@ -1,4 +1,5 @@
 import '../utils/datetime_formatter.dart';
+import '../utils/map_parser.dart';
 
 // 患者材料模型
 class PatientMaterial {
@@ -17,12 +18,13 @@ class PatientMaterial {
   });
 
   factory PatientMaterial.fromMap(Map<String, dynamic> map) {
+    final p = MapParser(map, context: 'PatientMaterial');
     return PatientMaterial(
-      id: map['id'] as int?,
-      patientId: map['patient_id'] as int,
-      description: map['description'] as String,
-      createdAt: DateTimeFormatter.fromDbString(map['created_at'] as String),
-      updatedAt: DateTimeFormatter.fromDbString(map['updated_at'] as String),
+      id: p.optional('id', (v) => v as int),
+      patientId: p.integer('patient_id'),
+      description: p.string('description'),
+      createdAt: p.dateTime('created_at'),
+      updatedAt: p.dateTime('updated_at'),
     );
   }
 

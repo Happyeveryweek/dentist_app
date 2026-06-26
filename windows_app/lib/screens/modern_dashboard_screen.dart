@@ -21,6 +21,7 @@ import '../providers/app_state.dart';
 import '../screens/appointment_details_screen.dart';
 import '../screens/patient_detail_screen.dart';
 import '../utils/permission_utils.dart';
+import '../widgets/success_toast.dart';
 
 class ModernDashboardScreen extends StatefulWidget {
   const ModernDashboardScreen({Key? key}) : super(key: key);
@@ -43,7 +44,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
   bool _hasLoadedOnce = false;
   String _currentUserName = '';
   Uint8List? _currentUserAvatar;
-  
+
   late AnimationController _animationController;
   late AnimationController _pulseController;
   late Animation<double> _slideAnimation;
@@ -55,13 +56,13 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
   @override
   void initState() {
     super.initState();
-    
+
     // 初始化动画控制器
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    
+
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -82,7 +83,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
-    
+
     _pulseAnimation = Tween<double>(
       begin: 0.95,
       end: 1.05,
@@ -92,11 +93,14 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
     ));
 
     _animationController.forward();
-    
+
     // 初始化仪表盘数据服务
-    final patientProvider = Provider.of<PatientProvider>(context, listen: false);
-    final appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
-    final databaseProvider = Provider.of<DatabaseProvider>(context, listen: false);
+    final patientProvider =
+        Provider.of<PatientProvider>(context, listen: false);
+    final appointmentProvider =
+        Provider.of<AppointmentProvider>(context, listen: false);
+    final databaseProvider =
+        Provider.of<DatabaseProvider>(context, listen: false);
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     _dashboardDataService = DashboardDataService(
       patientProvider: patientProvider,
@@ -106,7 +110,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
     );
     _appointmentProvider = appointmentProvider;
     _appointmentProvider.addListener(_handleAppointmentProviderChanged);
-    
+
     _loadData();
   }
 
@@ -186,7 +190,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -194,7 +198,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
             ),
             child: ScaleTransition(
               scale: _pulseAnimation,
-              child: Icon(
+              child: const Icon(
                 DentalIcons.tooth,
                 size: 64,
                 color: DentalColors.primary,
@@ -205,7 +209,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
           const Text(
             '正在加载数据...',
             style: TextStyle(
-              fontSize: 18, 
+              fontSize: 18,
               fontWeight: FontWeight.w600,
               color: DentalColors.primary,
             ),
@@ -254,8 +258,6 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
     );
   }
 
-
-
   Widget _buildWelcomeCard() {
     return AnimatedBuilder(
       animation: _animationController,
@@ -272,13 +274,13 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                   end: Alignment.bottomRight,
                   colors: [
                     DentalColors.primary,
-                    DentalColors.primary.withOpacity(0.8),
+                    DentalColors.primary.withValues(alpha: 0.8),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: DentalColors.primary.withOpacity(0.3),
+                    color: DentalColors.primary.withValues(alpha: 0.3),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -291,49 +293,54 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                     height: 64,
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Colors.white.withValues(alpha: 0.3),
                         width: 2,
                       ),
                     ),
-                    child: _currentUserAvatar != null && _currentUserAvatar!.isNotEmpty
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: AspectRatio(
-                              aspectRatio: 1.0,
-                              child: Image.memory(
-                                _currentUserAvatar!,
-                                fit: BoxFit.cover,
-                                alignment: Alignment.center,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(14),
-                                    ),
-                                    child: const Icon(
-                                      DentalIcons.userDoctor,
-                                      color: Colors.white,
-                                      size: 32,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          )
-                        : Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: const Icon(
-                              DentalIcons.userDoctor,
-                              color: Colors.white,
-                              size: 32,
+                    child: Builder(builder: (context) {
+                      final avatar = _currentUserAvatar;
+                      if (avatar != null && avatar.isNotEmpty) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: AspectRatio(
+                            aspectRatio: 1.0,
+                            child: Image.memory(
+                              avatar,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.center,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: const Icon(
+                                    DentalIcons.userDoctor,
+                                    color: Colors.white,
+                                    size: 32,
+                                  ),
+                                );
+                              },
                             ),
                           ),
+                        );
+                      }
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          DentalIcons.userDoctor,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                      );
+                    }),
                   ),
                   const SizedBox(width: 20),
                   Expanded(
@@ -353,14 +360,15 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                           '欢迎回来工作，祝您今天心情愉快！',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 24),
+                    icon: const Icon(Icons.refresh_rounded,
+                        color: Colors.white, size: 24),
                     onPressed: _loadData,
                     tooltip: '刷新数据',
                   ),
@@ -389,15 +397,19 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                     value: _patientCount.toString(),
                     icon: DentalIcons.hospitalUser,
                     color: DentalColors.primary,
-                    onTap: PermissionUtils.hasModulePermission(context, 'patients') ? () {
-                      final appState = Provider.of<AppState>(context, listen: false);
-                      appState.activePageIndex = 1;
-                    } : () {
-                      PermissionUtils.showPermissionDeniedDialog(
-                        context,
-                        message: '您没有访问患者管理的权限。',
-                      );
-                    },
+                    onTap: PermissionUtils.hasModulePermission(
+                            context, 'patients')
+                        ? () {
+                            final appState =
+                                Provider.of<AppState>(context, listen: false);
+                            appState.activePageIndex = 1;
+                          }
+                        : () {
+                            PermissionUtils.showPermissionDeniedDialog(
+                              context,
+                              message: '您没有访问患者管理的权限。',
+                            );
+                          },
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -407,15 +419,19 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                     value: _appointmentCount.toString(),
                     icon: DentalIcons.calendarCheck,
                     color: DentalColors.secondary,
-                    onTap: PermissionUtils.hasModulePermission(context, 'appointments') ? () {
-                      final appState = Provider.of<AppState>(context, listen: false);
-                      appState.activePageIndex = 2;
-                    } : () {
-                      PermissionUtils.showPermissionDeniedDialog(
-                        context,
-                        message: '您没有访问预约管理的权限。',
-                      );
-                    },
+                    onTap: PermissionUtils.hasModulePermission(
+                            context, 'appointments')
+                        ? () {
+                            final appState =
+                                Provider.of<AppState>(context, listen: false);
+                            appState.activePageIndex = 2;
+                          }
+                        : () {
+                            PermissionUtils.showPermissionDeniedDialog(
+                              context,
+                              message: '您没有访问预约管理的权限。',
+                            );
+                          },
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -444,8 +460,6 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
     );
   }
 
-
-
   Widget _buildStatCard({
     required String title,
     required String value,
@@ -456,54 +470,54 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
     return HoverableStatCard(
       onTap: onTap,
       child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              size: 24,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 24,
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                     color: color,
+                    height: 1.2,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        value,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: color,
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                if (onTap != null)
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: Colors.grey[400],
-                  ),
               ],
             ),
+          ),
+          if (onTap != null)
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: Colors.grey[400],
+            ),
+        ],
+      ),
     );
   }
 
@@ -521,7 +535,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -537,10 +551,10 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: DentalColors.primary.withOpacity(0.1),
+                            color: DentalColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             DentalIcons.calendarCheck,
                             color: DentalColors.primary,
                             size: 20,
@@ -635,9 +649,11 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                               physics: const NeverScrollableScrollPhysics(),
                               padding: const EdgeInsets.all(16),
                               itemCount: _todayAppointments.length,
-                              separatorBuilder: (context, index) => const SizedBox(height: 12),
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: 12),
                               itemBuilder: (context, index) {
-                                return _buildTodayAppointmentCard(_todayAppointments[index]);
+                                return _buildTodayAppointmentCard(
+                                    _todayAppointments[index]);
                               },
                             ),
                     ),
@@ -653,19 +669,22 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
 
   int get dataTodayScheduledAppointments {
     return _todayAppointments
-        .where((appointment) => DashboardStatusHelper.isScheduled(appointment.status))
+        .where((appointment) =>
+            DashboardStatusHelper.isScheduled(appointment.status))
         .length;
   }
 
   int get dataTodayCompletedAppointments {
     return _todayAppointments
-        .where((appointment) => DashboardStatusHelper.isCompleted(appointment.status))
+        .where((appointment) =>
+            DashboardStatusHelper.isCompleted(appointment.status))
         .length;
   }
 
   int get dataTodayUnfinishedAppointments {
     return _todayAppointments
-        .where((appointment) => DashboardStatusHelper.isUnfinished(appointment.status))
+        .where((appointment) =>
+            DashboardStatusHelper.isUnfinished(appointment.status))
         .length;
   }
 
@@ -677,9 +696,9 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.15)),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Text(
         '$label $value',
@@ -693,35 +712,43 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
   }
 
   Widget _buildTodayAppointmentCard(Appointment appointment) {
-    final time = DateFormat('HH:mm').format(appointment.appointment_date);
-    final statusColor = DashboardStatusHelper.getStatusColor(appointment.status);
+    final time = DateFormat('HH:mm').format(appointment.appointmentDate);
+    final statusColor =
+        DashboardStatusHelper.getStatusColor(appointment.status);
     final gender = appointment.patient?.gender ?? '';
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: PermissionUtils.hasModulePermission(context, 'appointments') ? () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AppointmentDetailsScreen(
-                  appointmentId: appointment.id!,
-                ),
-              ),
-            );
-          } : () {
-            PermissionUtils.showPermissionDeniedDialog(
-              context,
-              message: '您没有查看预约详情的权限。',
-            );
-          },
+          onTap: PermissionUtils.hasModulePermission(context, 'appointments')
+              ? () {
+                  final appointmentId = appointment.id;
+                  if (appointmentId == null) {
+                    AppToastManager.showError(context, message: '预约 ID 为空');
+                    return;
+                  }
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AppointmentDetailsScreen(
+                        appointmentId: appointmentId,
+                      ),
+                    ),
+                  );
+                }
+              : () {
+                  PermissionUtils.showPermissionDeniedDialog(
+                    context,
+                    message: '您没有查看预约详情的权限。',
+                  );
+                },
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -730,7 +757,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -748,7 +775,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                         time.split(':')[1],
                         style: TextStyle(
                           fontSize: 14,
-                          color: statusColor.withOpacity(0.7),
+                          color: statusColor.withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -764,7 +791,9 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                           Icon(
                             DentalIcons.getGenderIcon(gender),
                             size: 16,
-                            color: gender == '女' ? DentalColors.femalePink : DentalColors.maleBlue,
+                            color: gender == '女'
+                                ? DentalColors.femalePink
+                                : DentalColors.maleBlue,
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -778,7 +807,8 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        DashboardTreatmentFormatter.formatTreatmentType(appointment.treatment_type),
+                        DashboardTreatmentFormatter.formatTreatmentType(
+                            appointment.treatmentType),
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 13,
@@ -790,9 +820,10 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -826,7 +857,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -842,10 +873,11 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: DentalColors.secondary.withOpacity(0.1),
+                            color:
+                                DentalColors.secondary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(
+                          child: const Icon(
                             DentalIcons.hospitalUser,
                             color: DentalColors.secondary,
                             size: 20,
@@ -863,13 +895,16 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                         const Spacer(),
                         PermissionWrapper(
                           requiredModule: 'patients',
-                          fallback: Icon(Icons.lock, size: 18, color: Colors.grey[400]),
+                          fallback: Icon(Icons.lock,
+                              size: 18, color: Colors.grey[400]),
                           child: TextButton.icon(
                             onPressed: () {
-                              final appState = Provider.of<AppState>(context, listen: false);
+                              final appState =
+                                  Provider.of<AppState>(context, listen: false);
                               appState.activePageIndex = 1;
                             },
-                            icon: Icon(Icons.arrow_forward_rounded, size: 16),
+                            icon: const Icon(Icons.arrow_forward_rounded,
+                                size: 16),
                             label: const Text('查看全部'),
                             style: TextButton.styleFrom(
                               foregroundColor: DentalColors.primary,
@@ -931,7 +966,8 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                                 height: 24,
                               ),
                               itemBuilder: (context, index) {
-                                return _buildPatientListTile(_recentPatients[index]);
+                                return _buildPatientListTile(
+                                    _recentPatients[index]);
                               },
                             ),
                     ),
@@ -946,10 +982,9 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
   }
 
   Widget _buildPatientListTile(Patient patient) {
-    final genderColor = patient.gender == '女' 
-        ? DentalColors.femalePink 
-        : DentalColors.maleBlue;
-    
+    final genderColor =
+        patient.gender == '女' ? DentalColors.femalePink : DentalColors.maleBlue;
+
     // 获取显示的电话号码
     String displayPhone = '未设置';
     if (patient.phone.isNotEmpty) {
@@ -967,21 +1002,23 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
         displayPhone = patient.phone;
       }
     }
-    
+
     return InkWell(
-      onTap: PermissionUtils.hasModulePermission(context, 'patients') ? () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PatientDetailScreen(patient: patient),
-          ),
-        );
-      } : () {
-        PermissionUtils.showPermissionDeniedDialog(
-          context,
-          message: '您没有查看患者详情的权限。',
-        );
-      },
+      onTap: PermissionUtils.hasModulePermission(context, 'patients')
+          ? () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PatientDetailScreen(patient: patient),
+                ),
+              );
+            }
+          : () {
+              PermissionUtils.showPermissionDeniedDialog(
+                context,
+                message: '您没有查看患者详情的权限。',
+              );
+            },
       mouseCursor: SystemMouseCursors.click,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
@@ -992,7 +1029,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: genderColor.withOpacity(0.1),
+                color: genderColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -1018,7 +1055,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                   Row(
                     children: [
                       // 病历号
-                      if (patient.medical_record_number != null) ...[
+                      if (patient.medicalRecordNumber != null) ...[
                         Icon(
                           Icons.badge,
                           size: 12,
@@ -1026,7 +1063,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${patient.medical_record_number}',
+                          '${patient.medicalRecordNumber}',
                           style: TextStyle(
                             color: Colors.blue[600],
                             fontSize: 11,
@@ -1035,7 +1072,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                         ),
                         const SizedBox(width: 8),
                       ],
-                      
+
                       // 电话
                       Icon(
                         Icons.phone,
@@ -1056,33 +1093,41 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                       ),
                     ],
                   ),
-                  
+
                   // 地址（如果有）
-                  if (patient.address != null && patient.address!.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Row(
+                  Builder(builder: (context) {
+                    final address = patient.address;
+                    if (address == null || address.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(
                       children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 12,
-                          color: Colors.orange[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            patient.address!,
-                            style: TextStyle(
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: 12,
                               color: Colors.orange[600],
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                address,
+                                style: TextStyle(
+                                  color: Colors.orange[600],
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
-                    ),
-                  ],
+                    );
+                  }),
                 ],
               ),
             ),
@@ -1091,7 +1136,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  DateFormat('MM/dd').format(patient.updated_at),
+                  DateFormat('MM/dd').format(patient.updatedAt),
                   style: TextStyle(
                     color: Colors.grey[500],
                     fontSize: 12,
@@ -1110,7 +1155,4 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
       ),
     );
   }
-
-
-
 }

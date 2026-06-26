@@ -12,11 +12,12 @@ abstract class MaterialDataSource {
   Future<int> createMaterial(material_models.MaterialInfo material);
   Future<bool> updateMaterial(material_models.MaterialInfo material);
   Future<bool> deleteMaterial(int id);
-  
+
   // 搜索和分类方法
   Future<List<material_models.MaterialInfo>> searchMaterials(String query);
-  Future<List<material_models.MaterialInfo>> getMaterialsByCategory(String category);
-  
+  Future<List<material_models.MaterialInfo>> getMaterialsByCategory(
+      String category);
+
   // 分页查询方法
   Future<int> getMaterialsCount({String? searchQuery});
   Future<List<material_models.MaterialInfo>> getPaginatedMaterials({
@@ -27,13 +28,13 @@ abstract class MaterialDataSource {
     String? searchQuery,
     String? category,
   });
-  
+
   // 统计方法
   Future<Map<String, dynamic>> getMaterialStatistics();
-  
+
   // 材料编码相关
   Future<String> getNextMaterialCode();
-  
+
   // 批量操作
   Future<bool> clearAllMaterials();
 }

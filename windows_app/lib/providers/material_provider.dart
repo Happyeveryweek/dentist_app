@@ -1,17 +1,13 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:intl/intl.dart';
 import 'package:mysql1/mysql1.dart';
-import 'dart:typed_data';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/user.dart';
 import '../models/material.dart' as material_models;
 import '../data_sources/material_data_source.dart';
 import '../features/materials/services/material_mysql_connection_service.dart';
 import '../features/materials/services/material_sync_service.dart';
+import '../utils/log_manager.dart';
 
 /// 材料管理提供者
 /// 负责处理所有与材料相关的数据库操作（不包括患者材料，患者材料在PatientProvider中）
@@ -22,8 +18,22 @@ class MaterialProvider extends ChangeNotifier {
   MySqlMaterialDataSource? _mysqlDataSource;
 
   // 同步服务
-  late final MaterialSyncService _syncService;
-  late final MaterialMysqlConnectionService _mysqlConnectionService;
+  MaterialSyncService? _syncServiceInstance;
+  MaterialSyncService get _syncService => _syncServiceInstance ??= MaterialSyncService(
+        getSyncMysqlConnection: () => _mysqlConnectionService.getSyncConnection(),
+        getEffectiveDataSourceType: () =>
+            _effectiveDataSourceType ?? _dataSourceType,
+      );
+  MaterialMysqlConnectionService? _mysqlConnectionServiceInstance;
+  MaterialMysqlConnectionService get _mysqlConnectionService => _mysqlConnectionServiceInstance ??= MaterialMysqlConnectionService(
+        getDatabaseProvider: () => _databaseProvider,
+        getCachedConnection: () => _mysqlConnection,
+        setCachedConnection: (connection) {
+          _mysqlConnection = connection;
+        },
+        getEffectiveDataSourceType: () =>
+            _effectiveDataSourceType ?? _dataSourceType,
+      );
 
   // 缓存机制（20分钟有效期）
   List<material_models.MaterialInfo>? _cachedMaterials;
@@ -46,9 +56,6 @@ class MaterialProvider extends ChangeNotifier {
 
   // 有效数据源类型（考虑模块化配置）
   String? _effectiveDataSourceType;
-
-  // 当前用户信息
-  User? _currentUser;
 
   // 刷新标志
   bool _materialsNeedRefresh = false;
@@ -73,11 +80,34 @@ class MaterialProvider extends ChangeNotifier {
     if (_effectiveDataSourceType == 'mysql') {
       // 如果要求使用MySQL但未初始化，尝试降级到SQLite
       if (_mysqlDataSource == null && _sqliteDataSource != null) {
-        print('⚠️ MySQL材料数据源未初始化，自动降级到SQLite');
+        LogManager.d('MaterialProvider', '⚠️ MySQL材料数据源未初始化，自动降级到SQLite');
         return _sqliteDataSource;
       }
       return _mysqlDataSource;
     } else if (_effectiveDataSourceType == 'sqlite') {
+      return _sqliteDataSource;
+    }
+    return null;
+  }
+
+  // 获取当前数据源，未初始化时抛出异常
+  MaterialDataSource get _requireDataSource {
+    final dataSource = _currentDataSource;
+    if (dataSource == null) {
+      throw Exception('材料数据源未初始化');
+    }
+    return dataSource;
+  }
+
+  MaterialDataSource? _dataSourceForType(String? effectiveDataSourceType) {
+    final requestedType = effectiveDataSourceType ?? dataSourceType;
+    if (requestedType == dataSourceType) {
+      return _currentDataSource;
+    }
+    if (requestedType == 'mysql') {
+      return _mysqlDataSource;
+    }
+    if (requestedType == 'sqlite') {
       return _sqliteDataSource;
     }
     return null;
@@ -88,28 +118,12 @@ class MaterialProvider extends ChangeNotifier {
     Database? database,
     MySqlConnection? mysqlConnection,
     String dataSourceType = 'sqlite',
-    User? currentUser,
   }) {
     _database = database;
     _mysqlConnection = mysqlConnection;
     _dataSourceType = dataSourceType;
-    _currentUser = currentUser;
 
-    _mysqlConnectionService = MaterialMysqlConnectionService(
-      getDatabaseProvider: () => _databaseProvider,
-      getCachedConnection: () => _mysqlConnection,
-      setCachedConnection: (connection) {
-        _mysqlConnection = connection;
-      },
-      getEffectiveDataSourceType: () =>
-          _effectiveDataSourceType ?? _dataSourceType,
-    );
-
-    _syncService = MaterialSyncService(
-      getSyncMysqlConnection: () => _mysqlConnectionService.getSyncConnection(),
-      getEffectiveDataSourceType: () =>
-          _effectiveDataSourceType ?? _dataSourceType,
-    );
+    // 服务实例通过 getter 懒加载
   }
 
   // 智能初始化（支持模块化配置）
@@ -125,15 +139,14 @@ class MaterialProvider extends ChangeNotifier {
       String dbType = 'sqlite';
 
       // 如果是模块化模式且有模块配置，优先使用模块配置
-      if (dataSourceMode == 'modular' &&
-          moduleDataSources != null &&
-          moduleDataSources.containsKey('materials')) {
-        dbType = moduleDataSources['materials']!;
-        print('MaterialProvider使用模块化配置: materials -> $dbType');
+      final materialsType = moduleDataSources?['materials'];
+      if (dataSourceMode == 'modular' && materialsType != null) {
+        dbType = materialsType;
+        LogManager.d('MaterialProvider', 'MaterialProvider使用模块化配置: materials -> $dbType');
       } else {
         // 否则使用全局配置
         dbType = dbProvider.dataSourceType ?? 'sqlite';
-        print('MaterialProvider使用全局配置: $dbType');
+        LogManager.d('MaterialProvider', 'MaterialProvider使用全局配置: $dbType');
       }
 
       _effectiveDataSourceType = dbType;
@@ -146,7 +159,7 @@ class MaterialProvider extends ChangeNotifier {
           _database = database; // 保持向后兼容
           _isConnected = true;
           _clearError();
-          print('MaterialProvider: SQLite数据源初始化完成');
+          LogManager.d('MaterialProvider', 'MaterialProvider: SQLite数据源初始化完成');
         } else {
           _setError('SQLite数据库连接不可用');
         }
@@ -154,7 +167,7 @@ class MaterialProvider extends ChangeNotifier {
         // 检查MySQL连接是否可用
         final mysqlConn = dbProvider.mysqlConnection;
         if (mysqlConn == null) {
-          print('⚠️ MaterialProvider: MySQL连接不可用，自动降级到SQLite');
+          LogManager.d('MaterialProvider', '⚠️ MaterialProvider: MySQL连接不可用，自动降级到SQLite');
           _effectiveDataSourceType = 'sqlite';
 
           // 降级到SQLite
@@ -164,7 +177,7 @@ class MaterialProvider extends ChangeNotifier {
             _database = database;
             _isConnected = true;
             _clearError();
-            print('MaterialProvider: 已降级到SQLite数据源');
+            LogManager.d('MaterialProvider', 'MaterialProvider: 已降级到SQLite数据源');
           } else {
             _setError('SQLite数据库连接不可用');
           }
@@ -178,9 +191,9 @@ class MaterialProvider extends ChangeNotifier {
             reconnectCallback: () async {
               try {
                 await _mysqlConnectionService.reconnectConnection();
-                print('✅ MaterialProvider: MySQL重连成功');
+                LogManager.d('MaterialProvider', '✅ MaterialProvider: MySQL重连成功');
               } catch (e) {
-                print('❌ MaterialProvider: MySQL重连失败: $e');
+                LogManager.d('MaterialProvider', '❌ MaterialProvider: MySQL重连失败: $e');
               }
             },
           );
@@ -189,9 +202,9 @@ class MaterialProvider extends ChangeNotifier {
           // 测试MySQL连接
           final testResult = await _testMySqlConnection();
           if (testResult) {
-            print('MaterialProvider: MySQL数据源初始化完成');
+            LogManager.d('MaterialProvider', 'MaterialProvider: MySQL数据源初始化完成');
           } else {
-            print('⚠️ MaterialProvider: MySQL连接测试失败，自动降级到SQLite');
+            LogManager.d('MaterialProvider', '⚠️ MaterialProvider: MySQL连接测试失败，自动降级到SQLite');
             _effectiveDataSourceType = 'sqlite';
 
             // 降级到SQLite
@@ -201,7 +214,7 @@ class MaterialProvider extends ChangeNotifier {
               _database = database;
               _isConnected = true;
               _clearError();
-              print('MaterialProvider: 已降级到SQLite数据源');
+              LogManager.d('MaterialProvider', 'MaterialProvider: 已降级到SQLite数据源');
             } else {
               _setError('SQLite数据库连接不可用');
             }
@@ -212,16 +225,18 @@ class MaterialProvider extends ChangeNotifier {
       // 清除缓存，强制重新加载
       clearCache();
     } catch (e) {
-      print('MaterialProvider初始化失败: $e');
+      LogManager.d('MaterialProvider', 'MaterialProvider初始化失败: $e');
       _setError('初始化失败: $e');
     }
   }
 
   // 缓存管理
   bool _isCacheValid() {
-    return _cachedMaterials != null &&
-        _lastCacheTime != null &&
-        DateTime.now().difference(_lastCacheTime!) < _cacheValidDuration;
+    final cached = _cachedMaterials;
+    final lastTime = _lastCacheTime;
+    return cached != null &&
+        lastTime != null &&
+        DateTime.now().difference(lastTime) < _cacheValidDuration;
   }
 
   void _updateCache(List<material_models.MaterialInfo> materials) {
@@ -232,14 +247,14 @@ class MaterialProvider extends ChangeNotifier {
   void clearCache() {
     _cachedMaterials = null;
     _lastCacheTime = null;
-    print('MaterialProvider: 缓存已清除');
+    LogManager.d('MaterialProvider', 'MaterialProvider: 缓存已清除');
   }
 
   // 错误处理
   void _setError(String error) {
     _lastError = error;
     _isConnected = false;
-    print('MaterialProvider错误: $error');
+    LogManager.d('MaterialProvider', 'MaterialProvider错误: $error');
   }
 
   void _clearError() {
@@ -265,14 +280,12 @@ class MaterialProvider extends ChangeNotifier {
     Database? database,
     MySqlConnection? mysqlConnection,
     String? dataSourceType,
-    User? currentUser,
   }) async {
-    print('MaterialProvider: setDatabaseConnection被调用，但已升级为数据源架构');
+    LogManager.d('MaterialProvider', 'MaterialProvider: setDatabaseConnection被调用，但已升级为数据源架构');
     // 这个方法保留用于向后兼容，但实际初始化应该使用initializeFromDatabase
     if (database != null) _database = database;
     if (mysqlConnection != null) _mysqlConnection = mysqlConnection;
     if (dataSourceType != null) _dataSourceType = dataSourceType;
-    if (currentUser != null) _currentUser = currentUser;
   }
 
   // 标记刷新
@@ -288,15 +301,14 @@ class MaterialProvider extends ChangeNotifier {
 
   // 更新模块数据源配置
   void updateModuleDataSources(Map<String, String> moduleDataSources) {
-    print(
-        'MaterialProvider.updateModuleDataSources - 模块数据源配置已更新: $moduleDataSources');
+    LogManager.d('MaterialProvider', 'MaterialProvider.updateModuleDataSources - 模块数据源配置已更新: $moduleDataSources');
 
     // 如果材料模块的数据源类型发生变化，需要重新初始化
     if (_databaseProvider != null) {
       final newDataSourceType =
           moduleDataSources['materials'] ?? _dataSourceType;
       if (newDataSourceType != _effectiveDataSourceType) {
-        print('材料模块数据源类型变更: $_effectiveDataSourceType -> $newDataSourceType');
+        LogManager.d('MaterialProvider', '材料模块数据源类型变更: $_effectiveDataSourceType -> $newDataSourceType');
 
         initializeFromDatabase(
           _databaseProvider,
@@ -316,17 +328,18 @@ class MaterialProvider extends ChangeNotifier {
     try {
       // 检查缓存是否有效
       if (!forceRefresh && _isCacheValid()) {
-        return List.from(_cachedMaterials!);
+        final cached = _cachedMaterials;
+        if (cached != null) return List.from(cached);
       }
 
       if (forceRefresh) {
         clearCache();
       }
 
-      print('正在从数据源获取最新材料数据...');
+      LogManager.d('MaterialProvider', '正在从数据源获取最新材料数据...');
 
       // 从数据源获取数据
-      final materials = await _currentDataSource!.getAllMaterials();
+      final materials = await _requireDataSource.getAllMaterials();
 
       // 更新缓存
       _updateCache(materials);
@@ -336,15 +349,44 @@ class MaterialProvider extends ChangeNotifier {
 
       return materials;
     } catch (e) {
-      print('获取材料数据失败: $e');
+      LogManager.d('MaterialProvider', '获取材料数据失败: $e');
       _setError('获取材料数据失败: $e');
 
       // 如果有缓存数据，返回缓存（优雅降级）
-      if (_cachedMaterials != null) {
-        print('使用缓存数据作为降级方案: ${_cachedMaterials!.length} 条记录');
-        return List.from(_cachedMaterials!);
+      final cached = _cachedMaterials;
+      if (cached != null) {
+        LogManager.d('MaterialProvider', '使用缓存数据作为降级方案: ${cached.length} 条记录');
+        return List.from(cached);
       }
 
+      return [];
+    }
+  }
+
+  Future<List<material_models.MaterialInfo>> getAllMaterialsInDataSource(
+    String effectiveDataSourceType, {
+    bool forceRefresh = false,
+  }) async {
+    try {
+      if (!forceRefresh && effectiveDataSourceType == dataSourceType && _isCacheValid()) {
+        final cached = _cachedMaterials;
+        if (cached != null) return List.from(cached);
+      }
+
+      final ds = _dataSourceForType(effectiveDataSourceType);
+      if (ds == null) {
+        throw Exception('材料数据源未初始化: $effectiveDataSourceType');
+      }
+
+      final materials = await ds.getAllMaterials();
+      if (effectiveDataSourceType == dataSourceType) {
+        _updateCache(materials);
+        _materialsNeedRefresh = false;
+      }
+      return materials;
+    } catch (e) {
+      LogManager.d('MaterialProvider',
+          '按指定数据源获取材料失败($effectiveDataSourceType): $e');
       return [];
     }
   }
@@ -352,9 +394,9 @@ class MaterialProvider extends ChangeNotifier {
   // 根据ID获取材料（使用数据源架构）
   Future<material_models.MaterialInfo?> getMaterialById(int id) async {
     try {
-      return await _currentDataSource!.getMaterialById(id);
+      return await _requireDataSource.getMaterialById(id);
     } catch (e) {
-      print('根据ID获取材料失败: $e');
+      LogManager.d('MaterialProvider', '根据ID获取材料失败: $e');
       return null;
     }
   }
@@ -362,7 +404,7 @@ class MaterialProvider extends ChangeNotifier {
   // 添加材料（使用数据源架构）
   Future<int> addMaterial(material_models.MaterialInfo material) async {
     try {
-      final id = await _currentDataSource!.createMaterial(material);
+      final id = await _requireDataSource.createMaterial(material);
       if (id > 0) {
         clearCache(); // 清除缓存
         notifyListeners();
@@ -376,7 +418,7 @@ class MaterialProvider extends ChangeNotifier {
       }
       return id;
     } catch (e) {
-      print('添加材料失败: $e');
+      LogManager.d('MaterialProvider', '添加材料失败: $e');
       _setError('添加材料失败: $e');
       rethrow;
     }
@@ -385,7 +427,7 @@ class MaterialProvider extends ChangeNotifier {
   // 创建材料（兼容性方法）
   Future<bool> createMaterial(material_models.MaterialInfo material) async {
     try {
-      final id = await _currentDataSource!.createMaterial(material);
+      final id = await _requireDataSource.createMaterial(material);
       if (id > 0) {
         clearCache();
         notifyListeners();
@@ -401,7 +443,7 @@ class MaterialProvider extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      print('创建材料失败: $e');
+      LogManager.d('MaterialProvider', '创建材料失败: $e');
       _setError('创建材料失败: $e');
       return false;
     }
@@ -410,21 +452,22 @@ class MaterialProvider extends ChangeNotifier {
   // 更新材料
   Future<bool> updateMaterial(material_models.MaterialInfo material) async {
     try {
-      final success = await _currentDataSource!.updateMaterial(material);
+      final success = await _requireDataSource.updateMaterial(material);
       if (success) {
         _cachedMaterials = null;
         _lastCacheTime = null;
         _materialsNeedRefresh = false;
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
-        if (_syncService.needsSync && material.id != null) {
+        final materialId = material.id;
+        if (_syncService.needsSync && materialId != null) {
           final materialMap = material.toMap();
-          _syncService.syncMaterialToMySQL(materialMap, material.id!);
+          _syncService.syncMaterialToMySQL(materialMap, materialId);
         }
       }
       return success;
     } catch (e) {
-      print('更新材料失败: $e');
+      LogManager.d('MaterialProvider', '更新材料失败: $e');
       return false;
     }
   }
@@ -432,7 +475,7 @@ class MaterialProvider extends ChangeNotifier {
   // 删除材料
   Future<bool> deleteMaterial(int id) async {
     try {
-      final success = await _currentDataSource!.deleteMaterial(id);
+      final success = await _requireDataSource.deleteMaterial(id);
       if (success) {
         clearCache();
         notifyListeners();
@@ -444,7 +487,7 @@ class MaterialProvider extends ChangeNotifier {
       }
       return success;
     } catch (e) {
-      print('删除材料失败: $e');
+      LogManager.d('MaterialProvider', '删除材料失败: $e');
       return false;
     }
   }
@@ -453,9 +496,9 @@ class MaterialProvider extends ChangeNotifier {
   Future<List<material_models.MaterialInfo>> searchMaterials(
       String query) async {
     try {
-      return await _currentDataSource!.searchMaterials(query);
+      return await _requireDataSource.searchMaterials(query);
     } catch (e) {
-      print('搜索材料失败: $e');
+      LogManager.d('MaterialProvider', '搜索材料失败: $e');
       return [];
     }
   }
@@ -463,9 +506,9 @@ class MaterialProvider extends ChangeNotifier {
   // 获取下一个材料编码
   Future<String> getNextMaterialCode() async {
     try {
-      return await _currentDataSource!.getNextMaterialCode();
+      return await _requireDataSource.getNextMaterialCode();
     } catch (e) {
-      print('获取下一个材料编码失败: $e');
+      LogManager.d('MaterialProvider', '获取下一个材料编码失败: $e');
       _setError('获取下一个材料编码失败: $e');
       return 'M301';
     }
@@ -474,9 +517,9 @@ class MaterialProvider extends ChangeNotifier {
   // 根据编码获取材料
   Future<material_models.MaterialInfo?> getMaterialByCode(String code) async {
     try {
-      return await _currentDataSource!.getMaterialByCode(code);
+      return await _requireDataSource.getMaterialByCode(code);
     } catch (e) {
-      print('根据编码获取材料失败: $e');
+      LogManager.d('MaterialProvider', '根据编码获取材料失败: $e');
       _setError('获取材料失败: $e');
       return null;
     }
@@ -486,9 +529,9 @@ class MaterialProvider extends ChangeNotifier {
   Future<List<material_models.MaterialInfo>> getMaterialsByCategory(
       String category) async {
     try {
-      return await _currentDataSource!.getMaterialsByCategory(category);
+      return await _requireDataSource.getMaterialsByCategory(category);
     } catch (e) {
-      print('根据类别获取材料失败: $e');
+      LogManager.d('MaterialProvider', '根据类别获取材料失败: $e');
       _setError('根据类别获取材料失败: $e');
       return [];
     }
@@ -497,9 +540,9 @@ class MaterialProvider extends ChangeNotifier {
   // 获取材料统计信息
   Future<Map<String, dynamic>> getMaterialStatistics() async {
     try {
-      return await _currentDataSource!.getMaterialStatistics();
+      return await _requireDataSource.getMaterialStatistics();
     } catch (e) {
-      print('获取材料统计信息失败: $e');
+      LogManager.d('MaterialProvider', '获取材料统计信息失败: $e');
       _setError('获取材料统计信息失败: $e');
       return {};
     }
@@ -512,13 +555,13 @@ class MaterialProvider extends ChangeNotifier {
     String? searchQuery,
   }) async {
     try {
-      return await _currentDataSource!.getPaginatedMaterials(
+      return await _requireDataSource.getPaginatedMaterials(
         page: page,
         pageSize: pageSize,
         searchQuery: searchQuery,
       );
     } catch (e) {
-      print('分页获取材料失败: $e');
+      LogManager.d('MaterialProvider', '分页获取材料失败: $e');
       _setError('分页获取材料失败: $e');
       return [];
     }
@@ -527,10 +570,10 @@ class MaterialProvider extends ChangeNotifier {
   // 获取材料总数
   Future<int> getMaterialsCount({String? searchQuery}) async {
     try {
-      return await _currentDataSource!
+      return await _requireDataSource
           .getMaterialsCount(searchQuery: searchQuery);
     } catch (e) {
-      print('获取材料总数失败: $e');
+      LogManager.d('MaterialProvider', '获取材料总数失败: $e');
       _setError('获取材料总数失败: $e');
       return 0;
     }
@@ -539,14 +582,14 @@ class MaterialProvider extends ChangeNotifier {
   // 清空所有牙科材料
   Future<bool> clearAllDentalMaterials() async {
     try {
-      final success = await _currentDataSource!.clearAllMaterials();
+      final success = await _requireDataSource.clearAllMaterials();
       if (success) {
         clearCache();
         notifyListeners();
       }
       return success;
     } catch (e) {
-      print('清空牙科材料失败: $e');
+      LogManager.d('MaterialProvider', '清空牙科材料失败: $e');
       return false;
     }
   }
@@ -561,13 +604,14 @@ class MaterialProvider extends ChangeNotifier {
     if (!initialized) return;
 
     try {
-      print('开始更新现有材料的类型分类...');
+      LogManager.d('MaterialProvider', '开始更新现有材料的类型分类...');
 
       // 在数据源架构中，我们通过直接访问数据库来执行批量更新
       // 这是一个特殊的维护操作，不适合通过标准的数据源接口
 
-      if (_effectiveDataSourceType == 'sqlite' && _database != null) {
-        final db = _database!;
+      final database = _database;
+      if (_effectiveDataSourceType == 'sqlite' && database != null) {
+        final db = database;
 
         // 根据材料名称和编码更新类型
         final updates = [
@@ -641,9 +685,9 @@ class MaterialProvider extends ChangeNotifier {
       // 更新完成后清除缓存
       clearCache();
 
-      print('已成功更新现有材料的类型分类');
+      LogManager.d('MaterialProvider', '已成功更新现有材料的类型分类');
     } catch (e) {
-      print('更新材料类型失败: $e');
+      LogManager.d('MaterialProvider', '更新材料类型失败: $e');
     }
   }
 

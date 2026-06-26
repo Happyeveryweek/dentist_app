@@ -27,7 +27,7 @@ class AppToast extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final config = _getToastConfig(type);
-    
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(16),
@@ -37,7 +37,7 @@ class AppToast extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -129,10 +129,10 @@ class AppToastManager {
   }) {
     final config = _getToastConfig(type);
     final toastColor = backgroundColor ?? config.color;
-    
+
     // 移除之前的提示（如果存在）
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    
+
     // 显示新的提示
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -158,7 +158,7 @@ class AppToastManager {
               IconButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                  onDismiss?.call();
+                  onDismiss.call();
                 },
                 icon: const Icon(
                   Icons.close,
@@ -280,11 +280,6 @@ class AppToastManager {
   }
 }
 
-
-
-
-
-
 /// 公共删除确认框组件
 /// 现代化设计风格，简洁美观
 class DeleteConfirmDialog extends StatelessWidget {
@@ -309,6 +304,7 @@ class DeleteConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final itemNameValue = itemName;
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -320,13 +316,13 @@ class DeleteConfirmDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 30,
               spreadRadius: 0,
               offset: const Offset(0, 15),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               spreadRadius: 0,
               offset: const Offset(0, 5),
@@ -357,7 +353,7 @@ class DeleteConfirmDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(32),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.shade300.withOpacity(0.3),
+                          color: Colors.red.shade300.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -369,9 +365,9 @@ class DeleteConfirmDialog extends StatelessWidget {
                       size: 28,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // 标题
                   Text(
                     title,
@@ -382,12 +378,14 @@ class DeleteConfirmDialog extends StatelessWidget {
                       letterSpacing: -0.5,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // 描述文本
                   Text(
-                    itemName != null ? message.replaceAll('{itemName}', itemName!) : message,
+                    itemNameValue != null
+                        ? message.replaceAll('{itemName}', itemNameValue)
+                        : message,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 15,
@@ -396,9 +394,9 @@ class DeleteConfirmDialog extends StatelessWidget {
                       fontWeight: FontWeight.w400,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // 警告提示
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -436,7 +434,7 @@ class DeleteConfirmDialog extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 分割线
             Container(
               height: 1,
@@ -451,7 +449,7 @@ class DeleteConfirmDialog extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // 按钮区域
             Padding(
               padding: const EdgeInsets.all(24),
@@ -473,7 +471,8 @@ class DeleteConfirmDialog extends StatelessWidget {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: onCancel ?? () => Navigator.of(context).pop(false),
+                          onTap: onCancel ??
+                              () => Navigator.of(context).pop(false),
                           child: Center(
                             child: Text(
                               cancelText,
@@ -488,9 +487,9 @@ class DeleteConfirmDialog extends StatelessWidget {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(width: 12),
-                  
+
                   // 确认按钮
                   Expanded(
                     child: Container(
@@ -507,7 +506,7 @@ class DeleteConfirmDialog extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.red.shade300.withOpacity(0.4),
+                            color: Colors.red.shade300.withValues(alpha: 0.4),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -517,7 +516,8 @@ class DeleteConfirmDialog extends StatelessWidget {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: onConfirm ?? () => Navigator.of(context).pop(true),
+                          onTap: onConfirm ??
+                              () => Navigator.of(context).pop(true),
                           child: Center(
                             child: Text(
                               confirmText,
@@ -558,7 +558,7 @@ class DeleteConfirmDialogManager {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.6),
+      barrierColor: Colors.black.withValues(alpha: 0.6),
       builder: (context) => DeleteConfirmDialog(
         title: title,
         message: message,
@@ -605,7 +605,7 @@ class DeleteConfirmDialogManager {
     return show(
       context,
       title: '确认删除',
-      message: '您确定要删除患者"$patientName"吗？此操作不可撤销。',
+      message: '删除患者"$patientName"将同时删除该患者的预约、财务、病历、材料等所有关联信息，此操作不可撤销。',
     );
   }
 
@@ -723,10 +723,14 @@ class ErrorDialog extends StatelessWidget {
 }
 
 class ErrorDialogManager {
-  static Future<void> show(BuildContext context, {String title = '错误', required String message, String buttonText = '知道了'}) async {
+  static Future<void> show(BuildContext context,
+      {String title = '错误',
+      required String message,
+      String buttonText = '知道了'}) async {
     await showDialog<void>(
       context: context,
-      builder: (ctx) => ErrorDialog(title: title, message: message, buttonText: buttonText),
+      builder: (ctx) =>
+          ErrorDialog(title: title, message: message, buttonText: buttonText),
     );
   }
 }
@@ -762,13 +766,13 @@ class LogoutConfirmDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 30,
               spreadRadius: 0,
               offset: const Offset(0, 15),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               spreadRadius: 0,
               offset: const Offset(0, 5),
@@ -799,7 +803,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(32),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.shade300.withOpacity(0.3),
+                          color: Colors.red.shade300.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -811,9 +815,9 @@ class LogoutConfirmDialog extends StatelessWidget {
                       size: 28,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // 标题
                   Text(
                     '退出登录',
@@ -824,9 +828,9 @@ class LogoutConfirmDialog extends StatelessWidget {
                       letterSpacing: -0.5,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   // 描述文本
                   Text(
                     '确认要退出登录吗？',
@@ -838,7 +842,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                       fontWeight: FontWeight.w400,
                     ),
                   ),
-                  
+
                   // 用户名显示（如果有的话）
                   if (username != null) ...[
                     const SizedBox(height: 16),
@@ -873,7 +877,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            username!,
+                            username ?? '',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -887,7 +891,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 分割线
             Container(
               height: 1,
@@ -902,7 +906,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // 按钮区域
             Padding(
               padding: const EdgeInsets.all(24),
@@ -924,7 +928,8 @@ class LogoutConfirmDialog extends StatelessWidget {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: onCancel ?? () => Navigator.of(context).pop(false),
+                          onTap: onCancel ??
+                              () => Navigator.of(context).pop(false),
                           child: Center(
                             child: Text(
                               cancelText,
@@ -939,9 +944,9 @@ class LogoutConfirmDialog extends StatelessWidget {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(width: 12),
-                  
+
                   // 确认按钮
                   Expanded(
                     child: Container(
@@ -958,7 +963,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.red.shade300.withOpacity(0.4),
+                            color: Colors.red.shade300.withValues(alpha: 0.4),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -968,7 +973,8 @@ class LogoutConfirmDialog extends StatelessWidget {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: onConfirm ?? () => Navigator.of(context).pop(true),
+                          onTap: onConfirm ??
+                              () => Navigator.of(context).pop(true),
                           child: Center(
                             child: Text(
                               confirmText,
@@ -1007,7 +1013,7 @@ class LogoutConfirmDialogManager {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withOpacity(0.6),
+      barrierColor: Colors.black.withValues(alpha: 0.6),
       builder: (context) => LogoutConfirmDialog(
         username: username,
         confirmText: confirmText,

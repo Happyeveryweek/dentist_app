@@ -41,7 +41,7 @@ class MedicalTemplateInitializeDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -62,7 +62,7 @@ class MedicalTemplateInitializeDialog extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 内容区域
             Container(
               width: double.infinity,
@@ -79,13 +79,15 @@ class MedicalTemplateInitializeDialog extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // 模板项列表
-                  _buildTemplateItem('治疗方案模板', '洁牙、充填、根管治疗等', Icons.healing_rounded),
-                  _buildTemplateItem('医嘱模板', '术后护理、用药指导等', Icons.note_add_rounded),
-                  
+                  _buildTemplateItem(
+                      '治疗方案模板', '洁牙、充填、根管治疗等', Icons.healing_rounded),
+                  _buildTemplateItem(
+                      '医嘱模板', '术后护理、用药指导等', Icons.note_add_rounded),
+
                   const SizedBox(height: 20),
-                  
+
                   // 警告提示
                   Container(
                     width: double.infinity,
@@ -119,7 +121,7 @@ class MedicalTemplateInitializeDialog extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 底部按钮
             Container(
               width: double.infinity,

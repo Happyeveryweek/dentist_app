@@ -29,7 +29,7 @@ class MaterialDropdownField extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: DentalColors.onSurface,

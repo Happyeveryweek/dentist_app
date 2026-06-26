@@ -31,6 +31,7 @@ class AppointmentCard extends StatelessWidget {
     final statusInfo = getStatusInfo(appointment.status);
     final patientName = appointment.patientName ?? '未知患者';
     final avatarColor = getPatientAvatarColor(patientName);
+    final notes = appointment.notes;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -152,8 +153,7 @@ class AppointmentCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (appointment.notes != null &&
-                  appointment.notes!.isNotEmpty) ...[
+              if (notes != null && notes.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -165,7 +165,7 @@ class AppointmentCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        appointment.notes!,
+                        notes,
                         style: const TextStyle(
                           color: AppTheme.secondaryText,
                           fontSize: 13,

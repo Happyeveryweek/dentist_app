@@ -24,8 +24,8 @@ class ModernDateRangePicker extends StatefulWidget {
 }
 
 class _ModernDateRangePickerState extends State<ModernDateRangePicker> {
-  late DateTime _startDate;
-  late DateTime _endDate;
+  DateTime _startDate = DateTime.now();
+  DateTime _endDate = DateTime.now();
   bool _isSelectingStart = true;
 
   @override

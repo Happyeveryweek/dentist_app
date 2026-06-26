@@ -33,16 +33,16 @@ class PatientDentalConditionList extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
+          const Padding(
+            padding: EdgeInsets.only(right: 8.0),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.medical_services,
                   color: AppTheme.primaryColor,
                   size: 20,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   '牙齿状况',
                   style: TextStyle(
@@ -129,7 +129,7 @@ class PatientDentalChartCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 3,
               offset: const Offset(0, 1),
             ),
@@ -141,10 +141,9 @@ class PatientDentalChartCard extends StatelessWidget {
             if (createdByDoctor.isNotEmpty)
               Container(
                 margin: const EdgeInsets.only(bottom: 6),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
+                  color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Row(
@@ -286,8 +285,7 @@ class _ReadOnlyCrossChart extends StatelessWidget {
                           Expanded(
                             child: Container(
                               alignment: Alignment.centerRight,
-                              padding:
-                                  const EdgeInsets.only(right: 3, top: 14),
+                              padding: const EdgeInsets.only(right: 3, top: 14),
                               child: Text(
                                 topLeft,
                                 textAlign: TextAlign.right,
@@ -298,8 +296,7 @@ class _ReadOnlyCrossChart extends StatelessWidget {
                           Expanded(
                             child: Container(
                               alignment: Alignment.centerLeft,
-                              padding:
-                                  const EdgeInsets.only(left: 3, top: 14),
+                              padding: const EdgeInsets.only(left: 3, top: 14),
                               child: Text(
                                 topRight,
                                 textAlign: TextAlign.left,

@@ -2,36 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'package:mysql1/mysql1.dart';
-import 'package:path/path.dart' as path;
-import 'dart:convert';
-import 'package:intl/intl.dart';
 
 import '../theme/app_theme.dart';
 import '../providers/settings_provider.dart';
 import '../providers/database_provider.dart';
 import '../providers/material_provider.dart';
 import '../screens/data_source_screen.dart'; // 数据源配置页面
-import '../features/settings/widgets/data_sync_dialog.dart'; // 导入数据同步对话框组件
-import '../models/backup_log.dart';
-import '../models/database_structure_log.dart';
 import '../widgets/dental_icons.dart';
-import '../widgets/success_toast.dart';
 
-import '../utils/datetime_formatter.dart';
-import '../utils/app_paths.dart';
-import 'app_info_screen.dart';
-import '../features/settings/widgets/database_check_widgets.dart';
 import '../features/settings/widgets/settings_header_card.dart';
-import '../features/settings/widgets/settings_card.dart';
 import '../features/settings/widgets/settings_section_header.dart';
-import '../features/settings/widgets/backup_path_selector.dart';
-import '../features/settings/widgets/theme_card.dart';
 import '../features/settings/widgets/setting_item.dart';
 import '../features/settings/widgets/backup_info_display.dart';
-import '../features/settings/widgets/backup_path_input.dart';
 import '../features/settings/widgets/auto_backup_settings.dart';
-import '../features/settings/widgets/reset_data_item.dart';
 import '../features/settings/widgets/data_source_selection_dialog.dart';
 import '../features/settings/widgets/edit_app_name_dialog.dart';
 import '../features/settings/widgets/theme_section.dart';
@@ -81,8 +64,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     // 初始化服务
     final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-    final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+    final settingsProvider =
+        Provider.of<SettingsProvider>(context, listen: false);
+    final materialProvider =
+        Provider.of<MaterialProvider>(context, listen: false);
 
     _backupRestoreService = BackupRestoreService(
       dbProvider: dbProvider,
@@ -175,8 +160,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('未设置备份路径'),
-            content: const Text(
-                '请至少设置一个备份目录后再执行备份，或在下方输入框手动输入备份路径。'),
+            content: const Text('请至少设置一个备份目录后再执行备份，或在下方输入框手动输入备份路径。'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -238,7 +222,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
 
       // 验证文件
-      final validationError = await _backupRestoreService.validateBackupFile(filePath);
+      final validationError =
+          await _backupRestoreService.validateBackupFile(filePath);
       if (validationError != null) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -250,7 +235,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return;
       }
 
-      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      if (!mounted) return;
+      final settingsProvider =
+          Provider.of<SettingsProvider>(context, listen: false);
       final isMySQL = settingsProvider.dataSourceType == 'mysql';
 
       // 确认是否恢复
@@ -288,14 +275,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           if (result.success) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content:
-                    Text(isMySQL ? 'MySQL数据库已成功从SQL文件恢复' : 'SQLite数据库已成功从备份文件恢复'),
+                content: Text(
+                    isMySQL ? 'MySQL数据库已成功从SQL文件恢复' : 'SQLite数据库已成功从备份文件恢复'),
                 backgroundColor: AppTheme.successColor,
               ),
             );
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('恢复失败: ${result.errorMessage}'), backgroundColor: Colors.red),
+              SnackBar(
+                  content: Text('恢复失败: ${result.errorMessage}'),
+                  backgroundColor: Colors.red),
             );
           }
         } catch (e) {
@@ -323,16 +312,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       MaterialPageRoute(
         builder: (context) => const DataSourceScreen(),
       ),
-    );
-  }
-
-  // 打开数据同步对话框
-  void _openDataSyncDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return const DataSyncDialog();
-      },
     );
   }
 
@@ -373,9 +352,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (context, constraints) {
           // Responsive layout: 2 columns for screens wider than 900px
           if (constraints.maxWidth >= 900) {
-            return this._buildTwoColumnLayout();
+            return _buildTwoColumnLayout();
           } else {
-            return this._buildSingleColumnLayout();
+            return _buildSingleColumnLayout();
           }
         },
       ),
@@ -396,7 +375,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onEditAppName: () async {
               final result = await EditAppNameDialog.show(context);
               if (result != null && result.isNotEmpty) {
-                final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+                if (!mounted) return;
+                final settingsProvider =
+                    Provider.of<SettingsProvider>(context, listen: false);
                 await settingsProvider.setAppName(result);
                 if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -408,11 +389,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               }
             },
             onOpenDataStorageLocation: () {
-              final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-              DataStorageLocationHelper.openDataStorageLocation(context, settingsProvider);
+              final settingsProvider =
+                  Provider.of<SettingsProvider>(context, listen: false);
+              DataStorageLocationHelper.openDataStorageLocation(
+                  context, settingsProvider);
             },
             onResetAppData: _resetAppData,
-            getDataStorageLocation: (settingsProvider) => DataStorageLocationHelper.getDataStorageLocation(settingsProvider),
+            getDataStorageLocation: (settingsProvider) =>
+                DataStorageLocationHelper.getDataStorageLocation(
+                    settingsProvider),
           ),
         ],
       ),
@@ -441,7 +426,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onEditAppName: () async {
                         final result = await EditAppNameDialog.show(context);
                         if (result != null && result.isNotEmpty) {
-                          final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+                          if (!mounted) return;
+                          final settingsProvider =
+                              Provider.of<SettingsProvider>(context,
+                                  listen: false);
                           await settingsProvider.setAppName(result);
                           if (!mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -453,11 +441,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         }
                       },
                       onOpenDataStorageLocation: () {
-                        final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-                        DataStorageLocationHelper.openDataStorageLocation(context, settingsProvider);
+                        final settingsProvider = Provider.of<SettingsProvider>(
+                            context,
+                            listen: false);
+                        DataStorageLocationHelper.openDataStorageLocation(
+                            context, settingsProvider);
                       },
                       onResetAppData: _resetAppData,
-                      getDataStorageLocation: (settingsProvider) => DataStorageLocationHelper.getDataStorageLocation(settingsProvider),
+                      getDataStorageLocation: (settingsProvider) =>
+                          DataStorageLocationHelper.getDataStorageLocation(
+                              settingsProvider),
                     ),
                   ],
                 ),
@@ -483,7 +476,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildDataManagementSection() {
     return Column(
       children: [
-        SettingsSectionHeader(
+        const SettingsSectionHeader(
           title: '数据管理',
           icon: Icons.storage,
           color: AppTheme.secondaryColor,
@@ -495,7 +488,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -527,11 +520,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.1),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                          child: const CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                AppTheme.primaryColor),
                             strokeWidth: 2,
                           ),
                         )
@@ -583,11 +577,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // 构建备份设置
   Widget _buildBackupSettings() {
-    final settingsProvider = Provider.of<SettingsProvider>(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SettingsSectionHeader(
+        const SettingsSectionHeader(
           title: '备份设置',
           icon: Icons.backup,
           color: AppTheme.secondaryColor,
@@ -605,7 +598,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               // 备份数据源信息显示
               const BackupInfoDisplay(),
-              
+
               // 数据备份和恢复备份功能
               BackupActionButtons(
                 isBackingUp: _isBackingUp,
@@ -613,7 +606,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onBackup: _performBackup,
                 onRestore: _selectBackupFile,
               ),
-              
+
               const Divider(height: 20),
 
               // 备份目录设置
@@ -637,7 +630,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // 检测数据库结构
   Future<void> _checkDatabaseStructure() async {
     // 显示数据源选择弹窗
-    final selectedDataSource = await this._showDataSourceSelectionDialog();
+    final selectedDataSource = await _showDataSourceSelectionDialog();
     if (selectedDataSource == null) return;
 
     setState(() {
@@ -645,7 +638,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
 
     try {
-      final result = await _databaseStructureCheckService.checkDatabaseStructure(
+      final result =
+          await _databaseStructureCheckService.checkDatabaseStructure(
         selectedDataSource,
       );
 
@@ -687,13 +681,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
   // 重置应用数据
   Future<void> _resetAppData() async {
     try {
       final confirmed = await ResetAppDataDialog.show(context);
 
       if (confirmed == true) {
+        if (!mounted) return;
         // 显示进度对话框
         showDialog(
           context: context,
@@ -791,7 +785,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                      Icon(Icons.info_outline,
+                          color: Colors.blue.shade700, size: 20),
                       const SizedBox(width: 8),
                       const Text(
                         '重置内容：',
@@ -825,7 +820,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.restart_alt, color: Colors.orange.shade700, size: 20),
+                  Icon(Icons.restart_alt,
+                      color: Colors.orange.shade700, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -864,7 +860,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showStructureCheckLogs() async {
     await StructureLogDialog.show(context);
   }
-
-
-
 }

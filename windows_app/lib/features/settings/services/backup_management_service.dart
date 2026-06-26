@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:dentist_app_windows/models/backup_log.dart';
 import 'package:dentist_app_windows/utils/datetime_formatter.dart';
+import 'package:dentist_app_windows/utils/log_manager.dart';
 
 /// 备份管理服务
 /// 负责应用的备份和还原管理
@@ -44,16 +45,17 @@ class BackupManagementService {
 
   /// 自动备份功能
   Future<String> performAutoBackup() async {
+    LogManager.i('BackupManagementService', '开始执行自动备份');
     try {
-      print('开始执行自动备份...');
-      
       // 检查备份路径是否设置
       if (_backupPath.isEmpty) {
         throw Exception('未设置备份路径，无法执行自动备份');
       }
 
       // 获取当前时间戳
-      final timestamp = DateTimeFormatter.nowDbString().replaceAll(':', '-').replaceAll(' ', '_');
+      final timestamp = DateTimeFormatter.nowDbString()
+          .replaceAll(':', '-')
+          .replaceAll(' ', '_');
       final backupFileName = 'auto_backup_$timestamp.db';
       final backupPath = path.join(_backupPath, backupFileName);
 
@@ -61,26 +63,26 @@ class BackupManagementService {
       final backupDir = Directory(_backupPath);
       if (!await backupDir.exists()) {
         await backupDir.create(recursive: true);
-        print('创建备份目录: $_backupPath');
       }
 
       // 执行备份（这里需要调用DatabaseProvider的实际备份方法）
       // 注意：实际的数据库备份操作仍然由DatabaseProvider执行
       // 这里只负责备份策略和路径管理
-      
+
       // 更新上次备份日期
       final now = DateTime.now();
       final todayDate = DateTime(now.year, now.month, now.day);
       _lastBackupDate = todayDate;
-      
+
       // 清理旧备份
       await _cleanupOldBackups(_backupPath, _backupInterval);
-      
-      print('自动备份策略执行完成');
+
       return backupPath;
     } catch (e) {
-      print('执行自动备份策略时出错: $e');
+      LogManager.e('BackupManagementService', '执行自动备份策略时出错', error: e);
       rethrow;
+    } finally {
+      LogManager.i('BackupManagementService', '自动备份流程结束');
     }
   }
 
@@ -93,24 +95,26 @@ class BackupManagementService {
       // 获取所有备份文件
       final files = await directory
           .list()
-          .where((entity) => entity is File && 
+          .where((entity) =>
+              entity is File &&
               (entity.path.endsWith('.db') || entity.path.endsWith('.sql')))
           .toList();
 
       // 按修改时间排序
       files.sort((a, b) {
-        return File(b.path).lastModifiedSync().compareTo(File(a.path).lastModifiedSync());
+        return File(b.path)
+            .lastModifiedSync()
+            .compareTo(File(a.path).lastModifiedSync());
       });
 
       // 删除旧文件
       if (files.length > keepCount) {
         for (int i = keepCount; i < files.length; i++) {
           await File(files[i].path).delete();
-          print('删除旧备份文件: ${files[i].path}');
         }
       }
     } catch (e) {
-      print('清理旧备份失败: $e');
+      LogManager.e('BackupManagementService', '清理旧备份失败', error: e);
     }
   }
 
@@ -124,9 +128,8 @@ class BackupManagementService {
       );
 
       await BackupLog.addLog(log);
-      print('已记录备份成功日志');
     } catch (e) {
-      print('记录备份成功日志出错: $e');
+      LogManager.e('BackupManagementService', '记录备份成功日志出错', error: e);
     }
   }
 
@@ -141,43 +144,43 @@ class BackupManagementService {
       );
 
       await BackupLog.addLog(log);
-      print('已记录备份失败日志: $errorMessage');
+      LogManager.e('BackupManagementService', '已记录备份失败日志', error: errorMessage);
     } catch (e) {
-      print('记录备份失败日志出错: $e');
+      LogManager.e('BackupManagementService', '记录备份失败日志出错', error: e);
     }
   }
 
   /// 备份路径验证和管理
   Future<bool> validateBackupPath(String backupPath) async {
+    LogManager.d('BackupManagementService', '验证备份路径: $backupPath');
     try {
       if (backupPath.isEmpty) return false;
-      
+
       final directory = Directory(backupPath);
-      
+
       // 检查目录是否存在，如果不存在则尝试创建
       if (!await directory.exists()) {
         try {
           await directory.create(recursive: true);
-          print('创建备份目录: $backupPath');
         } catch (e) {
-          print('无法创建备份目录: $e');
+          LogManager.e('BackupManagementService', '无法创建备份目录', error: e);
           return false;
         }
       }
-      
+
       // 检查目录是否可写
       try {
         final testFile = File(path.join(backupPath, 'test_write.tmp'));
         await testFile.writeAsString('测试写入权限');
         await testFile.delete();
-        print('备份目录写入权限验证成功');
+
         return true;
       } catch (e) {
-        print('备份目录写入权限验证失败: $e');
+        LogManager.e('BackupManagementService', '备份目录写入权限验证失败', error: e);
         return false;
       }
     } catch (e) {
-      print('验证备份路径时出错: $e');
+      LogManager.e('BackupManagementService', '验证备份路径时出错', error: e);
       return false;
     }
   }
@@ -186,24 +189,27 @@ class BackupManagementService {
   Future<List<FileSystemEntity>> getBackupFiles() async {
     try {
       if (_backupPath.isEmpty) return [];
-      
+
       final directory = Directory(_backupPath);
       if (!await directory.exists()) return [];
-      
+
       final files = await directory
           .list()
-          .where((entity) => entity is File && 
+          .where((entity) =>
+              entity is File &&
               (entity.path.endsWith('.db') || entity.path.endsWith('.sql')))
           .toList();
-      
+
       // 按修改时间排序（最新的在前）
       files.sort((a, b) {
-        return File(b.path).lastModifiedSync().compareTo(File(a.path).lastModifiedSync());
+        return File(b.path)
+            .lastModifiedSync()
+            .compareTo(File(a.path).lastModifiedSync());
       });
-      
+
       return files;
     } catch (e) {
-      print('获取备份文件列表时出错: $e');
+      LogManager.e('BackupManagementService', '获取备份文件列表时出错', error: e);
       return [];
     }
   }
@@ -213,8 +219,9 @@ class BackupManagementService {
     try {
       final files = await getBackupFiles();
       final totalSize = await _calculateTotalBackupSize(files);
-      final lastBackup = files.isNotEmpty ? File(files.first.path).lastModifiedSync() : null;
-      
+      final lastBackup =
+          files.isNotEmpty ? File(files.first.path).lastModifiedSync() : null;
+
       return {
         'totalFiles': files.length,
         'totalSize': totalSize,
@@ -225,7 +232,7 @@ class BackupManagementService {
         'lastBackupDate': _lastBackupDate,
       };
     } catch (e) {
-      print('获取备份统计信息时出错: $e');
+      LogManager.e('BackupManagementService', '获取备份统计信息时出错', error: e);
       return {};
     }
   }
@@ -238,7 +245,8 @@ class BackupManagementService {
         try {
           totalSize += await file.length();
         } catch (e) {
-          print('计算文件大小时出错: ${file.path}, $e');
+          LogManager.e(
+              'BackupManagementService', '计算文件大小时出错: ${file.path}, $e');
         }
       }
     }
@@ -249,19 +257,22 @@ class BackupManagementService {
   bool shouldPerformAutoBackup() {
     if (!_autoBackup) return false;
     if (_backupPath.isEmpty) return false;
-    if (_lastBackupDate == null) return true;
-    
+    final lastBackup = _lastBackupDate;
+    if (lastBackup == null) return true;
+
     final now = DateTime.now();
-    final daysSinceLastBackup = now.difference(_lastBackupDate!).inDays;
-    
+    final daysSinceLastBackup = now.difference(lastBackup).inDays;
+
     return daysSinceLastBackup >= _backupInterval;
   }
 
   /// 获取下次自动备份时间
   DateTime? getNextAutoBackupTime() {
-    if (!_autoBackup || _lastBackupDate == null) return null;
-    
-    return _lastBackupDate!.add(Duration(days: _backupInterval));
+    if (!_autoBackup) return null;
+    final lastBackup = _lastBackupDate;
+    if (lastBackup == null) return null;
+
+    return lastBackup.add(Duration(days: _backupInterval));
   }
 
   /// 备份策略管理
@@ -272,8 +283,6 @@ class BackupManagementService {
   }) async {
     _autoBackup = autoBackup;
     _backupInterval = backupInterval;
-    
-    print('备份策略已更新: 自动备份=$autoBackup, 间隔=$backupInterval天');
   }
 
   Map<String, dynamic> getBackupStrategy() {
@@ -294,29 +303,27 @@ class BackupManagementService {
     if (secondaryPath != null) {
       _backupPath2 = secondaryPath;
     }
-    
+
     // 验证路径
     final primaryValid = await validateBackupPath(primaryPath);
     if (!primaryValid) {
       throw Exception('主备份路径无效或无法访问: $primaryPath');
     }
-    
+
     if (secondaryPath != null && secondaryPath.isNotEmpty) {
       final secondaryValid = await validateBackupPath(secondaryPath);
       if (!secondaryValid) {
         throw Exception('备用备份路径无效或无法访问: $secondaryPath');
       }
     }
-    
-    print('备份路径已更新: 主路径=$primaryPath, 备用路径=$secondaryPath');
   }
 
   /// 检查备份路径状态
   Future<Map<String, bool>> checkBackupPathStatus() async {
     final primaryStatus = await validateBackupPath(_backupPath);
-    final secondaryStatus = _backupPath2.isNotEmpty ? 
-        await validateBackupPath(_backupPath2) : true;
-    
+    final secondaryStatus =
+        _backupPath2.isNotEmpty ? await validateBackupPath(_backupPath2) : true;
+
     return {
       'primary': primaryStatus,
       'secondary': secondaryStatus,
@@ -334,7 +341,6 @@ class BackupManagementService {
   }) async {
     // 这里可以添加还原策略的设置
     // 目前先保存到设置中，后续可以扩展
-    print('还原策略已更新');
   }
 
   Map<String, dynamic> getRestoreStrategy() {
@@ -352,33 +358,30 @@ class BackupManagementService {
     if (!isValid) {
       throw Exception('还原路径无效或无法访问: $restorePath');
     }
-    
-    print('还原路径已设置: $restorePath');
   }
 
   Future<bool> validateRestorePath(String restorePath) async {
     try {
       if (restorePath.isEmpty) return false;
-      
+
       final file = File(restorePath);
-      
+
       // 检查文件是否存在
       if (!await file.exists()) {
-        print('还原文件不存在: $restorePath');
         return false;
       }
-      
+
       // 检查文件是否可读
       try {
         await file.open(mode: FileMode.read);
-        print('还原文件读取权限验证成功');
+
         return true;
       } catch (e) {
-        print('还原文件读取权限验证失败: $e');
+        LogManager.e('BackupManagementService', '还原文件读取权限验证失败', error: e);
         return false;
       }
     } catch (e) {
-      print('验证还原路径时出错: $e');
+      LogManager.e('BackupManagementService', '验证还原路径时出错', error: e);
       return false;
     }
   }
@@ -387,72 +390,79 @@ class BackupManagementService {
   Future<List<FileSystemEntity>> getAvailableRestoreFiles() async {
     try {
       final List<FileSystemEntity> allFiles = [];
-      
+
       // 从主备份路径获取
       if (_backupPath.isNotEmpty) {
         final primaryFiles = await _getRestoreFilesFromPath(_backupPath);
         allFiles.addAll(primaryFiles);
       }
-      
+
       // 从备用备份路径获取
       if (_backupPath2.isNotEmpty) {
         final secondaryFiles = await _getRestoreFilesFromPath(_backupPath2);
         allFiles.addAll(secondaryFiles);
       }
-      
+
       // 按修改时间排序（最新的在前）
       allFiles.sort((a, b) {
-        return File(b.path).lastModifiedSync().compareTo(File(a.path).lastModifiedSync());
+        return File(b.path)
+            .lastModifiedSync()
+            .compareTo(File(a.path).lastModifiedSync());
       });
-      
+
       return allFiles;
     } catch (e) {
-      print('获取可用还原文件列表时出错: $e');
+      LogManager.e('BackupManagementService', '获取可用还原文件列表时出错', error: e);
       return [];
     }
   }
 
-  Future<List<FileSystemEntity>> _getRestoreFilesFromPath(String pathStr) async {
+  Future<List<FileSystemEntity>> _getRestoreFilesFromPath(
+      String pathStr) async {
     try {
       final directory = Directory(pathStr);
       if (!await directory.exists()) return [];
-      
+
       final files = await directory
           .list()
-          .where((entity) => entity is File && 
+          .where((entity) =>
+              entity is File &&
               (entity.path.endsWith('.db') || entity.path.endsWith('.sql')))
           .toList();
-      
+
       return files;
     } catch (e) {
-      print('从路径获取还原文件时出错: $pathStr, $e');
+      LogManager.e('BackupManagementService', '从路径获取还原文件时出错: $pathStr, $e');
       return [];
     }
   }
 
   /// 还原前备份策略
   Future<String?> createPreRestoreBackup() async {
+    LogManager.i('BackupManagementService', '开始创建还原前备份');
     try {
       if (_backupPath.isEmpty) {
-        print('未设置备份路径，无法创建还原前备份');
+        LogManager.e('BackupManagementService', '未设置备份路径，无法创建还原前备份');
         return null;
       }
-      
+
       // 创建还原前备份
-      final timestamp = DateTimeFormatter.nowDbString().replaceAll(':', '-').replaceAll(' ', '_');
+      final timestamp = DateTimeFormatter.nowDbString()
+          .replaceAll(':', '-')
+          .replaceAll(' ', '_');
       final backupFileName = 'pre_restore_backup_$timestamp.db';
       final backupPath = path.join(_backupPath, backupFileName);
-      
+
       // 确保备份目录存在
       final backupDir = Directory(_backupPath);
       if (!await backupDir.exists()) {
         await backupDir.create(recursive: true);
       }
-      
-      print('已创建还原前备份: $backupPath');
+
+      LogManager.i('BackupManagementService', '已创建还原前备份: $backupPath');
       return backupPath;
     } catch (e) {
-      print('创建还原前备份失败: $e');
+      LogManager.e('BackupManagementService', '创建还原前备份失败', error: e);
       return null;
     }
   }
@@ -466,28 +476,27 @@ class BackupManagementService {
     try {
       if (success) {
         // 还原成功，可以清理临时文件
-        if (preRestoreBackupPath != null && await File(preRestoreBackupPath).exists()) {
+        if (preRestoreBackupPath != null &&
+            await File(preRestoreBackupPath).exists()) {
           // 可以选择保留或删除还原前备份
           // await File(preRestoreBackupPath).delete();
-          print('还原成功，还原前备份保留在: $preRestoreBackupPath');
         }
       } else {
         // 还原失败，保留还原前备份
         if (preRestoreBackupPath != null) {
-          print('还原失败，还原前备份保留在: $preRestoreBackupPath');
+          LogManager.e('BackupManagementService', '还原失败，还原前备份保留在',
+              error: preRestoreBackupPath);
         }
       }
-      
-      print('还原后清理完成');
     } catch (e) {
-      print('还原后清理时出错: $e');
+      LogManager.e('BackupManagementService', '还原后清理时出错', error: e);
     }
   }
 
   /// 还原文件类型检测
   String detectRestoreFileType(String filePath) {
     final extension = path.extension(filePath).toLowerCase();
-    
+
     switch (extension) {
       case '.db':
       case '.sqlite':
@@ -507,10 +516,10 @@ class BackupManagementService {
       if (!await file.exists()) {
         return {'error': '文件不存在'};
       }
-      
+
       final stat = await file.stat();
       final fileType = detectRestoreFileType(filePath);
-      
+
       return {
         'path': filePath,
         'name': path.basename(filePath),
@@ -533,7 +542,6 @@ class BackupManagementService {
   }) async {
     // 这里可以保存还原进度到设置中
     // 目前先打印日志，后续可以扩展为持久化存储
-    print('还原进度: $operation $current/$total ${detail ?? ''}');
   }
 
   /// 还原历史记录管理
@@ -547,15 +555,13 @@ class BackupManagementService {
     try {
       // 这里可以记录还原操作到日志中
       // 目前先打印日志，后续可以扩展为持久化存储
-      print('还原操作记录: $operation, 文件: $filePath, 结果: ${success ? '成功' : '失败'}');
+
       if (errorMessage != null) {
-        print('错误信息: $errorMessage');
+        LogManager.e('BackupManagementService', '错误信息', error: errorMessage);
       }
-      if (preRestoreBackupPath != null) {
-        print('还原前备份: $preRestoreBackupPath');
-      }
+      if (preRestoreBackupPath != null) {}
     } catch (e) {
-      print('记录还原操作时出错: $e');
+      LogManager.e('BackupManagementService', '记录还原操作时出错', error: e);
     }
   }
 
@@ -567,34 +573,31 @@ class BackupManagementService {
     try {
       // 检查文件类型是否匹配数据源
       final fileType = detectRestoreFileType(filePath);
-      
+
       if (targetDataSource == 'mysql' && fileType != 'mysql') {
-        print('MySQL数据源不能使用SQLite备份文件');
         return false;
       }
-      
+
       if (targetDataSource == 'sqlite' && fileType != 'sqlite') {
-        print('SQLite数据源不能使用MySQL备份文件');
         return false;
       }
-      
+
       // 检查文件是否有效
       final fileInfo = await getRestoreFileInfo(filePath);
       if (fileInfo.containsKey('error')) {
-        print('文件无效: ${fileInfo['error']}');
         return false;
       }
-      
+
       // 检查备份路径状态
       final backupStatus = await checkBackupPathStatus();
       if (backupStatus['hasValidPath'] != true) {
-        print('备份路径无效，无法创建还原前备份');
+        LogManager.e('BackupManagementService', '备份路径无效，无法创建还原前备份');
         return false;
       }
-      
+
       return true;
     } catch (e) {
-      print('验证还原策略时出错: $e');
+      LogManager.e('BackupManagementService', '验证还原策略时出错', error: e);
       return false;
     }
   }

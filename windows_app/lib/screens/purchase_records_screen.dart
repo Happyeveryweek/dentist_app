@@ -1,34 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'dart:ui' as ui;
-import 'dart:typed_data';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 
 import '../models/purchase_record.dart';
 import '../models/purchase_item.dart';
-import '../models/material.dart' as material_models;
 import '../providers/purchase_provider.dart';
-import '../providers/material_provider.dart';
-import '../providers/database_provider.dart';
-import '../providers/user_provider.dart';
-import '../providers/app_state.dart';
 import '../widgets/mysql_connection_warning.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dental_icons.dart';
 import '../widgets/unified_search_field.dart';
-import '../widgets/modern_date_picker.dart';
 import '../features/purchases/widgets/purchase_export_dialog.dart';
 import '../widgets/success_toast.dart';
 import '../features/purchases/widgets/purchase_statistics_dialog.dart';
-import '../features/purchases/widgets/material_selection_dialog.dart';
 import '../features/purchases/widgets/purchase_detail_dialog.dart';
 import '../features/purchases/widgets/purchase_form_dialog.dart'
     show showPurchaseFormDialog;
 import '../features/purchases/widgets/stat_card.dart';
 import '../features/purchases/widgets/pagination_widget.dart';
 import '../services/purchase_export_service.dart';
+import '../utils/log_manager.dart';
 
 class PurchaseRecordsScreen extends StatefulWidget {
   const PurchaseRecordsScreen({Key? key}) : super(key: key);
@@ -157,7 +147,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
       _totalAmount =
           records.fold<double>(0.0, (sum, record) => sum + record.totalAmount);
     } catch (e) {
-      print('加载统计信息失败: $e');
+      LogManager.e('PurchaseRecordsScreen', '加载统计信息失败', error: e);
       _totalQuantity = 0;
       _totalAmount = 0.0;
     }
@@ -181,15 +171,20 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
     // 获取该采购记录的所有采购项目
     List<PurchaseItem> purchaseItems = [];
     try {
+      final recordId = record.id;
+      if (recordId == null) {
+        AppToastManager.showError(context, message: '采购记录 ID 为空');
+        return;
+      }
       final purchaseProvider =
           Provider.of<PurchaseProvider>(context, listen: false);
       purchaseItems =
-          await purchaseProvider.getPurchaseItemsByRecordId(record.id!);
-      print('成功加载采购项目: ${purchaseItems.length} 项');
+          await purchaseProvider.getPurchaseItemsByRecordId(recordId);
     } catch (e) {
-      print('加载采购项目失败: $e');
+      LogManager.e('PurchaseRecordsScreen', '加载采购项目失败', error: e);
     }
 
+    if (!mounted) return;
     await PurchaseDetailDialog.show(
       context: context,
       record: record,
@@ -209,114 +204,6 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
     );
   }
 
-  Widget _buildStatItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    return Column(
-      children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-                fontSize: 12,
-              ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: color,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDetailItemCard(PurchaseItem item) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Row(
-          children: [
-            // 材料名称
-            Expanded(
-              flex: 3,
-              child: Text(
-                item.materialName,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                    ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            // 数量
-            Expanded(
-              flex: 1,
-              child: Text(
-                '${item.quantity}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.green[700],
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            // 单价
-            Expanded(
-              flex: 1,
-              child: Text(
-                '¥${item.unitPrice.toStringAsFixed(2)}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.blue[700],
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            // 单位
-            Expanded(
-              flex: 1,
-              child: Text(
-                item.formattedUnit,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.purple[700],
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            // 总价
-            Expanded(
-              flex: 1,
-              child: Text(
-                '¥${item.totalPrice.toStringAsFixed(2)}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.orange[700],
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                    ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _deletePurchaseRecord(PurchaseRecord record) async {
     final confirmed = await DeleteConfirmDialogManager.showPurchaseRecordDelete(
       context,
@@ -326,14 +213,23 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
 
     if (confirmed == true) {
       try {
+        final recordId = record.id;
+        if (recordId == null) {
+          if (!mounted) return;
+          AppToastManager.showError(context, message: '无法删除无 ID 的采购记录');
+          return;
+        }
+        if (!mounted) return;
         final purchaseProvider =
             Provider.of<PurchaseProvider>(context, listen: false);
-        final success = await purchaseProvider.deletePurchaseRecord(record.id!);
+        final success = await purchaseProvider.deletePurchaseRecord(recordId);
 
         if (success) {
           _loadData(showLoading: false);
+          if (!mounted) return;
           AppToastManager.showDelete(context, message: '采购记录删除成功');
         } else {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('删除失败'),
@@ -342,6 +238,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
           );
         }
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('删除失败: $e'),
@@ -353,7 +250,6 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
   }
 
   Widget _buildPurchaseRecordCard(PurchaseRecord record) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final isPurpleTheme =
         Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
 
@@ -372,7 +268,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                   : Theme.of(context).primaryColor,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
+            child: const Icon(
               DentalIcons.shoppingCart,
               color: Colors.white,
               size: 20,
@@ -394,7 +290,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
@@ -422,7 +318,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.1),
+                            color: Colors.orange.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
@@ -433,7 +329,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                               const SizedBox(width: 3),
                               Flexible(
                                 child: Text(
-                                  record.supplier!,
+                                  record.supplier ?? '',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
@@ -454,7 +350,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.purple.withOpacity(0.1),
+                            color: Colors.purple.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
@@ -465,7 +361,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                               const SizedBox(width: 3),
                               Flexible(
                                 child: Text(
-                                  record.doctor!,
+                                  record.doctor ?? '',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
@@ -491,7 +387,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
+                        color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
@@ -516,7 +412,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
+                        color: Colors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
@@ -543,7 +439,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withOpacity(0.1),
+                            color: Colors.grey.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
@@ -554,7 +450,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                               const SizedBox(width: 3),
                               Flexible(
                                 child: Text(
-                                  record.notes!,
+                                  record.notes ?? '',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
@@ -622,10 +518,10 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -656,7 +552,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                 gradient: DentalColors.primaryGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 DentalIcons.shoppingCart,
                 color: Colors.white,
                 size: 24,
@@ -687,6 +583,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               onPressed: () async {
                 await _loadData(showLoading: false);
+                if (!context.mounted) return;
                 // 使用公用成功提示组件
                 AppToastManager.showSuccess(context, message: '数据已刷新');
               },
@@ -712,14 +609,14 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              color: DentalColors.success.withOpacity(0.1),
+              color: DentalColors.success.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.success.withOpacity(0.3),
+                color: DentalColors.success.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.bar_chart_rounded,
                 color: DentalColors.success,
               ),
@@ -742,10 +639,10 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black.withOpacity(0.06)),
+                border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 12,
                       offset: const Offset(0, 2)),
                 ],
@@ -1005,13 +902,16 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
       final result = await exportService.saveImageToDownloads(imageData);
 
       if (result != null) {
+        if (!mounted) return;
         // 显示成功提示
         AppToastManager.showSuccess(context, message: '导出成功！图片已保存到下载目录');
       } else {
+        if (!mounted) return;
         // 显示失败提示
         AppToastManager.showError(context, message: '图片保存失败');
       }
     } catch (e) {
+      if (!mounted) return;
       AppToastManager.showError(context, message: '导出失败: $e');
     }
   }
@@ -1055,12 +955,12 @@ class _HoverablePurchaseRecordCardState
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: _isHovered
-                ? Color(0xFFE3F2FD) // 淡蓝色
+                ? const Color(0xFFE3F2FD) // 淡蓝色
                 : Colors.white,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 2,
                 offset: const Offset(0, 1),
               ),

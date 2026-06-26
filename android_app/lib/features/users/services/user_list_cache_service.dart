@@ -12,9 +12,11 @@ class UserListCacheService {
   int get cachedUsersCount => _cachedUsers?.length ?? 0;
 
   bool _isCacheValid() {
-    return _cachedUsers != null &&
-        _lastCacheTime != null &&
-        DateTime.now().difference(_lastCacheTime!) < _cacheValidDuration;
+    final cachedUsers = _cachedUsers;
+    final lastCacheTime = _lastCacheTime;
+    return cachedUsers != null &&
+        lastCacheTime != null &&
+        DateTime.now().difference(lastCacheTime) < _cacheValidDuration;
   }
 
   void updateCache(List<User> users) {

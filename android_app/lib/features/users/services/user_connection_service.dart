@@ -7,7 +7,15 @@ import 'user_connection_health_service.dart';
 /// 职责：MySQL 连接获取、连接状态检查、连接确保
 class UserConnectionService {
   final UserConnectionStateService _stateService = UserConnectionStateService();
-  late final UserConnectionHealthService _healthService;
+  UserConnectionHealthService? _healthServiceInstance;
+
+  UserConnectionHealthService get _healthService {
+    final service = _healthServiceInstance;
+    if (service == null) {
+      throw StateError('UserConnectionHealthService 尚未初始化');
+    }
+    return service;
+  }
 
   // Getters
   bool get isConnected => _stateService.isConnected;
@@ -21,7 +29,7 @@ class UserConnectionService {
     String dataSourceType = 'sqlite',
     dynamic databaseProvider,
   }) {
-    _healthService = UserConnectionHealthService(
+    _healthServiceInstance = UserConnectionHealthService(
       stateService: _stateService,
       mysqlConnection: mysqlConnection,
       database: database,

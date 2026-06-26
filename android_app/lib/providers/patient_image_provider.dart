@@ -27,18 +27,24 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
   bool initialized = false;
 
   // 服务实例
-  late final PatientImageConnectionService _connectionService;
-  late final PatientImageCacheService _cacheService;
-  late final PatientImageInitializationService _initializationService;
+  final PatientImageConnectionService _connectionService;
+  PatientImageCacheService? _cacheServiceInstance;
+  final PatientImageInitializationService _initializationService;
 
-  PatientImageProvider(this._databaseProvider) {
-    // 初始化服务
-    _connectionService = PatientImageConnectionService(_databaseProvider);
-    _cacheService = PatientImageCacheService(() => notifyListeners());
-    _initializationService = PatientImageInitializationService();
-
+  PatientImageProvider(this._databaseProvider)
+      : _connectionService = PatientImageConnectionService(_databaseProvider),
+        _initializationService = PatientImageInitializationService() {
+    _cacheServiceInstance = PatientImageCacheService(() => notifyListeners());
     // 添加应用生命周期监听
     WidgetsBinding.instance.addObserver(this);
+  }
+
+  PatientImageCacheService get _cacheService {
+    final service = _cacheServiceInstance;
+    if (service == null) {
+      throw StateError('PatientImageCacheService 尚未初始化');
+    }
+    return service;
   }
 
   @override
@@ -111,22 +117,24 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _validateDatabaseConnection() async {
     try {
       if (_dataSourceType == 'sqlite') {
-        if (_sqliteDatabase == null) {
+        final db = _sqliteDatabase;
+        if (db == null) {
           AppLogger.info('PatientImageProvider: SQLite数据库为null，跳过连接验证');
           return; // 不抛出异常，允许继续初始化
         }
 
         // 测试数据库连接
-        await _sqliteDatabase!.rawQuery('SELECT 1');
+        await db.rawQuery('SELECT 1');
         AppLogger.info('PatientImageProvider: SQLite连接验证成功');
       } else if (_dataSourceType == 'mysql') {
-        if (_mysqlConnection == null) {
+        final conn = _mysqlConnection;
+        if (conn == null) {
           AppLogger.info('PatientImageProvider: MySQL连接为null，跳过连接验证');
           return; // 不抛出异常，允许继续初始化
         }
 
         // 测试MySQL连接
-        await _mysqlConnection!.query('SELECT 1');
+        await conn.query('SELECT 1');
         AppLogger.info('PatientImageProvider: MySQL连接验证成功');
       }
     } catch (e) {
@@ -153,20 +161,22 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
   // 获取患者材料列表
   Future<List<PatientMaterial>> getPatientMaterials(int patientId) async {
     // 检查缓存
-    if (_cacheService.hasPatientMaterialsCache(patientId)) {
+    final cachedMaterials = _cacheService.getPatientMaterialsCache(patientId);
+    if (cachedMaterials != null) {
       AppLogger.info(
-        'PatientImageProvider: 使用缓存的患者材料数据: ${_cacheService.getPatientMaterialsCache(patientId)!.length} 条',
+        'PatientImageProvider: 使用缓存的患者材料数据: ${cachedMaterials.length} 条',
       );
-      return _cacheService.getPatientMaterialsCache(patientId)!;
+      return cachedMaterials;
     }
 
     if (_cacheService.isLoading(patientId)) {
-      return _cacheService.getPatientMaterialsCache(patientId) ?? [];
+      return [];
     }
 
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('getPatientMaterials', () async {
+    return await wrapper.wrapOperation('getPatientMaterials', () async {
       try {
         _cacheService.setLoadingState(patientId, true);
         _cacheService.clearError(patientId);
@@ -203,8 +213,9 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
 
         // 异步预加载图片数据，不阻塞主流程
         for (final material in materials) {
-          if (material.id != null) {
-            getMaterialImages(material.id!).catchError((e) {
+          final materialId = material.id;
+          if (materialId != null) {
+            getMaterialImages(materialId).catchError((e) {
               AppLogger.info('获取材料图片失败: $e');
               return <MaterialImage>[];
             });
@@ -227,16 +238,18 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
   // 获取材料图片列表
   Future<List<MaterialImage>> getMaterialImages(int materialId) async {
     // 检查缓存
-    if (_cacheService.hasMaterialImagesCache(materialId)) {
+    final cachedImages = _cacheService.getMaterialImagesCache(materialId);
+    if (cachedImages != null) {
       AppLogger.info(
-        'PatientImageProvider: 使用缓存的材料图片数据: ${_cacheService.getMaterialImagesCache(materialId)!.length} 张',
+        'PatientImageProvider: 使用缓存的材料图片数据: ${cachedImages.length} 张',
       );
-      return _cacheService.getMaterialImagesCache(materialId)!;
+      return cachedImages;
     }
 
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('getMaterialImages', () async {
+    return await wrapper.wrapOperation('getMaterialImages', () async {
       try {
         // 检查是否已初始化
         if (!initialized) {
@@ -276,9 +289,10 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   // 获取患者所有图片（优化版本，避免重复查询）
   Future<List<MaterialImage>> getPatientImages(int patientId) async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('getPatientImages', () async {
+    return await wrapper.wrapOperation('getPatientImages', () async {
       try {
         // 检查是否有缓存的图片数据
         if (_cacheService.hasCachedData(patientId)) {
@@ -319,20 +333,21 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
         // 获取所有图片（批量获取，避免多次notifyListeners）
         List<MaterialImage> allImages = [];
         for (final material in materials) {
-          if (material.id != null) {
+          final materialId = material.id;
+          if (materialId != null) {
             try {
               List<MaterialImage> images = [];
               if (_currentDbType == 'sqlite') {
-                images = await _getMaterialImagesFromSQLite(material.id!);
+                images = await _getMaterialImagesFromSQLite(materialId);
               } else if (_currentDbType == 'mysql') {
-                images = await _getMaterialImagesFromMySQL(material.id!);
+                images = await _getMaterialImagesFromMySQL(materialId);
               }
 
               // 更新图片缓存
-              _cacheService.updateMaterialImagesCache(material.id!, images);
+              _cacheService.updateMaterialImagesCache(materialId, images);
               allImages.addAll(images);
             } catch (e) {
-              AppLogger.info('PatientImageProvider: 获取材料 ${material.id} 的图片失败: $e');
+              AppLogger.info('PatientImageProvider: 获取材料 $materialId 的图片失败: $e');
             }
           }
         }

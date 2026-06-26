@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 
-import '../theme/app_theme.dart';
 import '../models/appointment.dart';
 import '../models/patient.dart';
 import '../providers/appointment_provider.dart';
@@ -18,6 +17,7 @@ import '../features/appointments/widgets/appointment_form_dialog.dart';
 import '../utils/permission_utils.dart';
 import '../widgets/success_toast.dart';
 import './patient_detail_screen.dart';
+import '../utils/log_manager.dart';
 
 // 牙位映射表 - 从医生视角看患者牙齿
 final Map<String, String> positionMap = {
@@ -51,7 +51,6 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
 
   // 预约详情数据
   List<Map<String, String>> _teethData = [];
-  List<String> _treatments = [];
 
   @override
   void initState() {
@@ -76,13 +75,15 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
       );
 
       // 获取患者信息
-      final patient = appointment.patientId != null
-          ? await patientProvider.getPatient(appointment.patientId!)
+      final patientId = appointment.patientId;
+      final patient = patientId != null
+          ? await patientProvider.getPatient(patientId)
           : null;
 
       // 解析treatment_type字段，获取牙齿情况和治疗项目
-      if (appointment.treatment_type != null) {
-        _parseTreatmentTypeData(appointment.treatment_type!);
+      final treatmentType = appointment.treatmentType;
+      if (treatmentType != null) {
+        _parseTreatmentTypeData(treatmentType);
       }
 
       setState(() {
@@ -91,6 +92,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('加载预约数据失败: $e'), backgroundColor: Colors.red),
@@ -103,7 +105,11 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
   void _parseTreatmentTypeData(String treatmentTypeStr) {
     try {
       // 尝试解析为JSON
-      Map<String, dynamic> data = json.decode(treatmentTypeStr);
+      final decoded = json.decode(treatmentTypeStr);
+      if (decoded is! Map<String, dynamic>) {
+        return;
+      }
+      final data = decoded;
 
       // 提取牙齿情况数据
       if (data.containsKey('teethData')) {
@@ -113,18 +119,18 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
       }
 
       // 提取治疗项目数据
-      if (data.containsKey('treatments')) {
-        _treatments = List<String>.from(data['treatments']);
+      if (data.containsKey('treatments') || data.containsKey('treatmentTypes')) {
+        // 治疗项目数据已包含在 treatment_type 中，但当前界面未使用
       }
     } catch (e) {
       // 如果解析失败，可能是旧数据格式，直接设为治疗项目
-      print('解析treatment_type失败: $e');
+      LogManager.e('AppointmentDetailsScreen', '解析treatment_type失败', error: e);
 
       // 如果治疗类型包含多个项目（用顿号分隔），则解析为多选项目
       if (treatmentTypeStr.contains('、')) {
-        _treatments = treatmentTypeStr.split('、');
+        // 治疗项目数据未在界面中使用
       } else if (treatmentTypeStr.isNotEmpty) {
-        _treatments = [treatmentTypeStr];
+        // 治疗项目数据未在界面中使用
       }
     }
   }
@@ -133,23 +139,24 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
     _appointment = appointment;
     _patient = appointment.patient ?? _patient;
     _teethData = [];
-    _treatments = [];
 
-    if (appointment.treatment_type != null) {
-      _parseTreatmentTypeData(appointment.treatment_type!);
+    final treatmentType = appointment.treatmentType;
+    if (treatmentType != null) {
+      _parseTreatmentTypeData(treatmentType);
     }
   }
 
   void _changeAppointmentStatus(String newStatus) async {
-    if (_appointment == null) return;
+    final appointment = _appointment;
+    if (appointment == null) return;
 
     final appointmentProvider =
         Provider.of<AppointmentProvider>(context, listen: false);
 
     try {
-      final updatedAppointment = _appointment!.copyWith(
+      final updatedAppointment = appointment.copyWith(
         status: newStatus,
-        updated_at: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
       await appointmentProvider.updateAppointment(updatedAppointment);
 
@@ -173,10 +180,11 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
   }
 
   Future<void> _showEditAppointmentDialog() async {
-    if (_appointment == null) return;
+    final appointment = _appointment;
+    if (appointment == null) return;
 
     if (!PermissionUtils.canEditDoctor(
-        context, _appointment!.patient?.doctor ?? _patient?.doctor)) {
+        context, appointment.patient?.doctor ?? _patient?.doctor)) {
       AppToastManager.showError(
         context,
         message: '您只能编辑自己医生患者的预约',
@@ -187,14 +195,15 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
     final result = await showDialog<Appointment>(
       context: context,
       builder: (context) => AppointmentFormDialog(
-        initialDate: _appointment!.appointment_date,
-        appointment: _appointment,
+        initialDate: appointment.appointmentDate,
+        appointment: appointment,
         preselectedPatient: _patient,
       ),
     );
 
     if (result == null) return;
 
+    if (!mounted) return;
     final appointmentProvider =
         Provider.of<AppointmentProvider>(context, listen: false);
 
@@ -225,22 +234,25 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                 gradient: DentalColors.primaryGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.event_note_rounded,
                 color: Colors.white,
                 size: 24,
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              _isLoading
-                  ? '预约详情'
-                  : '预约: ${DateFormat('MM/dd HH:mm').format(_appointment!.appointmentDate)}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
+            Builder(builder: (context) {
+              final appointment = _appointment;
+              return Text(
+                _isLoading || appointment == null
+                    ? '预约详情'
+                    : '预约: ${DateFormat('MM/dd HH:mm').format(appointment.appointmentDate)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              );
+            }),
           ],
         ),
         backgroundColor: Colors.white,
@@ -251,14 +263,14 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
             Container(
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: DentalColors.warning.withOpacity(0.1),
+                color: DentalColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: DentalColors.warning.withOpacity(0.3),
+                  color: DentalColors.warning.withValues(alpha: 0.3),
                 ),
               ),
               child: IconButton(
-                icon: Icon(
+                icon: const Icon(
                   Icons.edit_rounded,
                   color: DentalColors.warning,
                 ),
@@ -269,14 +281,14 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: DentalColors.info.withOpacity(0.1),
+              color: DentalColors.info.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.info.withOpacity(0.3),
+                color: DentalColors.info.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.refresh_rounded,
                 color: DentalColors.info,
               ),
@@ -288,89 +300,99 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _appointment == null
-              ? const Center(child: Text('预约信息不存在'))
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppointmentDetailsSummaryCard(appointment: _appointment!),
-                      const SizedBox(height: 16),
-                      AppointmentDetailsTeethSection(teethData: _teethData),
-                      const SizedBox(height: 16),
-                      AppointmentDetailsTreatmentSection(
-                          appointment: _appointment!),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: DentalColors.divider.withOpacity(0.5)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.update_rounded,
-                                    size: 16, color: Colors.orange),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '更新预约状态',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                    color: DentalColors.onSurface,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                _buildStatusButton('已预约', Colors.blue),
-                                _buildStatusButton('已完成', Colors.green),
-                                _buildStatusButton('已取消', Colors.red),
-                                _buildStatusButton('未到诊', Colors.orange),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      if (_appointment!.notes != null &&
-                          _appointment!.notes!.isNotEmpty)
-                        _buildInfoRow('备注', _appointment!.notes!),
-                      if (_appointment!.cost != null)
-                        _buildInfoRow(
-                            '费用', '¥${_appointment!.cost!.toStringAsFixed(2)}'),
-                      const SizedBox(height: 12),
-                      if (_patient != null)
-                        AppointmentDetailsPatientCard(
-                          patient: _patient!,
-                          onViewDetails: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    PatientDetailScreen(patient: _patient!),
-                              ),
-                            );
-                          },
-                        ),
-                    ],
-                  ),
-                ),
+          : _buildBody(),
     );
   }
 
-  Widget _buildStatusButton(String status, Color color) {
-    final isCurrentStatus = _appointment!.status == status;
+  Widget _buildBody() {
+    final appointment = _appointment;
+    if (appointment == null) {
+      return const Center(child: Text('预约信息不存在'));
+    }
+
+    final patient = _patient;
+    final notes = appointment.notes;
+    final cost = appointment.cost;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppointmentDetailsSummaryCard(appointment: appointment),
+          const SizedBox(height: 16),
+          AppointmentDetailsTeethSection(teethData: _teethData),
+          const SizedBox(height: 16),
+          AppointmentDetailsTreatmentSection(appointment: appointment),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color:
+                      DentalColors.divider.withValues(alpha: 0.5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.update_rounded,
+                        size: 16, color: Colors.orange),
+                    SizedBox(width: 6),
+                    Text(
+                      '更新预约状态',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: DentalColors.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildStatusButton(appointment, '已预约', Colors.blue),
+                    _buildStatusButton(appointment, '已完成', Colors.green),
+                    _buildStatusButton(appointment, '已取消', Colors.red),
+                    _buildStatusButton(appointment, '未到诊', Colors.orange),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (notes != null && notes.isNotEmpty)
+            _buildInfoRow('备注', notes),
+          if (cost != null)
+            _buildInfoRow(
+                '费用', '¥${cost.toStringAsFixed(2)}'),
+          const SizedBox(height: 12),
+          if (patient != null)
+            AppointmentDetailsPatientCard(
+              patient: patient,
+              onViewDetails: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        PatientDetailScreen(patient: patient),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusButton(Appointment appointment, String status, Color color) {
+    final isCurrentStatus = appointment.status == status;
 
     // 获取状态对应的转换后状态文本
     String statusText;
@@ -402,7 +424,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
             color: isCurrentStatus ? color : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: color.withOpacity(isCurrentStatus ? 1.0 : 0.6),
+              color: color.withValues(alpha: isCurrentStatus ? 1.0 : 0.6),
               width: 1,
             ),
           ),
@@ -427,12 +449,12 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
         color: DentalColors.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: DentalColors.divider.withOpacity(0.3),
+          color: DentalColors.divider.withValues(alpha: 0.3),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: DentalColors.primary.withOpacity(0.05),
+            color: DentalColors.primary.withValues(alpha: 0.05),
             blurRadius: 8,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -445,10 +467,10 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: DentalColors.primary.withOpacity(0.1),
+              color: DentalColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.info_outline_rounded,
               size: 16,
               color: DentalColors.primary,
@@ -461,7 +483,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                     color: DentalColors.onSurfaceVariant,
@@ -470,7 +492,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 15,
                     color: DentalColors.onSurface,
                   ),

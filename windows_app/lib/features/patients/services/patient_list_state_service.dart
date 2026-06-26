@@ -110,10 +110,11 @@ class PatientListStateService {
     required PatientProvider patientProvider,
     required Patient patient,
   }) async {
-    if (patient.id == null) return patient;
+    final patientId = patient.id;
+    if (patientId == null) return patient;
 
     try {
-      final freshPatient = await patientProvider.getPatient(patient.id!);
+      final freshPatient = await patientProvider.getPatient(patientId);
       if (freshPatient == null) {
         return patient;
       }

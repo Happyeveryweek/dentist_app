@@ -67,9 +67,11 @@ class StructureCheckResultDialog extends StatelessWidget {
   }
 
   _StructureCheckDisplayState _buildDisplayState() {
-    final errors = (result['errors'] as List?)?.cast<String>() ?? const <String>[];
+    final errors =
+        (result['errors'] as List?)?.cast<String>() ?? const <String>[];
     final missingTables = (result['missingTables'] as int?) ?? 0;
-    final structureChanges = DatabaseCheckWidgets.getActionableStructureChangeCount(result);
+    final structureChanges =
+        DatabaseCheckWidgets.getActionableStructureChangeCount(result);
 
     final hasStructuralIssues = missingTables > 0 || structureChanges > 0;
     final hasWarnings = !hasStructuralIssues && errors.isNotEmpty;
@@ -153,7 +155,8 @@ class StructureCheckResultDialog extends StatelessWidget {
   }
 
   Widget _buildStatisticsSection() {
-    final actionableChanges = DatabaseCheckWidgets.getActionableStructureChangeCount(result);
+    final actionableChanges =
+        DatabaseCheckWidgets.getActionableStructureChangeCount(result);
 
     return Container(
       width: double.infinity,
@@ -168,7 +171,8 @@ class StructureCheckResultDialog extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.analytics_outlined, size: 24, color: Colors.blue.shade700),
+              Icon(Icons.analytics_outlined,
+                  size: 24, color: Colors.blue.shade700),
               const SizedBox(width: 12),
               Text(
                 '检测统计',

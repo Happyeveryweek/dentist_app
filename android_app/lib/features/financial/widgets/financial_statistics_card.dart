@@ -82,7 +82,7 @@ class FinancialStatisticsCard extends StatelessWidget {
                                 '总欠费',
                                 '¥${NumberFormat('#,##0').format(totalOutstanding)}',
                                 Icons.money_off,
-                                Colors.red[700]!,
+                                Colors.red.shade700,
                               ),
                             ),
                             Expanded(

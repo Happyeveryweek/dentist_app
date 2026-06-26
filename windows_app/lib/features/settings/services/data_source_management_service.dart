@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:mysql1/mysql1.dart';
 import 'package:dentist_app_windows/utils/datetime_formatter.dart';
 import 'package:path/path.dart' as path;
+import '../../../utils/log_manager.dart';
 
 /// 数据源管理服务
 /// 负责数据源的配置和管理，包括SQLite和MySQL
@@ -29,7 +30,8 @@ class DataSourceManagementService {
   Map<String, dynamic>? _mysqlSettings;
   Map<String, dynamic>? _lastMySQLSettings;
   String _backupDataSource = 'sqlite';
-  Map<String, String> _moduleDataSources = Map<String, String>.from(_defaultModuleDataSources);
+  Map<String, String> _moduleDataSources =
+      Map<String, String>.from(_defaultModuleDataSources);
 
   String get dataSourceType => _dataSourceType;
   String get dataSourceMode => _dataSourceMode;
@@ -43,10 +45,13 @@ class DataSourceManagementService {
   Map<String, dynamic>? get mysqlSettings => _mysqlSettings;
   Map<String, dynamic>? get lastMySQLSettings => _lastMySQLSettings;
   String get backupDataSource => _backupDataSource;
-  Map<String, String> get moduleDataSources => Map<String, String>.from(_moduleDataSources);
-  Map<String, String> get defaultModuleDataSources => Map<String, String>.from(_defaultModuleDataSources);
+  Map<String, String> get moduleDataSources =>
+      Map<String, String>.from(_moduleDataSources);
+  Map<String, String> get defaultModuleDataSources =>
+      Map<String, String>.from(_defaultModuleDataSources);
 
-  Map<String, String> _normalizeModuleDataSources(Map<String, String> moduleDataSources) {
+  Map<String, String> _normalizeModuleDataSources(
+      Map<String, String> moduleDataSources) {
     final normalized = Map<String, String>.from(_defaultModuleDataSources);
     normalized.addAll(moduleDataSources);
     return normalized;
@@ -74,7 +79,7 @@ class DataSourceManagementService {
           );
         }
       } catch (e) {
-        print('解析模块数据源配置出错: $e');
+        LogManager.e('DataSourceManagementService', '解析模块数据源配置出错', error: e);
       }
     }
 
@@ -190,10 +195,8 @@ class DataSourceManagementService {
         'username': _mysqlUsername,
         'password': _mysqlPassword,
       };
-
-      print('保存MySQL设置成功');
     } catch (e) {
-      print('保存MySQL设置失败: $e');
+      LogManager.e('DataSourceManagementService', '保存MySQL设置失败', error: e);
     }
   }
 
@@ -211,9 +214,9 @@ class DataSourceManagementService {
   /// 验证MySQL设置是否完整
   bool isMySQLSettingsComplete() {
     return _mysqlHost.isNotEmpty &&
-           _mysqlPort.isNotEmpty &&
-           _mysqlDatabase.isNotEmpty &&
-           _mysqlUsername.isNotEmpty;
+        _mysqlPort.isNotEmpty &&
+        _mysqlDatabase.isNotEmpty &&
+        _mysqlUsername.isNotEmpty;
   }
 
   /// 重置MySQL设置到默认值
@@ -230,8 +233,6 @@ class DataSourceManagementService {
       username: _mysqlUsername,
       password: _mysqlPassword,
     );
-
-    print('MySQL设置已重置为默认值');
   }
 
   /// 清除MySQL设置
@@ -244,8 +245,6 @@ class DataSourceManagementService {
 
     _mysqlSettings = null;
     _lastMySQLSettings = null;
-
-    print('MySQL设置已清除');
   }
 
   /// 获取数据源类型（带验证）
@@ -253,7 +252,6 @@ class DataSourceManagementService {
     if (_dataSourceType == 'mysql' && !isMySQLSettingsComplete()) {
       // 如果MySQL设置不完整，自动切换到SQLite
       _dataSourceType = 'sqlite';
-      print('MySQL设置不完整，自动切换到SQLite');
     }
     return _dataSourceType;
   }
@@ -265,7 +263,9 @@ class DataSourceManagementService {
 
   /// 获取指定模块的数据源类型
   String getModuleDataSource(String module) {
-    return _moduleDataSources[module] ?? _defaultModuleDataSources[module] ?? 'sqlite';
+    return _moduleDataSources[module] ??
+        _defaultModuleDataSources[module] ??
+        'sqlite';
   }
 
   /// 检查模块是否使用MySQL数据源
@@ -316,8 +316,6 @@ class DataSourceManagementService {
     required String password,
   }) async {
     try {
-      print('开始测试MySQL连接...');
-      
       // 创建临时连接进行测试
       final conn = await MySqlConnection.connect(
         ConnectionSettings(
@@ -328,39 +326,37 @@ class DataSourceManagementService {
           password: password,
         ),
       );
-      
+
       // 测试连接是否成功
       await conn.query('SELECT 1');
-      
+
       // 关闭连接
       await conn.close();
-      
-      print('MySQL连接测试成功');
+
       return true;
     } catch (e) {
-      print('MySQL连接测试失败: $e');
+      LogManager.e('DataSourceManagementService', 'MySQL连接测试失败', error: e);
       return false;
     }
   }
 
   /// 数据库导入功能
-  Future<void> importDatabase(String importFilePath, {
-    required Function(String, String, bool, {String? errorMessage, String? preRestoreBackupPath}) logRestoreOperation,
+  Future<void> importDatabase(
+    String importFilePath, {
+    required Function(String, String, bool,
+            {String? errorMessage, String? preRestoreBackupPath})
+        logRestoreOperation,
     required String Function(String) detectRestoreFileType,
-    required Future<bool> Function({required String filePath, required String targetDataSource}) validateRestoreStrategy,
+    required Future<bool> Function(
+            {required String filePath, required String targetDataSource})
+        validateRestoreStrategy,
   }) async {
     try {
-      print('开始导入数据库: $importFilePath');
-      
       // 验证文件存在
       final importFile = File(importFilePath);
       if (!await importFile.exists()) {
         throw Exception('导入文件不存在: $importFilePath');
       }
-
-      // 检查文件类型
-      final fileType = detectRestoreFileType(importFilePath);
-      print('检测到文件类型: $fileType');
 
       // 验证导入策略
       final isValid = await validateRestoreStrategy(
@@ -379,11 +375,9 @@ class DataSourceManagementService {
         true,
         preRestoreBackupPath: null,
       );
-
-      print('数据库导入完成: $importFilePath');
     } catch (e) {
-      print('导入数据库时出错: $e');
-      
+      LogManager.e('DataSourceManagementService', '导入数据库时出错', error: e);
+
       // 记录导入失败
       logRestoreOperation(
         '数据库导入',
@@ -392,7 +386,7 @@ class DataSourceManagementService {
         errorMessage: e.toString(),
         preRestoreBackupPath: null,
       );
-      
+
       rethrow;
     }
   }
@@ -404,16 +398,16 @@ class DataSourceManagementService {
     required Function(String) logBackupFailure,
   }) async {
     try {
-      print('开始导出数据库...');
-      
       if (_dataSourceType.isEmpty) {
         throw Exception('数据源类型未设置');
       }
 
       // 生成导出文件名
-      final timestamp = DateTimeFormatter.nowDbString().replaceAll(':', '-').replaceAll(' ', '_');
+      final timestamp = DateTimeFormatter.nowDbString()
+          .replaceAll(':', '-')
+          .replaceAll(' ', '_');
       final exportFileName = 'export_${_dataSourceType}_$timestamp';
-      
+
       String exportPath;
       if (_dataSourceType == 'mysql') {
         exportPath = '$exportFileName.sql';
@@ -424,19 +418,17 @@ class DataSourceManagementService {
       // 这里可以添加实际的导出逻辑
       // 目前返回模拟路径
       final fullPath = path.join(backupPath, exportPath);
-      
-      print('数据库导出完成: $fullPath');
-      
+
       // 记录导出操作
       logBackupSuccess(fullPath);
-      
+
       return fullPath;
     } catch (e) {
-      print('导出数据库时出错: $e');
-      
+      LogManager.e('DataSourceManagementService', '导出数据库时出错', error: e);
+
       // 记录导出失败
       logBackupFailure('导出失败: $e');
-      
+
       rethrow;
     }
   }

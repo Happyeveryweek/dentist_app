@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../widgets/unified_search_field.dart';
 
@@ -50,9 +49,12 @@ class FinancialSearchBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.black.withOpacity(0.06)),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 2)),
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 2)),
           ],
         ),
         child: Row(
@@ -75,7 +77,8 @@ class FinancialSearchBar extends StatelessWidget {
             PopupMenuButton<String>(
               icon: const Icon(Icons.sort_rounded, color: Colors.black87),
               onSelected: onSortChanged,
-              itemBuilder: (BuildContext context) => _buildSortMenuItems(context),
+              itemBuilder: (BuildContext context) =>
+                  _buildSortMenuItems(context),
             ),
             const SizedBox(width: 12),
             // 时间范围选择
@@ -87,7 +90,8 @@ class FinancialSearchBar extends StatelessWidget {
                   color: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(color: Colors.grey.withOpacity(0.12)),
+                    side:
+                        BorderSide(color: Colors.grey.withValues(alpha: 0.12)),
                   ),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
@@ -97,15 +101,20 @@ class FinancialSearchBar extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.calendar_today, size: 16, color: Colors.black54),
+                          const Icon(Icons.calendar_today,
+                              size: 16, color: Colors.black54),
                           const SizedBox(width: 6),
                           ConstrainedBox(
-                            constraints: const BoxConstraints(minWidth: 120, maxWidth: 280),
+                            constraints: const BoxConstraints(
+                                minWidth: 120, maxWidth: 280),
                             child: Text(
                               (startDate == null && endDate == null)
                                   ? '全部时间'
-                                  : '${DateFormat('yyyy-MM-dd').format(startDate!)} - ${DateFormat('yyyy-MM-dd').format(endDate!)}',
-                              style: const TextStyle(color: Colors.black87, fontSize: 12, fontWeight: FontWeight.w500),
+                                  : '${DateFormat('yyyy-MM-dd').format(startDate ?? DateTime.now())} - ${DateFormat('yyyy-MM-dd').format(endDate ?? DateTime.now())}',
+                              style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -114,7 +123,8 @@ class FinancialSearchBar extends StatelessWidget {
                             InkWell(
                               onTap: onDateRangeCleared,
                               borderRadius: BorderRadius.circular(12),
-                              child: const Icon(Icons.close_rounded, size: 16, color: Colors.black45),
+                              child: const Icon(Icons.close_rounded,
+                                  size: 16, color: Colors.black45),
                             ),
                           ],
                         ],
@@ -134,11 +144,15 @@ class FinancialSearchBar extends StatelessWidget {
                   color: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.grey.withOpacity(0.12)),
+                    side:
+                        BorderSide(color: Colors.grey.withValues(alpha: 0.12)),
                   ),
                   elevation: 0.5,
                   child: IconButton(
-                    icon: Icon(Icons.tune, color: hasAdvancedFilter ? DentalColors.primary : Colors.grey[700]),
+                    icon: Icon(Icons.tune,
+                        color: hasAdvancedFilter
+                            ? DentalColors.primary
+                            : Colors.grey[700]),
                     tooltip: '高级筛选',
                     onPressed: onAdvancedFilterTap,
                   ),

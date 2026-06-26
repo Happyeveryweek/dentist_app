@@ -12,10 +12,10 @@ class DataSourceFormWidgets {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.05),
+        color: iconColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: iconColor.withOpacity(0.2),
+          color: iconColor.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -24,7 +24,7 @@ class DataSourceFormWidgets {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: iconColor, size: 22),
@@ -45,7 +45,9 @@ class DataSourceFormWidgets {
                 Text(
                   value,
                   style: TextStyle(
-                    color: value == '未设置' ? Colors.grey.shade500 : Colors.grey.shade700,
+                    color: value == '未设置'
+                        ? Colors.grey.shade500
+                        : Colors.grey.shade700,
                     fontSize: 14,
                   ),
                 ),
@@ -75,7 +77,7 @@ class DataSourceFormWidgets {
         border: Border.all(color: Colors.grey.shade300),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -93,7 +95,7 @@ class DataSourceFormWidgets {
             margin: const EdgeInsets.all(8),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: iconColor, size: 20),
@@ -108,7 +110,8 @@ class DataSourceFormWidgets {
           ),
           filled: true,
           fillColor: Colors.transparent,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );
@@ -124,10 +127,10 @@ class DataSourceFormWidgets {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: iconColor.withOpacity(0.05),
+        color: iconColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: iconColor.withOpacity(0.2),
+          color: iconColor.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -136,7 +139,7 @@ class DataSourceFormWidgets {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: iconColor, size: 22),
@@ -157,7 +160,9 @@ class DataSourceFormWidgets {
                 Text(
                   value,
                   style: TextStyle(
-                    color: value == '未设置' ? Colors.grey.shade500 : Colors.grey.shade700,
+                    color: value == '未设置'
+                        ? Colors.grey.shade500
+                        : Colors.grey.shade700,
                     fontSize: 14,
                   ),
                 ),
@@ -187,7 +192,7 @@ class DataSourceFormWidgets {
         border: Border.all(color: Colors.grey.shade300),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -205,7 +210,7 @@ class DataSourceFormWidgets {
             margin: const EdgeInsets.all(8),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: iconColor, size: 20),
@@ -220,20 +225,22 @@ class DataSourceFormWidgets {
           ),
           filled: true,
           fillColor: Colors.transparent,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
       ),
     );
   }
 
   /// 构建紧凑备份信息项
-  static Widget buildCompactBackupInfoItem(String label, String value, IconData icon, Color color) {
+  static Widget buildCompactBackupInfoItem(
+      String label, String value, IconData icon, Color color) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(4),
           ),
           child: Icon(

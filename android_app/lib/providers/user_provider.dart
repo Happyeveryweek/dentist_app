@@ -105,15 +105,17 @@ class UserProvider extends ChangeNotifier {
   // 获取当前数据源（必须可用，否则抛出异常）
   UserDataSource get _currentDataSource {
     if (_dataSourceType == 'mysql') {
-      if (_mysqlDataSource == null) {
+      final dataSource = _mysqlDataSource;
+      if (dataSource == null) {
         throw Exception('MySQL用户数据源未初始化');
       }
-      return _mysqlDataSource!;
+      return dataSource;
     } else {
-      if (_sqliteDataSource == null) {
+      final dataSource = _sqliteDataSource;
+      if (dataSource == null) {
         throw Exception('SQLite用户数据源未初始化');
       }
-      return _sqliteDataSource!;
+      return dataSource;
     }
   }
 
@@ -146,8 +148,9 @@ class UserProvider extends ChangeNotifier {
       getDataSourceType: () => _dataSourceType,
       notifyListeners: () => notifyListeners(),
       primeCurrentUserPermissions: (user) async {
-        if (_currentPermissionService != null) {
-          await _currentPermissionService!.primeCurrentUserPermissions(user);
+        final service = _currentPermissionService;
+        if (service != null) {
+          await service.primeCurrentUserPermissions(user);
         }
       },
       authenticateWithLocalSqlite: _authenticateWithLocalSqliteFallback,
@@ -262,10 +265,12 @@ class UserProvider extends ChangeNotifier {
       _database = result.database;
       _mysqlConnection = result.mysqlConnection;
       _dataSourceType = result.dataSourceType;
-      if (_dataSourceType == 'mysql' && _mysqlConnection != null) {
-        setMySqlDataSource(_mysqlConnection!);
-      } else if (_database != null) {
-        setSqliteDataSource(_database!);
+      final conn = _mysqlConnection;
+      final db = _database;
+      if (_dataSourceType == 'mysql' && conn != null) {
+        setMySqlDataSource(conn);
+      } else if (db != null) {
+        setSqliteDataSource(db);
       }
       _isInitializedFlag = result.initialized;
 
@@ -310,32 +315,37 @@ class UserProvider extends ChangeNotifier {
 
   // 获取所有用户（带缓存）
   Future<List<User>> getAllUsers() async {
-    if (_crudService == null) return _cacheService.getCachedUsers() ?? [];
-    return await _crudService!.getAllUsers();
+    final crudService = _crudService;
+    if (crudService == null) return _cacheService.getCachedUsers() ?? [];
+    return await crudService.getAllUsers();
   }
 
   // 根据ID获取用户
   Future<User?> getUserById(int id) async {
-    if (_crudService == null) return null;
-    return await _crudService!.getUserById(id);
+    final crudService = _crudService;
+    if (crudService == null) return null;
+    return await crudService.getUserById(id);
   }
 
   // 创建用户
   Future<int> addUser(User user) async {
-    if (_crudService == null) return -1;
-    return await _crudService!.addUser(user);
+    final crudService = _crudService;
+    if (crudService == null) return -1;
+    return await crudService.addUser(user);
   }
 
   // 更新用户
   Future<bool> updateUser(User user) async {
-    if (_crudService == null) return false;
-    return await _crudService!.updateUser(user);
+    final crudService = _crudService;
+    if (crudService == null) return false;
+    return await crudService.updateUser(user);
   }
 
   // 删除用户
   Future<bool> deleteUser(int userId) async {
-    if (_crudService == null) return false;
-    return await _crudService!.deleteUser(userId);
+    final crudService = _crudService;
+    if (crudService == null) return false;
+    return await crudService.deleteUser(userId);
   }
 
   // 用户登录
@@ -345,8 +355,9 @@ class UserProvider extends ChangeNotifier {
 
   // 用户认证
   Future<User?> authenticateUser(String username, String password) async {
-    if (_authenticationService == null) return null;
-    final user = await _authenticationService!.authenticateUser(
+    final service = _authenticationService;
+    if (service == null) return null;
+    final user = await service.authenticateUser(
       username,
       password,
     );
@@ -415,8 +426,9 @@ class UserProvider extends ChangeNotifier {
 
   // 检查用户名是否存在
   Future<bool> isUsernameExists(String username, {int? excludeId}) async {
-    if (_validationService == null) return false;
-    return await _validationService!.isUsernameExists(
+    final service = _validationService;
+    if (service == null) return false;
+    return await service.isUsernameExists(
       username,
       excludeId: excludeId,
     );
@@ -424,13 +436,15 @@ class UserProvider extends ChangeNotifier {
 
   // 检查邮箱是否存在
   Future<bool> isEmailExists(String email, {int? excludeId}) async {
-    if (_validationService == null) return false;
-    return await _validationService!.isEmailExists(email, excludeId: excludeId);
+    final service = _validationService;
+    if (service == null) return false;
+    return await service.isEmailExists(email, excludeId: excludeId);
   }
 
   // 获取用户统计信息
   Future<Map<String, dynamic>> getUserStatistics() async {
-    if (_statisticsService == null) {
+    final service = _statisticsService;
+    if (service == null) {
       return {
         'totalUsers': 0,
         'adminCount': 0,
@@ -439,7 +453,7 @@ class UserProvider extends ChangeNotifier {
       };
     }
 
-    return await _statisticsService!.getUserStatistics();
+    return await service.getUserStatistics();
   }
 
   // ==================== 权限相关方法 ====================
@@ -451,15 +465,17 @@ class UserProvider extends ChangeNotifier {
       return null;
     }
 
-    if (_permissionService == null) return null;
+    final service = _permissionService;
+    if (service == null) return null;
 
-    return await _permissionService!.getUserPermissions(userId);
+    return await service.getUserPermissions(userId);
   }
 
   /// 检查用户是否有特定模块的权限
   Future<bool> hasModulePermission(int userId, String module) async {
-    if (_permissionService == null) return false;
-    return await _permissionService!.hasModulePermission(
+    final service = _permissionService;
+    if (service == null) return false;
+    return await service.hasModulePermission(
       userId,
       module,
       getUserById,
@@ -476,9 +492,10 @@ class UserProvider extends ChangeNotifier {
       return false;
     }
 
-    if (_permissionService == null) return false;
+    final service = _permissionService;
+    if (service == null) return false;
 
-    return await _permissionService!.updateUserPermissions(userId, permissions);
+    return await service.updateUserPermissions(userId, permissions);
   }
 
   /// 清除权限缓存
@@ -488,45 +505,52 @@ class UserProvider extends ChangeNotifier {
 
   /// 加载当前用户权限（登录成功后调用）
   Future<void> loadCurrentUserPermissions() async {
-    if (_currentPermissionService == null) return;
-    await _currentPermissionService!.loadCurrentUserPermissions();
+    final service = _currentPermissionService;
+    if (service == null) return;
+    await service.loadCurrentUserPermissions();
   }
 
   /// 刷新当前用户权限（强制重新加载）
   Future<void> refreshCurrentUserPermissions() async {
-    if (_currentPermissionService == null) return;
-    await _currentPermissionService!.refreshCurrentUserPermissions();
+    final service = _currentPermissionService;
+    if (service == null) return;
+    await service.refreshCurrentUserPermissions();
   }
 
   /// 检查当前用户是否有特定模块的权限
   Future<bool> hasCurrentUserModulePermission(String module) async {
-    if (_currentPermissionService == null) return false;
-    return await _currentPermissionService!.hasCurrentUserModulePermission(
+    final service = _currentPermissionService;
+    if (service == null) return false;
+    return await service.hasCurrentUserModulePermission(
       module,
     );
   }
 
   /// 获取当前用户权限配置
   Future<Map<String, bool>?> getCurrentUserPermissions() async {
-    if (_currentPermissionService == null) return null;
-    return await _currentPermissionService!.getCurrentUserPermissions();
+    final service = _currentPermissionService;
+    if (service == null) return null;
+    return await service.getCurrentUserPermissions();
   }
 
   /// 构建医生过滤条件（用于数据访问权限控制）
   String? buildDoctorFilter(User? user) {
-    if (_permissionService == null) return null;
-    return _permissionService!.buildDoctorFilter(user);
+    final service = _permissionService;
+    if (service == null) return null;
+    return service.buildDoctorFilter(user);
   }
 
   /// Android端不需要数据查看过滤 - 权限控制只在编辑/删除时生效
   bool shouldFilterByDoctor(User? user) {
-    if (_permissionService == null) return false;
-    return _permissionService!.shouldFilterByDoctor(user);
+    final service = _permissionService;
+    if (service == null) return false;
+    return service.shouldFilterByDoctor(user);
   }
 
   /// 修复数据库中的无效角色值
   Future<void> fixInvalidRoles() async {
-    if (_dataRepairService == null) return;
-    await _dataRepairService!.fixInvalidRoles();
+    final service = _dataRepairService;
+    if (service == null) return;
+    await service.fixInvalidRoles();
   }
 }

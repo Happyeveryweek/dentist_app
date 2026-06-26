@@ -43,7 +43,8 @@ class DataSourceConfigService {
   }
 
   /// 保存所有模块数据源配置
-  Future<void> saveAllModuleDataSources(Map<String, String> moduleDataSources) async {
+  Future<void> saveAllModuleDataSources(
+      Map<String, String> moduleDataSources) async {
     await settingsProvider.setAllModuleDataSources(moduleDataSources);
   }
 
@@ -59,7 +60,8 @@ class DataSourceConfigService {
   }) async {
     await databaseProvider.setDataSourceType(
       dataSourceType,
-      customSqlitePath: customSqlitePath?.isNotEmpty == true ? customSqlitePath : null,
+      customSqlitePath:
+          customSqlitePath?.isNotEmpty == true ? customSqlitePath : null,
     );
   }
 

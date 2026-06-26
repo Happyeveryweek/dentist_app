@@ -15,30 +15,33 @@ class HoverableStatCard extends StatefulWidget {
   State<HoverableStatCard> createState() => HoverableStatCardState();
 }
 
-
 class HoverableStatCardState extends State<HoverableStatCard> {
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      cursor: widget.onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      cursor: widget.onTap != null
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: InkWell(
         onTap: widget.onTap,
-        mouseCursor: widget.onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        mouseCursor: widget.onTap != null
+            ? SystemMouseCursors.click
+            : SystemMouseCursors.basic,
         borderRadius: BorderRadius.circular(16),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             color: _isHovered && widget.onTap != null
-                ? Color(0xFFE3F2FD)  // 淡蓝色
+                ? const Color(0xFFE3F2FD) // 淡蓝色
                 : Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),

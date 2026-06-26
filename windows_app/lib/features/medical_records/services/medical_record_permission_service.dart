@@ -17,7 +17,8 @@ class MedicalRecordPermissionService {
 
   /// 检查病历记录操作权限
   Future<void> checkMedicalRecordPermission(int recordId) async {
-    final currentUser = getUserProvider?.call()?.currentUser ?? getCurrentUser?.call();
+    final currentUser =
+        getUserProvider?.call()?.currentUser ?? getCurrentUser?.call();
     if (currentUser == null) {
       throw Exception('用户未登录');
     }
@@ -28,7 +29,7 @@ class MedicalRecordPermissionService {
     }
 
     // 非管理员用户需要检查是否是自己创建的病历记录
-    if (currentUser.doctor != null && currentUser.doctor!.isNotEmpty) {
+    if (currentUser.doctor?.isNotEmpty == true) {
       final record = await getMedicalRecordById(recordId);
       if (record == null) {
         throw Exception('病历记录不存在');
@@ -56,13 +57,15 @@ class MedicalRecordPermissionService {
 
   /// 检查当前用户是否为管理员
   bool get isCurrentUserAdmin {
-    final currentUser = getUserProvider?.call()?.currentUser ?? getCurrentUser?.call();
+    final currentUser =
+        getUserProvider?.call()?.currentUser ?? getCurrentUser?.call();
     return currentUser?.role == 'admin';
   }
 
   /// 获取当前用户的医生名称
   String? get currentDoctorName {
-    final currentUser = getUserProvider?.call()?.currentUser ?? getCurrentUser?.call();
+    final currentUser =
+        getUserProvider?.call()?.currentUser ?? getCurrentUser?.call();
     return currentUser?.doctor;
   }
 

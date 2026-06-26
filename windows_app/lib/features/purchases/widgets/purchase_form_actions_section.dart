@@ -36,12 +36,12 @@ class PurchaseFormActionsSection extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.grey.withOpacity(0.25),
+              color: Colors.grey.withValues(alpha: 0.25),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -53,14 +53,15 @@ class PurchaseFormActionsSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               onTap: onCancel,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.grey.withOpacity(0.15),
+                        color: Colors.grey.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Icon(
@@ -99,7 +100,7 @@ class PurchaseFormActionsSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.teal.withOpacity(0.3),
+                color: Colors.teal.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -111,12 +112,13 @@ class PurchaseFormActionsSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               onTap: isLoading ? null : onSave,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (isLoading) ...[
-                      SizedBox(
+                      const SizedBox(
                         width: 16,
                         height: 16,
                         child: CircularProgressIndicator(

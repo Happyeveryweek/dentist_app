@@ -28,9 +28,10 @@ class StructureLogDialog extends StatefulWidget {
     );
 
     // 获取数据库提供者和设置提供者
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    final settingsProvider =
+        Provider.of<SettingsProvider>(context, listen: false);
     final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-    
+
     // 确保SettingsProvider能够访问到数据库实例
     if (dbProvider.initialized) {
       settingsProvider.setDatabaseConnection(
@@ -38,10 +39,10 @@ class StructureLogDialog extends StatefulWidget {
         mysqlConnection: dbProvider.mysqlConnection,
       );
     }
-    
+
     // 获取结构检测日志
     final logs = await settingsProvider.getDatabaseStructureLogs(limit: 100);
-    
+
     // 关闭加载对话框
     if (context.mounted) {
       Navigator.of(context).pop();
@@ -84,9 +85,10 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
     );
 
     // 获取数据库提供者和设置提供者
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    final settingsProvider =
+        Provider.of<SettingsProvider>(context, listen: false);
     final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-    
+
     // 确保SettingsProvider能够访问到数据库实例
     if (dbProvider.initialized) {
       settingsProvider.setDatabaseConnection(
@@ -94,10 +96,10 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
         mysqlConnection: dbProvider.mysqlConnection,
       );
     }
-    
+
     // 获取结构检测日志
     final logs = await settingsProvider.getDatabaseStructureLogs(limit: 100);
-    
+
     // 关闭加载对话框
     if (mounted) {
       Navigator.of(context).pop();
@@ -123,76 +125,39 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
       );
 
       if (confirmed == true) {
-        final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-        final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-        
+        if (!mounted) return;
+        final settingsProvider =
+            Provider.of<SettingsProvider>(context, listen: false);
+        final dbProvider =
+            Provider.of<DatabaseProvider>(context, listen: false);
+
         // 确保SettingsProvider能够访问到数据库实例
         if (dbProvider.initialized) {
-          print('设置SettingsProvider数据库连接用于删除日志...');
           settingsProvider.setDatabaseConnection(
             database: dbProvider.database,
             mysqlConnection: dbProvider.mysqlConnection,
           );
         }
-        
+
         final success = await settingsProvider.clearAllDatabaseStructureLogs();
-        
+
         if (success) {
+          if (!mounted) return;
           // 使用公用成功提示组件
           AppToastManager.showSuccess(context, message: '所有日志已清空');
-          if (mounted) {
-            Navigator.of(context).pop();
-            _refreshLogs();
-          }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('清空日志失败'), backgroundColor: Colors.red),
-          );
-        }
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('清空失败: $e'), backgroundColor: Colors.red),
-      );
-    }
-  }
-
-  Future<void> _deleteLog(int logId) async {
-    try {
-      final confirmed = await DeleteConfirmDialogManager.show(
-        context,
-        title: '确认删除',
-        message: '确定要删除这条检测日志吗？',
-      );
-
-      if (confirmed == true) {
-        final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-        final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
-        
-        // 确保SettingsProvider能够访问到数据库实例
-        if (dbProvider.initialized) {
-          print('设置SettingsProvider数据库连接用于删除日志...');
-          settingsProvider.setDatabaseConnection(
-            database: dbProvider.database,
-            mysqlConnection: dbProvider.mysqlConnection,
-          );
-        }
-        
-        final success = await settingsProvider.deleteDatabaseStructureLog(logId);
-        
-        if (success) {
-          // 使用公用删除成功提示组件
-          AppToastManager.showDelete(context, message: '日志删除成功');
           _refreshLogs();
         } else {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('日志删除失败'), backgroundColor: Colors.red),
+            const SnackBar(
+                content: Text('清空日志失败'), backgroundColor: Colors.red),
           );
         }
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('删除失败: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('清空失败: $e'), backgroundColor: Colors.red),
       );
     }
   }
@@ -218,11 +183,12 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
                       label: const Text('刷新'),
                       onPressed: _refreshLogs,
                     ),
-                    if (widget.logs.isNotEmpty) TextButton.icon(
-                      icon: const Icon(Icons.delete_sweep),
-                      label: const Text('清空'),
-                      onPressed: _clearAllLogs,
-                    ),
+                    if (widget.logs.isNotEmpty)
+                      TextButton.icon(
+                        icon: const Icon(Icons.delete_sweep),
+                        label: const Text('清空'),
+                        onPressed: _clearAllLogs,
+                      ),
                   ],
                 ),
               ],
@@ -235,7 +201,8 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.info_outline, size: 48, color: Colors.blue),
+                          Icon(Icons.info_outline,
+                              size: 48, color: Colors.blue),
                           SizedBox(height: 16),
                           Text('暂无检测日志'),
                           SizedBox(height: 8),
@@ -247,9 +214,11 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
                       itemCount: widget.logs.length,
                       itemBuilder: (context, index) {
                         final log = widget.logs[index];
-                        return DatabaseCheckWidgets.buildLogItem(context, log, () {
+                        return DatabaseCheckWidgets.buildLogItem(context, log,
+                            () {
                           Navigator.of(context).pop();
-                          DatabaseCheckWidgets.showLogDetails(context, log, () => _refreshLogs());
+                          DatabaseCheckWidgets.showLogDetails(
+                              context, log, () => _refreshLogs());
                         });
                       },
                     ),

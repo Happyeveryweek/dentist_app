@@ -32,7 +32,7 @@ class MonthlyTrendChart extends StatelessWidget {
     }
 
     final maxValue = sortedMonths.fold<double>(0.0, (max, month) {
-      final collected = monthlyData[month]!['collected']!;
+      final collected = monthlyData[month]?['collected'] ?? 0.0;
       return collected > max ? collected : max;
     });
 
@@ -76,9 +76,9 @@ class MonthlyTrendChart extends StatelessWidget {
                 // 反转索引，使最近的月份显示在最上面
                 final reversedIndex = sortedMonths.length - 1 - index;
                 final month = sortedMonths[reversedIndex];
-                final data = monthlyData[month]!;
-                final collected = data['collected']!;
-                final records = data['records']!.toInt();
+                final data = monthlyData[month];
+                final collected = data?['collected'] ?? 0.0;
+                final records = (data?['records'] ?? 0.0).toInt();
 
                 final collectedRate = maxValue > 0 ? collected / maxValue : 0.0;
 
@@ -151,7 +151,7 @@ class MonthlyTrendChart extends StatelessWidget {
                               value: collectedRate,
                               backgroundColor: Colors.grey[200],
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.blue[600]!,
+                                Colors.blue.shade600,
                               ),
                               minHeight: 3,
                             ),

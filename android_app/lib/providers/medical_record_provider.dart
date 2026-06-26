@@ -83,15 +83,17 @@ class MedicalRecordProvider extends ChangeNotifier {
   // 获取当前数据源（必须可用，否则抛出异常）
   MedicalRecordDataSource get _currentDataSource {
     if (_dataSourceType == 'mysql') {
-      if (_mysqlDataSource == null) {
+      final dataSource = _mysqlDataSource;
+      if (dataSource == null) {
         throw Exception('MySQL病历数据源未初始化');
       }
-      return _mysqlDataSource!;
+      return dataSource;
     } else {
-      if (_sqliteDataSource == null) {
+      final dataSource = _sqliteDataSource;
+      if (dataSource == null) {
         throw Exception('SQLite病历数据源未初始化');
       }
-      return _sqliteDataSource!;
+      return dataSource;
     }
   }
 
@@ -130,7 +132,11 @@ class MedicalRecordProvider extends ChangeNotifier {
         );
         AppLogger.info('✅ MedicalRecordProvider MySQL数据源设置成功');
       } else {
-        _sqliteDataSource = SqliteMedicalRecordDataSource(result.database!);
+        final db = result.database;
+        if (db == null) {
+          throw Exception('SQLite数据库实例为空');
+        }
+        _sqliteDataSource = SqliteMedicalRecordDataSource(db);
         AppLogger.info('✅ MedicalRecordProvider SQLite数据源设置成功');
       }
 
@@ -167,8 +173,9 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 检查缓存是否有效
   bool _isCacheValid() {
-    if (_lastCacheTime == null) return false;
-    return DateTime.now().difference(_lastCacheTime!) < _cacheValidDuration;
+    final lastCacheTime = _lastCacheTime;
+    if (lastCacheTime == null) return false;
+    return DateTime.now().difference(lastCacheTime) < _cacheValidDuration;
   }
 
   // 强制刷新缓存
@@ -183,9 +190,10 @@ class MedicalRecordProvider extends ChangeNotifier {
   Future<List<PatientMedicalRecord>> getPatientMedicalRecords(
     int patientId,
   ) async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation(
+    return await wrapper.wrapOperation(
       'getPatientMedicalRecords',
       () async {
         try {
@@ -229,9 +237,10 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 获取单个病历记录
   Future<PatientMedicalRecord?> getMedicalRecord(int recordId) async {
-    if (_dbWrapper == null) return null;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return null;
 
-    return await _dbWrapper!.wrapOperation('getMedicalRecord', () async {
+    return await wrapper.wrapOperation('getMedicalRecord', () async {
       try {
         _setLoading(true);
         _setError(null);
@@ -251,9 +260,10 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 检查患者是否有病历记录
   Future<bool> hasMedicalRecords(int patientId) async {
-    if (_dbWrapper == null) return false;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return false;
 
-    return await _dbWrapper!.wrapOperation('hasMedicalRecords', () async {
+    return await wrapper.wrapOperation('hasMedicalRecords', () async {
       try {
         return await _currentDataSource.hasMedicalRecords(patientId);
       } catch (e) {
@@ -266,15 +276,17 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 获取病历模板
   Future<List<MedicalRecordTemplate>> getMedicalRecordTemplates() async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    final cachedTemplates = _cachedTemplates;
+    if (wrapper == null) return cachedTemplates ?? [];
 
-    return await _dbWrapper!.wrapOperation(
+    return await wrapper.wrapOperation(
       'getMedicalRecordTemplates',
       () async {
         try {
           // 检查缓存
-          if (_cachedTemplates != null && _isCacheValid()) {
-            return _cachedTemplates!;
+          if (cachedTemplates != null && _isCacheValid()) {
+            return cachedTemplates;
           }
 
           _setLoading(true);
@@ -304,9 +316,10 @@ class MedicalRecordProvider extends ChangeNotifier {
   Future<List<MedicalRecordTemplate>> getTemplatesByCategory(
     String category,
   ) async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('getTemplatesByCategory', () async {
+    return await wrapper.wrapOperation('getTemplatesByCategory', () async {
       try {
         _setLoading(true);
         _setError(null);
@@ -328,9 +341,10 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 初始化默认模板数据（如果数据库中没有模板数据）
   Future<void> initializeDefaultTemplates() async {
-    if (_dbWrapper == null) return;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return;
 
-    await _dbWrapper!.wrapOperation('initializeDefaultTemplates', () async {
+    await wrapper.wrapOperation('initializeDefaultTemplates', () async {
       try {
         _setLoading(true);
         _setError(null);

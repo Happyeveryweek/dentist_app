@@ -14,13 +14,14 @@ class AppointmentDetailsPatientCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final patientAddress = patient.address;
     return Container(
       margin: const EdgeInsets.only(top: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: DentalColors.divider.withOpacity(0.5),
+          color: DentalColors.divider.withValues(alpha: 0.5),
           width: 1,
         ),
       ),
@@ -34,18 +35,19 @@ class AppointmentDetailsPatientCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: DentalColors.primary.withOpacity(0.08),
+                    color: DentalColors.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: DentalColors.primary.withOpacity(0.2)),
+                    border: Border.all(
+                        color: DentalColors.primary.withValues(alpha: 0.2)),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.person_rounded,
                     color: DentalColors.primary,
                     size: 18,
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
+                const Text(
                   '患者信息',
                   style: TextStyle(
                     fontSize: 16,
@@ -73,7 +75,9 @@ class AppointmentDetailsPatientCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: patient.gender == '女' ? Colors.pink.shade600 : Colors.blue.shade600,
+                        color: patient.gender == '女'
+                            ? Colors.pink.shade600
+                            : Colors.blue.shade600,
                       ),
                     ),
                   ),
@@ -85,7 +89,7 @@ class AppointmentDetailsPatientCard extends StatelessWidget {
                     children: [
                       Text(
                         patient.name,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: DentalColors.onSurface,
@@ -97,37 +101,44 @@ class AppointmentDetailsPatientCard extends StatelessWidget {
                         runSpacing: 8,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: DentalColors.info.withOpacity(0.5)),
+                              border: Border.all(
+                                  color:
+                                      DentalColors.info.withValues(alpha: 0.5)),
                             ),
                             child: Text(
                               '${patient.age}岁 | ${patient.gender} | ${patient.phone}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                                 color: DentalColors.info,
                               ),
                             ),
                           ),
-                          if (patient.medical_record_number != null)
+                          if (patient.medicalRecordNumber != null)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: DentalColors.primary.withOpacity(0.5)),
+                                border: Border.all(
+                                    color: DentalColors.primary
+                                        .withValues(alpha: 0.5)),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.badge_rounded, size: 14, color: DentalColors.primary),
+                                  const Icon(Icons.badge_rounded,
+                                      size: 14, color: DentalColors.primary),
                                   const SizedBox(width: 4),
                                   Text(
-                                    '病历号 ${patient.medical_record_number}',
-                                    style: TextStyle(
+                                    '病历号 ${patient.medicalRecordNumber}',
+                                    style: const TextStyle(
                                       fontSize: 12,
                                       color: DentalColors.primary,
                                       fontWeight: FontWeight.w600,
@@ -136,22 +147,28 @@ class AppointmentDetailsPatientCard extends StatelessWidget {
                                 ],
                               ),
                             ),
-                          if (patient.address != null && patient.address!.isNotEmpty)
+                          if (patientAddress != null &&
+                              patientAddress.isNotEmpty)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: DentalColors.onSurfaceVariant.withOpacity(0.5)),
+                                border: Border.all(
+                                    color: DentalColors.onSurfaceVariant
+                                        .withValues(alpha: 0.5)),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.location_on_outlined, size: 14, color: DentalColors.onSurfaceVariant),
+                                  const Icon(Icons.location_on_outlined,
+                                      size: 14,
+                                      color: DentalColors.onSurfaceVariant),
                                   const SizedBox(width: 4),
                                   Text(
-                                    patient.address!,
-                                    style: TextStyle(
+                                    patientAddress,
+                                    style: const TextStyle(
                                       fontSize: 12,
                                       color: DentalColors.onSurfaceVariant,
                                       fontWeight: FontWeight.w500,
@@ -166,7 +183,7 @@ class AppointmentDetailsPatientCard extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.info_outline_rounded,
                     color: DentalColors.primary,
                   ),

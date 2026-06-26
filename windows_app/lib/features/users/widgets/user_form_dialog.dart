@@ -7,7 +7,6 @@ import '../../../theme/app_theme.dart';
 import '../../../providers/user_provider.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../widgets/success_toast.dart';
-import '../../../utils/image_compressor.dart';
 import '../services/user_validation_service.dart';
 import '../services/user_avatar_service.dart';
 import 'user_form_field.dart';
@@ -52,25 +51,26 @@ class _UserFormDialogState extends State<UserFormDialog> {
   @override
   void initState() {
     super.initState();
-    _isEditing = widget.user != null;
+    final user = widget.user;
+    _isEditing = user != null;
     _titleText = _isEditing ? '编辑用户' : '添加用户';
     _buttonText = _isEditing ? '保存' : '添加';
 
     _usernameController = TextEditingController(
-      text: _isEditing ? widget.user!.username : '',
+      text: user?.username ?? '',
     );
     _passwordController = TextEditingController();
     _emailController = TextEditingController(
-      text: _isEditing ? widget.user!.email ?? '' : '',
+      text: user?.email ?? '',
     );
     _doctorNameController = TextEditingController(
-      text: _isEditing ? widget.user!.doctor ?? '' : '',
+      text: user?.doctor ?? '',
     );
-    _selectedRole = _isEditing ? widget.user!.role : 'assistant';
-    _uploadedImageData = _isEditing ? widget.user!.imageData : null;
-    _avatarFileName = _isEditing ? widget.user!.avatar : null;
-    _modulePermissions = _isEditing && widget.user != null
-        ? widget.user!.permissionMap
+    _selectedRole = user?.role ?? 'assistant';
+    _uploadedImageData = user?.imageData;
+    _avatarFileName = user?.avatar;
+    _modulePermissions = _isEditing && user != null
+        ? user.permissionMap
         : {
             'dashboard': true,
             'patients': false,
@@ -97,16 +97,17 @@ class _UserFormDialogState extends State<UserFormDialog> {
       _emailErrorMessage = null;
     });
 
-    if (_formKey.currentState!.validate()) {
+    if (_formKey.currentState?.validate() == true) {
       try {
         final userProvider = Provider.of<UserProvider>(context, listen: false);
+        final editingUser = widget.user;
 
         if (_usernameController.text.isNotEmpty) {
           bool isUsernameExists =
               await UserValidationService.checkUsernameExists(
             userProvider,
             _usernameController.text,
-            _isEditing ? widget.user!.id : null,
+            editingUser?.id,
           );
 
           if (isUsernameExists) {
@@ -122,7 +123,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
           bool isEmailExists = await UserValidationService.checkEmailExists(
             userProvider,
             _emailController.text,
-            _isEditing ? widget.user!.id : null,
+            editingUser?.id,
           );
 
           if (isEmailExists) {
@@ -142,6 +143,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
               .any((entry) => entry.value == true);
 
           if (!hasAnyPermission) {
+            if (!mounted) return;
             AppToastManager.showError(
               context,
               message: '请至少选择一个功能模块权限',
@@ -152,10 +154,16 @@ class _UserFormDialogState extends State<UserFormDialog> {
           permissionsJson = jsonEncode(_modulePermissions);
         }
 
-        if (_isEditing) {
+        if (_isEditing && editingUser != null) {
           // 更新用户
+          final userId = editingUser.id;
+          if (userId == null) {
+            if (!mounted) return;
+            AppToastManager.showError(context, message: '用户 ID 为空');
+            return;
+          }
           await userProvider.updateUser(
-            widget.user!.id!,
+            userId,
             _usernameController.text,
             null, // 不更新密码
             _selectedRole,
@@ -279,7 +287,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
                   availableRoles: widget.availableRoles,
                   onRoleChanged: (value) {
                     setState(() {
-                      _selectedRole = value!;
+                      _selectedRole = value ?? _selectedRole;
                       if (value == 'admin') {
                         _modulePermissions.clear();
                       } else if (_selectedRole == 'admin' && value != 'admin') {

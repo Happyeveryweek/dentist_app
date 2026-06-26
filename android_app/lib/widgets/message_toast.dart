@@ -21,24 +21,25 @@ class MessageToast extends StatefulWidget {
 
 class _MessageToastState extends State<MessageToast>
     with TickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _scaleAnimation;
+  AnimationController? _controller;
+  Animation<double> _fadeAnimation = const AlwaysStoppedAnimation<double>(1.0);
+  Animation<Offset> _slideAnimation = const AlwaysStoppedAnimation<Offset>(Offset.zero);
+  Animation<double> _scaleAnimation = const AlwaysStoppedAnimation<double>(1.0);
   bool _isVisible = false;
 
   @override
   void initState() {
     super.initState();
 
-    _controller = AnimationController(
+    final controller = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
+    _controller = controller;
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
-        parent: _controller,
+        parent: controller,
         curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
       ),
     );
@@ -48,14 +49,14 @@ class _MessageToastState extends State<MessageToast>
       end: Offset.zero,
     ).animate(
       CurvedAnimation(
-        parent: _controller,
+        parent: controller,
         curve: const Interval(0.2, 1.0, curve: Curves.easeOutBack),
       ),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(
-        parent: _controller,
+        parent: controller,
         curve: const Interval(0.0, 0.8, curve: Curves.elasticOut),
       ),
     );
@@ -65,7 +66,7 @@ class _MessageToastState extends State<MessageToast>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -74,7 +75,7 @@ class _MessageToastState extends State<MessageToast>
       _isVisible = true;
     });
 
-    _controller.forward().then((_) {
+    _controller?.forward().then((_) {
       Future.delayed(widget.duration, () {
         if (mounted && _isVisible) {
           _hideToast();
@@ -84,7 +85,7 @@ class _MessageToastState extends State<MessageToast>
   }
 
   void _hideToast() {
-    _controller.reverse().then((_) {
+    _controller?.reverse().then((_) {
       if (mounted) {
         setState(() {
           _isVisible = false;
@@ -233,15 +234,14 @@ class MessageToastHelper {
     bool isSuccess,
   ) {
     final overlay = Overlay.of(context);
-    late final OverlayEntry overlayEntry;
-
+    OverlayEntry? overlayEntry;
     overlayEntry = OverlayEntry(
       builder:
           (context) => MessageToast(
             message: message,
             isSuccess: isSuccess,
             onDismiss: () {
-              overlayEntry.remove();
+              overlayEntry?.remove();
             },
           ),
     );

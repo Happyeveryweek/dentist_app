@@ -4,7 +4,7 @@ import '../../../models/patient.dart';
 import '../../../theme/app_theme.dart';
 
 /// 患者选择区域
-/// 
+///
 /// 显示患者选择框、选择按钮、预选患者信息
 class PatientSelectionSection extends StatelessWidget {
   final Patient? preselectedPatient;
@@ -44,15 +44,15 @@ class PatientSelectionSection extends StatelessWidget {
   }
 
   Widget _buildHeader() {
-    return Row(
+    return const Row(
       children: [
         Icon(
           Icons.person,
-          color: const Color(0xFF667eea),
+          color: Color(0xFF667eea),
           size: 18,
         ),
-        const SizedBox(width: 8),
-        const Text(
+        SizedBox(width: 8),
+        Text(
           '患者信息',
           style: TextStyle(
             fontSize: 16,
@@ -65,6 +65,7 @@ class PatientSelectionSection extends StatelessWidget {
   }
 
   Widget _buildPatientSelector() {
+    final patient = selectedPatient;
     if (isLoadingPatients) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -81,10 +82,11 @@ class PatientSelectionSection extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.person, color: AppTheme.primaryColor, size: 18),
+                const Icon(Icons.person,
+                    color: AppTheme.primaryColor, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: selectedPatient == null
+                  child: patient == null
                       ? Text(
                           '患者姓名',
                           style: TextStyle(
@@ -96,7 +98,7 @@ class PatientSelectionSection extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              selectedPatient!.name,
+                              patient.name,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
@@ -104,7 +106,7 @@ class PatientSelectionSection extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '最近就诊: ${DateFormat('yyyy-MM-dd').format(selectedPatient!.updated_at)}',
+                              '最近就诊: ${DateFormat('yyyy-MM-dd').format(patient.updatedAt)}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey.shade600,
@@ -139,17 +141,18 @@ class PatientSelectionSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF667eea).withOpacity(0.1),
+        color: const Color(0xFF667eea).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF667eea).withOpacity(0.3)),
+        border:
+            Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          Icon(Icons.person, color: const Color(0xFF667eea)),
+          const Icon(Icons.person, color: Color(0xFF667eea)),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              '患者: ${selectedPatient!.name}',
+              '患者: ${selectedPatient?.name ?? '未选择'}',
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF667eea),

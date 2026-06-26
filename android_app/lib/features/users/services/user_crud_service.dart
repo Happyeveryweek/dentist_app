@@ -170,9 +170,10 @@ class UserCrudService {
             return -1;
           }
 
+          final imageData = user.imageData;
           dynamic imageBlob;
-          if (user.imageData != null && user.imageData!.isNotEmpty) {
-            imageBlob = Uint8List.fromList(user.imageData!);
+          if (imageData != null && imageData.isNotEmpty) {
+            imageBlob = Uint8List.fromList(imageData);
           }
 
           final results = await conn.query(
@@ -259,9 +260,10 @@ class UserCrudService {
             return false;
           }
 
+          final updateImageData = user.imageData;
           dynamic imageBlob;
-          if (user.imageData != null && user.imageData!.isNotEmpty) {
-            imageBlob = Uint8List.fromList(user.imageData!);
+          if (updateImageData != null && updateImageData.isNotEmpty) {
+            imageBlob = Uint8List.fromList(updateImageData);
           }
 
           final results = await conn.query(

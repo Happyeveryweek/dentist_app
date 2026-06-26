@@ -34,10 +34,11 @@ class AppointmentFilterBar extends StatelessWidget {
       return '全部时间';
     }
 
-    if (isDateRangeFiltering && endDate != null) {
+    final end = endDate;
+    if (isDateRangeFiltering && end != null) {
       return '${selectedDate.year.toString().padLeft(4, '0')}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}'
           ' - '
-          '${endDate!.year.toString().padLeft(4, '0')}-${endDate!.month.toString().padLeft(2, '0')}-${endDate!.day.toString().padLeft(2, '0')}';
+          '${end.year.toString().padLeft(4, '0')}-${end.month.toString().padLeft(2, '0')}-${end.day.toString().padLeft(2, '0')}';
     }
 
     return '${selectedDate.year.toString().padLeft(4, '0')}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}';
@@ -50,10 +51,10 @@ class AppointmentFilterBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.black.withOpacity(0.06)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 2),
           ),
@@ -80,7 +81,7 @@ class AppointmentFilterBar extends StatelessWidget {
                 color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: Colors.grey.withOpacity(0.12)),
+                  side: BorderSide(color: Colors.grey.withValues(alpha: 0.12)),
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
@@ -90,7 +91,7 @@ class AppointmentFilterBar extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.calendar_today,
                           size: 20,
                           color: DentalColors.info,

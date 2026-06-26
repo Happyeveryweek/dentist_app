@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/patient.dart';
 import '../../../models/financial_record.dart';
-import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
 import 'financial_compact_tag.dart';
 import 'financial_compact_action_button.dart';
@@ -42,6 +41,7 @@ class FinancialCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final updateDate = lastFinancialUpdateDate;
     return HoverableFinancialListCard(
       onTap: onTap,
       child: Row(
@@ -78,7 +78,7 @@ class FinancialCard extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
@@ -91,7 +91,7 @@ class FinancialCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 3),
                           Text(
-                            '${patient.medical_record_number ?? '未设置'}',
+                            '${patient.medicalRecordNumber ?? '未设置'}',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
@@ -115,20 +115,20 @@ class FinancialCard extends StatelessWidget {
                       child: FinancialCompactTag(
                         icon: Icons.calendar_today,
                         label: DateFormat('yy-MM-dd')
-                            .format(patient.first_visit_date),
+                            .format(patient.firstVisitDate),
                         color: Colors.purple,
                       ),
                     ),
                     const SizedBox(width: 4),
 
                     // 最近更新
-                    if (lastFinancialUpdateDate != null)
+                    if (updateDate != null)
                       Flexible(
                         flex: 2,
                         child: FinancialCompactTag(
                           icon: Icons.update,
                           label: DateFormat('yy-MM-dd')
-                              .format(lastFinancialUpdateDate!),
+                              .format(updateDate),
                           color: Colors.orange,
                         ),
                       ),

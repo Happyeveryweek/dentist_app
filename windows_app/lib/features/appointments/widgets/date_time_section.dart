@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 /// 预约时间区域
-/// 
+///
 /// 显示日期选择框和时间选择框
 class DateTimeSection extends StatelessWidget {
   final DateTime date;
@@ -39,15 +39,15 @@ class DateTimeSection extends StatelessWidget {
   }
 
   Widget _buildHeader() {
-    return Row(
+    return const Row(
       children: [
         Icon(
           Icons.schedule,
-          color: const Color(0xFFFF8A65),
+          color: Color(0xFFFF8A65),
           size: 18,
         ),
-        const SizedBox(width: 8),
-        const Text(
+        SizedBox(width: 8),
+        Text(
           '预约时间',
           style: TextStyle(
             fontSize: 16,
@@ -74,7 +74,7 @@ class DateTimeSection extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.calendar_today, color: const Color(0xFFFF8A65)),
+                  const Icon(Icons.calendar_today, color: Color(0xFFFF8A65)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -103,7 +103,7 @@ class DateTimeSection extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.access_time, color: const Color(0xFFFF8A65)),
+                  const Icon(Icons.access_time, color: Color(0xFFFF8A65)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(

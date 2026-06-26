@@ -2,7 +2,7 @@ import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 
 /// 患者计算辅助类
-/// 
+///
 /// 提供患者相关的纯计算函数，不涉及状态管理
 class PatientCalculationHelper {
   /// 获取患者的应收费总额
@@ -12,9 +12,11 @@ class PatientCalculationHelper {
     Map<int, List<FinancialItem>> recordItemsMap,
   ) {
     double totalReceivable = 0.0;
-    for (final record in financialRecords.where((record) => record.patientId == patientId)) {
+    for (final record
+        in financialRecords.where((record) => record.patientId == patientId)) {
       final items = recordItemsMap[record.id] ?? [];
-      totalReceivable += items.fold(0.0, (sum, item) => sum + (item.itemPrice * (item.quantity ?? 1)));
+      totalReceivable += items.fold(
+          0.0, (sum, item) => sum + (item.itemPrice * item.quantity));
     }
     return totalReceivable;
   }

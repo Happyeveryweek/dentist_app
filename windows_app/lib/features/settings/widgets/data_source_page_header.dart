@@ -25,7 +25,7 @@ class DataSourcePageHeader extends StatelessWidget {
         gradient: LinearGradient(
           colors: [
             AppTheme.primaryColor,
-            AppTheme.primaryColor.withOpacity(0.8),
+            AppTheme.primaryColor.withValues(alpha: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -33,7 +33,7 @@ class DataSourcePageHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
+            color: AppTheme.primaryColor.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -44,7 +44,7 @@ class DataSourcePageHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -70,7 +70,7 @@ class DataSourcePageHeader extends StatelessWidget {
                 Text(
                   '配置SQLite本地数据库或MySQL远程数据库连接',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 16,
                   ),
                 ),
@@ -80,10 +80,10 @@ class DataSourcePageHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -102,8 +102,8 @@ class DataSourcePageHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            selectedDataSource == 'sqlite' 
-                ? Icons.storage_rounded 
+            selectedDataSource == 'sqlite'
+                ? Icons.storage_rounded
                 : Icons.cloud_done_rounded,
             color: Colors.white,
             size: 20,
@@ -131,7 +131,7 @@ class DataSourcePageHeader extends StatelessWidget {
               Text(
                 '所有模块使用相同数据源',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   fontSize: 8,
                 ),
               ),
@@ -142,9 +142,11 @@ class DataSourcePageHeader extends StatelessWidget {
     } else {
       // 模块化配置模式
       // 统计各数据源的模块数量
-      final sqliteModules = moduleDataSources.values.where((ds) => ds == 'sqlite').length;
-      final mysqlModules = moduleDataSources.values.where((ds) => ds == 'mysql').length;
-      
+      final sqliteModules =
+          moduleDataSources.values.where((ds) => ds == 'sqlite').length;
+      final mysqlModules =
+          moduleDataSources.values.where((ds) => ds == 'mysql').length;
+
       // 获取具体的模块名称
       final sqliteModuleNames = moduleDataSources.entries
           .where((entry) => entry.value == 'sqlite')
@@ -154,11 +156,11 @@ class DataSourcePageHeader extends StatelessWidget {
           .where((entry) => entry.value == 'mysql')
           .map((entry) => getModuleDisplayName(entry.key))
           .toList();
-      
+
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          const Icon(
             Icons.grid_view_rounded,
             color: Colors.white,
             size: 20,

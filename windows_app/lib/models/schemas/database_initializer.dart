@@ -1,6 +1,5 @@
 import 'table_schema.dart';
-import 'mysql_schema.dart';
-import 'sqlite_schema.dart';
+import '../../utils/log_manager.dart';
 
 /// Windows端数据库初始化工具
 class DatabaseInitializer {
@@ -26,10 +25,10 @@ class DatabaseInitializer {
     for (final tableName in tableNames) {
       try {
         final schema = TableSchemaFactory.getSchema(tableName, databaseType);
-        
+
         // 添加建表语句
         createTableStatements.add(schema.createTableSql);
-        
+
         // 添加索引创建语句（如果有的话）
         for (final indexSql in schema.indexDefinitions) {
           if (!indexSql.contains('PRIMARY KEY')) {
@@ -37,7 +36,7 @@ class DatabaseInitializer {
           }
         }
       } catch (e) {
-        print('初始化表 $tableName 时出错: $e');
+        LogManager.e('DatabaseInitializer', '初始化表 $tableName 时出错', error: e);
       }
     }
 
@@ -60,7 +59,8 @@ class DatabaseInitializer {
   }
 
   /// 获取特定表的建表SQL
-  static String getTableCreationSQL(String tableName, DatabaseType databaseType) {
+  static String getTableCreationSQL(
+      String tableName, DatabaseType databaseType) {
     try {
       final schema = TableSchemaFactory.getSchema(tableName, databaseType);
       return schema.createTableSql;
@@ -70,12 +70,14 @@ class DatabaseInitializer {
   }
 
   /// 获取特定表的所有索引SQL
-  static List<String> getTableIndexSQL(String tableName, DatabaseType databaseType) {
+  static List<String> getTableIndexSQL(
+      String tableName, DatabaseType databaseType) {
     try {
       final schema = TableSchemaFactory.getSchema(tableName, databaseType);
       return schema.indexDefinitions
           .where((index) => !index.contains('PRIMARY KEY'))
-          .map((index) => 'CREATE INDEX IF NOT EXISTS idx_${tableName}_${index.split('(')[1].split(')')[0]} ON $tableName ($index)')
+          .map((index) =>
+              'CREATE INDEX IF NOT EXISTS idx_${tableName}_${index.split('(')[1].split(')')[0]} ON $tableName ($index)')
           .toList();
     } catch (e) {
       return ['错误: 无法获取表 $tableName 的索引SQL - $e'];
@@ -89,13 +91,12 @@ class DatabaseInitializer {
         return 'MySQL';
       case DatabaseType.sqlite:
         return 'SQLite';
-      default:
-        return '未知';
     }
   }
 
   /// 验证表结构完整性
-  static Map<String, dynamic> validateTableStructure(DatabaseType databaseType) {
+  static Map<String, dynamic> validateTableStructure(
+      DatabaseType databaseType) {
     final results = <String, dynamic>{};
     final tableNames = [
       'patients',
@@ -114,13 +115,14 @@ class DatabaseInitializer {
     for (final tableName in tableNames) {
       try {
         final schema = TableSchemaFactory.getSchema(tableName, databaseType);
-        
+
         results[tableName] = {
           'status': 'valid',
           'column_count': schema.columnDefinitions.length,
           'index_count': schema.indexDefinitions.length,
           'foreign_key_count': schema.foreignKeyConstraints.length,
-          'has_primary_key': schema.indexDefinitions.any((index) => index.contains('PRIMARY KEY')),
+          'has_primary_key': schema.indexDefinitions
+              .any((index) => index.contains('PRIMARY KEY')),
         };
       } catch (e) {
         results[tableName] = {
@@ -137,18 +139,19 @@ class DatabaseInitializer {
   static String generateInitializationReport(DatabaseType databaseType) {
     final validationResults = validateTableStructure(databaseType);
     final buffer = StringBuffer();
-    
-    buffer.writeln('=== Windows端 ${getDatabaseTypeDescription(databaseType)} 数据库初始化报告 ===\n');
-    
+
+    buffer.writeln(
+        '=== Windows端 ${getDatabaseTypeDescription(databaseType)} 数据库初始化报告 ===\n');
+
     int validTables = 0;
     int errorTables = 0;
-    
+
     for (final entry in validationResults.entries) {
       final tableName = entry.key;
       final result = entry.value;
-      
+
       buffer.writeln('表名: $tableName');
-      
+
       if (result['status'] == 'valid') {
         validTables++;
         buffer.writeln('  状态: 有效');
@@ -160,15 +163,15 @@ class DatabaseInitializer {
         errorTables++;
         buffer.writeln('  状态: 错误 - ${result['error']}');
       }
-      
+
       buffer.writeln();
     }
-    
+
     buffer.writeln('=== 总结 ===');
     buffer.writeln('有效表数: $validTables');
     buffer.writeln('错误表数: $errorTables');
     buffer.writeln('总计: ${validationResults.length}');
-    
+
     return buffer.toString();
   }
 

@@ -415,15 +415,17 @@ class MySqlUserDataSource implements UserDataSource {
     AppLogger.info('创建用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
 
     // 处理权限字段
+    final modulePermissions = user.modulePermissions;
     String? permissionsJson;
-    if (user.modulePermissions != null && user.modulePermissions!.isNotEmpty) {
-      permissionsJson = user.modulePermissions;
+    if (modulePermissions != null && modulePermissions.isNotEmpty) {
+      permissionsJson = modulePermissions;
     }
     
     // 处理图片数据 - MySQL需要转换为Blob
+    final imageData = user.imageData;
     dynamic imageBlob;
-    if (user.imageData != null && user.imageData!.isNotEmpty) {
-      imageBlob = Uint8List.fromList(user.imageData!);
+    if (imageData != null && imageData.isNotEmpty) {
+      imageBlob = Uint8List.fromList(imageData);
     }
 
     final result = await connection.query(
@@ -442,7 +444,11 @@ class MySqlUserDataSource implements UserDataSource {
       ]
     );
     
-    return result.insertId!;
+    final insertId = result.insertId;
+    if (insertId == null) {
+      throw Exception('创建用户失败：无法获取插入ID');
+    }
+    return insertId;
   }
 
   @override
@@ -458,15 +464,17 @@ class MySqlUserDataSource implements UserDataSource {
     AppLogger.info('更新用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword');
 
     // 处理权限字段
+    final updateModulePermissions = user.modulePermissions;
     String? permissionsJson;
-    if (user.modulePermissions != null && user.modulePermissions!.isNotEmpty) {
-      permissionsJson = user.modulePermissions;
+    if (updateModulePermissions != null && updateModulePermissions.isNotEmpty) {
+      permissionsJson = updateModulePermissions;
     }
     
     // 处理图片数据 - MySQL需要转换为Blob
+    final updateImageData = user.imageData;
     dynamic imageBlob;
-    if (user.imageData != null && user.imageData!.isNotEmpty) {
-      imageBlob = Uint8List.fromList(user.imageData!);
+    if (updateImageData != null && updateImageData.isNotEmpty) {
+      imageBlob = Uint8List.fromList(updateImageData);
     }
 
     final result = await connection.query(
@@ -487,7 +495,7 @@ class MySqlUserDataSource implements UserDataSource {
       ]
     );
     
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -496,7 +504,7 @@ class MySqlUserDataSource implements UserDataSource {
     if (connection == null) throw Exception('MySQL连接不可用');
     
     final result = await connection.query('DELETE FROM users WHERE id = ?', [id]);
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -723,7 +731,7 @@ class MySqlUserDataSource implements UserDataSource {
         'UPDATE users SET module_permissions = ? WHERE id = ?',
         [permissionsJson, userId],
       );
-      return result.affectedRows! > 0;
+      return (result.affectedRows ?? 0) > 0;
     } catch (e) {
       AppLogger.info('更新用户权限失败: $e');
       return false;

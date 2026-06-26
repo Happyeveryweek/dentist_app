@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:ui';
 import 'package:crypto/crypto.dart';
 import 'package:intl/intl.dart';
-import 'package:mysql1/mysql1.dart';
-import 'dart:math' as math;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/app_theme.dart';
 import '../providers/database_provider.dart';
@@ -16,6 +12,7 @@ import '../providers/settings_provider.dart';
 import '../screens/home_screen.dart';
 import '../models/user.dart';
 import '../features/users/helpers/credential_storage_helper.dart';
+import '../utils/log_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -62,11 +59,11 @@ class _LoginScreenState extends State<LoginScreen>
     ));
 
     _animationController.forward();
-    
+
     // 加载保存的登录信息
     _loadSavedCredentials();
   }
-  
+
   // 加载保存的登录凭证
   Future<void> _loadSavedCredentials() async {
     final credentialData = await CredentialStorageHelper.loadSavedCredentials();
@@ -78,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen>
       });
     }
   }
-  
+
   // 保存登录凭证
   Future<void> _saveCredentials(String username, String password) async {
     await CredentialStorageHelper.saveCredentials(
@@ -106,9 +103,8 @@ class _LoginScreenState extends State<LoginScreen>
   // 确保用户表存在
   Future<void> _ensureUserTableExists(DatabaseProvider dbProvider) async {
     // SQLite数据库检查
-    if (dbProvider.dataSourceType == 'sqlite' && dbProvider.database != null) {
-      final db = dbProvider.database!;
-
+    final db = dbProvider.database;
+    if (dbProvider.dataSourceType == 'sqlite' && db != null) {
       // 检查users表是否存在
       final tables = await db.rawQuery(
           "SELECT name FROM sqlite_master WHERE type='table' AND name='users'");
@@ -140,16 +136,12 @@ class _LoginScreenState extends State<LoginScreen>
           'created_at':
               DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
         });
-
-        print('创建SQLite users表并添加默认管理员用户，密码已设置为123456');
       }
     }
 
     // MySQL数据库检查
-    if (dbProvider.dataSourceType == 'mysql' &&
-        dbProvider.mysqlConnection != null) {
-      final conn = dbProvider.mysqlConnection!;
-
+    final conn = dbProvider.mysqlConnection;
+    if (dbProvider.dataSourceType == 'mysql' && conn != null) {
       try {
         // 尝试查询users表，如果失败则创建
         await conn.query('SELECT 1 FROM users LIMIT 1');
@@ -174,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen>
         // 添加默认管理员用户
         final hashedPassword = _hashPassword('123456');
         await conn.query(
-            'INSERT INTO users (username, email, password, role, doctor, avatar, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO users (username, email, password, role, doctor, avatar, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [
               'admin',
               'admin@example.com',
@@ -184,8 +176,6 @@ class _LoginScreenState extends State<LoginScreen>
               'avatar_5', // 使用管理员头像
               DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())
             ]);
-
-        print('创建MySQL users表并添加默认管理员用户，密码已设置为123456');
       }
     }
   }
@@ -197,8 +187,13 @@ class _LoginScreenState extends State<LoginScreen>
       throw Exception('SQLite数据库未初始化');
     }
 
+    final database = dbProvider.database;
+    if (database == null) {
+      throw Exception('SQLite 数据库未初始化');
+    }
+
     // 从数据库查询用户
-    final result = await dbProvider.database!.query(
+    final result = await database.query(
       'users',
       where: 'username = ?',
       whereArgs: [username],
@@ -219,7 +214,8 @@ class _LoginScreenState extends State<LoginScreen>
       // 登录成功，设置当前用户
       final user = User.fromMap(result.first);
       dbProvider.setCurrentUser(user);
-      
+
+      if (!mounted) return false;
       // 同时设置到UserProvider
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       userProvider.setCurrentUser(user);
@@ -233,12 +229,13 @@ class _LoginScreenState extends State<LoginScreen>
   // MySQL登录
   Future<bool> _loginWithMySQL(
       DatabaseProvider dbProvider, String username, String password) async {
-    if (dbProvider.mysqlConnection == null) {
+    final conn = dbProvider.mysqlConnection;
+    if (conn == null) {
       throw Exception('MySQL连接未初始化');
     }
 
     // 从数据库查询用户
-    final results = await dbProvider.mysqlConnection!.query(
+    final results = await conn.query(
       'SELECT * FROM users WHERE username = ?',
       [username],
     );
@@ -273,7 +270,8 @@ class _LoginScreenState extends State<LoginScreen>
 
       final user = User.fromMap(map);
       dbProvider.setCurrentUser(user);
-      
+
+      if (!mounted) return false;
       // 同时设置到UserProvider
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       userProvider.setCurrentUser(user);
@@ -286,7 +284,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   // 登录方法
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) {
+    if (_formKey.currentState?.validate() != true) {
       return;
     }
 
@@ -321,27 +319,27 @@ class _LoginScreenState extends State<LoginScreen>
       if (loginSuccess) {
         // 保存登录凭证（如果勾选了记住密码）
         await _saveCredentials(username, password);
-        
+
         // 登录成功，加载用户权限并导航到首页
         if (!mounted) return;
-        
+
         // 获取UserProvider并加载权限
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         final currentUser = await dbProvider.getCurrentUser();
-        
+
         if (currentUser != null) {
           try {
             // 加载用户权限到UserProvider
             await userProvider.loadUserPermissions(currentUser);
-            print('用户权限加载成功: ${currentUser.username}');
           } catch (e) {
-            print('用户权限加载失败: $e');
+            LogManager.e('LoginScreen', '用户权限加载失败', error: e);
             // 权限加载失败不阻止登录，使用默认权限
             // 确保用户仍然设置在UserProvider中
             userProvider.setCurrentUser(currentUser);
           }
         }
-        
+
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -353,7 +351,7 @@ class _LoginScreenState extends State<LoginScreen>
         });
       }
     } catch (e) {
-      print('登录时出错: $e');
+      LogManager.e('LoginScreen', '登录时出错', error: e);
       setState(() {
         _errorMessage = '登录时出错: $e';
       });
@@ -366,12 +364,10 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final isSmallScreen = size.height < 700;
-    final isTinyScreen = size.height < 600;
 
     return Scaffold(
       body: Stack(
@@ -406,17 +402,17 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         padding: EdgeInsets.all(isSmallScreen ? 20.0 : 32.0),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.25),
+                          color: Colors.white.withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(20.0),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
+                              color: Colors.black.withValues(alpha: 0.15),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
                           ],
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.25),
+                            color: Colors.white.withValues(alpha: 0.25),
                             width: 1.0,
                           ),
                         ),
@@ -435,19 +431,24 @@ class _LoginScreenState extends State<LoginScreen>
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                     colors: [
-                                      const Color(0xFF2196F3).withOpacity(0.15),
-                                      const Color(0xFF03DAC6).withOpacity(0.1),
-                                      const Color(0xFF00BCD4).withOpacity(0.05),
+                                      const Color(0xFF2196F3)
+                                          .withValues(alpha: 0.15),
+                                      const Color(0xFF03DAC6)
+                                          .withValues(alpha: 0.1),
+                                      const Color(0xFF00BCD4)
+                                          .withValues(alpha: 0.05),
                                     ],
                                   ),
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: const Color(0xFF2196F3).withOpacity(0.2),
+                                    color: const Color(0xFF2196F3)
+                                        .withValues(alpha: 0.2),
                                     width: 2,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF2196F3).withOpacity(0.15),
+                                      color: const Color(0xFF2196F3)
+                                          .withValues(alpha: 0.15),
                                       blurRadius: 20,
                                       spreadRadius: 0,
                                       offset: const Offset(0, 8),
@@ -457,11 +458,11 @@ class _LoginScreenState extends State<LoginScreen>
                                 child: Stack(
                                   children: [
                                     // 主医疗图标
-                                    Center(
+                                    const Center(
                                       child: Icon(
                                         Icons.medical_services_rounded,
                                         size: 50,
-                                        color: const Color(0xFF2196F3),
+                                        color: Color(0xFF2196F3),
                                       ),
                                     ),
                                     // 装饰性十字符号
@@ -473,7 +474,8 @@ class _LoginScreenState extends State<LoginScreen>
                                         height: 16,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFF03DAC6),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
                                         child: const Icon(
                                           Icons.add,
@@ -489,7 +491,8 @@ class _LoginScreenState extends State<LoginScreen>
                                       child: Icon(
                                         Icons.favorite,
                                         size: 12,
-                                        color: const Color(0xFFE91E63).withOpacity(0.7),
+                                        color: const Color(0xFFE91E63)
+                                            .withValues(alpha: 0.7),
                                       ),
                                     ),
                                   ],
@@ -522,7 +525,8 @@ class _LoginScreenState extends State<LoginScreen>
                               Form(
                                 key: _formKey,
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
                                   children: [
                                     // 用户名
                                     TextFormField(
@@ -533,8 +537,10 @@ class _LoginScreenState extends State<LoginScreen>
                                         prefixIcon: Container(
                                           margin: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF2196F3).withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(8),
+                                            color: const Color(0xFF2196F3)
+                                                .withValues(alpha: 0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                           child: const Icon(
                                             Icons.person_rounded,
@@ -544,18 +550,22 @@ class _LoginScreenState extends State<LoginScreen>
                                         filled: true,
                                         fillColor: const Color(0xFFF8FCFF),
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                           borderSide: BorderSide.none,
                                         ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                           borderSide: BorderSide(
-                                            color: const Color(0xFF2196F3).withOpacity(0.2),
+                                            color: const Color(0xFF2196F3)
+                                                .withValues(alpha: 0.2),
                                             width: 1.5,
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                           borderSide: const BorderSide(
                                             color: Color(0xFF2196F3),
                                             width: 2.5,
@@ -585,8 +595,10 @@ class _LoginScreenState extends State<LoginScreen>
                                         prefixIcon: Container(
                                           margin: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF03DAC6).withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(8),
+                                            color: const Color(0xFF03DAC6)
+                                                .withValues(alpha: 0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                           child: const Icon(
                                             Icons.lock_rounded,
@@ -596,7 +608,8 @@ class _LoginScreenState extends State<LoginScreen>
                                         filled: true,
                                         fillColor: const Color(0xFFF0FFFE),
                                         suffixIcon: Container(
-                                          margin: const EdgeInsets.only(right: 8),
+                                          margin:
+                                              const EdgeInsets.only(right: 8),
                                           child: IconButton(
                                             icon: Icon(
                                               _obscurePassword
@@ -606,24 +619,29 @@ class _LoginScreenState extends State<LoginScreen>
                                             ),
                                             onPressed: () {
                                               setState(() {
-                                                _obscurePassword = !_obscurePassword;
+                                                _obscurePassword =
+                                                    !_obscurePassword;
                                               });
                                             },
                                           ),
                                         ),
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                           borderSide: BorderSide.none,
                                         ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                           borderSide: BorderSide(
-                                            color: const Color(0xFF03DAC6).withOpacity(0.2),
+                                            color: const Color(0xFF03DAC6)
+                                                .withValues(alpha: 0.2),
                                             width: 1.5,
                                           ),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                           borderSide: const BorderSide(
                                             color: Color(0xFF03DAC6),
                                             width: 2.5,
@@ -653,12 +671,15 @@ class _LoginScreenState extends State<LoginScreen>
                                             value: _rememberPassword,
                                             onChanged: (value) {
                                               setState(() {
-                                                _rememberPassword = value ?? false;
+                                                _rememberPassword =
+                                                    value ?? false;
                                               });
                                             },
-                                            activeColor: const Color(0xFF2196F3),
+                                            activeColor:
+                                                const Color(0xFF2196F3),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(4),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
                                             ),
                                           ),
                                         ),
@@ -666,7 +687,8 @@ class _LoginScreenState extends State<LoginScreen>
                                         GestureDetector(
                                           onTap: () {
                                             setState(() {
-                                              _rememberPassword = !_rememberPassword;
+                                              _rememberPassword =
+                                                  !_rememberPassword;
                                             });
                                           },
                                           child: const Text(
@@ -689,7 +711,8 @@ class _LoginScreenState extends State<LoginScreen>
                                             vertical: 8.0, horizontal: 12),
                                         decoration: BoxDecoration(
                                           color: Colors.red.shade50,
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                           border: Border.all(
                                             color: Colors.red.shade200,
                                           ),
@@ -704,7 +727,7 @@ class _LoginScreenState extends State<LoginScreen>
                                             const SizedBox(width: 8),
                                             Expanded(
                                               child: Text(
-                                                _errorMessage!,
+                                                _errorMessage ?? '',
                                                 style: TextStyle(
                                                   color: Colors.red.shade700,
                                                   fontSize: 14,
@@ -732,7 +755,8 @@ class _LoginScreenState extends State<LoginScreen>
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: const Color(0xFF2196F3).withOpacity(0.3),
+                                            color: const Color(0xFF2196F3)
+                                                .withValues(alpha: 0.3),
                                             blurRadius: 15,
                                             offset: const Offset(0, 8),
                                           ),
@@ -748,7 +772,8 @@ class _LoginScreenState extends State<LoginScreen>
                                             vertical: 18.0,
                                           ),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(16),
+                                            borderRadius:
+                                                BorderRadius.circular(16),
                                           ),
                                           elevation: 0,
                                         ),
@@ -756,24 +781,27 @@ class _LoginScreenState extends State<LoginScreen>
                                             ? const SizedBox(
                                                 width: 26,
                                                 height: 26,
-                                                child: CircularProgressIndicator(
+                                                child:
+                                                    CircularProgressIndicator(
                                                   color: Colors.white,
                                                   strokeWidth: 3,
                                                 ),
                                               )
-                                            : Row(
-                                                mainAxisAlignment: MainAxisAlignment.center,
+                                            : const Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
                                                 children: [
-                                                  const Icon(
+                                                  Icon(
                                                     Icons.login_rounded,
                                                     size: 20,
                                                   ),
-                                                  const SizedBox(width: 8),
-                                                  const Text(
+                                                  SizedBox(width: 8),
+                                                  Text(
                                                     '登录',
                                                     style: TextStyle(
                                                       fontSize: 18,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                       letterSpacing: 1.0,
                                                     ),
                                                   ),
@@ -792,24 +820,30 @@ class _LoginScreenState extends State<LoginScreen>
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                           colors: [
-                                            const Color(0xFF2196F3).withOpacity(0.08),
-                                            const Color(0xFF03DAC6).withOpacity(0.05),
+                                            const Color(0xFF2196F3)
+                                                .withValues(alpha: 0.08),
+                                            const Color(0xFF03DAC6)
+                                                .withValues(alpha: 0.05),
                                           ],
                                         ),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
-                                          color: const Color(0xFF2196F3).withOpacity(0.2),
+                                          color: const Color(0xFF2196F3)
+                                              .withValues(alpha: 0.2),
                                           width: 1,
                                         ),
                                       ),
                                       child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: [
                                           Container(
                                             padding: const EdgeInsets.all(4),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFF2196F3).withOpacity(0.1),
-                                              borderRadius: BorderRadius.circular(6),
+                                              color: const Color(0xFF2196F3)
+                                                  .withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
                                             ),
                                             child: const Icon(
                                               Icons.info_outline_rounded,

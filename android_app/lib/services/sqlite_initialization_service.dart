@@ -26,22 +26,23 @@ class SQLiteInitializationService {
 
   /// 初始化 SQLite 数据库
   Future<void> initDatabase() async {
-    if (_dbConfig == null) {
+    final config = _dbConfig;
+    if (config == null) {
       throw Exception('数据库配置未设置');
     }
 
     AppLogger.info('初始化SQLite数据库...');
 
     // 设置数据库路径
-    if (_dbConfig!.sqlite.path.isEmpty) {
+    if (config.sqlite.path.isEmpty) {
       AppLogger.info('SQLite路径为空，设置默认路径');
-      _dbConfig!.sqlite.path = await DatabaseUtils.getDefaultDatabasePath();
-      AppLogger.info('设置的默认路径: ${_dbConfig!.sqlite.path}');
-      await _dbConfig!.saveConfig();
-    } else if (!File(_dbConfig!.sqlite.path).existsSync()) {
-      AppLogger.info('SQLite路径不存在: ${_dbConfig!.sqlite.path}');
+      config.sqlite.path = await DatabaseUtils.getDefaultDatabasePath();
+      AppLogger.info('设置的默认路径: ${config.sqlite.path}');
+      await config.saveConfig();
+    } else if (!File(config.sqlite.path).existsSync()) {
+      AppLogger.info('SQLite路径不存在: ${config.sqlite.path}');
       // 确保目录存在
-      final dbDir = Directory(path.dirname(_dbConfig!.sqlite.path));
+      final dbDir = Directory(path.dirname(config.sqlite.path));
       if (!dbDir.existsSync()) {
         AppLogger.info('创建数据库目录: ${dbDir.path}');
         await dbDir.create(recursive: true);
@@ -49,14 +50,15 @@ class SQLiteInitializationService {
     }
 
     // 设置数据库路径
-    _dbPath = _dbConfig!.sqlite.path;
+    _dbPath = config.sqlite.path;
     AppLogger.info('SQLite数据库路径: $_dbPath');
 
     // 初始化 SQLite 数据库
     try {
       AppLogger.info('开始初始化DatabaseHelper...');
-      _dbHelper = DatabaseHelper();
-      await _dbHelper!.database;
+      final helper = DatabaseHelper();
+      _dbHelper = helper;
+      await helper.database;
       AppLogger.info('SQLite数据库初始化成功');
     } catch (e) {
       AppLogger.info('SQLite数据库初始化失败: $e');
@@ -67,15 +69,20 @@ class SQLiteInitializationService {
 
   /// 初始化 SQLite 并显示通知
   Future<void> initWithNotification() async {
+    final config = _dbConfig;
+    if (config == null) {
+      throw Exception('数据库配置未设置');
+    }
+
     try {
       AppLogger.info('初始化SQLite数据库（带通知）...');
 
       // 设置数据库路径
-      if (_dbConfig!.sqlite.path.isEmpty) {
-        _dbConfig!.sqlite.path = await DatabaseUtils.getDefaultDatabasePath();
-        await _dbConfig!.saveConfig();
+      if (config.sqlite.path.isEmpty) {
+        config.sqlite.path = await DatabaseUtils.getDefaultDatabasePath();
+        await config.saveConfig();
       }
-      _dbPath = _dbConfig!.sqlite.path;
+      _dbPath = config.sqlite.path;
 
       // 确保目录存在
       final dbDir = Directory(path.dirname(_dbPath));
@@ -84,8 +91,9 @@ class SQLiteInitializationService {
       }
 
       // 初始化 SQLite 数据库
-      _dbHelper = DatabaseHelper();
-      await _dbHelper!.database;
+      final helper = DatabaseHelper();
+      _dbHelper = helper;
+      await helper.database;
       AppLogger.info('SQLite数据库初始化成功');
     } catch (e) {
       AppLogger.info('SQLite数据库初始化失败: $e');
@@ -95,16 +103,17 @@ class SQLiteInitializationService {
 
   /// 确保数据库路径存在
   Future<void> ensureDatabasePath() async {
-    if (_dbConfig == null) {
+    final config = _dbConfig;
+    if (config == null) {
       throw Exception('数据库配置未设置');
     }
 
-    if (_dbConfig!.sqlite.path.isEmpty) {
-      _dbConfig!.sqlite.path = await DatabaseUtils.getDefaultDatabasePath();
-      await _dbConfig!.saveConfig();
+    if (config.sqlite.path.isEmpty) {
+      config.sqlite.path = await DatabaseUtils.getDefaultDatabasePath();
+      await config.saveConfig();
     }
 
-    _dbPath = _dbConfig!.sqlite.path;
+    _dbPath = config.sqlite.path;
 
     // 确保目录存在
     final dbDir = Directory(path.dirname(_dbPath));
@@ -115,16 +124,18 @@ class SQLiteInitializationService {
 
   /// 获取 SQLite 数据库实例
   Future<Database?> getDatabase() async {
-    if (_dbHelper != null) {
-      return await _dbHelper!.database;
+    final helper = _dbHelper;
+    if (helper != null) {
+      return await helper.database;
     }
     return null;
   }
 
   /// 关闭数据库连接
   Future<void> closeDatabase() async {
-    if (_dbHelper != null) {
-      await _dbHelper!.closeDatabase();
+    final helper = _dbHelper;
+    if (helper != null) {
+      await helper.closeDatabase();
     }
   }
 }

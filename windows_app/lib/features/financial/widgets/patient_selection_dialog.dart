@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/patient.dart';
+
 // 患者选择对话框
 class PatientSelectionDialog extends StatefulWidget {
   final List<Patient> patients;
 
-  const PatientSelectionDialog({Key? key, required this.patients}) : super(key: key);
+  const PatientSelectionDialog({Key? key, required this.patients})
+      : super(key: key);
 
   @override
   State<PatientSelectionDialog> createState() => _PatientSelectionDialogState();
@@ -29,18 +31,30 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
       } else {
         _filteredPatients = widget.patients.where((patient) {
           // 姓名搜索
-          final nameMatch = patient.name.toLowerCase().contains(query.toLowerCase());
-          
+          final nameMatch =
+              patient.name.toLowerCase().contains(query.toLowerCase());
+
           // 病历号搜索
-          final medicalRecordMatch = patient.medical_record_number?.toString().contains(query) ?? false;
-          
+          final medicalRecordMatch =
+              patient.medicalRecordNumber?.toString().contains(query) ?? false;
+
           // 姓名拼音搜索（支持带空格和不带空格）
-          final namePinyinMatch = patient.name_pinyin?.toLowerCase().replaceAll(' ', '').contains(query.toLowerCase().replaceAll(' ', '')) ?? false;
-          
+          final namePinyinMatch = patient.namePinyin
+                  ?.toLowerCase()
+                  .replaceAll(' ', '')
+                  .contains(query.toLowerCase().replaceAll(' ', '')) ??
+              false;
+
           // 姓名拼音首字母搜索
-          final nameInitialsMatch = patient.name_initials?.toLowerCase().contains(query.toLowerCase()) ?? false;
-          
-          return nameMatch || medicalRecordMatch || namePinyinMatch || nameInitialsMatch;
+          final nameInitialsMatch = patient.nameInitials
+                  ?.toLowerCase()
+                  .contains(query.toLowerCase()) ??
+              false;
+
+          return nameMatch ||
+              medicalRecordMatch ||
+              namePinyinMatch ||
+              nameInitialsMatch;
         }).toList();
       }
     });
@@ -50,8 +64,8 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
   Widget build(BuildContext context) {
     // 根据患者信息的更新时间排序，最新的排到最前面
     List<Patient> sortedPatients = List.from(widget.patients);
-    sortedPatients.sort((a, b) => b.updated_at.compareTo(a.updated_at));
-    
+    sortedPatients.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
@@ -65,18 +79,18 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
           minHeight: 300,
         ),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF667eea),
-              const Color(0xFF764ba2),
+              Color(0xFF667eea),
+              Color(0xFF764ba2),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF667eea).withOpacity(0.3),
+              color: const Color(0xFF667eea).withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
               spreadRadius: 0,
@@ -85,10 +99,10 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.98),
+            color: Colors.white.withValues(alpha: 0.98),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFF667eea).withOpacity(0.1),
+              color: const Color(0xFF667eea).withValues(alpha: 0.1),
               width: 1,
             ),
           ),
@@ -98,21 +112,22 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
             children: [
               // 标题栏 - 带渐变背景
               Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      const Color(0xFF667eea),
-                      const Color(0xFF764ba2),
+                      Color(0xFF667eea),
+                      Color(0xFF764ba2),
                     ],
                   ),
-                  borderRadius: const BorderRadius.only(
+                  borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -121,7 +136,7 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -150,22 +165,24 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white, size: 16),
+                        icon: const Icon(Icons.close,
+                            color: Colors.white, size: 16),
                         onPressed: () => Navigator.of(context).pop(),
                         splashRadius: 14,
                         tooltip: '关闭',
                         padding: const EdgeInsets.all(3),
-                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                        constraints:
+                            const BoxConstraints(minWidth: 28, minHeight: 28),
                       ),
                     ),
                   ],
                 ),
               ),
-              
+
               // 内容区域
               Expanded(
                 child: Padding(
@@ -178,30 +195,33 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                         autofocus: true,
                         decoration: InputDecoration(
                           hintText: '搜索患者 (姓名/拼音/首字母/病历号)',
-                          prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+                          prefixIcon:
+                              Icon(Icons.search, color: Colors.grey[600]),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[300]!),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.blue[400]!, width: 2),
+                            borderSide:
+                                BorderSide(color: Colors.blue.shade400, width: 2),
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 2),
                         ),
                         onChanged: _filterPatients,
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // 患者列表标题
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.people,
-                            color: const Color(0xFF667eea),
+                            color: Color(0xFF667eea),
                             size: 18,
                           ),
                           const SizedBox(width: 8),
@@ -215,9 +235,9 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 12),
-                      
+
                       // 患者列表
                       Expanded(
                         child: _filteredPatients.isEmpty
@@ -226,13 +246,17 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
-                                      _searchQuery.isEmpty ? Icons.people_outline : Icons.search_off,
+                                      _searchQuery.isEmpty
+                                          ? Icons.people_outline
+                                          : Icons.search_off,
                                       size: 48,
                                       color: Colors.grey.shade400,
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
-                                      _searchQuery.isEmpty ? '暂无患者数据' : '未找到匹配的患者',
+                                      _searchQuery.isEmpty
+                                          ? '暂无患者数据'
+                                          : '未找到匹配的患者',
                                       style: TextStyle(
                                         color: Colors.grey.shade600,
                                         fontSize: 16,
@@ -256,10 +280,11 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.grey.shade200),
+                                  border:
+                                      Border.all(color: Colors.grey.shade200),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.grey.withOpacity(0.1),
+                                      color: Colors.grey.withValues(alpha: 0.1),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
@@ -274,8 +299,10 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                         decoration: BoxDecoration(
                                           gradient: LinearGradient(
                                             colors: [
-                                              const Color(0xFF667eea).withOpacity(0.1),
-                                              const Color(0xFF667eea).withOpacity(0.05),
+                                              const Color(0xFF667eea)
+                                                  .withValues(alpha: 0.1),
+                                              const Color(0xFF667eea)
+                                                  .withValues(alpha: 0.05),
                                             ],
                                           ),
                                           borderRadius: const BorderRadius.only(
@@ -283,8 +310,9 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                             topRight: Radius.circular(12),
                                           ),
                                         ),
-                                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                                        child: Row(
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 4, horizontal: 16),
+                                        child: const Row(
                                           children: [
                                             Expanded(
                                               flex: 3,
@@ -293,13 +321,14 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                                   Icon(
                                                     Icons.person,
                                                     size: 16,
-                                                    color: const Color(0xFF667eea),
+                                                    color: Color(0xFF667eea),
                                                   ),
-                                                  const SizedBox(width: 8),
-                                                  const Text(
+                                                  SizedBox(width: 8),
+                                                  Text(
                                                     '姓名',
                                                     style: TextStyle(
-                                                      fontWeight: FontWeight.w600,
+                                                      fontWeight:
+                                                          FontWeight.w600,
                                                       color: Color(0xFF667eea),
                                                       fontSize: 14,
                                                     ),
@@ -314,13 +343,14 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                                   Icon(
                                                     Icons.calendar_today,
                                                     size: 16,
-                                                    color: const Color(0xFF667eea),
+                                                    color: Color(0xFF667eea),
                                                   ),
-                                                  const SizedBox(width: 8),
-                                                  const Text(
+                                                  SizedBox(width: 8),
+                                                  Text(
                                                     '最近就诊',
                                                     style: TextStyle(
-                                                      fontWeight: FontWeight.w600,
+                                                      fontWeight:
+                                                          FontWeight.w600,
                                                       color: Color(0xFF667eea),
                                                       fontSize: 14,
                                                     ),
@@ -337,15 +367,23 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                           shrinkWrap: true,
                                           itemCount: _filteredPatients.length,
                                           itemBuilder: (context, index) {
-                                            final patient = _filteredPatients[index];
-                                            final lastVisitDate = DateFormat('yyyy-MM-dd')
-                                                .format(patient.updated_at);
+                                            final patient =
+                                                _filteredPatients[index];
+                                            final lastVisitDate =
+                                                DateFormat('yyyy-MM-dd')
+                                                    .format(patient.updatedAt);
 
                                             return Container(
-                                              margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 2,
+                                                      vertical: 1),
                                               decoration: BoxDecoration(
-                                                color: index % 2 == 0 ? Colors.white : Colors.grey.shade50,
-                                                borderRadius: BorderRadius.circular(12),
+                                                color: index % 2 == 0
+                                                    ? Colors.white
+                                                    : Colors.grey.shade50,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
                                                 border: Border.all(
                                                   color: Colors.transparent,
                                                   width: 1,
@@ -354,30 +392,40 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                               child: Material(
                                                 color: Colors.transparent,
                                                 child: InkWell(
-                                                  borderRadius: BorderRadius.circular(12),
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
                                                   onTap: () {
                                                     // 选择患者并关闭对话框
-                                                    Navigator.of(context).pop(patient);
+                                                    Navigator.of(context)
+                                                        .pop(patient);
                                                   },
                                                   child: Padding(
-                                                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        vertical: 4,
+                                                        horizontal: 16),
                                                     child: Row(
                                                       children: [
                                                         Expanded(
                                                           flex: 3,
                                                           child: Row(
                                                             children: [
-                                                              Icon(
+                                                              const Icon(
                                                                 Icons.person,
                                                                 size: 16,
-                                                                color: const Color(0xFF667eea),
+                                                                color: Color(
+                                                                    0xFF667eea),
                                                               ),
-                                                              const SizedBox(width: 8),
+                                                              const SizedBox(
+                                                                  width: 8),
                                                               Text(
                                                                 patient.name,
-                                                                style: const TextStyle(
+                                                                style:
+                                                                    const TextStyle(
                                                                   fontSize: 14,
-                                                                  fontWeight: FontWeight.w500,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w500,
                                                                 ),
                                                               ),
                                                             ],
@@ -389,7 +437,8 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                                             lastVisitDate,
                                                             style: TextStyle(
                                                               fontSize: 14,
-                                                              color: Colors.grey[600],
+                                                              color: Colors
+                                                                  .grey[600],
                                                             ),
                                                           ),
                                                         ),

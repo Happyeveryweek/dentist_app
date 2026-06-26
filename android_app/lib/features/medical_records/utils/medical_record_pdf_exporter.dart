@@ -320,12 +320,12 @@ class MedicalRecordPdfExporter {
     }
 
     // 关联牙齿状况
-    if (record.selectedDentalConditionDate != null &&
-        record.selectedDentalConditionDate!.isNotEmpty) {
+    final selectedDentalConditionDate = record.selectedDentalConditionDate;
+    if (selectedDentalConditionDate != null && selectedDentalConditionDate.isNotEmpty) {
       contentWidgets.add(
         _buildMultipleDentalConditionSection(
           patient,
-          record.selectedDentalConditionDate!,
+          selectedDentalConditionDate,
         ),
       );
       contentWidgets.add(pw.SizedBox(height: 12));
@@ -457,11 +457,11 @@ class MedicalRecordPdfExporter {
 
     // 解析患者的牙齿状况数据
     Map<String, dynamic> dentalData = {};
-    if (patient.dentalCondition != null &&
-        patient.dentalCondition!.isNotEmpty) {
+    final dentalCondition = patient.dentalCondition;
+    if (dentalCondition != null && dentalCondition.isNotEmpty) {
       try {
         dentalData = DentalConditionIntegration.parseDentalCondition(
-          patient.dentalCondition!,
+          dentalCondition,
         );
       } catch (e) {
         AppLogger.info('PDF导出: 解析牙齿状况数据失败: $e');

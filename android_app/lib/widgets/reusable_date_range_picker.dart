@@ -39,6 +39,11 @@ class ReusableDateRangePicker extends StatefulWidget {
             builder: (context, setState) {
               pickedStart ??= s;
               pickedEnd ??= e;
+              final selectedStart = pickedStart;
+              final selectedEnd = pickedEnd;
+              if (selectedStart == null || selectedEnd == null) {
+                return const SizedBox.shrink();
+              }
 
               void applyPreset(String preset) {
                 final now = DateTime.now();
@@ -66,7 +71,7 @@ class ReusableDateRangePicker extends StatefulWidget {
                     break;
 
                   default:
-                    start = pickedStart!;
+                    start = selectedStart;
                 }
                 setState(() {
                   pickedStart = start;
@@ -176,13 +181,13 @@ class ReusableDateRangePicker extends StatefulWidget {
                     const SizedBox(height: 6),
                     buildDateTile(
                       '开始',
-                      pickedStart!,
+                      selectedStart,
                       onTap: () async {
                         final d = await showDialog<DateTime>(
                           context: context,
                           builder:
                               (c) => ModernDatePickerDialog(
-                                initialDate: pickedStart!,
+                                initialDate: selectedStart,
                                 firstDate: DateTime(2000),
                                 lastDate: DateTime(2100),
                                 title: '选择开始日期',
@@ -191,8 +196,8 @@ class ReusableDateRangePicker extends StatefulWidget {
                         if (d != null) {
                           setState(() {
                             pickedStart = d;
-                            if (pickedEnd!.isBefore(pickedStart!)) {
-                              pickedEnd = pickedStart;
+                            if (selectedEnd.isBefore(d)) {
+                              pickedEnd = d;
                             }
                           });
                         }
@@ -203,14 +208,14 @@ class ReusableDateRangePicker extends StatefulWidget {
                     const SizedBox(height: 6),
                     buildDateTile(
                       '结束',
-                      pickedEnd!,
+                      selectedEnd,
                       onTap: () async {
                         final d = await showDialog<DateTime>(
                           context: context,
                           builder:
                               (c) => ModernDatePickerDialog(
-                                initialDate: pickedEnd!,
-                                firstDate: pickedStart!,
+                                initialDate: selectedEnd,
+                                firstDate: selectedStart,
                                 lastDate: DateTime(2100),
                                 title: '选择结束日期',
                               ),
@@ -251,7 +256,12 @@ class ReusableDateRangePicker extends StatefulWidget {
     );
 
     if (ok == true) {
-      return DateTimeRange(start: pickedStart!, end: pickedEnd!);
+      final start = pickedStart;
+      final end = pickedEnd;
+      if (start == null || end == null) {
+        return null;
+      }
+      return DateTimeRange(start: start, end: end);
     }
     return null;
   }

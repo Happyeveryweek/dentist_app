@@ -16,14 +16,16 @@ class MedicalRecordCacheHelper {
 
   /// 检查病历记录缓存是否有效
   bool isCacheValid() {
-    return lastCacheTime != null &&
-        DateTime.now().difference(lastCacheTime!) < cacheValidDuration;
+    final cacheTime = lastCacheTime;
+    return cacheTime != null &&
+        DateTime.now().difference(cacheTime) < cacheValidDuration;
   }
 
   /// 检查模板缓存是否有效
   bool isTemplateCacheValid() {
-    return lastTemplateCacheTime != null &&
-        DateTime.now().difference(lastTemplateCacheTime!) <
+    final cacheTime = lastTemplateCacheTime;
+    return cacheTime != null &&
+        DateTime.now().difference(cacheTime) <
             templateCacheValidDuration;
   }
 

@@ -15,16 +15,19 @@ class UserCacheHelper {
 
   // 检查用户缓存是否有效
   bool isCacheValid() {
+    final cacheTime = _lastCacheTime;
     return _cachedUsers != null &&
-           _lastCacheTime != null &&
-           DateTime.now().difference(_lastCacheTime!) < _cacheValidDuration;
+        cacheTime != null &&
+        DateTime.now().difference(cacheTime) < _cacheValidDuration;
   }
 
   // 检查权限缓存是否有效
   bool isPermissionsCacheValid() {
+    final cacheTime = _lastPermissionsCacheTime;
     return _cachedPermissions != null &&
-           _lastPermissionsCacheTime != null &&
-           DateTime.now().difference(_lastPermissionsCacheTime!) < _permissionsCacheValidDuration;
+        cacheTime != null &&
+        DateTime.now().difference(cacheTime) <
+            _permissionsCacheValidDuration;
   }
 
   // 更新用户缓存
@@ -41,8 +44,8 @@ class UserCacheHelper {
 
   // 更新权限缓存
   void updatePermissionsCache(int userId, Map<String, bool> permissions) {
-    _cachedPermissions ??= {};
-    _cachedPermissions![userId] = Map.from(permissions);
+    final cached = _cachedPermissions ??= {};
+    cached[userId] = Map.from(permissions);
     _lastPermissionsCacheTime = DateTime.now();
   }
 
@@ -54,9 +57,8 @@ class UserCacheHelper {
 
   // 清除指定用户的权限缓存
   void clearUserPermissionsCache(int userId) {
-    if (_cachedPermissions != null) {
-      _cachedPermissions!.remove(userId);
-    }
+    final cached = _cachedPermissions;
+    cached?.remove(userId);
   }
 
   // Getters

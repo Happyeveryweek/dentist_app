@@ -1,4 +1,5 @@
 import 'package:mysql1/mysql1.dart';
+import '../../../utils/log_manager.dart';
 
 /// 采购同步服务
 /// 负责处理 SQLite → MySQL 的数据同步逻辑（从 PurchaseProvider 中提取）
@@ -21,7 +22,8 @@ class PurchaseSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过采购记录同步(id=$recordId)');
+          LogManager.w(
+              'PurchaseSyncService', 'MySQL连接不可用，跳过采购记录同步(id=$recordId)');
           return;
         }
 
@@ -49,7 +51,8 @@ class PurchaseSyncService {
               recordMap['updated_at'],
               recordId,
             ]);
-            print('成功更新MySQL采购记录(id=$recordId)，影响行数: ${result.affectedRows}');
+            LogManager.i('PurchaseSyncService',
+                '成功更新MySQL采购记录(id=$recordId)，影响行数: ${result.affectedRows}');
           } else {
             final result = await conn.query('''
               INSERT INTO purchase_records
@@ -66,13 +69,14 @@ class PurchaseSyncService {
               recordMap['created_at'],
               recordMap['updated_at'],
             ]);
-            print('成功将采购记录(id=$recordId)同步到MySQL，插入ID: ${result.insertId}');
+            LogManager.i('PurchaseSyncService',
+                '成功将采购记录(id=$recordId)同步到MySQL，插入ID: ${result.insertId}');
           }
         } catch (e) {
-          print('同步采购记录到MySQL时出错: $e');
+          LogManager.e('PurchaseSyncService', '同步采购记录到MySQL时出错', error: e);
         }
       } catch (e) {
-        print('采购记录同步到MySQL发生不可预期错误: $e');
+        LogManager.e('PurchaseSyncService', '采购记录同步到MySQL发生不可预期错误', error: e);
       }
     });
   }
@@ -83,7 +87,8 @@ class PurchaseSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过采购记录删除同步(id=$recordId)');
+          LogManager.w(
+              'PurchaseSyncService', 'MySQL连接不可用，跳过采购记录删除同步(id=$recordId)');
           return;
         }
 
@@ -93,19 +98,22 @@ class PurchaseSyncService {
             'DELETE FROM purchase_items WHERE purchase_record_id = ?',
             [recordId],
           );
-          print('成功从MySQL删除采购项目，影响行数: ${itemsResult.affectedRows}');
+          LogManager.i('PurchaseSyncService',
+              '成功从MySQL删除采购项目，影响行数: ${itemsResult.affectedRows}');
 
           // 再删除采购记录
           final recordResult = await conn.query(
             'DELETE FROM purchase_records WHERE id = ?',
             [recordId],
           );
-          print('成功从MySQL删除采购记录(id=$recordId)，影响行数: ${recordResult.affectedRows}');
+          LogManager.i('PurchaseSyncService',
+              '成功从MySQL删除采购记录(id=$recordId)，影响行数: ${recordResult.affectedRows}');
         } catch (e) {
-          print('从MySQL删除采购记录(id=$recordId)时出错: $e');
+          LogManager.e('PurchaseSyncService', '从MySQL删除采购记录(id=$recordId)时出错',
+              error: e);
         }
       } catch (e) {
-        print('采购记录删除同步到MySQL发生不可预期错误: $e');
+        LogManager.e('PurchaseSyncService', '采购记录删除同步到MySQL发生不可预期错误', error: e);
       }
     });
   }
@@ -117,7 +125,8 @@ class PurchaseSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过采购项目同步(id=$itemId)');
+          LogManager.w(
+              'PurchaseSyncService', 'MySQL连接不可用，跳过采购项目同步(id=$itemId)');
           return;
         }
 
@@ -146,7 +155,8 @@ class PurchaseSyncService {
               itemMap['updated_at'],
               itemId,
             ]);
-            print('成功更新MySQL采购项目(id=$itemId)，影响行数: ${result.affectedRows}');
+            LogManager.i('PurchaseSyncService',
+                '成功更新MySQL采购项目(id=$itemId)，影响行数: ${result.affectedRows}');
           } else {
             final result = await conn.query('''
               INSERT INTO purchase_items
@@ -164,13 +174,14 @@ class PurchaseSyncService {
               itemMap['created_at'],
               itemMap['updated_at'],
             ]);
-            print('成功将采购项目(id=$itemId)同步到MySQL，插入ID: ${result.insertId}');
+            LogManager.i('PurchaseSyncService',
+                '成功将采购项目(id=$itemId)同步到MySQL，插入ID: ${result.insertId}');
           }
         } catch (e) {
-          print('同步采购项目到MySQL时出错: $e');
+          LogManager.e('PurchaseSyncService', '同步采购项目到MySQL时出错', error: e);
         }
       } catch (e) {
-        print('采购项目同步到MySQL发生不可预期错误: $e');
+        LogManager.e('PurchaseSyncService', '采购项目同步到MySQL发生不可预期错误', error: e);
       }
     });
   }
@@ -181,7 +192,8 @@ class PurchaseSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过采购项目删除同步(id=$itemId)');
+          LogManager.w(
+              'PurchaseSyncService', 'MySQL连接不可用，跳过采购项目删除同步(id=$itemId)');
           return;
         }
 
@@ -190,12 +202,14 @@ class PurchaseSyncService {
             'DELETE FROM purchase_items WHERE id = ?',
             [itemId],
           );
-          print('成功从MySQL删除采购项目(id=$itemId)，影响行数: ${result.affectedRows}');
+          LogManager.i('PurchaseSyncService',
+              '成功从MySQL删除采购项目(id=$itemId)，影响行数: ${result.affectedRows}');
         } catch (e) {
-          print('从MySQL删除采购项目(id=$itemId)时出错: $e');
+          LogManager.e('PurchaseSyncService', '从MySQL删除采购项目(id=$itemId)时出错',
+              error: e);
         }
       } catch (e) {
-        print('采购项目删除同步到MySQL发生不可预期错误: $e');
+        LogManager.e('PurchaseSyncService', '采购项目删除同步到MySQL发生不可预期错误', error: e);
       }
     });
   }

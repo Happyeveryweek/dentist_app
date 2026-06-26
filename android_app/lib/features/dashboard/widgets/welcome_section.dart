@@ -22,6 +22,7 @@ class WelcomeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final currentUserAvatar = this.currentUserAvatar;
     final now = DateTime.now();
     final hour = now.hour;
     String greeting;
@@ -113,11 +114,11 @@ class WelcomeSection extends StatelessWidget {
                     ),
                   ),
                   child:
-                      currentUserAvatar != null && currentUserAvatar!.isNotEmpty
+                      currentUserAvatar != null && currentUserAvatar.isNotEmpty
                           ? ClipRRect(
                             borderRadius: BorderRadius.circular(14),
                             child: Image.memory(
-                              currentUserAvatar!,
+                              currentUserAvatar,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return const DefaultAvatarIcon();

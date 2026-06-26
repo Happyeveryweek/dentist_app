@@ -72,7 +72,7 @@ class ExistingPatientOverlayBuilder {
               border: Border.all(color: Colors.orange, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: Colors.black.withValues(alpha: 0.15),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -130,6 +130,7 @@ class ExistingPatientOverlayBuilder {
   }
 
   static Widget _buildPatientInfo(Patient existingPatient) {
+    final address = existingPatient.address;
     return Expanded(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -138,8 +139,7 @@ class ExistingPatientOverlayBuilder {
           children: [
             ExistingPatientInfoRow(
               label: '病历号',
-              value:
-                  existingPatient.medical_record_number?.toString() ?? '无',
+              value: existingPatient.medicalRecordNumber?.toString() ?? '无',
             ),
             ExistingPatientInfoRow(
               label: '姓名',
@@ -153,19 +153,18 @@ class ExistingPatientOverlayBuilder {
               label: '电话',
               value: existingPatient.phone,
             ),
-            if (existingPatient.address != null &&
-                existingPatient.address!.isNotEmpty)
+            if (address != null && address.isNotEmpty)
               ExistingPatientInfoRow(
                 label: '地址',
-                value: existingPatient.address!,
+                value: address,
               ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: const Text(
                 '请确认是否为新患者，或选择填充现有患者信息（包括材料）',
@@ -189,7 +188,7 @@ class ExistingPatientOverlayBuilder {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.05),
+        color: Colors.grey.withValues(alpha: 0.05),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(12),
           bottomRight: Radius.circular(12),

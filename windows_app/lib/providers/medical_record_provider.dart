@@ -1,12 +1,8 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../utils/mysql_connection_helper.dart';
 import '../models/patient.dart';
 import '../models/patient_medical_record.dart';
 
@@ -20,9 +16,8 @@ import '../features/medical_records/services/medical_record_service.dart';
 import '../features/medical_records/helpers/medical_record_cache_helper.dart';
 import '../providers/user_provider.dart';
 import '../models/user.dart';
-import '../utils/datetime_formatter.dart';
 import '../utils/medical_record_pdf_exporter.dart';
-import '../utils/mysql_sync_connection_helper.dart';
+import '../utils/log_manager.dart';
 
 /// 病历管理提供者
 /// 负责处理所有与患者病历相关的数据库操作和状态管理
@@ -35,22 +30,59 @@ class MedicalRecordProvider extends ChangeNotifier {
   MySqlMedicalRecordDataSource? _mysqlDataSource;
 
   // 同步服务
-  late final MedicalRecordSyncService _syncService;
+  MedicalRecordSyncService? _syncServiceInstance;
+  MedicalRecordSyncService get _syncService => _syncServiceInstance ??= MedicalRecordSyncService(
+        getSyncMysqlConnection: () => _syncMysqlConnection,
+        getEffectiveDataSourceType: () =>
+            _effectiveDataSourceType ?? _dataSourceType,
+      );
 
   // 模板管理服务
-  late final MedicalRecordTemplateService _templateService;
+  MedicalRecordTemplateService? _templateServiceInstance;
+  MedicalRecordTemplateService get _templateService => _templateServiceInstance ??= MedicalRecordTemplateService(
+        getCurrentDataSource: () => _currentDataSource,
+        setLoading: _setLoading,
+        clearError: _clearError,
+        setError: _setError,
+        notifyListeners: notifyListeners,
+        markTemplatesNeedRefresh: markTemplatesNeedRefresh,
+        syncService: _syncService,
+      );
 
   // 数据源初始化服务
-  late final MedicalRecordDataSourceInitializer _dataSourceInitializer;
+  MedicalRecordDataSourceInitializer? _dataSourceInitializerInstance;
+  MedicalRecordDataSourceInitializer get _dataSourceInitializer => _dataSourceInitializerInstance ??= MedicalRecordDataSourceInitializer(
+        getDatabaseProvider: () => _databaseProvider,
+        getUserProvider: () => _userProvider,
+        getCurrentUser: () => _currentUser,
+        setError: _setError,
+        printLog: (message) => LogManager.w('MedicalRecordProvider', message),
+      );
 
   // 权限检查服务
-  late final MedicalRecordPermissionService _permissionService;
+  MedicalRecordPermissionService? _permissionServiceInstance;
+  MedicalRecordPermissionService get _permissionService => _permissionServiceInstance ??= MedicalRecordPermissionService(
+        getUserProvider: () => _userProvider,
+        getCurrentUser: () => _currentUser,
+        getMedicalRecordById: getMedicalRecordById,
+      );
 
   // 病历记录管理服务
-  late final MedicalRecordService _medicalRecordService;
+  MedicalRecordService? _medicalRecordServiceInstance;
+  MedicalRecordService get _medicalRecordService => _medicalRecordServiceInstance ??= MedicalRecordService(
+        getCurrentDataSource: () => _currentDataSource,
+        setLoading: _setLoading,
+        clearError: _clearError,
+        setError: _setError,
+        notifyListeners: notifyListeners,
+        syncService: _syncService,
+        permissionService: _permissionService,
+        cacheHelper: _cacheHelper,
+      );
 
   // 缓存管理助手
-  late final MedicalRecordCacheHelper _cacheHelper;
+  MedicalRecordCacheHelper? _cacheHelperInstance;
+  MedicalRecordCacheHelper get _cacheHelper => _cacheHelperInstance ??= MedicalRecordCacheHelper();
 
   // 用户权限提供者引用
   UserProvider? _userProvider;
@@ -101,7 +133,7 @@ class MedicalRecordProvider extends ChangeNotifier {
   bool get isDataSourceReady {
     final dataSource = _currentDataSource;
     final ready = dataSource != null && _effectiveDataSourceType != null;
-    print(
+    LogManager.w('MedicalRecordProvider',
         'MedicalRecordProvider.isDataSourceReady: $ready (dataSource=${dataSource != null}, effectiveType=$_effectiveDataSourceType)');
     return ready;
   }
@@ -116,14 +148,8 @@ class MedicalRecordProvider extends ChangeNotifier {
     return null;
   }
 
-  // MySQL动态连接获取
-  MySqlConnection? get _currentMysqlConnection {
-    return _dataSourceInitializer.getCurrentMysqlConnection(
-      cachedConnection: _mysqlConnection,
-    );
-  }
-
   /// 获取用于同步的MySQL连接
+
   ///
   /// 说明：
   /// - 此连接专门用于SQLite→MySQL数据同步
@@ -149,50 +175,10 @@ class MedicalRecordProvider extends ChangeNotifier {
   }) {
     _userProvider = userProvider;
     _currentUser = currentUser;
-    print('MedicalRecordProvider 实例创建: $_instanceId');
+    LogManager.w(
+        'MedicalRecordProvider', 'MedicalRecordProvider 实例创建: $_instanceId');
 
-    _cacheHelper = MedicalRecordCacheHelper();
-
-    _syncService = MedicalRecordSyncService(
-      getSyncMysqlConnection: () => _syncMysqlConnection,
-      getEffectiveDataSourceType: () =>
-          _effectiveDataSourceType ?? _dataSourceType,
-    );
-
-    _templateService = MedicalRecordTemplateService(
-      getCurrentDataSource: () => _currentDataSource,
-      setLoading: _setLoading,
-      clearError: _clearError,
-      setError: _setError,
-      notifyListeners: notifyListeners,
-      markTemplatesNeedRefresh: markTemplatesNeedRefresh,
-      syncService: _syncService,
-    );
-
-    _dataSourceInitializer = MedicalRecordDataSourceInitializer(
-      getDatabaseProvider: () => _databaseProvider,
-      getUserProvider: () => _userProvider,
-      getCurrentUser: () => _currentUser,
-      setError: _setError,
-      printLog: (message) => print(message),
-    );
-
-    _permissionService = MedicalRecordPermissionService(
-      getUserProvider: () => _userProvider,
-      getCurrentUser: () => _currentUser,
-      getMedicalRecordById: getMedicalRecordById,
-    );
-
-    _medicalRecordService = MedicalRecordService(
-      getCurrentDataSource: () => _currentDataSource,
-      setLoading: _setLoading,
-      clearError: _clearError,
-      setError: _setError,
-      notifyListeners: notifyListeners,
-      syncService: _syncService,
-      permissionService: _permissionService,
-      cacheHelper: _cacheHelper,
-    );
+    // 服务实例通过 getter 懒加载
   }
 
   // 同步初始化方法（立即设置数据源）
@@ -202,7 +188,7 @@ class MedicalRecordProvider extends ChangeNotifier {
     String? dataSourceMode,
     UserProvider? userProvider,
   }) {
-    print(
+    LogManager.w('MedicalRecordProvider',
         'MedicalRecordProvider($_instanceId).initializeFromDatabaseSync: 开始同步初始化');
 
     _databaseProvider = dbProvider;
@@ -239,7 +225,7 @@ class MedicalRecordProvider extends ChangeNotifier {
     if (result.success) {
       // 清除缓存，强制重新加载
       _cacheHelper.clearAllCache();
-      print(
+      LogManager.i('MedicalRecordProvider',
           'MedicalRecordProvider($_instanceId).initializeFromDatabaseSync: 同步初始化完成');
     } else {
       _setError(result.error ?? '初始化失败');
@@ -253,7 +239,9 @@ class MedicalRecordProvider extends ChangeNotifier {
       // 初始化默认模板数据（如果需要）
       await _initializeDefaultTemplatesIfNeeded();
     } catch (e) {
-      print('MedicalRecordProvider($_instanceId): 异步表检查失败: $e');
+      LogManager.e('MedicalRecordProvider',
+          'MedicalRecordProvider($_instanceId): 异步表检查失败',
+          error: e);
     }
   }
 
@@ -307,7 +295,8 @@ class MedicalRecordProvider extends ChangeNotifier {
         _setError(result.error ?? '初始化失败');
       }
     } catch (e) {
-      print('MedicalRecordProvider初始化失败: $e');
+      LogManager.e('MedicalRecordProvider', 'MedicalRecordProvider初始化失败',
+          error: e);
       _setError('初始化失败: $e');
     }
   }
@@ -321,7 +310,8 @@ class MedicalRecordProvider extends ChangeNotifier {
         await initializeDefaultTemplates();
       }
     } catch (e) {
-      print('MedicalRecordProvider: 初始化默认模板时出错: $e');
+      LogManager.e('MedicalRecordProvider', 'MedicalRecordProvider: 初始化默认模板时出错',
+          error: e);
       // 不抛出异常，避免影响整体初始化
     }
   }
@@ -330,7 +320,8 @@ class MedicalRecordProvider extends ChangeNotifier {
   void _setError(String error) {
     _lastError = error;
     _isConnected = false;
-    print('MedicalRecordProvider错误: $error');
+    LogManager.e('MedicalRecordProvider', 'MedicalRecordProvider错误',
+        error: error);
   }
 
   void _clearError() {
@@ -345,7 +336,8 @@ class MedicalRecordProvider extends ChangeNotifier {
     try {
       await dataSource.ensureTablesExist();
     } catch (e) {
-      print('MedicalRecordProvider: 创建表时出错: $e');
+      LogManager.e('MedicalRecordProvider', 'MedicalRecordProvider: 创建表时出错',
+          error: e);
     }
   }
 
@@ -367,7 +359,8 @@ class MedicalRecordProvider extends ChangeNotifier {
     String? dataSourceType,
     User? currentUser,
   }) async {
-    print('MedicalRecordProvider: setDatabaseConnection被调用，但已升级为数据源架构');
+    LogManager.w('MedicalRecordProvider',
+        'MedicalRecordProvider: setDatabaseConnection被调用，但已升级为数据源架构');
     // 这个方法保留用于向后兼容，但实际初始化应该使用initializeFromDatabase
     if (database != null) _database = database;
     if (mysqlConnection != null) _mysqlConnection = mysqlConnection;
@@ -434,7 +427,7 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 更新模块数据源配置
   void updateModuleDataSources(Map<String, String> moduleDataSources) {
-    print(
+    LogManager.i('MedicalRecordProvider',
         'MedicalRecordProvider.updateModuleDataSources - 模块数据源配置已更新: $moduleDataSources');
 
     // 如果病历模块的数据源类型发生变化，需要重新初始化
@@ -442,7 +435,8 @@ class MedicalRecordProvider extends ChangeNotifier {
       // 病历管理使用与患者管理相同的数据源
       final newDataSourceType = moduleDataSources['patients'] ?? 'sqlite';
       if (newDataSourceType != _effectiveDataSourceType) {
-        print('病历模块数据源类型变更: $_effectiveDataSourceType -> $newDataSourceType');
+        LogManager.w('MedicalRecordProvider',
+            '病历模块数据源类型变更: $_effectiveDataSourceType -> $newDataSourceType');
 
         initializeFromDatabase(
           _databaseProvider,
@@ -525,14 +519,8 @@ class MedicalRecordProvider extends ChangeNotifier {
     );
   }
 
-  // =================== 权限检查辅助方法 ===================
-
-  /// 检查病历记录操作权限
-  Future<void> _checkMedicalRecordPermission(int recordId) async {
-    return _permissionService.checkMedicalRecordPermission(recordId);
-  }
-
   /// 检查当前用户是否有权限操作指定病历记录
+
   Future<bool> hasPermissionForRecord(int recordId) async {
     return _permissionService.hasPermissionForRecord(recordId);
   }
@@ -688,7 +676,7 @@ class MedicalRecordProvider extends ChangeNotifier {
       _clearError();
       return pdfBytes;
     } catch (e) {
-      print('导出病历PDF时出错: $e');
+      LogManager.e('MedicalRecordProvider', '导出病历PDF时出错', error: e);
       _setError('导出病历PDF失败: $e');
       rethrow;
     } finally {

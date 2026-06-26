@@ -32,9 +32,10 @@ class FinancialDataCleanerService {
         final invalidCount = await db.rawQuery(
           'SELECT COUNT(*) as count FROM financial_records WHERE patient_id IS NULL OR patient_id = 0',
         );
-        result['invalid'] = invalidCount.first['count'] as int;
+        final invalid = invalidCount.first['count'] as int;
+        result['invalid'] = invalid;
 
-        if (result['invalid']! > 0) {
+        if (invalid > 0) {
           // 删除无效记录
           final deleted = await db.delete(
             'financial_records',
@@ -59,10 +60,11 @@ class FinancialDataCleanerService {
           final invalidResults = await conn.query(
             'SELECT COUNT(*) as count FROM financial_records WHERE patient_id IS NULL OR patient_id = 0',
           );
-          result['invalid'] =
+          final invalid =
               int.tryParse(invalidResults.first['count'].toString()) ?? 0;
+          result['invalid'] = invalid;
 
-          if (result['invalid']! > 0) {
+          if (invalid > 0) {
             // 删除无效记录
             final deletedResults = await conn.query(
               'DELETE FROM financial_records WHERE patient_id IS NULL OR patient_id = 0',

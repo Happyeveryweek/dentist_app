@@ -1,44 +1,21 @@
-import 'dart:io';
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:intl/intl.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mysql1/mysql1.dart';
-import 'dart:math';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/database_provider.dart';
-import '../utils/mysql_connection_helper.dart';
-import 'package:flutter/services.dart';
-import 'dart:math' as math;
-import 'dart:typed_data';
-import 'package:crypto/crypto.dart';
-import 'package:file_picker/file_picker.dart';
 
-import '../models/patient.dart';
-import '../models/appointment.dart';
 // 随访记录相关导入已移除
 import '../models/user.dart';
-import '../models/financial_record.dart';
-import '../models/financial_item.dart';
-import '../models/material.dart' as material_models;
 import '../models/purchase_record.dart';
 import '../models/purchase_item.dart';
-import '../models/patient_material.dart';
-import '../models/material_image.dart';
-import '../utils/mysql_sync_connection_helper.dart';
-import '../providers/settings_provider.dart';
 import '../providers/user_provider.dart';
-import '../utils/pinyin_util.dart';
-import 'package:dentist_app_windows/models/backup_log.dart';
 import '../data_sources/purchase_data_source.dart';
 import '../utils/purchase_migration.dart';
 import '../features/purchases/services/purchase_mysql_connection_service.dart';
 import '../features/purchases/services/purchase_sync_service.dart';
+import '../utils/log_manager.dart';
 
 /// 采购管理提供者
 /// 负责处理所有与采购相关的数据库操作
@@ -79,11 +56,25 @@ class PurchaseProvider extends ChangeNotifier {
   MySqlPurchaseDataSource? _mysqlDataSource;
 
   // 同步服务
-  late final PurchaseMysqlConnectionService _mysqlConnectionService;
-  late final PurchaseSyncService _syncService;
+  PurchaseMysqlConnectionService? _mysqlConnectionServiceInstance;
+  PurchaseMysqlConnectionService get _mysqlConnectionService => _mysqlConnectionServiceInstance ??= PurchaseMysqlConnectionService(
+        getDatabaseProvider: () => _databaseProvider is DatabaseProvider
+            ? _databaseProvider as DatabaseProvider
+            : null,
+        getCachedConnection: () => _mysqlConnection,
+        setCachedConnection: (connection) {
+          _mysqlConnection = connection;
+        },
+        getEffectiveDataSourceType: () => _effectiveDataSourceType,
+      );
+  PurchaseSyncService? _syncServiceInstance;
+  PurchaseSyncService get _syncService => _syncServiceInstance ??= PurchaseSyncService(
+        getSyncMysqlConnection: () => _syncMysqlConnection,
+        getEffectiveDataSourceType: () => _effectiveDataSourceType,
+      );
 
   // 连接状态
-  bool _isConnected = true;
+  final bool _isConnected = true;
   String? _lastError;
 
   // Getters
@@ -101,9 +92,9 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 获取有效的数据源类型（考虑模块化配置）
   String get _effectiveDataSourceType {
-    if (_moduleDataSources != null &&
-        _moduleDataSources!.containsKey('purchase')) {
-      return _moduleDataSources!['purchase']!;
+    final moduleType = _moduleDataSources?['purchase'];
+    if (moduleType != null) {
+      return moduleType;
     }
     return _dataSourceType;
   }
@@ -126,9 +117,10 @@ class PurchaseProvider extends ChangeNotifier {
         if (_databaseProvider != null) {
           try {
             await _databaseProvider.initializeMySQL();
-            print('✅ PurchaseProvider: MySQL重连成功');
+            LogManager.i('PurchaseProvider', '✅ PurchaseProvider: MySQL重连成功');
           } catch (e) {
-            print('❌ PurchaseProvider: MySQL重连失败: $e');
+            LogManager.e('PurchaseProvider', '❌ PurchaseProvider: MySQL重连失败',
+                error: e);
           }
         }
       },
@@ -142,7 +134,8 @@ class PurchaseProvider extends ChangeNotifier {
     // 清除缓存，强制重新加载数据以应用权限过滤
     clearCache();
 
-    print('✅ PurchaseProvider已设置UserProvider引用，权限过滤已启用');
+    LogManager.w(
+        'PurchaseProvider', '✅ PurchaseProvider已设置UserProvider引用，权限过滤已启用');
   }
 
   // 获取当前数据源（必须可用，否则抛出异常）
@@ -151,29 +144,28 @@ class PurchaseProvider extends ChangeNotifier {
 
     if (effectiveType == 'mysql') {
       // 如果要求使用MySQL但未初始化，尝试降级到SQLite
-      if (_mysqlDataSource == null) {
-        if (_sqliteDataSource != null) {
-          print('⚠️ MySQL采购数据源未初始化，自动降级到SQLite');
-          return _sqliteDataSource!;
+      final mysqlDataSource = _mysqlDataSource;
+      if (mysqlDataSource == null) {
+        final sqliteDataSource = _sqliteDataSource;
+        if (sqliteDataSource != null) {
+          LogManager.w('PurchaseProvider', 'MySQL采购数据源未初始化，自动降级到SQLite');
+          return sqliteDataSource;
         }
         throw Exception('MySQL采购数据源未初始化 - 模块配置要求使用MySQL但数据源未设置');
       }
-      return _mysqlDataSource!;
+      return mysqlDataSource;
     } else {
-      if (_sqliteDataSource == null) {
+      final sqliteDataSource = _sqliteDataSource;
+      if (sqliteDataSource == null) {
         throw Exception('SQLite采购数据源未初始化');
       }
-      return _sqliteDataSource!;
+      return sqliteDataSource;
     }
   }
 
   // 获取最新的MySQL连接（防止连接过期）
   Future<MySqlConnection?> get _currentMysqlConnection =>
       _mysqlConnectionService.getCurrentConnection();
-
-  // 验证MySQL连接是否有效
-  Future<bool> _validateConnection(MySqlConnection connection) =>
-      _mysqlConnectionService.validateConnection(connection);
 
   /// 获取用于同步的MySQL连接
   ///
@@ -188,44 +180,13 @@ class PurchaseProvider extends ChangeNotifier {
   MySqlConnection? get _syncMysqlConnection =>
       _mysqlConnectionService.getSyncConnection();
 
-  // 测试MySQL连接是否有效
-  Future<bool> _testMySqlConnection() async {
-    try {
-      final ok = await _mysqlConnectionService.testCurrentConnection();
-      if (!ok) {
-        _setError('MySQL连接测试失败');
-        return false;
-      }
-      _isConnected = true;
-      _clearError();
-      return true;
-    } catch (e) {
-      print('MySQL连接测试失败: $e');
-      // 如果连接失败，标记连接为无效
-      _mysqlConnection = null;
-      _setError('MySQL连接测试失败: $e');
-      return false;
-    }
-  }
-
-  // 清除错误状态
-  void _clearError() {
-    _lastError = null;
-    notifyListeners();
-  }
-
-  // 设置错误状态
-  void _setError(String error) {
-    _lastError = error;
-    _isConnected = false;
-    notifyListeners();
-  }
-
   // 检查缓存是否有效
   bool _isCacheValid() {
-    return _cachedRecords != null &&
-        _lastCacheTime != null &&
-        DateTime.now().difference(_lastCacheTime!) < _cacheValidDuration;
+    final cached = _cachedRecords;
+    final lastTime = _lastCacheTime;
+    return cached != null &&
+        lastTime != null &&
+        DateTime.now().difference(lastTime) < _cacheValidDuration;
   }
 
   // 更新缓存
@@ -263,7 +224,7 @@ class PurchaseProvider extends ChangeNotifier {
       );
       return count;
     } catch (e) {
-      print('getPurchaseRecordsCount 出错: $e');
+      LogManager.e('PurchaseProvider', 'getPurchaseRecordsCount 出错', error: e);
       return 0;
     }
   }
@@ -297,7 +258,7 @@ class PurchaseProvider extends ChangeNotifier {
       );
       return records;
     } catch (e) {
-      print('getPurchaseRecords 出错: $e');
+      LogManager.e('PurchaseProvider', 'getPurchaseRecords 出错', error: e);
       return [];
     }
   }
@@ -314,7 +275,7 @@ class PurchaseProvider extends ChangeNotifier {
         doctorFilter: doctorFilter,
       );
     } catch (e) {
-      print('searchPurchaseRecords 出错: $e');
+      LogManager.e('PurchaseProvider', 'searchPurchaseRecords 出错', error: e);
       return [];
     }
   }
@@ -333,20 +294,7 @@ class PurchaseProvider extends ChangeNotifier {
     _currentUser = currentUser;
     _moduleDataSources = moduleDataSources;
 
-    _mysqlConnectionService = PurchaseMysqlConnectionService(
-      getDatabaseProvider: () => _databaseProvider is DatabaseProvider
-          ? _databaseProvider as DatabaseProvider
-          : null,
-      getCachedConnection: () => _mysqlConnection,
-      setCachedConnection: (connection) {
-        _mysqlConnection = connection;
-      },
-      getEffectiveDataSourceType: () => _effectiveDataSourceType,
-    );
-    _syncService = PurchaseSyncService(
-      getSyncMysqlConnection: () => _syncMysqlConnection,
-      getEffectiveDataSourceType: () => _effectiveDataSourceType,
-    );
+    // 服务实例通过 getter 懒加载
   }
 
   // 设置数据库连接
@@ -357,48 +305,57 @@ class PurchaseProvider extends ChangeNotifier {
     User? currentUser,
     Map<String, String>? moduleDataSources,
   }) async {
-    print('PurchaseProvider.setDatabaseConnection - 开始设置数据库连接');
-    print('PurchaseProvider.setDatabaseConnection - 当前数据源类型: $_dataSourceType');
-    print('PurchaseProvider.setDatabaseConnection - 新的数据源类型: $dataSourceType');
-    print(
-        'PurchaseProvider.setDatabaseConnection - 当前SQLite数据库: ${_database != null ? "已连接" : "未连接"}');
-    print(
-        'PurchaseProvider.setDatabaseConnection - 当前MySQL连接: ${_mysqlConnection != null ? "已连接" : "未连接"}');
-    print(
-        'PurchaseProvider.setDatabaseConnection - 新的SQLite数据库: ${database != null ? "已提供" : "未提供"}');
-    print(
-        'PurchaseProvider.setDatabaseConnection - 新的MySQL连接: ${mysqlConnection != null ? "已提供" : "未提供"}');
+    LogManager.w('PurchaseProvider',
+        'PurchaseProvider.setDatabaseConnection - 开始设置数据库连接');
+    LogManager.w('PurchaseProvider',
+        'PurchaseProvider.setDatabaseConnection - 当前数据源类型: $_dataSourceType');
+    LogManager.w('PurchaseProvider',
+        'PurchaseProvider.setDatabaseConnection - 新的数据源类型: $dataSourceType');
+    LogManager.w('PurchaseProvider',
+        'PurchaseProvider.setDatabaseConnection - 当前SQLite数据库');
+    LogManager.w('PurchaseProvider',
+        'PurchaseProvider.setDatabaseConnection - 当前MySQL连接');
+    LogManager.w('PurchaseProvider',
+        'PurchaseProvider.setDatabaseConnection - 新的SQLite数据库');
+    LogManager.w('PurchaseProvider',
+        'PurchaseProvider.setDatabaseConnection - 新的MySQL连接');
 
     if (database != null) {
       _database = database;
-      print('PurchaseProvider.setDatabaseConnection - SQLite数据库连接已设置');
+      LogManager.w('PurchaseProvider',
+          'PurchaseProvider.setDatabaseConnection - SQLite数据库连接已设置');
     }
     if (mysqlConnection != null) {
       _mysqlConnection = mysqlConnection;
-      print('PurchaseProvider.setDatabaseConnection - MySQL连接已设置');
+      LogManager.w('PurchaseProvider',
+          'PurchaseProvider.setDatabaseConnection - MySQL连接已设置');
     }
     if (dataSourceType != null) {
       _dataSourceType = dataSourceType;
-      print(
+      LogManager.w('PurchaseProvider',
           'PurchaseProvider.setDatabaseConnection - 数据源类型已设置为: $_dataSourceType');
     }
     if (currentUser != null) {
       _currentUser = currentUser;
-      print('PurchaseProvider.setDatabaseConnection - 当前用户已设置');
+      LogManager.w('PurchaseProvider',
+          'PurchaseProvider.setDatabaseConnection - 当前用户已设置');
     }
     if (moduleDataSources != null) {
       _moduleDataSources = moduleDataSources;
-      print(
+      LogManager.w('PurchaseProvider',
           'PurchaseProvider.setDatabaseConnection - 模块数据源配置已设置: $_moduleDataSources');
     }
 
-    print('PurchaseProvider.setDatabaseConnection - 设置完成后的状态:');
-    print('PurchaseProvider.setDatabaseConnection - 数据源类型: $_dataSourceType');
-    print(
-        'PurchaseProvider.setDatabaseConnection - SQLite数据库: ${_database != null ? "已连接" : "未连接"}');
-    print(
+    LogManager.i('PurchaseProvider',
+        'PurchaseProvider.setDatabaseConnection - 设置完成后的状态:');
+    LogManager.w('PurchaseProvider',
+        'PurchaseProvider.setDatabaseConnection - 数据源类型: $_dataSourceType');
+    LogManager.w('PurchaseProvider',
+        'PurchaseProvider.setDatabaseConnection - SQLite数据库');
+    LogManager.w('PurchaseProvider',
         'PurchaseProvider.setDatabaseConnection - 模块数据源配置: $_moduleDataSources');
-    print('PurchaseProvider.setDatabaseConnection - 初始化状态: $initialized');
+    LogManager.w('PurchaseProvider',
+        'PurchaseProvider.setDatabaseConnection - 初始化状态: $initialized');
   }
 
   // 标记刷新
@@ -416,18 +373,19 @@ class PurchaseProvider extends ChangeNotifier {
   void updateModuleDataSources(Map<String, String> moduleDataSources) {
     _moduleDataSources = moduleDataSources;
     _isUsingTemporaryModuleDataSources = true; // 标记为使用了临时覆盖
-    print(
+    LogManager.i('PurchaseProvider',
         'PurchaseProvider.updateModuleDataSources - 模块数据源配置已更新: $_moduleDataSources');
-    print('⏸️ PurchaseProvider.updateModuleDataSources - 已设置临时覆盖标志');
+    LogManager.w('PurchaseProvider',
+        '⏸️ PurchaseProvider.updateModuleDataSources - 已设置临时覆盖标志');
 
     // 检查当前需要的数据源是否已初始化
     final requiredType = _effectiveDataSourceType;
-    print(
+    LogManager.w('PurchaseProvider',
         'PurchaseProvider.updateModuleDataSources - 当前需要的数据源类型: $requiredType');
 
     if (requiredType == 'mysql' && _mysqlDataSource == null) {
-      print('⚠️ 警告：模块配置要求使用MySQL，但MySQL数据源未初始化');
-      print('⚠️ MySQL连接状态: ${_mysqlConnection != null ? "已连接" : "未连接"}');
+      LogManager.w('PurchaseProvider', '⚠️ 警告：模块配置要求使用MySQL，但MySQL数据源未初始化');
+      LogManager.w('PurchaseProvider', '⚠️ MySQL连接状态');
 
       // 尝试从DatabaseProvider获取MySQL连接并初始化
       if (_databaseProvider != null) {
@@ -436,17 +394,16 @@ class PurchaseProvider extends ChangeNotifier {
           if (mysqlConnection != null) {
             _mysqlConnection = mysqlConnection;
             setMySqlDataSource(mysqlConnection);
-            print('✅ 已重新初始化MySQL数据源');
           } else {
-            print('❌ 无法获取MySQL连接');
+            LogManager.w('PurchaseProvider', '❌ 无法获取MySQL连接');
           }
         } catch (e) {
-          print('❌ 获取MySQL连接失败: $e');
+          LogManager.e('PurchaseProvider', '❌ 获取MySQL连接失败', error: e);
         }
       }
     } else if (requiredType == 'sqlite' && _sqliteDataSource == null) {
-      print('⚠️ 警告：模块配置要求使用SQLite，但SQLite数据源未初始化');
-      print('⚠️ SQLite连接状态: ${_database != null ? "已连接" : "未连接"}');
+      LogManager.w('PurchaseProvider', '⚠️ 警告：模块配置要求使用SQLite，但SQLite数据源未初始化');
+      LogManager.w('PurchaseProvider', '⚠️ SQLite连接状态');
 
       // 尝试从DatabaseProvider获取SQLite连接并初始化
       if (_databaseProvider != null) {
@@ -455,12 +412,9 @@ class PurchaseProvider extends ChangeNotifier {
           if (database != null) {
             _database = database;
             setSqliteDataSource(database);
-            print('✅ 已重新初始化SQLite数据源');
-          } else {
-            print('❌ 无法获取SQLite数据库');
-          }
+          } else {}
         } catch (e) {
-          print('❌ 获取SQLite数据库失败: $e');
+          LogManager.e('PurchaseProvider', '❌ 获取SQLite数据库失败', error: e);
         }
       }
     }
@@ -479,10 +433,9 @@ class PurchaseProvider extends ChangeNotifier {
       String dbType = 'sqlite';
 
       // 如果是模块化模式且有模块配置，优先使用模块配置
-      if (dataSourceMode == 'modular' &&
-          moduleDataSources != null &&
-          moduleDataSources.containsKey('purchase')) {
-        dbType = moduleDataSources['purchase']!;
+      final purchaseType = moduleDataSources?['purchase'];
+      if (dataSourceMode == 'modular' && purchaseType != null) {
+        dbType = purchaseType;
       } else {
         // 否则使用全局配置
         try {
@@ -497,16 +450,19 @@ class PurchaseProvider extends ChangeNotifier {
       // 检查是否需要重新初始化
       if (_isInitialized && _lastInitializedDataSource == dbType) {
         if (dbType == 'mysql' && _mysqlDataSource == null) {
-          print('⚠️ PurchaseProvider检测到MySQL数据源未就绪，继续尝试初始化');
+          LogManager.w(
+              'PurchaseProvider', '⚠️ PurchaseProvider检测到MySQL数据源未就绪，继续尝试初始化');
         } else if (dbType == 'sqlite' && _sqliteDataSource == null) {
-          print('⚠️ PurchaseProvider检测到SQLite数据源未就绪，继续尝试初始化');
+          LogManager.w(
+              'PurchaseProvider', '⚠️ PurchaseProvider检测到SQLite数据源未就绪，继续尝试初始化');
         } else {
           // 已经初始化过相同的数据源且数据源对象可用，跳过
           return;
         }
       }
 
-      print('PurchaseProvider开始从DatabaseProvider初始化...');
+      LogManager.w(
+          'PurchaseProvider', 'PurchaseProvider开始从DatabaseProvider初始化...');
 
       // 保存DatabaseProvider引用
       _databaseProvider = dbProvider;
@@ -516,20 +472,21 @@ class PurchaseProvider extends ChangeNotifier {
       if (!_isUsingTemporaryModuleDataSources) {
         _moduleDataSources = moduleDataSources;
       } else {
-        print('⏸️ initializeFromDatabase：已使用临时模块数据源配置，跳过覆盖');
+        LogManager.w(
+            'PurchaseProvider', '⏸️ initializeFromDatabase：已使用临时模块数据源配置，跳过覆盖');
       }
 
       // 保存用户权限提供者引用
       if (userProvider != null) {
         _userProvider = userProvider;
-        print('✅ PurchaseProvider已设置UserProvider引用');
       }
 
       // 输出使用的数据源类型
       if (dataSourceMode == 'modular' &&
           moduleDataSources != null &&
           moduleDataSources.containsKey('purchase')) {
-        print('PurchaseProvider使用模块化配置: purchase -> $dbType');
+        LogManager.w(
+            'PurchaseProvider', 'PurchaseProvider使用模块化配置: purchase -> $dbType');
       } else {
         // 否则使用全局配置
         try {
@@ -537,9 +494,9 @@ class PurchaseProvider extends ChangeNotifier {
             dbType = dbProvider.dataSourceType;
           }
         } catch (e) {
-          print('获取dataSourceType失败，使用默认值: $e');
+          LogManager.e('PurchaseProvider', '获取dataSourceType失败，使用默认值',
+              error: e);
         }
-        print('PurchaseProvider使用全局配置: $dbType');
       }
 
       // 设置数据源类型
@@ -558,7 +515,7 @@ class PurchaseProvider extends ChangeNotifier {
             setSqliteDataSource(dbProvider.database);
           }
         } catch (e) {
-          print('获取SQLite数据库失败: $e');
+          LogManager.e('PurchaseProvider', '获取SQLite数据库失败', error: e);
         }
       } else if (dbType == 'mysql') {
         // 初始化MySQL数据源
@@ -572,7 +529,7 @@ class PurchaseProvider extends ChangeNotifier {
 
             setMySqlDataSource(mysqlConnection);
           } else {
-            print('⚠️ MySQL连接为null，自动降级到SQLite');
+            LogManager.w('PurchaseProvider', '⚠️ MySQL连接为null，自动降级到SQLite');
             _dataSourceType = 'sqlite';
 
             // 降级到SQLite
@@ -580,13 +537,14 @@ class PurchaseProvider extends ChangeNotifier {
               _database = dbProvider.database;
               await _migratePurchaseRecordsTable();
               setSqliteDataSource(dbProvider.database);
-              print('✅ PurchaseProvider已降级到SQLite数据源');
+              LogManager.w(
+                  'PurchaseProvider', '✅ PurchaseProvider已降级到SQLite数据源');
             } else {
-              print('❌ SQLite数据库也不可用');
+              LogManager.w('PurchaseProvider', '❌ SQLite数据库也不可用');
             }
           }
         } catch (e) {
-          print('获取MySQL连接失败: $e');
+          LogManager.e('PurchaseProvider', '获取MySQL连接失败', error: e);
           // 尝试降级到SQLite
           _dataSourceType = 'sqlite';
           if (dbProvider.database != null) {
@@ -594,9 +552,11 @@ class PurchaseProvider extends ChangeNotifier {
             try {
               await _migratePurchaseRecordsTable();
               setSqliteDataSource(dbProvider.database);
-              print('✅ PurchaseProvider已降级到SQLite数据源');
+              LogManager.w(
+                  'PurchaseProvider', '✅ PurchaseProvider已降级到SQLite数据源');
             } catch (fallbackError) {
-              print('❌ 降级到SQLite也失败: $fallbackError');
+              LogManager.e(
+                  'PurchaseProvider', '❌ 降级到SQLite也失败: $fallbackError');
             }
           }
         }
@@ -606,9 +566,9 @@ class PurchaseProvider extends ChangeNotifier {
       _isInitialized = true;
       _lastInitializedDataSource = _dataSourceType;
 
-      print('PurchaseProvider初始化完成，数据源类型: $dbType');
+      LogManager.i('PurchaseProvider', 'PurchaseProvider初始化完成，数据源类型: $dbType');
     } catch (e) {
-      print('PurchaseProvider初始化失败: $e');
+      LogManager.e('PurchaseProvider', 'PurchaseProvider初始化失败', error: e);
       _dataSourceType = 'sqlite';
     }
 
@@ -639,16 +599,18 @@ class PurchaseProvider extends ChangeNotifier {
     }
 
     try {
-      if (effectiveDataSourceType == 'sqlite' && _database != null) {
-        await PurchaseMigration.addDoctorFieldToSQLite(_database!);
+      final database = _database;
+      final mysqlConnection = _mysqlConnection;
+      if (effectiveDataSourceType == 'sqlite' && database != null) {
+        await PurchaseMigration.addDoctorFieldToSQLite(database);
         _sqliteMigrationCompleted = true;
       } else if (effectiveDataSourceType == 'mysql' &&
-          _mysqlConnection != null) {
-        await PurchaseMigration.addDoctorFieldToMySQL(_mysqlConnection!);
+          mysqlConnection != null) {
+        await PurchaseMigration.addDoctorFieldToMySQL(mysqlConnection);
         _mysqlMigrationCompleted = true;
       }
     } catch (e) {
-      print('❌ 采购记录表迁移失败: $e');
+      LogManager.e('PurchaseProvider', '❌ 采购记录表迁移失败', error: e);
       // 迁移失败不应该阻止应用启动，只记录错误
     }
   }
@@ -657,16 +619,6 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 添加采购记录
   Future<int> addPurchaseRecord(PurchaseRecord record) async {
-    final effectiveDataSourceType = _effectiveDataSourceType;
-    print(
-        'PurchaseProvider.addPurchaseRecord - 使用数据源类型: $effectiveDataSourceType');
-    print('PurchaseProvider.addPurchaseRecord - 初始化状态: $initialized');
-    print(
-        'PurchaseProvider.addPurchaseRecord - SQLite数据库: ${_database != null ? "已连接" : "未连接"}');
-    print(
-        'PurchaseProvider.addPurchaseRecord - MySQL连接: ${_mysqlConnection != null ? "已连接" : "未连接"}');
-    print('PurchaseProvider.addPurchaseRecord - 模块数据源配置: $_moduleDataSources');
-
     if (!initialized) {
       throw Exception(
           '数据库未初始化 - SQLite: ${_database != null}, MySQL: ${_mysqlConnection != null}');
@@ -688,7 +640,7 @@ class PurchaseProvider extends ChangeNotifier {
 
       return recordId;
     } catch (e) {
-      print('添加采购记录时出错: $e');
+      LogManager.e('PurchaseProvider', '添加采购记录时出错', error: e);
       throw Exception('添加采购记录失败: $e');
     }
   }
@@ -699,13 +651,12 @@ class PurchaseProvider extends ChangeNotifier {
   String? _getDoctorFilter() {
     try {
       // 如果没有用户权限提供者或当前用户是管理员，不进行过滤
-      if (_userProvider == null || _userProvider!.currentUser == null) {
-        return null;
-      }
+      final userProvider = _userProvider;
+      if (userProvider == null) return null;
 
-      final currentUser = _userProvider!.currentUser!;
-      if (currentUser.isAdmin) {
-        return null; // 管理员不过滤
+      final currentUser = userProvider.currentUser;
+      if (currentUser == null || currentUser.isAdmin) {
+        return null; // 无用户或管理员不过滤
       }
 
       // 获取当前用户的医生字段
@@ -717,53 +668,14 @@ class PurchaseProvider extends ChangeNotifier {
 
       return doctorName;
     } catch (e) {
-      print('❌ 获取医生过滤条件失败: $e');
+      LogManager.e('PurchaseProvider', '❌ 获取医生过滤条件失败', error: e);
       // 出错时返回安全的过滤条件
       return '__NO_DOCTOR__';
     }
   }
 
-  // 应用权限过滤（基于医生字段过滤采购记录）- 保留作为备用方法
-  Future<List<PurchaseRecord>> _applyPermissionFilter(
-      List<PurchaseRecord> records) async {
-    try {
-      // 如果没有用户权限提供者或当前用户是管理员，不进行过滤
-      if (_userProvider == null || _userProvider!.currentUser == null) {
-        return records;
-      }
-
-      final currentUser = _userProvider!.currentUser!;
-      if (currentUser.isAdmin) {
-        return records;
-      }
-
-      // 获取当前用户的医生字段
-      final doctorName = currentUser.doctor;
-      if (doctorName == null || doctorName.isEmpty) {
-        // 如果没有医生字段，返回空列表
-        print('当前用户没有医生字段，返回空采购记录列表');
-        return [];
-      }
-
-      // 过滤采购记录：只显示医生字段匹配的记录
-      List<PurchaseRecord> filteredRecords = [];
-
-      for (final record in records) {
-        // 检查医生字段是否匹配
-        if (record.doctor == doctorName) {
-          filteredRecords.add(record);
-        }
-      }
-
-      return filteredRecords;
-    } catch (e) {
-      print('应用采购记录权限过滤失败: $e');
-      // 出错时返回空列表，确保安全
-      return [];
-    }
-  }
-
   // 获取所有采购记录（纯数据源模式，支持权限过滤）
+
   Future<List<PurchaseRecord>> getAllPurchaseRecords() async {
     if (!initialized) {
       return _cachedRecords ?? []; // 优雅降级而不是抛出异常
@@ -771,12 +683,14 @@ class PurchaseProvider extends ChangeNotifier {
 
     try {
       // 优先检查缓存
-      if (_isCacheValid() && !_purchasesNeedRefresh) {
-        print('使用缓存的采购记录数据: ${_cachedRecords!.length} 条');
-        return _cachedRecords!;
+      final cachedRecords = _cachedRecords;
+      if (cachedRecords != null && _isCacheValid() && !_purchasesNeedRefresh) {
+        LogManager.w(
+            'PurchaseProvider', '使用缓存的采购记录数据: ${cachedRecords.length} 条');
+        return cachedRecords;
       }
 
-      print('🔄 从数据库获取最新采购记录...');
+      LogManager.w('PurchaseProvider', '从数据库获取最新采购记录...');
 
       // 获取权限过滤条件
       final doctorFilter = _getDoctorFilter();
@@ -787,16 +701,17 @@ class PurchaseProvider extends ChangeNotifier {
       // 更新缓存
       _updateCache(records);
       _purchasesNeedRefresh = false; // 清除刷新标志
-      print('✅ 采购记录缓存已更新');
+      LogManager.i('PurchaseProvider', '采购记录缓存已更新');
 
       return records;
     } catch (e) {
-      print('❌ 获取采购记录失败: $e');
+      LogManager.e('PurchaseProvider', '获取采购记录失败', error: e);
 
       // 优雅降级：如果有缓存就返回缓存，否则返回空列表
-      if (_isCacheValid()) {
-        print('使用缓存的采购记录数据，查询失败: $e');
-        return _cachedRecords!;
+      final cachedRecords = _cachedRecords;
+      if (cachedRecords != null && _isCacheValid()) {
+        LogManager.e('PurchaseProvider', '使用缓存的采购记录数据，查询失败', error: e);
+        return cachedRecords;
       }
 
       return []; // 返回空列表而不是抛出异常
@@ -814,7 +729,7 @@ class PurchaseProvider extends ChangeNotifier {
       final record = await _currentDataSource.getPurchaseById(id);
       return record;
     } catch (e) {
-      print('获取采购记录详情时出错: $e');
+      LogManager.e('PurchaseProvider', '获取采购记录详情时出错', error: e);
       return null;
     }
   }
@@ -835,14 +750,15 @@ class PurchaseProvider extends ChangeNotifier {
         _purchasesNeedRefresh = false;
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
-        if (_syncService.needsSync && record.id != null) {
+        final recordId = record.id;
+        if (_syncService.needsSync && recordId != null) {
           final recordMap = record.toMap();
-          _syncService.syncPurchaseRecordToMySQL(recordMap, record.id!);
+          _syncService.syncPurchaseRecordToMySQL(recordMap, recordId);
         }
       }
       return success;
     } catch (e) {
-      print('更新采购记录时出错: $e');
+      LogManager.e('PurchaseProvider', '更新采购记录时出错', error: e);
       return false;
     }
   }
@@ -868,7 +784,7 @@ class PurchaseProvider extends ChangeNotifier {
       }
       return success;
     } catch (e) {
-      print('删除采购记录时出错: $e');
+      LogManager.e('PurchaseProvider', '删除采购记录时出错', error: e);
       return false;
     }
   }
@@ -888,7 +804,7 @@ class PurchaseProvider extends ChangeNotifier {
       markPurchasesNeedRefresh();
 
       // 如果当前使用的是SQLite数据源，需要同步到MySQL
-      if (_syncService.needsSync && id != null) {
+      if (_syncService.needsSync) {
         final itemMap = item.toMap();
         itemMap['id'] = id;
         _syncService.syncPurchaseItemToMySQL(itemMap, id);
@@ -896,7 +812,7 @@ class PurchaseProvider extends ChangeNotifier {
 
       return id;
     } catch (e) {
-      print('添加采购项目时出错: $e');
+      LogManager.e('PurchaseProvider', '添加采购项目时出错', error: e);
       throw Exception('添加采购项目失败: $e');
     }
   }
@@ -920,7 +836,7 @@ class PurchaseProvider extends ChangeNotifier {
       }
       return success;
     } catch (e) {
-      print('删除采购项目时出错: $e');
+      LogManager.e('PurchaseProvider', '删除采购项目时出错', error: e);
       return false;
     }
   }
@@ -941,30 +857,22 @@ class PurchaseProvider extends ChangeNotifier {
           await _currentDataSource.getPurchaseItemsByRecordId(recordId);
       return items;
     } catch (e) {
-      print('获取采购项目时出错: $e');
+      LogManager.e('PurchaseProvider', '获取采购项目时出错', error: e);
       return [];
     }
   }
 
   // 创建采购项目表
   Future<void> createPurchaseItemsTable() async {
-    final effectiveDataSourceType = _effectiveDataSourceType;
-    print(
-        'PurchaseProvider.createPurchaseItemsTable - 使用数据源类型: $effectiveDataSourceType');
-
     await _currentDataSource.ensureTablesExist();
   }
 
   // 确保采购项目表存在
   Future<void> ensurePurchaseItemsTableExists() async {
-    final effectiveDataSourceType = _effectiveDataSourceType;
-    print(
-        'PurchaseProvider.ensurePurchaseItemsTableExists - 使用数据源类型: $effectiveDataSourceType');
-
     try {
       await _currentDataSource.ensureTablesExist();
     } catch (e) {
-      print('检查purchase_items表时出错: $e');
+      LogManager.e('PurchaseProvider', '检查purchase_items表时出错', error: e);
     }
   }
 
@@ -978,26 +886,16 @@ class PurchaseProvider extends ChangeNotifier {
         _purchasesNeedRefresh = false;
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
-        if (_syncService.needsSync && item.id != null) {
+        final itemId = item.id;
+        if (_syncService.needsSync && itemId != null) {
           final itemMap = item.toMap();
-          _syncService.syncPurchaseItemToMySQL(itemMap, item.id!);
+          _syncService.syncPurchaseItemToMySQL(itemMap, itemId);
         }
       }
       return success;
     } catch (e) {
-      print('更新采购项目时出错: $e');
+      LogManager.e('PurchaseProvider', '更新采购项目时出错', error: e);
       return false;
     }
-  }
-
-  // =================== SQLite→MySQL 同步方法 ===================
-
-  /// 尝试建立MySQL连接的辅助方法
-  Future<MySqlConnection?> _tryEstablishMySQLConnection() async {
-    final conn = await MySqlConnectionHelper.establishConnection();
-    if (conn != null) {
-      _mysqlConnection = conn;
-    }
-    return conn;
   }
 }

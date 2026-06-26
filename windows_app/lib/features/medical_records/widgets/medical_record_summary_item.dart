@@ -15,7 +15,7 @@ class MedicalRecordSummaryItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (value.isEmpty) return const SizedBox.shrink();
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -25,7 +25,7 @@ class MedicalRecordSummaryItem extends StatelessWidget {
             width: 100,
             child: Text(
               '$label:',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: DentalColors.primary,

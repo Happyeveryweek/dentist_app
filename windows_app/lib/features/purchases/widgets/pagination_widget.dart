@@ -21,14 +21,21 @@ class PaginationWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveTotalPages = totalPages > 0 ? totalPages : 1;
-    final String infoText = '每页 $recordsPerPage 条 · 共 $totalRecords 条 / $effectiveTotalPages 页';
+    final String infoText =
+        '每页 $recordsPerPage 条 · 共 $totalRecords 条 / $effectiveTotalPages 页';
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, -2))],
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), topRight: Radius.circular(12)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, -2))
+        ],
+        borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12), topRight: Radius.circular(12)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -41,7 +48,8 @@ class PaginationWidget extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           // 页码窗口（最多5个）
-          ...List.generate(effectiveTotalPages < 5 ? effectiveTotalPages : 5, (i) {
+          ...List.generate(effectiveTotalPages < 5 ? effectiveTotalPages : 5,
+              (i) {
             int pageNum;
             if (effectiveTotalPages <= 5) {
               pageNum = i + 1;
@@ -59,14 +67,26 @@ class PaginationWidget extends StatelessWidget {
                 onTap: active ? null : () => onPageChanged(pageNum),
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
-                  width: 40, height: 36, alignment: Alignment.center,
+                  width: 40,
+                  height: 36,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: active ? Theme.of(context).primaryColor : Colors.white,
+                    color:
+                        active ? Theme.of(context).primaryColor : Colors.white,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey.withOpacity(0.25)),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6, offset: const Offset(0, 2))],
+                    border:
+                        Border.all(color: Colors.grey.withValues(alpha: 0.25)),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2))
+                    ],
                   ),
-                  child: Text('$pageNum', style: TextStyle(color: active ? Colors.white : Colors.black87, fontWeight: FontWeight.w600)),
+                  child: Text('$pageNum',
+                      style: TextStyle(
+                          color: active ? Colors.white : Colors.black87,
+                          fontWeight: FontWeight.w600)),
                 ),
               ),
             );
@@ -85,13 +105,20 @@ class PaginationWidget extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2))],
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2))
+              ],
             ),
             child: Row(children: [
               const Icon(Icons.info_outline, size: 16, color: Colors.black54),
               const SizedBox(width: 6),
-              Text(infoText, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              Text(infoText,
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600)),
             ]),
           ),
         ],
@@ -118,13 +145,16 @@ class _PageIconButton extends StatelessWidget {
       onTap: enabled ? onTap : null,
       borderRadius: BorderRadius.circular(10),
       child: Container(
-        width: 40, height: 36, alignment: Alignment.center,
+        width: 40,
+        height: 36,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.withOpacity(0.25)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.25)),
           color: enabled ? Colors.white : Colors.grey.shade100,
         ),
-        child: Icon(icon, size: 20, color: enabled ? Colors.black87 : Colors.grey),
+        child:
+            Icon(icon, size: 20, color: enabled ? Colors.black87 : Colors.grey),
       ),
     );
   }

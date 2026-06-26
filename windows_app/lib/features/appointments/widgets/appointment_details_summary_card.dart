@@ -13,7 +13,8 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = Color(int.parse(appointment.statusColor.replaceAll('#', '0xff')));
+    final statusColor =
+        Color(int.parse(appointment.statusColor.replaceAll('#', '0xff')));
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -21,26 +22,26 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             Colors.white,
-            DentalColors.background.withOpacity(0.5),
+            DentalColors.background.withValues(alpha: 0.5),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: DentalColors.primary.withOpacity(0.1),
+            color: DentalColors.primary.withValues(alpha: 0.1),
             blurRadius: 20,
             spreadRadius: 2,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 8,
             spreadRadius: 1,
             offset: const Offset(0, 3),
           ),
         ],
         border: Border.all(
-          color: DentalColors.primary.withOpacity(0.1),
+          color: DentalColors.primary.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -55,7 +56,7 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
@@ -66,7 +67,7 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: DentalColors.primary.withOpacity(0.3),
+                        color: DentalColors.primary.withValues(alpha: 0.3),
                         blurRadius: 12,
                         spreadRadius: 2,
                         offset: const Offset(0, 4),
@@ -85,13 +86,15 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        DateFormat('yyyy年MM月dd日 EEEE', 'zh_CN').format(appointment.appointmentDate),
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        DateFormat('yyyy年MM月dd日 EEEE', 'zh_CN')
+                            .format(appointment.appointmentDate),
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '时间: ${DateFormat('HH:mm').format(appointment.appointmentDate)}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           color: DentalColors.onSurfaceVariant,
                         ),
@@ -100,21 +103,22 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        statusColor.withOpacity(0.1),
-                        statusColor.withOpacity(0.2),
+                        statusColor.withValues(alpha: 0.1),
+                        statusColor.withValues(alpha: 0.2),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: statusColor, width: 1.5),
                     boxShadow: [
                       BoxShadow(
-                        color: statusColor.withOpacity(0.2),
+                        color: statusColor.withValues(alpha: 0.2),
                         blurRadius: 8,
                         spreadRadius: 1,
                         offset: const Offset(0, 2),

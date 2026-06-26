@@ -1,50 +1,51 @@
-import 'package:intl/intl.dart';
 import 'patient.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/log_manager.dart';
+import '../utils/map_parser.dart';
 
 class Appointment {
   final int? id;
-  final int? patient_id;
+  final int? patientId;
   Patient? patient; // 不再为final，允许后续设置
-  final DateTime appointment_date;
-  final String? appointment_time; // 预约时间
+  final DateTime appointmentDate;
+  final String? appointmentTime; // 预约时间
   final String status; // scheduled, completed, cancelled
-  final String? treatment_type;
+  final String? treatmentType;
   final String? notes;
   final double? cost;
-  final DateTime created_at;
-  final DateTime updated_at;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   Appointment({
     this.id,
-    required this.patient_id,
+    required this.patientId,
     this.patient,
-    required this.appointment_date,
-    this.appointment_time, // 预约时间
+    required this.appointmentDate,
+    this.appointmentTime, // 预约时间
     required this.status,
-    this.treatment_type,
+    this.treatmentType,
     this.notes,
     this.cost,
-    DateTime? created_at,
-    DateTime? updated_at,
-  })  : created_at = created_at ?? DateTime.now(),
-        updated_at = updated_at ?? DateTime.now();
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  })  : createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
 
   // 从Map创建Appointment对象
   factory Appointment.fromMap(Map<String, dynamic> map) {
+    final p = MapParser(map, context: 'Appointment');
+
     return Appointment(
-      id: map['id'],
-      patient_id: map['patient_id'],
-      appointment_date: _parseDateTime(map['appointment_date']),
-      appointment_time: _parseAppointmentTime(map['appointment_time']), // 处理可能的Duration类型
-      status: map['status'] ?? '',
-      treatment_type: map['treatment_type'],
-      notes: map['notes'],
-      cost: map['cost'] != null ? (map['cost'] as num).toDouble() : null,
-      created_at:
-          map['created_at'] != null ? _parseDateTime(map['created_at']) : null,
-      updated_at:
-          map['updated_at'] != null ? _parseDateTime(map['updated_at']) : null,
+      id: p.optional('id', (v) => v as int),
+      patientId: p.optional('patient_id', (v) => v as int),
+      appointmentDate: _parseDateTime(map['appointment_date']),
+      appointmentTime: _parseAppointmentTime(map['appointment_time']),
+      status: p.string('status'),
+      treatmentType: p.optional('treatment_type', (v) => v.toString()),
+      notes: p.optional('notes', (v) => v.toString()),
+      cost: p.decimalOrNull('cost'),
+      createdAt: p.dateTime('created_at'),
+      updatedAt: p.dateTime('updated_at'),
     );
   }
 
@@ -52,15 +53,16 @@ class Appointment {
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,
-      'patient_id': patient_id,
-      'appointment_date': DateTimeFormatter.toDbString(appointment_date),
-      'appointment_time': appointment_time ?? _extractTimeFromDateTime(appointment_date), // 确保总是有时间值
+      'patient_id': patientId,
+      'appointment_date': DateTimeFormatter.toDbString(appointmentDate),
+      'appointment_time': appointmentTime ??
+          _extractTimeFromDateTime(appointmentDate), // 确保总是有时间值
       'status': status,
-      if (treatment_type != null) 'treatment_type': treatment_type,
+      if (treatmentType != null) 'treatment_type': treatmentType,
       if (notes != null) 'notes': notes,
       if (cost != null) 'cost': cost,
-      'created_at': DateTimeFormatter.toDbString(created_at),
-      'updated_at': DateTimeFormatter.toDbString(updated_at),
+      'created_at': DateTimeFormatter.toDbString(createdAt),
+      'updated_at': DateTimeFormatter.toDbString(updatedAt),
     };
   }
 
@@ -72,29 +74,29 @@ class Appointment {
   // 创建具有新属性的Appointment副本
   Appointment copyWith({
     int? id,
-    int? patient_id,
+    int? patientId,
     Patient? patient,
-    DateTime? appointment_date,
-    String? appointment_time, // 预约时间
+    DateTime? appointmentDate,
+    String? appointmentTime, // 预约时间
     String? status,
-    String? treatment_type,
+    String? treatmentType,
     String? notes,
     double? cost,
-    DateTime? created_at,
-    DateTime? updated_at,
+    DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Appointment(
       id: id ?? this.id,
-      patient_id: patient_id ?? this.patient_id,
+      patientId: patientId ?? this.patientId,
       patient: patient ?? this.patient,
-      appointment_date: appointment_date ?? this.appointment_date,
-      appointment_time: appointment_time ?? this.appointment_time, // 预约时间
+      appointmentDate: appointmentDate ?? this.appointmentDate,
+      appointmentTime: appointmentTime ?? this.appointmentTime, // 预约时间
       status: status ?? this.status,
-      treatment_type: treatment_type ?? this.treatment_type,
+      treatmentType: treatmentType ?? this.treatmentType,
       notes: notes ?? this.notes,
       cost: cost ?? this.cost,
-      created_at: created_at ?? this.created_at,
-      updated_at: updated_at ?? this.updated_at,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
@@ -111,19 +113,19 @@ class Appointment {
     }
 
     // 如果无法解析，返回当前时间
-    print('无法解析日期时间: $dateTime，使用当前时间');
+    LogManager.e('Appointment', '无法解析日期时间: $dateTime，使用当前时间');
     return DateTime.now();
   }
 
   // 帮助函数：解析预约时间（处理Duration和String类型）
   static String? _parseAppointmentTime(dynamic timeValue) {
     if (timeValue == null) return null;
-    
+
     // 如果已经是String类型，直接返回
     if (timeValue is String) {
       return timeValue;
     }
-    
+
     // 如果是Duration类型（MySQL的TIME类型），转换为HH:MM:SS格式
     if (timeValue is Duration) {
       final hours = timeValue.inHours;
@@ -131,7 +133,7 @@ class Appointment {
       final seconds = timeValue.inSeconds.remainder(60);
       return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
-    
+
     // 其他类型尝试转换为字符串
     return timeValue.toString();
   }
@@ -171,11 +173,4 @@ class Appointment {
         return '#9E9E9E'; // 灰色
     }
   }
-
-  // 为了向后兼容添加的getter
-  int? get patientId => patient_id;
-  DateTime get appointmentDate => appointment_date;
-  String? get treatmentType => treatment_type;
-  DateTime? get createdAt => created_at;
-  DateTime? get updatedAt => updated_at;
 }

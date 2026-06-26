@@ -59,12 +59,14 @@ class DashboardDataService {
   /// 加载仪表盘数据
   Future<DashboardData> loadData() async {
     // 获取当前用户信息（优先从UserProvider获取）
-    final currentUser = _userProvider.currentUser ?? await _databaseProvider.getCurrentUser();
+    final currentUser =
+        _userProvider.currentUser ?? await _databaseProvider.getCurrentUser();
     // 优先使用医生姓名，如果没有则使用用户名
-    final currentUserName = currentUser?.doctor?.isNotEmpty == true 
-        ? currentUser!.doctor! 
+    final doctorName = currentUser?.doctor;
+    final currentUserName = doctorName != null && doctorName.isNotEmpty
+        ? doctorName
         : (currentUser?.username ?? '');
-    
+
     // 获取用户头像
     Uint8List? currentUserAvatar;
     final imageData = currentUser?.imageData;
@@ -73,46 +75,54 @@ class DashboardDataService {
     } else {
       currentUserAvatar = null;
     }
-    
+
     // 获取统计数据（已通过Provider自动应用权限过滤）
     final patients = await _patientProvider.getAllPatients();
     final appointments = await _appointmentProvider.getAllAppointments();
-    
+
     // 记录权限过滤信息
     if (currentUser != null && !currentUser.isAdmin) {
-      print('仪表盘数据权限过滤: 用户=${currentUser.username}, 医生=${currentUser.doctor}, 患者数=${patients.length}, 预约数=${appointments.length}');
-    } else {
-      print('仪表盘数据无权限过滤: 管理员用户或未登录, 患者数=${patients.length}, 预约数=${appointments.length}');
-    }
-    
+    } else {}
+
     // 获取今日预约
     final today = DateTime.now();
     final todayAppointments = appointments.where((appointment) {
-      final appointmentDate = appointment.appointment_date;
+      final appointmentDate = appointment.appointmentDate;
       return appointmentDate.year == today.year &&
           appointmentDate.month == today.month &&
           appointmentDate.day == today.day;
     }).toList();
 
     // 按时间排序今日预约
-    todayAppointments.sort((a, b) => a.appointment_date.compareTo(b.appointment_date));
+    todayAppointments
+        .sort((a, b) => a.appointmentDate.compareTo(b.appointmentDate));
 
-    final todayScheduledAppointments =
-        todayAppointments.where((appointment) => DashboardStatusHelper.isScheduled(appointment.status)).length;
-    final todayCompletedAppointments =
-        todayAppointments.where((appointment) => DashboardStatusHelper.isCompleted(appointment.status)).length;
-    final todayUnfinishedAppointments =
-        todayAppointments.where((appointment) => DashboardStatusHelper.isUnfinished(appointment.status)).length;
+    final todayScheduledAppointments = todayAppointments
+        .where((appointment) =>
+            DashboardStatusHelper.isScheduled(appointment.status))
+        .length;
+    final todayCompletedAppointments = todayAppointments
+        .where((appointment) =>
+            DashboardStatusHelper.isCompleted(appointment.status))
+        .length;
+    final todayUnfinishedAppointments = todayAppointments
+        .where((appointment) =>
+            DashboardStatusHelper.isUnfinished(appointment.status))
+        .length;
 
     // 获取最近的患者（按更新时间排序）
     final recentPatients = List<Patient>.from(patients);
-    recentPatients.sort((a, b) => b.updated_at.compareTo(a.updated_at));
+    recentPatients.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
     // 计算完成和即将到来的预约
-    final completed = appointments.where((a) => DashboardStatusHelper.isCompleted(a.status)).length;
-    final upcoming = appointments.where((a) =>
-      a.appointment_date.isAfter(DateTime.now()) &&
-      DashboardStatusHelper.isScheduled(a.status)).length;
+    final completed = appointments
+        .where((a) => DashboardStatusHelper.isCompleted(a.status))
+        .length;
+    final upcoming = appointments
+        .where((a) =>
+            a.appointmentDate.isAfter(DateTime.now()) &&
+            DashboardStatusHelper.isScheduled(a.status))
+        .length;
 
     return DashboardData(
       patientCount: patients.length,

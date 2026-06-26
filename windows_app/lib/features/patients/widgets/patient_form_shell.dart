@@ -19,9 +19,9 @@ class PatientFormHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: DentalColors.primaryGradient,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -35,7 +35,7 @@ class PatientFormHeader extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -68,7 +68,7 @@ class PatientFormHeader extends StatelessWidget {
           ),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: IconButton(
@@ -95,16 +95,16 @@ class PatientFormPermissionNotice extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
+        color: Colors.orange.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.orange.withOpacity(0.3),
+          color: Colors.orange.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.info_outline,
             color: Colors.orange,
             size: 20,
@@ -152,7 +152,7 @@ class PatientFormActions extends StatelessWidget {
         ),
         border: Border(
           top: BorderSide(
-            color: DentalColors.divider.withOpacity(0.3),
+            color: DentalColors.divider.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -164,7 +164,7 @@ class PatientFormActions extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.divider.withOpacity(0.5),
+                color: DentalColors.divider.withValues(alpha: 0.5),
                 width: 1,
               ),
             ),
@@ -190,7 +190,7 @@ class PatientFormActions extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: DentalColors.primary.withOpacity(0.3),
+                  color: DentalColors.primary.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),

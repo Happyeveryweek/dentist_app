@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/log_manager.dart';
 
 class AppState extends ChangeNotifier {
   // 全局导航键
@@ -16,8 +17,9 @@ class AppState extends ChangeNotifier {
 
   // 显示全局消息
   void showMessage(String message, {bool isError = false}) {
-    if (navigatorKey.currentContext != null) {
-      ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+    final context = navigatorKey.currentContext;
+    if (context != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
@@ -39,7 +41,8 @@ class AppState extends ChangeNotifier {
               ),
             ],
           ),
-          backgroundColor: isError ? Colors.red.shade500 : Colors.green.shade600,
+          backgroundColor:
+              isError ? Colors.red.shade500 : Colors.green.shade600,
           duration: Duration(seconds: isError ? 4 : 2),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -55,24 +58,24 @@ class AppState extends ChangeNotifier {
 
   // 显示加载指示器
   Future<T?> showLoading<T>(Future<T> future, {String? message}) async {
-    if (navigatorKey.currentContext == null) {
+    final context = navigatorKey.currentContext;
+    if (context == null) {
       return await future;
     }
 
     showDialog(
-      context: navigatorKey.currentContext!,
+      context: context,
       barrierDismissible: false,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: Colors.white,
-            content: Row(
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(width: 20),
-                Text(message ?? '加载中...'),
-              ],
-            ),
-          ),
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        content: Row(
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(width: 20),
+            Text(message ?? '加载中...'),
+          ],
+        ),
+      ),
     );
 
     try {
@@ -113,11 +116,11 @@ class AppState extends ChangeNotifier {
   // MySQL连接状态管理
   bool _isMySQLConnected = false;
   bool get isMySQLConnected => _isMySQLConnected;
-  
+
   // MySQL连接失败标志（用于区分主动选择SQLite和MySQL失败降级）
   bool _isMySQLConnectionFailed = false;
   bool get isMySQLConnectionFailed => _isMySQLConnectionFailed;
-  
+
   // 受影响的MySQL模块列表
   List<String> _affectedMySQLModules = [];
   List<String> get affectedMySQLModules => _affectedMySQLModules;
@@ -150,6 +153,7 @@ class AppState extends ChangeNotifier {
     _isMySQLConnectionFailed = isFailure;
     _affectedMySQLModules = affectedModules ?? [];
     notifyListeners();
-    print('AppState: MySQL连接状态已更新 - 已连接: $_isMySQLConnected, 连接失败: $_isMySQLConnectionFailed, 受影响模块: $_affectedMySQLModules');
+    LogManager.e('AppState',
+        'AppState: MySQL连接状态已更新 - 已连接: $_isMySQLConnected, 连接失败: $_isMySQLConnectionFailed, 受影响模块: $_affectedMySQLModules');
   }
 }

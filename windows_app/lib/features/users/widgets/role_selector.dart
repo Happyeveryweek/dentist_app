@@ -16,20 +16,34 @@ class RoleSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final roleInfo = {
-      'admin': {'name': '管理员', 'icon': Icons.admin_panel_settings, 'color': AppTheme.errorColor},
-      'doctor': {'name': '医生', 'icon': Icons.medical_services, 'color': AppTheme.successColor},
-      'assistant': {'name': '助理', 'icon': Icons.assistant, 'color': AppTheme.warningColor},
-      'receptionist': {'name': '前台', 'icon': Icons.person_outline, 'color': AppTheme.infoColor},
+      'admin': {
+        'name': '管理员',
+        'icon': Icons.admin_panel_settings,
+        'color': AppTheme.errorColor
+      },
+      'doctor': {
+        'name': '医生',
+        'icon': Icons.medical_services,
+        'color': AppTheme.successColor
+      },
+      'assistant': {
+        'name': '助理',
+        'icon': Icons.assistant,
+        'color': AppTheme.warningColor
+      },
+      'receptionist': {
+        'name': '前台',
+        'icon': Icons.person_outline,
+        'color': AppTheme.infoColor
+      },
     };
 
-    final currentRole = roleInfo[selectedRole];
-    
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -46,7 +60,8 @@ class RoleSelector extends StatelessWidget {
           child: DropdownButton<String>(
             value: selectedRole,
             isExpanded: true,
-            icon: Icon(Icons.keyboard_arrow_down, color: AppTheme.primaryColor),
+            icon: const Icon(Icons.keyboard_arrow_down,
+                color: AppTheme.primaryColor),
             style: const TextStyle(fontSize: 16, color: Colors.black87),
             dropdownColor: Colors.white,
             borderRadius: BorderRadius.circular(12),
@@ -54,10 +69,15 @@ class RoleSelector extends StatelessWidget {
             onChanged: onRoleChanged,
             selectedItemBuilder: (context) {
               return availableRoles.map<Widget>((role) {
-                final info = roleInfo[role]!;
+                final info = roleInfo[role] ?? {
+                  'name': role,
+                  'icon': Icons.person,
+                  'color': Colors.grey,
+                };
                 return Row(
                   children: [
-                    Icon(Icons.work, color: AppTheme.primaryColor, size: 20),
+                    const Icon(Icons.work,
+                        color: AppTheme.primaryColor, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -88,14 +108,19 @@ class RoleSelector extends StatelessWidget {
               }).toList();
             },
             items: availableRoles.map((role) {
-              final info = roleInfo[role]!;
+              final info = roleInfo[role] ?? {
+                'name': role,
+                'icon': Icons.person,
+                'color': Colors.grey,
+              };
               return DropdownMenuItem<String>(
                 value: role,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   decoration: BoxDecoration(
-                    color: selectedRole == role 
-                        ? (info['color'] as Color).withOpacity(0.1)
+                    color: selectedRole == role
+                        ? (info['color'] as Color).withValues(alpha: 0.1)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -104,7 +129,8 @@ class RoleSelector extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: (info['color'] as Color).withOpacity(0.1),
+                          color:
+                              (info['color'] as Color).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -118,8 +144,10 @@ class RoleSelector extends StatelessWidget {
                         info['name'] as String,
                         style: TextStyle(
                           fontSize: 16,
-                          fontWeight: selectedRole == role ? FontWeight.bold : FontWeight.w500,
-                          color: selectedRole == role 
+                          fontWeight: selectedRole == role
+                              ? FontWeight.bold
+                              : FontWeight.w500,
+                          color: selectedRole == role
                               ? (info['color'] as Color)
                               : Colors.black87,
                         ),

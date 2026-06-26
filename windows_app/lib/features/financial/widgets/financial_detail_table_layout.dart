@@ -88,8 +88,9 @@ class FinancialDetailTableLayout {
       return SizedBox(width: column.width, child: paddedChild);
     }
 
+    final flex = column.flex;
     return Expanded(
-      flex: column.flex!,
+      flex: flex ?? 1,
       child: paddedChild,
     );
   }

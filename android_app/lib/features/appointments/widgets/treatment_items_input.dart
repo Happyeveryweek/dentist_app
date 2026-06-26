@@ -39,95 +39,110 @@ class TreatmentItemsInputState extends State<TreatmentItemsInput> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompactLayout = constraints.maxWidth < 420;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              flex: 5,
-              child: _buildModernTextField(
+            if (isCompactLayout) ...[
+              _buildModernTextField(
                 controller: widget.controller,
                 hint: '输入治疗项目',
                 icon: Icons.healing_rounded,
               ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              flex: 4,
-              child: DropdownButtonFormField<String>(
-                initialValue: _selectedSuggestion,
-                decoration: InputDecoration(
-                  labelText: '选择已有项目',
-                  filled: true,
-                  fillColor: AppTheme.backgroundColor,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.grey.withValues(alpha: 0.2),
+              const SizedBox(height: 12),
+              _buildSuggestionDropdown(),
+            ] else
+              Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: _buildModernTextField(
+                      controller: widget.controller,
+                      hint: '输入治疗项目',
+                      icon: Icons.healing_rounded,
                     ),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.grey.withValues(alpha: 0.2),
-                    ),
-                  ),
-                ),
-                hint: const Text('暂无'),
-                items:
-                    widget.suggestions
-                        .map(
-                          (item) => DropdownMenuItem<String>(
-                            value: item,
-                            child: Text(item, overflow: TextOverflow.ellipsis),
-                          ),
-                        )
-                        .toList(),
-                onChanged:
-                    widget.suggestions.isEmpty
-                        ? null
-                        : (value) {
-                          if (value == null) {
-                            return;
-                          }
+                  const SizedBox(width: 8),
+                  Expanded(flex: 4, child: _buildSuggestionDropdown()),
+                ],
+              ),
+            if (widget.selectedTreatments.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    widget.selectedTreatments.map((treatment) {
+                      return Chip(
+                        label: Text(treatment),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () {
                           setState(() {
-                            _selectedSuggestion = null;
-                            _addTreatment(value);
+                            final treatments = List<String>.from(
+                              widget.selectedTreatments,
+                            )..remove(treatment);
+                            widget.onChanged(treatments);
+                            widget.controller.clear();
                           });
                         },
+                        backgroundColor: AppTheme.primaryColor.withValues(
+                          alpha: 0.1,
+                        ),
+                        labelStyle: const TextStyle(
+                          color: AppTheme.primaryText,
+                        ),
+                      );
+                    }).toList(),
               ),
-            ),
+            ],
           ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSuggestionDropdown() {
+    return DropdownButtonFormField<String>(
+      initialValue: _selectedSuggestion,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: '选择已有项目',
+        filled: true,
+        fillColor: AppTheme.backgroundColor,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
         ),
-        if (widget.selectedTreatments.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children:
-                widget.selectedTreatments.map((treatment) {
-                  return Chip(
-                    label: Text(treatment),
-                    deleteIcon: const Icon(Icons.close, size: 16),
-                    onDeleted: () {
-                      setState(() {
-                        final treatments = List<String>.from(
-                          widget.selectedTreatments,
-                        )..remove(treatment);
-                        widget.onChanged(treatments);
-                        widget.controller.clear();
-                      });
-                    },
-                    backgroundColor: AppTheme.primaryColor.withValues(
-                      alpha: 0.1,
-                    ),
-                    labelStyle: const TextStyle(color: AppTheme.primaryText),
-                  );
-                }).toList(),
-          ),
-        ],
-      ],
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+        ),
+      ),
+      hint: const Text('暂无', overflow: TextOverflow.ellipsis),
+      items:
+          widget.suggestions
+              .map(
+                (item) => DropdownMenuItem<String>(
+                  value: item,
+                  child: Text(item, overflow: TextOverflow.ellipsis),
+                ),
+              )
+              .toList(),
+      onChanged:
+          widget.suggestions.isEmpty
+              ? null
+              : (value) {
+                if (value == null) {
+                  return;
+                }
+                setState(() {
+                  _selectedSuggestion = null;
+                  _addTreatment(value);
+                });
+              },
     );
   }
 

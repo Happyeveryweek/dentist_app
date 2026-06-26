@@ -32,7 +32,7 @@ class AppointmentDetailScreen extends StatefulWidget {
 }
 
 class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
-  late Appointment _appointment;
+  Appointment? _appointment;
   Patient? _patient;
   bool _isLoading = true;
   bool _dataUpdated = false; // 标记数据是否已更新
@@ -45,6 +45,8 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   }
 
   Future<void> _loadPatientData() async {
+    final appointment = _appointment;
+    if (appointment == null) return;
     setState(() {
       _isLoading = true;
     });
@@ -53,7 +55,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
       final patient = await Provider.of<PatientProvider>(
         context,
         listen: false,
-      ).getPatientById(_appointment.patientId);
+      ).getPatientById(appointment.patientId);
 
       setState(() {
         _patient = patient;
@@ -69,6 +71,12 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appointment = _appointment;
+    if (appointment == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -154,7 +162,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AppointmentInfoCard(appointment: _appointment),
+                      AppointmentInfoCard(appointment: appointment),
                       const SizedBox(height: 16),
                       PatientInfoCard(
                         patient: _patient,
@@ -166,7 +174,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                         builder: (context, snapshot) {
                           final patientDoctor = snapshot.data;
                           return AppointmentActionButtons(
-                            status: _appointment.status,
+                            status: appointment.status,
                             patientDoctor: patientDoctor,
                             onChangeStatus: (newStatus) {
                               _changeAppointmentStatus(newStatus);
@@ -209,6 +217,8 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   }
 
   Future<void> _showEditAppointment() async {
+    final appointment = _appointment;
+    if (appointment == null) return;
     // 导航到编辑预约页面
     await Navigator.push(
       context,
@@ -218,7 +228,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
               resizeToAvoidBottomInset: true,
               body: SafeArea(
                 child: AppointmentFormSheet(
-                  appointment: _appointment,
+                  appointment: appointment,
                   onSaved: (isSuccess, message) {
                     if (isSuccess) {
                       // 刷新页面数据
@@ -272,19 +282,28 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   }
 
   Future<void> _deleteAppointment() async {
-    if (widget.appointment.id == null) {
+    final appointment = _appointment;
+    if (appointment == null) return;
+    if (appointment.id == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('无法删除：预约ID无效')));
       return;
     }
 
+    final appointmentId = appointment.id;
+    if (appointmentId == null) {
+      if (mounted) {
+        ToastUtil.showError(context, '预约ID无效，无法删除');
+      }
+      return;
+    }
     try {
       final appointmentsProvider = Provider.of<AppointmentsProvider>(
         context,
         listen: false,
       );
-      await appointmentsProvider.deleteAppointment(_appointment.id!);
+      await appointmentsProvider.deleteAppointment(appointmentId);
 
       // 返回上一页并通知更新
       if (!mounted) return;
@@ -299,9 +318,12 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
 
   /// 获取预约关联患者的医生字段，用于权限检查
   Future<String?> _getAppointmentPatientDoctor() async {
+    final appointment = _appointment;
+    if (appointment == null) return null;
     try {
-      if (_patient != null) {
-        return _patient!.doctor;
+      final patient = _patient;
+      if (patient != null) {
+        return patient.doctor;
       }
 
       // 如果患者数据还没加载，尝试获取
@@ -309,10 +331,10 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         context,
         listen: false,
       );
-      final patient = await patientProvider.getPatientById(
-        _appointment.patientId,
+      final freshPatient = await patientProvider.getPatientById(
+        appointment.patientId,
       );
-      return patient?.doctor;
+      return freshPatient?.doctor;
     } catch (e) {
       AppLogger.info('获取预约患者医生信息失败: $e');
       return null;
@@ -321,6 +343,8 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
 
   // 修改预约状态
   Future<void> _changeAppointmentStatus(String newStatus) async {
+    final appointment = _appointment;
+    if (appointment == null) return;
     try {
       final appointmentsProvider = Provider.of<AppointmentsProvider>(
         context,
@@ -328,7 +352,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
       );
 
       // 创建更新后的预约对象
-      final updatedAppointment = _appointment.copyWith(
+      final updatedAppointment = appointment.copyWith(
         status: newStatus,
         updatedAt: DateTime.now(),
       );

@@ -10,6 +10,7 @@ import 'package:dentist_app_windows/features/settings/services/database_structur
 import 'package:dentist_app_windows/features/settings/services/mysql_connection_service.dart';
 import 'package:dentist_app_windows/models/database_structure_log.dart';
 import 'package:dentist_app_windows/utils/datetime_formatter.dart';
+import '../utils/log_manager.dart';
 
 // 扩展主题模式枚举，支持更多主题选项
 enum ExtendedThemeMode { light, grey, purple }
@@ -17,13 +18,17 @@ enum ExtendedThemeMode { light, grey, purple }
 class SettingsProvider extends ChangeNotifier {
   // ==================== Service 实例 ====================
   final ConfigStorageService _configStorageService = ConfigStorageService();
-  final BackupManagementService _backupManagementService = BackupManagementService();
-  final DataSourceManagementService _dataSourceManagementService = DataSourceManagementService();
-  final DatabaseStructureDetectionService _databaseStructureDetectionService = DatabaseStructureDetectionService();
-  final MySQLConnectionService _mysqlConnectionService = MySQLConnectionService();
+  final BackupManagementService _backupManagementService =
+      BackupManagementService();
+  final DataSourceManagementService _dataSourceManagementService =
+      DataSourceManagementService();
+  final DatabaseStructureDetectionService _databaseStructureDetectionService =
+      DatabaseStructureDetectionService();
+  final MySQLConnectionService _mysqlConnectionService =
+      MySQLConnectionService();
 
   // ==================== 状态字段 ====================
-  
+
   // 扩展主题设置
   ExtendedThemeMode _extendedThemeMode = ExtendedThemeMode.light;
   ExtendedThemeMode get extendedThemeMode => _extendedThemeMode;
@@ -36,8 +41,6 @@ class SettingsProvider extends ChangeNotifier {
         return ThemeMode.light;
       case ExtendedThemeMode.grey:
       case ExtendedThemeMode.purple:
-        return ThemeMode.light;
-      default:
         return ThemeMode.light;
     }
   }
@@ -65,7 +68,7 @@ class SettingsProvider extends ChangeNotifier {
   MySqlConnection? get mysqlConnection => _mysqlConnection;
 
   // ==================== Getter 委托给 Service ====================
-  
+
   bool get useFileStorage => _configStorageService.useFileStorage;
   String get backupPath => _backupManagementService.backupPath;
   String get backupPath2 => _backupManagementService.backupPath2;
@@ -75,16 +78,20 @@ class SettingsProvider extends ChangeNotifier {
   String get dataSourceType => _dataSourceManagementService.dataSourceType;
   String get dataSourceMode => _dataSourceManagementService.dataSourceMode;
   String get sqliteDbPath => _dataSourceManagementService.sqliteDbPath;
-  String get customSqliteDbPath => _dataSourceManagementService.customSqliteDbPath;
+  String get customSqliteDbPath =>
+      _dataSourceManagementService.customSqliteDbPath;
   String get mysqlHost => _dataSourceManagementService.mysqlHost;
   String get mysqlPort => _dataSourceManagementService.mysqlPort;
   String get mysqlDatabase => _dataSourceManagementService.mysqlDatabase;
   String get mysqlUsername => _dataSourceManagementService.mysqlUsername;
   String get mysqlPassword => _dataSourceManagementService.mysqlPassword;
-  Map<String, dynamic>? get mysqlSettings => _dataSourceManagementService.mysqlSettings;
-  Map<String, dynamic>? get lastMySQLSettings => _dataSourceManagementService.lastMySQLSettings;
+  Map<String, dynamic>? get mysqlSettings =>
+      _dataSourceManagementService.mysqlSettings;
+  Map<String, dynamic>? get lastMySQLSettings =>
+      _dataSourceManagementService.lastMySQLSettings;
   String get backupDataSource => _dataSourceManagementService.backupDataSource;
-  Map<String, String> get moduleDataSources => _dataSourceManagementService.moduleDataSources;
+  Map<String, String> get moduleDataSources =>
+      _dataSourceManagementService.moduleDataSources;
 
   Map<String, String> _defaultModuleDataSources() {
     return _dataSourceManagementService.defaultModuleDataSources;
@@ -93,7 +100,8 @@ class SettingsProvider extends ChangeNotifier {
   Map<String, String> _loadModuleDataSources(dynamic rawValue) {
     if (rawValue is Map) {
       return Map<String, String>.from(
-        rawValue.map((key, value) => MapEntry(key.toString(), value.toString())),
+        rawValue
+            .map((key, value) => MapEntry(key.toString(), value.toString())),
       );
     }
 
@@ -102,11 +110,12 @@ class SettingsProvider extends ChangeNotifier {
         final decoded = jsonDecode(rawValue);
         if (decoded is Map) {
           return Map<String, String>.from(
-            decoded.map((key, value) => MapEntry(key.toString(), value.toString())),
+            decoded.map(
+                (key, value) => MapEntry(key.toString(), value.toString())),
           );
         }
       } catch (e) {
-        print('解析模块数据源配置出错: $e');
+        LogManager.e('SettingsProvider', '解析模块数据源配置出错', error: e);
       }
     }
 
@@ -169,12 +178,13 @@ class SettingsProvider extends ChangeNotifier {
       password: settings['mysqlPassword']?.toString() ?? '',
     );
 
-    final moduleDataSources = _loadModuleDataSources(settings['moduleDataSources']);
+    final moduleDataSources =
+        _loadModuleDataSources(settings['moduleDataSources']);
     _dataSourceManagementService.setAllModuleDataSources(moduleDataSources);
   }
 
   // ==================== 初始化 ====================
-  
+
   Future<void> init() async {
     await _configStorageService.initialize();
     await _loadSettings();
@@ -218,7 +228,7 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   // ==================== 主题设置 ====================
-  
+
   Future<void> setExtendedThemeMode(ExtendedThemeMode mode) async {
     _extendedThemeMode = mode;
     _themeMode = ThemeMode.light;
@@ -247,7 +257,7 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> setAppName(String name) async {
     if (name.trim().isEmpty) {
-      print('应用名称不能为空');
+      LogManager.w('SettingsProvider', '应用名称不能为空');
       return;
     }
     _appName = name.trim();
@@ -256,7 +266,7 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   // ==================== 窗口设置 ====================
-  
+
   Future<void> saveWindowSize(Size size) async {
     _windowSize = size;
     await _saveSettings();
@@ -274,7 +284,7 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   // ==================== 备份路径设置 ====================
-  
+
   Future<void> setBackupPath(String path) async {
     _backupManagementService.updateBackupPaths(primaryPath: path);
     await _saveSettings();
@@ -321,7 +331,7 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   // ==================== 数据源设置 ====================
-  
+
   Future<void> setSqliteDbPath(String path) async {
     _dataSourceManagementService.updateSqlitePaths(
       sqliteDbPath: path,
@@ -400,7 +410,8 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setDataSourceType(String type, {Map<String, dynamic>? mysqlSettings, String? customSqlitePath}) async {
+  Future<void> setDataSourceType(String type,
+      {Map<String, dynamic>? mysqlSettings, String? customSqlitePath}) async {
     _dataSourceManagementService.setDataSourceType(
       type,
       mysqlSettings: mysqlSettings,
@@ -428,105 +439,216 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setAllModuleDataSources(Map<String, String> moduleDataSources) async {
+  Future<void> setAllModuleDataSources(
+      Map<String, String> moduleDataSources) async {
     _dataSourceManagementService.setAllModuleDataSources(moduleDataSources);
     await _saveSettings();
     notifyListeners();
   }
 
   // ==================== 委托给 Service 的方法 ====================
-  
+
   // 配置存储
-  Map<String, dynamic> getConfigStorageInfo() => _configStorageService.getConfigStorageInfo();
-  Future<bool> switchToFileStorage() => _configStorageService.switchToFileStorage();
-  Future<void> switchToPreferencesStorage() => _configStorageService.switchToPreferencesStorage();
-  Future<bool> saveConfigValue(String key, dynamic value) => _configStorageService.saveConfigValue(key, value);
-  Future<T?> loadConfigValue<T>(String key, {T? defaultValue}) => _configStorageService.loadConfigValue<T>(key, defaultValue: defaultValue);
+  Map<String, dynamic> getConfigStorageInfo() =>
+      _configStorageService.getConfigStorageInfo();
+  Future<bool> switchToFileStorage() =>
+      _configStorageService.switchToFileStorage();
+  Future<void> switchToPreferencesStorage() =>
+      _configStorageService.switchToPreferencesStorage();
+  Future<bool> saveConfigValue(String key, dynamic value) =>
+      _configStorageService.saveConfigValue(key, value);
+  Future<T?> loadConfigValue<T>(String key, {T? defaultValue}) =>
+      _configStorageService.loadConfigValue<T>(key, defaultValue: defaultValue);
   Future<bool> clearAllConfigs() => _configStorageService.clearAllConfigs();
-  Future<List<String>> getAllConfigKeys() => _configStorageService.getAllConfigKeys();
+  Future<List<String>> getAllConfigKeys() =>
+      _configStorageService.getAllConfigKeys();
   Future<void> clearAllSettings() => _configStorageService.clearAllSettings();
 
   // 备份管理
-  Future<String> performAutoBackup() => _backupManagementService.performAutoBackup();
-  Future<void> logBackupSuccess(String backupPath) => _backupManagementService.logBackupSuccess(backupPath);
-  Future<void> logBackupFailure(String errorMessage) => _backupManagementService.logBackupFailure(errorMessage);
-  Future<bool> validateBackupPath(String backupPath) => _backupManagementService.validateBackupPath(backupPath);
-  Future<List<FileSystemEntity>> getBackupFiles() => _backupManagementService.getBackupFiles();
-  Future<Map<String, dynamic>> getBackupStatistics() => _backupManagementService.getBackupStatistics();
-  bool shouldPerformAutoBackup() => _backupManagementService.shouldPerformAutoBackup();
-  DateTime? getNextAutoBackupTime() => _backupManagementService.getNextAutoBackupTime();
-  Future<void> setBackupStrategy({required bool autoBackup, required int backupInterval, required int keepBackupCount}) => _backupManagementService.setBackupStrategy(autoBackup: autoBackup, backupInterval: backupInterval, keepBackupCount: keepBackupCount);
-  Map<String, dynamic> getBackupStrategy() => _backupManagementService.getBackupStrategy();
-  Future<void> setRestoreStrategy({required bool autoRestore, required bool backupBeforeRestore, required bool validateRestoreData}) => _backupManagementService.setRestoreStrategy(autoRestore: autoRestore, backupBeforeRestore: backupBeforeRestore, validateRestoreData: validateRestoreData);
-  Map<String, dynamic> getRestoreStrategy() => _backupManagementService.getRestoreStrategy();
-  Future<void> setRestorePath(String restorePath) => _backupManagementService.setRestorePath(restorePath);
-  Future<bool> validateRestorePath(String restorePath) => _backupManagementService.validateRestorePath(restorePath);
-  Future<List<FileSystemEntity>> getAvailableRestoreFiles() => _backupManagementService.getAvailableRestoreFiles();
-  Future<String?> createPreRestoreBackup() => _backupManagementService.createPreRestoreBackup();
-  Future<void> cleanupAfterRestore({required bool success, String? restorePath, String? preRestoreBackupPath}) => _backupManagementService.cleanupAfterRestore(success: success, restorePath: restorePath, preRestoreBackupPath: preRestoreBackupPath);
-  String detectRestoreFileType(String filePath) => _backupManagementService.detectRestoreFileType(filePath);
-  Future<Map<String, dynamic>> getRestoreFileInfo(String filePath) => _backupManagementService.getRestoreFileInfo(filePath);
-  Future<void> updateRestoreProgress({required String operation, required int current, required int total, String? detail}) => _backupManagementService.updateRestoreProgress(operation: operation, current: current, total: total, detail: detail);
-  Future<void> logRestoreOperation({required String operation, required String filePath, required bool success, String? errorMessage, String? preRestoreBackupPath}) => _backupManagementService.logRestoreOperation(operation: operation, filePath: filePath, success: success, errorMessage: errorMessage, preRestoreBackupPath: preRestoreBackupPath);
-  Future<bool> validateRestoreStrategy({required String filePath, required String targetDataSource}) => _backupManagementService.validateRestoreStrategy(filePath: filePath, targetDataSource: targetDataSource);
+  Future<String> performAutoBackup() =>
+      _backupManagementService.performAutoBackup();
+  Future<void> logBackupSuccess(String backupPath) =>
+      _backupManagementService.logBackupSuccess(backupPath);
+  Future<void> logBackupFailure(String errorMessage) =>
+      _backupManagementService.logBackupFailure(errorMessage);
+  Future<bool> validateBackupPath(String backupPath) =>
+      _backupManagementService.validateBackupPath(backupPath);
+  Future<List<FileSystemEntity>> getBackupFiles() =>
+      _backupManagementService.getBackupFiles();
+  Future<Map<String, dynamic>> getBackupStatistics() =>
+      _backupManagementService.getBackupStatistics();
+  bool shouldPerformAutoBackup() =>
+      _backupManagementService.shouldPerformAutoBackup();
+  DateTime? getNextAutoBackupTime() =>
+      _backupManagementService.getNextAutoBackupTime();
+  Future<void> setBackupStrategy(
+          {required bool autoBackup,
+          required int backupInterval,
+          required int keepBackupCount}) =>
+      _backupManagementService.setBackupStrategy(
+          autoBackup: autoBackup,
+          backupInterval: backupInterval,
+          keepBackupCount: keepBackupCount);
+  Map<String, dynamic> getBackupStrategy() =>
+      _backupManagementService.getBackupStrategy();
+  Future<void> setRestoreStrategy(
+          {required bool autoRestore,
+          required bool backupBeforeRestore,
+          required bool validateRestoreData}) =>
+      _backupManagementService.setRestoreStrategy(
+          autoRestore: autoRestore,
+          backupBeforeRestore: backupBeforeRestore,
+          validateRestoreData: validateRestoreData);
+  Map<String, dynamic> getRestoreStrategy() =>
+      _backupManagementService.getRestoreStrategy();
+  Future<void> setRestorePath(String restorePath) =>
+      _backupManagementService.setRestorePath(restorePath);
+  Future<bool> validateRestorePath(String restorePath) =>
+      _backupManagementService.validateRestorePath(restorePath);
+  Future<List<FileSystemEntity>> getAvailableRestoreFiles() =>
+      _backupManagementService.getAvailableRestoreFiles();
+  Future<String?> createPreRestoreBackup() =>
+      _backupManagementService.createPreRestoreBackup();
+  Future<void> cleanupAfterRestore(
+          {required bool success,
+          String? restorePath,
+          String? preRestoreBackupPath}) =>
+      _backupManagementService.cleanupAfterRestore(
+          success: success,
+          restorePath: restorePath,
+          preRestoreBackupPath: preRestoreBackupPath);
+  String detectRestoreFileType(String filePath) =>
+      _backupManagementService.detectRestoreFileType(filePath);
+  Future<Map<String, dynamic>> getRestoreFileInfo(String filePath) =>
+      _backupManagementService.getRestoreFileInfo(filePath);
+  Future<void> updateRestoreProgress(
+          {required String operation,
+          required int current,
+          required int total,
+          String? detail}) =>
+      _backupManagementService.updateRestoreProgress(
+          operation: operation, current: current, total: total, detail: detail);
+  Future<void> logRestoreOperation(
+          {required String operation,
+          required String filePath,
+          required bool success,
+          String? errorMessage,
+          String? preRestoreBackupPath}) =>
+      _backupManagementService.logRestoreOperation(
+          operation: operation,
+          filePath: filePath,
+          success: success,
+          errorMessage: errorMessage,
+          preRestoreBackupPath: preRestoreBackupPath);
+  Future<bool> validateRestoreStrategy(
+          {required String filePath, required String targetDataSource}) =>
+      _backupManagementService.validateRestoreStrategy(
+          filePath: filePath, targetDataSource: targetDataSource);
 
   // 数据源管理
-  Future<bool> testMySQLConnection({required String host, required int port, required String database, required String username, required String password}) => _dataSourceManagementService.testMySQLConnection(host: host, port: port, database: database, username: username, password: password);
-  Future<void> importDatabase(String importFilePath) => _dataSourceManagementService.importDatabase(
-    importFilePath,
-    logRestoreOperation: (operation, filePath, success, {errorMessage, preRestoreBackupPath}) => logRestoreOperation(operation: operation, filePath: filePath, success: success, errorMessage: errorMessage, preRestoreBackupPath: preRestoreBackupPath),
-    detectRestoreFileType: detectRestoreFileType,
-    validateRestoreStrategy: validateRestoreStrategy,
-  );
-  Future<String> exportDatabase() => _dataSourceManagementService.exportDatabase(backupPath: backupPath, logBackupSuccess: logBackupSuccess, logBackupFailure: logBackupFailure);
-  Map<String, dynamic> getCompleteMySQLSettings() => _dataSourceManagementService.getCompleteMySQLSettings();
-  bool isMySQLSettingsComplete() => _dataSourceManagementService.isMySQLSettingsComplete();
-  Future<void> resetMySQLSettings() async => _dataSourceManagementService.resetMySQLSettings();
-  Future<void> clearMySQLSettings() async => _dataSourceManagementService.clearMySQLSettings();
-  String getValidatedDataSourceType() => _dataSourceManagementService.getValidatedDataSourceType();
-  bool shouldShowMySQLWarning() => _dataSourceManagementService.shouldShowMySQLWarning();
-  String getModuleDataSource(String module) => _dataSourceManagementService.getModuleDataSource(module);
-  bool isModuleUsingMySQL(String module) => _dataSourceManagementService.isModuleUsingMySQL(module);
-  List<String> getMySQLModules() => _dataSourceManagementService.getMySQLModules();
-  List<String> getSQLiteModules() => _dataSourceManagementService.getSQLiteModules();
+  Future<bool> testMySQLConnection(
+          {required String host,
+          required int port,
+          required String database,
+          required String username,
+          required String password}) =>
+      _dataSourceManagementService.testMySQLConnection(
+          host: host,
+          port: port,
+          database: database,
+          username: username,
+          password: password);
+  Future<void> importDatabase(String importFilePath) =>
+      _dataSourceManagementService.importDatabase(
+        importFilePath,
+        logRestoreOperation: (operation, filePath, success,
+                {errorMessage, preRestoreBackupPath}) =>
+            logRestoreOperation(
+                operation: operation,
+                filePath: filePath,
+                success: success,
+                errorMessage: errorMessage,
+                preRestoreBackupPath: preRestoreBackupPath),
+        detectRestoreFileType: detectRestoreFileType,
+        validateRestoreStrategy: validateRestoreStrategy,
+      );
+  Future<String> exportDatabase() =>
+      _dataSourceManagementService.exportDatabase(
+          backupPath: backupPath,
+          logBackupSuccess: logBackupSuccess,
+          logBackupFailure: logBackupFailure);
+  Map<String, dynamic> getCompleteMySQLSettings() =>
+      _dataSourceManagementService.getCompleteMySQLSettings();
+  bool isMySQLSettingsComplete() =>
+      _dataSourceManagementService.isMySQLSettingsComplete();
+  Future<void> resetMySQLSettings() async =>
+      _dataSourceManagementService.resetMySQLSettings();
+  Future<void> clearMySQLSettings() async =>
+      _dataSourceManagementService.clearMySQLSettings();
+  String getValidatedDataSourceType() =>
+      _dataSourceManagementService.getValidatedDataSourceType();
+  bool shouldShowMySQLWarning() =>
+      _dataSourceManagementService.shouldShowMySQLWarning();
+  String getModuleDataSource(String module) =>
+      _dataSourceManagementService.getModuleDataSource(module);
+  bool isModuleUsingMySQL(String module) =>
+      _dataSourceManagementService.isModuleUsingMySQL(module);
+  List<String> getMySQLModules() =>
+      _dataSourceManagementService.getMySQLModules();
+  List<String> getSQLiteModules() =>
+      _dataSourceManagementService.getSQLiteModules();
 
   // 数据库结构检测
-  void setDatabaseConnection({Database? database, MySqlConnection? mysqlConnection}) {
+  void setDatabaseConnection(
+      {Database? database, MySqlConnection? mysqlConnection}) {
     _database = database;
     _mysqlConnection = mysqlConnection;
-    _databaseStructureDetectionService.setDatabaseConnection(database: database, mysqlConnection: mysqlConnection);
+    _databaseStructureDetectionService.setDatabaseConnection(
+        database: database, mysqlConnection: mysqlConnection);
   }
 
-  Future<void> initializeMySQLConnection(Map<String, dynamic> mysqlSettings) => _databaseStructureDetectionService.initializeMySQLConnection(mysqlSettings);
-  Future<Map<String, dynamic>> detectAndUpdateDatabaseStructure({String? targetDataSource}) async {
-    final result = await _databaseStructureDetectionService.detectAndUpdateDatabaseStructure(
+  Future<void> initializeMySQLConnection(Map<String, dynamic> mysqlSettings) =>
+      _databaseStructureDetectionService
+          .initializeMySQLConnection(mysqlSettings);
+  Future<Map<String, dynamic>> detectAndUpdateDatabaseStructure(
+      {String? targetDataSource}) async {
+    final result = await _databaseStructureDetectionService
+        .detectAndUpdateDatabaseStructure(
       targetDataSource: targetDataSource,
     );
 
     try {
       await saveDatabaseStructureLog(_createLogFromResult(result));
-      print('数据库结构检测日志已保存');
+      LogManager.i('SettingsProvider', '数据库结构检测日志已保存');
     } catch (e) {
-      print('保存数据库结构检测日志失败: $e');
+      LogManager.e('SettingsProvider', '保存数据库结构检测日志失败', error: e);
     }
 
     return result;
   }
-  Future<List<DatabaseStructureLog>> getDatabaseStructureLogs({int limit = 50}) => _databaseStructureDetectionService.getDatabaseStructureLogs(limit: limit);
-  Future<bool> deleteDatabaseStructureLog(int logId) => _databaseStructureDetectionService.deleteDatabaseStructureLog(logId);
-  Future<bool> clearAllDatabaseStructureLogs() => _databaseStructureDetectionService.clearAllDatabaseStructureLogs();
-  Future<void> saveDatabaseStructureLog(DatabaseStructureLog log) => _databaseStructureDetectionService.saveDatabaseStructureLog(log);
+
+  Future<List<DatabaseStructureLog>> getDatabaseStructureLogs(
+          {int limit = 50}) =>
+      _databaseStructureDetectionService.getDatabaseStructureLogs(limit: limit);
+  Future<bool> deleteDatabaseStructureLog(int logId) =>
+      _databaseStructureDetectionService.deleteDatabaseStructureLog(logId);
+  Future<bool> clearAllDatabaseStructureLogs() =>
+      _databaseStructureDetectionService.clearAllDatabaseStructureLogs();
+  Future<void> saveDatabaseStructureLog(DatabaseStructureLog log) =>
+      _databaseStructureDetectionService.saveDatabaseStructureLog(log);
 
   DatabaseStructureLog _createLogFromResult(Map<String, dynamic> result) {
     return DatabaseStructureLog(
       dataSourceType: result['dataSourceType']?.toString() ?? '',
-      detectionTime: DateTimeFormatter.fromDbString(result['detectionTime']?.toString() ?? ''),
+      detectionTime: DateTimeFormatter.fromDbString(
+          result['detectionTime']?.toString() ?? ''),
       status: result['status']?.toString() ?? '',
       requiredTables: result['requiredTables'] ?? 0,
       missingTables: result['missingTables'] ?? 0,
       structureChanges: result['structureChanges'] ?? 0,
       errors: List<String>.from(result['errors'] ?? const <String>[]),
-      details: Map<String, dynamic>.from(result['details'] ?? const <String, dynamic>{}),
+      details: Map<String, dynamic>.from(
+          result['details'] ?? const <String, dynamic>{}),
       summary: _generateLogSummary(result),
     );
   }
@@ -536,7 +658,8 @@ class SettingsProvider extends ChangeNotifier {
     final errors = List<String>.from(result['errors'] ?? const <String>[]);
     final missingTables = (result['missingTables'] as int?) ?? 0;
     final structureChanges = (result['structureChanges'] as int?) ?? 0;
-    final details = Map<String, dynamic>.from(result['details'] ?? const <String, dynamic>{});
+    final details = Map<String, dynamic>.from(
+        result['details'] ?? const <String, dynamic>{});
     final tablesCreated = (details['tablesCreated'] as List?)?.length ?? 0;
     final tablesUpdated = (details['tablesUpdated'] as List?)?.length ?? 0;
     final columnsAdded = (details['columnsAdded'] as List?)?.length ?? 0;
@@ -544,34 +667,38 @@ class SettingsProvider extends ChangeNotifier {
 
     if (errors.isNotEmpty) {
       if (missingTables > 0) {
-        final suffix = ignoredTables > 0 ? ', 忽略${ignoredTables}个非系统表' : '';
-        return '${dataSourceType.toUpperCase()}数据库结构检测: 发现 ${missingTables} 个缺失表$suffix';
+        final suffix = ignoredTables > 0 ? ', 忽略${1}个非系统表' : '';
+        return '${dataSourceType.toUpperCase()}数据库结构检测: 发现 ${1} 个缺失表$suffix';
       }
-      if (structureChanges > 0 || tablesCreated > 0 || tablesUpdated > 0 || columnsAdded > 0) {
-        final suffix = ignoredTables > 0 ? ', 忽略${ignoredTables}个非系统表' : '';
+      if (structureChanges > 0 ||
+          tablesCreated > 0 ||
+          tablesUpdated > 0 ||
+          columnsAdded > 0) {
+        final suffix = ignoredTables > 0 ? ', 忽略${1}个非系统表' : '';
         return '${dataSourceType.toUpperCase()}数据库结构检测: 存在结构变更$suffix';
       }
-      final suffix = ignoredTables > 0 ? ', 忽略${ignoredTables}个非系统表' : '';
+      final suffix = ignoredTables > 0 ? ', 忽略${1}个非系统表' : '';
       return '${dataSourceType.toUpperCase()}数据库结构检测: 存在警告$suffix';
     }
 
     if (tablesCreated > 0 || tablesUpdated > 0 || columnsAdded > 0) {
-      final suffix = ignoredTables > 0 ? ', 忽略${ignoredTables}个非系统表' : '';
-      return '${dataSourceType.toUpperCase()}数据库结构检测: 创建${tablesCreated}个表, 更新${tablesUpdated}个表, 添加${columnsAdded}个字段$suffix';
+      final suffix = ignoredTables > 0 ? ', 忽略${1}个非系统表' : '';
+      return '${dataSourceType.toUpperCase()}数据库结构检测: 创建${1}个表, 更新${1}个表, 添加${1}个字段$suffix';
     }
 
     if (structureChanges > 0) {
-      final suffix = ignoredTables > 0 ? ', 忽略${ignoredTables}个非系统表' : '';
+      final suffix = ignoredTables > 0 ? ', 忽略${1}个非系统表' : '';
       return '${dataSourceType.toUpperCase()}数据库结构检测: 检测到结构更新$suffix';
     }
 
     if (ignoredTables > 0) {
-      return '${dataSourceType.toUpperCase()}数据库结构检测: 数据库结构正常，无需更新，忽略${ignoredTables}个非系统表';
+      return '${dataSourceType.toUpperCase()}数据库结构检测: 数据库结构正常，无需更新，忽略${1}个非系统表';
     }
 
     return '${dataSourceType.toUpperCase()}数据库结构检测: 数据库结构正常，无需更新';
   }
 
   // MySQL连接
-  Future<String> backupMySQLDatabase({String? backupPath}) => _mysqlConnectionService.backupMySQLDatabase(backupPath: backupPath);
+  Future<String> backupMySQLDatabase({String? backupPath}) =>
+      _mysqlConnectionService.backupMySQLDatabase(backupPath: backupPath);
 }

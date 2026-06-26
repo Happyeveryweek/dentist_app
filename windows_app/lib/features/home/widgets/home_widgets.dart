@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:typed_data';
 import '../../../providers/user_provider.dart';
-import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../widgets/success_toast.dart';
 
@@ -38,9 +37,9 @@ class UserInfoSection extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Color(0xFFF3E5F5),  // 淡紫色
+          color: const Color(0xFFF3E5F5), // 淡紫色
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Color(0xFFE1BEE7)),  // 淡紫色边框
+          border: Border.all(color: const Color(0xFFE1BEE7)), // 淡紫色边框
         ),
         child: Row(
           children: [
@@ -55,9 +54,11 @@ class UserInfoSection extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                      child: currentUser.imageData != null && currentUser.imageData!.isNotEmpty
+                      child: () {
+                        final imageData = currentUser.imageData;
+                        return imageData != null && imageData.isNotEmpty
                           ? Image.memory(
-                              Uint8List.fromList(currentUser.imageData!),
+                              Uint8List.fromList(imageData),
                               width: 44,
                               height: 44,
                               fit: BoxFit.cover,
@@ -74,7 +75,8 @@ class UserInfoSection extends StatelessWidget {
                             )
                           : Container(
                               color: Colors.grey.shade100,
-                              child: currentUser.role == 'doctor' || currentUser.role == 'admin'
+                              child: currentUser.role == 'doctor' ||
+                                      currentUser.role == 'admin'
                                   ? Image.asset(
                                       'assets/icons/doctor.png',
                                       width: 44,
@@ -87,17 +89,18 @@ class UserInfoSection extends StatelessWidget {
                                       height: 44,
                                       fit: BoxFit.cover,
                                     ),
-                            ),
+                            );
+                        }(),
                     ),
                   )
                 : Container(
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: DentalColors.primary.withOpacity(0.1),
+                      color: DentalColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.person_rounded,
                       color: DentalColors.primary,
                       size: 24,
@@ -143,8 +146,9 @@ class UserInfoSection extends StatelessWidget {
                   context,
                   username: currentUser?.username ?? 'admin',
                 );
-                
+
                 if (confirmed) {
+                  if (!context.mounted) return;
                   // 退出登录
                   Navigator.of(context).pushReplacementNamed('/login');
                 }

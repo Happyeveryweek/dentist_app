@@ -29,7 +29,7 @@ class _PatientsScreenState extends State<PatientsScreen>
   String _searchQuery = '';
   String _currentSort = 'updated'; // 'updated', 'age', 'recent'
   bool _ascending = false;
-  late AnimationController _animationController;
+  AnimationController? _animationController;
 
   // 分页控制
   int _currentPage = 1;
@@ -88,7 +88,7 @@ class _PatientsScreenState extends State<PatientsScreen>
   @override
   void dispose() {
     _searchController.dispose();
-    _animationController.dispose();
+    _animationController?.dispose();
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
     super.dispose();
@@ -547,13 +547,20 @@ class _PatientsScreenState extends State<PatientsScreen>
       patientName: patient.name,
     );
 
+    final patientId = patient.id;
+    if (patientId == null) {
+      if (context.mounted) {
+        SuccessToastManager.showError(context, message: '患者ID无效，无法删除');
+      }
+      return;
+    }
     if (confirmed == true) {
       if (!context.mounted) return;
       try {
         await Provider.of<PatientProvider>(
           context,
           listen: false,
-        ).deletePatient(patient.id!);
+        ).deletePatient(patientId);
         _loadPatients();
 
         // 使用新的成功提示组件
@@ -618,15 +625,20 @@ class _PatientsScreenState extends State<PatientsScreen>
         patientDate.month,
         patientDate.day,
       );
+      final startDate = _startDate;
+      final endDate = _endDate;
+      if (startDate == null || endDate == null) {
+        return false;
+      }
       final startDateOnly = DateTime(
-        _startDate!.year,
-        _startDate!.month,
-        _startDate!.day,
+        startDate.year,
+        startDate.month,
+        startDate.day,
       );
       final endDateOnly = DateTime(
-        _endDate!.year,
-        _endDate!.month,
-        _endDate!.day,
+        endDate.year,
+        endDate.month,
+        endDate.day,
       );
 
       // 使用 compareTo 进行日期比较，包含开始和结束日期

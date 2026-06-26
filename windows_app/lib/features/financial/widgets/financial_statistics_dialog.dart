@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'dart:ui' as ui; // 导入 dart:ui
-import '../../../theme/app_theme.dart';
 import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../../../models/patient.dart';
 import '../../../widgets/dental_icons.dart';
-import '../../../widgets/modern_date_picker.dart';
 import '../../../widgets/reusable_date_range_picker.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import '../services/financial_statistics_service.dart';
@@ -35,10 +33,10 @@ class FinancialStatsDialog extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _FinancialStatsDialogState createState() => _FinancialStatsDialogState();
+  FinancialStatsDialogState createState() => FinancialStatsDialogState();
 }
 
-class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
+class FinancialStatsDialogState extends State<FinancialStatsDialog> {
   late List<FinancialRecord> _financialRecords;
   late List<FinancialItem> _financialItems;
   late List<Patient> _patients;
@@ -74,10 +72,12 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
   }
 
   void _setDefaultDateRange() {
+    final startDate = widget.initialStartDate;
+    final endDate = widget.initialEndDate;
     // 如果父页面传递了日期范围，使用父页面的日期范围
-    if (widget.initialStartDate != null && widget.initialEndDate != null) {
-      _startDate = widget.initialStartDate!;
-      _endDate = widget.initialEndDate!;
+    if (startDate != null && endDate != null) {
+      _startDate = startDate;
+      _endDate = endDate;
       _activePreset = ''; // 自定义日期范围
     } else {
       // 默认显示全部数据
@@ -99,15 +99,6 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
         _startDate = picked.start;
         _endDate = picked.end;
         _activePreset = ''; // 自定义日期范围，清除预设
-      });
-    }
-  }
-
-  void _selectAllTime() {
-    if (mounted) {
-      setState(() {
-        _startDate = _getEarliestFinancialDate();
-        _endDate = DateTime.now();
       });
     }
   }
@@ -187,8 +178,7 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     // 填充实际数据
     for (final item in filteredItems) {
       final monthKey = DateFormat('yyyy-MM').format(item.chargeDate);
-      monthlyData[monthKey] =
-          (monthlyData[monthKey] ?? 0) + (item.processingFee ?? 0.0);
+      monthlyData[monthKey] = (monthlyData[monthKey] ?? 0) + item.processingFee;
     }
 
     return monthlyData;
@@ -216,10 +206,6 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     }
 
     return monthlyData;
-  }
-
-  double _calculateTotalRevenue() {
-    return _getFilteredItems().fold(0, (sum, item) => sum + item.totalPrice);
   }
 
   Map<String, double> _calculatePaymentMethodTotals() {
@@ -270,8 +256,7 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
   }
 
   double _calculateTotalProcessingFee() {
-    return _getFilteredItems()
-        .fold(0, (sum, item) => sum + (item.processingFee ?? 0.0));
+    return _getFilteredItems().fold(0, (sum, item) => sum + item.processingFee);
   }
 
   int _calculateTotalItems() {
@@ -296,11 +281,6 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     }
 
     return patientIds.length;
-  }
-
-  double _calculateTotalReceivable() {
-    // 总应收费 = item_price 字段总和（不乘数量）
-    return _getFilteredItems().fold(0.0, (sum, item) => sum + item.itemPrice);
   }
 
   double _calculateTotalReceived() {
@@ -371,7 +351,7 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
             age: 0,
             gender: '未知',
             phone: '',
-            first_visit_date: DateTime.now()),
+            firstVisitDate: DateTime.now()),
       );
       patientTotals[patient.name] =
           (patientTotals[patient.name] ?? 0) + item.totalPrice;
@@ -430,7 +410,7 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
               age: 0,
               gender: '未知',
               phone: '',
-              first_visit_date: DateTime.now()),
+              firstVisitDate: DateTime.now()),
         );
         patientDebts[patient.name] = debt;
       }
@@ -457,7 +437,9 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
         elevation: active ? 3 : 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         side: BorderSide(
-            color: active ? Colors.transparent : Colors.grey.withOpacity(0.12)),
+            color: active
+                ? Colors.transparent
+                : Colors.grey.withValues(alpha: 0.12)),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
       child: Text(label,
@@ -478,6 +460,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
     final monthlyProcessingData = _calculateMonthlyProcessingFee();
     final topPatients = _calculateTopPatients();
     final topDebtors = _calculateTopDebtors();
+    final searchQuery = widget.searchQuery;
+    final chargeItemQuery = widget.chargeItemQuery;
 
     final sortedRevenueMonths = monthlyRevenueData.keys.toList()..sort();
     final sortedProcessingMonths = monthlyProcessingData.keys.toList()..sort();
@@ -545,7 +529,7 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.grey.withOpacity(0.12)),
+                  side: BorderSide(color: Colors.grey.withValues(alpha: 0.12)),
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(8),
@@ -611,34 +595,32 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 显示搜索条件提示
-            if ((widget.searchQuery != null &&
-                    widget.searchQuery!.isNotEmpty) ||
-                (widget.chargeItemQuery != null &&
-                    widget.chargeItemQuery!.isNotEmpty))
+            if ((searchQuery != null && searchQuery.isNotEmpty) ||
+                (chargeItemQuery != null && chargeItemQuery.isNotEmpty))
               Container(
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: DentalColors.info.withOpacity(0.1),
+                  color: DentalColors.info.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: DentalColors.info.withOpacity(0.3)),
+                  border: Border.all(
+                      color: DentalColors.info.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline,
+                    const Icon(Icons.info_outline,
                         color: DentalColors.info, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         '当前显示搜索结果的统计数据：${[
-                          if (widget.searchQuery != null &&
-                              widget.searchQuery!.isNotEmpty)
-                            '患者搜索"${widget.searchQuery}"',
-                          if (widget.chargeItemQuery != null &&
-                              widget.chargeItemQuery!.isNotEmpty)
-                            '收费项目"${widget.chargeItemQuery}"',
+                          if (searchQuery != null && searchQuery.isNotEmpty)
+                            '患者搜索"$searchQuery"',
+                          if (chargeItemQuery != null &&
+                              chargeItemQuery.isNotEmpty)
+                            '收费项目"$chargeItemQuery"',
                         ].join('、')}',
-                        style: TextStyle(
+                        style: const TextStyle(
                             color: DentalColors.info,
                             fontSize: 13,
                             fontWeight: FontWeight.w500),
@@ -665,8 +647,9 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                   // 固定切分：在原基础上将右侧整体再增加 100px（两个榜单各 +50px）
                   double rightW = (totalW / 3) < 520 ? 520 : (totalW / 3);
                   rightW += 100; // 两个榜单各 +50px
-                  if (rightW > totalW - 300)
+                  if (rightW > totalW - 300) {
                     rightW = totalW - 300; // 左侧至少保留 300px
+                  }
                   final double leftW =
                       totalW - rightW - gap; // 折线图宽度相应增加 100px（相对上次）
 
@@ -749,9 +732,10 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
               reservedSize: 40,
               interval: interval,
               getTitlesWidget: (value, meta) {
-                if (value == 0)
+                if (value == 0) {
                   return const Text('¥0',
                       style: TextStyle(fontSize: 10, color: Colors.black54));
+                }
                 return Text('¥${value.toInt()}',
                     style:
                         const TextStyle(fontSize: 10, color: Colors.black54));
@@ -823,8 +807,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 leftTitles: AxisTitles(
                     sideTitles: showLeftTitles
                         ? leftTitlesConfig()
-                        : SideTitles(showTitles: false)),
-                topTitles: AxisTitles(
+                        : const SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(
                     sideTitles: SideTitles(
                         showTitles: false, reservedSize: 20)), // 增加顶部预留空间
                 rightTitles: AxisTitles(
@@ -868,8 +852,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.blue.withOpacity(0.3),
-                        Colors.blue.withOpacity(0.1),
+                        Colors.blue.withValues(alpha: 0.3),
+                        Colors.blue.withValues(alpha: 0.1),
                       ],
                     ),
                   ),
@@ -886,17 +870,17 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 width: 40,
                 child: LineChart(
                   LineChartData(
-                    lineTouchData: LineTouchData(enabled: false),
-                    gridData: FlGridData(show: false),
+                    lineTouchData: const LineTouchData(enabled: false),
+                    gridData: const FlGridData(show: false),
                     titlesData: FlTitlesData(
                       bottomTitles: AxisTitles(
                           sideTitles: bottomTitlesConfig(showLabels: false)),
                       leftTitles: AxisTitles(sideTitles: leftTitlesConfig()),
-                      topTitles: AxisTitles(
+                      topTitles: const AxisTitles(
                           sideTitles:
                               SideTitles(showTitles: false, reservedSize: 20)),
-                      rightTitles:
-                          AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
                     ),
                     borderData: FlBorderData(show: false),
                     minX: 0,
@@ -959,9 +943,10 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
               reservedSize: 40,
               interval: interval,
               getTitlesWidget: (value, meta) {
-                if (value == 0)
+                if (value == 0) {
                   return const Text('¥0',
                       style: TextStyle(fontSize: 10, color: Colors.black54));
+                }
                 return Text('¥${value.toInt()}',
                     style:
                         const TextStyle(fontSize: 10, color: Colors.black54));
@@ -1033,8 +1018,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 leftTitles: AxisTitles(
                     sideTitles: showLeftTitles
                         ? leftTitlesConfig()
-                        : SideTitles(showTitles: false)),
-                topTitles: AxisTitles(
+                        : const SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(
                     sideTitles: SideTitles(
                         showTitles: false, reservedSize: 20)), // 增加顶部预留空间
                 rightTitles: AxisTitles(
@@ -1078,8 +1063,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.green.withOpacity(0.3),
-                        Colors.green.withOpacity(0.1),
+                        Colors.green.withValues(alpha: 0.3),
+                        Colors.green.withValues(alpha: 0.1),
                       ],
                     ),
                   ),
@@ -1096,17 +1081,17 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 width: 40,
                 child: LineChart(
                   LineChartData(
-                    lineTouchData: LineTouchData(enabled: false),
-                    gridData: FlGridData(show: false),
+                    lineTouchData: const LineTouchData(enabled: false),
+                    gridData: const FlGridData(show: false),
                     titlesData: FlTitlesData(
                       bottomTitles: AxisTitles(
                           sideTitles: bottomTitlesConfig(showLabels: false)),
                       leftTitles: AxisTitles(sideTitles: leftTitlesConfig()),
-                      topTitles: AxisTitles(
+                      topTitles: const AxisTitles(
                           sideTitles:
                               SideTitles(showTitles: false, reservedSize: 20)),
-                      rightTitles:
-                          AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
                     ),
                     borderData: FlBorderData(show: false),
                     minX: 0,
@@ -1234,7 +1219,7 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: cardColor.withOpacity(0.3),
+            color: cardColor.withValues(alpha: 0.3),
             spreadRadius: 2,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -1285,7 +1270,7 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: purpleCardColor.withOpacity(0.3),
+              color: purpleCardColor.withValues(alpha: 0.3),
               spreadRadius: 2,
               blurRadius: 8,
               offset: const Offset(0, 4),
@@ -1360,7 +1345,7 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
       constraints: const BoxConstraints(minHeight: 26),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
+        color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -1391,14 +1376,15 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
   }
 
   Future<void> _refreshData() async {
-    if (widget.onRefresh == null || _isRefreshing) return;
+    final onRefresh = widget.onRefresh;
+    if (onRefresh == null || _isRefreshing) return;
 
     setState(() {
       _isRefreshing = true;
     });
 
     try {
-      final data = await widget.onRefresh!();
+      final data = await onRefresh();
       if (!mounted) return;
       setState(() {
         _financialRecords = List<FinancialRecord>.from(data.financialRecords);
@@ -1452,10 +1438,11 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 children: [
                   CircleAvatar(
                     radius: 12,
-                    backgroundColor: DentalColors.primary.withOpacity(0.1),
+                    backgroundColor:
+                        DentalColors.primary.withValues(alpha: 0.1),
                     child: Text(
                       entry.key.substring(0, 1),
-                      style: TextStyle(
+                      style: const TextStyle(
                           color: DentalColors.primary,
                           fontWeight: FontWeight.bold,
                           fontSize: 11),
@@ -1474,11 +1461,11 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
                   const SizedBox(width: 8),
                   Text(
                     '¥${entry.value.toStringAsFixed(0)}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: DentalColors.primary,
-                      fontFeatures: const [ui.FontFeature.tabularFigures()],
+                      fontFeatures: [ui.FontFeature.tabularFigures()],
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -1490,7 +1477,8 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
               LinearProgressIndicator(
                 value: percentage / 100,
                 backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation<Color>(DentalColors.primary),
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(DentalColors.primary),
               ),
             ],
           ),
@@ -1510,8 +1498,9 @@ class _FinancialStatsDialogState extends State<FinancialStatsDialog> {
             children: [
               CircleAvatar(
                 radius: 12,
-                backgroundColor: DentalColors.error.withOpacity(0.1),
-                child: Icon(Icons.person, color: DentalColors.error, size: 14),
+                backgroundColor: DentalColors.error.withValues(alpha: 0.1),
+                child: const Icon(Icons.person,
+                    color: DentalColors.error, size: 14),
               ),
               const SizedBox(width: 8),
               Expanded(

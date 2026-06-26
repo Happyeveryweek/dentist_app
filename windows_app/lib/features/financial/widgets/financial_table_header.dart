@@ -12,21 +12,21 @@ class FinancialTableHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.blue[50]!, Colors.indigo[50]!],
+          colors: [Colors.blue.shade50, Colors.indigo.shade50],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!, width: 1.5),
+        border: Border.all(color: Colors.blue.shade200, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.08),
+            color: Colors.blue.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-          child: Row(
+      child: Row(
         children: [
           // 病历号列
           SizedBox(
@@ -34,7 +34,7 @@ class FinancialTableHeader extends StatelessWidget {
             child: FinancialHeaderCell(
               icon: Icons.badge,
               label: '病历号',
-              color: Colors.orange[600]!,
+              color: Colors.orange.shade600,
               alignment: MainAxisAlignment.center,
             ),
           ),
@@ -45,7 +45,7 @@ class FinancialTableHeader extends StatelessWidget {
             child: FinancialHeaderCell(
               icon: Icons.person,
               label: '患者姓名',
-              color: Colors.blue[700]!,
+              color: Colors.blue.shade700,
               alignment: MainAxisAlignment.center,
             ),
           ),
@@ -58,12 +58,12 @@ class FinancialTableHeader extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.teal[50],
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.teal[200]!, width: 1),
+                border: Border.all(color: Colors.teal.shade200, width: 1),
               ),
               child: FinancialHeaderCell(
                 icon: Icons.calendar_today,
                 label: '收费日期',
-                color: Colors.teal[600]!,
+                color: Colors.teal.shade600,
                 alignment: MainAxisAlignment.center,
               ),
             ),
@@ -77,12 +77,12 @@ class FinancialTableHeader extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.indigo[50],
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.indigo[200]!, width: 1),
+                border: Border.all(color: Colors.indigo.shade200, width: 1),
               ),
               child: FinancialHeaderCell(
                 icon: Icons.update,
                 label: '最近更新',
-                color: Colors.indigo[600]!,
+                color: Colors.indigo.shade600,
                 alignment: MainAxisAlignment.center,
               ),
             ),
@@ -96,12 +96,12 @@ class FinancialTableHeader extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.green[50],
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green[200]!, width: 1),
+                border: Border.all(color: Colors.green.shade200, width: 1),
               ),
               child: FinancialHeaderCell(
                 icon: Icons.medical_services,
                 label: '收费项目',
-                color: Colors.green[700]!,
+                color: Colors.green.shade700,
                 alignment: MainAxisAlignment.center,
               ),
             ),
@@ -115,12 +115,12 @@ class FinancialTableHeader extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.purple[50],
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.purple[200]!, width: 1),
+                border: Border.all(color: Colors.purple.shade200, width: 1),
               ),
               child: FinancialHeaderCell(
                 icon: Icons.payments,
                 label: '收费方式',
-                color: Colors.purple[700]!,
+                color: Colors.purple.shade700,
                 alignment: MainAxisAlignment.center,
               ),
             ),
@@ -133,16 +133,17 @@ class FinancialTableHeader extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: Container(
                 constraints: const BoxConstraints(minWidth: 100),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.blue[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue[200]!, width: 1),
+                  border: Border.all(color: Colors.blue.shade200, width: 1),
                 ),
                 child: FinancialHeaderCell(
                   icon: Icons.request_quote,
                   label: '应收费',
-                  color: Colors.blue[700]!,
+                  color: Colors.blue.shade700,
                   alignment: MainAxisAlignment.center,
                 ),
               ),
@@ -156,16 +157,17 @@ class FinancialTableHeader extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: Container(
                 constraints: const BoxConstraints(minWidth: 100),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.green[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green[200]!, width: 1),
+                  border: Border.all(color: Colors.green.shade200, width: 1),
                 ),
                 child: FinancialHeaderCell(
                   icon: Icons.payments,
                   label: '已收费',
-                  color: Colors.green[700]!,
+                  color: Colors.green.shade700,
                   alignment: MainAxisAlignment.center,
                 ),
               ),
@@ -179,16 +181,17 @@ class FinancialTableHeader extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: Container(
                 constraints: const BoxConstraints(minWidth: 100),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.orange[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange[200]!, width: 1),
+                  border: Border.all(color: Colors.orange.shade200, width: 1),
                 ),
                 child: FinancialHeaderCell(
                   icon: Icons.build,
                   label: '加工费',
-                  color: Colors.orange[700]!,
+                  color: Colors.orange.shade700,
                   alignment: MainAxisAlignment.center,
                 ),
               ),
@@ -201,7 +204,7 @@ class FinancialTableHeader extends StatelessWidget {
             child: FinancialHeaderCell(
               icon: Icons.settings,
               label: '操作',
-              color: Colors.grey[700]!,
+              color: Colors.grey.shade700,
               alignment: MainAxisAlignment.center,
             ),
           ),

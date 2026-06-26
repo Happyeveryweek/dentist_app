@@ -54,7 +54,9 @@ class BackupLogDialog extends StatelessWidget {
                 children: [
                   Icon(
                     log.success ? Icons.check_circle : Icons.error,
-                    color: log.success ? AppTheme.successColor : AppTheme.errorColor,
+                    color: log.success
+                        ? AppTheme.successColor
+                        : AppTheme.errorColor,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -62,7 +64,8 @@ class BackupLogDialog extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${DateFormat('yyyy-MM-dd HH:mm:ss').format(log.backupDate)}',
+                          DateFormat('yyyy-MM-dd HH:mm:ss')
+                              .format(log.backupDate),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),

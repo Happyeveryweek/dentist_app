@@ -3,6 +3,7 @@ import '../../../models/material_image.dart';
 import '../../../models/patient_material_with_images.dart';
 import '../../../data_sources/patient_data_source.dart';
 import 'patient_material_sync_service.dart';
+import '../../../utils/log_manager.dart';
 
 /// 患者材料服务
 /// 负责处理患者材料的业务逻辑，SQL 操作委托给 Data Source
@@ -20,8 +21,9 @@ class PatientMaterialService {
     final ds = getCurrentDataSource();
     if (ds == null) throw Exception('数据源未初始化');
     final savedMaterial = await ds.addPatientMaterial(material);
-    if (savedMaterial.id != null && syncService.needsSync) {
-      syncService.syncPatientMaterialToMySQL(savedMaterial, savedMaterial.id!);
+    final savedId = savedMaterial.id;
+    if (savedId != null && syncService.needsSync) {
+      syncService.syncPatientMaterialToMySQL(savedMaterial, savedId);
     }
     return savedMaterial;
   }
@@ -37,9 +39,10 @@ class PatientMaterialService {
   Future<bool> updatePatientMaterial(PatientMaterial material) async {
     final ds = getCurrentDataSource();
     if (ds == null) return false;
+    final materialId = material.id;
     final success = await ds.updatePatientMaterial(material);
-    if (success && material.id != null && syncService.needsSync) {
-      syncService.syncPatientMaterialToMySQL(material, material.id!);
+    if (success && materialId != null && syncService.needsSync) {
+      syncService.syncPatientMaterialToMySQL(material, materialId);
     }
     return success;
   }
@@ -60,8 +63,9 @@ class PatientMaterialService {
     final ds = getCurrentDataSource();
     if (ds == null) throw Exception('数据源未初始化');
     final savedImage = await ds.addMaterialImage(image);
-    if (savedImage.id != null && syncService.needsSync) {
-      syncService.syncMaterialImageToMySQL(savedImage, savedImage.id!);
+    final savedId = savedImage.id;
+    if (savedId != null && syncService.needsSync) {
+      syncService.syncMaterialImageToMySQL(savedImage, savedId);
     }
     return savedImage;
   }
@@ -85,11 +89,14 @@ class PatientMaterialService {
   }
 
   /// 获取患者材料（包含图片信息）
-  Future<List<PatientMaterialWithImages>> getPatientMaterialsWithImages(int patientId) async {
+  Future<List<PatientMaterialWithImages>> getPatientMaterialsWithImages(
+      int patientId) async {
     final materials = await getPatientMaterials(patientId);
     List<PatientMaterialWithImages> result = [];
     for (var material in materials) {
-      final images = await getMaterialImages(material.id!);
+      final materialId = material.id;
+      if (materialId == null) continue;
+      final images = await getMaterialImages(materialId);
       result.add(PatientMaterialWithImages(material: material, images: images));
     }
     return result;
@@ -102,13 +109,14 @@ class PatientMaterialService {
     try {
       return await ds.getMaterialImage(imageId);
     } catch (e) {
-      print('获取单个材料图片失败: $e');
+      LogManager.e('PatientMaterialService', '获取单个材料图片失败', error: e);
       return null;
     }
   }
 
   /// 获取患者材料缩略图
-  Future<List<PatientMaterialWithImages>> getPatientMaterialsWithThumbnails(int patientId) async {
+  Future<List<PatientMaterialWithImages>> getPatientMaterialsWithThumbnails(
+      int patientId) async {
     // Data Source 接口统一返回图片数据，缩略图处理由上层 UI 控制
     return await getPatientMaterialsWithImages(patientId);
   }

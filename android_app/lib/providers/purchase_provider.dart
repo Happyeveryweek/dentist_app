@@ -91,15 +91,17 @@ class PurchaseProvider extends ChangeNotifier {
   // 获取当前数据源（必须可用，否则抛出异常）
   PurchaseDataSource get _currentDataSource {
     if (_dataSourceType == 'mysql') {
-      if (_mysqlDataSource == null) {
+      final dataSource = _mysqlDataSource;
+      if (dataSource == null) {
         throw Exception('MySQL采购数据源未初始化');
       }
-      return _mysqlDataSource!;
+      return dataSource;
     } else {
-      if (_sqliteDataSource == null) {
+      final dataSource = _sqliteDataSource;
+      if (dataSource == null) {
         throw Exception('SQLite采购数据源未初始化');
       }
-      return _sqliteDataSource!;
+      return dataSource;
     }
   }
 
@@ -226,9 +228,10 @@ class PurchaseProvider extends ChangeNotifier {
       return cachedRecords; // 优雅降级而不是抛出异常
     }
 
-    if (_dbWrapper == null) return cachedRecords;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return cachedRecords;
 
-    return await _dbWrapper!.wrapOperation('getAllPurchaseRecords', () async {
+    return await wrapper.wrapOperation('getAllPurchaseRecords', () async {
       try {
         // 优先检查缓存（像财务管理一样）
         if (_cacheService?.isCacheValid() == true) {
@@ -314,9 +317,10 @@ class PurchaseProvider extends ChangeNotifier {
       return await getAllPurchaseRecords();
     }
 
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('searchPurchaseRecords', () async {
+    return await wrapper.wrapOperation('searchPurchaseRecords', () async {
       try {
         final doctorFilter = _permissionService?.getDoctorFilter();
         if (doctorFilter != null &&
@@ -357,9 +361,10 @@ class PurchaseProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
-    if (_dbWrapper == null) return -1;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return -1;
 
-    return await _dbWrapper!.wrapOperation('addPurchaseRecord', () async {
+    return await wrapper.wrapOperation('addPurchaseRecord', () async {
       try {
         // 使用数据源模式（统一接口）
         final id = await _currentDataSource.createPurchase(record);
@@ -386,9 +391,10 @@ class PurchaseProvider extends ChangeNotifier {
       throw Exception('数据库未初始化或记录ID为空');
     }
 
-    if (_dbWrapper == null) return 0;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return 0;
 
-    return await _dbWrapper!.wrapOperation('updatePurchaseRecord', () async {
+    return await wrapper.wrapOperation('updatePurchaseRecord', () async {
       try {
         // 使用数据源模式（统一接口）
         final success = await _currentDataSource.updatePurchase(record);
@@ -416,9 +422,10 @@ class PurchaseProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
-    if (_dbWrapper == null) return 0;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return 0;
 
-    return await _dbWrapper!.wrapOperation('deletePurchaseRecord', () async {
+    return await wrapper.wrapOperation('deletePurchaseRecord', () async {
       try {
         // 使用数据源模式（统一接口）
         final success = await _currentDataSource.deletePurchase(recordId);
@@ -541,10 +548,11 @@ class PurchaseProvider extends ChangeNotifier {
     String operationName,
     Future<T> Function() operation,
   ) async {
-    if (_dbWrapper == null) {
+    final wrapper = _dbWrapper;
+    if (wrapper == null) {
       return await operation();
     }
-    return await _dbWrapper!.wrapOperation(operationName, operation);
+    return await wrapper.wrapOperation(operationName, operation);
   }
 
   // =================== 统计方法 ===================
@@ -578,7 +586,16 @@ class PurchaseProvider extends ChangeNotifier {
                   Future.value(false),
         );
 
-        return await _statisticsService!.getPurchaseStatistics();
+        final statisticsService = _statisticsService;
+        if (statisticsService == null) {
+          return {
+            'totalRecords': 0,
+            'totalAmount': 0.0,
+            'totalQuantity': 0,
+            'supplierCount': 0,
+          };
+        }
+        return await statisticsService.getPurchaseStatistics();
       } catch (e) {
         AppLogger.info('获取采购统计信息失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
@@ -621,7 +638,11 @@ class PurchaseProvider extends ChangeNotifier {
                     Future.value(false),
           );
 
-          return await _statisticsService!.getPurchaseStatisticsByDateRange(
+          final statisticsService = _statisticsService;
+          if (statisticsService == null) {
+            return {'totalRecords': 0, 'totalAmount': 0.0, 'totalQuantity': 0};
+          }
+          return await statisticsService.getPurchaseStatisticsByDateRange(
             startDate,
             endDate,
           );

@@ -29,27 +29,28 @@ class _DashboardScreenState extends State<DashboardScreen>
   bool _isLoading = true;
   Uint8List? _currentUserAvatar;
   String _currentUserName = '';
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
+  AnimationController? _animationController;
+  Animation<double> _fadeAnimation = const AlwaysStoppedAnimation<double>(1.0);
 
   @override
   void initState() {
     super.initState();
 
     // 初始化动画控制器
-    _animationController = AnimationController(
+    final controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
+    _animationController = controller;
 
     _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
+      parent: controller,
       curve: Curves.easeInOutCubic,
       reverseCurve: Curves.easeIn,
     );
 
     // 启动动画
-    _animationController.forward();
+    controller.forward();
 
     // 延迟加载数据，确保Provider完全初始化
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -60,7 +61,7 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _animationController?.dispose();
     super.dispose();
   }
 
@@ -128,17 +129,18 @@ class _DashboardScreenState extends State<DashboardScreen>
       final currentUser = userProvider.currentUser;
 
       // 获取用户头像和医生姓名
-      if (currentUser?.imageData != null &&
-          currentUser!.imageData!.isNotEmpty) {
-        _currentUserAvatar = Uint8List.fromList(currentUser.imageData!);
+      final imageData = currentUser?.imageData;
+      if (imageData != null && imageData.isNotEmpty) {
+        _currentUserAvatar = Uint8List.fromList(imageData);
       } else {
         _currentUserAvatar = null;
       }
 
       // 获取医生姓名，优先使用 doctor 字段，否则使用 username
+      final doctor = currentUser?.doctor;
       _currentUserName =
-          currentUser?.doctor?.isNotEmpty == true
-              ? currentUser!.doctor!
+          doctor != null && doctor.isNotEmpty
+              ? doctor
               : (currentUser?.username ?? '');
 
       // 使用数据加载服务加载数据
@@ -159,8 +161,8 @@ class _DashboardScreenState extends State<DashboardScreen>
 
       // 启动动画
       if (mounted) {
-        _animationController.reset();
-        _animationController.forward();
+        _animationController?.reset();
+        _animationController?.forward();
         AppLogger.info('仪表盘数据加载完成');
       }
     } catch (e) {

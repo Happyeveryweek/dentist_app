@@ -299,7 +299,11 @@ class MySqlFinancialDataSource implements FinancialDataSource {
       [record.patientId, record.totalQuantity, record.notes],
     );
 
-    return result.insertId!;
+    final insertId = result.insertId;
+    if (insertId == null) {
+      throw Exception('创建财务记录失败：无法获取插入ID');
+    }
+    return insertId;
   }
 
   @override
@@ -316,7 +320,7 @@ class MySqlFinancialDataSource implements FinancialDataSource {
       [record.patientId, record.totalQuantity, record.notes, record.id],
     );
 
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -335,7 +339,7 @@ class MySqlFinancialDataSource implements FinancialDataSource {
       'DELETE FROM financial_records WHERE id = ?',
       [id],
     );
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -381,7 +385,11 @@ class MySqlFinancialDataSource implements FinancialDataSource {
       ],
     );
 
-    return result.insertId!;
+    final insertId = result.insertId;
+    if (insertId == null) {
+      throw Exception('创建财务项目失败：无法获取插入ID');
+    }
+    return insertId;
   }
 
   @override
@@ -408,7 +416,7 @@ class MySqlFinancialDataSource implements FinancialDataSource {
       ],
     );
 
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -420,7 +428,7 @@ class MySqlFinancialDataSource implements FinancialDataSource {
       'DELETE FROM financial_items WHERE id = ?',
       [id],
     );
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override

@@ -12,11 +12,9 @@ class PatientFormState {
   // 文本控制器
   final TextEditingController nameController = TextEditingController();
   final TextEditingController ageController = TextEditingController();
-  final TextEditingController primaryPhoneController =
-      TextEditingController();
+  final TextEditingController primaryPhoneController = TextEditingController();
   final TextEditingController backupPhoneController = TextEditingController();
-  final TextEditingController medicalRecordController =
-      TextEditingController();
+  final TextEditingController medicalRecordController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController idNumberController = TextEditingController();
   final TextEditingController doctorController = TextEditingController();
@@ -74,12 +72,12 @@ class PatientFormState {
     ageController.text = patient.age.toString();
     gender = patient.gender;
     medicalRecordController.text =
-        patient.medical_record_number?.toString() ?? '';
+        patient.medicalRecordNumber?.toString() ?? '';
     addressController.text = patient.address ?? '';
-    idNumberController.text = patient.identification_number ?? '';
+    idNumberController.text = patient.identificationNumber ?? '';
     doctorController.text = patient.doctor ?? '';
-    treatmentItemsController.text = patient.treatment_items ?? '';
-    firstVisitDate = patient.first_visit_date;
+    treatmentItemsController.text = patient.treatmentItems ?? '';
+    firstVisitDate = patient.firstVisitDate;
   }
 
   /// 构建电话号码数据
@@ -100,6 +98,5 @@ class PatientFormState {
   }
 
   /// 获取排除当前编辑患者的 ID（用于重复检查）
-  int? get excludePatientId =>
-      editingExistingPatient?.id;
+  int? get excludePatientId => editingExistingPatient?.id;
 }

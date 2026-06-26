@@ -4,6 +4,7 @@ import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../../../models/patient.dart';
 import '../helpers/financial_payment_method_helper.dart';
+
 // 财务统计对话框
 class FinancialStatisticsDialog extends StatelessWidget {
   final List<FinancialRecord> financialRecords;
@@ -21,22 +22,27 @@ class FinancialStatisticsDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     // 计算统计数据
     final totalRecords = financialRecords.length;
-    final totalReceivable = financialItems.fold<double>(0.0, (sum, item) => sum + item.itemPrice);
-    final totalReceived = financialItems.fold<double>(0.0, (sum, item) => sum + item.totalPrice);
+    final totalReceivable =
+        financialItems.fold<double>(0.0, (sum, item) => sum + item.itemPrice);
+    final totalReceived =
+        financialItems.fold<double>(0.0, (sum, item) => sum + item.totalPrice);
     final totalDue = totalReceivable - totalReceived;
-    final totalProcessingFee = financialItems.fold<double>(0.0, (sum, item) => sum + item.processingFee);
-    
+    final totalProcessingFee = financialItems.fold<double>(
+        0.0, (sum, item) => sum + item.processingFee);
+
     // 按月份统计
     final Map<String, double> monthlyStats = {};
     for (final item in financialItems) {
       final monthKey = DateFormat('yyyy-MM').format(item.chargeDate);
-      monthlyStats[monthKey] = (monthlyStats[monthKey] ?? 0.0) + item.totalPrice;
+      monthlyStats[monthKey] =
+          (monthlyStats[monthKey] ?? 0.0) + item.totalPrice;
     }
-    
+
     // 按收费项目统计
     final Map<String, double> itemStats = {};
     for (final item in financialItems) {
-      itemStats[item.itemName] = (itemStats[item.itemName] ?? 0.0) + item.totalPrice;
+      itemStats[item.itemName] =
+          (itemStats[item.itemName] ?? 0.0) + item.totalPrice;
     }
 
     // 按支付方式统计
@@ -46,11 +52,13 @@ class FinancialStatisticsDialog extends StatelessWidget {
       '现金': 0.0,
     };
     for (final item in financialItems) {
-      final methodName = FinancialPaymentMethodHelper.displayNameOrDefault(item.paymentMethod);
-      paymentMethodStats[methodName] = (paymentMethodStats[methodName] ?? 0.0) + item.totalPrice;
+      final methodName =
+          FinancialPaymentMethodHelper.displayNameOrDefault(item.paymentMethod);
+      paymentMethodStats[methodName] =
+          (paymentMethodStats[methodName] ?? 0.0) + item.totalPrice;
     }
     final paymentMethodOrder = <String>['微信', '支付宝', '现金'];
-    
+
     // 按患者统计
     final Map<String, double> patientStats = {};
     for (final item in financialItems) {
@@ -64,28 +72,30 @@ class FinancialStatisticsDialog extends StatelessWidget {
           updatedAt: DateTime.now(),
         ),
       );
-      
-             if (record.patientId > 0) {
-         final patient = patients.firstWhere(
-           (patient) => patient.id == record.patientId,
-           orElse: () => Patient(
-             id: 0,
-             name: '未知患者',
-             age: 0,
-             gender: '未知',
-             phone: '',
-             medical_record_number: 0,
-             address: '',
-             first_visit_date: DateTime.now(),
-           ),
-         );
-         
-         if (patient.id != null && patient.id! > 0) {
-           patientStats[patient.name] = (patientStats[patient.name] ?? 0.0) + item.totalPrice;
-         }
-       }
+
+      if (record.patientId > 0) {
+        final patient = patients.firstWhere(
+          (patient) => patient.id == record.patientId,
+          orElse: () => Patient(
+            id: 0,
+            name: '未知患者',
+            age: 0,
+            gender: '未知',
+            phone: '',
+            medicalRecordNumber: 0,
+            address: '',
+            firstVisitDate: DateTime.now(),
+          ),
+        );
+
+        final patientId = patient.id;
+        if (patientId != null && patientId > 0) {
+          patientStats[patient.name] =
+              (patientStats[patient.name] ?? 0.0) + item.totalPrice;
+        }
+      }
     }
-    
+
     // 排序数据
     final sortedMonths = monthlyStats.keys.toList()..sort();
     final sortedItems = itemStats.entries.toList()
@@ -104,13 +114,14 @@ class FinancialStatisticsDialog extends StatelessWidget {
             // 标题栏
             Row(
               children: [
-                Icon(Icons.bar_chart, color: Theme.of(context).primaryColor, size: 24),
+                Icon(Icons.bar_chart,
+                    color: Theme.of(context).primaryColor, size: 24),
                 const SizedBox(width: 12),
                 Text(
                   '收费图表统计',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const Spacer(),
                 IconButton(
@@ -120,9 +131,9 @@ class FinancialStatisticsDialog extends StatelessWidget {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -136,17 +147,25 @@ class FinancialStatisticsDialog extends StatelessWidget {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Theme.of(context).primaryColor.withOpacity(0.05),
-                            Theme.of(context).primaryColor.withOpacity(0.03),
+                            Theme.of(context)
+                                .primaryColor
+                                .withValues(alpha: 0.05),
+                            Theme.of(context)
+                                .primaryColor
+                                .withValues(alpha: 0.03),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Theme.of(context).primaryColor.withOpacity(0.2),
+                          color: Theme.of(context)
+                              .primaryColor
+                              .withValues(alpha: 0.2),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).primaryColor.withOpacity(0.08),
+                            color: Theme.of(context)
+                                .primaryColor
+                                .withValues(alpha: 0.08),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -159,7 +178,7 @@ class FinancialStatisticsDialog extends StatelessWidget {
                               '总记录数',
                               '$totalRecords',
                               Icons.receipt_long_rounded,
-                              Colors.blue[700]!,
+                              Colors.blue.shade700,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -168,7 +187,7 @@ class FinancialStatisticsDialog extends StatelessWidget {
                               '总应收费',
                               '¥${totalReceivable.toStringAsFixed(0)}',
                               Icons.account_balance_wallet_rounded,
-                              Colors.green[700]!,
+                              Colors.green.shade700,
                               details: paymentMethodOrder
                                   .map(
                                     (method) => _buildCardDetailLine(
@@ -185,7 +204,7 @@ class FinancialStatisticsDialog extends StatelessWidget {
                               '总已收费',
                               '¥${totalReceived.toStringAsFixed(0)}',
                               Icons.check_circle_rounded,
-                              Colors.blue[600]!,
+                              Colors.blue.shade600,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -194,7 +213,9 @@ class FinancialStatisticsDialog extends StatelessWidget {
                               '总欠费',
                               '¥${totalDue.toStringAsFixed(0)}',
                               Icons.pending_rounded,
-                              totalDue > 0 ? Colors.red[600]! : Colors.grey[600]!,
+                              totalDue > 0
+                                  ? Colors.red.shade600
+                                  : Colors.grey.shade600,
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -203,25 +224,25 @@ class FinancialStatisticsDialog extends StatelessWidget {
                               '总加工费',
                               '¥${totalProcessingFee.toStringAsFixed(0)}',
                               Icons.build_rounded,
-                              Colors.orange[600]!,
+                              Colors.orange.shade600,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // 月度趋势图
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(color: Colors.grey.shade300),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
+                            color: Colors.grey.withValues(alpha: 0.1),
                             spreadRadius: 1,
                             blurRadius: 3,
                             offset: const Offset(0, 1),
@@ -233,9 +254,12 @@ class FinancialStatisticsDialog extends StatelessWidget {
                         children: [
                           Text(
                             '月度收费趋势',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                           const SizedBox(height: 16),
                           SizedBox(
@@ -248,11 +272,15 @@ class FinancialStatisticsDialog extends StatelessWidget {
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: sortedMonths.map((month) {
                                       final amount = monthlyStats[month] ?? 0.0;
-                                      final maxAmount = monthlyStats.values.isEmpty 
-                                          ? 1.0 
-                                          : monthlyStats.values.reduce((a, b) => a > b ? a : b);
-                                      final height = maxAmount > 0 ? (amount / maxAmount) * 150 : 0.0;
-                                      
+                                      final maxAmount = monthlyStats
+                                              .values.isEmpty
+                                          ? 1.0
+                                          : monthlyStats.values
+                                              .reduce((a, b) => a > b ? a : b);
+                                      final height = maxAmount > 0
+                                          ? (amount / maxAmount) * 150
+                                          : 0.0;
+
                                       return Expanded(
                                         child: Column(
                                           children: [
@@ -260,21 +288,28 @@ class FinancialStatisticsDialog extends StatelessWidget {
                                               width: 30,
                                               height: height,
                                               decoration: BoxDecoration(
-                                                color: Theme.of(context).primaryColor,
-                                                borderRadius: BorderRadius.circular(4),
+                                                color: Theme.of(context)
+                                                    .primaryColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
                                               ),
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
                                               month,
-                                              style: Theme.of(context).textTheme.bodySmall,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall,
                                               textAlign: TextAlign.center,
                                             ),
                                             Text(
                                               '¥${amount.toStringAsFixed(0)}',
-                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                               textAlign: TextAlign.center,
                                             ),
                                           ],
@@ -286,183 +321,211 @@ class FinancialStatisticsDialog extends StatelessWidget {
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(height: 24),
-                    
-                                         // 收费项目统计
-                     Container(
-                       padding: const EdgeInsets.all(16),
-                       decoration: BoxDecoration(
-                         color: Colors.white,
-                         borderRadius: BorderRadius.circular(12),
-                         border: Border.all(color: Colors.grey[300]!),
-                         boxShadow: [
-                           BoxShadow(
-                             color: Colors.grey.withOpacity(0.1),
-                             spreadRadius: 1,
-                             blurRadius: 3,
-                             offset: const Offset(0, 1),
-                           ),
-                         ],
-                       ),
-                       child: Column(
-                         crossAxisAlignment: CrossAxisAlignment.start,
-                         children: [
-                           Text(
-                             '收费项目统计 (前10名)',
-                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                               fontWeight: FontWeight.bold,
-                             ),
-                           ),
-                           const SizedBox(height: 16),
-                           if (sortedItems.isEmpty)
-                             const Center(
-                               child: Text('暂无数据'),
-                             )
-                           else
-                             ...sortedItems.take(10).map((entry) {
-                               final percentage = totalReceivable > 0 ? (entry.value / totalReceivable) * 100 : 0.0;
-                               return Padding(
-                                 padding: const EdgeInsets.only(bottom: 12),
-                                 child: Row(
-                                   children: [
-                                     Expanded(
-                                       flex: 2,
-                                       child: Text(
-                                         entry.key,
-                                         style: Theme.of(context).textTheme.bodyMedium,
-                                       ),
-                                     ),
-                                     Expanded(
-                                       flex: 3,
-                                       child: LinearProgressIndicator(
-                                         value: percentage / 100,
-                                         backgroundColor: Colors.grey[300],
-                                         valueColor: AlwaysStoppedAnimation<Color>(
-                                           Theme.of(context).primaryColor,
-                                         ),
-                                       ),
-                                     ),
-                                     const SizedBox(width: 16),
-                                     SizedBox(
-                                       width: 80,
-                                       child: Text(
-                                         '¥${entry.value.toStringAsFixed(0)}',
-                                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                           fontWeight: FontWeight.bold,
-                                         ),
-                                         textAlign: TextAlign.right,
-                                       ),
-                                     ),
-                                     SizedBox(
-                                       width: 60,
-                                       child: Text(
-                                         '${percentage.toStringAsFixed(1)}%',
-                                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                           color: Colors.grey[600],
-                                         ),
-                                         textAlign: TextAlign.right,
-                                       ),
-                                     ),
-                                   ],
-                                 ),
-                               );
-                             }).toList(),
-                         ],
-                       ),
-                     ),
-                     
-                     const SizedBox(height: 24),
-                     
-                     // 患者收费统计排行
-                     Container(
-                       padding: const EdgeInsets.all(16),
-                       decoration: BoxDecoration(
-                         color: Colors.white,
-                         borderRadius: BorderRadius.circular(12),
-                         border: Border.all(color: Colors.grey[300]!),
-                         boxShadow: [
-                           BoxShadow(
-                             color: Colors.grey.withOpacity(0.1),
-                             spreadRadius: 1,
-                             blurRadius: 3,
-                             offset: const Offset(0, 1),
-                           ),
-                         ],
-                       ),
-                       child: Column(
-                         crossAxisAlignment: CrossAxisAlignment.start,
-                         children: [
-                           Text(
-                             '患者收费统计 (前10名)',
-                             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                               fontWeight: FontWeight.bold,
-                             ),
-                           ),
-                           const SizedBox(height: 16),
-                           if (sortedPatients.isEmpty)
-                             const Center(
-                               child: Text('暂无数据'),
-                             )
-                           else
-                             ...sortedPatients.take(10).map((entry) {
-                               final percentage = totalReceivable > 0 ? (entry.value / totalReceivable) * 100 : 0.0;
-                               return Padding(
-                                 padding: const EdgeInsets.only(bottom: 12),
-                                 child: Row(
-                                   children: [
-                                     Expanded(
-                                       flex: 2,
-                                       child: Text(
-                                         entry.key,
-                                         style: Theme.of(context).textTheme.bodyMedium,
-                                       ),
-                                     ),
-                                     Expanded(
-                                       flex: 3,
-                                       child: LinearProgressIndicator(
-                                         value: percentage / 100,
-                                         backgroundColor: Colors.grey[300],
-                                         valueColor: AlwaysStoppedAnimation<Color>(
-                                           Colors.green[600]!,
-                                         ),
-                                       ),
-                                     ),
-                                     const SizedBox(width: 16),
-                                     SizedBox(
-                                       width: 80,
-                                       child: Text(
-                                         '¥${entry.value.toStringAsFixed(0)}',
-                                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                           fontWeight: FontWeight.bold,
-                                         ),
-                                         textAlign: TextAlign.right,
-                                       ),
-                                     ),
-                                     SizedBox(
-                                       width: 60,
-                                       child: Text(
-                                         '${percentage.toStringAsFixed(1)}%',
-                                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                           color: Colors.grey[600],
-                                         ),
-                                         textAlign: TextAlign.right,
-                                       ),
-                                     ),
-                                   ],
-                                 ),
-                               );
-                             }).toList(),
-                         ],
-                       ),
-                     ),
+
+                    // 收费项目统计
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withValues(alpha: 0.1),
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '收费项目统计 (前10名)',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (sortedItems.isEmpty)
+                            const Center(
+                              child: Text('暂无数据'),
+                            )
+                          else
+                            ...sortedItems.take(10).map((entry) {
+                              final percentage = totalReceivable > 0
+                                  ? (entry.value / totalReceivable) * 100
+                                  : 0.0;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        entry.key,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: LinearProgressIndicator(
+                                        value: percentage / 100,
+                                        backgroundColor: Colors.grey[300],
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                          Theme.of(context).primaryColor,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    SizedBox(
+                                      width: 80,
+                                      child: Text(
+                                        '¥${entry.value.toStringAsFixed(0)}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 60,
+                                      child: Text(
+                                        '${percentage.toStringAsFixed(1)}%',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Colors.grey[600],
+                                            ),
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // 患者收费统计排行
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade300),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withValues(alpha: 0.1),
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '患者收费统计 (前10名)',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (sortedPatients.isEmpty)
+                            const Center(
+                              child: Text('暂无数据'),
+                            )
+                          else
+                            ...sortedPatients.take(10).map((entry) {
+                              final percentage = totalReceivable > 0
+                                  ? (entry.value / totalReceivable) * 100
+                                  : 0.0;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 2,
+                                      child: Text(
+                                        entry.key,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: LinearProgressIndicator(
+                                        value: percentage / 100,
+                                        backgroundColor: Colors.grey[300],
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                          Colors.green.shade600,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    SizedBox(
+                                      width: 80,
+                                      child: Text(
+                                        '¥${entry.value.toStringAsFixed(0)}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 60,
+                                      child: Text(
+                                        '${percentage.toStringAsFixed(1)}%',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Colors.grey[600],
+                                            ),
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // 底部按钮
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -478,7 +541,7 @@ class FinancialStatisticsDialog extends StatelessWidget {
       ),
     );
   }
-  
+
   // 构建统计卡片
   Widget _buildStatCard(
     String title,
@@ -493,11 +556,11 @@ class FinancialStatisticsDialog extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
         ),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.08),
+            color: color.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -508,7 +571,7 @@ class FinancialStatisticsDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(

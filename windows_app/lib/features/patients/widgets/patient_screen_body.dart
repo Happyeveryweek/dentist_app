@@ -134,7 +134,7 @@ class PatientScreenBody extends StatelessWidget {
                 Positioned.fill(
                   child: IgnorePointer(
                     child: Container(
-                      color: Colors.white.withOpacity(0.45),
+                      color: Colors.white.withValues(alpha: 0.45),
                       alignment: Alignment.center,
                       child: const SizedBox(
                         width: 34,

@@ -34,17 +34,17 @@ class FinancialCompactInfoItem extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
-                  fontSize: 13,
-                ),
+                      color: Colors.grey[600],
+                      fontSize: 13,
+                    ),
               ),
               Text(
                 value,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: valueColor,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 15,
-                ),
+                      color: valueColor,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15,
+                    ),
               ),
             ],
           ),

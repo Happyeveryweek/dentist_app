@@ -3,12 +3,10 @@ import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../../../models/patient.dart';
 import '../widgets/financial_table_header.dart';
-import '../widgets/financial_card.dart';
-import '../widgets/financial_item_card.dart';
 import './financial_pagination.dart';
 
 /// 财务记录列表视图
-/// 
+///
 /// 包含患者模式和记录模式的列表渲染逻辑
 class FinancialRecordsListView extends StatelessWidget {
   final String displayMode;
@@ -26,8 +24,10 @@ class FinancialRecordsListView extends StatelessWidget {
   final Future<Patient?> Function(int) getPatientByIdAsync;
   final double Function(int) getPatientTotalReceivable;
   final DateTime? Function(int) getPatientLastFinancialUpdateDate;
-  final Widget Function(Patient, FinancialRecord, double, DateTime?, {double? receivedSum, double? processingSum}) buildFinancialCard;
-  final Widget Function(Patient, FinancialRecord, FinancialItem) buildFinancialItemCard;
+  final Widget Function(Patient, FinancialRecord, double, DateTime?,
+      {double? receivedSum, double? processingSum}) buildFinancialCard;
+  final Widget Function(Patient, FinancialRecord, FinancialItem)
+      buildFinancialItemCard;
 
   const FinancialRecordsListView({
     Key? key,
@@ -71,7 +71,7 @@ class FinancialRecordsListView extends StatelessWidget {
                       child: Builder(
                         builder: (context) {
                           final pagedData = getPagedData();
-                          print('📋 渲染按患者显示列表(分页后): ${pagedData.length} 条, 当前页=$currentPage/$totalPages');
+
                           return ListView.builder(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             itemCount: pagedData.length,
@@ -79,10 +79,17 @@ class FinancialRecordsListView extends StatelessWidget {
                               final data = pagedData[index];
                               final patient = data['patient'] as Patient;
                               final record = data['record'] as FinancialRecord;
-                              final totalCost = data['totalCost'] as double? ?? getPatientTotalReceivable(record.patientId);
-                              final receivedSum = data['receivedSum'] as double?;
-                              final processingSum = data['processingSum'] as double?;
-                              final lastFinancialUpdateDate = data['lastFinancialUpdateDate'] as DateTime? ?? getPatientLastFinancialUpdateDate(record.patientId);
+                              final totalCost = data['totalCost'] as double? ??
+                                  getPatientTotalReceivable(record.patientId);
+                              final receivedSum =
+                                  data['receivedSum'] as double?;
+                              final processingSum =
+                                  data['processingSum'] as double?;
+                              final lastFinancialUpdateDate =
+                                  data['lastFinancialUpdateDate']
+                                          as DateTime? ??
+                                      getPatientLastFinancialUpdateDate(
+                                          record.patientId);
                               return buildFinancialCard(
                                 patient,
                                 record,
@@ -123,33 +130,28 @@ class FinancialRecordsListView extends StatelessWidget {
                           Expanded(
                             child: Builder(
                               builder: (context) {
-                                print('📋 渲染按收费记录显示列表: ${financialItemsWithDetails.length} 条记录');
                                 return ListView.builder(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
                                   itemCount: financialItemsWithDetails.length,
                                   itemBuilder: (context, index) {
-                                    final data = financialItemsWithDetails[index];
+                                    final data =
+                                        financialItemsWithDetails[index];
                                     final item = data['item'] as FinancialItem;
                                     final patientId = data['patient_id'] as int;
 
                                     return FutureBuilder<Patient?>(
                                       future: getPatientByIdAsync(patientId),
                                       builder: (context, snapshot) {
-                                        if (snapshot.connectionState == ConnectionState.waiting) {
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.waiting) {
                                           return const Center(
                                             child: Padding(
                                               padding: EdgeInsets.all(8.0),
-                                              child: CircularProgressIndicator(),
+                                              child:
+                                                  CircularProgressIndicator(),
                                             ),
                                           );
-                                        }
-
-                                        final patient = snapshot.data;
-                                        if (patient == null) {
-                                          print('⚠️ 收费项 $index: 找不到患者');
-                                          print('   患者ID: $patientId');
-                                          print('   收费项ID: ${item.id}');
-                                          return const SizedBox.shrink();
                                         }
 
                                         // 创建一个临时的 FinancialRecord 对象用于显示
@@ -157,12 +159,22 @@ class FinancialRecordsListView extends StatelessWidget {
                                           id: item.financialRecordId,
                                           patientId: patientId,
                                           totalQuantity: 0,
-                                          notes: data['record_notes'] as String?,
+                                          notes:
+                                              data['record_notes'] as String?,
                                           createdAt: item.createdAt,
                                           updatedAt: item.updatedAt,
                                         );
 
-                                        return buildFinancialItemCard(patient, record, item);
+                                        final patient = snapshot.data;
+                                        final displayPatient = patient ??
+                                            Patient.placeholderForFinancialRecord(
+                                              patientId: patientId,
+                                              recordId: record.id,
+                                              createdAt: record.createdAt,
+                                            );
+
+                                        return buildFinancialItemCard(
+                                            displayPatient, record, item);
                                       },
                                     );
                                   },
@@ -191,7 +203,6 @@ class FinancialRecordsListView extends StatelessWidget {
                   Expanded(
                     child: Builder(
                       builder: (context) {
-                        print('📋 渲染按收费记录显示列表: ${financialItemsWithDetails.length} 条记录');
                         return ListView.builder(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           itemCount: financialItemsWithDetails.length,
@@ -203,21 +214,14 @@ class FinancialRecordsListView extends StatelessWidget {
                             return FutureBuilder<Patient?>(
                               future: getPatientByIdAsync(patientId),
                               builder: (context, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
                                   return const Center(
                                     child: Padding(
                                       padding: EdgeInsets.all(8.0),
                                       child: CircularProgressIndicator(),
                                     ),
                                   );
-                                }
-
-                                final patient = snapshot.data;
-                                if (patient == null) {
-                                  print('⚠️ 收费项 $index: 找不到患者');
-                                  print('   患者ID: $patientId');
-                                  print('   收费项ID: ${item.id}');
-                                  return const SizedBox.shrink();
                                 }
 
                                 // 创建一个临时的 FinancialRecord 对象用于显示
@@ -230,7 +234,16 @@ class FinancialRecordsListView extends StatelessWidget {
                                   updatedAt: item.updatedAt,
                                 );
 
-                                return buildFinancialItemCard(patient, record, item);
+                                final patient = snapshot.data;
+                                final displayPatient = patient ??
+                                    Patient.placeholderForFinancialRecord(
+                                      patientId: patientId,
+                                      recordId: record.id,
+                                      createdAt: record.createdAt,
+                                    );
+
+                                return buildFinancialItemCard(
+                                    displayPatient, record, item);
                               },
                             );
                           },

@@ -19,13 +19,13 @@ class PatientFinancialPermissionDeniedState extends StatelessWidget {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
+              color: Colors.orange.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.lock_outline,
               size: 64,
-              color: Colors.orange.withOpacity(0.6),
+              color: Colors.orange.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 24),
@@ -240,8 +240,9 @@ class PatientFinancialRecordCard extends StatelessWidget {
                       icon: Icons.warning,
                       label: '欠费',
                       value: '¥${outstandingAmount.toStringAsFixed(2)}',
-                      valueColor:
-                          outstandingAmount > 0 ? Colors.red : Colors.green[700],
+                      valueColor: outstandingAmount > 0
+                          ? Colors.red
+                          : Colors.green[700],
                     ),
                   ),
                 ],
@@ -282,7 +283,8 @@ class _FinancialRecordHeader extends StatelessWidget {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: (isFemale ? Colors.pink : Colors.blue).withOpacity(0.1),
+            color:
+                (isFemale ? Colors.pink : Colors.blue).withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -364,7 +366,9 @@ class _FinancialItemsPreview extends StatelessWidget {
                   const SizedBox(height: 8),
                   const _FinancialItemPreviewHeader(),
                   const SizedBox(height: 6),
-                  ...items.take(5).map((item) => _FinancialItemPreviewRow(item: item)),
+                  ...items
+                      .take(5)
+                      .map((item) => _FinancialItemPreviewRow(item: item)),
                   if (items.length > 5)
                     Padding(
                       padding: const EdgeInsets.only(left: 4.0, top: 2.0),
@@ -476,7 +480,8 @@ class _FinancialItemPreviewRow extends StatelessWidget {
   }
 
   Widget _buildPaymentMethodIcon(String? paymentMethod) {
-    final iconPath = FinancialPaymentMethodHelper.iconAssetPathOrNull(paymentMethod);
+    final iconPath =
+        FinancialPaymentMethodHelper.iconAssetPathOrNull(paymentMethod);
     if (iconPath == null) {
       return const SizedBox.shrink();
     }

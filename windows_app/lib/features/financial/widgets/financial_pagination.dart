@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
 
 /// 财务管理分页控件
@@ -35,7 +34,7 @@ class FinancialPagination extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 1),
@@ -100,10 +99,10 @@ class FinancialPagination extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
+                  color: Colors.black.withValues(alpha: 0.03),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
@@ -117,11 +116,15 @@ class FinancialPagination extends StatelessWidget {
                   height: 8,
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.9),
+                    color:
+                        Theme.of(context).primaryColor.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
-                Icon(Icons.info_outline, size: 16, color: Theme.of(context).primaryColor.withOpacity(0.9)),
+                Icon(Icons.info_outline,
+                    size: 16,
+                    color:
+                        Theme.of(context).primaryColor.withValues(alpha: 0.9)),
                 const SizedBox(width: 6),
                 Text(
                   '每页 $recordsPerPage 条 · 共 $totalRecords 条 / $totalPages 页',
@@ -138,9 +141,11 @@ class FinancialPagination extends StatelessWidget {
           // 页面跳转
           Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withOpacity(0.06),
+              color: Theme.of(context).primaryColor.withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Theme.of(context).primaryColor.withOpacity(0.12)),
+              border: Border.all(
+                  color:
+                      Theme.of(context).primaryColor.withValues(alpha: 0.12)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -159,8 +164,9 @@ class FinancialPagination extends StatelessWidget {
                   child: Text(
                     '转到',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[700], fontWeight: FontWeight.w600,
-                    ),
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                 ),
                 Container(
@@ -199,14 +205,17 @@ class FinancialPagination extends StatelessWidget {
                       height: 36,
                       alignment: Alignment.center,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
+                      decoration: const BoxDecoration(
+                        borderRadius: BorderRadius.only(
                           topRight: Radius.circular(10),
                           bottomRight: Radius.circular(10),
                         ),
                         gradient: DentalColors.primaryGradient,
                       ),
-                      child: const Text('确定', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                      child: const Text('确定',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ),
@@ -225,7 +234,8 @@ class FinancialPagination extends StatelessWidget {
     VoidCallback? onPressed,
     required bool isActive,
   }) {
-    final isPurpleTheme = Theme.of(context).scaffoldBackgroundColor == Colors.purple[50];
+    final isPurpleTheme =
+        Theme.of(context).scaffoldBackgroundColor == Colors.purple[50];
 
     if (icon != null) {
       return IconButton(
@@ -233,7 +243,9 @@ class FinancialPagination extends StatelessWidget {
         onPressed: onPressed,
         splashRadius: 20,
         color: isActive
-            ? (isPurpleTheme ? Colors.purple[600] : Theme.of(context).primaryColor)
+            ? (isPurpleTheme
+                ? Colors.purple[600]
+                : Theme.of(context).primaryColor)
             : Colors.grey[400],
         disabledColor: Colors.grey[300],
       );
@@ -250,13 +262,17 @@ class FinancialPagination extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: isActive
-                    ? (isPurpleTheme ? Colors.purple[600] : Theme.of(context).primaryColor)
+                    ? (isPurpleTheme
+                        ? Colors.purple[600]
+                        : Theme.of(context).primaryColor)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isActive
-                      ? (isPurpleTheme ? Colors.purple[600]! : Theme.of(context).primaryColor)
-                      : Colors.grey[300]!,
+                      ? (isPurpleTheme
+                          ? Colors.purple.shade600
+                          : Theme.of(context).primaryColor)
+                      : Colors.grey.shade300,
                 ),
               ),
               child: Center(

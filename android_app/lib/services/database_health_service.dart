@@ -103,11 +103,12 @@ class DatabaseHealthService {
 
   /// 快速连接检查（轻量级检查，用于频繁检测）
   Future<void> _quickConnectionCheck() async {
-    if (_isReconnecting || _mysqlConnection == null) return;
+    final connection = _mysqlConnection;
+    if (_isReconnecting || connection == null) return;
 
     try {
       // 使用更快的超时时间进行快速检查
-      final results = await _mysqlConnection!
+      final results = await connection
           .query('SELECT 1')
           .timeout(
             const Duration(seconds: 2),
@@ -133,11 +134,12 @@ class DatabaseHealthService {
 
   /// 测试连接健康状态
   Future<bool> testConnectionHealth() async {
-    if (_mysqlConnection == null) return false;
+    final connection = _mysqlConnection;
+    if (connection == null) return false;
 
     try {
       // 使用简单的查询测试连接，增加超时时间以提高稳定性
-      final results = await _mysqlConnection!
+      final results = await connection
           .query('SELECT 1')
           .timeout(
             const Duration(seconds: 5),

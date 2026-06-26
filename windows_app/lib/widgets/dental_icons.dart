@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import '../models/user.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../utils/log_manager.dart';
 // import 'package:line_icons/line_icons.dart'; // 暂时注释掉，使用FontAwesome替代
 
 class DentalIcons {
   // 基础图标 - 使用Material Icons作为后备
-  static final IconData tooth = IconData(
-    FontAwesomeIcons.tooth.codePoint,
-    fontFamily: FontAwesomeIcons.tooth.fontFamily,
-    fontPackage: FontAwesomeIcons.tooth.fontPackage,
+  static const IconData tooth = IconData(
+    0xf5c9,
+    fontFamily: 'FontAwesomeSolid',
+    fontPackage: 'font_awesome_flutter',
   );
   static const IconData teeth = Icons.medical_services;
   static const IconData teethOpen = Icons.medical_services;
@@ -240,9 +240,9 @@ class DentalColors {
   );
 
   // 阴影颜色
-  static Color shadowLight = const Color(0xFF2196F3).withOpacity(0.1);
-  static Color shadowMedium = const Color(0xFF2196F3).withOpacity(0.2);
-  static Color shadowDark = const Color(0xFF2196F3).withOpacity(0.3);
+  static Color shadowLight = const Color(0xFF2196F3).withValues(alpha: 0.1);
+  static Color shadowMedium = const Color(0xFF2196F3).withValues(alpha: 0.2);
+  static Color shadowDark = const Color(0xFF2196F3).withValues(alpha: 0.3);
 }
 
 // 牙科主题组件
@@ -279,7 +279,7 @@ class DentalCard extends StatelessWidget {
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
             blurRadius: 1.0,
             offset: const Offset(0, 1),
             spreadRadius: 0,
@@ -364,8 +364,8 @@ class DentalGradientButton extends StatelessWidget {
                         const SizedBox(width: 8),
                       ],
                       Text(
-                        text!,
-                        style: TextStyle(
+                        text ?? '',
+                        style: const TextStyle(
                           color: DentalColors.primary,
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
@@ -385,7 +385,7 @@ class DentalGradientButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.0),
         boxShadow: [
           BoxShadow(
-            color: DentalColors.primary.withOpacity(0.3),
+            color: DentalColors.primary.withValues(alpha: 0.3),
             blurRadius: 8.0,
             offset: const Offset(0, 4),
           ),
@@ -419,7 +419,7 @@ class DentalGradientButton extends StatelessWidget {
                       const SizedBox(width: 8),
                     ],
                     Text(
-                      text!,
+                      text ?? '',
                       style: const TextStyle(
                         color: DentalColors.onPrimary,
                         fontWeight: FontWeight.w600,
@@ -453,7 +453,7 @@ class DentalAvatar extends StatelessWidget {
     final bool isFemale = gender == '女';
     final Color baseColor =
         isFemale ? DentalColors.femalePink : DentalColors.maleBlue;
-    final Color backgroundColor = baseColor.withOpacity(0.14);
+    final Color backgroundColor = baseColor.withValues(alpha: 0.14);
     final Color textColor = baseColor;
     final String initial = name.isNotEmpty ? name[0] : '?';
 
@@ -464,12 +464,12 @@ class DentalAvatar extends StatelessWidget {
         color: backgroundColor,
         shape: BoxShape.circle,
         border: Border.all(
-          color: textColor.withOpacity(0.16),
+          color: textColor.withValues(alpha: 0.16),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: textColor.withOpacity(0.08),
+            color: textColor.withValues(alpha: 0.08),
             blurRadius: 3,
             offset: const Offset(0, 1),
           ),
@@ -512,13 +512,13 @@ class DentalStatusIndicator extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            statusColor.withOpacity(0.1),
-            statusColor.withOpacity(0.05),
+            statusColor.withValues(alpha: 0.1),
+            statusColor.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: statusColor.withOpacity(0.3),
+          color: statusColor.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -637,14 +637,15 @@ class UserAvatar extends StatelessWidget {
     }
 
     // 普通模式（不显示样式化边框）
+    final imageData = user.imageData;
     // 如果用户上传了自定义头像图片，显示上传的图片
-    if (user.imageData != null && user.imageData!.isNotEmpty) {
+    if (imageData != null && imageData.isNotEmpty) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(size * 0.2),
         child: AspectRatio(
           aspectRatio: 1.0, // 确保正方形比例
           child: Image.memory(
-            Uint8List.fromList(user.imageData!),
+            Uint8List.fromList(imageData),
             fit: BoxFit.cover, // 覆盖整个区域，保持比例，居中裁剪
             alignment: Alignment.center, // 确保图片居中
             // 添加缓存配置，避免重复加载
@@ -652,7 +653,7 @@ class UserAvatar extends StatelessWidget {
             cacheHeight: size.toInt() * 2,
             gaplessPlayback: true, // 平滑切换，避免闪烁
             errorBuilder: (context, error, stackTrace) {
-              print('加载用户上传头像失败: $error');
+              LogManager.e('DentalIcons', '加载用户上传头像失败', error: error);
               // 加载失败时使用默认头像
               return _buildDefaultAvatar(user);
             },
@@ -667,20 +668,21 @@ class UserAvatar extends StatelessWidget {
 
   // 构建样式化头像内容（用于showStyledBorder模式）
   Widget _buildStyledAvatarContent(User user) {
+    final imageData = user.imageData;
     // 如果用户上传了自定义头像图片，显示上传的图片
-    if (user.imageData != null && user.imageData!.isNotEmpty) {
+    if (imageData != null && imageData.isNotEmpty) {
       return SizedBox(
         width: size,
         height: size,
         child: Image.memory(
-          Uint8List.fromList(user.imageData!),
+          Uint8List.fromList(imageData),
           fit: BoxFit.cover,
           alignment: Alignment.center,
           cacheWidth: size.toInt() * 2,
           cacheHeight: size.toInt() * 2,
           gaplessPlayback: true,
           errorBuilder: (context, error, stackTrace) {
-            print('加载用户上传头像失败: $error');
+            LogManager.e('DentalIcons', '加载用户上传头像失败', error: error);
             return _buildStyledDefaultAvatar(user);
           },
         ),
@@ -711,7 +713,7 @@ class UserAvatar extends StatelessWidget {
         cacheHeight: size.toInt() * 2,
         gaplessPlayback: true,
         errorBuilder: (context, error, stackTrace) {
-          print('加载默认头像失败: $error, 路径: $assetPath');
+          LogManager.e('DentalIcons', '加载默认头像失败, 路径: $assetPath', error: error);
           return _buildFallbackAvatar(user);
         },
       ),
@@ -742,7 +744,8 @@ class UserAvatar extends StatelessWidget {
           cacheHeight: size.toInt() * 2,
           gaplessPlayback: true, // 平滑切换，避免闪烁
           errorBuilder: (context, error, stackTrace) {
-            print('加载默认头像失败: $error, 路径: $assetPath');
+            LogManager.e('DentalIcons', '加载默认头像失败, 路径: $assetPath',
+                error: error);
             // 如果默认头像也加载失败，使用纯色背景+图标
             return _buildFallbackAvatar(user);
           },
@@ -754,10 +757,10 @@ class UserAvatar extends StatelessWidget {
   // 构建降级头像（纯色背景+图标）
   Widget _buildFallbackAvatar(User user) {
     final roleColors = {
-      'admin': [Color(0xFFFF9800), Color(0xFFFFB74D)],
-      'doctor': [Color(0xFF4CAF50), Color(0xFF66BB6A)],
-      'assistant': [Color(0xFF009688), Color(0xFF26A69A)],
-      'receptionist': [Color(0xFF607D8B), Color(0xFF78909C)],
+      'admin': [const Color(0xFFFF9800), const Color(0xFFFFB74D)],
+      'doctor': [const Color(0xFF4CAF50), const Color(0xFF66BB6A)],
+      'assistant': [const Color(0xFF009688), const Color(0xFF26A69A)],
+      'receptionist': [const Color(0xFF607D8B), const Color(0xFF78909C)],
     };
 
     final roleIcons = {
@@ -767,8 +770,8 @@ class UserAvatar extends StatelessWidget {
       'receptionist': Icons.person_outline,
     };
 
-    final colors =
-        roleColors[user.role] ?? [Color(0xFF9E9E9E), Color(0xFFBDBDBD)];
+    final colors = roleColors[user.role] ??
+        [const Color(0xFF9E9E9E), const Color(0xFFBDBDBD)];
     final icon = roleIcons[user.role] ?? Icons.person;
 
     return Container(
@@ -784,7 +787,7 @@ class UserAvatar extends StatelessWidget {
         boxShadow: showBorder
             ? [
                 BoxShadow(
-                  color: colors.first.withOpacity(0.3),
+                  color: colors.first.withValues(alpha: 0.3),
                   blurRadius: 10,
                   offset: const Offset(0, 5),
                 ),

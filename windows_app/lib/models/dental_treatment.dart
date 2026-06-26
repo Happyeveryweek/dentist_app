@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 /// 牙科治疗项目模型
 class DentalTreatment {
@@ -45,31 +44,31 @@ class DentalTreatmentManager {
   // 预定义的牙科治疗项目列表
   static final List<DentalTreatment> predefinedTreatments = [
     // 根管治疗相关
-    DentalTreatment(
+    const DentalTreatment(
       id: 'root_canal_opening',
       name: '根管开髓',
       category: '根管治疗',
       isCommon: true,
     ),
-    DentalTreatment(
+    const DentalTreatment(
       id: 'nerve_killing',
       name: '封药',
       category: '根管治疗',
       isCommon: true,
     ),
-    DentalTreatment(
+    const DentalTreatment(
       id: 'root_canal_preparation',
       name: '根管预备',
       category: '根管治疗',
       isCommon: true,
     ),
-    DentalTreatment(
+    const DentalTreatment(
       id: 'root_canal_filling',
       name: '根管填充',
       category: '根管治疗',
       isCommon: true,
     ),
-    DentalTreatment(
+    const DentalTreatment(
       id: 'root_canal_disinfection',
       name: '根管消毒',
       category: '根管治疗',
@@ -77,37 +76,37 @@ class DentalTreatmentManager {
     ),
 
     // 补牙相关
-    DentalTreatment(
+    const DentalTreatment(
       id: 'filling',
       name: '补牙',
       category: '修复治疗',
       isCommon: true,
     ),
-    DentalTreatment(
+    const DentalTreatment(
       id: 'composite_resin_filling',
       name: '复合树脂充填',
       category: '修复治疗',
       isCommon: true,
     ),
-    DentalTreatment(
+    const DentalTreatment(
       id: 'glass_ionomer_filling',
       name: '玻璃离子充填',
       category: '修复治疗',
       isCommon: false,
     ),
-    DentalTreatment(
+    const DentalTreatment(
       id: 'crown',
       name: '烤瓷牙',
       category: '修复治疗',
       isCommon: true,
     ),
-    DentalTreatment(
+    const DentalTreatment(
       id: 'all_ceramic',
       name: '全瓷牙',
       category: '修复治疗',
       isCommon: true,
     ),
-    DentalTreatment(
+    const DentalTreatment(
       id: 'removable_denture',
       name: '活动牙',
       category: '修复治疗',
@@ -115,13 +114,13 @@ class DentalTreatmentManager {
     ),
 
     // 洁牙相关
-    DentalTreatment(
+    const DentalTreatment(
       id: 'scaling',
       name: '洁牙',
       category: '预防治疗',
       isCommon: true,
     ),
-    DentalTreatment(
+    const DentalTreatment(
       id: 'polishing',
       name: '抛光',
       category: '预防治疗',
@@ -129,13 +128,13 @@ class DentalTreatmentManager {
     ),
 
     // 拔牙相关
-    DentalTreatment(
+    const DentalTreatment(
       id: 'extraction',
       name: '拔牙',
       category: '口腔外科',
       isCommon: true,
     ),
-    DentalTreatment(
+    const DentalTreatment(
       id: 'wisdom_tooth_extraction',
       name: '智齿拔除',
       category: '口腔外科',
@@ -143,7 +142,7 @@ class DentalTreatmentManager {
     ),
 
     // 正畸治疗 - 向前移动
-    DentalTreatment(
+    const DentalTreatment(
       id: 'orthodontics',
       name: '正畸',
       category: '其它',
@@ -151,7 +150,7 @@ class DentalTreatmentManager {
     ),
 
     // 其它选项 - 新增分类
-    DentalTreatment(
+    const DentalTreatment(
       id: 'appointment_check',
       name: '预约检查',
       category: '其它',
@@ -164,10 +163,9 @@ class DentalTreatmentManager {
     Map<String, List<DentalTreatment>> result = {};
 
     for (var treatment in predefinedTreatments) {
-      if (!result.containsKey(treatment.category)) {
-        result[treatment.category] = [];
-      }
-      result[treatment.category]!.add(treatment);
+      final category = treatment.category;
+      final list = result.putIfAbsent(category, () => []);
+      list.add(treatment);
     }
 
     return result;
@@ -188,7 +186,6 @@ class DentalTreatmentManager {
       return null;
     }
   }
-
 }
 
 /// 治疗项目选择对话框
@@ -276,7 +273,7 @@ class _TreatmentSelectionDialogState extends State<TreatmentSelectionDialog> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF667eea).withOpacity(0.12),
+              color: const Color(0xFF667eea).withValues(alpha: 0.12),
               blurRadius: 16,
               offset: const Offset(0, 8),
               spreadRadius: 0,
@@ -289,16 +286,16 @@ class _TreatmentSelectionDialogState extends State<TreatmentSelectionDialog> {
             // 标题栏
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    const Color(0xFF667eea),
-                    const Color(0xFF764ba2),
+                    Color(0xFF667eea),
+                    Color(0xFF764ba2),
                   ],
                 ),
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
@@ -308,20 +305,20 @@ class _TreatmentSelectionDialogState extends State<TreatmentSelectionDialog> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.medical_services,
                       color: Colors.white,
                       size: 18,
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Expanded(
+                  const Expanded(
                     child: Text(
                       '选择治疗项目',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
@@ -337,16 +334,18 @@ class _TreatmentSelectionDialogState extends State<TreatmentSelectionDialog> {
                   ),
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 18),
                       onPressed: () => Navigator.of(context).pop(),
                       splashRadius: 16,
                       tooltip: '关闭',
                       padding: const EdgeInsets.all(4),
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints:
+                          const BoxConstraints(minWidth: 32, minHeight: 32),
                     ),
                   ),
                 ],
@@ -373,18 +372,31 @@ class _TreatmentSelectionDialogState extends State<TreatmentSelectionDialog> {
                           final category = _categories[index];
                           final isSelected = _currentTabIndex == index;
                           return InkWell(
-                            onTap: () => setState(() => _currentTabIndex = index),
+                            onTap: () =>
+                                setState(() => _currentTabIndex = index),
                             child: Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 10),
                               decoration: BoxDecoration(
-                                color: isSelected ? const Color(0xFF667eea).withOpacity(0.08) : Colors.white,
+                                color: isSelected
+                                    ? const Color(0xFF667eea)
+                                        .withValues(alpha: 0.08)
+                                    : Colors.white,
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: isSelected ? const Color(0xFF667eea) : Colors.grey.shade300),
+                                border: Border.all(
+                                    color: isSelected
+                                        ? const Color(0xFF667eea)
+                                        : Colors.grey.shade300),
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.label_rounded, size: 14, color: isSelected ? const Color(0xFF667eea) : Colors.grey.shade500),
+                                  Icon(Icons.label_rounded,
+                                      size: 14,
+                                      color: isSelected
+                                          ? const Color(0xFF667eea)
+                                          : Colors.grey.shade500),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
@@ -393,8 +405,12 @@ class _TreatmentSelectionDialogState extends State<TreatmentSelectionDialog> {
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                        color: isSelected ? const Color(0xFF667eea) : Colors.grey.shade700,
+                                        fontWeight: isSelected
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                        color: isSelected
+                                            ? const Color(0xFF667eea)
+                                            : Colors.grey.shade700,
                                       ),
                                     ),
                                   ),
@@ -417,15 +433,20 @@ class _TreatmentSelectionDialogState extends State<TreatmentSelectionDialog> {
                               Expanded(
                                 child: TextField(
                                   controller: _searchController,
-                                  onChanged: (v) => setState(() => _searchQuery = v.trim()),
+                                  onChanged: (v) =>
+                                      setState(() => _searchQuery = v.trim()),
                                   decoration: InputDecoration(
                                     hintText: '搜索当前分类项目...',
                                     isDense: true,
-                                    prefixIcon: const Icon(Icons.search, size: 18),
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                    prefixIcon:
+                                        const Icon(Icons.search, size: 18),
+                                    border: OutlineInputBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
                                     filled: true,
                                     fillColor: Colors.white,
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 10),
                                   ),
                                 ),
                               ),
@@ -447,45 +468,83 @@ class _TreatmentSelectionDialogState extends State<TreatmentSelectionDialog> {
                               padding: const EdgeInsets.all(8),
                               child: LayoutBuilder(
                                 builder: (context, constraints) {
-                                  final currentList = (_categorizedTreatments[_categories[_currentTabIndex]] ?? [])
-                                      .where((t) => _searchQuery.isEmpty || t.name.contains(_searchQuery))
+                                  final currentList = (_categorizedTreatments[
+                                              _categories[_currentTabIndex]] ??
+                                          [])
+                                      .where((t) =>
+                                          _searchQuery.isEmpty ||
+                                          t.name.contains(_searchQuery))
                                       .toList();
                                   return SingleChildScrollView(
                                     child: Wrap(
                                       spacing: 8,
                                       runSpacing: 8,
                                       children: currentList.map((treatment) {
-                                        final bool isSelected = _selectedTreatments.contains(treatment.name);
+                                        final bool isSelected =
+                                            _selectedTreatments
+                                                .contains(treatment.name);
                                         return InkWell(
                                           onTap: () {
                                             setState(() {
                                               if (isSelected) {
-                                                _selectedTreatments.remove(treatment.name);
+                                                _selectedTreatments
+                                                    .remove(treatment.name);
                                               } else {
-                                                _selectedTreatments.add(treatment.name);
+                                                _selectedTreatments
+                                                    .add(treatment.name);
                                               }
                                             });
                                           },
-                                          borderRadius: BorderRadius.circular(10),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
                                           child: AnimatedContainer(
-                                            duration: const Duration(milliseconds: 120),
-                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                            duration: const Duration(
+                                                milliseconds: 120),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 8),
                                             decoration: BoxDecoration(
-                                              color: isSelected ? const Color(0xFF667eea) : Colors.white,
-                                              borderRadius: BorderRadius.circular(10),
-                                              border: Border.all(color: isSelected ? const Color(0xFF667eea) : Colors.grey.shade300),
-                                              boxShadow: isSelected ? [BoxShadow(color: const Color(0xFF667eea).withOpacity(0.15), blurRadius: 6, offset: const Offset(0, 2))] : null,
+                                              color: isSelected
+                                                  ? const Color(0xFF667eea)
+                                                  : Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(
+                                                  color: isSelected
+                                                      ? const Color(0xFF667eea)
+                                                      : Colors.grey.shade300),
+                                              boxShadow: isSelected
+                                                  ? [
+                                                      BoxShadow(
+                                                          color: const Color(
+                                                                  0xFF667eea)
+                                                              .withValues(
+                                                                  alpha: 0.15),
+                                                          blurRadius: 6,
+                                                          offset: const Offset(
+                                                              0, 2))
+                                                    ]
+                                                  : null,
                                             ),
                                             child: Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
                                                 Text(
                                                   treatment.name,
-                                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: isSelected ? Colors.white : Colors.grey.shade800),
+                                                  style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color: isSelected
+                                                          ? Colors.white
+                                                          : Colors
+                                                              .grey.shade800),
                                                 ),
                                                 if (isSelected) ...[
                                                   const SizedBox(width: 6),
-                                                  const Icon(Icons.check_rounded, size: 14, color: Colors.white),
+                                                  const Icon(
+                                                      Icons.check_rounded,
+                                                      size: 14,
+                                                      color: Colors.white),
                                                 ]
                                               ],
                                             ),
@@ -506,20 +565,32 @@ class _TreatmentSelectionDialogState extends State<TreatmentSelectionDialog> {
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: Colors.grey.shade200),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            constraints: const BoxConstraints(minHeight: 72, maxHeight: 84),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            constraints: const BoxConstraints(
+                                minHeight: 72, maxHeight: 84),
                             child: Row(
                               children: [
                                 Row(
                                   children: [
-                                    Icon(Icons.check_circle, size: 16, color: Colors.green.shade600),
+                                    Icon(Icons.check_circle,
+                                        size: 16, color: Colors.green.shade600),
                                     const SizedBox(width: 6),
-                                    Text('已选 ${_selectedTreatments.length}', style: TextStyle(fontSize: 12, color: Colors.green.shade700, fontWeight: FontWeight.w700)),
+                                    Text('已选 ${_selectedTreatments.length}',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.green.shade700,
+                                            fontWeight: FontWeight.w700)),
                                     if (_selectedTreatments.isNotEmpty) ...[
                                       const SizedBox(width: 10),
                                       GestureDetector(
-                                        onTap: () => setState(() => _selectedTreatments.clear()),
-                                        child: Text('清空', style: TextStyle(fontSize: 12, color: const Color(0xFF667eea), fontWeight: FontWeight.w600)),
+                                        onTap: () => setState(
+                                            () => _selectedTreatments.clear()),
+                                        child: const Text('清空',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: Color(0xFF667eea),
+                                                fontWeight: FontWeight.w600)),
                                       ),
                                     ],
                                   ],
@@ -533,25 +604,40 @@ class _TreatmentSelectionDialogState extends State<TreatmentSelectionDialog> {
                                       children: _selectedTreatments.map((t) {
                                         return Container(
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF667eea).withOpacity(0.08),
-                                            borderRadius: BorderRadius.circular(16),
-                                            border: Border.all(color: const Color(0xFF667eea)),
+                                            color: const Color(0xFF667eea)
+                                                .withValues(alpha: 0.08),
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                            border: Border.all(
+                                                color: const Color(0xFF667eea)),
                                           ),
                                           child: InkWell(
-                                            borderRadius: BorderRadius.circular(16),
+                                            borderRadius:
+                                                BorderRadius.circular(16),
                                             onTap: () {
                                               setState(() {
                                                 _selectedTreatments.remove(t);
                                               });
                                             },
                                             child: Padding(
-                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 6),
                                               child: Row(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
-                                                  Text(t, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF667eea))),
+                                                  Text(t,
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: Color(
+                                                              0xFF667eea))),
                                                   const SizedBox(width: 6),
-                                                  const Icon(Icons.close, size: 14, color: Color(0xFF667eea)),
+                                                  const Icon(Icons.close,
+                                                      size: 14,
+                                                      color: Color(0xFF667eea)),
                                                 ],
                                               ),
                                             ),
@@ -587,7 +673,8 @@ class _TreatmentSelectionDialogState extends State<TreatmentSelectionDialog> {
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -610,14 +697,18 @@ class _TreatmentSelectionDialogState extends State<TreatmentSelectionDialog> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF667eea),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 2,
-                      shadowColor: const Color(0xFF667eea).withOpacity(0.3),
+                      shadowColor:
+                          const Color(0xFF667eea).withValues(alpha: 0.3),
                     ),
-                    child: const Text('确定', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                    child: const Text('确定',
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600)),
                   ),
                 ],
               ),

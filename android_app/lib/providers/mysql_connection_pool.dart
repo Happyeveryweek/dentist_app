@@ -68,8 +68,13 @@ class MySQLConnectionPool {
 
   /// 创建新连接
   Future<MySqlConnection> _createConnection() async {
+    final settings = _settings;
+    if (settings == null) {
+      throw Exception('MySQL连接配置未初始化');
+    }
+
     try {
-      final connection = await MySqlConnection.connect(_settings!);
+      final connection = await MySqlConnection.connect(settings);
 
       // 设置字符编码
       await connection.query("SET NAMES 'utf8mb4'");
@@ -333,15 +338,16 @@ class MySQLConnectionPool {
 
   /// 获取详细的连接状态
   Map<String, dynamic> getDetailedStats() {
+    final settings = _settings;
     return {
       ...getPoolStats(),
       'isInitialized': _isInitialized,
       'settings':
-          _settings != null
+          settings != null
               ? {
-                'host': _settings!.host,
-                'port': _settings!.port,
-                'database': _settings!.db,
+                'host': settings.host,
+                'port': settings.port,
+                'database': settings.db,
               }
               : null,
     };

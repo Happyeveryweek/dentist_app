@@ -254,8 +254,7 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
             _buildDetailSection('口腔检查', widget.record.oralExamination),
 
           // 关联牙齿状况
-          if (widget.record.selectedDentalConditionDate != null &&
-              widget.record.selectedDentalConditionDate!.isNotEmpty)
+          if (widget.record.selectedDentalConditionDate?.isNotEmpty == true)
             _buildDentalConditionSection(),
 
           // 诊断
@@ -320,7 +319,7 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
           decoration: BoxDecoration(
             color: Colors.grey[50],
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[200]!),
+            border: Border.all(color: Colors.grey.shade200),
           ),
           child: Text(
             content,
@@ -338,14 +337,15 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
 
   // 牙齿状况区块
   Widget _buildDentalConditionSection() {
-    if (widget.patient.dentalCondition == null ||
-        widget.patient.dentalCondition!.isEmpty) {
+    final dentalCondition = widget.patient.dentalCondition;
+    final selectedDentalConditionDate = widget.record.selectedDentalConditionDate;
+    if (dentalCondition == null || dentalCondition.isEmpty) {
       return _buildDetailSection('关联牙齿状况', '无牙齿状况数据');
     }
 
     try {
       final dentalData = DentalConditionIntegration.parseDentalCondition(
-        widget.patient.dentalCondition!,
+        dentalCondition,
       );
 
       if (dentalData.isEmpty) {
@@ -355,12 +355,17 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
       // 解析选中的日期
       List<String> selectedDates = [];
       try {
-        final List<dynamic> dates = jsonDecode(
-          widget.record.selectedDentalConditionDate!,
-        );
+        final date = selectedDentalConditionDate;
+        if (date == null) {
+          throw Exception('未选择牙齿状况日期');
+        }
+        final List<dynamic> dates = jsonDecode(date);
         selectedDates = dates.map((date) => date.toString()).toList();
       } catch (e) {
-        selectedDates = [widget.record.selectedDentalConditionDate!];
+        final date = selectedDentalConditionDate;
+        if (date != null) {
+          selectedDates = [date];
+        }
       }
 
       return Column(
@@ -384,7 +389,7 @@ class _MedicalRecordDetailScreenState extends State<MedicalRecordDetailScreen> {
               decoration: BoxDecoration(
                 color: Colors.blue[50],
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue[200]!),
+                border: Border.all(color: Colors.blue.shade200),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

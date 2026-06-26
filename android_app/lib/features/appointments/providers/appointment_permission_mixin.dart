@@ -13,20 +13,26 @@ mixin AppointmentPermissionMixin {
 
   // 获取医生过滤条件
   String? getDoctorFilter() {
-    if (_userProvider?.currentUser == null) {
+    final provider = _userProvider;
+    if (provider == null) return null;
+    final currentUser = provider.currentUser;
+    if (currentUser == null) {
       return null;
     }
 
-    return _userProvider!.buildDoctorFilter(_userProvider!.currentUser);
+    return provider.buildDoctorFilter(currentUser);
   }
 
   // 检查是否需要数据过滤
   bool shouldFilterByDoctor() {
-    if (_userProvider?.currentUser == null) {
+    final provider = _userProvider;
+    if (provider == null) return false;
+    final currentUser = provider.currentUser;
+    if (currentUser == null) {
       return false;
     }
 
-    return _userProvider!.shouldFilterByDoctor(_userProvider!.currentUser);
+    return provider.shouldFilterByDoctor(currentUser);
   }
 
   // 获取 UserProvider（供子类使用）

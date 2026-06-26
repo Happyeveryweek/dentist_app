@@ -26,6 +26,11 @@ class AppointmentCard extends StatelessWidget {
     final statusInfo = AppointmentStatusHelper.getStatusInfo(
       appointment.status,
     );
+    final p = patient;
+    final patientName = p?.name;
+    final phone = p?.phone;
+    final medicalRecordNumber = p?.medicalRecordNumber;
+    final notes = appointment.notes;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -86,8 +91,8 @@ class AppointmentCard extends StatelessWidget {
                       ),
                       child: Center(
                         child: Text(
-                          patient?.name.isNotEmpty == true
-                              ? patient!.name.substring(0, 1)
+                          patientName != null && patientName.isNotEmpty
+                              ? patientName.substring(0, 1)
                               : '?',
                           style: TextStyle(
                             color: statusInfo.color,
@@ -103,17 +108,17 @@ class AppointmentCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            patient?.name ?? '加载中...',
+                            patientName ?? '加载中...',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: AppTheme.primaryText,
                             ),
                           ),
-                          if (patient?.medicalRecordNumber != null) ...[
+                          if (medicalRecordNumber != null) ...[
                             const SizedBox(height: 4),
                             Text(
-                              '病历号: ${patient!.medicalRecordNumber}',
+                              '病历号: $medicalRecordNumber',
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: AppTheme.secondaryText,
@@ -141,12 +146,11 @@ class AppointmentCard extends StatelessWidget {
                         color: AppTheme.infoColor,
                         expanded: true,
                       ),
-                      if (patient?.phone != null &&
-                          patient!.phone.isNotEmpty) ...[
+                      if (phone != null && phone.isNotEmpty) ...[
                         const SizedBox(width: 16),
                         InfoItem(
                           icon: Icons.phone_rounded,
-                          text: PhoneFormatter.getDisplayPhone(patient!.phone),
+                          text: PhoneFormatter.getDisplayPhone(phone),
                           color: AppTheme.successColor,
                           expanded: true,
                         ),
@@ -164,12 +168,11 @@ class AppointmentCard extends StatelessWidget {
                     color: AppTheme.primaryColor,
                   ),
                 ],
-                if (appointment.notes != null &&
-                    appointment.notes!.isNotEmpty) ...[
+                if (notes != null && notes.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   InfoItem(
                     icon: Icons.notes_rounded,
-                    text: appointment.notes!,
+                    text: notes,
                     color: AppTheme.warningColor,
                   ),
                 ],

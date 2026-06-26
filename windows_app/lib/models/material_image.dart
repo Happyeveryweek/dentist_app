@@ -1,7 +1,7 @@
-import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import '../utils/datetime_formatter.dart';
+import '../utils/log_manager.dart';
 
 // 材料图片模型
 class MaterialImage {
@@ -37,21 +37,21 @@ class MaterialImage {
     try {
       final previewId = map['id'];
       final previewName = map['original_name'] ?? map['originalName'] ?? '';
-      print('MaterialImage.fromMap - 开始解析: ID=$previewId, 名称=$previewName');
-    } catch (_) {
-      print('MaterialImage.fromMap - 开始解析一条记录（详情省略）');
-    }
-    
+      LogManager.e('MaterialImage',
+          'MaterialImage.fromMap - 开始解析: ID=$previewId, 名称=$previewName');
+    } catch (_) {}
+
     DateTime createdAt = DateTime.now();
     if (map['created_at'] != null) {
       try {
         if (map['created_at'] is DateTime) {
           createdAt = map['created_at'];
         } else {
-          createdAt = DateTimeFormatter.fromDbString(map['created_at'].toString());
+          createdAt =
+              DateTimeFormatter.fromDbString(map['created_at'].toString());
         }
       } catch (e) {
-        print('解析created_at错误: ${map['created_at']}, 使用当前时间');
+        LogManager.e('MaterialImage', '解析created_at错误: ${map['created_at']}');
       }
     }
 
@@ -59,83 +59,72 @@ class MaterialImage {
     Uint8List imageData = Uint8List(0);
     if (map['image_data'] != null) {
       // 仅记录类型信息，避免打印二进制内容
-      try {
-        print('处理图片数据: 类型=${map['image_data'].runtimeType}');
-      } catch (_) {}
-      
+      try {} catch (_) {}
+
       if (map['image_data'] is Uint8List) {
         imageData = map['image_data'];
       } else if (map['image_data'] is List<int>) {
         imageData = Uint8List.fromList(map['image_data']);
       } else if (map['image_data'] is String) {
         // 如果是String类型，可能是二进制数据的错误表示或Base64字符串
+        try {
+          // 首先尝试Base64解码
+          imageData = Uint8List.fromList(base64Decode(map['image_data']));
+        } catch (e) {
+          // 如果失败，尝试将字符串按字符编码转换为字节（作为最后手段），并记录错误但不打印数据
           try {
-            // 首先尝试Base64解码
-            imageData = Uint8List.fromList(base64Decode(map['image_data']));
-          } catch (e) {
-            // 如果失败，尝试将字符串按字符编码转换为字节（作为最后手段），并记录错误但不打印数据
-            try {
-              final stringData = map['image_data'] as String;
-              final bytes = <int>[];
-              for (int i = 0; i < stringData.length; i++) {
-                bytes.add(stringData.codeUnitAt(i));
-              }
-              if (bytes.isNotEmpty) {
-                imageData = Uint8List.fromList(bytes);
-              } else {
-                imageData = Uint8List(0);
-              }
-            } catch (e2) {
-              print('二进制字符串处理也失败（忽略数据）: $e2');
+            final stringData = map['image_data'] as String;
+            final bytes = <int>[];
+            for (int i = 0; i < stringData.length; i++) {
+              bytes.add(stringData.codeUnitAt(i));
+            }
+            if (bytes.isNotEmpty) {
+              imageData = Uint8List.fromList(bytes);
+            } else {
               imageData = Uint8List(0);
             }
+          } catch (e2) {
+            LogManager.e('MaterialImage', '二进制字符串处理也失败', error: e2);
+            imageData = Uint8List(0);
           }
-      } else {
-        print('未知的图片数据类型: ${map['image_data'].runtimeType}');
-      }
-    } else {
-      print('图片数据为空');
-    }
+        }
+      } else {}
+    } else {}
 
     // 处理缩略图数据
     Uint8List? thumbnailData;
     if (map['thumbnail_data'] != null) {
       // 仅记录类型信息，避免打印二进制内容
-      try {
-        print('处理缩略图数据: 类型=${map['thumbnail_data'].runtimeType}');
-      } catch (_) {}
-      
+      try {} catch (_) {}
+
       if (map['thumbnail_data'] is Uint8List) {
         thumbnailData = map['thumbnail_data'];
       } else if (map['thumbnail_data'] is List<int>) {
         thumbnailData = Uint8List.fromList(map['thumbnail_data']);
       } else if (map['thumbnail_data'] is String) {
         // 如果是String类型，可能是二进制数据的错误表示或Base64字符串
+        try {
+          thumbnailData =
+              Uint8List.fromList(base64Decode(map['thumbnail_data']));
+        } catch (e) {
           try {
-            thumbnailData = Uint8List.fromList(base64Decode(map['thumbnail_data']));
-          } catch (e) {
-            try {
-              final stringData = map['thumbnail_data'] as String;
-              final bytes = <int>[];
-              for (int i = 0; i < stringData.length; i++) {
-                bytes.add(stringData.codeUnitAt(i));
-              }
-              if (bytes.isNotEmpty) {
-                thumbnailData = Uint8List.fromList(bytes);
-              } else {
-                thumbnailData = Uint8List(0);
-              }
-            } catch (e2) {
-              print('二进制字符串处理缩略图也失败（忽略数据）: $e2');
+            final stringData = map['thumbnail_data'] as String;
+            final bytes = <int>[];
+            for (int i = 0; i < stringData.length; i++) {
+              bytes.add(stringData.codeUnitAt(i));
+            }
+            if (bytes.isNotEmpty) {
+              thumbnailData = Uint8List.fromList(bytes);
+            } else {
               thumbnailData = Uint8List(0);
             }
+          } catch (e2) {
+            LogManager.e('MaterialImage', '二进制字符串处理缩略图也失败', error: e2);
+            thumbnailData = Uint8List(0);
           }
-      } else {
-        print('未知的缩略图数据类型: ${map['thumbnail_data'].runtimeType}');
-      }
-    } else {
-      print('缩略图数据为空');
-    }
+        }
+      } else {}
+    } else {}
 
     final result = MaterialImage(
       id: map['id'],
@@ -150,8 +139,9 @@ class MaterialImage {
       createdAt: createdAt,
       hasThumbnail: _parseBoolValue(map['has_thumbnail']), // 正确解析布尔值
     );
-    
-  print('MaterialImage.fromMap - 创建结果: ID=${result.id}, 类型=${result.imageType}, 大小=${result.fileSize}');
+
+    LogManager.e('MaterialImage',
+        'MaterialImage.fromMap - 创建结果: ID=${result.id}, 类型=${result.imageType}, 大小=${result.fileSize}');
     return result;
   }
 
@@ -226,13 +216,14 @@ class MaterialImage {
 
   // 获取缩略图大小的可读格式
   String get thumbnailSizeFormatted {
-    if (thumbnailSize == null) return '无';
-    if (thumbnailSize! < 1024) {
-      return '${thumbnailSize}B';
-    } else if (thumbnailSize! < 1024 * 1024) {
-      return '${(thumbnailSize! / 1024).toStringAsFixed(1)}KB';
+    final size = thumbnailSize;
+    if (size == null) return '无';
+    if (size < 1024) {
+      return '${size}B';
+    } else if (size < 1024 * 1024) {
+      return '${(size / 1024).toStringAsFixed(1)}KB';
     } else {
-      return '${(thumbnailSize! / (1024 * 1024)).toStringAsFixed(1)}MB';
+      return '${(size / (1024 * 1024)).toStringAsFixed(1)}MB';
     }
   }
 
@@ -251,18 +242,19 @@ class MaterialImage {
   // 检查是否有可用的缩略图
   bool get hasValidThumbnail {
     // 不仅要检查数据是否存在和长度，还要检查数据是否看起来像有效的图片数据
-    if (thumbnailData == null || thumbnailData!.isEmpty) {
+    final data = thumbnailData;
+    if (data == null || data.isEmpty) {
       return false;
     }
-    
+
     // 检查数据长度是否合理（至少几百字节）
-    if (thumbnailData!.length < 100) {
+    if (data.length < 100) {
       return false;
     }
-    
+
     // 检查文件头是否看起来像图片（简单的启发式检查）
-    if (thumbnailData!.length >= 2) {
-      final firstBytes = thumbnailData!.take(2).toList();
+    if (data.length >= 2) {
+      final firstBytes = data.take(2).toList();
       // JPEG文件头通常是 0xFF 0xD8
       // PNG文件头通常是 0x89 0x50
       // GIF文件头通常是 0x47 0x49
@@ -278,7 +270,7 @@ class MaterialImage {
         return true; // WebP
       }
     }
-    
+
     // 如果无法识别文件头，但数据长度合理，仍然认为可能有效
     // 这样可以处理一些特殊的图片格式
     return true;
@@ -302,6 +294,10 @@ class MaterialImage {
 
   @override
   int get hashCode {
-    return id.hashCode ^ materialId.hashCode ^ imageType.hashCode ^ fileSize.hashCode ^ hasThumbnail.hashCode;
+    return id.hashCode ^
+        materialId.hashCode ^
+        imageType.hashCode ^
+        fileSize.hashCode ^
+        hasThumbnail.hashCode;
   }
 }

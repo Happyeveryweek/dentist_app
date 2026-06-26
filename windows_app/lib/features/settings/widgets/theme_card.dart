@@ -25,7 +25,8 @@ class ThemeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    final settingsProvider =
+        Provider.of<SettingsProvider>(context, listen: false);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     Color defaultCardColor;
@@ -43,10 +44,6 @@ class ThemeCard extends StatelessWidget {
       case ExtendedThemeMode.purple:
         defaultCardColor = AppTheme.purpleCardBackground;
         defaultTextColor = AppTheme.purplePrimaryText;
-        break;
-      default:
-        defaultCardColor = isDarkMode ? const Color(0xFF303030) : Colors.white;
-        defaultTextColor = isDarkMode ? Colors.white : Colors.black87;
         break;
     }
 
@@ -66,9 +63,9 @@ class ThemeCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: isSelected 
-                  ? AppTheme.primaryColor.withOpacity(0.3)
-                  : Colors.black.withOpacity(0.08),
+              color: isSelected
+                  ? AppTheme.primaryColor.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.08),
               blurRadius: isSelected ? 12 : 8,
               offset: const Offset(0, 4),
             ),
@@ -80,7 +77,8 @@ class ThemeCard extends StatelessWidget {
             Icon(
               icon,
               size: 32,
-              color: iconColor ?? (isDarkMode ? Colors.white : Colors.grey.shade700),
+              color: iconColor ??
+                  (isDarkMode ? Colors.white : Colors.grey.shade700),
             ),
             const SizedBox(height: 8),
             Text(
@@ -96,12 +94,13 @@ class ThemeCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
+                  child: const Text(
                     '当前',
                     style: TextStyle(
                       fontSize: 10,

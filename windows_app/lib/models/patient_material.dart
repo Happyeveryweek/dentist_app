@@ -1,5 +1,5 @@
-import 'package:intl/intl.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/log_manager.dart';
 
 // 患者材料模型
 class PatientMaterial {
@@ -20,24 +20,17 @@ class PatientMaterial {
 
   // 从Map构造PatientMaterial对象
   factory PatientMaterial.fromMap(Map<String, dynamic> map) {
-    try {
-      final previewId = map['id'];
-      final previewDesc = map['description'] ?? '';
-      print('PatientMaterial.fromMap - 输入记录: ID=$previewId, 描述=${previewDesc}');
-    } catch (_) {
-      print('PatientMaterial.fromMap - 输入一条记录（详情省略）');
-    }
-    
     DateTime createdAt = DateTime.now();
     if (map['created_at'] != null) {
       try {
         if (map['created_at'] is DateTime) {
           createdAt = map['created_at'];
         } else {
-          createdAt = DateTimeFormatter.fromDbString(map['created_at'].toString());
+          createdAt =
+              DateTimeFormatter.fromDbString(map['created_at'].toString());
         }
       } catch (e) {
-        print('解析created_at错误: ${map['created_at']}');
+        LogManager.e('PatientMaterial', '解析created_at错误: ${map['created_at']}');
       }
     }
 
@@ -47,10 +40,11 @@ class PatientMaterial {
         if (map['updated_at'] is DateTime) {
           updatedAt = map['updated_at'];
         } else {
-          updatedAt = DateTimeFormatter.fromDbString(map['updated_at'].toString());
+          updatedAt =
+              DateTimeFormatter.fromDbString(map['updated_at'].toString());
         }
       } catch (e) {
-        print('解析updated_at错误: ${map['updated_at']}');
+        LogManager.e('PatientMaterial', '解析updated_at错误: ${map['updated_at']}');
       }
     }
 
@@ -61,8 +55,9 @@ class PatientMaterial {
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
-    
-  print('PatientMaterial.fromMap - 创建结果: ID=${result.id}, 描述=${result.description}');
+
+    LogManager.e('PatientMaterial',
+        'PatientMaterial.fromMap - 创建结果: ID=${result.id}, 描述=${result.description}');
     return result;
   }
 

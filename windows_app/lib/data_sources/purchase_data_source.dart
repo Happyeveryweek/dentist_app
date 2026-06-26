@@ -12,10 +12,13 @@ abstract class PurchaseDataSource {
   Future<int> createPurchase(PurchaseRecord purchase);
   Future<bool> updatePurchase(PurchaseRecord purchase);
   Future<bool> deletePurchase(int id);
-  Future<List<PurchaseRecord>> searchPurchases(String keyword, {String? doctorFilter});
+  Future<List<PurchaseRecord>> searchPurchases(String keyword,
+      {String? doctorFilter});
   Future<double> getTotalPurchaseAmount({String? doctorFilter});
-  Future<List<PurchaseRecord>> getPurchasesByDateRange(DateTime startDate, DateTime endDate, {String? doctorFilter});
-  
+  Future<List<PurchaseRecord>> getPurchasesByDateRange(
+      DateTime startDate, DateTime endDate,
+      {String? doctorFilter});
+
   // 分页查询方法
   Future<int> getPurchasesCount({String? searchQuery, String? doctorFilter});
   Future<List<PurchaseRecord>> getPaginatedPurchases({
@@ -26,7 +29,7 @@ abstract class PurchaseDataSource {
     String? searchQuery,
     String? doctorFilter,
   });
-  
+
   // 采购项目相关方法
   Future<List<PurchaseItem>> getPurchaseItemsByRecordId(int recordId);
   Future<int> createPurchaseItem(PurchaseItem item);

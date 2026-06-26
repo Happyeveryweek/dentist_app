@@ -26,11 +26,12 @@ class MedicalTemplateInitializeProgressDialog extends StatelessWidget {
               ),
               child: CircularProgressIndicator(
                 strokeWidth: 4,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // 标题
             Text(
               '正在初始化病历模板数据...',
@@ -42,7 +43,7 @@ class MedicalTemplateInitializeProgressDialog extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            
+
             // 描述
             Text(
               '请稍候，系统正在创建数据库表并初始化预设的疾病类型数据。\n此过程可能需要几秒钟时间。',

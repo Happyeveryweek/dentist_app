@@ -20,7 +20,7 @@ class DatabaseProvider extends ChangeNotifier {
   final MySQLConnectionService _mysqlConnectionService =
       MySQLConnectionService();
   final DatabaseHealthService _healthService = DatabaseHealthService();
-  late MySQLReconnectService _reconnectService;
+  MySQLReconnectService? _reconnectServiceInstance;
   final SQLiteInitializationService _sqliteInitService =
       SQLiteInitializationService();
   final DatabaseSyncService _syncService = DatabaseSyncService();
@@ -28,7 +28,7 @@ class DatabaseProvider extends ChangeNotifier {
 
   String _dbType = ''; // 初始化前不设置默认值，避免误导
   String _dbPath = '';
-  late DatabaseConfig _dbConfig;
+  DatabaseConfig? _dbConfig;
   bool _initialized = false;
   // 添加一个数据库变更标志，当数据库切换时会变更
   bool _databaseChanged = false;
@@ -73,11 +73,14 @@ class DatabaseProvider extends ChangeNotifier {
   MySqlConnection? get mysqlConnection => _mysqlConnectionService.connection;
 
   // 获取配置文件中设置的数据库类型（不受自动切换影响）
-  String get configDbType => _dbConfig.dbType;
+  String get configDbType => _dbConfig?.dbType ?? 'sqlite';
 
   // 获取当前实际使用的数据库类型描述
   String get currentDbTypeDescription {
-    if (_isAutoSwitchedToSQLite && _dbConfig.dbType == 'mysql') {
+    final config = _dbConfig;
+    if (config != null &&
+        _isAutoSwitchedToSQLite &&
+        config.dbType == 'mysql') {
       return 'SQLite (MySQL连接失败时自动切换)';
     }
     return _dbType == 'mysql' ? 'MySQL' : 'SQLite';
@@ -102,10 +105,17 @@ class DatabaseProvider extends ChangeNotifier {
   // 是否需要导航到仪表盘
   bool get shouldNavigateToDashboard => _shouldNavigateToDashboard;
 
+  MySQLReconnectService get _reconnectService {
+    final service = _reconnectServiceInstance;
+    if (service == null) {
+      throw StateError('MySQLReconnectService 尚未初始化');
+    }
+    return service;
+  }
+
   // 构造函数
   DatabaseProvider() {
-    // 初始化重连服务
-    _reconnectService = MySQLReconnectService(
+    _reconnectServiceInstance = MySQLReconnectService(
       connectionService: _mysqlConnectionService,
       healthService: _healthService,
     );
@@ -288,7 +298,9 @@ class DatabaseProvider extends ChangeNotifier {
         if (_dbType == 'sqlite') {
           final db = await _sqliteInitService.getDatabase();
           // 执行一些简单查询以确保数据库连接正常
-          await db!.rawQuery('SELECT 1');
+          if (db != null) {
+            await db.rawQuery('SELECT 1');
+          }
 
           // 患者数据缓存更新已迁移到 PatientProvider
 

@@ -18,7 +18,7 @@ class PatientEmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.person_off_outlined,
             size: 64,
             color: AppTheme.lightText,
@@ -26,7 +26,7 @@ class PatientEmptyState extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             hasSearchQuery ? '未找到匹配的搜索结果' : '暂无患者记录',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 18,
               color: AppTheme.secondaryText,
             ),
@@ -39,13 +39,13 @@ class PatientEmptyState extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   AppTheme.primaryColor,
-                  AppTheme.primaryColor.withOpacity(0.8),
+                  AppTheme.primaryColor.withValues(alpha: 0.8),
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),

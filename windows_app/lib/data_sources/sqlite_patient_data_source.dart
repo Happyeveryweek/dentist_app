@@ -3,6 +3,7 @@ import '../models/patient.dart';
 import '../models/patient_material.dart';
 import '../models/material_image.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/log_manager.dart';
 import 'patient_data_source.dart';
 
 /// SQLite 患者数据源实现
@@ -10,10 +11,14 @@ class SqlitePatientDataSource implements PatientDataSource {
   final Database _database;
   final String? _doctorName;
   final bool _isAdmin;
-  
-  bool get _hasDoctorName => _doctorName != null && _doctorName!.isNotEmpty;
 
-  SqlitePatientDataSource(this._database, {String? doctorName, bool isAdmin = false})
+  bool get _hasDoctorName {
+    final doctorName = _doctorName;
+    return doctorName != null && doctorName.isNotEmpty;
+  }
+
+  SqlitePatientDataSource(this._database,
+      {String? doctorName, bool isAdmin = false})
       : _doctorName = doctorName,
         _isAdmin = isAdmin;
 
@@ -108,7 +113,7 @@ class SqlitePatientDataSource implements PatientDataSource {
       final maps = await _database.query('patients');
       return maps.map((m) => Patient.fromMap(m)).toList();
     } catch (e) {
-      print('SqlitePatientDataSource: getAllPatients 出错: $e');
+      LogManager.e('SqlitePatientDataSource', 'getAllPatients 出错', error: e);
       return [];
     }
   }
@@ -124,7 +129,7 @@ class SqlitePatientDataSource implements PatientDataSource {
       );
       return maps.isNotEmpty ? Patient.fromMap(maps.first) : null;
     } catch (e) {
-      print('SqlitePatientDataSource: getPatientById 出错: $e');
+      LogManager.e('SqlitePatientDataSource', 'getPatientById 出错', error: e);
       return null;
     }
   }
@@ -134,7 +139,7 @@ class SqlitePatientDataSource implements PatientDataSource {
     try {
       return await _database.insert('patients', patient.toMap());
     } catch (e) {
-      print('SqlitePatientDataSource: createPatient 出错: $e');
+      LogManager.e('SqlitePatientDataSource', 'createPatient 出错', error: e);
       rethrow;
     }
   }
@@ -143,10 +148,11 @@ class SqlitePatientDataSource implements PatientDataSource {
   Future<bool> updatePatient(Patient patient) async {
     if (patient.id == null) throw Exception('更新患者时必须提供ID');
     try {
-      final result = await _database.update('patients', patient.toMap(), where: 'id = ?', whereArgs: [patient.id]);
+      final result = await _database.update('patients', patient.toMap(),
+          where: 'id = ?', whereArgs: [patient.id]);
       return result > 0;
     } catch (e) {
-      print('SqlitePatientDataSource: updatePatient 出错: $e');
+      LogManager.e('SqlitePatientDataSource', 'updatePatient 出错', error: e);
       rethrow;
     }
   }
@@ -155,32 +161,46 @@ class SqlitePatientDataSource implements PatientDataSource {
   Future<bool> deletePatient(int patientId) async {
     try {
       // 级联清理逻辑迁移
-      final materialIds = (await _database.rawQuery('SELECT id FROM patient_materials WHERE patient_id = ?', [patientId]))
-          .map((row) => row['id'] as int).toList();
-      
+      final materialIds = (await _database.rawQuery(
+              'SELECT id FROM patient_materials WHERE patient_id = ?',
+              [patientId]))
+          .map((row) => row['id'] as int)
+          .toList();
+
       if (materialIds.isNotEmpty) {
         final placeholders = materialIds.map((_) => '?').join(',');
-        await _database.delete('material_images', where: 'material_id IN ($placeholders)', whereArgs: materialIds);
+        await _database.delete('material_images',
+            where: 'material_id IN ($placeholders)', whereArgs: materialIds);
       }
 
-      await _database.delete('patient_materials', where: 'patient_id = ?', whereArgs: [patientId]);
+      await _database.delete('patient_materials',
+          where: 'patient_id = ?', whereArgs: [patientId]);
 
-      final financialRecordIds = (await _database.rawQuery('SELECT id FROM financial_records WHERE patient_id = ?', [patientId]))
-          .map((row) => row['id'] as int).toList();
-      
+      final financialRecordIds = (await _database.rawQuery(
+              'SELECT id FROM financial_records WHERE patient_id = ?',
+              [patientId]))
+          .map((row) => row['id'] as int)
+          .toList();
+
       if (financialRecordIds.isNotEmpty) {
         final placeholders = financialRecordIds.map((_) => '?').join(',');
-        await _database.delete('financial_items', where: 'financial_record_id IN ($placeholders)', whereArgs: financialRecordIds);
+        await _database.delete('financial_items',
+            where: 'financial_record_id IN ($placeholders)',
+            whereArgs: financialRecordIds);
       }
-      
-      await _database.delete('financial_records', where: 'patient_id = ?', whereArgs: [patientId]);
-      await _database.delete('appointments', where: 'patient_id = ?', whereArgs: [patientId]);
-      await _database.delete('patient_medical_records', where: 'patient_id = ?', whereArgs: [patientId]);
-      
-      final patientResult = await _database.delete('patients', where: 'id = ?', whereArgs: [patientId]);
+
+      await _database.delete('financial_records',
+          where: 'patient_id = ?', whereArgs: [patientId]);
+      await _database.delete('appointments',
+          where: 'patient_id = ?', whereArgs: [patientId]);
+      await _database.delete('patient_medical_records',
+          where: 'patient_id = ?', whereArgs: [patientId]);
+
+      final patientResult = await _database
+          .delete('patients', where: 'id = ?', whereArgs: [patientId]);
       return patientResult > 0;
     } catch (e) {
-      print('SqlitePatientDataSource: deletePatient 出错: $e');
+      LogManager.e('SqlitePatientDataSource', 'deletePatient 出错', error: e);
       throw Exception('删除患者失败: $e');
     }
   }
@@ -196,7 +216,7 @@ class SqlitePatientDataSource implements PatientDataSource {
       );
       return results.map((data) => Patient.fromMap(data)).toList();
     } catch (e) {
-      print('SqlitePatientDataSource: searchPatients 出错: $e');
+      LogManager.e('SqlitePatientDataSource', 'searchPatients 出错', error: e);
       return [];
     }
   }
@@ -225,9 +245,14 @@ class SqlitePatientDataSource implements PatientDataSource {
 
   @override
   Future<Map<String, dynamic>> getPatientsPage({
-    required int page, required int pageSize, String? searchQuery,
-    String? sortField, bool sortAscending = false,
-    DateTime? startDate, DateTime? endDate, String dateFilterType = 'first_visit_date',
+    required int page,
+    required int pageSize,
+    String? searchQuery,
+    String? sortField,
+    bool sortAscending = false,
+    DateTime? startDate,
+    DateTime? endDate,
+    String dateFilterType = 'first_visit_date',
   }) async {
     try {
       final offset = (page - 1) * pageSize;
@@ -242,11 +267,15 @@ class SqlitePatientDataSource implements PatientDataSource {
         parts.args,
       );
       final totalCountValue = countResult.first['count'];
-      final totalCount = totalCountValue is int ? totalCountValue : (totalCountValue as num).toInt();
+      final totalCount = totalCountValue is int
+          ? totalCountValue
+          : (totalCountValue as num).toInt();
 
       String orderBy = 'updated_at DESC';
       if (sortField != null && sortField.isNotEmpty) {
-        String field = (sortField == 'medical_record_number') ? 'CAST(medical_record_number AS INTEGER)' : sortField;
+        String field = (sortField == 'medical_record_number')
+            ? 'CAST(medical_record_number AS INTEGER)'
+            : sortField;
         orderBy = '$field ${sortAscending ? "ASC" : "DESC"}';
       }
 
@@ -262,7 +291,7 @@ class SqlitePatientDataSource implements PatientDataSource {
         'currentPage': page,
       };
     } catch (e) {
-      print('SqlitePatientDataSource: getPatientsPage 出错: $e');
+      LogManager.e('SqlitePatientDataSource', 'getPatientsPage 出错', error: e);
       rethrow;
     }
   }
@@ -270,7 +299,8 @@ class SqlitePatientDataSource implements PatientDataSource {
   @override
   Future<List<Patient>> getPatientsByDoctor(String doctorName) async {
     try {
-      final maps = await _database.query('patients', where: 'doctor = ?', whereArgs: [doctorName]);
+      final maps = await _database
+          .query('patients', where: 'doctor = ?', whereArgs: [doctorName]);
       return maps.map((m) => Patient.fromMap(m)).toList();
     } catch (e) {
       return [];
@@ -357,7 +387,8 @@ class SqlitePatientDataSource implements PatientDataSource {
 
   @override
   Future<void> updateAllPatientsPinyin() async {
-    throw UnimplementedError('updateAllPatientsPinyin should be implemented in Provider/Service layer');
+    throw UnimplementedError(
+        'updateAllPatientsPinyin should be implemented in Provider/Service layer');
   }
 
   @override
@@ -368,20 +399,25 @@ class SqlitePatientDataSource implements PatientDataSource {
 
   @override
   Future<List<PatientMaterial>> getPatientMaterials(int patientId) async {
-    final results = await _database.query('patient_materials', where: 'patient_id = ?', whereArgs: [patientId], orderBy: 'created_at DESC');
+    final results = await _database.query('patient_materials',
+        where: 'patient_id = ?',
+        whereArgs: [patientId],
+        orderBy: 'created_at DESC');
     return results.map((m) => PatientMaterial.fromMap(m)).toList();
   }
 
   @override
   Future<bool> updatePatientMaterial(PatientMaterial material) async {
-    final count = await _database.update('patient_materials', material.toMap(), where: 'id = ?', whereArgs: [material.id]);
+    final count = await _database.update('patient_materials', material.toMap(),
+        where: 'id = ?', whereArgs: [material.id]);
     return count > 0;
   }
 
   @override
   Future<bool> deletePatientMaterial(int id) async {
     await _database.transaction((txn) async {
-      await txn.delete('material_images', where: 'material_id = ?', whereArgs: [id]);
+      await txn
+          .delete('material_images', where: 'material_id = ?', whereArgs: [id]);
       await txn.delete('patient_materials', where: 'id = ?', whereArgs: [id]);
     });
     return true;
@@ -389,7 +425,10 @@ class SqlitePatientDataSource implements PatientDataSource {
 
   @override
   Future<List<MaterialImage>> getMaterialImages(int materialId) async {
-    final result = await _database.query('material_images', where: 'material_id = ?', whereArgs: [materialId], orderBy: 'created_at DESC');
+    final result = await _database.query('material_images',
+        where: 'material_id = ?',
+        whereArgs: [materialId],
+        orderBy: 'created_at DESC');
     return result.map((e) => MaterialImage.fromMap(e)).toList();
   }
 
@@ -413,13 +452,15 @@ class SqlitePatientDataSource implements PatientDataSource {
 
   @override
   Future<bool> updateMaterialImage(MaterialImage image) async {
-    final count = await _database.update('material_images', image.toMap(), where: 'id = ?', whereArgs: [image.id]);
+    final count = await _database.update('material_images', image.toMap(),
+        where: 'id = ?', whereArgs: [image.id]);
     return count > 0;
   }
 
   @override
   Future<bool> deleteMaterialImage(int imageId) async {
-    final count = await _database.delete('material_images', where: 'id = ?', whereArgs: [imageId]);
+    final count = await _database
+        .delete('material_images', where: 'id = ?', whereArgs: [imageId]);
     return count > 0;
   }
 }

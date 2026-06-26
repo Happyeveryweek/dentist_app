@@ -1,5 +1,6 @@
 import '../utils/datetime_formatter.dart';
 import '../utils/app_logger.dart';
+import '../utils/map_parser.dart';
 
 /// 病历模板数据模型
 /// 用于存储疾病类型等模板数据，支持牙科疾病、全身疾病、过敏类型三大类别
@@ -29,84 +30,51 @@ class MedicalRecordTemplate {
 
   /// 从Map构造MedicalRecordTemplate对象
   factory MedicalRecordTemplate.fromMap(Map<String, dynamic> map) {
-    // 辅助方法：安全转换字符串，处理各种数据类型
-    String safeStringFromField(dynamic field) {
-      if (field == null) return '';
-      if (field is String) return field;
-      if (field is List<int>) {
-        try {
-          return String.fromCharCodes(field);
-        } catch (e) {
-          AppLogger.info('MedicalRecordTemplate.fromMap: Blob转换失败: $e');
-          return '';
-        }
-      }
-      try {
-        return field.toString();
-      } catch (e) {
-        AppLogger.info('MedicalRecordTemplate.fromMap: 字段转换失败: $e');
-        return '';
-      }
-    }
-
-    // 处理创建时间和更新时间
-    DateTime createdAt = DateTime.now();
-    if (map['created_at'] != null) {
-      try {
-        if (map['created_at'] is DateTime) {
-          createdAt = map['created_at'];
-        } else {
-          createdAt = DateTimeFormatter.fromDbString(
-            map['created_at'].toString(),
-          );
-        }
-      } catch (e) {
-        AppLogger.info('解析created_at错误: ${map['created_at']}');
-      }
-    }
-
-    DateTime updatedAt = DateTime.now();
-    if (map['updated_at'] != null) {
-      try {
-        if (map['updated_at'] is DateTime) {
-          updatedAt = map['updated_at'];
-        } else {
-          updatedAt = DateTimeFormatter.fromDbString(
-            map['updated_at'].toString(),
-          );
-        }
-      } catch (e) {
-        AppLogger.info('解析updated_at错误: ${map['updated_at']}');
-      }
-    }
+    final p = MapParser(map, context: 'MedicalRecordTemplate');
 
     // 处理parent_name字段，确保NULL值被正确识别
     String? parentName;
-    if (map['parent_name'] == null) {
-      parentName = null;
-    } else {
-      final parentNameStr = safeStringFromField(map['parent_name']);
-      // 检查是否为空字符串、"null"字符串或"(Null)"字符串
-      if (parentNameStr.isEmpty ||
-          parentNameStr.toLowerCase() == 'null' ||
-          parentNameStr == '(Null)') {
-        parentName = null;
-      } else {
+    final parentNameRaw = map['parent_name'];
+    if (parentNameRaw != null) {
+      final parentNameStr = _safeStringFromField(parentNameRaw);
+      if (parentNameStr.isNotEmpty &&
+          parentNameStr.toLowerCase() != 'null' &&
+          parentNameStr != '(Null)') {
         parentName = parentNameStr;
       }
     }
 
     return MedicalRecordTemplate(
-      id: map['id'],
-      category: safeStringFromField(map['category']),
-      name: safeStringFromField(map['name']),
+      id: p.optional('id', (v) => v as int),
+      category: _safeStringFromField(map['category']),
+      name: _safeStringFromField(map['name']),
       parentName: parentName,
-      description: safeStringFromField(map['description']),
-      isActive: map['is_active'] == 1 || map['is_active'] == true,
-      sortOrder: map['sort_order'] ?? 0,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
+      description: _safeStringFromField(map['description']),
+      isActive: p.boolean('is_active'),
+      sortOrder: p.integer('sort_order'),
+      createdAt: p.dateTime('created_at'),
+      updatedAt: p.dateTime('updated_at'),
     );
+  }
+
+  // 辅助方法：安全转换字符串，处理各种数据类型（包括 Blob）
+  static String _safeStringFromField(dynamic field) {
+    if (field == null) return '';
+    if (field is String) return field;
+    if (field is List<int>) {
+      try {
+        return String.fromCharCodes(field);
+      } catch (e) {
+        AppLogger.info('MedicalRecordTemplate.fromMap: Blob转换失败: $e');
+        return '';
+      }
+    }
+    try {
+      return field.toString();
+    } catch (e) {
+      AppLogger.info('MedicalRecordTemplate.fromMap: 字段转换失败: $e');
+      return '';
+    }
   }
 
   /// 将MedicalRecordTemplate对象转换为Map

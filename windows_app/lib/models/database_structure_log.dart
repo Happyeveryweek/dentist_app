@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 import '../utils/datetime_formatter.dart';
 import 'dart:convert';
+import '../utils/log_manager.dart';
 
 /// 数据库结构检测日志模型
 class DatabaseStructureLog {
@@ -41,7 +42,8 @@ class DatabaseStructureLog {
           created = DateTimeFormatter.fromDbString(map['created_at']);
         }
       } catch (e) {
-        print('解析created_at错误: ${map['created_at']}');
+        LogManager.e(
+            'DatabaseStructureLog', '解析created_at错误: ${map['created_at']}');
       }
     }
 
@@ -56,7 +58,8 @@ class DatabaseStructureLog {
         detectionTime = DateTime.now();
       }
     } catch (e) {
-      print('解析detection_time错误: ${map['detection_time']}');
+      LogManager.e('DatabaseStructureLog',
+          '解析detection_time错误: ${map['detection_time']}');
       detectionTime = DateTime.now();
     }
 
@@ -77,7 +80,7 @@ class DatabaseStructureLog {
         errorsList = [];
       }
     } catch (e) {
-      print('解析errors字段错误: ${map['errors']}, 错误: $e');
+      LogManager.e('DatabaseStructureLog', '解析errors字段错误: ${map['errors字段']}');
       errorsList = [];
     }
 
@@ -98,7 +101,8 @@ class DatabaseStructureLog {
         detailsMap = {};
       }
     } catch (e) {
-      print('解析details字段错误: ${map['details']}, 错误: $e');
+      LogManager.e(
+          'DatabaseStructureLog', '解析details字段错误: ${map['details字段']}');
       detailsMap = {};
     }
 
@@ -168,11 +172,11 @@ class DatabaseStructureLog {
     final tablesCreated = (details['tablesCreated'] as List?)?.length ?? 0;
     final tablesUpdated = (details['tablesUpdated'] as List?)?.length ?? 0;
     final columnsAdded = (details['columnsAdded'] as List?)?.length ?? 0;
-    
+
     if (errors.isNotEmpty) {
       return '检测失败: ${errors.length} 个错误';
     } else if (tablesCreated > 0 || tablesUpdated > 0 || columnsAdded > 0) {
-      return '检测完成: 创建${tablesCreated}个表, 更新${tablesUpdated}个表, 添加${columnsAdded}个字段';
+      return '检测完成: 创建${1}个表, 更新${1}个表, 添加${1}个字段';
     } else {
       return '检测完成: 数据库结构正常，无需更新';
     }

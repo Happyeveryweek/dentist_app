@@ -145,9 +145,8 @@ class SqliteFinancialDataSource implements FinancialDataSource {
 
   @override
   Future<List<FinancialRecord>> getAllFinancialRecords() async {
-    final result = await _database.rawQuery(
-      'SELECT * FROM financial_records ORDER BY updated_at DESC'
-    );
+    final result = await _database
+        .rawQuery('SELECT * FROM financial_records ORDER BY updated_at DESC');
     return result.map((e) => FinancialRecord.fromMap(e)).toList();
   }
 
@@ -186,7 +185,7 @@ class SqliteFinancialDataSource implements FinancialDataSource {
       where: 'financial_record_id = ?',
       whereArgs: [id],
     );
-    
+
     // 再删除财务记录
     final count = await _database.delete(
       'financial_records',
@@ -262,17 +261,15 @@ class SqliteFinancialDataSource implements FinancialDataSource {
 
   @override
   Future<double> getTotalReceivableAmount() async {
-    final result = await _database.rawQuery(
-      'SELECT SUM(total_price) AS total FROM financial_items'
-    );
+    final result = await _database
+        .rawQuery('SELECT SUM(total_price) AS total FROM financial_items');
     return (result.first['total'] as num?)?.toDouble() ?? 0.0;
   }
 
   @override
   Future<double> getTotalReceivedAmount() async {
     final result = await _database.rawQuery(
-      'SELECT SUM(total_price - processing_fee) AS total FROM financial_items WHERE processing_fee >= 0'
-    );
+        'SELECT SUM(total_price - processing_fee) AS total FROM financial_items WHERE processing_fee >= 0');
     return (result.first['total'] as num?)?.toDouble() ?? 0.0;
   }
 
@@ -280,7 +277,7 @@ class SqliteFinancialDataSource implements FinancialDataSource {
   Future<Map<String, dynamic>> getFinancialStatistics() async {
     final receivable = await getTotalReceivableAmount();
     final received = await getTotalReceivedAmount();
-    
+
     return {
       'totalReceivable': receivable,
       'totalReceived': received,
@@ -319,7 +316,8 @@ class SqliteFinancialDataSource implements FinancialDataSource {
       orderExprSql = 'COALESCE(SUM(fi.total_price), 0)';
       isDateOrder = false;
     } else if (sortBy == 'receivable_sum') {
-      orderExprSql = 'COALESCE(SUM(fi.item_price * COALESCE(fi.quantity, 1)), 0)';
+      orderExprSql =
+          'COALESCE(SUM(fi.item_price * COALESCE(fi.quantity, 1)), 0)';
       isDateOrder = false;
     } else if (sortBy == 'debt_sum') {
       orderExprSql =
@@ -334,7 +332,7 @@ class SqliteFinancialDataSource implements FinancialDataSource {
       SELECT COUNT(*) AS cnt FROM (
         SELECT fr.patient_id
         FROM financial_records fr
-        JOIN patients p ON p.id = fr.patient_id
+        LEFT JOIN patients p ON p.id = fr.patient_id
         LEFT JOIN financial_items fi ON fi.financial_record_id = fr.id
         ${parts.whereClause}
         GROUP BY fr.patient_id
@@ -351,23 +349,25 @@ class SqliteFinancialDataSource implements FinancialDataSource {
              COALESCE(SUM(fi.total_price), 0) AS received_sum,
              COALESCE(SUM(fi.processing_fee), 0) AS processing_sum
       FROM financial_records fr
-      JOIN patients p ON p.id = fr.patient_id
+      LEFT JOIN patients p ON p.id = fr.patient_id
       LEFT JOIN financial_items fi ON fi.financial_record_id = fr.id
       ${parts.whereClause}
       GROUP BY fr.patient_id
-      ORDER BY ${isDateOrder ? 'datetime(' + orderExprSql + ')' : orderExprSql} $sortOrder
+      ORDER BY ${isDateOrder ? 'datetime($orderExprSql)' : orderExprSql} $sortOrder
       LIMIT ? OFFSET ?
     ''';
     final rowsArgs = [...parts.whereArgs, pageSize, offset];
     final rowsRes = await _database.rawQuery(rowsQuery, rowsArgs);
-    final rows = rowsRes.map((r) => {
-          'patient_id': r['patient_id'],
-          'latest_charge_date': r['latest_charge_date'],
-          'last_updated': r['last_updated'],
-          'receivable_sum': r['receivable_sum'],
-          'received_sum': r['received_sum'],
-          'processing_sum': r['processing_sum'],
-        }).toList();
+    final rows = rowsRes
+        .map((r) => {
+              'patient_id': r['patient_id'],
+              'latest_charge_date': r['latest_charge_date'],
+              'last_updated': r['last_updated'],
+              'receivable_sum': r['receivable_sum'],
+              'received_sum': r['received_sum'],
+              'processing_sum': r['processing_sum'],
+            })
+        .toList();
     return {'total': total, 'rows': rows};
   }
 
@@ -375,7 +375,14 @@ class SqliteFinancialDataSource implements FinancialDataSource {
   Future<FinancialRecord?> getLatestRecordForPatient(int patientId) async {
     final res = await _database.query(
       'financial_records',
-      columns: ['id', 'patient_id', 'total_quantity', 'notes', 'created_at', 'updated_at'],
+      columns: [
+        'id',
+        'patient_id',
+        'total_quantity',
+        'notes',
+        'created_at',
+        'updated_at'
+      ],
       where: 'patient_id = ?',
       whereArgs: [patientId],
       orderBy: 'updated_at DESC',
@@ -386,10 +393,18 @@ class SqliteFinancialDataSource implements FinancialDataSource {
   }
 
   @override
-  Future<List<FinancialRecord>> getFinancialRecordsByPatientId(int patientId) async {
+  Future<List<FinancialRecord>> getFinancialRecordsByPatientId(
+      int patientId) async {
     final List<Map<String, dynamic>> maps = await _database.query(
       'financial_records',
-      columns: ['id', 'patient_id', 'total_quantity', 'notes', 'created_at', 'updated_at'],
+      columns: [
+        'id',
+        'patient_id',
+        'total_quantity',
+        'notes',
+        'created_at',
+        'updated_at'
+      ],
       where: 'patient_id = ?',
       whereArgs: [patientId],
       orderBy: 'updated_at DESC',
@@ -475,24 +490,27 @@ class SqliteFinancialDataSource implements FinancialDataSource {
       LIMIT ? OFFSET ?
     ''';
 
-    final results = await _database.rawQuery(query, [...parts.whereArgs, pageSize, offset]);
-    return results.map((row) => {
-      'item': FinancialItem.fromMap({
-        'id': row['id'],
-        'financial_record_id': row['financial_record_id'],
-        'item_name': row['item_name'],
-        'item_price': row['item_price'],
-        'processing_fee': row['processing_fee'],
-        'payment_method': row['payment_method'],
-        'quantity': row['quantity'],
-        'total_price': row['total_price'],
-        'charge_date': row['charge_date'],
-        'created_at': row['created_at'],
-        'updated_at': row['updated_at'],
-      }),
-      'patient_id': row['patient_id'],
-      'record_notes': row['notes'],
-    }).toList();
+    final results =
+        await _database.rawQuery(query, [...parts.whereArgs, pageSize, offset]);
+    return results
+        .map((row) => {
+              'item': FinancialItem.fromMap({
+                'id': row['id'],
+                'financial_record_id': row['financial_record_id'],
+                'item_name': row['item_name'],
+                'item_price': row['item_price'],
+                'processing_fee': row['processing_fee'],
+                'payment_method': row['payment_method'],
+                'quantity': row['quantity'],
+                'total_price': row['total_price'],
+                'charge_date': row['charge_date'],
+                'created_at': row['created_at'],
+                'updated_at': row['updated_at'],
+              }),
+              'patient_id': row['patient_id'],
+              'record_notes': row['notes'],
+            })
+        .toList();
   }
 
   @override
@@ -538,23 +556,25 @@ class SqliteFinancialDataSource implements FinancialDataSource {
       ORDER BY $orderBy
     ''';
     final results = await _database.rawQuery(query, parts.whereArgs);
-    return results.map((row) => {
-      'item': FinancialItem.fromMap({
-        'id': row['id'],
-        'financial_record_id': row['financial_record_id'],
-        'item_name': row['item_name'],
-        'item_price': row['item_price'],
-        'processing_fee': row['processing_fee'],
-        'payment_method': row['payment_method'],
-        'quantity': row['quantity'],
-        'total_price': row['total_price'],
-        'charge_date': row['charge_date'],
-        'created_at': row['created_at'],
-        'updated_at': row['updated_at'],
-      }),
-      'patient_id': row['patient_id'],
-      'record_notes': row['notes'],
-      }).toList();
+    return results
+        .map((row) => {
+              'item': FinancialItem.fromMap({
+                'id': row['id'],
+                'financial_record_id': row['financial_record_id'],
+                'item_name': row['item_name'],
+                'item_price': row['item_price'],
+                'processing_fee': row['processing_fee'],
+                'payment_method': row['payment_method'],
+                'quantity': row['quantity'],
+                'total_price': row['total_price'],
+                'charge_date': row['charge_date'],
+                'created_at': row['created_at'],
+                'updated_at': row['updated_at'],
+              }),
+              'patient_id': row['patient_id'],
+              'record_notes': row['notes'],
+            })
+        .toList();
   }
 
   @override

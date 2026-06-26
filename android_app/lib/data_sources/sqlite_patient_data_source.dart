@@ -34,8 +34,9 @@ class SqlitePatientDataSource implements PatientDataSource {
   Future<int> createPatient(Patient patient) async {
     patient.namePinyin = PinyinUtil.toPinyin(patient.name);
     patient.nameInitials = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null && patient.address!.isNotEmpty) {
-      patient.addressPinyin = PinyinUtil.toPinyin(patient.address!);
+    final address = patient.address;
+    if (address != null && address.isNotEmpty) {
+      patient.addressPinyin = PinyinUtil.toPinyin(address);
     }
 
     return await _database.insert('patients', patient.toMap());
@@ -45,8 +46,9 @@ class SqlitePatientDataSource implements PatientDataSource {
   Future<bool> updatePatient(Patient patient) async {
     patient.namePinyin = PinyinUtil.toPinyin(patient.name);
     patient.nameInitials = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null && patient.address!.isNotEmpty) {
-      patient.addressPinyin = PinyinUtil.toPinyin(patient.address!);
+    final updateAddress = patient.address;
+    if (updateAddress != null && updateAddress.isNotEmpty) {
+      patient.addressPinyin = PinyinUtil.toPinyin(updateAddress);
     }
 
     final count = await _database.update(

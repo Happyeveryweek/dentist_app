@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/medical_template.dart';
 import '../services/medical_template_service.dart';
-import '../widgets/dental_icons.dart';
 import '../features/medical_records/widgets/medical_template_edit_dialog.dart';
-import '../features/medical_records/widgets/medical_template_card.dart';
 import '../features/medical_records/widgets/medical_template_empty_state.dart';
 import '../features/medical_records/widgets/medical_template_list.dart';
 import '../features/medical_records/widgets/medical_template_initialize_dialog.dart';
@@ -16,15 +14,17 @@ class MedicalTemplateManagementScreen extends StatefulWidget {
   const MedicalTemplateManagementScreen({Key? key}) : super(key: key);
 
   @override
-  State<MedicalTemplateManagementScreen> createState() => _MedicalTemplateManagementScreenState();
+  State<MedicalTemplateManagementScreen> createState() =>
+      _MedicalTemplateManagementScreenState();
 }
 
-class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagementScreen>
+class _MedicalTemplateManagementScreenState
+    extends State<MedicalTemplateManagementScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = false;
   String? _errorMessage;
-  
+
   // 用于强制刷新的键
   int _refreshKey = 0;
 
@@ -64,7 +64,7 @@ class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagem
 
     try {
       final hasData = await MedicalTemplateService.hasTemplateData();
-      
+
       if (!hasData) {
         // 如果没有数据，显示空状态
         setState(() {
@@ -120,7 +120,7 @@ class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagem
           preferredSize: const Size.fromHeight(1),
           child: Container(
             height: 1,
-            color: Colors.grey.withOpacity(0.15),
+            color: Colors.grey.withValues(alpha: 0.15),
           ),
         ),
         actions: [
@@ -150,7 +150,8 @@ class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagem
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.settings_backup_restore_rounded, color: Colors.white),
+              icon: const Icon(Icons.settings_backup_restore_rounded,
+                  color: Colors.white),
               onPressed: _showInitializeDialog,
               tooltip: '初始化默认模板',
             ),
@@ -165,17 +166,19 @@ class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagem
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: TabBar(
               controller: _tabController,
-              tabs: _tabs.map((tab) => Tab(
-                height: 56,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(tab['icon'], size: 20),
-                    const SizedBox(width: 8),
-                    Text(tab['title']),
-                  ],
-                ),
-              )).toList(),
+              tabs: _tabs
+                  .map((tab) => Tab(
+                        height: 56,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(tab['icon'], size: 20),
+                            const SizedBox(width: 8),
+                            Text(tab['title']),
+                          ],
+                        ),
+                      ))
+                  .toList(),
               indicatorColor: Theme.of(context).primaryColor,
               labelColor: Theme.of(context).primaryColor,
               unselectedLabelColor: Colors.grey[600],
@@ -198,10 +201,12 @@ class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagem
                     ? _buildErrorWidget()
                     : TabBarView(
                         controller: _tabController,
-                        children: _tabs.map((tab) => _buildTabContent(
-                          tab['type'] as String,
-                          tab['title'] as String,
-                        )).toList(),
+                        children: _tabs
+                            .map((tab) => _buildTabContent(
+                                  tab['type'] as String,
+                                  tab['title'] as String,
+                                ))
+                            .toList(),
                       ),
           ),
         ],
@@ -222,7 +227,7 @@ class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagem
           ),
           const SizedBox(height: 16),
           Text(
-            _errorMessage!,
+            _errorMessage ?? '',
             style: TextStyle(
               fontSize: 16,
               color: Colors.red[700],
@@ -268,7 +273,7 @@ class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagem
         }
 
         final templates = snapshot.data ?? [];
-        
+
         if (templates.isEmpty) {
           return MedicalTemplateEmptyState(
             templateType: templateType,
@@ -283,22 +288,21 @@ class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagem
           templateType: templateType,
           title: title,
           onAdd: () => _addTemplate(templateType),
-          onEdit: (template) => _handleTemplateAction('edit', template, templateType),
-          onDelete: (template) => _handleTemplateAction('delete', template, templateType),
+          onEdit: (template) =>
+              _handleTemplateAction('edit', template, templateType),
+          onDelete: (template) =>
+              _handleTemplateAction('delete', template, templateType),
         );
       },
     );
   }
-
-
-
 
   /// 刷新数据
   Future<void> _refreshData() async {
     setState(() {
       _refreshKey++;
     });
-    
+
     AppToastManager.showInfo(
       context,
       message: '数据刷新完成',
@@ -332,22 +336,24 @@ class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagem
 
     try {
       await MedicalTemplateService.initializeDefaultTemplates();
-      
+
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _refreshKey++;
       });
-      
+
       AppToastManager.showSuccess(
         context,
         message: '默认模板初始化成功！',
         duration: const Duration(seconds: 3),
       );
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
-      
+
       AppToastManager.showError(
         context,
         message: '初始化失败: $e',
@@ -379,7 +385,8 @@ class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagem
   }
 
   /// 处理模板操作
-  void _handleTemplateAction(String action, MedicalTemplate template, String templateType) {
+  void _handleTemplateAction(
+      String action, MedicalTemplate template, String templateType) {
     switch (action) {
       case 'edit':
         _showTemplateDialog(templateType: templateType, template: template);
@@ -391,7 +398,8 @@ class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagem
   }
 
   /// 显示删除确认对话框
-  Future<void> _showDeleteConfirmDialog(MedicalTemplate template, String templateType) async {
+  Future<void> _showDeleteConfirmDialog(
+      MedicalTemplate template, String templateType) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -417,18 +425,21 @@ class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagem
   }
 
   /// 删除模板
-  Future<void> _deleteTemplate(MedicalTemplate template, String templateType) async {
+  Future<void> _deleteTemplate(
+      MedicalTemplate template, String templateType) async {
     try {
       await MedicalTemplateService.deleteTemplate(templateType, template.id);
-      
+
+      if (!mounted) return;
       AppToastManager.showSuccess(
         context,
         message: '已删除"${template.title}"',
         duration: const Duration(seconds: 2),
       );
-      
+
       _refreshCurrentTab();
     } catch (e) {
+      if (!mounted) return;
       AppToastManager.showError(
         context,
         message: '删除失败: $e',
@@ -436,5 +447,4 @@ class _MedicalTemplateManagementScreenState extends State<MedicalTemplateManagem
       );
     }
   }
-
 }

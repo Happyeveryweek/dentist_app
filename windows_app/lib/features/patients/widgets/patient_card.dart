@@ -8,6 +8,7 @@ import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
 import 'hoverable_patient_card.dart';
 import 'patient_info_row.dart';
+import '../../../utils/log_manager.dart';
 
 class PatientCard extends StatelessWidget {
   final Patient patient;
@@ -79,7 +80,7 @@ class PatientCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.cake_outlined,
                           size: 16,
                           color: DentalColors.onSurfaceVariant,
@@ -87,13 +88,13 @@ class PatientCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           '${patient.age}岁',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
                             color: DentalColors.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(width: 16),
-                        Icon(
+                        const Icon(
                           Icons.phone_outlined,
                           size: 16,
                           color: DentalColors.onSurfaceVariant,
@@ -102,7 +103,7 @@ class PatientCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             displayPhone,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 14,
                               color: DentalColors.onSurfaceVariant,
                             ),
@@ -122,30 +123,31 @@ class PatientCard extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  DentalColors.surface.withOpacity(0.5),
-                  DentalColors.surface.withOpacity(0.2),
+                  DentalColors.surface.withValues(alpha: 0.5),
+                  DentalColors.surface.withValues(alpha: 0.2),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: DentalColors.primary.withOpacity(0.1)),
+              border: Border.all(
+                  color: DentalColors.primary.withValues(alpha: 0.1)),
             ),
             child: Column(
               children: [
-                if (patient.medical_record_number != null)
+                if (patient.medicalRecordNumber != null)
                   PatientInfoRow(
                     icon: Icons.badge_outlined,
                     label: '病历号',
-                    value: patient.medical_record_number.toString(),
+                    value: patient.medicalRecordNumber.toString(),
                     color: DentalColors.info,
                   ),
-                if (patient.doctor != null && patient.doctor!.isNotEmpty)
+                if (patient.doctor?.isNotEmpty ?? false)
                   PatientInfoRow(
                     icon: Icons.medical_services_outlined,
                     label: '主治医生',
                     value: patient.doctor ?? '',
                     color: DentalColors.success,
                   ),
-                if (patient.address != null && patient.address!.isNotEmpty)
+                if (patient.address?.isNotEmpty ?? false)
                   PatientInfoRow(
                     icon: Icons.location_on_outlined,
                     label: '地址',
@@ -157,7 +159,7 @@ class PatientCard extends StatelessWidget {
                   icon: Icons.event_outlined,
                   label: '首诊日期',
                   value: DateFormat('yyyy-MM-dd').format(
-                    patient.first_visit_date,
+                    patient.firstVisitDate,
                   ),
                   color: DentalColors.warning,
                 ),
@@ -173,10 +175,10 @@ class PatientCard extends StatelessWidget {
                   gradient: LinearGradient(
                     colors: [
                       DentalColors.info,
-                      DentalColors.info.withOpacity(0.8),
+                      DentalColors.info.withValues(alpha: 0.8),
                     ],
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -185,8 +187,8 @@ class PatientCard extends StatelessWidget {
                         size: 16,
                         color: Colors.white,
                       ),
-                      const SizedBox(width: 8),
-                      const Text(
+                      SizedBox(width: 8),
+                      Text(
                         '查看详情',
                         style: TextStyle(
                           color: Colors.white,
@@ -206,10 +208,10 @@ class PatientCard extends StatelessWidget {
                         gradient: LinearGradient(
                           colors: [
                             DentalColors.warning,
-                            DentalColors.warning.withOpacity(0.8),
+                            DentalColors.warning.withValues(alpha: 0.8),
                           ],
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -218,8 +220,8 @@ class PatientCard extends StatelessWidget {
                               size: 16,
                               color: Colors.white,
                             ),
-                            const SizedBox(width: 8),
-                            const Text(
+                            SizedBox(width: 8),
+                            Text(
                               '编辑',
                               style: TextStyle(
                                 color: Colors.white,
@@ -234,17 +236,17 @@ class PatientCard extends StatelessWidget {
                         onPressed: onEditPermissionDenied,
                         gradient: LinearGradient(
                           colors: [
-                            Colors.grey.withOpacity(0.7),
-                            Colors.grey.withOpacity(0.5),
+                            Colors.grey.withValues(alpha: 0.7),
+                            Colors.grey.withValues(alpha: 0.5),
                           ],
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.lock, size: 16, color: Colors.white),
-                            const SizedBox(width: 8),
-                            const Text(
+                            SizedBox(width: 8),
+                            Text(
                               '权限不足',
                               style: TextStyle(
                                 color: Colors.white,
@@ -260,15 +262,15 @@ class PatientCard extends StatelessWidget {
               canDelete
                   ? Container(
                       decoration: BoxDecoration(
-                        color: DentalColors.error.withOpacity(0.1),
+                        color: DentalColors.error.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: DentalColors.error.withOpacity(0.3),
+                          color: DentalColors.error.withValues(alpha: 0.3),
                         ),
                       ),
                       child: IconButton(
                         onPressed: onDelete,
-                        icon: Icon(
+                        icon: const Icon(
                           Icons.delete_outline,
                           color: DentalColors.error,
                           size: 20,
@@ -316,7 +318,7 @@ class PatientCard extends StatelessWidget {
         }
         return phones[0].toString();
       } catch (e) {
-        print('解析电话号码JSON失败: $e');
+        LogManager.e('PatientCard', '解析电话号码JSON失败', error: e);
         final content = phoneStr.substring(1, phoneStr.length - 1);
         final regex = RegExp(r'"([^"]*)"');
         final matches = regex.allMatches(content);

@@ -82,24 +82,26 @@ class FinancialItemAddDialogState extends State<FinancialItemAddDialog> {
   }
 
   void _save() {
-    if (_formKey.currentState!.validate()) {
-      final newItem = FinancialItem(
-        financialRecordId: widget.financialRecordId,
-        itemName: _itemNameController.text,
-        itemPrice: double.tryParse(_itemPriceController.text) ?? 0.0,
-        processingFee: double.tryParse(_processingFeeController.text) ?? 0.0,
-        paymentMethod: FinancialPaymentMethodHelper.toStorageValue(
-          _paymentMethod,
-        ),
-        quantity: 1, // 固定数量为1
-        totalPrice: double.tryParse(_collectedAmountController.text) ?? 0.0,
-        chargeDate: DateFormat('yyyy-MM-dd').parse(_chargeDateController.text),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      widget.onSave(newItem);
+    final formState = _formKey.currentState;
+    if (formState == null || !formState.validate()) {
+      return;
     }
+    final newItem = FinancialItem(
+      financialRecordId: widget.financialRecordId,
+      itemName: _itemNameController.text,
+      itemPrice: double.tryParse(_itemPriceController.text) ?? 0.0,
+      processingFee: double.tryParse(_processingFeeController.text) ?? 0.0,
+      paymentMethod: FinancialPaymentMethodHelper.toStorageValue(
+        _paymentMethod,
+      ),
+      quantity: 1, // 固定数量为1
+      totalPrice: double.tryParse(_collectedAmountController.text) ?? 0.0,
+      chargeDate: DateFormat('yyyy-MM-dd').parse(_chargeDateController.text),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    widget.onSave(newItem);
   }
 
   @override

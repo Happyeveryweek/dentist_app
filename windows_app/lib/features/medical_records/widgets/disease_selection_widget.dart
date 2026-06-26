@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/dental_icons.dart';
-import 'medical_record_form_input_field.dart';
 
 /// 疾病选择组件
 class DiseaseSelectionWidget extends StatelessWidget {
@@ -78,44 +77,54 @@ class DiseaseSelectionWidget extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: diseases.keys.map((diseaseType) {
-                  final isSelected = selectedDiseases.any((selected) => 
-                      selected.startsWith(diseaseType));
-                  
+                  final isSelected = selectedDiseases
+                      .any((selected) => selected.startsWith(diseaseType));
+
                   return FilterChip(
                     label: Text(diseaseType),
                     selected: isSelected,
-                    onSelected: hasEditPermission ? (selected) {
-                      final newSelected = Set<String>.from(selectedDiseases);
-                      if (selected) {
-                        newSelected.add(diseaseType);
-                      } else {
-                        newSelected.removeWhere((item) => item.startsWith(diseaseType));
-                      }
-                      onSelectionChanged(newSelected);
-                    } : null,
-                    backgroundColor: hasEditPermission ? DentalColors.surface : Colors.grey.shade200,
-                    selectedColor: DentalColors.primary.withOpacity(0.2),
+                    onSelected: hasEditPermission
+                        ? (selected) {
+                            final newSelected =
+                                Set<String>.from(selectedDiseases);
+                            if (selected) {
+                              newSelected.add(diseaseType);
+                            } else {
+                              newSelected.removeWhere(
+                                  (item) => item.startsWith(diseaseType));
+                            }
+                            onSelectionChanged(newSelected);
+                          }
+                        : null,
+                    backgroundColor: hasEditPermission
+                        ? DentalColors.surface
+                        : Colors.grey.shade200,
+                    selectedColor: DentalColors.primary.withValues(alpha: 0.2),
                     checkmarkColor: DentalColors.primary,
                     labelStyle: TextStyle(
-                      color: hasEditPermission ? 
-                        (isSelected ? DentalColors.primary : DentalColors.onSurface) : 
-                        Colors.grey,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: hasEditPermission
+                          ? (isSelected
+                              ? DentalColors.primary
+                              : DentalColors.onSurface)
+                          : Colors.grey,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
                   );
                 }).toList(),
               ),
 
               // 显示选中疾病类型的子类型
-              ...diseases.entries.where((entry) => 
-                  selectedDiseases.any((selected) => selected.startsWith(entry.key))
-              ).map((entry) => DiseaseSubTypeSelectionWidget(
-                diseaseType: entry.key,
-                subTypes: entry.value,
-                selectedDiseases: selectedDiseases,
-                onSelectionChanged: onSelectionChanged,
-                hasEditPermission: hasEditPermission,
-              )),
+              ...diseases.entries
+                  .where((entry) => selectedDiseases
+                      .any((selected) => selected.startsWith(entry.key)))
+                  .map((entry) => DiseaseSubTypeSelectionWidget(
+                        diseaseType: entry.key,
+                        subTypes: entry.value,
+                        selectedDiseases: selectedDiseases,
+                        onSelectionChanged: onSelectionChanged,
+                        hasEditPermission: hasEditPermission,
+                      )),
             ],
           ),
         ),
@@ -159,10 +168,10 @@ class DiseaseSubTypeSelectionWidget extends StatelessWidget {
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: DentalColors.primary.withOpacity(0.05),
+        color: DentalColors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: DentalColors.primary.withOpacity(0.2),
+          color: DentalColors.primary.withValues(alpha: 0.2),
         ),
       ),
       child: Wrap(
@@ -175,7 +184,7 @@ class DiseaseSubTypeSelectionWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               '$diseaseType 详细类型:',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: DentalColors.primary,
@@ -185,24 +194,29 @@ class DiseaseSubTypeSelectionWidget extends StatelessWidget {
           ...subTypes.map((subType) {
             final fullType = '$diseaseType - $subType';
             final isSelected = selectedDiseases.contains(fullType);
-            
+
             return FilterChip(
               label: Text(subType),
               selected: isSelected,
-              onSelected: hasEditPermission ? (selected) {
-                final newSelected = Set<String>.from(selectedDiseases);
-                if (selected) {
-                  newSelected.add(fullType);
-                } else {
-                  newSelected.remove(fullType);
-                }
-                onSelectionChanged(newSelected);
-              } : null,
-              backgroundColor: hasEditPermission ? DentalColors.surface : Colors.grey.shade200,
-              selectedColor: DentalColors.primary.withOpacity(0.3),
+              onSelected: hasEditPermission
+                  ? (selected) {
+                      final newSelected = Set<String>.from(selectedDiseases);
+                      if (selected) {
+                        newSelected.add(fullType);
+                      } else {
+                        newSelected.remove(fullType);
+                      }
+                      onSelectionChanged(newSelected);
+                    }
+                  : null,
+              backgroundColor: hasEditPermission
+                  ? DentalColors.surface
+                  : Colors.grey.shade200,
+              selectedColor: DentalColors.primary.withValues(alpha: 0.3),
               checkmarkColor: DentalColors.primary,
               labelStyle: TextStyle(
-                color: isSelected ? DentalColors.primary : DentalColors.onSurface,
+                color:
+                    isSelected ? DentalColors.primary : DentalColors.onSurface,
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),

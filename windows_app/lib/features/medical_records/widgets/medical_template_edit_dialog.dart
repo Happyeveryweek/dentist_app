@@ -19,14 +19,15 @@ class MedicalTemplateEditDialog extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<MedicalTemplateEditDialog> createState() => _MedicalTemplateEditDialogState();
+  State<MedicalTemplateEditDialog> createState() =>
+      _MedicalTemplateEditDialogState();
 }
 
 class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
-  
+
   bool _isLoading = false;
 
   @override
@@ -43,9 +44,9 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
   }
 
   void _initializeForm() {
-    if (widget.template != null) {
+    final template = widget.template;
+    if (template != null) {
       // 编辑模式
-      final template = widget.template!;
       _titleController.text = template.title;
       _contentController.text = template.content;
     }
@@ -62,7 +63,7 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               spreadRadius: 5,
             ),
@@ -83,9 +84,9 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: DentalColors.primaryGradient,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -95,7 +96,7 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -120,7 +121,7 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
                 Text(
                   MedicalTemplateType.getTypeName(widget.templateType),
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                     fontSize: 14,
                   ),
                 ),
@@ -189,15 +190,15 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: DentalColors.info.withOpacity(0.1),
+                color: DentalColors.info.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: DentalColors.info.withOpacity(0.3),
+                  color: DentalColors.info.withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.lightbulb_outline_rounded,
                     color: DentalColors.info,
                     size: 20,
@@ -208,7 +209,7 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
                       widget.templateType == MedicalTemplateType.treatment
                           ? '治疗方案模板用于快速填入治疗计划，建议按步骤编写'
                           : '医嘱模板用于快速填入注意事项，建议分条列出要点',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: DentalColors.info,
                         fontSize: 14,
                       ),
@@ -267,28 +268,28 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
+              borderSide: const BorderSide(
                 color: DentalColors.divider,
                 width: 1,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
+              borderSide: const BorderSide(
                 color: DentalColors.primary,
                 width: 2,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
+              borderSide: const BorderSide(
                 color: DentalColors.error,
                 width: 1,
               ),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
+              borderSide: const BorderSide(
                 color: DentalColors.error,
                 width: 2,
               ),
@@ -310,7 +311,7 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
   Widget _buildActionButtons() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: DentalColors.surface,
         border: Border(
           top: BorderSide(
@@ -318,7 +319,7 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
             width: 1,
           ),
         ),
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
@@ -330,7 +331,7 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
               onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                side: BorderSide(color: DentalColors.primary),
+                side: const BorderSide(color: DentalColors.primary),
                 foregroundColor: DentalColors.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -383,7 +384,7 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
   }
 
   Future<void> _saveTemplate() async {
-    if (!_formKey.currentState!.validate()) {
+    if (_formKey.currentState?.validate() != true) {
       return;
     }
 
@@ -393,7 +394,8 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
 
     try {
       final template = MedicalTemplate(
-        id: widget.template?.id ?? MedicalTemplateService.generateTemplateId(widget.templateType),
+        id: widget.template?.id ??
+            MedicalTemplateService.generateTemplateId(widget.templateType),
         title: _titleController.text.trim(),
         content: _contentController.text.trim(),
         type: widget.templateType,
@@ -403,6 +405,7 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
       if (widget.template == null) {
         // 新建
         await MedicalTemplateService.addTemplate(template);
+        if (!mounted) return;
         AppToastManager.showSuccess(
           context,
           message: '模板添加成功',
@@ -411,6 +414,7 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
       } else {
         // 编辑
         await MedicalTemplateService.updateTemplate(template);
+        if (!mounted) return;
         AppToastManager.showSuccess(
           context,
           message: '模板更新成功',
@@ -419,8 +423,9 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
       }
 
       // 调用回调
-      if (widget.onSaved != null) {
-        widget.onSaved!(template);
+      final onSaved = widget.onSaved;
+      if (onSaved != null) {
+        onSaved(template);
       }
 
       // 关闭对话框
@@ -428,6 +433,7 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
         Navigator.of(context).pop(template);
       }
     } catch (e) {
+      if (!mounted) return;
       AppToastManager.showError(
         context,
         message: '保存失败: $e',

@@ -4,23 +4,32 @@ import 'dart:ui' as ui;
 
 import '../../../models/material.dart' as material_models;
 import '../../../providers/material_provider.dart';
+import '../../../providers/purchase_provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
+import '../../../utils/log_manager.dart';
 
 /// 材料选择对话框
 class MaterialSelectionDialog {
   /// 显示材料选择对话框
-  static Future<material_models.MaterialInfo?> show(BuildContext context) async {
-    final materialProvider = Provider.of<MaterialProvider>(context, listen: false);
+  static Future<material_models.MaterialInfo?> show(
+      BuildContext context) async {
+    final materialProvider =
+        Provider.of<MaterialProvider>(context, listen: false);
+    final purchaseProvider =
+        Provider.of<PurchaseProvider>(context, listen: false);
     List<material_models.MaterialInfo> materials = [];
     final materialSearchController = TextEditingController();
 
     try {
-      materials = await materialProvider.getAllMaterials();
+      materials = await materialProvider.getAllMaterialsInDataSource(
+        purchaseProvider.dataSourceType,
+      );
     } catch (e) {
-      print('加载材料数据失败: $e');
+      LogManager.e('MaterialSelectionDialog', '加载材料数据失败', error: e);
     }
 
+    if (!context.mounted) return null;
     final result = await showDialog<material_models.MaterialInfo>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -28,13 +37,14 @@ class MaterialSelectionDialog {
           void listener() {
             setDialogState(() {});
           }
+
           materialSearchController.addListener(listener);
 
           final filteredMaterials = materials.where((material) {
             final query = materialSearchController.text.toLowerCase();
             if (query.isEmpty) return true;
             return material.materialName.toLowerCase().contains(query) ||
-                   (material.materialCode?.toLowerCase().contains(query) ?? false);
+                (material.materialCode?.toLowerCase().contains(query) ?? false);
           }).toList();
 
           return Dialog(
@@ -46,11 +56,11 @@ class MaterialSelectionDialog {
                 width: 500,
                 height: 600,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 30,
                       spreadRadius: 5,
                     ),
@@ -60,12 +70,15 @@ class MaterialSelectionDialog {
                   children: [
                     // 标题栏
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 15),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
                             Theme.of(context).primaryColor,
-                            Theme.of(context).primaryColor.withOpacity(0.7),
+                            Theme.of(context)
+                                .primaryColor
+                                .withValues(alpha: 0.7),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -101,10 +114,12 @@ class MaterialSelectionDialog {
                         controller: materialSearchController,
                         decoration: InputDecoration(
                           hintText: '搜索材料 (名称/编码)',
-                          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                          prefixIcon:
+                              const Icon(Icons.search, color: Colors.grey),
                           suffixIcon: materialSearchController.text.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.clear, color: Colors.grey),
+                                  icon: const Icon(Icons.clear,
+                                      color: Colors.grey),
                                   onPressed: () {
                                     materialSearchController.clear();
                                   },
@@ -116,7 +131,8 @@ class MaterialSelectionDialog {
                           ),
                           filled: true,
                           fillColor: Colors.white,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 10),
                         ),
                       ),
                     ),
@@ -131,7 +147,7 @@ class MaterialSelectionDialog {
                           return Card(
                             margin: const EdgeInsets.only(bottom: 10),
                             elevation: 2,
-                            shadowColor: Colors.black.withOpacity(0.1),
+                            shadowColor: Colors.black.withValues(alpha: 0.1),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -141,7 +157,8 @@ class MaterialSelectionDialog {
                                 Navigator.of(context).pop(material);
                               },
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
                                 child: Row(
                                   children: [
                                     const CircleAvatar(
@@ -152,14 +169,17 @@ class MaterialSelectionDialog {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             material.materialName,
-                                            style: const TextStyle(fontWeight: FontWeight.bold),
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold),
                                           ),
                                           const SizedBox(height: 4),
-                                          Text('编码: ${material.materialCode ?? 'N/A'}'),
+                                          Text(
+                                              '编码: ${material.materialCode ?? 'N/A'}'),
                                         ],
                                       ),
                                     ),
@@ -188,15 +208,16 @@ class MaterialSelectionDialog {
                         children: [
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('取消'),
                             style: TextButton.styleFrom(
                               foregroundColor: Colors.grey[600],
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                side: BorderSide(color: Colors.grey[300]!),
+                                side: BorderSide(color: Colors.grey.shade300),
                               ),
                             ),
+                            child: const Text('取消'),
                           ),
                         ],
                       ),

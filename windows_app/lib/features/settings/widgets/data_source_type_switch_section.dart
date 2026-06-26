@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../theme/app_theme.dart';
-import 'data_source_form_widgets.dart';
 
 /// 数据源类型切换区域组件
 /// 包含全局/模块化模式选择和数据源配置
@@ -39,7 +38,8 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('数据源类型切换', Icons.swap_horiz_rounded, AppTheme.secondaryColor),
+        _buildSectionHeader(
+            '数据源类型切换', Icons.swap_horiz_rounded, AppTheme.secondaryColor),
         Container(
           margin: const EdgeInsets.only(bottom: 24),
           decoration: BoxDecoration(
@@ -47,7 +47,7 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -81,19 +81,19 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+          colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.05)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -118,10 +118,10 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.secondaryColor.withOpacity(0.1),
+            color: AppTheme.secondaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
+          child: const Icon(
             Icons.swap_horiz_rounded,
             color: AppTheme.secondaryColor,
             size: 20,
@@ -190,10 +190,10 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.secondaryColor.withOpacity(0.1),
+                color: AppTheme.secondaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.tune_rounded,
                 color: AppTheme.secondaryColor,
                 size: 20,
@@ -220,13 +220,15 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
                 Icons.public_rounded,
                 Colors.blue,
                 dataSourceMode == 'global',
-                isDataSourceTypeEditing ? () {
-                  onSetDataSourceMode('global');
-                  // 当切换到全局模式时，所有模块使用相同的数据源
-                  for (String key in moduleDataSources.keys) {
-                    moduleDataSources[key] = selectedDataSource;
-                  }
-                } : null,
+                isDataSourceTypeEditing
+                    ? () {
+                        onSetDataSourceMode('global');
+                        // 当切换到全局模式时，所有模块使用相同的数据源
+                        for (String key in moduleDataSources.keys) {
+                          moduleDataSources[key] = selectedDataSource;
+                        }
+                      }
+                    : null,
               ),
             ),
             const SizedBox(width: 12),
@@ -238,11 +240,13 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
                 Icons.grid_view_rounded,
                 Colors.green,
                 dataSourceMode == 'modular',
-                isDataSourceTypeEditing ? () {
-                  onSetDataSourceMode('modular');
-                  // 切换到模块化模式时，重新加载保存的模块配置
-                  onReloadModuleDataSources();
-                } : null,
+                isDataSourceTypeEditing
+                    ? () {
+                        onSetDataSourceMode('modular');
+                        // 切换到模块化模式时，重新加载保存的模块配置
+                        onReloadModuleDataSources();
+                      }
+                    : null,
               ),
             ),
           ],
@@ -252,20 +256,21 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
   }
 
   Widget _buildCompactModeOption(
-      String value,
-      String title,
-      String subtitle,
-      IconData icon,
-      Color color,
-      bool isSelected,
-      VoidCallback? onTap,
-    ) {
+    String value,
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    bool isSelected,
+    VoidCallback? onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : Colors.grey.shade50,
+          color:
+              isSelected ? color.withValues(alpha: 0.1) : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : Colors.grey.shade300,
@@ -277,7 +282,9 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: isSelected ? color.withOpacity(0.2) : Colors.grey.shade200,
+                color: isSelected
+                    ? color.withValues(alpha: 0.2)
+                    : Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
@@ -301,14 +308,17 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
               subtitle,
               style: TextStyle(
                 fontSize: 11,
-                color: isSelected ? color.withOpacity(0.8) : Colors.grey.shade500,
+                color: isSelected
+                    ? color.withValues(alpha: 0.8)
+                    : Colors.grey.shade500,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             if (isSelected)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: color,
                   borderRadius: BorderRadius.circular(10),
@@ -337,10 +347,10 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.public_rounded,
                 color: Colors.blue,
                 size: 20,
@@ -357,60 +367,58 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildCompactDataSourceOption(
-                context,
-                'sqlite',
-                'SQLite (本地数据库)',
-                '数据存储在本地设备上，无需网络连接，适合单机使用',
-                '快速、轻量、无需配置服务器',
-                Icons.storage_rounded,
-                Colors.blue,
-                selectedDataSource == 'sqlite',
-                isDataSourceTypeEditing ? (value) {
-                  onSetSelectedDataSource(value!);
-                  // 当选择全局模式时，同步更新所有模块
+        RadioGroup<String>(
+          groupValue: selectedDataSource,
+          onChanged: isDataSourceTypeEditing
+              ? (value) {
+                  if (value == null) return;
+                  onSetSelectedDataSource(value);
                   if (dataSourceMode == 'global') {
                     for (String key in moduleDataSources.keys) {
                       moduleDataSources[key] = value;
                     }
                   }
-                } : null,
+                }
+              : (_) {},
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildCompactDataSourceOption(
+                  context,
+                  'sqlite',
+                  'SQLite (本地数据库)',
+                  '数据存储在本地设备上，无需网络连接，适合单机使用',
+                  '快速、轻量、无需配置服务器',
+                  Icons.storage_rounded,
+                  Colors.blue,
+                  selectedDataSource == 'sqlite',
+                  isDataSourceTypeEditing,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildCompactDataSourceOption(
-                context,
-                'mysql',
-                'MySQL (远程数据库)',
-                '数据存储在远程服务器上，可多设备共享数据',
-                '支持多用户、数据同步、备份恢复',
-                Icons.cloud_done_rounded,
-                Colors.green,
-                selectedDataSource == 'mysql',
-                isDataSourceTypeEditing ? (value) {
-                  onSetSelectedDataSource(value!);
-                  // 当选择全局模式时，同步更新所有模块
-                  if (dataSourceMode == 'global') {
-                    for (String key in moduleDataSources.keys) {
-                      moduleDataSources[key] = value;
-                    }
-                  }
-                } : null,
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildCompactDataSourceOption(
+                  context,
+                  'mysql',
+                  'MySQL (远程数据库)',
+                  '数据存储在远程服务器上，可多设备共享数据',
+                  '支持多用户、数据同步、备份恢复',
+                  Icons.cloud_done_rounded,
+                  Colors.green,
+                  selectedDataSource == 'mysql',
+                  isDataSourceTypeEditing,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.05),
+            color: Colors.blue.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.blue.withOpacity(0.2)),
+            border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -438,23 +446,24 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
   }
 
   Widget _buildCompactDataSourceOption(
-      BuildContext context,
-      String value,
-      String title,
-      String subtitle,
-      String description,
-      IconData icon,
-      Color color,
-      bool isSelected,
-      Function(String?)? onChanged,
-    ) {
+    BuildContext context,
+    String value,
+    String title,
+    String subtitle,
+    String description,
+    IconData icon,
+    Color color,
+    bool isSelected,
+    bool enabled,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        color: isSelected ? color.withOpacity(0.05) : Colors.transparent,
+        color: isSelected ? color.withValues(alpha: 0.05) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isSelected ? color.withOpacity(0.3) : Colors.grey.shade200,
+          color:
+              isSelected ? color.withValues(alpha: 0.3) : Colors.grey.shade200,
           width: isSelected ? 2 : 1,
         ),
       ),
@@ -468,7 +477,7 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(icon, color: color, size: 18),
@@ -508,10 +517,10 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
             ],
           ),
           value: value,
-          groupValue: selectedDataSource,
-          onChanged: onChanged,
+          enabled: enabled,
           activeColor: color,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         ),
       ),
     );
@@ -526,10 +535,10 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.grid_view_rounded,
                 color: Colors.green,
                 size: 20,
@@ -607,9 +616,9 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.05),
+            color: Colors.blue.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.blue.withOpacity(0.2)),
+            border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -640,7 +649,9 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
                           color: Colors.blue.shade800,
                         ),
                       ),
-                      const TextSpan(text: '模块的配置，无需单独设置。这样可以确保患者数据和病历数据使用相同的数据源，保持数据一致性。'),
+                      const TextSpan(
+                          text:
+                              '模块的配置，无需单独设置。这样可以确保患者数据和病历数据使用相同的数据源，保持数据一致性。'),
                     ],
                   ),
                 ),
@@ -652,9 +663,9 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.05),
+            color: Colors.green.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.green.withOpacity(0.2)),
+            border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -681,18 +692,19 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
     );
   }
 
-  Widget _buildModuleDataSourceCard(String moduleKey, String moduleName, IconData icon, Color color) {
-    final currentDataSource = dataSourceMode == 'global' 
+  Widget _buildModuleDataSourceCard(
+      String moduleKey, String moduleName, IconData icon, Color color) {
+    final currentDataSource = dataSourceMode == 'global'
         ? selectedDataSource
         : (moduleDataSources[moduleKey] ?? 'sqlite');
-    
+
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: color.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -704,7 +716,7 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(icon, color: color, size: 14),
@@ -727,10 +739,14 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
             decoration: BoxDecoration(
-              color: currentDataSource == 'sqlite' ? Colors.blue.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+              color: currentDataSource == 'sqlite'
+                  ? Colors.blue.withValues(alpha: 0.1)
+                  : Colors.green.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: currentDataSource == 'sqlite' ? Colors.blue.withOpacity(0.3) : Colors.green.withOpacity(0.3),
+                color: currentDataSource == 'sqlite'
+                    ? Colors.blue.withValues(alpha: 0.3)
+                    : Colors.green.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -738,9 +754,13 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  currentDataSource == 'sqlite' ? Icons.storage_rounded : Icons.cloud_done_rounded,
+                  currentDataSource == 'sqlite'
+                      ? Icons.storage_rounded
+                      : Icons.cloud_done_rounded,
                   size: 10,
-                  color: currentDataSource == 'sqlite' ? Colors.blue : Colors.green,
+                  color: currentDataSource == 'sqlite'
+                      ? Colors.blue
+                      : Colors.green,
                 ),
                 const SizedBox(width: 3),
                 Text(
@@ -748,7 +768,9 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
-                    color: currentDataSource == 'sqlite' ? Colors.blue : Colors.green,
+                    color: currentDataSource == 'sqlite'
+                        ? Colors.blue
+                        : Colors.green,
                   ),
                 ),
               ],
@@ -786,22 +808,24 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
   }
 
   Widget _buildModuleDataSourceToggleButton(
-      String moduleKey,
-      String dataSource,
-      String label,
-      IconData icon,
-      Color color,
-      bool isSelected,
-    ) {
+    String moduleKey,
+    String dataSource,
+    String label,
+    IconData icon,
+    Color color,
+    bool isSelected,
+  ) {
     final isEnabled = isDataSourceTypeEditing && dataSourceMode == 'modular';
-    final shouldShowAsSelected = dataSourceMode == 'global' 
-        ? (selectedDataSource == dataSource) 
+    final shouldShowAsSelected = dataSourceMode == 'global'
+        ? (selectedDataSource == dataSource)
         : isSelected;
-    
+
     return GestureDetector(
-      onTap: isEnabled ? () {
-        onSetModuleDataSource(moduleKey, dataSource);
-      } : null,
+      onTap: isEnabled
+          ? () {
+              onSetModuleDataSource(moduleKey, dataSource);
+            }
+          : null,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
         decoration: BoxDecoration(
@@ -816,16 +840,21 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: shouldShowAsSelected ? Colors.white : (isEnabled ? color : Colors.grey.shade400),
+              color: shouldShowAsSelected
+                  ? Colors.white
+                  : (isEnabled ? color : Colors.grey.shade400),
               size: 12,
             ),
             const SizedBox(height: 1),
             Text(
               label,
               style: TextStyle(
-                color: shouldShowAsSelected ? Colors.white : (isEnabled ? color : Colors.grey.shade400),
+                color: shouldShowAsSelected
+                    ? Colors.white
+                    : (isEnabled ? color : Colors.grey.shade400),
                 fontSize: 8,
-                fontWeight: shouldShowAsSelected ? FontWeight.bold : FontWeight.normal,
+                fontWeight:
+                    shouldShowAsSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
           ],

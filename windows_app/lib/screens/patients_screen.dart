@@ -7,7 +7,6 @@ import '../providers/patient_provider.dart';
 import '../models/patient.dart';
 import './patient_detail_screen.dart';
 import '../features/patients/widgets/patient_form_dialog.dart';
-import '../widgets/dental_icons.dart';
 import '../widgets/reusable_date_range_picker.dart';
 import '../widgets/success_toast.dart';
 import '../utils/permission_utils.dart';
@@ -16,6 +15,7 @@ import '../features/patients/services/patient_list_state_service.dart';
 import '../features/patients/services/patient_operation_feedback_service.dart';
 import '../features/patients/services/patient_search_criteria_service.dart';
 import '../features/patients/widgets/patient_screen_components.dart';
+import '../utils/log_manager.dart';
 
 class PatientsScreen extends StatefulWidget {
   const PatientsScreen({Key? key}) : super(key: key);
@@ -55,11 +55,14 @@ class _PatientsScreenState extends State<PatientsScreen> {
 
   // 页面状态变量
   bool _isSearching = false;
-  bool _hasSearchResults = false;
-  bool _isAdvancedSearchVisible = false;
 
   // 添加一个变量来存储当前的高级搜索条件
   Map<String, String>? _currentAdvancedCriteria;
+
+  bool get _hasAdvancedSearch {
+    final criteria = _currentAdvancedCriteria;
+    return criteria != null && criteria.isNotEmpty;
+  }
 
   @override
   void initState() {
@@ -109,8 +112,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
       );
 
       // 判断是否正在使用高级搜索
-      if (_currentAdvancedCriteria != null &&
-          _currentAdvancedCriteria!.isNotEmpty) {
+      if (_hasAdvancedSearch) {
         await _loadPatientsWithAdvancedSearch();
         return;
       }
@@ -135,7 +137,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
         ),
       );
     } catch (e) {
-      print('加载患者数据错误: $e');
+      LogManager.e('PatientsScreen', '加载患者数据错误', error: e);
 
       // 检查是否是数据库连接问题
       if (e.toString().contains('database_closed') ||
@@ -186,14 +188,6 @@ class _PatientsScreenState extends State<PatientsScreen> {
         _loadPatients();
       }
     });
-  }
-
-  void _updateSearchQuery(String query) {
-    setState(() {
-      _searchQuery = query;
-      _currentPage = 1;
-    });
-    _loadPatients();
   }
 
   void _changeSort(String field) {
@@ -312,7 +306,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
         onShowStatistics: _showStatisticsDialog,
         onRefresh: () async {
           await _loadPatients();
-          if (!mounted) return;
+          if (!context.mounted) return;
           AppToastManager.showSuccess(context, message: '刷新数据成功');
         },
       ),
@@ -322,16 +316,12 @@ class _PatientsScreenState extends State<PatientsScreen> {
         showAdvancedSearch: _showAdvancedSearch,
         advancedSearchFields:
             _showAdvancedSearch ? _buildAdvancedSearchFields() : null,
-        searchReadOnly:
-            _currentAdvancedCriteria != null &&
-            _currentAdvancedCriteria!.isNotEmpty,
+        searchReadOnly: _hasAdvancedSearch,
         onSearchChanged: (v) {
           _scheduleSearch(v);
         },
         onSearchCleared: () {
-          final hasAdvancedSearch =
-              _currentAdvancedCriteria != null &&
-              _currentAdvancedCriteria!.isNotEmpty;
+          final hasAdvancedSearch = _hasAdvancedSearch;
           if (hasAdvancedSearch) {
             _clearAdvancedSearch();
             return;
@@ -507,7 +497,10 @@ class _PatientsScreenState extends State<PatientsScreen> {
 
       // 删除患者
       if (patient.id != null) {
-        await patientProvider.deletePatient(patient.id!);
+        final patientId = patient.id;
+        if (patientId != null) {
+          await patientProvider.deletePatient(patientId);
+        }
       }
 
       // 明确标记患者数据需要刷新
@@ -533,9 +526,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
         listen: false,
       );
 
-      final hasAdvancedSearch =
-          _currentAdvancedCriteria != null &&
-          _currentAdvancedCriteria!.isNotEmpty;
+      final hasAdvancedSearch = _hasAdvancedSearch;
       final allPatients = hasAdvancedSearch
           ? await patientProvider.searchPatients(
               '',
@@ -556,7 +547,8 @@ class _PatientsScreenState extends State<PatientsScreen> {
               startDate: _startDate,
               endDate: _endDate,
               dateFilterType: _dateFilterType,
-            )).patients;
+            ))
+              .patients;
 
       if (!mounted) return;
 
@@ -569,7 +561,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
         dateFilterType: _dateFilterType,
       );
     } catch (e) {
-      print('加载患者统计数据错误: $e');
+      LogManager.e('PatientsScreen', '加载患者统计数据错误', error: e);
       if (!mounted) return;
       PatientSnackBars.showSimple(
         context,
@@ -585,14 +577,12 @@ class _PatientsScreenState extends State<PatientsScreen> {
       context: context,
       builder: (BuildContext context) {
         return PatientExportDialog(
-          searchQuery: _currentAdvancedCriteria != null &&
-                  _currentAdvancedCriteria!.isNotEmpty
+          searchQuery: _hasAdvancedSearch
               ? null
               : (_searchController.text.isNotEmpty
-                    ? _searchController.text
-                    : null),
-          advancedCriteria: _currentAdvancedCriteria != null &&
-                  _currentAdvancedCriteria!.isNotEmpty
+                  ? _searchController.text
+                  : null),
+          advancedCriteria: _hasAdvancedSearch
               ? _currentAdvancedCriteria
               : null,
           sortField: _sortField,
@@ -605,33 +595,14 @@ class _PatientsScreenState extends State<PatientsScreen> {
     );
   }
 
-  // 修改排序选项对话框
-  void _showSortOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return PatientSortOptionsSheet(
-          sortField: _sortField,
-          sortAscending: _sortAscending,
-          onSortSelected: _changeSort,
-        );
-      },
-    );
-  }
-
   // 执行高级搜索
   Future<void> _performAdvancedSearch() async {
     setState(() {
       _isSearching = true;
-      _isAdvancedSearchVisible = true;
       _currentPage = 1; // 重置到第一页
     });
 
-    final advancedCriteria =
-        PatientSearchCriteriaService.buildAdvancedCriteria(
+    final advancedCriteria = PatientSearchCriteriaService.buildAdvancedCriteria(
       name: _nameSearchController.text,
       address: _addressSearchController.text,
       phone: _phoneSearchController.text,
@@ -769,7 +740,6 @@ class _PatientsScreenState extends State<PatientsScreen> {
       _totalPatients = state.totalPatients;
       _isLoading = state.isLoading;
       _isSearching = state.isSearching;
-      _hasSearchResults = state.hasSearchResults;
       _searchQuery = state.searchQuery;
     });
   }

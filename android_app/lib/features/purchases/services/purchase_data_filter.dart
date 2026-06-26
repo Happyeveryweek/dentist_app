@@ -30,8 +30,11 @@ class PurchaseDataFilter {
     final List<PurchaseItem> allItems = [];
 
     for (final recordId in filteredRecordIds) {
-      if (recordId != null && recordItemsMap.containsKey(recordId)) {
-        allItems.addAll(recordItemsMap[recordId]!);
+      if (recordId != null) {
+        final items = recordItemsMap[recordId];
+        if (items != null) {
+          allItems.addAll(items);
+        }
       }
     }
 

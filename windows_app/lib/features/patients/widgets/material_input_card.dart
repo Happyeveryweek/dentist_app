@@ -59,7 +59,7 @@ class MaterialInputCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // 显示现有图片
             if (existingImages.isNotEmpty) ...[
               Text(
@@ -75,7 +75,8 @@ class MaterialInputCard extends StatelessWidget {
                   itemBuilder: (context, imageIndex) {
                     return MaterialImagePreview(
                       image: existingImages[imageIndex],
-                      onTap: () => onShowImageDetail(existingImages[imageIndex]),
+                      onTap: () =>
+                          onShowImageDetail(existingImages[imageIndex]),
                       onDelete: () => onRemoveExistingImage(0, imageIndex),
                     );
                   },
@@ -99,7 +100,8 @@ class MaterialInputCard extends StatelessWidget {
                   itemBuilder: (context, imageIndex) {
                     return MaterialFileImagePreview(
                       file: selectedImages[imageIndex],
-                      onTap: () => onShowFileImageDetail(selectedImages[imageIndex]),
+                      onTap: () =>
+                          onShowFileImageDetail(selectedImages[imageIndex]),
                       onDelete: () => onRemoveSelectedImage(0, imageIndex),
                     );
                   },

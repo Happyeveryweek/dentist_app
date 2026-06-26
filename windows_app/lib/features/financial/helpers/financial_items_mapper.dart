@@ -3,7 +3,7 @@ import '../../../models/financial_item.dart';
 import '../../../models/patient.dart';
 
 /// 财务明细项映射辅助类
-/// 
+///
 /// 提供记录模式的数据映射逻辑
 class FinancialItemsMapper {
   /// 获取所有收费记录明细项数据（用于按收费记录显示）

@@ -13,12 +13,17 @@ class PatientInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (patient == null) {
+    final p = patient;
+    if (p == null) {
       return const AppCard(
         padding: EdgeInsets.all(16),
         child: Center(child: Text('无法加载患者信息')),
       );
     }
+
+    final doctor = p.doctor;
+    final address = p.address;
+    final treatmentItems = p.treatmentItems;
 
     return AppCard(
       padding: const EdgeInsets.all(16),
@@ -40,15 +45,15 @@ class PatientInfoCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
                   color:
-                      patient!.gender == '男'
+                      p.gender == '男'
                           ? Colors.blue.withValues(alpha: 0.1)
                           : Colors.pink.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  patient!.gender,
+                  p.gender,
                   style: TextStyle(
-                    color: patient!.gender == '男' ? Colors.blue : Colors.pink,
+                    color: p.gender == '男' ? Colors.blue : Colors.pink,
                     fontSize: 12,
                   ),
                 ),
@@ -56,37 +61,37 @@ class PatientInfoCard extends StatelessWidget {
             ],
           ),
           const Divider(height: 24),
-          _buildInfoRow(CupertinoIcons.person, '姓名', patient!.name),
+          _buildInfoRow(CupertinoIcons.person, '姓名', p.name),
           const SizedBox(height: 12),
-          _buildInfoRow(CupertinoIcons.number, '年龄', '${patient!.age}岁'),
+          _buildInfoRow(CupertinoIcons.number, '年龄', '${p.age}岁'),
           const SizedBox(height: 12),
           PatientPhoneDisplay(
-            phoneNumbers: parsePatientPhoneNumbers(patient!.phone),
+            phoneNumbers: parsePatientPhoneNumbers(p.phone),
             onPhoneCall: onPhoneCall,
           ),
-          if (patient!.medicalRecordNumber != null) ...[
+          if (p.medicalRecordNumber != null) ...[
             const SizedBox(height: 12),
             _buildInfoRow(
               CupertinoIcons.doc_text,
               '病历号',
-              patient!.medicalRecordNumber.toString(),
+              p.medicalRecordNumber.toString(),
             ),
           ],
-          if (patient!.doctor != null && patient!.doctor!.isNotEmpty) ...[
+          if (doctor != null && doctor.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _buildInfoRow(CupertinoIcons.person_2, '主治医生', patient!.doctor!),
+            _buildInfoRow(CupertinoIcons.person_2, '主治医生', doctor),
           ],
-          if (patient!.address != null && patient!.address!.isNotEmpty) ...[
+          if (address != null && address.isNotEmpty) ...[
             const SizedBox(height: 12),
             _buildInfoRow(
               CupertinoIcons.location,
               '地址',
-              patient!.address!,
+              address,
               alignTop: true,
             ),
           ],
-          if (patient!.treatmentItems != null &&
-              patient!.treatmentItems!.isNotEmpty) ...[
+          if (treatmentItems != null &&
+              treatmentItems.isNotEmpty) ...[
             const SizedBox(height: 20),
             const Text(
               '患者治疗项目',
@@ -105,7 +110,7 @@ class PatientInfoCard extends StatelessWidget {
                 border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: Text(
-                patient!.treatmentItems!,
+                treatmentItems,
                 style: const TextStyle(fontSize: 14, color: AppTheme.textColor),
               ),
             ),

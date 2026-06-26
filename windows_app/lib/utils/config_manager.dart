@@ -3,12 +3,13 @@ import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app_paths.dart';
 import 'datetime_formatter.dart';
+import 'log_manager.dart';
 
 /// 配置存储模式
 enum StorageMode {
-  file,           // 文件存储（应用目录）
-  preferences,    // SharedPreferences存储
-  hybrid,         // 混合模式（优先文件，回退到SharedPreferences）
+  file, // 文件存储（应用目录）
+  preferences, // SharedPreferences存储
+  hybrid, // 混合模式（优先文件，回退到SharedPreferences）
 }
 
 /// 配置管理器
@@ -69,7 +70,7 @@ class ConfigManager {
   /// 删除配置
   Future<bool> removeConfig(String key) async {
     bool result = true;
-    
+
     switch (_storageMode) {
       case StorageMode.file:
         result = await _removeFromFile(key);
@@ -84,14 +85,14 @@ class ConfigManager {
         result = fileResult || prefResult;
         break;
     }
-    
+
     return result;
   }
 
   /// 清空所有配置
   Future<bool> clearAllConfigs() async {
     bool result = true;
-    
+
     switch (_storageMode) {
       case StorageMode.file:
         result = await _clearFileConfigs();
@@ -106,7 +107,7 @@ class ConfigManager {
         result = fileResult && prefResult;
         break;
     }
-    
+
     return result;
   }
 
@@ -130,7 +131,7 @@ class ConfigManager {
   /// 获取所有配置键
   Future<List<String>> getAllConfigKeys() async {
     final Set<String> keys = {};
-    
+
     switch (_storageMode) {
       case StorageMode.file:
         keys.addAll(await _getFileConfigKeys());
@@ -143,7 +144,7 @@ class ConfigManager {
         keys.addAll(await _getPreferencesConfigKeys());
         break;
     }
-    
+
     return keys.toList();
   }
 
@@ -152,9 +153,9 @@ class ConfigManager {
     try {
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys();
-      
+
       final Map<String, dynamic> allConfigs = {};
-      
+
       for (final key in keys) {
         final value = prefs.get(key);
         if (value != null) {
@@ -164,15 +165,15 @@ class ConfigManager {
 
       // 记录迁移已完成，避免每次启动都重复执行迁移流程
       allConfigs[_migrationCompletedKey] = true;
-      
+
       final success = await _saveAllToFile(allConfigs);
       if (success) {
         return true;
       }
-      
+
       return false;
     } catch (e) {
-      print('配置迁移失败: $e');
+      LogManager.e('ConfigManager', '配置迁移失败', error: e);
       return false;
     }
   }
@@ -185,7 +186,7 @@ class ConfigManager {
       configs[key] = value;
       return await _saveAllToFile(configs);
     } catch (e) {
-      print('保存配置到文件失败: $e');
+      LogManager.e('ConfigManager', '保存配置到文件失败', error: e);
       return false;
     }
   }
@@ -199,7 +200,7 @@ class ConfigManager {
       }
       return defaultValue;
     } catch (e) {
-      print('从文件加载配置失败: $e');
+      LogManager.e('ConfigManager', '从文件加载配置失败', error: e);
       return defaultValue;
     }
   }
@@ -210,7 +211,7 @@ class ConfigManager {
       configs.remove(key);
       return await _saveAllToFile(configs);
     } catch (e) {
-      print('从文件删除配置失败: $e');
+      LogManager.e('ConfigManager', '从文件删除配置失败', error: e);
       return false;
     }
   }
@@ -219,7 +220,7 @@ class ConfigManager {
     try {
       return await _saveAllToFile({});
     } catch (e) {
-      print('清空文件配置失败: $e');
+      LogManager.e('ConfigManager', '清空文件配置失败', error: e);
       return false;
     }
   }
@@ -253,7 +254,7 @@ class ConfigManager {
       }
       return {};
     } catch (e) {
-      print('加载配置文件失败: $e');
+      LogManager.e('ConfigManager', '加载配置文件失败', error: e);
       return {};
     }
   }
@@ -261,17 +262,17 @@ class ConfigManager {
   Future<bool> _saveAllToFile(Map<String, dynamic> configs) async {
     try {
       final configFile = File(configFilePath);
-      
+
       // 确保目录存在
       final configDir = Directory(configFile.parent.path);
       if (!await configDir.exists()) {
         await configDir.create(recursive: true);
       }
-      
+
       await configFile.writeAsString(jsonEncode(configs));
       return true;
     } catch (e) {
-      print('保存配置文件失败: $e');
+      LogManager.e('ConfigManager', '保存配置文件失败', error: e);
       return false;
     }
   }
@@ -281,7 +282,7 @@ class ConfigManager {
   Future<bool> _saveToPreferences(String key, dynamic value) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       if (value is String) {
         return await prefs.setString(key, value);
       } else if (value is int) {
@@ -297,7 +298,7 @@ class ConfigManager {
         return await prefs.setString(key, jsonEncode(value));
       }
     } catch (e) {
-      print('保存配置到SharedPreferences失败: $e');
+      LogManager.e('ConfigManager', '保存配置到SharedPreferences失败', error: e);
       return false;
     }
   }
@@ -306,7 +307,7 @@ class ConfigManager {
     try {
       final prefs = await SharedPreferences.getInstance();
       final value = prefs.get(key);
-      
+
       if (value is T) {
         return value;
       } else if (value is String && T != String) {
@@ -320,10 +321,10 @@ class ConfigManager {
           // JSON解析失败，返回默认值
         }
       }
-      
+
       return defaultValue;
     } catch (e) {
-      print('从SharedPreferences加载配置失败: $e');
+      LogManager.e('ConfigManager', '从SharedPreferences加载配置失败', error: e);
       return defaultValue;
     }
   }
@@ -333,7 +334,7 @@ class ConfigManager {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.remove(key);
     } catch (e) {
-      print('从SharedPreferences删除配置失败: $e');
+      LogManager.e('ConfigManager', '从SharedPreferences删除配置失败', error: e);
       return false;
     }
   }
@@ -343,7 +344,7 @@ class ConfigManager {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.clear();
     } catch (e) {
-      print('清空SharedPreferences配置失败: $e');
+      LogManager.e('ConfigManager', '清空SharedPreferences配置失败', error: e);
       return false;
     }
   }
@@ -411,7 +412,8 @@ extension ConfigManagerExtension on ConfigManager {
 
   /// 保存最后备份时间
   Future<bool> saveLastBackupDate(DateTime date) async {
-    return await saveConfig('lastBackupDate', DateTimeFormatter.toDbString(date));
+    return await saveConfig(
+        'lastBackupDate', DateTimeFormatter.toDbString(date));
   }
 
   /// 加载最后备份时间
@@ -421,7 +423,7 @@ extension ConfigManagerExtension on ConfigManager {
       try {
         return DateTimeFormatter.fromDbString(dateStr);
       } catch (e) {
-        print('解析最后备份时间失败: $e');
+        LogManager.e('ConfigManager', '解析最后备份时间失败', error: e);
       }
     }
     return null;

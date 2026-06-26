@@ -43,7 +43,7 @@ class _HoverableFinancialListCardState
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 2,
                 offset: const Offset(0, 1),
               ),
@@ -80,8 +80,7 @@ class HoverableFinancialCard extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<HoverableFinancialCard> createState() =>
-      _HoverableFinancialCardState();
+  State<HoverableFinancialCard> createState() => _HoverableFinancialCardState();
 }
 
 class _HoverableFinancialCardState extends State<HoverableFinancialCard> {
@@ -111,14 +110,14 @@ class _HoverableFinancialCardState extends State<HoverableFinancialCard> {
           boxShadow: _isHovered
               ? [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.5),
+                    color: Colors.blue.withValues(alpha: 0.5),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 2,
                     offset: const Offset(0, 1),
                   ),

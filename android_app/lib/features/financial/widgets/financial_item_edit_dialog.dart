@@ -86,22 +86,24 @@ class FinancialItemEditDialogState extends State<FinancialItemEditDialog> {
   }
 
   void _save() {
-    if (_formKey.currentState!.validate()) {
-      final updatedItem = widget.item.copyWith(
-        itemName: _itemNameController.text,
-        paymentMethod: FinancialPaymentMethodHelper.toStorageValue(
-          _paymentMethod,
-        ),
-        itemPrice: double.tryParse(_itemPriceController.text) ?? 0.0,
-        processingFee: double.tryParse(_processingFeeController.text) ?? 0.0,
-        quantity: 1, // 固定数量为1
-        totalPrice: double.tryParse(_collectedAmountController.text) ?? 0.0,
-        chargeDate: DateFormat('yyyy-MM-dd').parse(_chargeDateController.text),
-        updatedAt: DateTime.now(),
-      );
-
-      widget.onSave(updatedItem);
+    final formState = _formKey.currentState;
+    if (formState == null || !formState.validate()) {
+      return;
     }
+    final updatedItem = widget.item.copyWith(
+      itemName: _itemNameController.text,
+      paymentMethod: FinancialPaymentMethodHelper.toStorageValue(
+        _paymentMethod,
+      ),
+      itemPrice: double.tryParse(_itemPriceController.text) ?? 0.0,
+      processingFee: double.tryParse(_processingFeeController.text) ?? 0.0,
+      quantity: 1, // 固定数量为1
+      totalPrice: double.tryParse(_collectedAmountController.text) ?? 0.0,
+      chargeDate: DateFormat('yyyy-MM-dd').parse(_chargeDateController.text),
+      updatedAt: DateTime.now(),
+    );
+
+    widget.onSave(updatedItem);
   }
 
   @override

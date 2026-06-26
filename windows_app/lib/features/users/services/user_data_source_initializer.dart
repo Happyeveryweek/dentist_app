@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
 import '../../../data_sources/user_data_source.dart';
 import '../../../utils/mysql_sync_connection_helper.dart';
+import '../../../utils/log_manager.dart';
 
 /// 用户数据源初始化服务
 /// 负责数据源初始化、连接管理和数据源切换
@@ -40,8 +41,12 @@ class UserDataSourceInitializer {
 
   // 获取有效的数据源类型（考虑模块化配置）
   String get effectiveDataSourceType {
-    if (_moduleDataSources != null && _moduleDataSources!.containsKey('users')) {
-      return _moduleDataSources!['users']!;
+    final moduleSources = _moduleDataSources;
+    if (moduleSources != null) {
+      final usersType = moduleSources['users'];
+      if (usersType != null) {
+        return usersType;
+      }
     }
     return _dataSourceType;
   }
@@ -57,16 +62,19 @@ class UserDataSourceInitializer {
     _mysqlConnection = connection;
     _mysqlDataSource = MySqlUserDataSource.withConnectionGetter(
       () async {
-        final conn = await _currentMysqlConnection;
+        final conn = _currentMysqlConnection;
         return conn;
       },
       reconnectCallback: () async {
         if (_databaseProvider != null) {
           try {
             await _databaseProvider.initializeMySQL();
-            print('✅ UserDataSourceInitializer: MySQL重连成功');
+            LogManager.i('UserDataSourceInitializer',
+                'UserDataSourceInitializer: MySQL重连成功');
           } catch (e) {
-            print('❌ UserDataSourceInitializer: MySQL重连失败: $e');
+            LogManager.e('UserDataSourceInitializer',
+                'UserDataSourceInitializer: MySQL重连失败',
+                error: e);
           }
         }
       },
@@ -77,15 +85,17 @@ class UserDataSourceInitializer {
   UserDataSource get currentDataSource {
     final effectiveType = effectiveDataSourceType;
     if (effectiveType == 'mysql') {
-      if (_mysqlDataSource == null) {
+      final mysqlSource = _mysqlDataSource;
+      if (mysqlSource == null) {
         throw Exception('MySQL用户数据源未初始化 - 模块配置要求使用MySQL但数据源未设置');
       }
-      return _mysqlDataSource!;
+      return mysqlSource;
     } else {
-      if (_sqliteDataSource == null) {
+      final sqliteSource = _sqliteDataSource;
+      if (sqliteSource == null) {
         throw Exception('SQLite用户数据源未初始化');
       }
-      return _sqliteDataSource!;
+      return sqliteSource;
     }
   }
 
@@ -103,7 +113,7 @@ class UserDataSourceInitializer {
         return latestConnection;
       }
     } catch (e) {
-      print('获取最新MySQL连接失败: $e');
+      LogManager.e('UserDataSourceInitializer', '获取最新MySQL连接失败', error: e);
     }
 
     return _mysqlConnection;
@@ -133,8 +143,11 @@ class UserDataSourceInitializer {
   Future<bool> testMySqlConnection() async {
     if (_currentMysqlConnection == null) return false;
 
+    final conn = _currentMysqlConnection;
+    if (conn == null) return false;
+
     try {
-      await _currentMysqlConnection!.query('SELECT 1').timeout(
+      await conn.query('SELECT 1').timeout(
         const Duration(seconds: 10),
         onTimeout: () {
           throw TimeoutException('连接测试超时', const Duration(seconds: 10));
@@ -142,7 +155,7 @@ class UserDataSourceInitializer {
       );
       return true;
     } catch (e) {
-      print('MySQL连接测试失败: $e');
+      LogManager.e('UserDataSourceInitializer', 'MySQL连接测试失败', error: e);
       _mysqlConnection = null;
       return false;
     }
@@ -155,11 +168,6 @@ class UserDataSourceInitializer {
     String? dataSourceMode,
   }) async {
     try {
-      print('🔧 UserDataSourceInitializer.initializeFromDatabase 开始初始化');
-      print('🔧 UserDataSourceInitializer - 数据源模式: $dataSourceMode');
-      print('🔧 UserDataSourceInitializer - 模块配置: $moduleDataSources');
-      print('🔧 UserDataSourceInitializer - 全局数据源类型: ${dbProvider?.dataSourceType}');
-
       // 保存数据库提供者引用
       _databaseProvider = dbProvider;
 
@@ -170,15 +178,14 @@ class UserDataSourceInitializer {
       String dbType = 'sqlite';
 
       // 如果是模块化模式且有用户模块配置，优先使用模块配置
-      if (dataSourceMode == 'modular' &&
-          moduleDataSources != null &&
-          moduleDataSources.containsKey('users')) {
-        dbType = moduleDataSources['users']!;
-        print('🔧 UserDataSourceInitializer使用模块化配置: users -> $dbType');
+      if (dataSourceMode == 'modular' && moduleDataSources != null) {
+        final usersType = moduleDataSources['users'];
+        if (usersType != null) {
+          dbType = usersType;
+        }
       } else {
         // 否则使用全局配置
         dbType = dbProvider?.dataSourceType ?? 'sqlite';
-        print('🔧 UserDataSourceInitializer使用全局配置: $dbType');
       }
 
       // 更新数据源类型
@@ -202,16 +209,15 @@ class UserDataSourceInitializer {
           // 测试MySQL连接
           final isConnected = await testMySqlConnection();
           if (isConnected) {
-            print('✅ UserDataSourceInitializer MySQL连接测试成功');
-          } else {
-            print('⚠️ UserDataSourceInitializer MySQL连接测试失败，但继续使用');
-          }
+          } else {}
         } else {
           throw Exception('MySQL数据库连接不可用');
         }
       }
     } catch (e) {
-      print('❌ UserDataSourceInitializer初始化失败: $e');
+      LogManager.e(
+          'UserDataSourceInitializer', 'UserDataSourceInitializer初始化失败',
+          error: e);
       rethrow;
     }
   }
@@ -219,17 +225,11 @@ class UserDataSourceInitializer {
   // 模块数据源配置更新（向后兼容）
   void updateModuleDataSources(Map<String, String>? moduleDataSources) {
     _moduleDataSources = moduleDataSources;
-    print('UserDataSourceInitializer模块数据源配置已更新: $moduleDataSources');
 
     // 如果有模块配置且当前是模块化模式，重新初始化数据源
-    if (moduleDataSources != null &&
-        moduleDataSources.containsKey('users') &&
-        _databaseProvider != null) {
-
-      final newDataSourceType = moduleDataSources['users']!;
-      if (newDataSourceType != _dataSourceType) {
-        print('用户模块数据源类型变更: $_dataSourceType -> $newDataSourceType');
-
+    if (moduleDataSources != null && _databaseProvider != null) {
+      final newDataSourceType = moduleDataSources['users'];
+      if (newDataSourceType != null && newDataSourceType != _dataSourceType) {
         // 重新初始化数据源
         initializeFromDatabase(
           _databaseProvider,

@@ -5,7 +5,7 @@ import '../../../theme/app_theme.dart';
 import 'material_detail_row.dart';
 
 /// 材料详情对话框
-/// 
+///
 /// 显示材料的详细信息，包括基本信息、供应商、描述、创建时间等
 class MaterialDetailDialog extends StatelessWidget {
   final material_models.MaterialInfo material;
@@ -39,7 +39,7 @@ class MaterialDetailDialog extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
               spreadRadius: 0,
@@ -51,7 +51,7 @@ class MaterialDetailDialog extends StatelessWidget {
           children: [
             // 标题栏
             _buildHeader(context),
-            
+
             // 内容区域
             Flexible(
               child: SingleChildScrollView(
@@ -61,22 +61,23 @@ class MaterialDetailDialog extends StatelessWidget {
                   children: [
                     // 材料基本信息
                     _buildBasicInfo(),
-                    
+
                     const SizedBox(height: 20),
-                    
+
                     // 详细信息
-                    if (material.supplier != null || material.description != null) ...[
+                    if (material.supplier != null ||
+                        material.description != null) ...[
                       _buildDetailInfo(),
                       const SizedBox(height: 20),
                     ],
-                    
+
                     // 创建时间
                     _buildCreateTime(),
                   ],
                 ),
               ),
             ),
-            
+
             // 按钮栏
             _buildFooter(context),
           ],
@@ -88,9 +89,9 @@ class MaterialDetailDialog extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: AppTheme.primaryGradient,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -100,10 +101,10 @@ class MaterialDetailDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.medication,
               color: Colors.white,
               size: 24,
@@ -152,13 +153,13 @@ class MaterialDetailDialog extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
-            child: Icon(
+            child: const Icon(
               Icons.medication,
               color: Colors.white,
               size: 30,
@@ -182,7 +183,7 @@ class MaterialDetailDialog extends StatelessWidget {
                   MaterialDetailRow(
                     icon: Icons.qr_code_rounded,
                     label: '编码',
-                    value: material.materialCode!,
+                    value: material.materialCode ?? '',
                     color: Colors.blue.shade700,
                   ),
                   const SizedBox(height: 4),
@@ -234,7 +235,7 @@ class MaterialDetailDialog extends StatelessWidget {
             MaterialDetailRow(
               icon: Icons.business_rounded,
               label: '供应商',
-              value: material.supplier!,
+              value: material.supplier ?? '',
               color: Colors.orange.shade700,
             ),
             if (material.description != null) const SizedBox(height: 16),

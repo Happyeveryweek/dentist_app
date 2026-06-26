@@ -7,7 +7,8 @@ import 'base_mysql_data_source.dart';
 import 'financial_data_source.dart';
 
 /// MySQL 财务数据源实现
-class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialDataSource {
+class MySqlFinancialDataSource extends BaseMySqlDataSource
+    implements FinancialDataSource {
   MySqlFinancialDataSource.withConnectionGetter(
     Future<MySqlConnection?> Function() connectionGetter, {
     Future<void> Function()? reconnectCallback,
@@ -19,9 +20,8 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
   @override
   Future<List<FinancialRecord>> getAllFinancialRecords() async {
     final result = await executeQuery(
-      'SELECT * FROM financial_records ORDER BY updated_at DESC'
-    );
-    
+        'SELECT * FROM financial_records ORDER BY updated_at DESC');
+
     final records = <FinancialRecord>[];
     for (final row in result) {
       final recordMap = convertRowToMap(row);
@@ -37,7 +37,7 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       [id],
     );
     if (result.isEmpty) return null;
-    
+
     final recordMap = convertRowToMap(result.first);
     return FinancialRecord.fromMap(recordMap);
   }
@@ -54,7 +54,11 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       DateTimeFormatter.toDbString(record.updatedAt),
       record.totalQuantity,
     ]);
-    return result.insertId!;
+    final insertId = result.insertId;
+    if (insertId == null) {
+      throw Exception('创建财务记录后未返回 insertId');
+    }
+    return insertId;
   }
 
   @override
@@ -70,7 +74,7 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       record.totalQuantity,
       record.id,
     ]);
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -80,25 +84,25 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       'DELETE FROM financial_items WHERE financial_record_id = ?',
       [id],
     );
-    
+
     // 再删除财务记录
     final result = await executeQuery(
       'DELETE FROM financial_records WHERE id = ?',
       [id],
     );
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
   Future<int> getFinancialRecordsCount({String? searchQuery}) async {
     String whereClause = '';
     List<dynamic> whereArgs = [];
-    
+
     if (searchQuery != null && searchQuery.trim().isNotEmpty) {
       whereClause = ' WHERE notes LIKE ?';
       whereArgs.add('%$searchQuery%');
     }
-    
+
     final result = await executeQuery(
       'SELECT COUNT(*) AS count FROM financial_records$whereClause',
       whereArgs,
@@ -121,15 +125,16 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
     final offset = (page - 1) * pageSize;
     String whereClause = '';
     List<dynamic> whereArgs = [];
-    
+
     if (searchQuery != null && searchQuery.trim().isNotEmpty) {
       whereClause = ' WHERE notes LIKE ?';
       whereArgs.add('%$searchQuery%');
     }
-    
-    final sql = 'SELECT * FROM financial_records$whereClause ORDER BY $sortBy $sortOrder LIMIT $offset, $pageSize';
+
+    final sql =
+        'SELECT * FROM financial_records$whereClause ORDER BY $sortBy $sortOrder LIMIT $offset, $pageSize';
     final result = await executeQuery(sql, whereArgs);
-    
+
     final records = <FinancialRecord>[];
     for (final row in result) {
       final recordMap = convertRowToMap(row);
@@ -144,7 +149,7 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       'SELECT * FROM financial_items WHERE financial_record_id = ? ORDER BY updated_at DESC',
       [recordId],
     );
-    
+
     final items = <FinancialItem>[];
     for (final row in result) {
       final itemMap = convertRowToMap(row);
@@ -170,7 +175,11 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       item.processingFee,
       item.paymentMethod,
     ]);
-    return result.insertId!;
+    final insertId = result.insertId;
+    if (insertId == null) {
+      throw Exception('创建财务项目后未返回 insertId');
+    }
+    return insertId;
   }
 
   @override
@@ -190,7 +199,7 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       item.paymentMethod,
       item.id,
     ]);
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -199,14 +208,13 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       'DELETE FROM financial_items WHERE id = ?',
       [id],
     );
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
   Future<double> getTotalReceivableAmount() async {
     final result = await executeQuery(
-      'SELECT SUM(total_price) AS total FROM financial_items'
-    );
+        'SELECT SUM(total_price) AS total FROM financial_items');
     final row = result.first;
     final dynamic total = row['total'] ?? row[0];
     if (total is num) return total.toDouble();
@@ -216,8 +224,7 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
   @override
   Future<double> getTotalReceivedAmount() async {
     final result = await executeQuery(
-      'SELECT SUM(total_price - processing_fee) AS total FROM financial_items WHERE processing_fee >= 0'
-    );
+        'SELECT SUM(total_price - processing_fee) AS total FROM financial_items WHERE processing_fee >= 0');
     final row = result.first;
     final dynamic total = row['total'] ?? row[0];
     if (total is num) return total.toDouble();
@@ -228,7 +235,7 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
   Future<Map<String, dynamic>> getFinancialStatistics() async {
     final receivable = await getTotalReceivableAmount();
     final received = await getTotalReceivedAmount();
-    
+
     return {
       'totalReceivable': receivable,
       'totalReceived': received,
@@ -288,7 +295,7 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       whereArgs.add(DateTimeFormatter.toDbString(endDate).split(' ')[0]);
     }
     if (conditions.isNotEmpty) {
-      whereClause = 'WHERE ' + conditions.join(' AND ');
+      whereClause = 'WHERE ${conditions.join(' AND ')}';
     }
 
     late final String orderExprSql;
@@ -299,7 +306,8 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
     } else if (sortBy == 'received_sum') {
       orderExprSql = 'COALESCE(SUM(fi.total_price), 0)';
     } else if (sortBy == 'receivable_sum') {
-      orderExprSql = 'COALESCE(SUM(fi.item_price * COALESCE(fi.quantity, 1)), 0)';
+      orderExprSql =
+          'COALESCE(SUM(fi.item_price * COALESCE(fi.quantity, 1)), 0)';
     } else if (sortBy == 'debt_sum') {
       orderExprSql =
           'COALESCE(SUM(fi.item_price * COALESCE(fi.quantity, 1)), 0) - COALESCE(SUM(fi.total_price), 0)';
@@ -311,7 +319,7 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       SELECT COUNT(*) AS cnt FROM (
         SELECT fr.patient_id
         FROM financial_records fr
-        JOIN patients p ON p.id = fr.patient_id
+        LEFT JOIN patients p ON p.id = fr.patient_id
         LEFT JOIN financial_items fi ON fi.financial_record_id = fr.id
         $whereClause
         GROUP BY fr.patient_id
@@ -331,7 +339,7 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
              COALESCE(SUM(fi.total_price), 0) AS received_sum,
              COALESCE(SUM(fi.processing_fee), 0) AS processing_sum
       FROM financial_records fr
-      JOIN patients p ON p.id = fr.patient_id
+      LEFT JOIN patients p ON p.id = fr.patient_id
       LEFT JOIN financial_items fi ON fi.financial_record_id = fr.id
       $whereClause
       GROUP BY fr.patient_id
@@ -340,22 +348,24 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
     ''';
     final rowsArgs = [...whereArgs, pageSize, offset];
     final rowsRes = await executeQuery(rowsQuery, rowsArgs);
-    final rows = rowsRes.map((r) => {
-          'patient_id': (r['patient_id'] is BigInt)
-              ? (r['patient_id'] as BigInt).toInt()
-              : r['patient_id'],
-          'latest_charge_date': r['latest_charge_date']?.toString(),
-          'last_updated': r['last_updated']?.toString(),
-          'receivable_sum': (r['receivable_sum'] is BigInt)
-              ? (r['receivable_sum'] as BigInt).toDouble()
-              : (r['receivable_sum'] as num?)?.toDouble() ?? 0.0,
-          'received_sum': (r['received_sum'] is BigInt)
-              ? (r['received_sum'] as BigInt).toDouble()
-              : (r['received_sum'] as num?)?.toDouble() ?? 0.0,
-          'processing_sum': (r['processing_sum'] is BigInt)
-              ? (r['processing_sum'] as BigInt).toDouble()
-              : (r['processing_sum'] as num?)?.toDouble() ?? 0.0,
-        }).toList();
+    final rows = rowsRes
+        .map((r) => {
+              'patient_id': (r['patient_id'] is BigInt)
+                  ? (r['patient_id'] as BigInt).toInt()
+                  : r['patient_id'],
+              'latest_charge_date': r['latest_charge_date']?.toString(),
+              'last_updated': r['last_updated']?.toString(),
+              'receivable_sum': (r['receivable_sum'] is BigInt)
+                  ? (r['receivable_sum'] as BigInt).toDouble()
+                  : (r['receivable_sum'] as num?)?.toDouble() ?? 0.0,
+              'received_sum': (r['received_sum'] is BigInt)
+                  ? (r['received_sum'] as BigInt).toDouble()
+                  : (r['received_sum'] as num?)?.toDouble() ?? 0.0,
+              'processing_sum': (r['processing_sum'] is BigInt)
+                  ? (r['processing_sum'] as BigInt).toDouble()
+                  : (r['processing_sum'] as num?)?.toDouble() ?? 0.0,
+            })
+        .toList();
     return {'total': total, 'rows': rows};
   }
 
@@ -378,19 +388,22 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
   }
 
   @override
-  Future<List<FinancialRecord>> getFinancialRecordsByPatientId(int patientId) async {
+  Future<List<FinancialRecord>> getFinancialRecordsByPatientId(
+      int patientId) async {
     final results = await executeQuery(
       'SELECT id, patient_id, total_quantity, notes, created_at, updated_at FROM financial_records WHERE patient_id = ? ORDER BY updated_at DESC',
       [patientId],
     );
-    return results.map((row) => FinancialRecord.fromMap({
-      'id': row['id'],
-      'patient_id': row['patient_id'],
-      'total_quantity': row['total_quantity'],
-      'notes': _safeGetNotes(row['notes']),
-      'created_at': row['created_at']?.toString(),
-      'updated_at': row['updated_at']?.toString(),
-    })).toList();
+    return results
+        .map((row) => FinancialRecord.fromMap({
+              'id': row['id'],
+              'patient_id': row['patient_id'],
+              'total_quantity': row['total_quantity'],
+              'notes': _safeGetNotes(row['notes']),
+              'created_at': row['created_at']?.toString(),
+              'updated_at': row['updated_at']?.toString(),
+            }))
+        .toList();
   }
 
   @override
@@ -413,7 +426,8 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
 
     if (patientIds != null && patientIds.isNotEmpty) {
       final placeholders = List.filled(patientIds.length, '?').join(',');
-      conditions.add('financial_record_id IN (SELECT id FROM financial_records WHERE patient_id IN ($placeholders))');
+      conditions.add(
+          'financial_record_id IN (SELECT id FROM financial_records WHERE patient_id IN ($placeholders))');
       whereArgs.addAll(patientIds);
     }
     if (chargeItemQuery != null && chargeItemQuery.isNotEmpty) {
@@ -428,14 +442,34 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       conditions.add('charge_date <= ?');
       whereArgs.add(DateTimeFormatter.toDbString(endDate).split(' ')[0]);
     }
-    if (receivableMin != null) { conditions.add('item_price >= ?'); whereArgs.add(receivableMin); }
-    if (receivableMax != null) { conditions.add('item_price <= ?'); whereArgs.add(receivableMax); }
-    if (receivedMin != null) { conditions.add('total_price >= ?'); whereArgs.add(receivedMin); }
-    if (receivedMax != null) { conditions.add('total_price <= ?'); whereArgs.add(receivedMax); }
-    if (processingMin != null) { conditions.add('processing_fee >= ?'); whereArgs.add(processingMin); }
-    if (processingMax != null) { conditions.add('processing_fee <= ?'); whereArgs.add(processingMax); }
+    if (receivableMin != null) {
+      conditions.add('item_price >= ?');
+      whereArgs.add(receivableMin);
+    }
+    if (receivableMax != null) {
+      conditions.add('item_price <= ?');
+      whereArgs.add(receivableMax);
+    }
+    if (receivedMin != null) {
+      conditions.add('total_price >= ?');
+      whereArgs.add(receivedMin);
+    }
+    if (receivedMax != null) {
+      conditions.add('total_price <= ?');
+      whereArgs.add(receivedMax);
+    }
+    if (processingMin != null) {
+      conditions.add('processing_fee >= ?');
+      whereArgs.add(processingMin);
+    }
+    if (processingMax != null) {
+      conditions.add('processing_fee <= ?');
+      whereArgs.add(processingMax);
+    }
 
-    if (conditions.isNotEmpty) { whereClause = ' WHERE ' + conditions.join(' AND '); }
+    if (conditions.isNotEmpty) {
+      whereClause = ' WHERE ${conditions.join(' AND ')}';
+    }
 
     final results = await executeQuery(
       'SELECT COUNT(*) as count FROM financial_items$whereClause',
@@ -473,7 +507,8 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
 
     if (patientIds != null && patientIds.isNotEmpty) {
       final placeholders = List.filled(patientIds.length, '?').join(',');
-      conditions.add('fi.financial_record_id IN (SELECT id FROM financial_records WHERE patient_id IN ($placeholders))');
+      conditions.add(
+          'fi.financial_record_id IN (SELECT id FROM financial_records WHERE patient_id IN ($placeholders))');
       whereArgs.addAll(patientIds);
     }
     if (chargeItemQuery != null && chargeItemQuery.isNotEmpty) {
@@ -488,14 +523,34 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       conditions.add('fi.charge_date <= ?');
       whereArgs.add(DateTimeFormatter.toDbString(endDate).split(' ')[0]);
     }
-    if (receivableMin != null) { conditions.add('fi.item_price >= ?'); whereArgs.add(receivableMin); }
-    if (receivableMax != null) { conditions.add('fi.item_price <= ?'); whereArgs.add(receivableMax); }
-    if (receivedMin != null) { conditions.add('fi.total_price >= ?'); whereArgs.add(receivedMin); }
-    if (receivedMax != null) { conditions.add('fi.total_price <= ?'); whereArgs.add(receivedMax); }
-    if (processingMin != null) { conditions.add('fi.processing_fee >= ?'); whereArgs.add(processingMin); }
-    if (processingMax != null) { conditions.add('fi.processing_fee <= ?'); whereArgs.add(processingMax); }
+    if (receivableMin != null) {
+      conditions.add('fi.item_price >= ?');
+      whereArgs.add(receivableMin);
+    }
+    if (receivableMax != null) {
+      conditions.add('fi.item_price <= ?');
+      whereArgs.add(receivableMax);
+    }
+    if (receivedMin != null) {
+      conditions.add('fi.total_price >= ?');
+      whereArgs.add(receivedMin);
+    }
+    if (receivedMax != null) {
+      conditions.add('fi.total_price <= ?');
+      whereArgs.add(receivedMax);
+    }
+    if (processingMin != null) {
+      conditions.add('fi.processing_fee >= ?');
+      whereArgs.add(processingMin);
+    }
+    if (processingMax != null) {
+      conditions.add('fi.processing_fee <= ?');
+      whereArgs.add(processingMax);
+    }
 
-    if (conditions.isNotEmpty) { whereClause = ' WHERE ' + conditions.join(' AND '); }
+    if (conditions.isNotEmpty) {
+      whereClause = ' WHERE ${conditions.join(' AND ')}';
+    }
 
     final orderBy = 'fi.$sortBy $sortOrder';
     final query = '''
@@ -508,23 +563,25 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
     ''';
 
     final results = await executeQuery(query, whereArgs);
-    return results.map((row) => {
-      'item': FinancialItem.fromMap({
-        'id': row['id'],
-        'financial_record_id': row['financial_record_id'],
-        'item_name': row['item_name']?.toString(),
-        'item_price': row['item_price'],
-        'processing_fee': row['processing_fee'],
-        'payment_method': row['payment_method'],
-        'quantity': row['quantity'],
-        'total_price': row['total_price'],
-        'charge_date': row['charge_date']?.toString(),
-        'created_at': row['created_at']?.toString(),
-        'updated_at': row['updated_at']?.toString(),
-      }),
-      'patient_id': row['patient_id'],
-      'record_notes': row['notes']?.toString(),
-    }).toList();
+    return results
+        .map((row) => {
+              'item': FinancialItem.fromMap({
+                'id': row['id'],
+                'financial_record_id': row['financial_record_id'],
+                'item_name': row['item_name']?.toString(),
+                'item_price': row['item_price'],
+                'processing_fee': row['processing_fee'],
+                'payment_method': row['payment_method'],
+                'quantity': row['quantity'],
+                'total_price': row['total_price'],
+                'charge_date': row['charge_date']?.toString(),
+                'created_at': row['created_at']?.toString(),
+                'updated_at': row['updated_at']?.toString(),
+              }),
+              'patient_id': row['patient_id'],
+              'record_notes': row['notes']?.toString(),
+            })
+        .toList();
   }
 
   @override
@@ -569,14 +626,34 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       conditions.add('fi.charge_date <= ?');
       whereArgs.add(DateTimeFormatter.toDbString(endDate).split(' ')[0]);
     }
-    if (receivableMin != null) { conditions.add('fi.item_price >= ?'); whereArgs.add(receivableMin); }
-    if (receivableMax != null) { conditions.add('fi.item_price <= ?'); whereArgs.add(receivableMax); }
-    if (receivedMin != null) { conditions.add('fi.total_price >= ?'); whereArgs.add(receivedMin); }
-    if (receivedMax != null) { conditions.add('fi.total_price <= ?'); whereArgs.add(receivedMax); }
-    if (processingMin != null) { conditions.add('fi.processing_fee >= ?'); whereArgs.add(processingMin); }
-    if (processingMax != null) { conditions.add('fi.processing_fee <= ?'); whereArgs.add(processingMax); }
+    if (receivableMin != null) {
+      conditions.add('fi.item_price >= ?');
+      whereArgs.add(receivableMin);
+    }
+    if (receivableMax != null) {
+      conditions.add('fi.item_price <= ?');
+      whereArgs.add(receivableMax);
+    }
+    if (receivedMin != null) {
+      conditions.add('fi.total_price >= ?');
+      whereArgs.add(receivedMin);
+    }
+    if (receivedMax != null) {
+      conditions.add('fi.total_price <= ?');
+      whereArgs.add(receivedMax);
+    }
+    if (processingMin != null) {
+      conditions.add('fi.processing_fee >= ?');
+      whereArgs.add(processingMin);
+    }
+    if (processingMax != null) {
+      conditions.add('fi.processing_fee <= ?');
+      whereArgs.add(processingMax);
+    }
 
-    if (conditions.isNotEmpty) { whereClause = ' WHERE ' + conditions.join(' AND '); }
+    if (conditions.isNotEmpty) {
+      whereClause = ' WHERE ${conditions.join(' AND ')}';
+    }
 
     final orderBy = 'fi.$sortBy $sortOrder';
     final query = '''
@@ -588,23 +665,25 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource implements FinancialD
       ORDER BY $orderBy
     ''';
     final results = await executeQuery(query, whereArgs);
-    return results.map((row) => {
-      'item': FinancialItem.fromMap({
-        'id': row['id'],
-        'financial_record_id': row['financial_record_id'],
-        'item_name': row['item_name']?.toString(),
-        'item_price': row['item_price'],
-        'processing_fee': row['processing_fee'],
-        'payment_method': row['payment_method'],
-        'quantity': row['quantity'],
-        'total_price': row['total_price'],
-        'charge_date': row['charge_date']?.toString(),
-        'created_at': row['created_at']?.toString(),
-        'updated_at': row['updated_at']?.toString(),
-      }),
-      'patient_id': row['patient_id'],
-      'record_notes': row['notes']?.toString(),
-    }).toList();
+    return results
+        .map((row) => {
+              'item': FinancialItem.fromMap({
+                'id': row['id'],
+                'financial_record_id': row['financial_record_id'],
+                'item_name': row['item_name']?.toString(),
+                'item_price': row['item_price'],
+                'processing_fee': row['processing_fee'],
+                'payment_method': row['payment_method'],
+                'quantity': row['quantity'],
+                'total_price': row['total_price'],
+                'charge_date': row['charge_date']?.toString(),
+                'created_at': row['created_at']?.toString(),
+                'updated_at': row['updated_at']?.toString(),
+              }),
+              'patient_id': row['patient_id'],
+              'record_notes': row['notes']?.toString(),
+            })
+        .toList();
   }
 
   @override

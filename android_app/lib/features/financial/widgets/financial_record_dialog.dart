@@ -31,6 +31,22 @@ class FinancialRecordDialog extends StatefulWidget {
 }
 
 class _FinancialRecordDialogState extends State<FinancialRecordDialog> {
+  FinancialRecord get _record {
+    final record = widget.record;
+    if (record == null) {
+      throw Exception('财务记录不能为空');
+    }
+    return record;
+  }
+
+  int get _recordId {
+    final id = _record.id;
+    if (id == null) {
+      throw Exception('财务记录ID无效');
+    }
+    return id;
+  }
+
   final _formKey = GlobalKey<FormState>();
   final _patientIdController = TextEditingController();
   final _patientNameController = TextEditingController();
@@ -64,9 +80,10 @@ class _FinancialRecordDialogState extends State<FinancialRecordDialog> {
     if (widget.isEditingNotesOnly) {
       // 在仅编辑备注模式下，我们不需要加载所有患者
       // 但需要设置 _selectedPatient 以便显示患者姓名
+      final record = _record;
       _selectedPatient = Patient(
-        id: widget.record!.patientId,
-        name: widget.record!.patientName ?? '未知患者',
+        id: record.patientId,
+        name: record.patientName ?? '未知患者',
         age: 0, // 提供一个默认值
         gender: '', // 提供一个默认值
         phone: '', // 提供一个默认值
@@ -106,12 +123,13 @@ class _FinancialRecordDialogState extends State<FinancialRecordDialog> {
 
   void _initializeControllers() {
     if (_isEditing) {
-      _patientIdController.text = widget.record!.patientId.toString();
-      _patientNameController.text = widget.record!.patientName ?? ''; // 设置患者姓名
+      final record = _record;
+      _patientIdController.text = record.patientId.toString();
+      _patientNameController.text = record.patientName ?? ''; // 设置患者姓名
       _chargeDateController.text = DateFormat(
         'yyyy-MM-dd',
-      ).format(widget.record!.createdAt);
-      _notesController.text = widget.record!.notes ?? '';
+      ).format(record.createdAt);
+      _notesController.text = record.notes ?? '';
 
       // 如果有财务项目，使用第一个项目的数据初始化金额控制器
       if (_financialItems.isNotEmpty) {
@@ -191,9 +209,14 @@ class _FinancialRecordDialogState extends State<FinancialRecordDialog> {
     FinancialProvider provider,
     FinancialRecord record,
   ) async {
+    final recordId = record.id;
+    if (recordId == null) {
+      AppLogger.info('❌ 更新财务记录失败：记录ID无效');
+      return;
+    }
     try {
       // 获取该财务记录的所有收费项，重新计算总数量
-      final items = await provider.getFinancialItemsByRecordId(record.id!);
+      final items = await provider.getFinancialItemsByRecordId(recordId);
       final totalQuantity = items.fold<int>(
         0,
         (sum, item) => sum + item.quantity,
@@ -233,7 +256,7 @@ class _FinancialRecordDialogState extends State<FinancialRecordDialog> {
         listen: false,
       );
       final items = await financialProvider.getFinancialItemsByRecordId(
-        widget.record!.id!,
+        _recordId,
       );
       setState(() {
         _financialItems = items;
@@ -272,15 +295,15 @@ class _FinancialRecordDialogState extends State<FinancialRecordDialog> {
   }
 
   Future<void> _saveFinancialRecord() async {
-    if (!_formKey.currentState!.validate()) {
+    final formState = _formKey.currentState;
+    if (formState == null || !formState.validate()) {
       return;
     }
 
     // 只在非编辑备注模式下验证患者选择
+    final selectedPatientId = _selectedPatient?.id;
     if (!widget.isEditingNotesOnly) {
-      if (_selectedPatient == null ||
-          _selectedPatient!.id == null ||
-          _selectedPatient!.id == 0) {
+      if (selectedPatientId == null || selectedPatientId == 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('请选择有效的患者'),
@@ -297,9 +320,9 @@ class _FinancialRecordDialogState extends State<FinancialRecordDialog> {
         context,
         listen: false,
       );
-      final existingPatient = await patientProvider.getPatientById(
-        _selectedPatient!.id!,
-      );
+      final existingPatient = selectedPatientId == null
+          ? null
+          : await patientProvider.getPatientById(selectedPatientId);
       if (existingPatient == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -333,8 +356,20 @@ class _FinancialRecordDialogState extends State<FinancialRecordDialog> {
 
       if (_isEditing) {
         // 更新现有记录
-        final updatedRecord = widget.record!.copyWith(
-          patientId: _selectedPatient!.id!,
+        final selectedPatient = _selectedPatient;
+        final selectedPatientId = selectedPatient?.id;
+        if (selectedPatientId == null) {
+          if (mounted) {
+            SuccessToastManager.showError(context, message: '请选择患者');
+          }
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+        final record = _record;
+        final updatedRecord = record.copyWith(
+          patientId: selectedPatientId,
           notes: _notesController.text.trim(),
           updatedAt: DateTimeFormatter.nowLocal(),
           createdAt: DateTimeFormatter.fromDbString(
@@ -368,7 +403,7 @@ class _FinancialRecordDialogState extends State<FinancialRecordDialog> {
           } else {
             // 如果没有项目，创建新的
             final newItem = FinancialItem(
-              financialRecordId: widget.record!.id!,
+              financialRecordId: _recordId,
               itemName: '诊疗费用',
               paymentMethod: FinancialPaymentMethodHelper.toStorageValue(
                 _paymentMethod,
@@ -392,7 +427,7 @@ class _FinancialRecordDialogState extends State<FinancialRecordDialog> {
           // 更新财务记录的收费项数量和更新时间
           await _updateFinancialRecordAfterItemChange(
             financialProvider,
-            widget.record!,
+            _record,
           );
         }
 
@@ -402,8 +437,18 @@ class _FinancialRecordDialogState extends State<FinancialRecordDialog> {
         }
       } else {
         // 创建新记录
+        final newRecordPatientId = _selectedPatient?.id;
+        if (newRecordPatientId == null) {
+          if (mounted) {
+            SuccessToastManager.showError(context, message: '请选择有效的患者');
+          }
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
         final newRecord = FinancialRecord(
-          patientId: _selectedPatient!.id!,
+          patientId: newRecordPatientId,
           totalQuantity: 1, // 固定为1，因为我们是直接创建一个项目
           notes: _notesController.text.trim(),
           createdAt: DateTimeFormatter.fromDbString(
@@ -568,7 +613,7 @@ class _FinancialRecordDialogState extends State<FinancialRecordDialog> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border(
-                  top: BorderSide(color: Colors.grey[200]!, width: 1),
+                  top: BorderSide(color: Colors.grey.shade200, width: 1),
                 ),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(12),
@@ -590,7 +635,7 @@ class _FinancialRecordDialogState extends State<FinancialRecordDialog> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          side: BorderSide(color: Colors.grey[400]!),
+                          side: BorderSide(color: Colors.grey.shade400),
                         ),
                         child: Text(
                           '取消',

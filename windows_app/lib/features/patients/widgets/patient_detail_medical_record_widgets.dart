@@ -22,13 +22,13 @@ class PatientMedicalRecordsEmptyState extends StatelessWidget {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: DentalColors.primary.withOpacity(0.1),
+              color: DentalColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.medical_services_rounded,
               size: 64,
-              color: DentalColors.primary.withOpacity(0.6),
+              color: DentalColors.primary.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 24),
@@ -93,7 +93,7 @@ class PatientMedicalRecordsListSection extends StatelessWidget {
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -101,7 +101,7 @@ class PatientMedicalRecordsListSection extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.medical_services_rounded,
                 color: DentalColors.primary,
                 size: 24,
@@ -109,7 +109,7 @@ class PatientMedicalRecordsListSection extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 '病历记录 ($recordCount)',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: DentalColors.onSurface,
@@ -119,14 +119,14 @@ class PatientMedicalRecordsListSection extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.only(right: 8),
                 decoration: BoxDecoration(
-                  color: DentalColors.info.withOpacity(0.1),
+                  color: DentalColors.info.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: DentalColors.info.withOpacity(0.3),
+                    color: DentalColors.info.withValues(alpha: 0.3),
                   ),
                 ),
                 child: IconButton(
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.refresh_rounded,
                     color: DentalColors.info,
                     size: 18,
@@ -204,8 +204,8 @@ class PatientMedicalRecordCard extends StatelessWidget {
                   title: '主诉',
                   text: record.chiefComplaint,
                   color: DentalColors.primary,
-                  backgroundColor: Colors.grey[50]!,
-                  borderColor: Colors.grey[200]!,
+                  backgroundColor: Colors.grey.shade50,
+                  borderColor: Colors.grey.shade200,
                 ),
                 const SizedBox(height: 8),
               ],
@@ -215,8 +215,8 @@ class PatientMedicalRecordCard extends StatelessWidget {
                   title: '诊断',
                   text: record.diagnosis,
                   color: DentalColors.success,
-                  backgroundColor: DentalColors.success.withOpacity(0.05),
-                  borderColor: DentalColors.success.withOpacity(0.2),
+                  backgroundColor: DentalColors.success.withValues(alpha: 0.05),
+                  borderColor: DentalColors.success.withValues(alpha: 0.2),
                 ),
                 const SizedBox(height: 8),
               ],
@@ -224,12 +224,12 @@ class PatientMedicalRecordCard extends StatelessWidget {
                 children: [
                   TextButton.icon(
                     onPressed: onView,
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.visibility_rounded,
                       size: 16,
                       color: DentalColors.primary,
                     ),
-                    label: Text(
+                    label: const Text(
                       '查看详情',
                       style: TextStyle(
                         color: DentalColors.primary,
@@ -304,10 +304,10 @@ class _MedicalRecordCardHeader extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: DentalColors.primary.withOpacity(0.1),
+            color: DentalColors.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
-          child: Icon(
+          child: const Icon(
             Icons.description_rounded,
             color: DentalColors.primary,
             size: 24,

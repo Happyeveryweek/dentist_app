@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../../../providers/financial_provider.dart';
@@ -29,9 +28,12 @@ class FinancialDetailService {
       final List<Map<String, dynamic>> detailedRecords = [];
 
       for (final record in patientRecords) {
+        final recordId = record.id;
+        if (recordId == null) continue;
+
         // 获取该财务记录的所有明细项
         final items =
-            await financialProvider.getFinancialItemsByRecordId(record.id!);
+            await financialProvider.getFinancialItemsByRecordId(recordId);
 
         if (items.isNotEmpty) {
           // 如果有明细项，为每个明细项创建一个显示记录
@@ -123,12 +125,17 @@ class FinancialDetailService {
   /// 更新财务记录的收费项数量和更新时间
   Future<void> updateFinancialRecordAfterItemChange(
       FinancialRecord record) async {
+    final recordId = record.id;
+    if (recordId == null) {
+      throw Exception('财务记录 ID 不存在');
+    }
+
     try {
       // 获取该财务记录的所有收费项，重新计算总数量
       final items =
-          await financialProvider.getFinancialItemsByRecordId(record.id!);
+          await financialProvider.getFinancialItemsByRecordId(recordId);
       final totalQuantity =
-          items.fold<int>(0, (sum, item) => sum + (item.quantity ?? 1));
+          items.fold<int>(0, (sum, item) => sum + item.quantity);
 
       // 更新财务记录
       final updatedRecord = record.copyWith(

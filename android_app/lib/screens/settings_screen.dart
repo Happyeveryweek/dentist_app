@@ -59,23 +59,20 @@ class _SettingsScreenState extends State<SettingsScreen>
   final TextEditingController _passwordController = TextEditingController();
 
   // 数据库配置对象
-  late DatabaseConfig _dbConfig;
+  DatabaseConfig _dbConfig = DatabaseConfig(
+    dbType: 'sqlite',
+    sqlite: SqliteConfig(path: ''),
+    mysql: MySqlConfig(),
+  );
   bool _showMysqlConfig = false;
 
   // Tab控制器
-  late TabController _tabController;
+  TabController? _tabController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-
-    // 初始化_dbConfig以防止late错误
-    _dbConfig = DatabaseConfig(
-      dbType: 'sqlite',
-      sqlite: SqliteConfig(path: ''),
-      mysql: MySqlConfig(),
-    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // 获取数据库提供者
@@ -93,7 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     _databaseController.dispose();
     _usernameController.dispose();
     _passwordController.dispose();
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -138,9 +135,10 @@ class _SettingsScreenState extends State<SettingsScreen>
       if (!mounted) return;
 
       // 从数据库提供者获取当前路径
-      if (dbProvider == null) return;
-      final providerDbType = dbProvider!.dbType;
-      final providerDbPath = dbProvider!.dbPath;
+      final provider = dbProvider;
+      if (provider == null) return;
+      final providerDbType = provider.dbType;
+      final providerDbPath = provider.dbPath;
       AppLogger.info('从Provider获取数据库信息: 类型=$providerDbType, 路径=$providerDbPath');
 
       setState(() {

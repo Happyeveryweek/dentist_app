@@ -1,5 +1,5 @@
 import '../utils/datetime_formatter.dart';
-import '../utils/app_logger.dart';
+import '../utils/map_parser.dart';
 
 // 财务记录模型
 class FinancialRecord {
@@ -31,47 +31,19 @@ class FinancialRecord {
     Map<String, dynamic> map, {
     String dataSource = 'sqlite',
   }) {
-    DateTime created = DateTime.now();
-    DateTime updated = DateTime.now();
-
-    // 使用统一的时间解析方法
-    try {
-      if (map['created_at'] is DateTime) {
-        created = map['created_at'];
-      } else if (map['created_at'] is String) {
-        created = DateTimeFormatter.fromDbString(map['created_at']);
-      }
-    } catch (e) {
-      AppLogger.info('created_at解析失败: ${map['created_at']}, 使用当前时间');
-      created = DateTime.now();
-    }
-
-    try {
-      if (map['updated_at'] is DateTime) {
-        updated = map['updated_at'];
-      } else if (map['updated_at'] is String) {
-        updated = DateTimeFormatter.fromDbString(map['updated_at']);
-      }
-    } catch (e) {
-      AppLogger.info('updated_at解析失败: ${map['updated_at']}, 使用当前时间');
-      updated = DateTime.now();
-    }
-
-    final record = FinancialRecord(
-      id: map['id'] != null ? int.tryParse(map['id'].toString()) ?? 0 : null,
-      patientId: int.tryParse(map['patient_id'].toString()) ?? 0,
-      totalQuantity:
-          int.tryParse(map['total_quantity'].toString()) ?? 0, // 新增：收费总条数
-      notes: map['notes']?.toString(),
-      createdAt: created,
-      updatedAt: updated,
-      patientName: map['patient_name']?.toString(), // 新增：患者姓名
-      patientNamePinyin: map['patient_name_pinyin']?.toString(), // 患者姓名拼音
+    final p = MapParser(map, context: 'FinancialRecord');
+    return FinancialRecord(
+      id: p.optional('id', (v) => v as int),
+      patientId: p.integer('patient_id'),
+      totalQuantity: p.integer('total_quantity'), // 新增：收费总条数
+      notes: p.stringOptional('notes'),
+      createdAt: p.dateTime('created_at'),
+      updatedAt: p.dateTime('updated_at'),
+      patientName: p.stringOptional('patient_name'), // 新增：患者姓名
+      patientNamePinyin: p.stringOptional('patient_name_pinyin'), // 患者姓名拼音
       patientNameInitials:
-          map['patient_name_initials']?.toString(), // 患者姓名拼音首字母
+          p.stringOptional('patient_name_initials'), // 患者姓名拼音首字母
     );
-
-    return record;
   }
 
   // 转换为Map（不包含拼音字段，因为它们不存储到数据库）

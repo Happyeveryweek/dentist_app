@@ -26,7 +26,8 @@ class MaterialDropdownContainer extends StatelessWidget {
                 ? constraints.maxWidth
                 : 260.0);
         final displayText = value.trim().isEmpty ? (hintText ?? '请选择') : value;
-        final displayColor = value.trim().isEmpty ? Colors.grey.shade500 : Colors.black87;
+        final displayColor =
+            value.trim().isEmpty ? Colors.grey.shade500 : Colors.black87;
 
         return SizedBox(
           width: resolvedWidth,
@@ -37,7 +38,7 @@ class MaterialDropdownContainer extends StatelessWidget {
               border: Border.all(color: Colors.grey.shade300),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 4,
                   offset: const Offset(0, 1),
                 ),
@@ -58,19 +59,24 @@ class MaterialDropdownContainer extends StatelessWidget {
                   enabled: false,
                   height: 40,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [DentalColors.primary.withOpacity(0.1), DentalColors.primary.withOpacity(0.05)],
+                        colors: [
+                          DentalColors.primary.withValues(alpha: 0.1),
+                          DentalColors.primary.withValues(alpha: 0.05)
+                        ],
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                       ),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
+                    child: const Row(
                       children: [
-                        Icon(Icons.list_rounded, size: 16, color: DentalColors.primary),
-                        const SizedBox(width: 8),
+                        Icon(Icons.list_rounded,
+                            size: 16, color: DentalColors.primary),
+                        SizedBox(width: 8),
                         Text(
                           '选择选项',
                           style: TextStyle(
@@ -92,9 +98,12 @@ class MaterialDropdownContainer extends StatelessWidget {
                     value: item,
                     height: 36,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isSelected ? DentalColors.primary.withOpacity(0.08) : Colors.transparent,
+                        color: isSelected
+                            ? DentalColors.primary.withValues(alpha: 0.08)
+                            : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -105,13 +114,18 @@ class MaterialDropdownContainer extends StatelessWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isSelected ? DentalColors.primary : Colors.grey.shade400,
+                                color: isSelected
+                                    ? DentalColors.primary
+                                    : Colors.grey.shade400,
                                 width: 2,
                               ),
-                              color: isSelected ? DentalColors.primary : Colors.transparent,
+                              color: isSelected
+                                  ? DentalColors.primary
+                                  : Colors.transparent,
                             ),
                             child: isSelected
-                                ? const Icon(Icons.check, size: 10, color: Colors.white)
+                                ? const Icon(Icons.check,
+                                    size: 10, color: Colors.white)
                                 : null,
                           ),
                           const SizedBox(width: 8),
@@ -120,8 +134,12 @@ class MaterialDropdownContainer extends StatelessWidget {
                               item,
                               style: TextStyle(
                                 fontSize: 13,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                color: isSelected ? DentalColors.primary : Colors.black87,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                                color: isSelected
+                                    ? DentalColors.primary
+                                    : Colors.black87,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -133,7 +151,8 @@ class MaterialDropdownContainer extends StatelessWidget {
                 }).toList(),
               ],
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 child: Row(
                   children: [
                     Expanded(
@@ -151,7 +170,9 @@ class MaterialDropdownContainer extends StatelessWidget {
                     Icon(
                       Icons.keyboard_arrow_down_rounded,
                       size: 20,
-                      color: value.trim().isEmpty ? Colors.grey.shade500 : DentalColors.primary,
+                      color: value.trim().isEmpty
+                          ? Colors.grey.shade500
+                          : DentalColors.primary,
                     ),
                   ],
                 ),

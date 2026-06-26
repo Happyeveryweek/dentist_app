@@ -52,17 +52,21 @@ class PatientDentalConditionDisplay extends StatelessWidget {
         final value = entry.value;
         if (key.startsWith('date-')) {
           String index = key.split('-').last;
-          groupedData[index]!['date'] = value?.toString() ?? '';
+          final group = groupedData[index];
+          if (group != null) {
+            group['date'] = value?.toString() ?? '';
+          }
         } else if (key.contains('-')) {
           List<String> parts = key.split('-');
           if (parts.length >= 2) {
             String dataIndex = parts.last;
+            final group = groupedData[dataIndex];
+            if (group == null) continue;
 
             // 处理带有note的字段
             if (key.contains('note')) {
               String chartPrefix = parts[0]; // 例如 chart1
-              groupedData[dataIndex]!['$chartPrefix-note'] =
-                  value?.toString() ?? '';
+              group['$chartPrefix-note'] = value?.toString() ?? '';
             }
             // 处理位置字段
             else if (parts.length >= 3) {
@@ -71,8 +75,7 @@ class PatientDentalConditionDisplay extends StatelessWidget {
               if (parts.length > 3) {
                 position = '${parts[1]}-${parts[2]}'; // 例如 top-left
               }
-              groupedData[dataIndex]!['$chartPrefix-$position'] =
-                  value?.toString() ?? '';
+              group['$chartPrefix-$position'] = value?.toString() ?? '';
             }
           }
         }

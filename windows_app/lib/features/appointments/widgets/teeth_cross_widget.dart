@@ -64,17 +64,17 @@ class TeethCrossWidget extends StatelessWidget {
 
   Widget _buildCross() {
     // 使用固定尺寸而非LayoutBuilder，避免潜在的布局计算问题（恢复原值）
-    final double width = 170.0;
-    final double height = 90.0;
-    final double centerX = width / 2;
-    final double centerY = height / 2;
+    const double width = 170.0;
+    const double height = 90.0;
+    const double centerX = width / 2;
+    const double centerY = height / 2;
 
     return Stack(
       alignment: Alignment.center,
       children: [
         // 自定义画笔绘制十字
         CustomPaint(
-          size: Size(width, height),
+          size: const Size(width, height),
           painter: CrossPainter(),
         ),
 

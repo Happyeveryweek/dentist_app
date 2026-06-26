@@ -9,13 +9,13 @@ class MedicalTemplateInitializationService {
   MedicalTemplateInitializationService(this._provider);
 
   /// 执行初始化流程
-  /// 
+  ///
   /// 返回初始化结果，成功返回 true，失败返回 false 和错误信息
   Future<Map<String, dynamic>> executeInitialization() async {
     try {
       // 执行初始化
       await _provider.initializeDefaultTemplates();
-      
+
       return {
         'success': true,
         'error': null,
@@ -44,22 +44,31 @@ class MedicalTemplateInitializationService {
   }
 
   /// 删除模板
-  /// 
+  ///
   /// 返回删除结果，成功返回 true，失败返回 false 和错误信息
-  Future<Map<String, dynamic>> deleteTemplate(MedicalRecordTemplate template) async {
+  Future<Map<String, dynamic>> deleteTemplate(
+      MedicalRecordTemplate template) async {
+    final templateId = template.id;
+    if (templateId == null) {
+      return {
+        'success': false,
+        'error': '疾病类型 ID 不存在',
+      };
+    }
+
     try {
       // 检查是否有关联记录
-      final hasRelated = await _provider.hasRelatedRecords(template.id!);
-      
+      final hasRelated = await _provider.hasRelatedRecords(templateId);
+
       if (hasRelated) {
         return {
           'success': false,
           'error': '该疾病类型已被病历记录使用',
         };
       }
-      
-      final deleteResult = await _provider.deleteTemplate(template.id!);
-      
+
+      final deleteResult = await _provider.deleteTemplate(templateId);
+
       if (deleteResult) {
         return {
           'success': true,
@@ -80,7 +89,8 @@ class MedicalTemplateInitializationService {
   }
 
   /// 获取指定类别的模板数据
-  Future<List<MedicalRecordTemplate>> getTemplatesByCategory(String category) async {
+  Future<List<MedicalRecordTemplate>> getTemplatesByCategory(
+      String category) async {
     return await _provider.getTemplatesByCategory(category, forceRefresh: true);
   }
 }

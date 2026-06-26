@@ -50,6 +50,8 @@ class UserDetailScreen extends StatelessWidget {
   }
 
   Widget _buildNewUserHeader(BuildContext context) {
+    final imageData = user.imageData;
+    final hasImage = imageData != null && imageData.isNotEmpty;
     return AppCard(
       padding: const EdgeInsets.all(24),
       child: Row(
@@ -58,11 +60,11 @@ class UserDetailScreen extends StatelessWidget {
             radius: 40,
             backgroundColor: _getRoleColor(user.role),
             backgroundImage:
-                user.imageData != null && user.imageData!.isNotEmpty
-                    ? MemoryImage(Uint8List.fromList(user.imageData!))
+                hasImage
+                    ? MemoryImage(Uint8List.fromList(imageData))
                     : _getDefaultAvatarImage(user.role),
             child:
-                user.imageData != null && user.imageData!.isNotEmpty
+                hasImage
                     ? null
                     : (_getDefaultAvatarImage(user.role) != null
                         ? null
@@ -120,6 +122,8 @@ class UserDetailScreen extends StatelessWidget {
   }
 
   Widget _buildDetailsExpansionCard(BuildContext context) {
+    final doctor = user.doctor;
+    final avatar = user.avatar;
     return AppCard(
       padding: EdgeInsets.zero,
       child: Column(
@@ -138,15 +142,15 @@ class UserDetailScreen extends StatelessWidget {
               _buildInfoRow(context, Icons.person_pin, '用户ID:', '#${user.id}'),
               _buildInfoRow(context, Icons.person, '用户名:', user.username),
               _buildInfoRow(context, Icons.email, '邮箱:', user.email ?? '未设置'),
-              if (user.doctor?.isNotEmpty == true)
+              if (doctor != null && doctor.isNotEmpty)
                 _buildInfoRow(
                   context,
                   Icons.medical_services,
                   '医生信息:',
-                  user.doctor!,
+                  doctor,
                 ),
-              if (user.avatar?.isNotEmpty == true)
-                _buildInfoRow(context, Icons.face, '头像:', user.avatar!),
+              if (avatar != null && avatar.isNotEmpty)
+                _buildInfoRow(context, Icons.face, '头像:', avatar),
             ],
           ),
           const Divider(height: 1, indent: 16, endIndent: 16),
@@ -314,9 +318,16 @@ class UserDetailScreen extends StatelessWidget {
   }
 
   Future<void> _confirmDeleteUser(BuildContext context) async {
+    final userId = user.id;
+    if (userId == null) {
+      if (context.mounted) {
+        SuccessToastManager.showError(context, message: '用户ID无效，无法删除');
+      }
+      return;
+    }
     try {
       final provider = Provider.of<UserProvider>(context, listen: false);
-      await provider.deleteUser(user.id!);
+      await provider.deleteUser(userId);
 
       if (!context.mounted) return;
       DeleteSuccessToastManager.show(context, message: '用户删除成功');

@@ -1,29 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'dart:convert';
 import '../models/material.dart' as material_models;
 import '../providers/material_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dental_icons.dart';
-import '../utils/dental_materials_init.dart';
 import '../widgets/unified_search_field.dart';
 import '../widgets/success_toast.dart';
 import '../features/materials/widgets/material_hoverable_cards.dart';
 import '../widgets/mysql_connection_warning.dart';
-import '../features/materials/widgets/material_form_field.dart';
-import '../features/materials/widgets/material_detail_row.dart';
 import '../features/materials/widgets/material_stat_card.dart';
 import '../features/materials/widgets/material_pagination.dart';
-import '../features/materials/widgets/material_dropdown_container.dart';
-import '../features/materials/widgets/material_dropdown_field.dart';
-import '../features/materials/widgets/material_unit_dropdown.dart';
 import '../features/materials/widgets/compact_material_action_button.dart';
 import '../features/materials/widgets/dental_material_initialize_dialog.dart';
 import '../features/materials/widgets/material_detail_dialog.dart';
 import '../features/materials/widgets/material_form_dialog.dart';
 import '../features/materials/services/material_initialization_service.dart';
 import '../features/materials/services/material_filter_pagination_service.dart';
+import '../utils/log_manager.dart';
 
 class MaterialsScreen extends StatefulWidget {
   const MaterialsScreen({Key? key}) : super(key: key);
@@ -186,18 +180,18 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
       _filterMaterials(resetPage: false);
 
       // 打印调试信息
-      print(
-          '材料数据加载成功，错误状态已重置: _hasError=$_hasError, _errorMessage="$_errorMessage"');
+      LogManager.e('MaterialsScreen',
+          '材料数据加载成功，错误状态已重置: _hasError=$_hasError, _errorMessage=');
 
       // 额外确保错误状态被重置
       if (_hasError || _errorMessage.isNotEmpty) {
-        print('检测到错误状态仍然存在，强制重置...');
+        LogManager.e('MaterialsScreen', '检测到错误状态仍然存在，强制重置...');
         setState(() {
           _hasError = false;
           _errorMessage = '';
         });
-        print(
-            '强制重置后错误状态: _hasError=$_hasError, _errorMessage="$_errorMessage"');
+        LogManager.e('MaterialsScreen',
+            '强制重置后错误状态: _hasError=$_hasError, _errorMessage=');
       }
     } catch (e) {
       setState(() {
@@ -211,7 +205,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   /// 开始初始化流程
   Future<void> _startInitialization() async {
     // 显示初始化进度对话框
-    this._showInitializationProgressDialog();
+    _showInitializationProgressDialog();
 
     try {
       // 执行初始化
@@ -227,6 +221,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
       if (mounted) {
         await _loadData(showLoading: false, forceRefresh: true);
 
+        if (!mounted) return;
         // 重置错误状态
         setState(() {
           _hasError = false;
@@ -249,7 +244,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
         }
       }
     } catch (e) {
-      print('材料数据初始化过程中出现异常: $e');
+      LogManager.e('MaterialsScreen', '材料数据初始化过程中出现异常', error: e);
 
       // 显示错误提示
       if (mounted) {
@@ -336,14 +331,23 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
 
     if (confirmed == true) {
       try {
+        final materialId = material.id;
+        if (materialId == null) {
+          if (!mounted) return;
+          AppToastManager.showError(context, message: '无法删除无 ID 的材料');
+          return;
+        }
+        if (!mounted) return;
         final materialProvider =
             Provider.of<MaterialProvider>(context, listen: false);
-        final success = await materialProvider.deleteMaterial(material.id!);
+        final success = await materialProvider.deleteMaterial(materialId);
 
         if (success) {
           await _loadData(showLoading: false);
+          if (!mounted) return;
           AppToastManager.showDelete(context, message: '材料删除成功');
         } else {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('删除失败'),
@@ -352,6 +356,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
           );
         }
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('删除失败: $e'),
@@ -376,7 +381,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 gradient: DentalColors.primaryGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 DentalIcons.pills,
                 color: Colors.white,
                 size: 24,
@@ -407,6 +412,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               onPressed: () async {
                 await _loadData(showLoading: false, forceRefresh: true);
+                if (!context.mounted) return;
                 // 使用公用成功提示组件
                 AppToastManager.showSuccess(context, message: '数据已刷新');
               },
@@ -427,7 +433,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             child: IconButton(
               icon: const Icon(Icons.settings_backup_restore_rounded,
                   color: Colors.white),
-              onPressed: () => this._showInitializeDialog(),
+              onPressed: () => _showInitializeDialog(),
               tooltip: '初始化默认材料',
             ),
           ),
@@ -440,7 +446,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             ),
             child: IconButton(
               icon: const Icon(Icons.add_rounded, color: Colors.white),
-              onPressed: () => this._showMaterialDialog(),
+              onPressed: () => _showMaterialDialog(),
               tooltip: '添加材料',
             ),
           ),
@@ -458,10 +464,10 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black.withOpacity(0.06)),
+                border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 12,
                       offset: const Offset(0, 2)),
                 ],
@@ -498,16 +504,16 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.category_rounded,
+                        const Icon(Icons.category_rounded,
                             color: DentalColors.primary, size: 20),
                         const SizedBox(width: 8),
-                        Text('类型:',
+                        const Text('类型:',
                             style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: DentalColors.onSurface)),
                         const SizedBox(width: 12),
-                        this._buildModernTypeDropdown(
+                        _buildModernTypeDropdown(
                           value: _selectedType,
                           items: _materialTypes,
                           onChanged: (value) {
@@ -530,7 +536,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: this._buildStatCard(
+                  child: _buildStatCard(
                     icon: Icons.inventory_rounded,
                     label: '材料总数',
                     value: _filteredMaterials.length.toString(),
@@ -539,7 +545,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: this._buildStatCard(
+                  child: _buildStatCard(
                     icon: Icons.attach_money_rounded,
                     label: '总价值',
                     value:
@@ -549,7 +555,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: this._buildStatCard(
+                  child: _buildStatCard(
                     icon: Icons.category_rounded,
                     label: '类型数',
                     value: _filteredMaterials
@@ -562,7 +568,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: this._buildStatCard(
+                  child: _buildStatCard(
                     icon: Icons.business_rounded,
                     label: '供应商数',
                     value: _filteredMaterials
@@ -657,7 +663,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                                   ),
                                   const SizedBox(height: 16),
                                   ElevatedButton.icon(
-                                    onPressed: () => this._showMaterialDialog(),
+                                    onPressed: () => _showMaterialDialog(),
                                     icon: const Icon(Icons.add),
                                     label: const Text('添加材料'),
                                   ),
@@ -674,14 +680,14 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                                       horizontal: 16),
                                   itemCount: _displayedMaterials.length,
                                   itemBuilder: (context, index) {
-                                    return this._buildMaterialCard(
+                                    return _buildMaterialCard(
                                         _displayedMaterials[index]);
                                   },
                                 ),
                               ),
 
                               // 分页控件
-                              if (_totalPages > 1) this._buildPagination(),
+                              if (_totalPages > 1) _buildPagination(),
                             ],
                           ),
           ),
@@ -708,7 +714,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                   : Theme.of(context).primaryColor,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
+            child: const Icon(
               DentalIcons.pills,
               color: Colors.white,
               size: 20,
@@ -734,7 +740,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
+                        color: Colors.green.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
@@ -759,7 +765,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
@@ -785,7 +791,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.purple.withOpacity(0.1),
+                          color: Colors.purple.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -816,7 +822,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withOpacity(0.1),
+                            color: Colors.orange.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
@@ -827,7 +833,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                               const SizedBox(width: 3),
                               Flexible(
                                 child: Text(
-                                  material.supplier!,
+                                  material.supplier ?? '',
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
@@ -890,74 +896,6 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
     );
   }
 
-  Widget _buildModernFormField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    bool isRequired = false,
-    bool isReadOnly = false,
-    TextInputType? keyboardType,
-    String? prefix,
-    int maxLines = 1,
-  }) {
-    return MaterialFormField(
-      controller: controller,
-      label: label,
-      hint: hint,
-      icon: icon,
-      isRequired: isRequired,
-      isReadOnly: isReadOnly,
-      keyboardType: keyboardType,
-      prefix: prefix,
-      maxLines: maxLines,
-    );
-  }
-
-  Widget _buildModernDropdownField({
-    required String value,
-    required String label,
-    required IconData icon,
-    required List<String> items,
-    required Function(String?) onChanged,
-  }) {
-    return MaterialDropdownField(
-      value: value,
-      label: label,
-      icon: icon,
-      items: items,
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildModernDropdownContainer({
-    required String value,
-    required List<String> items,
-    required Function(String?) onChanged,
-    String? hintText,
-    double? width,
-  }) {
-    return MaterialDropdownContainer(
-      value: value,
-      items: items,
-      onChanged: onChanged,
-      hintText: hintText,
-      width: width,
-    );
-  }
-
-  Widget _buildModernUnitDropdown({
-    required TextEditingController controller,
-    required List<String> options,
-    required Function(String) onSelected,
-  }) {
-    return MaterialUnitDropdown(
-      controller: controller,
-      options: options,
-      onSelected: onSelected,
-    );
-  }
-
   // 构建类型筛选下拉框
   Widget _buildModernTypeDropdown({
     required String value,
@@ -974,14 +912,14 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: (_selectedType != '全部' || _isTypeHover)
-                ? DentalColors.primary.withOpacity(0.6)
-                : Colors.grey[300]!,
+                ? DentalColors.primary.withValues(alpha: 0.6)
+                : Colors.grey.shade300,
             width: 1.5,
           ),
           boxShadow: [
             if (_isTypeHover)
               BoxShadow(
-                color: DentalColors.primary.withOpacity(0.1),
+                color: DentalColors.primary.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -1026,7 +964,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -1055,7 +993,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? DentalColors.primary.withOpacity(0.1)
+                        ? DentalColors.primary.withValues(alpha: 0.1)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -1100,10 +1038,10 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: DentalColors.primary.withOpacity(0.1),
+                            color: DentalColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text(
+                          child: const Text(
                             '已选',
                             style: TextStyle(
                               fontSize: 10,
@@ -1154,30 +1092,6 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDetailRow(
-      IconData icon, String label, String value, Color color) {
-    return MaterialDetailRow(
-      icon: icon,
-      label: label,
-      value: value,
-      color: color,
-    );
-  }
-
-  Widget _buildCompactMaterialActionButton({
-    required IconData icon,
-    required MaterialColor color,
-    required String tooltip,
-    required VoidCallback onPressed,
-  }) {
-    return CompactMaterialActionButton(
-      icon: icon,
-      color: color,
-      tooltip: tooltip,
-      onPressed: onPressed,
     );
   }
 

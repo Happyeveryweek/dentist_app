@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../utils/log_manager.dart';
 
 /// 凭证存储助手
 /// 负责保存和加载用户登录凭证
@@ -10,7 +11,7 @@ class CredentialStorageHelper {
       final savedUsername = prefs.getString('saved_username');
       final savedPassword = prefs.getString('saved_password');
       final rememberPassword = prefs.getBool('remember_password') ?? false;
-      
+
       if (rememberPassword && savedUsername != null && savedPassword != null) {
         return CredentialData(
           username: savedUsername,
@@ -19,7 +20,7 @@ class CredentialStorageHelper {
         );
       }
     } catch (e) {
-      print('加载保存的登录信息失败: $e');
+      LogManager.e('CredentialStorageHelper', '加载保存的登录信息失败', error: e);
     }
     return null;
   }
@@ -42,7 +43,7 @@ class CredentialStorageHelper {
         await prefs.setBool('remember_password', false);
       }
     } catch (e) {
-      print('保存登录信息失败: $e');
+      LogManager.e('CredentialStorageHelper', '保存登录信息失败', error: e);
     }
   }
 }

@@ -23,7 +23,8 @@ class PatientMaterialSyncService {
     Future.microtask(() async {
       try {
         final conn = getSyncMysqlConnection();
-        final summary = 'patient_id=${material.patientId}, description=${material.description}';
+        final summary =
+            'patient_id=${material.patientId}, description=${material.description}';
         if (conn == null) {
           await LogManager.logSyncOperation(
             module: 'patient_material',
@@ -34,7 +35,8 @@ class PatientMaterialSyncService {
             summary: summary,
             error: 'mysql_connection_unavailable',
           );
-          print('MySQL连接不可用，跳过患者材料同步(id=$materialId)');
+          LogManager.w('PatientMaterialSyncService',
+              'MySQL连接不可用，跳过患者材料同步(id=$materialId)');
           return;
         }
 
@@ -67,7 +69,8 @@ class PatientMaterialSyncService {
             recordId: materialId,
             summary: summary,
           );
-          print('成功更新MySQL患者材料(id=$materialId)，影响行数: ${result.affectedRows}');
+          LogManager.i('PatientMaterialSyncService',
+              '成功更新MySQL患者材料(id=$materialId)，影响行数: ${result.affectedRows}');
         } else {
           final result = await conn.query(
             '''
@@ -91,7 +94,8 @@ class PatientMaterialSyncService {
             recordId: materialId,
             summary: summary,
           );
-          print('成功将患者材料(id=$materialId)同步到MySQL，插入ID: ${result.insertId}');
+          LogManager.i('PatientMaterialSyncService',
+              '成功将患者材料(id=$materialId)同步到MySQL，插入ID: ${result.insertId}');
         }
       } catch (e) {
         await LogManager.logSyncOperation(
@@ -100,10 +104,11 @@ class PatientMaterialSyncService {
           table: 'patient_materials',
           status: 'failed',
           recordId: materialId,
-          summary: 'patient_id=${material.patientId}, description=${material.description}',
+          summary:
+              'patient_id=${material.patientId}, description=${material.description}',
           error: e.toString(),
         );
-        print('同步患者材料到MySQL时出错: $e');
+        LogManager.e('PatientMaterialSyncService', '同步患者材料到MySQL时出错', error: e);
       }
     });
   }
@@ -121,11 +126,13 @@ class PatientMaterialSyncService {
             recordId: materialId,
             error: 'mysql_connection_unavailable',
           );
-          print('MySQL连接不可用，跳过患者材料删除同步(id=$materialId)');
+          LogManager.w('PatientMaterialSyncService',
+              'MySQL连接不可用，跳过患者材料删除同步(id=$materialId)');
           return;
         }
 
-        await conn.query('DELETE FROM material_images WHERE material_id = ?', [materialId]);
+        await conn.query(
+            'DELETE FROM material_images WHERE material_id = ?', [materialId]);
         final result = await conn.query(
           'DELETE FROM patient_materials WHERE id = ?',
           [materialId],
@@ -137,7 +144,8 @@ class PatientMaterialSyncService {
           status: 'success',
           recordId: materialId,
         );
-        print('成功从MySQL删除患者材料(id=$materialId)，影响行数: ${result.affectedRows}');
+        LogManager.i('PatientMaterialSyncService',
+            '成功从MySQL删除患者材料(id=$materialId)，影响行数: ${result.affectedRows}');
       } catch (e) {
         await LogManager.logSyncOperation(
           module: 'patient_material',
@@ -147,7 +155,9 @@ class PatientMaterialSyncService {
           recordId: materialId,
           error: e.toString(),
         );
-        print('从MySQL删除患者材料(id=$materialId)时出错: $e');
+        LogManager.e(
+            'PatientMaterialSyncService', '从MySQL删除患者材料(id=$materialId)时出错',
+            error: e);
       }
     });
   }
@@ -159,7 +169,8 @@ class PatientMaterialSyncService {
     Future.microtask(() async {
       try {
         final conn = getSyncMysqlConnection();
-        final summary = 'material_id=${image.materialId}, original_name=${image.originalName}';
+        final summary =
+            'material_id=${image.materialId}, original_name=${image.originalName}';
         if (conn == null) {
           await LogManager.logSyncOperation(
             module: 'material_image',
@@ -170,7 +181,8 @@ class PatientMaterialSyncService {
             summary: summary,
             error: 'mysql_connection_unavailable',
           );
-          print('MySQL连接不可用，跳过材料图片同步(id=$imageId)');
+          LogManager.w(
+              'PatientMaterialSyncService', 'MySQL连接不可用，跳过材料图片同步(id=$imageId)');
           return;
         }
 
@@ -210,7 +222,8 @@ class PatientMaterialSyncService {
             recordId: imageId,
             summary: summary,
           );
-          print('成功更新MySQL材料图片(id=$imageId)，影响行数: ${result.affectedRows}');
+          LogManager.i('PatientMaterialSyncService',
+              '成功更新MySQL材料图片(id=$imageId)，影响行数: ${result.affectedRows}');
         } else {
           final result = await conn.query(
             '''
@@ -240,7 +253,8 @@ class PatientMaterialSyncService {
             recordId: imageId,
             summary: summary,
           );
-          print('成功将材料图片(id=$imageId)同步到MySQL，插入ID: ${result.insertId}');
+          LogManager.i('PatientMaterialSyncService',
+              '成功将材料图片(id=$imageId)同步到MySQL，插入ID: ${result.insertId}');
         }
       } catch (e) {
         await LogManager.logSyncOperation(
@@ -249,10 +263,11 @@ class PatientMaterialSyncService {
           table: 'material_images',
           status: 'failed',
           recordId: imageId,
-          summary: 'material_id=${image.materialId}, original_name=${image.originalName}',
+          summary:
+              'material_id=${image.materialId}, original_name=${image.originalName}',
           error: e.toString(),
         );
-        print('同步材料图片到MySQL时出错: $e');
+        LogManager.e('PatientMaterialSyncService', '同步材料图片到MySQL时出错', error: e);
       }
     });
   }
@@ -270,7 +285,8 @@ class PatientMaterialSyncService {
             recordId: imageId,
             error: 'mysql_connection_unavailable',
           );
-          print('MySQL连接不可用，跳过材料图片删除同步(id=$imageId)');
+          LogManager.w('PatientMaterialSyncService',
+              'MySQL连接不可用，跳过材料图片删除同步(id=$imageId)');
           return;
         }
 
@@ -285,7 +301,8 @@ class PatientMaterialSyncService {
           status: 'success',
           recordId: imageId,
         );
-        print('成功从MySQL删除材料图片(id=$imageId)，影响行数: ${result.affectedRows}');
+        LogManager.i('PatientMaterialSyncService',
+            '成功从MySQL删除材料图片(id=$imageId)，影响行数: ${result.affectedRows}');
       } catch (e) {
         await LogManager.logSyncOperation(
           module: 'material_image',
@@ -295,7 +312,9 @@ class PatientMaterialSyncService {
           recordId: imageId,
           error: e.toString(),
         );
-        print('从MySQL删除材料图片(id=$imageId)时出错: $e');
+        LogManager.e(
+            'PatientMaterialSyncService', '从MySQL删除材料图片(id=$imageId)时出错',
+            error: e);
       }
     });
   }

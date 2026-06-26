@@ -18,6 +18,8 @@ import '../features/patients/services/patient_search_service.dart';
 import '../features/patients/services/patient_core_service.dart';
 import '../features/patients/services/patient_list_service.dart';
 import '../features/patients/services/patient_initialization_service.dart';
+import '../utils/pinyin_util.dart';
+import '../utils/log_manager.dart';
 
 export '../models/patient_material_with_images.dart'
     show PatientMaterialWithImages;
@@ -29,11 +31,33 @@ class PatientProvider extends ChangeNotifier {
   SqlitePatientDataSource? _sqliteDataSource;
   MySqlPatientDataSource? _mysqlDataSource;
 
-  // 患者相关服务
-  late final PatientMaterialService _materialService;
-  late final PatientSearchService _searchService;
-  late final PatientCoreService _coreService;
-  late final PatientListService _listService;
+  // 患者相关服务（通过 getter 懒加载，闭包依赖 Provider 实时状态）
+  PatientMaterialService? _materialServiceInstance;
+  PatientMaterialService get _materialService => _materialServiceInstance ??= PatientMaterialService(
+        getCurrentDataSource: () => _currentDataSource,
+        syncService: PatientMaterialSyncService(
+          getSyncMysqlConnection: () => _syncMysqlConnection,
+          getEffectiveDataSourceType: () =>
+              _effectiveDataSourceType ?? _dataSourceType,
+        ),
+      );
+  PatientSearchService? _searchServiceInstance;
+  PatientSearchService get _searchService => _searchServiceInstance ??= PatientSearchService(
+        getCurrentDataSource: () => _currentDataSource,
+      );
+  PatientCoreService? _coreServiceInstance;
+  PatientCoreService get _coreService => _coreServiceInstance ??= PatientCoreService(
+        getCurrentDataSource: () => _currentDataSource,
+        getSyncMysqlConnection: () => _syncMysqlConnection,
+        getMysqlConnection: () => _currentMysqlConnection,
+        getDatabase: () => _database,
+        getEffectiveDataSourceType: () =>
+            _effectiveDataSourceType ?? _dataSourceType,
+      );
+  PatientListService? _listServiceInstance;
+  PatientListService get _listService => _listServiceInstance ??= PatientListService(
+        getCurrentDataSource: () => _currentDataSource,
+      );
 
   // 用户权限提供者引用
   UserProvider? _userProvider;
@@ -92,11 +116,12 @@ class PatientProvider extends ChangeNotifier {
     }
 
     if (requestedType == 'sqlite') {
-      if (_sqliteDataSource == null && _database != null) {
+      final database = _database;
+      if (_sqliteDataSource == null && database != null) {
         final doctor = _currentUser?.doctor;
         final isAdmin = _currentUser == null || _currentUser?.role == 'admin';
         _sqliteDataSource = SqlitePatientDataSource(
-          _database!,
+          database,
           doctorName: doctor,
           isAdmin: isAdmin,
         );
@@ -110,7 +135,8 @@ class PatientProvider extends ChangeNotifier {
         try {
           mysqlConnection = _databaseProvider.mysqlConnection;
         } catch (e) {
-          print('PatientProvider: 获取指定MySQL连接失败: $e');
+          LogManager.e('PatientProvider', 'PatientProvider: 获取指定MySQL连接失败',
+              error: e);
         }
       }
       if (_mysqlDataSource == null && mysqlConnection != null) {
@@ -136,13 +162,15 @@ class PatientProvider extends ChangeNotifier {
 
   // MySQL 动态连接获取
   MySqlConnection? get _currentMysqlConnection {
-    if (_effectiveDataSourceType != 'mysql' || _databaseProvider == null)
+    if (_effectiveDataSourceType != 'mysql' || _databaseProvider == null) {
       return _mysqlConnection;
+    }
     try {
       final latestConnection = _databaseProvider.mysqlConnection;
       if (latestConnection != null) return latestConnection;
     } catch (e) {
-      print('PatientProvider: 获取最新MySQL连接失败: $e');
+      LogManager.e('PatientProvider', 'PatientProvider: 获取最新MySQL连接失败',
+          error: e);
     }
     return _mysqlConnection;
   }
@@ -171,32 +199,7 @@ class PatientProvider extends ChangeNotifier {
     _dataSourceType = dataSourceType;
     _currentUser = currentUser;
 
-    // 初始化服务，通过闭包桥接 Provider 的实时状态
-    _materialService = PatientMaterialService(
-      getCurrentDataSource: () => _currentDataSource,
-      syncService: PatientMaterialSyncService(
-        getSyncMysqlConnection: () => _syncMysqlConnection,
-        getEffectiveDataSourceType: () =>
-            _effectiveDataSourceType ?? _dataSourceType,
-      ),
-    );
-
-    _searchService = PatientSearchService(
-      getCurrentDataSource: () => _currentDataSource,
-    );
-
-    _listService = PatientListService(
-      getCurrentDataSource: () => _currentDataSource,
-    );
-
-    _coreService = PatientCoreService(
-      getCurrentDataSource: () => _currentDataSource,
-      getSyncMysqlConnection: () => _syncMysqlConnection,
-      getMysqlConnection: () => _currentMysqlConnection,
-      getDatabase: () => _database,
-      getEffectiveDataSourceType: () =>
-          _effectiveDataSourceType ?? _dataSourceType,
-    );
+    // 服务实例通过 getter 懒加载
   }
 
   // 智能初始化 (委托至 PatientInitializationService)
@@ -270,7 +273,8 @@ class PatientProvider extends ChangeNotifier {
     required String signature,
   }) async {
     try {
-      print('PatientProvider.initializeFromDatabase: 开始初始化');
+      LogManager.w(
+          'PatientProvider', 'PatientProvider.initializeFromDatabase: 开始初始化');
       _databaseProvider = dbProvider;
       _userProvider = userProvider;
 
@@ -298,10 +302,12 @@ class PatientProvider extends ChangeNotifier {
       _lastError = null;
       _lastInitializationSignature = signature;
       clearCache();
-      print(
+      LogManager.i('PatientProvider',
           'PatientProvider.initializeFromDatabase: 完成，数据源类型: $_effectiveDataSourceType');
     } catch (e) {
-      print('PatientProvider.initializeFromDatabase: 失败: $e');
+      LogManager.e(
+          'PatientProvider', 'PatientProvider.initializeFromDatabase: 失败',
+          error: e);
       _lastError = '初始化失败: $e';
       _isConnected = false;
     }
@@ -316,8 +322,9 @@ class PatientProvider extends ChangeNotifier {
       mysqlConnection: _currentMysqlConnection,
       mysqlConnectionGetter: () async => _currentMysqlConnection,
       onReconnect: () async {
-        if (_databaseProvider != null)
+        if (_databaseProvider != null) {
           await _databaseProvider.initializeMySQL();
+        }
       },
     );
 
@@ -326,10 +333,13 @@ class PatientProvider extends ChangeNotifier {
   }
 
   // 缓存管理
-  bool _isCacheValid() =>
-      _cachedPatients != null &&
-      _lastCacheTime != null &&
-      DateTime.now().difference(_lastCacheTime!) < _cacheValidDuration;
+  bool _isCacheValid() {
+    final patients = _cachedPatients;
+    final lastTime = _lastCacheTime;
+    return patients != null &&
+        lastTime != null &&
+        DateTime.now().difference(lastTime) < _cacheValidDuration;
+  }
 
   void _updateCache(List<Patient> patients) {
     _cachedPatients = patients;
@@ -345,11 +355,22 @@ class PatientProvider extends ChangeNotifier {
 
   Future<List<Patient>> getAllPatients() async {
     if (!initialized) throw Exception('数据库未初始化');
-    if (_isCacheValid()) return _cachedPatients!;
+    if (_isCacheValid()) {
+      final cached = _cachedPatients;
+      if (cached != null) return cached;
+    }
     final patients = await _listService.getAllPatients();
     _updateCache(patients);
     _patientsNeedRefresh = false;
     return patients;
+  }
+
+  Future<List<Patient>> getAllPatientsInDataSource(
+    String effectiveDataSourceType,
+  ) async {
+    final ds = _dataSourceForType(effectiveDataSourceType);
+    if (ds == null) return [];
+    return ds.getAllPatients();
   }
 
   Future<List<Patient>> getPatientsByDoctor(String doctorName) async {
@@ -367,9 +388,220 @@ class PatientProvider extends ChangeNotifier {
     return ds.getPatientsByIds(ids);
   }
 
-  Future<Patient?> getPatient(int id) async {
+  Future<Patient?> getPatient(int id, {String? effectiveDataSourceType}) async {
     if (!initialized) throw Exception('数据库未初始化');
-    return _currentDataSource?.getPatientById(id);
+    final ds = _dataSourceForType(effectiveDataSourceType);
+    return ds?.getPatientById(id);
+  }
+
+  Future<List<Patient>> searchPatientsInDataSource(
+    String query, {
+    String? effectiveDataSourceType,
+  }) async {
+    final normalizedQuery = query.trim();
+    if (normalizedQuery.isEmpty) return [];
+    final ds = _dataSourceForType(effectiveDataSourceType);
+    if (ds == null) return [];
+    return ds.searchPatients(normalizedQuery);
+  }
+
+  Future<Patient?> resolvePatientForDataSource(
+    Patient sourcePatient, {
+    required String targetDataSourceType,
+  }) async {
+    if (!initialized) {
+      throw Exception('数据库未初始化');
+    }
+
+    final sourceId = sourcePatient.id;
+    if (sourceId != null) {
+      final directMatches = await getPatientsByIds(
+        [sourceId],
+        effectiveDataSourceType: targetDataSourceType,
+      );
+      if (directMatches.isNotEmpty &&
+          _matchesPatientIdentity(sourcePatient, directMatches.first)) {
+        return directMatches.first;
+      }
+    }
+
+    final candidates = <Patient>[];
+    final seenIds = <int?>{};
+
+    void addCandidates(Iterable<Patient> patients) {
+      for (final patient in patients) {
+        final key = patient.id;
+        if (seenIds.add(key)) {
+          candidates.add(patient);
+        }
+      }
+    }
+
+    final mrn = sourcePatient.medicalRecordNumber;
+    if (mrn != null) {
+      addCandidates(await searchPatientsInDataSource(
+        mrn.toString(),
+        effectiveDataSourceType: targetDataSourceType,
+      ));
+    }
+
+    final identificationNumber =
+        _normalizeIdentity(sourcePatient.identificationNumber);
+    if (identificationNumber.isNotEmpty) {
+      addCandidates(await searchPatientsInDataSource(
+        identificationNumber,
+        effectiveDataSourceType: targetDataSourceType,
+      ));
+    }
+
+    final name = sourcePatient.name.trim();
+    if (name.isNotEmpty) {
+      addCandidates(await searchPatientsInDataSource(
+        name,
+        effectiveDataSourceType: targetDataSourceType,
+      ));
+    }
+
+    for (final candidate in candidates) {
+      if (_matchesPatientIdentity(sourcePatient, candidate)) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  Future<Patient?> ensurePatientInDataSource(
+    Patient sourcePatient, {
+    required String targetDataSourceType,
+  }) async {
+    final existing = await resolvePatientForDataSource(
+      sourcePatient,
+      targetDataSourceType: targetDataSourceType,
+    );
+    if (existing != null) {
+      return existing;
+    }
+
+    if (targetDataSourceType != 'mysql') {
+      return null;
+    }
+
+    final mysqlConnection = _currentMysqlConnection;
+    if (mysqlConnection == null) {
+      LogManager.w('PatientProvider', '无法补齐财务侧患者：MySQL连接不可用');
+      return null;
+    }
+
+    final patientMap = sourcePatient.toMap();
+    patientMap['name_pinyin'] =
+        sourcePatient.namePinyin ?? PinyinUtil.toPinyin(sourcePatient.name);
+    patientMap['name_initials'] =
+        sourcePatient.nameInitials ?? PinyinUtil.getInitials(sourcePatient.name);
+    final address = sourcePatient.address;
+    if (address != null && address.isNotEmpty) {
+      patientMap['address_pinyin'] =
+          sourcePatient.addressPinyin ?? PinyinUtil.toPinyin(address);
+    }
+
+    final sourceId = sourcePatient.id;
+    final name = patientMap['name'];
+    final mrn = patientMap['medical_record_number'];
+
+    try {
+      bool isUpdate = false;
+      int? targetId = sourceId;
+
+      if (sourceId != null) {
+        final existById = await mysqlConnection.query(
+          'SELECT id, name FROM patients WHERE id = ? LIMIT 1',
+          [sourceId],
+        );
+        if (existById.isNotEmpty && existById.first['name'] == name) {
+          isUpdate = true;
+        }
+      }
+
+      if (!isUpdate && mrn != null) {
+        final existByMrn = await mysqlConnection.query(
+          'SELECT id FROM patients WHERE medical_record_number = ? AND name = ? LIMIT 1',
+          [mrn, name],
+        );
+        if (existByMrn.isNotEmpty) {
+          isUpdate = true;
+          final dynamic matchedId = existByMrn.first['id'];
+          targetId = matchedId is int ? matchedId : int.tryParse('$matchedId');
+        }
+      }
+
+      if (isUpdate && targetId != null) {
+        await mysqlConnection.query(
+          '''
+            UPDATE patients SET
+              name = ?, name_pinyin = ?, name_initials = ?, age = ?, gender = ?, phone = ?,
+              medical_record_number = ?, address = ?, address_pinyin = ?, identification_number = ?,
+              doctor = ?, dental_condition = ?, treatment_items = ?, first_visit_date = ?, total_cost = ?, created_at = ?, updated_at = ?
+            WHERE id = ?
+          ''',
+          [
+            patientMap['name'],
+            patientMap['name_pinyin'],
+            patientMap['name_initials'],
+            patientMap['age'],
+            patientMap['gender'],
+            patientMap['phone'],
+            patientMap['medical_record_number'],
+            patientMap['address'],
+            patientMap['address_pinyin'],
+            patientMap['identification_number'],
+            patientMap['doctor'],
+            patientMap['dental_condition'],
+            patientMap['treatment_items'],
+            patientMap['first_visit_date'],
+            patientMap['total_cost'],
+            patientMap['created_at'],
+            patientMap['updated_at'],
+            targetId,
+          ],
+        );
+      } else {
+        await mysqlConnection.query(
+          '''
+            INSERT INTO patients
+            (id, name, name_pinyin, name_initials, age, gender, phone, medical_record_number, address, address_pinyin, identification_number, doctor, dental_condition, treatment_items, first_visit_date, total_cost, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ''',
+          [
+            sourceId,
+            patientMap['name'],
+            patientMap['name_pinyin'],
+            patientMap['name_initials'],
+            patientMap['age'],
+            patientMap['gender'],
+            patientMap['phone'],
+            patientMap['medical_record_number'],
+            patientMap['address'],
+            patientMap['address_pinyin'],
+            patientMap['identification_number'],
+            patientMap['doctor'],
+            patientMap['dental_condition'],
+            patientMap['treatment_items'],
+            patientMap['first_visit_date'],
+            patientMap['total_cost'],
+            patientMap['created_at'],
+            patientMap['updated_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      LogManager.e('PatientProvider', '补齐目标数据源患者失败', error: e);
+      return null;
+    }
+
+    return resolvePatientForDataSource(
+      sourcePatient,
+      targetDataSourceType: targetDataSourceType,
+    );
   }
 
   Future<Map<String, dynamic>> getPatientsPage({
@@ -433,6 +665,35 @@ class PatientProvider extends ChangeNotifier {
     return id;
   }
 
+  static String _normalizeIdentity(String? value) {
+    return value?.trim().toLowerCase() ?? '';
+  }
+
+  static bool _matchesPatientIdentity(Patient source, Patient candidate) {
+    final sourceMrn = source.medicalRecordNumber;
+    final candidateMrn = candidate.medicalRecordNumber;
+    final sourceName = source.name.trim();
+    final candidateName = candidate.name.trim();
+    final sourceIdentity = _normalizeIdentity(source.identificationNumber);
+    final candidateIdentity = _normalizeIdentity(candidate.identificationNumber);
+
+    if (sourceMrn != null &&
+        candidateMrn != null &&
+        sourceMrn == candidateMrn &&
+        sourceName.isNotEmpty &&
+        sourceName == candidateName) {
+      return true;
+    }
+
+    if (sourceIdentity.isNotEmpty &&
+        candidateIdentity.isNotEmpty &&
+        sourceIdentity == candidateIdentity) {
+      return true;
+    }
+
+    return false;
+  }
+
   Future<int> updatePatient(Patient patient) async {
     final success = await _coreService.updatePatient(patient);
     if (success) {
@@ -449,7 +710,7 @@ class PatientProvider extends ChangeNotifier {
       p = await getPatient(patientId);
     } catch (_) {}
     final success = await _coreService.deletePatient(patientId,
-        patientName: p?.name, medicalRecordNumber: p?.medical_record_number);
+        patientName: p?.name, medicalRecordNumber: p?.medicalRecordNumber);
     if (success) {
       clearCache();
       markPatientsNeedRefresh();

@@ -12,6 +12,7 @@ import '../../../widgets/modern_date_picker.dart';
 import '../models/patient_form_state.dart';
 import 'patient_form_components.dart';
 import '../../../utils/permission_utils.dart';
+import '../../../utils/log_manager.dart';
 
 // 患者表单对话框组件
 class PatientFormDialog extends StatefulWidget {
@@ -37,19 +38,19 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
   @override
   void initState() {
     super.initState();
-    
+
     _checkEditPermissions();
-    
+
     if (widget.patient != null) {
       _loadPatientData();
     } else {
       _initializeDefaultValues();
       _setDefaultDoctor();
     }
-    
+
     _formState.nameController.addListener(_onNameChanged);
   }
-  
+
   @override
   void dispose() {
     _formState.nameController.removeListener(_onNameChanged);
@@ -76,29 +77,33 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
   Future<void> _setDefaultDoctor() async {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final currentUser = userProvider.currentUser ?? await userProvider.getCurrentUser();
-      
-      if (currentUser != null && currentUser.doctor != null && currentUser.doctor!.isNotEmpty) {
-        _formState.doctorController.text = currentUser.doctor!;
+      final currentUser =
+          userProvider.currentUser ?? await userProvider.getCurrentUser();
+
+      final doctorName = currentUser?.doctor;
+      if (doctorName != null && doctorName.isNotEmpty) {
+        _formState.doctorController.text = doctorName;
       } else if (currentUser != null && currentUser.role == 'doctor') {
         _formState.doctorController.text = currentUser.username;
       } else {
         _formState.doctorController.text = '';
       }
     } catch (e) {
-      print('通过UserProvider设置默认医生时出错: $e');
+      LogManager.e('PatientFormDialog', '通过UserProvider设置默认医生时出错', error: e);
       _formState.doctorController.text = '';
     }
   }
 
   Future<void> _getDefaultMedicalRecordNumber() async {
     try {
-      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
+      final patientProvider =
+          Provider.of<PatientProvider>(context, listen: false);
       int defaultRecordNumber = 1;
 
       if (patientProvider.dataSourceType == 'sqlite') {
-        final db = await patientProvider.database;
-        final result = await db!.query(
+        final db = patientProvider.database;
+        if (db == null) return;
+        final result = await db.query(
           'patients',
           columns: ['medical_record_number'],
           where: 'medical_record_number IS NOT NULL',
@@ -118,11 +123,14 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
           }
         }
       } else {
-        final results = await patientProvider.mysqlConnection!.query(
+        final mysqlConnection = patientProvider.mysqlConnection;
+        if (mysqlConnection == null) return;
+        final results = await mysqlConnection.query(
           'SELECT medical_record_number FROM patients WHERE medical_record_number IS NOT NULL ORDER BY medical_record_number + 0 DESC LIMIT 1',
         );
 
-        if (results.isNotEmpty && results.first['medical_record_number'] != null) {
+        if (results.isNotEmpty &&
+            results.first['medical_record_number'] != null) {
           var maxRecordNumber = results.first['medical_record_number'];
           if (maxRecordNumber != null) {
             if (maxRecordNumber is int) {
@@ -136,7 +144,8 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
       }
       if (mounted) {
         setState(() {
-          _formState.medicalRecordController.text = defaultRecordNumber.toString();
+          _formState.medicalRecordController.text =
+              defaultRecordNumber.toString();
         });
       }
     } catch (e) {
@@ -149,12 +158,13 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
   }
 
   void _loadPatientData() {
-    if (widget.patient != null) {
-      _formState.loadFromPatient(widget.patient!);
+    final patient = widget.patient;
+    if (patient != null) {
+      _formState.loadFromPatient(patient);
 
       // 处理电话号码
       try {
-        List<String> phones = widget.patient!.phoneList;
+        List<String> phones = patient.phoneList;
 
         if (phones.isNotEmpty) {
           _formState.primaryPhoneController.text = phones[0];
@@ -165,27 +175,32 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
           }
         }
       } catch (e) {
-        print('处理电话时出错: $e');
+        LogManager.e('PatientFormDialog', '处理电话时出错', error: e);
 
-        if (widget.patient!.phone is String) {
-          String phoneStr = widget.patient!.phone.toString();
+        final patientPhone = patient.phone;
+        if (patientPhone is String) {
+          String phoneStr = patientPhone.toString();
 
           if (phoneStr.startsWith('[') && phoneStr.endsWith(']')) {
             try {
               var phoneJson = jsonDecode(phoneStr);
               if (phoneJson is List && phoneJson.isNotEmpty) {
-                _formState.primaryPhoneController.text = phoneJson[0].toString();
+                _formState.primaryPhoneController.text =
+                    phoneJson[0].toString();
 
                 if (phoneJson.length > 1) {
-                  _formState.backupPhoneController.text = phoneJson[1].toString();
+                  _formState.backupPhoneController.text =
+                      phoneJson[1].toString();
                   _formState.hasBackupPhone = true;
                 }
               }
             } catch (jsonError) {
               RegExp regex = RegExp(r'"([^"]*)"');
               var matches = regex.allMatches(phoneStr);
-              List<String> extractedPhones =
-                  matches.map((match) => match.group(1)!).toList();
+              List<String> extractedPhones = matches
+                  .map((match) => match.group(1))
+                  .whereType<String>()
+                  .toList();
 
               if (extractedPhones.isNotEmpty) {
                 _formState.primaryPhoneController.text = extractedPhones[0];
@@ -209,8 +224,9 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
   }
 
   void _loadDentalCondition() {
-    if (widget.patient?.dental_condition == null ||
-        widget.patient!.dental_condition!.isEmpty) {
+    final patient = widget.patient;
+    final dentalCondition = patient?.dentalCondition;
+    if (dentalCondition == null || dentalCondition.isEmpty) {
       _addNewDentalChartRow();
       return;
     }
@@ -218,7 +234,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
     try {
       _formState.dentalChartRows.clear();
 
-      Map<String, dynamic> dentalCharts = widget.patient!.dentalCharts;
+      Map<String, dynamic> dentalCharts = patient?.dentalCharts ?? {};
 
       if (dentalCharts.isEmpty) {
         _addNewDentalChartRow();
@@ -265,29 +281,41 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
           createdByDoctor: createdByDoctor,
         );
 
-        row.chart1.topLeftController.text = dentalCharts['chart1-top-left-$i'] ?? '';
-        row.chart1.topRightController.text = dentalCharts['chart1-top-right-$i'] ?? '';
-        row.chart1.bottomLeftController.text = dentalCharts['chart1-bottom-left-$i'] ?? '';
-        row.chart1.bottomRightController.text = dentalCharts['chart1-bottom-right-$i'] ?? '';
+        row.chart1.topLeftController.text =
+            dentalCharts['chart1-top-left-$i'] ?? '';
+        row.chart1.topRightController.text =
+            dentalCharts['chart1-top-right-$i'] ?? '';
+        row.chart1.bottomLeftController.text =
+            dentalCharts['chart1-bottom-left-$i'] ?? '';
+        row.chart1.bottomRightController.text =
+            dentalCharts['chart1-bottom-right-$i'] ?? '';
         row.chart1.noteController.text = dentalCharts['chart1-note-$i'] ?? '';
 
-        row.chart2.topLeftController.text = dentalCharts['chart2-top-left-$i'] ?? '';
-        row.chart2.topRightController.text = dentalCharts['chart2-top-right-$i'] ?? '';
-        row.chart2.bottomLeftController.text = dentalCharts['chart2-bottom-left-$i'] ?? '';
-        row.chart2.bottomRightController.text = dentalCharts['chart2-bottom-right-$i'] ?? '';
+        row.chart2.topLeftController.text =
+            dentalCharts['chart2-top-left-$i'] ?? '';
+        row.chart2.topRightController.text =
+            dentalCharts['chart2-top-right-$i'] ?? '';
+        row.chart2.bottomLeftController.text =
+            dentalCharts['chart2-bottom-left-$i'] ?? '';
+        row.chart2.bottomRightController.text =
+            dentalCharts['chart2-bottom-right-$i'] ?? '';
         row.chart2.noteController.text = dentalCharts['chart2-note-$i'] ?? '';
 
-        row.chart3.topLeftController.text = dentalCharts['chart3-top-left-$i'] ?? '';
-        row.chart3.topRightController.text = dentalCharts['chart3-top-right-$i'] ?? '';
-        row.chart3.bottomLeftController.text = dentalCharts['chart3-bottom-left-$i'] ?? '';
-        row.chart3.bottomRightController.text = dentalCharts['chart3-bottom-right-$i'] ?? '';
+        row.chart3.topLeftController.text =
+            dentalCharts['chart3-top-left-$i'] ?? '';
+        row.chart3.topRightController.text =
+            dentalCharts['chart3-top-right-$i'] ?? '';
+        row.chart3.bottomLeftController.text =
+            dentalCharts['chart3-bottom-left-$i'] ?? '';
+        row.chart3.bottomRightController.text =
+            dentalCharts['chart3-bottom-right-$i'] ?? '';
         row.chart3.noteController.text = dentalCharts['chart3-note-$i'] ?? '';
 
         tempRows.add(row);
       }
 
       tempRows.sort((a, b) => b.date.compareTo(a.date));
-      
+
       setState(() {
         _formState.dentalChartRows.addAll(tempRows);
       });
@@ -296,15 +324,16 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
         _addNewDentalChartRow();
       }
     } catch (e) {
-      print('加载牙齿状况时出错: $e');
+      LogManager.e('PatientFormDialog', '加载牙齿状况时出错', error: e);
       _addNewDentalChartRow();
     }
   }
 
   Future<Patient> _savePatientAndGetId(Patient patient) async {
     try {
-      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
-      
+      final patientProvider =
+          Provider.of<PatientProvider>(context, listen: false);
+
       if (patient.id != null) {
         await patientProvider.updatePatient(patient);
         return patient;
@@ -313,7 +342,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
         return patient.copyWith(id: newId);
       }
     } catch (e) {
-      print('保存患者失败: $e');
+      LogManager.e('PatientFormDialog', '保存患者失败', error: e);
       rethrow;
     }
   }
@@ -339,7 +368,8 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
       DentalChartRow row = _formState.dentalChartRows[i];
 
       result['date-$i'] = DateFormat('yyyy-MM-dd').format(row.date);
-      result['created_by_doctor-$i'] = row.createdByDoctor ?? _getCurrentDoctorName();
+      result['created_by_doctor-$i'] =
+          row.createdByDoctor ?? _getCurrentDoctorName();
 
       result['chart1-top-left-$i'] = row.chart1.topLeftController.text;
       result['chart1-top-right-$i'] = row.chart1.topRightController.text;
@@ -367,14 +397,16 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
-      
+
       if (currentUser != null) {
-        return currentUser.doctor?.isNotEmpty == true 
-            ? currentUser.doctor! 
-            : currentUser.username;
+        final doctorName = currentUser.doctor;
+        if (doctorName != null && doctorName.isNotEmpty) {
+          return doctorName;
+        }
+        return currentUser.username;
       }
     } catch (e) {
-      print('获取当前医生姓名失败: $e');
+      LogManager.e('PatientFormDialog', '获取当前医生姓名失败', error: e);
     }
     return '';
   }
@@ -425,25 +457,28 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
   void _loadExistingPatientData(Patient patient) {
     setState(() {
       _formState.editingExistingPatient = patient;
-      
+
       _formState.nameController.text = patient.name;
       _formState.ageController.text = patient.age.toString();
       _formState.primaryPhoneController.text = patient.mainPhone;
-      _formState.medicalRecordController.text = patient.medical_record_number?.toString() ?? '';
+      _formState.medicalRecordController.text =
+          patient.medicalRecordNumber?.toString() ?? '';
       _formState.addressController.text = patient.address ?? '';
-      _formState.idNumberController.text = patient.identification_number ?? '';
+      _formState.idNumberController.text = patient.identificationNumber ?? '';
       _formState.doctorController.text = patient.doctor ?? '';
-      _formState.treatmentItemsController.text = patient.treatment_items ?? '';
+      _formState.treatmentItemsController.text = patient.treatmentItems ?? '';
       _formState.gender = patient.gender;
-      _formState.firstVisitDate = patient.first_visit_date;
-      
+      _formState.firstVisitDate = patient.firstVisitDate;
+
       // 加载备用电话
       if (patient.phone != null) {
         try {
           if (patient.phone is String) {
             try {
               final phoneData = json.decode(patient.phone);
-              if (phoneData is Map && phoneData.containsKey('backup') && phoneData['backup'].isNotEmpty) {
+              if (phoneData is Map &&
+                  phoneData.containsKey('backup') &&
+                  phoneData['backup'].isNotEmpty) {
                 _formState.backupPhoneController.text = phoneData['backup'];
                 _formState.hasBackupPhone = true;
               } else if (phoneData is List && phoneData.length > 1) {
@@ -455,12 +490,13 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
             }
           }
         } catch (e) {
-          print('解析电话数据失败: $e');
+          LogManager.e('PatientFormDialog', '解析电话数据失败', error: e);
         }
       }
-      
+
       // 加载牙齿状况数据
-      if (patient.dental_condition != null && patient.dental_condition!.isNotEmpty) {
+      final dentalCondition = patient.dentalCondition;
+      if (dentalCondition != null && dentalCondition.isNotEmpty) {
         try {
           _formState.dentalChartRows.clear();
           Map<String, dynamic> dentalCharts = patient.dentalCharts;
@@ -510,29 +546,44 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
               createdByDoctor: createdByDoctor,
             );
 
-            row.chart1.topLeftController.text = dentalCharts['chart1-top-left-$i'] ?? '';
-            row.chart1.topRightController.text = dentalCharts['chart1-top-right-$i'] ?? '';
-            row.chart1.bottomLeftController.text = dentalCharts['chart1-bottom-left-$i'] ?? '';
-            row.chart1.bottomRightController.text = dentalCharts['chart1-bottom-right-$i'] ?? '';
-            row.chart1.noteController.text = dentalCharts['chart1-note-$i'] ?? '';
+            row.chart1.topLeftController.text =
+                dentalCharts['chart1-top-left-$i'] ?? '';
+            row.chart1.topRightController.text =
+                dentalCharts['chart1-top-right-$i'] ?? '';
+            row.chart1.bottomLeftController.text =
+                dentalCharts['chart1-bottom-left-$i'] ?? '';
+            row.chart1.bottomRightController.text =
+                dentalCharts['chart1-bottom-right-$i'] ?? '';
+            row.chart1.noteController.text =
+                dentalCharts['chart1-note-$i'] ?? '';
 
-            row.chart2.topLeftController.text = dentalCharts['chart2-top-left-$i'] ?? '';
-            row.chart2.topRightController.text = dentalCharts['chart2-top-right-$i'] ?? '';
-            row.chart2.bottomLeftController.text = dentalCharts['chart2-bottom-left-$i'] ?? '';
-            row.chart2.bottomRightController.text = dentalCharts['chart2-bottom-right-$i'] ?? '';
-            row.chart2.noteController.text = dentalCharts['chart2-note-$i'] ?? '';
+            row.chart2.topLeftController.text =
+                dentalCharts['chart2-top-left-$i'] ?? '';
+            row.chart2.topRightController.text =
+                dentalCharts['chart2-top-right-$i'] ?? '';
+            row.chart2.bottomLeftController.text =
+                dentalCharts['chart2-bottom-left-$i'] ?? '';
+            row.chart2.bottomRightController.text =
+                dentalCharts['chart2-bottom-right-$i'] ?? '';
+            row.chart2.noteController.text =
+                dentalCharts['chart2-note-$i'] ?? '';
 
-            row.chart3.topLeftController.text = dentalCharts['chart3-top-left-$i'] ?? '';
-            row.chart3.topRightController.text = dentalCharts['chart3-top-right-$i'] ?? '';
-            row.chart3.bottomLeftController.text = dentalCharts['chart3-bottom-left-$i'] ?? '';
-            row.chart3.bottomRightController.text = dentalCharts['chart3-bottom-right-$i'] ?? '';
-            row.chart3.noteController.text = dentalCharts['chart3-note-$i'] ?? '';
+            row.chart3.topLeftController.text =
+                dentalCharts['chart3-top-left-$i'] ?? '';
+            row.chart3.topRightController.text =
+                dentalCharts['chart3-top-right-$i'] ?? '';
+            row.chart3.bottomLeftController.text =
+                dentalCharts['chart3-bottom-left-$i'] ?? '';
+            row.chart3.bottomRightController.text =
+                dentalCharts['chart3-bottom-right-$i'] ?? '';
+            row.chart3.noteController.text =
+                dentalCharts['chart3-note-$i'] ?? '';
 
             tempRows.add(row);
           }
 
           tempRows.sort((a, b) => b.date.compareTo(a.date));
-          
+
           for (int i = 0; i < tempRows.length; i++) {
             tempRows[i].index = i;
           }
@@ -543,7 +594,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
             _addNewDentalChartRow();
           }
         } catch (e) {
-          print('解析牙齿状况数据失败: $e');
+          LogManager.e('PatientFormDialog', '解析牙齿状况数据失败', error: e);
           _formState.dentalChartRows = [];
           _addNewDentalChartRow();
         }
@@ -559,20 +610,23 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
       return;
     }
 
-    final patientProvider = Provider.of<PatientProvider>(context, listen: false);
+    final patientProvider =
+        Provider.of<PatientProvider>(context, listen: false);
 
     try {
       bool nameExists = await patientProvider.checkPatientNameExists(
-          _formState.nameController.text, _formState.excludePatientId ?? widget.patient?.id);
+          _formState.nameController.text,
+          _formState.excludePatientId ?? widget.patient?.id);
 
       if (nameExists) {
-        List<Patient> patients =
-            await patientProvider.searchPatients(_formState.nameController.text);
-        
+        List<Patient> patients = await patientProvider
+            .searchPatients(_formState.nameController.text);
+
         if (patients.isNotEmpty) {
           for (var patient in patients) {
             if (patient.name == _formState.nameController.text &&
-                patient.id != (_formState.excludePatientId ?? widget.patient?.id)) {
+                patient.id !=
+                    (_formState.excludePatientId ?? widget.patient?.id)) {
               setState(() {
                 _formState.existingPatient = patient;
               });
@@ -581,7 +635,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
             }
           }
         }
-        
+
         await _tryDirectDatabaseQuery(_formState.nameController.text);
       } else {
         setState(() {
@@ -590,23 +644,24 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
         });
       }
     } catch (e) {
-      print('检查姓名时出错: $e');
+      LogManager.e('PatientFormDialog', '检查姓名时出错', error: e);
     }
   }
-  
+
   Future<void> _tryDirectDatabaseQuery(String name) async {
     try {
-      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
-      
+      final patientProvider =
+          Provider.of<PatientProvider>(context, listen: false);
+
       if (patientProvider.dataSourceType == 'sqlite') {
-        final db = await patientProvider.database;
+        final db = patientProvider.database;
         if (db != null) {
           final result = await db.query(
             'patients',
             where: 'name = ?',
             whereArgs: [name],
           );
-          
+
           if (result.isNotEmpty) {
             final patient = Patient.fromMap(result.first);
             setState(() {
@@ -617,15 +672,17 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
         }
       } else if (patientProvider.dataSourceType == 'mysql') {
         try {
-          final results = await patientProvider.mysqlConnection!.query(
+          final mysqlConnection = patientProvider.mysqlConnection;
+          if (mysqlConnection == null) return;
+          final results = await mysqlConnection.query(
             'SELECT * FROM patients WHERE name = ?',
             [name],
           );
-          
+
           if (results.isNotEmpty) {
             final mysqlRow = results.first;
             final Map<String, dynamic> patientMap = {};
-            
+
             for (var field in mysqlRow.fields.keys) {
               var value = mysqlRow[field];
               if (value is Uint8List) {
@@ -644,7 +701,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
                 patientMap[field] = value;
               }
             }
-           
+
             final patient = Patient.fromMap(patientMap);
             setState(() {
               _formState.existingPatient = patient;
@@ -652,11 +709,11 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
             _showExistingPatientOverlay();
           }
         } catch (mysqlError) {
-          print('MySQL查询出错: $mysqlError');
+          LogManager.e('PatientFormDialog', 'MySQL查询出错');
         }
       }
     } catch (e) {
-      print('直接查询数据库时出错: $e');
+      LogManager.e('PatientFormDialog', '直接查询数据库时出错', error: e);
     }
   }
 
@@ -668,9 +725,11 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
     _hideExistingPatientOverlay();
 
     final overlay = Overlay.of(context);
+    final existingPatient = _formState.existingPatient;
+    if (existingPatient == null) return;
 
     _overlayEntry = ExistingPatientOverlayBuilder.buildOverlayEntry(
-      existingPatient: _formState.existingPatient!,
+      existingPatient: existingPatient,
       nameFieldKey: _formState.nameFieldKey,
       context: context,
       onContinue: () {
@@ -681,14 +740,15 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
       },
       onLoadExisting: () {
         _hideExistingPatientOverlay();
-        if (_formState.existingPatient != null) {
-          _loadExistingPatientData(_formState.existingPatient!);
-        }
+        _loadExistingPatientData(existingPatient);
       },
       onClose: _hideExistingPatientOverlay,
     );
 
-    overlay.insert(_overlayEntry!);
+    final overlayEntry = _overlayEntry;
+    if (overlayEntry != null) {
+      overlay.insert(overlayEntry);
+    }
   }
 
   void _hideExistingPatientOverlay() {
@@ -724,10 +784,10 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.95),
+            color: Colors.white.withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: DentalColors.primary.withOpacity(0.1),
+              color: DentalColors.primary.withValues(alpha: 0.1),
               width: 1,
             ),
           ),
@@ -736,12 +796,12 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               PatientFormHeader(
-                isEditingExistingPatient: _formState.editingExistingPatient != null,
+                isEditingExistingPatient:
+                    _formState.editingExistingPatient != null,
                 isNewPatient: widget.patient == null,
                 editingPatientName: _formState.editingExistingPatient?.name,
                 onClose: () => Navigator.of(context).pop(),
               ),
-              
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(24),
@@ -752,7 +812,6 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
                       children: [
                         if (!_formState.canEditBasicInfo)
                           const PatientFormPermissionNotice(),
-                        
                         Expanded(
                           child: SingleChildScrollView(
                             controller: _formState.scrollController,
@@ -769,7 +828,8 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
                                   canEditBasicInfo: _formState.canEditBasicInfo,
                                   gender: _formState.gender,
                                   firstVisitDate: _formState.firstVisitDate,
-                                  onNameTap: () => _hideExistingPatientOverlay(),
+                                  onNameTap: () =>
+                                      _hideExistingPatientOverlay(),
                                   onNameSubmitted: (value) =>
                                       _checkNameExists(),
                                   onGenderChanged: (value) {
@@ -780,31 +840,32 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
                                   onSelectDate: () => _selectDate(context),
                                 ),
                                 const SizedBox(height: 12),
-
                                 PatientFormContactSection(
                                   primaryPhoneController:
                                       _formState.primaryPhoneController,
                                   backupPhoneController:
                                       _formState.backupPhoneController,
-                                  idNumberController: _formState.idNumberController,
-                                  addressController: _formState.addressController,
+                                  idNumberController:
+                                      _formState.idNumberController,
+                                  addressController:
+                                      _formState.addressController,
                                   hasBackupPhone: _formState.hasBackupPhone,
                                   canEditBasicInfo: _formState.canEditBasicInfo,
                                   onToggleBackupPhone: () {
                                     setState(() {
-                                      _formState.hasBackupPhone = !_formState.hasBackupPhone;
+                                      _formState.hasBackupPhone =
+                                          !_formState.hasBackupPhone;
                                       if (!_formState.hasBackupPhone) {
-                                        _formState.backupPhoneController.clear();
+                                        _formState.backupPhoneController
+                                            .clear();
                                       }
                                     });
                                   },
                                 ),
-
                                 PatientFormDentalConditionSection(
                                   child: _buildDentalConditionSection(),
                                 ),
                                 const SizedBox(height: 16),
-
                                 PatientFormTreatmentSection(
                                   treatmentItemsController:
                                       _formState.treatmentItemsController,
@@ -814,7 +875,6 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
                             ),
                           ),
                         ),
-
                         PatientFormActions(
                           isLoading: _formState.isLoading,
                           isEditMode: widget.patient != null,
@@ -834,13 +894,15 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
   }
 
   Future<void> _handleSave() async {
-    if (_formState.formKey.currentState!.validate()) {
+    final formState = _formState.formKey.currentState;
+    if (formState != null && formState.validate()) {
       setState(() {
         _formState.isLoading = true;
       });
 
       try {
-        final patientProvider = Provider.of<PatientProvider>(context, listen: false);
+        final patientProvider =
+            Provider.of<PatientProvider>(context, listen: false);
         bool canProceed = true;
 
         // 检查病历号是否重复
@@ -849,9 +911,11 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
               int.parse(_formState.medicalRecordController.text);
           bool medicalRecordExists =
               await patientProvider.checkMedicalRecordExists(
-                  medicalRecordNumber, _formState.excludePatientId ?? widget.patient?.id);
+                  medicalRecordNumber,
+                  _formState.excludePatientId ?? widget.patient?.id);
 
           if (medicalRecordExists) {
+            if (!mounted) return;
             await showDialog(
               context: context,
               builder: (context) => const DuplicateMedicalRecordDialog(),
@@ -862,31 +926,35 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
 
         // 检查姓名是否重复
         if (canProceed) {
-          bool nameExists =
-              await patientProvider.checkPatientNameExists(
-                  _formState.nameController.text, _formState.excludePatientId ?? widget.patient?.id);
+          bool nameExists = await patientProvider.checkPatientNameExists(
+              _formState.nameController.text,
+              _formState.excludePatientId ?? widget.patient?.id);
 
           if (nameExists) {
-            List<Patient> existingPatients = await patientProvider.searchPatients(_formState.nameController.text);
+            List<Patient> existingPatients = await patientProvider
+                .searchPatients(_formState.nameController.text);
             Patient? selectedPatient;
 
             for (var patient in existingPatients) {
               if (patient.name == _formState.nameController.text &&
-                  patient.id != (_formState.excludePatientId ?? widget.patient?.id)) {
+                  patient.id !=
+                      (_formState.excludePatientId ?? widget.patient?.id)) {
                 selectedPatient = patient;
                 break;
               }
             }
 
             if (selectedPatient != null) {
+              final existingPatient = selectedPatient;
+              if (!mounted) return;
               final bool? shouldLoadExisting = await showDialog<bool>(
                 context: context,
                 builder: (context) =>
-                    ExistingPatientChoiceDialog(patient: selectedPatient!),
+                    ExistingPatientChoiceDialog(patient: existingPatient),
               );
 
               if (shouldLoadExisting == true) {
-                _loadExistingPatientData(selectedPatient);
+                _loadExistingPatientData(existingPatient);
                 return;
               } else if (shouldLoadExisting == false) {
                 setState(() {
@@ -922,44 +990,45 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
         final Patient patient = Patient(
           id: _formState.editingExistingPatient?.id ?? widget.patient?.id,
           name: _formState.nameController.text,
-          name_pinyin: (_formState.editingExistingPatient ?? widget.patient)
-              ?.name_pinyin,
+          namePinyin:
+              (_formState.editingExistingPatient ?? widget.patient)?.namePinyin,
           age: _formState.ageController.text.isNotEmpty
               ? int.parse(_formState.ageController.text)
               : 0,
           gender: _formState.gender,
           phone: phoneData,
-          medical_record_number:
+          medicalRecordNumber:
               _formState.medicalRecordController.text.isNotEmpty
                   ? int.parse(_formState.medicalRecordController.text)
                   : null,
           address: _formState.addressController.text.isNotEmpty
               ? _formState.addressController.text
               : null,
-          address_pinyin: (_formState.editingExistingPatient ?? widget.patient)
-              ?.address_pinyin,
-          identification_number:
-              _formState.idNumberController.text.isNotEmpty
-                  ? _formState.idNumberController.text
-                  : null,
+          addressPinyin: (_formState.editingExistingPatient ?? widget.patient)
+              ?.addressPinyin,
+          identificationNumber: _formState.idNumberController.text.isNotEmpty
+              ? _formState.idNumberController.text
+              : null,
           doctor: _formState.doctorController.text.isNotEmpty
               ? _formState.doctorController.text
               : null,
-          dental_condition:
-              dentalCondition.isNotEmpty ? dentalCondition : null,
-          treatment_items:
-              _formState.treatmentItemsController.text.isNotEmpty
-                  ? _formState.treatmentItemsController.text
-                  : null,
-          first_visit_date: _formState.firstVisitDate,
-          total_cost: (_formState.editingExistingPatient ?? widget.patient)?.total_cost ?? 0.0,
-          created_at: (_formState.editingExistingPatient ?? widget.patient)?.created_at ??
+          dentalCondition: dentalCondition.isNotEmpty ? dentalCondition : null,
+          treatmentItems: _formState.treatmentItemsController.text.isNotEmpty
+              ? _formState.treatmentItemsController.text
+              : null,
+          firstVisitDate: _formState.firstVisitDate,
+          totalCost: (_formState.editingExistingPatient ?? widget.patient)
+                  ?.totalCost ??
+              0.0,
+          createdAt: (_formState.editingExistingPatient ?? widget.patient)
+                  ?.createdAt ??
               DateTime.now(),
-          updated_at: DateTime.now(),
+          updatedAt: DateTime.now(),
         );
 
         final savedPatient = await _savePatientAndGetId(patient);
 
+        if (!mounted) return;
         widget.onSave(savedPatient);
 
         Navigator.of(context).pop();
@@ -988,10 +1057,12 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
       canDeleteRow: _canDeleteDentalChartRow,
     );
   }
-  
+
   void _checkEditPermissions() {
-    if (widget.patient != null) {
-      _formState.canEditBasicInfo = PermissionUtils.canEditDoctor(context, widget.patient!.doctor);
+    final patient = widget.patient;
+    if (patient != null) {
+      _formState.canEditBasicInfo =
+          PermissionUtils.canEditDoctor(context, patient.doctor);
     } else {
       _formState.canEditBasicInfo = true;
     }
@@ -1001,26 +1072,28 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
-      
+
       if (currentUser == null) {
         return false;
       }
-      
+
       if (currentUser.role == 'admin') {
         return true;
       }
-      
-      if (row.createdByDoctor == null || row.createdByDoctor!.isEmpty) {
+
+      final createdByDoctor = row.createdByDoctor;
+      if (createdByDoctor == null || createdByDoctor.isEmpty) {
         return false;
       }
-      
-      String currentDoctorName = currentUser.doctor?.isNotEmpty == true 
-          ? currentUser.doctor! 
+
+      final currentDoctorName = currentUser.doctor;
+      final doctorName = currentDoctorName?.isNotEmpty == true
+          ? currentDoctorName
           : currentUser.username;
-      
-      return row.createdByDoctor == currentDoctorName;
+
+      return createdByDoctor == doctorName;
     } catch (e) {
-      print('检查牙齿状况编辑权限时出错: $e');
+      LogManager.e('PatientFormDialog', '检查牙齿状况编辑权限时出错', error: e);
       return false;
     }
   }
@@ -1028,5 +1101,4 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
   bool _canDeleteDentalChartRow(DentalChartRow row) {
     return _canEditDentalChartRow(row);
   }
-
 }

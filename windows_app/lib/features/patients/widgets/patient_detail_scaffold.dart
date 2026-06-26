@@ -60,14 +60,14 @@ class PatientDetailScaffold extends StatelessWidget {
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: DentalColors.primary.withOpacity(0.1),
+              color: DentalColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.primary.withOpacity(0.3),
+                color: DentalColors.primary.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.edit_rounded,
                 color: DentalColors.primary,
               ),

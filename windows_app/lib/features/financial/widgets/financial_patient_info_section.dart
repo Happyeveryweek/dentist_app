@@ -16,12 +16,13 @@ class FinancialPatientInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isFemale = (patient.gender == '女') ||
-        (patient.gender.toLowerCase() == 'female');
+    final bool isFemale =
+        (patient.gender == '女') || (patient.gender.toLowerCase() == 'female');
     final Color? infoBgColor = isFemale ? Colors.pink[50] : Colors.blue[50];
     final Color infoBorderColor =
-        isFemale ? Colors.pink[200]! : Colors.blue[200]!;
-    final Color avatarBgColor = isFemale ? Colors.pink[400]! : Colors.blue[300]!;
+        isFemale ? Colors.pink.shade200 : Colors.blue.shade200;
+    final Color avatarBgColor =
+        isFemale ? Colors.pink.shade400 : Colors.blue.shade300;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -52,19 +53,20 @@ class FinancialPatientInfoSection extends StatelessWidget {
                 Text(
                   patient.name,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
                 ),
                 const SizedBox(height: 4),
-                Text('病历号: ${patient.medical_record_number ?? '未设置'}'),
-                Text('首诊日期: ${DateFormat('yyyy-MM-dd').format(patient.first_visit_date)}'),
+                Text('病历号: ${patient.medicalRecordNumber ?? '未设置'}'),
+                Text(
+                    '首诊日期: ${DateFormat('yyyy-MM-dd').format(patient.firstVisitDate)}'),
                 const SizedBox(height: 4),
                 Text(
                   '备注信息: $notes',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[700],
-                  ),
+                        color: Colors.grey[700],
+                      ),
                 ),
               ],
             ),

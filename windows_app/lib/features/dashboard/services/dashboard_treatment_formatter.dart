@@ -9,7 +9,7 @@ class DashboardTreatmentFormatter {
     if (treatmentType == null || treatmentType.isEmpty) {
       return '常规检查';
     }
-    
+
     try {
       final data = json.decode(treatmentType);
       List<String> displayParts = [];

@@ -5,13 +5,13 @@ import '../../../models/database_config.dart';
 /// 数据库设置管理器 - 负责管理数据库配置状态
 /// 业务逻辑已迁移到 Service 层
 class DatabaseSettingsManager extends ChangeNotifier {
-  late DatabaseConfig _dbConfig;
+  DatabaseConfig? _dbConfig;
   String _dbType = 'sqlite';
   String _dbPath = '';
 
   String get dbType => _dbType;
   String get dbPath => _dbPath;
-  DatabaseConfig get dbConfig => _dbConfig;
+  DatabaseConfig? get dbConfig => _dbConfig;
 
   void setDbConfig(DatabaseConfig config) {
     _dbConfig = config;

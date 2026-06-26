@@ -3,15 +3,20 @@ import '../models/patient.dart';
 import '../models/patient_material.dart';
 import '../models/material_image.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/log_manager.dart';
 import 'base_mysql_data_source.dart';
 import 'patient_data_source.dart';
 
 /// MySQL 患者数据源实现
-class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataSource {
+class MySqlPatientDataSource extends BaseMySqlDataSource
+    implements PatientDataSource {
   final String? _doctorName;
   final bool _isAdmin;
-  
-  bool get _hasDoctorName => _doctorName != null && _doctorName!.isNotEmpty;
+
+  bool get _hasDoctorName {
+    final doctorName = _doctorName;
+    return doctorName != null && doctorName.isNotEmpty;
+  }
 
   _PatientQueryParts _buildQueryParts(
     List<String> clauses,
@@ -123,7 +128,7 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
       }
       return patients;
     } catch (e) {
-      print('MySqlPatientDataSource: getAllPatients 出错: $e');
+      LogManager.e('MySqlPatientDataSource', 'getAllPatients 出错', error: e);
       return [];
     }
   }
@@ -139,7 +144,7 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
       if (results.isEmpty) return null;
       return Patient.fromMap(convertRowToMap(results.first));
     } catch (e) {
-      print('MySqlPatientDataSource: getPatientById 出错: $e');
+      LogManager.e('MySqlPatientDataSource', 'getPatientById 出错', error: e);
       return null;
     }
   }
@@ -152,10 +157,23 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
         INSERT INTO patients (name, name_pinyin, name_initials, age, gender, phone, medical_record_number, address, address_pinyin, identification_number, doctor, dental_condition, treatment_items, first_visit_date, total_cost, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ''', [
-        m['name'], m['name_pinyin'], m['name_initials'], m['age'], m['gender'], m['phone'],
-        m['medical_record_number'], m['address'], m['address_pinyin'], m['identification_number'],
-        m['doctor'], m['dental_condition'], m['treatment_items'], m['first_visit_date'], m['total_cost'],
-        m['created_at'], m['updated_at'],
+        m['name'],
+        m['name_pinyin'],
+        m['name_initials'],
+        m['age'],
+        m['gender'],
+        m['phone'],
+        m['medical_record_number'],
+        m['address'],
+        m['address_pinyin'],
+        m['identification_number'],
+        m['doctor'],
+        m['dental_condition'],
+        m['treatment_items'],
+        m['first_visit_date'],
+        m['total_cost'],
+        m['created_at'],
+        m['updated_at'],
       ]);
       return result.insertId ?? 0;
     } catch (e) {
@@ -171,12 +189,25 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
       final result = await executeQuery('''
         UPDATE patients SET name = ?, name_pinyin = ?, name_initials = ?, age = ?, gender = ?, phone = ?, medical_record_number = ?, address = ?, address_pinyin = ?, identification_number = ?, doctor = ?, dental_condition = ?, treatment_items = ?, first_visit_date = ?, total_cost = ?, updated_at = ? WHERE id = ?
       ''', [
-        m['name'], m['name_pinyin'], m['name_initials'], m['age'], m['gender'], m['phone'],
-        m['medical_record_number'], m['address'], m['address_pinyin'], m['identification_number'],
-        m['doctor'], m['dental_condition'], m['treatment_items'], m['first_visit_date'], m['total_cost'],
-        m['updated_at'], patient.id,
+        m['name'],
+        m['name_pinyin'],
+        m['name_initials'],
+        m['age'],
+        m['gender'],
+        m['phone'],
+        m['medical_record_number'],
+        m['address'],
+        m['address_pinyin'],
+        m['identification_number'],
+        m['doctor'],
+        m['dental_condition'],
+        m['treatment_items'],
+        m['first_visit_date'],
+        m['total_cost'],
+        m['updated_at'],
+        patient.id,
       ]);
-      return result.affectedRows! > 0;
+      return (result.affectedRows ?? 0) > 0;
     } catch (e) {
       rethrow;
     }
@@ -187,30 +218,47 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
     try {
       await executeQuery('SET FOREIGN_KEY_CHECKS = 0');
       // 深度删除逻辑
-      final materialIdsResult = await executeQuery('SELECT id FROM patient_materials WHERE patient_id = ?', [patientId]);
-      final materialIds = materialIdsResult.map((row) => row[0] as int).toList();
+      final materialIdsResult = await executeQuery(
+          'SELECT id FROM patient_materials WHERE patient_id = ?', [patientId]);
+      final materialIds =
+          materialIdsResult.map((row) => row[0] as int).toList();
       if (materialIds.isNotEmpty) {
         final placeholders = materialIds.map((_) => '?').join(',');
-        await executeQuery('DELETE FROM material_images WHERE material_id IN ($placeholders)', materialIds);
+        await executeQuery(
+            'DELETE FROM material_images WHERE material_id IN ($placeholders)',
+            materialIds);
       }
-      await executeQuery('DELETE FROM patient_materials WHERE patient_id = ?', [patientId]);
+      await executeQuery(
+          'DELETE FROM patient_materials WHERE patient_id = ?', [patientId]);
 
-      final financialRecordIds = (await executeQuery('SELECT id FROM financial_records WHERE patient_id = ?', [patientId]))
-          .map((row) => row[0] as int).toList();
+      final financialRecordIds = (await executeQuery(
+              'SELECT id FROM financial_records WHERE patient_id = ?',
+              [patientId]))
+          .map((row) => row[0] as int)
+          .toList();
       if (financialRecordIds.isNotEmpty) {
         final placeholders = financialRecordIds.map((_) => '?').join(',');
-        await executeQuery('DELETE FROM financial_items WHERE financial_record_id IN ($placeholders)', financialRecordIds);
+        await executeQuery(
+            'DELETE FROM financial_items WHERE financial_record_id IN ($placeholders)',
+            financialRecordIds);
       }
-      
-      await executeQuery('DELETE FROM financial_records WHERE patient_id = ?', [patientId]);
-      await executeQuery('DELETE FROM appointments WHERE patient_id = ?', [patientId]);
-      await executeQuery('DELETE FROM patient_medical_records WHERE patient_id = ?', [patientId]);
-      final result = await executeQuery('DELETE FROM patients WHERE id = ?', [patientId]);
-      
+
+      await executeQuery(
+          'DELETE FROM financial_records WHERE patient_id = ?', [patientId]);
+      await executeQuery(
+          'DELETE FROM appointments WHERE patient_id = ?', [patientId]);
+      await executeQuery(
+          'DELETE FROM patient_medical_records WHERE patient_id = ?',
+          [patientId]);
+      final result =
+          await executeQuery('DELETE FROM patients WHERE id = ?', [patientId]);
+
       await executeQuery('SET FOREIGN_KEY_CHECKS = 1');
-      return result.affectedRows! > 0;
+      return (result.affectedRows ?? 0) > 0;
     } catch (e) {
-      try { await executeQuery('SET FOREIGN_KEY_CHECKS = 1'); } catch (_) {}
+      try {
+        await executeQuery('SET FOREIGN_KEY_CHECKS = 1');
+      } catch (_) {}
       throw Exception('MySQL删除患者失败: $e');
     }
   }
@@ -224,7 +272,9 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
         'SELECT * FROM patients${_whereOrEmpty(parts.where)} ORDER BY updated_at DESC, id DESC',
         parts.args,
       );
-      return results.map((row) => Patient.fromMap(convertRowToMap(row))).toList();
+      return results
+          .map((row) => Patient.fromMap(convertRowToMap(row)))
+          .toList();
     } catch (e) {
       return [];
     }
@@ -254,9 +304,14 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
 
   @override
   Future<Map<String, dynamic>> getPatientsPage({
-    required int page, required int pageSize, String? searchQuery,
-    String? sortField, bool sortAscending = false,
-    DateTime? startDate, DateTime? endDate, String dateFilterType = 'first_visit_date',
+    required int page,
+    required int pageSize,
+    String? searchQuery,
+    String? sortField,
+    bool sortAscending = false,
+    DateTime? startDate,
+    DateTime? endDate,
+    String dateFilterType = 'first_visit_date',
   }) async {
     try {
       final offset = (page - 1) * pageSize;
@@ -271,12 +326,17 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
         'SELECT COUNT(*) as count FROM patients${_whereOrEmpty(parts.where)}',
         parts.args,
       );
-      final dynamic countVal = countResults.first['count'] ?? countResults.first[0];
+      final dynamic countVal =
+          countResults.first['count'] ?? countResults.first[0];
       final totalCount = _readCount(countVal);
 
       String orderBy = 'updated_at DESC';
       if (sortField != null && sortField.isNotEmpty) {
-        String field = sortField == 'medicalRecordNumber' ? 'CAST(medical_record_number AS SIGNED)' : (sortField == 'firstVisitDate' ? 'first_visit_date' : sortField);
+        String field = sortField == 'medical_record_number'
+            ? 'CAST(medical_record_number AS SIGNED)'
+            : (sortField == 'first_visit_date'
+                ? 'first_visit_date'
+                : sortField);
         orderBy = '$field ${sortAscending ? 'ASC' : 'DESC'}';
       }
 
@@ -285,7 +345,9 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
         [...parts.args, pageSize, offset],
       );
       return {
-        'patients': results.map((row) => Patient.fromMap(convertRowToMap(row))).toList(),
+        'patients': results
+            .map((row) => Patient.fromMap(convertRowToMap(row)))
+            .toList(),
         'totalCount': totalCount,
         'totalPages': (totalCount / pageSize).ceil(),
         'currentPage': page,
@@ -297,7 +359,8 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
 
   @override
   Future<List<Patient>> getPatientsByDoctor(String doctorName) async {
-    final results = await executeQuery('SELECT * FROM patients WHERE doctor = ?', [doctorName]);
+    final results = await executeQuery(
+        'SELECT * FROM patients WHERE doctor = ?', [doctorName]);
     return results.map((row) => Patient.fromMap(convertRowToMap(row))).toList();
   }
 
@@ -362,26 +425,42 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
 
   @override
   Future<void> updateAllPatientsPinyin() async {
-    throw UnimplementedError('updateAllPatientsPinyin should be implemented in Provider layer');
+    throw UnimplementedError(
+        'updateAllPatientsPinyin should be implemented in Provider layer');
   }
 
   @override
   Future<PatientMaterial> addPatientMaterial(PatientMaterial material) async {
-    final result = await executeQuery('INSERT INTO patient_materials (patient_id, description, created_at, updated_at) VALUES (?, ?, ?, ?)', 
-      [material.patientId, material.description, material.createdAt != null ? DateTimeFormatter.toDbString(material.createdAt!) : null, material.updatedAt != null ? DateTimeFormatter.toDbString(material.updatedAt!) : null]);
+    final result = await executeQuery(
+        'INSERT INTO patient_materials (patient_id, description, created_at, updated_at) VALUES (?, ?, ?, ?)',
+        [
+          material.patientId,
+          material.description,
+          DateTimeFormatter.toDbString(material.createdAt),
+          DateTimeFormatter.toDbString(material.updatedAt)
+        ]);
     return material.copyWith(id: result.insertId);
   }
 
   @override
   Future<List<PatientMaterial>> getPatientMaterials(int patientId) async {
-    final results = await executeQuery('SELECT * FROM patient_materials WHERE patient_id = ? ORDER BY created_at DESC', [patientId]);
-    return results.map((row) => PatientMaterial.fromMap(convertRowToMap(row))).toList();
+    final results = await executeQuery(
+        'SELECT * FROM patient_materials WHERE patient_id = ? ORDER BY created_at DESC',
+        [patientId]);
+    return results
+        .map((row) => PatientMaterial.fromMap(convertRowToMap(row)))
+        .toList();
   }
 
   @override
   Future<bool> updatePatientMaterial(PatientMaterial material) async {
-    final result = await executeQuery('UPDATE patient_materials SET description = ?, updated_at = ? WHERE id = ?', 
-      [material.description, material.updatedAt != null ? DateTimeFormatter.toDbString(material.updatedAt!) : null, material.id]);
+    final result = await executeQuery(
+        'UPDATE patient_materials SET description = ?, updated_at = ? WHERE id = ?',
+        [
+          material.description,
+          DateTimeFormatter.toDbString(material.updatedAt),
+          material.id
+        ]);
     return (result.affectedRows ?? 0) > 0;
   }
 
@@ -389,7 +468,8 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
   Future<bool> deletePatientMaterial(int id) async {
     await executeQuery('START TRANSACTION');
     try {
-      await executeQuery('DELETE FROM material_images WHERE material_id = ?', [id]);
+      await executeQuery(
+          'DELETE FROM material_images WHERE material_id = ?', [id]);
       await executeQuery('DELETE FROM patient_materials WHERE id = ?', [id]);
       await executeQuery('COMMIT');
       return true;
@@ -401,8 +481,12 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
 
   @override
   Future<List<MaterialImage>> getMaterialImages(int materialId) async {
-    final results = await executeQuery('SELECT * FROM material_images WHERE material_id = ? ORDER BY created_at DESC', [materialId]);
-    return results.map((row) => MaterialImage.fromMap(convertRowToMap(row))).toList();
+    final results = await executeQuery(
+        'SELECT * FROM material_images WHERE material_id = ? ORDER BY created_at DESC',
+        [materialId]);
+    return results
+        .map((row) => MaterialImage.fromMap(convertRowToMap(row)))
+        .toList();
   }
 
   @override
@@ -417,21 +501,43 @@ class MySqlPatientDataSource extends BaseMySqlDataSource implements PatientDataS
 
   @override
   Future<MaterialImage> addMaterialImage(MaterialImage image) async {
-    final result = await executeQuery('INSERT INTO material_images (material_id, original_name, image_data, thumbnail_data, image_type, file_size, thumbnail_size, has_thumbnail, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())',
-      [image.materialId, image.originalName, image.imageData, image.thumbnailData, image.imageType, image.fileSize, image.thumbnailSize, image.hasThumbnail ? 1 : 0]);
+    final result = await executeQuery(
+        'INSERT INTO material_images (material_id, original_name, image_data, thumbnail_data, image_type, file_size, thumbnail_size, has_thumbnail, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())',
+        [
+          image.materialId,
+          image.originalName,
+          image.imageData,
+          image.thumbnailData,
+          image.imageType,
+          image.fileSize,
+          image.thumbnailSize,
+          image.hasThumbnail ? 1 : 0
+        ]);
     return image.copyWith(id: result.insertId);
   }
 
   @override
   Future<bool> updateMaterialImage(MaterialImage image) async {
-    final result = await executeQuery('UPDATE material_images SET material_id = ?, original_name = ?, image_data = ?, thumbnail_data = ?, image_type = ?, file_size = ?, thumbnail_size = ?, has_thumbnail = ? WHERE id = ?',
-      [image.materialId, image.originalName, image.imageData, image.thumbnailData, image.imageType, image.fileSize, image.thumbnailSize, image.hasThumbnail ? 1 : 0, image.id]);
+    final result = await executeQuery(
+        'UPDATE material_images SET material_id = ?, original_name = ?, image_data = ?, thumbnail_data = ?, image_type = ?, file_size = ?, thumbnail_size = ?, has_thumbnail = ? WHERE id = ?',
+        [
+          image.materialId,
+          image.originalName,
+          image.imageData,
+          image.thumbnailData,
+          image.imageType,
+          image.fileSize,
+          image.thumbnailSize,
+          image.hasThumbnail ? 1 : 0,
+          image.id
+        ]);
     return (result.affectedRows ?? 0) > 0;
   }
 
   @override
   Future<bool> deleteMaterialImage(int imageId) async {
-    final result = await executeQuery('DELETE FROM material_images WHERE id = ?', [imageId]);
+    final result = await executeQuery(
+        'DELETE FROM material_images WHERE id = ?', [imageId]);
     return (result.affectedRows ?? 0) > 0;
   }
 }

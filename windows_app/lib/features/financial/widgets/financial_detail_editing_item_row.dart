@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/modern_date_picker.dart';
 import '../helpers/amount_input_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import 'financial_detail_table_layout.dart';
@@ -42,10 +41,10 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.blue[50],
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.blue[100]!, width: 1),
+          border: Border.all(color: Colors.blue.shade100, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue[200]!.withOpacity(0.2),
+              color: Colors.blue.shade200.withValues(alpha: 0.2),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -68,11 +67,12 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.blue[300]!),
+                  border: Border.all(color: Colors.blue.shade300),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.calendar_today, size: 12, color: Colors.blue[600]),
+                    Icon(Icons.calendar_today,
+                        size: 12, color: Colors.blue[600]),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -91,7 +91,7 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: Colors.grey.shade300),
               ),
               child: TextField(
                 controller: itemNameController,
@@ -121,10 +121,13 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: Colors.grey.shade300),
               ),
               child: DropdownButtonFormField<String>(
-                value: FinancialPaymentMethodHelper.uiValue(paymentMethod),
+                key: ValueKey<String?>(
+                    FinancialPaymentMethodHelper.uiValue(paymentMethod)),
+                initialValue:
+                    FinancialPaymentMethodHelper.uiValue(paymentMethod),
                 hint: Text(
                   '未选择',
                   style: TextStyle(color: Colors.grey[500], fontSize: 11),
@@ -151,7 +154,8 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
                           child: Row(
                             children: [
                               if (method ==
-                                  FinancialPaymentMethodHelper.nonePaymentMethod)
+                                  FinancialPaymentMethodHelper
+                                      .nonePaymentMethod)
                                 Icon(
                                   Icons.do_not_disturb_alt,
                                   size: 14,
@@ -162,14 +166,17 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
                                   width: 14,
                                   height: 14,
                                   child: Image.asset(
-                                    FinancialPaymentMethodHelper.iconAssetPath(method),
+                                    FinancialPaymentMethodHelper.iconAssetPath(
+                                        method),
                                     fit: BoxFit.contain,
                                   ),
                                 ),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  method == FinancialPaymentMethodHelper.nonePaymentMethod
+                                  method ==
+                                          FinancialPaymentMethodHelper
+                                              .nonePaymentMethod
                                       ? '无'
                                       : FinancialPaymentMethodHelper
                                           .displayNameOrDefault(method),
@@ -194,7 +201,7 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: Colors.grey.shade300),
               ),
               child: TextField(
                 controller: itemPriceController,
@@ -226,7 +233,7 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: Colors.grey.shade300),
               ),
               child: TextField(
                 controller: totalPriceController,
@@ -258,7 +265,7 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: Colors.grey.shade300),
               ),
               child: TextField(
                 controller: processingFeeController,

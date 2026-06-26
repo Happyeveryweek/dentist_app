@@ -21,7 +21,9 @@ class FinancialEmptyState extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              searchQuery.isEmpty ? Icons.account_balance_wallet_outlined : Icons.search_off,
+              searchQuery.isEmpty
+                  ? Icons.account_balance_wallet_outlined
+                  : Icons.search_off,
               size: 64,
               color: Colors.grey[400],
             ),

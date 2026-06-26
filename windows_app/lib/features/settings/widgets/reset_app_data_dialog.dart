@@ -37,7 +37,7 @@ class ResetAppDataDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -58,7 +58,7 @@ class ResetAppDataDialog extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 内容区域
             Container(
               width: double.infinity,
@@ -75,17 +75,19 @@ class ResetAppDataDialog extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // 配置项列表
                   const ResetDataItem(title: '应用名称恢复为默认', icon: Icons.title),
-                  const ResetDataItem(title: '数据源设置恢复为SQLite', icon: Icons.storage),
+                  const ResetDataItem(
+                      title: '数据源设置恢复为SQLite', icon: Icons.storage),
                   const ResetDataItem(title: '备份路径清空', icon: Icons.folder),
                   const ResetDataItem(title: '自动备份关闭', icon: Icons.backup),
-                  const ResetDataItem(title: 'MySQL连接信息清空', icon: Icons.cloud_off),
+                  const ResetDataItem(
+                      title: 'MySQL连接信息清空', icon: Icons.cloud_off),
                   const ResetDataItem(title: '主题设置恢复默认', icon: Icons.palette),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // 重要提示
                   Container(
                     width: double.infinity,
@@ -116,9 +118,9 @@ class ResetAppDataDialog extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(height: 8),
-                  
+
                   // 安全提示
                   Container(
                     width: double.infinity,
@@ -152,7 +154,7 @@ class ResetAppDataDialog extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 底部按钮
             Container(
               width: double.infinity,

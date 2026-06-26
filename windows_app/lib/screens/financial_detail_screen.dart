@@ -6,14 +6,10 @@ import '../models/financial_record.dart';
 import '../models/financial_item.dart';
 import '../models/patient.dart';
 import '../providers/financial_provider.dart';
-import '../providers/patient_provider.dart';
 import '../providers/user_provider.dart';
 import '../widgets/success_toast.dart';
-import '../widgets/success_toast.dart'
-    show DeleteConfirmDialogManager, InlineSuccessMessage;
 import '../widgets/modern_date_picker.dart';
 import '../utils/permission_utils.dart';
-import '../providers/settings_provider.dart';
 import '../features/financial/helpers/financial_payment_method_helper.dart';
 import '../features/financial/widgets/financial_patient_info_section.dart';
 import '../features/financial/widgets/financial_detail_stats_section.dart';
@@ -23,6 +19,7 @@ import '../features/financial/widgets/financial_detail_record_card.dart';
 import '../features/financial/widgets/financial_detail_editing_item_row.dart';
 import '../features/financial/services/financial_detail_service.dart';
 import 'patient_detail_screen.dart';
+import '../utils/log_manager.dart';
 
 class FinancialDetailScreen extends StatefulWidget {
   final Patient patient;
@@ -42,7 +39,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   List<FinancialRecord> _patientRecords = [];
   List<Map<String, dynamic>> _detailedRecords = []; // 存储详细记录（包含明细项）
   bool _isLoading = true;
-  bool _isEditing = false; // 新增：编辑状态标志
+  final bool _isEditing = false; // 新增：编辑状态标志
   bool _showProcessingFee = false;
   String _errorMessage = '';
   final ScrollController _scrollController = ScrollController();
@@ -129,6 +126,15 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   Future<void> _loadPatientRecords() async {
     if (!mounted) return;
 
+    final patientId = widget.patient.id;
+    if (patientId == null) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = '患者 ID 为空，无法加载财务记录';
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -136,7 +142,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
     try {
       final detailedRecords = await _financialDetailService.loadPatientRecords(
-        widget.patient.id!,
+        patientId,
         widget.initialRecordId,
       );
 
@@ -200,7 +206,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.blue[600]!, Colors.indigo[600]!],
+                  colors: [Colors.blue.shade600, Colors.indigo.shade600],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -219,7 +225,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(
@@ -400,12 +406,12 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
         ),
 
         // 成功消息显示区域（在底部）
-        if (_showSuccessMessage && _successMessage != null)
+        if (_showSuccessMessage)
           Padding(
             padding:
                 const EdgeInsets.only(left: 16, right: 16, bottom: 16, top: 8),
             child: InlineSuccessMessage(
-              message: _successMessage!,
+              message: _successMessage ?? '',
               isDelete: _isDeleteMessage,
               onDismiss: () {
                 setState(() {
@@ -423,8 +429,9 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
     // 获取患者最新的财务记录备注信息
     if (_patientRecords.isNotEmpty) {
       final latestRecord = _patientRecords.first;
-      if (latestRecord.notes != null && latestRecord.notes!.isNotEmpty) {
-        return latestRecord.notes!;
+      final notes = latestRecord.notes;
+      if (notes != null && notes.isNotEmpty) {
+        return notes;
       }
     }
     return '暂无备注信息';
@@ -432,11 +439,16 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
   // 获取或创建财务记录
   Future<FinancialRecord?> _getOrCreateFinancialRecord() async {
+    final patientId = widget.patient.id;
+    if (patientId == null) {
+      LogManager.w('FinancialDetailScreen', '患者 ID 为空，无法获取或创建财务记录');
+      return null;
+    }
     try {
       return await _financialDetailService
-          .getOrCreateFinancialRecord(widget.patient.id!);
+          .getOrCreateFinancialRecord(patientId);
     } catch (e) {
-      print('获取或创建财务记录失败: $e');
+      LogManager.e('FinancialDetailScreen', '获取或创建财务记录失败', error: e);
       return null;
     }
   }
@@ -456,6 +468,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
     FinancialRecord? targetRecord = await _getOrCreateFinancialRecord();
 
     if (targetRecord == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('无法创建财务记录')),
       );
@@ -506,13 +519,30 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   // 删除财务记录
   Future<void> _deleteFinancialRecord(FinancialRecord record,
       {FinancialItem? item, bool isDetail = false}) async {
+    final patientId = widget.patient.id;
+    if (patientId == null) {
+      AppToastManager.showError(context, message: '患者 ID 为空，无法删除财务记录');
+      return;
+    }
+
+    final recordId = record.id;
+    if (recordId == null) {
+      AppToastManager.showError(context, message: '无法删除无 ID 的财务记录');
+      return;
+    }
+
     if (isDetail && item != null) {
+      final itemId = item.id;
+      if (itemId == null) {
+        AppToastManager.showError(context, message: '无法删除无 ID 的收费项目');
+        return;
+      }
+
       final recordItems = await _financialDetailService.financialProvider
-          .getFinancialItemsByRecordId(
-        record.id!,
-      );
+          .getFinancialItemsByRecordId(recordId);
       final isLastItem = recordItems.length <= 1;
 
+      if (!mounted) return;
       // 删除明细项
       final confirmed = await DeleteConfirmDialogManager.show(
         context,
@@ -532,8 +562,8 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
           // 删除明细项
           final success =
               await _financialDetailService.deleteFinancialItemAndCleanupRecord(
-            itemId: item.id!,
-            recordId: record.id!,
+            itemId: itemId,
+            recordId: recordId,
           );
 
           if (success) {
@@ -546,7 +576,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             }
             // 删除成功后，更新患者的财务统计
             await _financialDetailService
-                .updatePatientFinancialSummary(widget.patient.id!);
+                .updatePatientFinancialSummary(patientId);
             // 重新加载数据
             await _loadPatientRecords();
 
@@ -556,6 +586,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
               isDelete: true,
             );
           } else {
+            if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('删除失败'),
@@ -564,6 +595,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             );
           }
         } catch (e) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('删除失败: $e'),
@@ -597,8 +629,21 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       return;
     }
 
-    if (_editingRecord == null) {
+    final patientId = widget.patient.id;
+    if (patientId == null) {
+      AppToastManager.showError(context, message: '患者 ID 为空');
+      return;
+    }
+
+    final editingRecord = _editingRecord;
+    if (editingRecord == null) {
       AppToastManager.showError(context, message: '无法找到财务记录');
+      return;
+    }
+
+    final editingRecordId = editingRecord.id;
+    if (editingRecordId == null) {
+      AppToastManager.showError(context, message: '财务记录 ID 为空');
       return;
     }
 
@@ -606,7 +651,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       if (_editingItemId == -1) {
         // 新增收费项
         final newItem = FinancialItem(
-          financialRecordId: _editingRecord!.id!,
+          financialRecordId: editingRecordId,
           itemName: _editItemNameController.text.trim(),
           paymentMethod: FinancialPaymentMethodHelper.toStorageValue(
             _editPaymentMethod,
@@ -634,11 +679,11 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
         // 更新财务记录的收费项数量和更新时间
         await _financialDetailService
-            .updateFinancialRecordAfterItemChange(_editingRecord!);
+            .updateFinancialRecordAfterItemChange(editingRecord);
 
         // 更新患者的财务统计
         await _financialDetailService
-            .updatePatientFinancialSummary(widget.patient.id!);
+            .updatePatientFinancialSummary(patientId);
 
         // 重新加载数据
         await _loadPatientRecords();
@@ -706,11 +751,11 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
         // 更新财务记录的收费项数量和更新时间
         await _financialDetailService
-            .updateFinancialRecordAfterItemChange(_editingRecord!);
+            .updateFinancialRecordAfterItemChange(editingRecord);
 
         // 更新患者的财务统计
         await _financialDetailService
-            .updatePatientFinancialSummary(widget.patient.id!);
+            .updatePatientFinancialSummary(patientId);
 
         // 重新加载数据
         await _loadPatientRecords();
@@ -722,6 +767,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
         _showInlineSuccessMessage('收费项更新成功');
       }
     } catch (e) {
+      if (!mounted) return;
       AppToastManager.showError(context, message: '保存失败: $e');
     }
   }
@@ -733,7 +779,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
     for (final detailRecord in _detailedRecords) {
       final item = detailRecord['item'] as FinancialItem?;
       if (detailRecord['isDetail'] == true && item != null) {
-        total += (item.itemPrice * (item.quantity ?? 1));
+        total += (item.itemPrice * item.quantity);
       }
     }
     return total;
@@ -873,40 +919,29 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
 
-      print('=== 财务详情页权限检查 ===');
-      print('当前用户: ${currentUser?.username}');
-      print('用户角色: ${currentUser?.role}');
-      print('用户医生: ${currentUser?.doctor}');
-      print('患者姓名: ${widget.patient.name}');
-      print('患者医生: ${widget.patient.doctor}');
-      print('用户是否为管理员: ${currentUser?.isAdmin}');
-
       if (currentUser == null) {
-        print('权限检查结果: false (用户未登录)');
         return false;
       }
 
       // 管理员拥有所有权限
       if (currentUser.isAdmin) {
-        print('权限检查结果: true (管理员权限)');
         return true;
       }
 
       // 非管理员用户只能查看自己医生的患者的财务记录
       // 如果患者没有指定医生，或者当前用户的医生与患者的医生匹配，则允许查看
-      if (widget.patient.doctor == null || widget.patient.doctor!.isEmpty) {
+      final patientDoctor = widget.patient.doctor;
+      if (patientDoctor == null || patientDoctor.isEmpty) {
         // 如果患者没有指定医生，所有用户都可以查看
-        print('权限检查结果: true (患者未指定医生)');
+
         return true;
       }
 
       // 检查当前用户的医生是否与患者的医生匹配
-      final hasPermission = currentUser.doctor != null &&
-          currentUser.doctor == widget.patient.doctor;
-      print('权限检查结果: $hasPermission (医生匹配检查)');
-      return hasPermission;
+      return currentUser.doctor != null &&
+          currentUser.doctor == patientDoctor;
     } catch (e) {
-      print('检查财务记录查看权限时出错: $e');
+      LogManager.e('FinancialDetailScreen', '检查财务记录查看权限时出错', error: e);
       return false;
     }
   }

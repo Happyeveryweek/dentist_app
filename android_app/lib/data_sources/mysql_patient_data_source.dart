@@ -114,13 +114,13 @@ class MySqlPatientDataSource implements PatientDataSource {
 
     patient.namePinyin = PinyinUtil.toPinyin(patient.name);
     patient.nameInitials = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null && patient.address!.isNotEmpty) {
-      patient.addressPinyin = PinyinUtil.toPinyin(patient.address!);
+    final address = patient.address;
+    if (address != null && address.isNotEmpty) {
+      patient.addressPinyin = PinyinUtil.toPinyin(address);
     }
 
     final result = await connection.query(
-      '''
-      INSERT INTO patients (medical_record_number, name, name_pinyin, name_initials, age, gender, phone,
+      '''INSERT INTO patients (medical_record_number, name, name_pinyin, name_initials, age, gender, phone,
                            identification_number, doctor, address, address_pinyin, first_visit_date,
                            dental_condition, treatment_items, total_cost, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
@@ -154,14 +154,13 @@ class MySqlPatientDataSource implements PatientDataSource {
 
     patient.namePinyin = PinyinUtil.toPinyin(patient.name);
     patient.nameInitials = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null && patient.address!.isNotEmpty) {
-      patient.addressPinyin = PinyinUtil.toPinyin(patient.address!);
+    final updateAddress = patient.address;
+    if (updateAddress != null && updateAddress.isNotEmpty) {
+      patient.addressPinyin = PinyinUtil.toPinyin(updateAddress);
     }
 
     final result = await connection.query(
-      '''
-      UPDATE patients
-      SET medical_record_number = ?, name = ?, name_pinyin = ?, name_initials = ?, age = ?, gender = ?, phone = ?,
+      '''UPDATE patients SET medical_record_number = ?, name = ?, name_pinyin = ?, name_initials = ?, age = ?, gender = ?, phone = ?,
           identification_number = ?, doctor = ?, address = ?, address_pinyin = ?, first_visit_date = ?,
           dental_condition = ?, treatment_items = ?, total_cost = ?, updated_at = NOW()
       WHERE id = ?

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'log_manager.dart';
 
 /// 单实例管理器 - 确保应用只能运行一个实例
 class SingleInstance {
@@ -20,33 +21,33 @@ class SingleInstance {
       // 获取临时目录
       final tempDir = await getTemporaryDirectory();
       _lockFilePath = path.join(tempDir.path, 'dentist_app.lock');
-      
-      print('🔒 尝试创建锁文件: $_lockFilePath');
-      
-      final lockFile = File(_lockFilePath!);
-      
+
+      final lockFilePath = _lockFilePath;
+      if (lockFilePath == null) return true;
+      final lockFile = File(lockFilePath);
+
       // 尝试以独占模式打开文件
       try {
-        _lockFile = await lockFile.open(mode: FileMode.write);
-        
+        final file = await lockFile.open(mode: FileMode.write);
+        _lockFile = file;
+
         // 尝试获取独占锁
-        await _lockFile!.lock(FileLock.exclusive);
-        
+        await file.lock(FileLock.exclusive);
+
         // 写入当前进程ID
-        await _lockFile!.writeString('${pid}\n${DateTime.now()}');
-        await _lockFile!.flush();
-        
-        print('✅ 成功获取独占锁，当前是唯一实例');
+        await file.writeString('${1}\n${DateTime.now()}');
+        await file.flush();
+
         return true;
       } catch (e) {
-        print('❌ 无法获取独占锁，应用已在运行: $e');
+        LogManager.w('SingleInstance', '无法获取独占锁，应用已在运行', error: e);
         // 无法获取锁，说明已有实例在运行
         await _lockFile?.close();
         _lockFile = null;
         return false;
       }
     } catch (e) {
-      print('⚠️ 单实例检测失败: $e');
+      LogManager.e('SingleInstance', '单实例检测失败', error: e);
       return true; // 出错时允许运行
     }
   }
@@ -54,23 +55,23 @@ class SingleInstance {
   /// 释放锁（应用退出时调用）
   static Future<void> release() async {
     try {
-      if (_lockFile != null) {
-        await _lockFile!.unlock();
-        await _lockFile!.close();
+      final file = _lockFile;
+      if (file != null) {
+        await file.unlock();
+        await file.close();
         _lockFile = null;
-        print('🔓 已释放锁文件');
       }
-      
+
       // 删除锁文件
-      if (_lockFilePath != null) {
-        final lockFile = File(_lockFilePath!);
+      final lockFilePath = _lockFilePath;
+      if (lockFilePath != null) {
+        final lockFile = File(lockFilePath);
         if (await lockFile.exists()) {
           await lockFile.delete();
-          print('🗑️ 已删除锁文件');
         }
       }
     } catch (e) {
-      print('⚠️ 释放锁失败: $e');
+      LogManager.e('SingleInstance', '释放锁失败', error: e);
     }
   }
 }

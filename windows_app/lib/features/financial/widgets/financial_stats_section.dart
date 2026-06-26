@@ -29,7 +29,7 @@ class FinancialStatsSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.blue[50],
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.blue[200]!),
+            border: Border.all(color: Colors.blue.shade200),
           ),
           child: Row(
             children: [
@@ -38,7 +38,7 @@ class FinancialStatsSection extends StatelessWidget {
                   icon: Icons.receipt_long,
                   label: '总记录数',
                   value: totalRecords.toString(),
-                  color: Colors.blue[700]!,
+                  color: Colors.blue.shade700,
                 ),
               ),
               Expanded(
@@ -46,13 +46,13 @@ class FinancialStatsSection extends StatelessWidget {
                   icon: Icons.people,
                   label: '涉及患者',
                   value: totalPatients.toString(),
-                  color: Colors.green[700]!,
+                  color: Colors.green.shade700,
                 ),
               ),
             ],
           ),
         ),
-        
+
         // 分页信息显示
         if (totalPages > 1)
           Container(

@@ -262,13 +262,18 @@ class PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                     color: Colors.grey.shade400,
                                   ),
                                   const SizedBox(height: 16),
-                                  Text(
-                                    _errorMessage!,
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                  Builder(
+                                    builder: (context) {
+                                      final errorMessage = _errorMessage;
+                                      return Text(
+                                        errorMessage ?? '',
+                                        style: TextStyle(
+                                          color: Colors.grey.shade600,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ],
                               )

@@ -25,8 +25,8 @@ class ProgressiveStatisticsDialog extends StatefulWidget {
 
 class ProgressiveStatisticsDialogState
     extends State<ProgressiveStatisticsDialog> {
-  late List<FinancialRecord> _records;
-  late Map<int, List<FinancialItem>> _itemsMap;
+  List<FinancialRecord> _records = [];
+  Map<int, List<FinancialItem>> _itemsMap = {};
 
   @override
   void initState() {
@@ -46,13 +46,13 @@ class ProgressiveStatisticsDialogState
   }
 
   void _applyFullCacheIfAvailable() {
-    if (widget.financialProvider.hasFullItemsCache) {
+    final cachedFullItemsMap = widget.financialProvider.cachedFullItemsMap;
+    if (widget.financialProvider.hasFullItemsCache && cachedFullItemsMap != null) {
       final allRecords = widget.financialProvider.cachedRecords;
-      final allItemsMap = widget.financialProvider.cachedFullItemsMap!;
       if (mounted) {
         setState(() {
           _records = allRecords;
-          _itemsMap = allItemsMap;
+          _itemsMap = cachedFullItemsMap;
         });
       }
     }
@@ -61,12 +61,12 @@ class ProgressiveStatisticsDialogState
   void _onProviderUpdated() {
     if (!mounted) return;
     // provider 后台任务每批完成都会 notifyListeners，这里更新图表
-    if (widget.financialProvider.cachedFullItemsMap != null) {
+    final cachedFullItemsMap = widget.financialProvider.cachedFullItemsMap;
+    if (cachedFullItemsMap != null) {
       final allRecords = widget.financialProvider.cachedRecords;
-      final allItemsMap = widget.financialProvider.cachedFullItemsMap!;
       setState(() {
         _records = allRecords;
-        _itemsMap = allItemsMap;
+        _itemsMap = cachedFullItemsMap;
       });
     }
   }

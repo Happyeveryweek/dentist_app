@@ -145,8 +145,7 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 4),
-                            if (log.schemaChanges != null &&
-                                log.schemaChanges!.isNotEmpty)
+                            if (log.schemaChanges?.isNotEmpty == true)
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
@@ -189,7 +188,7 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
                                   color: Colors.grey,
                                 ),
                               ),
-                            if (log.error != null && log.error!.isNotEmpty)
+                            if (log.error?.isNotEmpty == true)
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
@@ -264,11 +263,11 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
 
   Color _getDarkerColor(Color color) {
     // 根据颜色返回对应的深色版本
-    if (color == Colors.blue) return Colors.blue[700]!;
-    if (color == Colors.purple) return Colors.purple[700]!;
-    if (color == Colors.green) return Colors.green[700]!;
-    if (color == Colors.orange) return Colors.orange[700]!;
-    if (color == Colors.red) return Colors.red[700]!;
+    if (color == Colors.blue) return Colors.blue.shade700;
+    if (color == Colors.purple) return Colors.purple.shade700;
+    if (color == Colors.green) return Colors.green.shade700;
+    if (color == Colors.orange) return Colors.orange.shade700;
+    if (color == Colors.red) return Colors.red.shade700;
 
     // 默认情况下，通过降低亮度来创建更深的颜色
     final hsl = HSLColor.fromColor(color);
@@ -368,12 +367,11 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
                           ),
 
                           // 表结构变更卡片
-                          if (log.schemaChanges != null &&
-                              log.schemaChanges!.isNotEmpty)
+                          if (log.schemaChanges?.isNotEmpty == true)
                             _buildInfoCard(
                               icon: Icons.schema,
                               title: '表结构变更',
-                              content: log.schemaChanges!,
+                              content: log.schemaChanges ?? '',
                               color: Colors.purple,
                             ),
 
@@ -386,8 +384,8 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
                             _buildDetailsCard(log.tableDetails),
 
                           // 错误信息卡片
-                          if (log.error != null && log.error!.isNotEmpty)
-                            _buildErrorCard(log.error!),
+                          if (log.error?.isNotEmpty == true)
+                            _buildErrorCard(log.error ?? ''),
                         ],
                       ),
                     ),
@@ -483,7 +481,7 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.green[700]!,
+                  color: Colors.green.shade700,
                 ),
               ),
             ],
@@ -510,7 +508,7 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
                         Icon(
                           Icons.table_chart,
                           size: 14,
-                          color: Colors.green[600]!,
+                          color: Colors.green.shade600,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -518,7 +516,7 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: Colors.green[700]!,
+                            color: Colors.green.shade700,
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -528,7 +526,7 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.green[600]!,
+                            color: Colors.green.shade600,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
@@ -582,7 +580,7 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.orange[700]!,
+                  color: Colors.orange.shade700,
                 ),
               ),
             ],
@@ -606,7 +604,7 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.orange[200]!,
+                      color: Colors.orange.shade200,
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -614,7 +612,7 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.orange[800]!,
+                        color: Colors.orange.shade800,
                       ),
                     ),
                   ),
@@ -670,7 +668,7 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.red[700]!,
+                  color: Colors.red.shade700,
                 ),
               ),
             ],
@@ -680,15 +678,15 @@ class SyncLogsScreenState extends State<SyncLogsScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.red[50]!,
+              color: Colors.red.shade50,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.red[200]!),
+              border: Border.all(color: Colors.red.shade200),
             ),
             child: Text(
               error,
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.red[700]!,
+                color: Colors.red.shade700,
                 fontFamily: 'monospace',
                 height: 1.4,
               ),

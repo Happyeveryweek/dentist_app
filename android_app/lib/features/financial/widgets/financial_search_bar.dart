@@ -32,6 +32,8 @@ class FinancialSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final start = startDate;
+    final end = endDate;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -114,9 +116,9 @@ class FinancialSearchBar extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            (startDate == null && endDate == null)
+                            (start == null && end == null)
                                 ? '全部时间'
-                                : '${_formatDate(startDate!)} - ${_formatDate(endDate!)}',
+                                : '${start != null ? _formatDate(start) : ''} - ${end != null ? _formatDate(end) : ''}',
                             style: const TextStyle(
                               color: Colors.black87,
                               fontSize: 12,
@@ -225,10 +227,12 @@ class FinancialSearchBar extends StatelessWidget {
 
     if (expectedStart == null || expectedEnd == null) return false;
 
-    return startDate != null &&
-        endDate != null &&
-        _isSameDay(startDate!, expectedStart) &&
-        _isSameDay(endDate!, expectedEnd);
+    final start = startDate;
+    final end = endDate;
+    return start != null &&
+        end != null &&
+        _isSameDay(start, expectedStart) &&
+        _isSameDay(end, expectedEnd);
   }
 
   bool _isSameDay(DateTime date1, DateTime date2) {

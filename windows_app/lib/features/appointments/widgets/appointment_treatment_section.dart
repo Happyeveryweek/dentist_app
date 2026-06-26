@@ -69,15 +69,15 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.healing,
-                color: const Color(0xFFFF9800),
+                color: Color(0xFFFF9800),
                 size: 18,
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 '治疗项目',
                 style: TextStyle(
                   fontSize: 16,
@@ -111,7 +111,8 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
                     ),
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 16),
                   ),
                   onSubmitted: _addCustomTreatment,
                 ),
@@ -120,7 +121,7 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
               Expanded(
                 flex: 4,
                 child: DropdownButtonFormField<String>(
-                  value: _selectedSuggestion,
+                  initialValue: _selectedSuggestion,
                   borderRadius: BorderRadius.circular(12),
                   dropdownColor: Colors.white,
                   focusColor: Colors.transparent,
@@ -142,30 +143,28 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
                     ),
                   ),
                   hint: const Text('暂无'),
-                  items:
-                      widget.suggestions
-                          .map(
-                            (item) => DropdownMenuItem<String>(
-                              value: item,
-                              child: Text(
-                                item,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          )
-                          .toList(),
-                  onChanged:
-                      widget.suggestions.isEmpty
-                          ? null
-                          : (value) {
-                              if (value == null) {
-                                return;
-                              }
-                              setState(() {
-                                _selectedSuggestion = null;
-                                _addCustomTreatment(value);
-                              });
-                            },
+                  items: widget.suggestions
+                      .map(
+                        (item) => DropdownMenuItem<String>(
+                          value: item,
+                          child: Text(
+                            item,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: widget.suggestions.isEmpty
+                      ? null
+                      : (value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setState(() {
+                            _selectedSuggestion = null;
+                            _addCustomTreatment(value);
+                          });
+                        },
                 ),
               ),
             ],
@@ -189,38 +188,38 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFFFF9800).withOpacity(0.2),
+                  color: const Color(0xFFFF9800).withValues(alpha: 0.2),
                 ),
               ),
               child: Wrap(
                 spacing: 6,
                 runSpacing: 6,
-                children:
-                    _localSelectedTreatments
-                        .map(
-                          (treatment) => InputChip(
-                            label: Text(
-                              treatment,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFFFF9800),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            onDeleted: () => _removeTreatment(treatment),
-                            deleteIcon: const Icon(
-                              Icons.close,
-                              size: 14,
-                              color: Color(0xFFFF9800),
-                            ),
-                            backgroundColor: const Color(0xFFFF9800)
-                                .withOpacity(0.08),
-                            side: BorderSide(
-                              color: const Color(0xFFFF9800).withOpacity(0.25),
-                            ),
+                children: _localSelectedTreatments
+                    .map(
+                      (treatment) => InputChip(
+                        label: Text(
+                          treatment,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFFFF9800),
+                            fontWeight: FontWeight.w500,
                           ),
-                        )
-                        .toList(),
+                        ),
+                        onDeleted: () => _removeTreatment(treatment),
+                        deleteIcon: const Icon(
+                          Icons.close,
+                          size: 14,
+                          color: Color(0xFFFF9800),
+                        ),
+                        backgroundColor:
+                            const Color(0xFFFF9800).withValues(alpha: 0.08),
+                        side: BorderSide(
+                          color:
+                              const Color(0xFFFF9800).withValues(alpha: 0.25),
+                        ),
+                      ),
+                    )
+                    .toList(),
               ),
             ),
           ],

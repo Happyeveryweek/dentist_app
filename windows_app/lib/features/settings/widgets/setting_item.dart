@@ -17,14 +17,27 @@ class SettingItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final subtitleText = subtitle;
+    final trailingWidget = trailing;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: AppTheme.primaryColor, size: 20),
@@ -35,16 +48,16 @@ class SettingItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title, 
+                  title,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
                   ),
                 ),
-                if (subtitle != null) ...[
+                if (subtitleText != null) ...[
                   const SizedBox(height: 2),
                   Text(
-                    subtitle!,
+                    subtitleText,
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 13,
@@ -54,7 +67,7 @@ class SettingItem extends StatelessWidget {
               ],
             ),
           ),
-          if (trailing != null) trailing!,
+          if (trailingWidget != null) trailingWidget,
         ],
       ),
     );

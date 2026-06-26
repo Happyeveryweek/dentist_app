@@ -1,4 +1,5 @@
 import 'package:mysql1/mysql1.dart';
+import '../../../utils/log_manager.dart';
 
 /// 材料同步服务
 /// 负责处理 SQLite → MySQL 的数据同步逻辑（从 MaterialProvider 中提取）
@@ -21,7 +22,8 @@ class MaterialSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过材料同步(id=$materialId)');
+          LogManager.w(
+              'MaterialSyncService', 'MySQL连接不可用，跳过材料同步(id=$materialId)');
           return;
         }
 
@@ -54,7 +56,8 @@ class MaterialSyncService {
               materialMap['updated_at'],
               materialId,
             ]);
-            print('成功更新MySQL材料(id=$materialId)，影响行数: ${result.affectedRows}');
+            LogManager.i('MaterialSyncService',
+                '成功更新MySQL材料(id=$materialId)，影响行数: ${result.affectedRows}');
           } else {
             final result = await conn.query('''
               INSERT INTO materials
@@ -75,13 +78,14 @@ class MaterialSyncService {
               materialMap['created_at'],
               materialMap['updated_at'],
             ]);
-            print('成功将材料(id=$materialId)同步到MySQL，插入ID: ${result.insertId}');
+            LogManager.i('MaterialSyncService',
+                '成功将材料(id=$materialId)同步到MySQL，插入ID: ${result.insertId}');
           }
         } catch (e) {
-          print('同步材料到MySQL时出错: $e');
+          LogManager.e('MaterialSyncService', '同步材料到MySQL时出错', error: e);
         }
       } catch (e) {
-        print('材料同步到MySQL发生不可预期错误: $e');
+        LogManager.e('MaterialSyncService', '材料同步到MySQL发生不可预期错误', error: e);
       }
     });
   }
@@ -92,7 +96,8 @@ class MaterialSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过材料删除同步(id=$materialId)');
+          LogManager.w(
+              'MaterialSyncService', 'MySQL连接不可用，跳过材料删除同步(id=$materialId)');
           return;
         }
 
@@ -101,12 +106,14 @@ class MaterialSyncService {
             'DELETE FROM materials WHERE id = ?',
             [materialId],
           );
-          print('成功从MySQL删除材料(id=$materialId)，影响行数: ${result.affectedRows}');
+          LogManager.i('MaterialSyncService',
+              '成功从MySQL删除材料(id=$materialId)，影响行数: ${result.affectedRows}');
         } catch (e) {
-          print('从MySQL删除材料(id=$materialId)时出错: $e');
+          LogManager.e('MaterialSyncService', '从MySQL删除材料(id=$materialId)时出错',
+              error: e);
         }
       } catch (e) {
-        print('材料删除同步到MySQL发生不可预期错误: $e');
+        LogManager.e('MaterialSyncService', '材料删除同步到MySQL发生不可预期错误', error: e);
       }
     });
   }

@@ -4,7 +4,7 @@ import '../../../models/patient.dart';
 import './patient_calculation_helper.dart';
 
 /// 财务数据聚合辅助类
-/// 
+///
 /// 提供患者模式的数据聚合逻辑
 class FinancialDataAggregator {
   /// 获取财务数据（按患者去重，基于患者的"最新收费日期/最近更新"排序）
@@ -32,22 +32,28 @@ class FinancialDataAggregator {
       // 该记录自身的最新收费日期（若无明细则用记录创建时间）
       final items = recordItemsMap[record.id] ?? [];
       final recordLatestCharge = items.isNotEmpty
-          ? items.map((i) => i.chargeDate).reduce((a, b) => a.isAfter(b) ? a : b)
+          ? items
+              .map((i) => i.chargeDate)
+              .reduce((a, b) => a.isAfter(b) ? a : b)
           : record.createdAt;
 
-      if (!agg.containsKey(pid)) {
-        agg[pid] = {
+      var m = agg[pid];
+      if (m == null) {
+        m = {
           'patient': patient,
           // 代表记录：先用当前记录，后续遇到"更新更晚"的记录替换
           'record': record,
-          'patientLatestChargeDate': patientLatestChargeFromAgg ?? recordLatestCharge, // 优先用后端聚合
-          'patientLastUpdated': patientLastUpdatedFromAgg ?? record.updatedAt,        // 优先用后端聚合
+          'patientLatestChargeDate':
+              patientLatestChargeFromAgg ?? recordLatestCharge, // 优先用后端聚合
+          'patientLastUpdated':
+              patientLastUpdatedFromAgg ?? record.updatedAt, // 优先用后端聚合
         };
+        agg[pid] = m;
       } else {
-        final m = agg[pid]!;
         // 维护患者维度的最新收费日期（所有收费明细的最大 charge_date）
         final prevCharge = m['patientLatestChargeDate'] as DateTime;
-        final candidateCharge = patientLatestChargeFromAgg ?? recordLatestCharge;
+        final candidateCharge =
+            patientLatestChargeFromAgg ?? recordLatestCharge;
         if (candidateCharge.isAfter(prevCharge)) {
           m['patientLatestChargeDate'] = candidateCharge;
         }
@@ -65,7 +71,8 @@ class FinancialDataAggregator {
     // 聚合后转列表并排序
     final List<Map<String, dynamic>> list = agg.values.toList();
     list.sort((a, b) {
-      int compareDate(DateTime da, DateTime db) => sortAscending ? da.compareTo(db) : db.compareTo(da);
+      int compareDate(DateTime da, DateTime db) =>
+          sortAscending ? da.compareTo(db) : db.compareTo(da);
       if (sortBy == 'charge_date') {
         final da = a['patientLatestChargeDate'] as DateTime;
         final db = b['patientLatestChargeDate'] as DateTime;
@@ -88,7 +95,8 @@ class FinancialDataAggregator {
           financialRecords,
           recordItemsMap,
         ),
-        'lastFinancialUpdateDate': PatientCalculationHelper.getPatientLastFinancialUpdateDate(
+        'lastFinancialUpdateDate':
+            PatientCalculationHelper.getPatientLastFinancialUpdateDate(
           record.patientId,
           financialRecords,
         ),

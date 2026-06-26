@@ -48,17 +48,33 @@ class FinancialProvider extends ChangeNotifier {
       FinancialStatisticsService();
   final FinancialInitializationService _initializationService =
       FinancialInitializationService();
-  late final FinancialRecordService _recordService = FinancialRecordService(
-    dataSourceService: _dataSourceService,
-  );
-  late final FinancialItemService _itemService = FinancialItemService(
-    dataSourceService: _dataSourceService,
-  );
-  late final FinancialQueryService _queryService = FinancialQueryService(
-    dataSourceService: _dataSourceService,
-    permissionService: _permissionService,
-    connectionService: _connectionService,
-  );
+  FinancialRecordService? _recordServiceInstance;
+  FinancialItemService? _itemServiceInstance;
+  FinancialQueryService? _queryServiceInstance;
+
+  FinancialRecordService get _recordService {
+    final service = _recordServiceInstance;
+    if (service == null) {
+      throw StateError('FinancialRecordService 尚未初始化');
+    }
+    return service;
+  }
+
+  FinancialItemService get _itemService {
+    final service = _itemServiceInstance;
+    if (service == null) {
+      throw StateError('FinancialItemService 尚未初始化');
+    }
+    return service;
+  }
+
+  FinancialQueryService get _queryService {
+    final service = _queryServiceInstance;
+    if (service == null) {
+      throw StateError('FinancialQueryService 尚未初始化');
+    }
+    return service;
+  }
 
   // Getters
   bool get initialized =>
@@ -154,13 +170,15 @@ class FinancialProvider extends ChangeNotifier {
   // 从DatabaseProvider获取数据库连接
   Future<void> initializeFromDatabase(dynamic dbProvider) async {
     if (_isInitializedFlag) return;
-    if (_initializationFuture != null) {
-      return await _initializationFuture!;
+    final existingFuture = _initializationFuture;
+    if (existingFuture != null) {
+      return await existingFuture;
     }
 
-    _initializationFuture = _initializeFromDatabaseInternal(dbProvider);
+    final future = _initializeFromDatabaseInternal(dbProvider);
+    _initializationFuture = future;
     try {
-      return await _initializationFuture!;
+      return await future;
     } finally {
       _initializationFuture = null;
     }
@@ -215,6 +233,18 @@ class FinancialProvider extends ChangeNotifier {
     MySqlConnection? mysqlConnection,
     String dataSourceType = 'sqlite',
   }) {
+    _recordServiceInstance = FinancialRecordService(
+      dataSourceService: _dataSourceService,
+    );
+    _itemServiceInstance = FinancialItemService(
+      dataSourceService: _dataSourceService,
+    );
+    _queryServiceInstance = FinancialQueryService(
+      dataSourceService: _dataSourceService,
+      permissionService: _permissionService,
+      connectionService: _connectionService,
+    );
+
     _database = database;
     _dataSourceType = dataSourceType;
   }
@@ -280,9 +310,10 @@ class FinancialProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('getAllFinancialRecords', () async {
+    return await wrapper.wrapOperation('getAllFinancialRecords', () async {
       try {
         AppLogger.info('🔄 从数据库获取最新财务记录...');
 
@@ -344,9 +375,10 @@ class FinancialProvider extends ChangeNotifier {
 
   // 智能获取财务记录（优先使用缓存）
   Future<List<FinancialRecord>> getFinancialRecordsWithCache() async {
-    if (_dbWrapper == null) return _cacheHelper.cachedRecords;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return _cacheHelper.cachedRecords;
 
-    return await _dbWrapper!.wrapOperation(
+    return await wrapper.wrapOperation(
       'getFinancialRecordsWithCache',
       () async {
         try {
@@ -458,8 +490,7 @@ class FinancialProvider extends ChangeNotifier {
   }) async {
     if (!initialized) return;
 
-    // 有完整缓存：先显示初步数字，再立即给出完整缓存
-    if (!forceRefresh && _cacheHelper.hasFullItemsCache) {
+    Future<void> emitInitialStats() async {
       try {
         final initialRecords = await getPaginatedFinancialRecords(
           1,
@@ -467,38 +498,34 @@ class FinancialProvider extends ChangeNotifier {
         );
         final initialItemsMap = <int, List<FinancialItem>>{};
         for (final r in initialRecords) {
-          if (r.id != null) {
+          final id = r.id;
+          if (id != null) {
             try {
-              initialItemsMap[r.id!] = await getFinancialItemsByRecordId(r.id!);
+              initialItemsMap[id] = await getFinancialItemsByRecordId(id);
             } catch (_) {
-              initialItemsMap[r.id!] = [];
+              initialItemsMap[id] = [];
             }
           }
         }
-        onProgress(_cacheHelper.cachedStats!, false);
+        final cachedStats = _cacheHelper.cachedStats;
+        if (cachedStats != null) {
+          onProgress(cachedStats, false);
+        }
       } catch (_) {}
-      onProgress(_cacheHelper.cachedStats!, true);
+    }
+
+    // 有完整缓存：先显示初步数字，再立即给出完整缓存
+    if (!forceRefresh && _cacheHelper.hasFullItemsCache) {
+      await emitInitialStats();
+      final cachedStats = _cacheHelper.cachedStats;
+      if (cachedStats != null) {
+        onProgress(cachedStats, true);
+      }
       return;
     }
 
     // 无完整缓存：先显示初步数字
-    try {
-      final initialRecords = await getPaginatedFinancialRecords(
-        1,
-        initialCount,
-      );
-      final initialItemsMap = <int, List<FinancialItem>>{};
-      for (final r in initialRecords) {
-        if (r.id != null) {
-          try {
-            initialItemsMap[r.id!] = await getFinancialItemsByRecordId(r.id!);
-          } catch (_) {
-            initialItemsMap[r.id!] = [];
-          }
-        }
-      }
-      onProgress(_cacheHelper.cachedStats!, false);
-    } catch (_) {}
+    await emitInitialStats();
 
     // 启动后台全量加载（独立于 widget 生命周期）
     ensureFullDataCached(forceRefresh: forceRefresh);
@@ -682,10 +709,11 @@ class FinancialProvider extends ChangeNotifier {
     String operationName,
     Future<T> Function() operation,
   ) async {
-    if (_dbWrapper == null) {
+    final wrapper = _dbWrapper;
+    if (wrapper == null) {
       return await operation();
     }
-    return await _dbWrapper!.wrapOperation(operationName, operation);
+    return await wrapper.wrapOperation(operationName, operation);
   }
 
   /// 获取所有财务项目明细（带权限过滤）

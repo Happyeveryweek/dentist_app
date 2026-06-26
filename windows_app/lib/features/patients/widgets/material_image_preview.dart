@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import '../../../models/material_image.dart';
-import 'material_image_detail_dialog.dart';
 
 /// 材料图片预览组件
-/// 
+///
 /// 用于显示材料图片的缩略图预览，支持点击查看详情和删除
 class MaterialImagePreview extends StatelessWidget {
   final MaterialImage image;
@@ -56,15 +55,16 @@ class MaterialImagePreview extends StatelessWidget {
   }
 
   Widget _buildOptimizedImage() {
+    final originalName = image.originalName;
     // 检查是否是新添加的图片（通过ID和originalName判断）
-    if (image.id == null && image.originalName != null && 
-        image.originalName!.isNotEmpty && 
-        !image.originalName!.startsWith('http') && 
-        !image.originalName!.startsWith('file://')) {
-      
+    if (image.id == null &&
+        originalName != null &&
+        originalName.isNotEmpty &&
+        !originalName.startsWith('http') &&
+        !originalName.startsWith('file://')) {
       // 这是新添加的图片，使用File显示
-      final file = File(image.originalName!);
-      
+      final file = File(originalName);
+
       return Container(
         width: 60,
         height: 60,
@@ -105,7 +105,7 @@ class MaterialImagePreview extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.8),
+                  color: Colors.green.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Text(
@@ -122,10 +122,13 @@ class MaterialImagePreview extends StatelessWidget {
         ),
       );
     }
-    
+
     // 现有图片：优先显示缩略图，如果没有缩略图才显示原图
     // 检查是否有有效的缩略图
-    if (image.hasThumbnail && image.thumbnailData != null && image.thumbnailData!.isNotEmpty) {
+    final thumbnailData = image.thumbnailData;
+    if (image.hasThumbnail &&
+        thumbnailData != null &&
+        thumbnailData.isNotEmpty) {
       return Container(
         width: 60,
         height: 60,
@@ -142,7 +145,7 @@ class MaterialImagePreview extends StatelessWidget {
               right: 3,
               bottom: 3,
               child: Image.memory(
-                image.thumbnailData!,
+                thumbnailData,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   // 缩略图显示失败，回退到原图
@@ -173,7 +176,7 @@ class MaterialImagePreview extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.8),
+                  color: Colors.blue.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Text(
@@ -231,7 +234,7 @@ class MaterialImagePreview extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.8),
+                  color: Colors.orange.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Text(
@@ -252,7 +255,7 @@ class MaterialImagePreview extends StatelessWidget {
 }
 
 /// 文件图片预览组件
-/// 
+///
 /// 用于显示新选择的文件图片预览
 class MaterialFileImagePreview extends StatelessWidget {
   final File file;
@@ -301,7 +304,8 @@ class MaterialFileImagePreview extends StatelessWidget {
                       bottom: 4,
                       right: 4,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: Colors.black54,
                           borderRadius: BorderRadius.circular(10),

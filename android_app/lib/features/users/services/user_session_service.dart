@@ -32,8 +32,9 @@ class UserSessionService {
     void Function(int?) clearPermissionsCache,
     void Function() notifyListeners,
   ) {
-    if (currentUser != null && currentUser.id != null) {
-      clearPermissionsCache(currentUser.id!);
+    final userId = currentUser?.id;
+    if (userId != null) {
+      clearPermissionsCache(userId);
     }
 
     notifyListeners();

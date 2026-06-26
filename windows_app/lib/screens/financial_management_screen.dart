@@ -6,39 +6,19 @@ import '../models/financial_record.dart';
 import '../models/financial_item.dart';
 import '../models/patient.dart';
 import '../providers/financial_provider.dart';
-import '../providers/database_provider.dart';
 import '../providers/patient_provider.dart';
 import '../providers/app_state.dart';
 import '../widgets/mysql_connection_warning.dart';
-import '../theme/app_theme.dart';
 import '../widgets/dental_icons.dart';
-import '../widgets/unified_search_field.dart';
-import '../widgets/modern_date_picker.dart';
-import '../widgets/reusable_date_range_picker.dart';
 import '../widgets/success_toast.dart';
-import '../widgets/success_toast.dart'
-    show DeleteConfirmDialogManager, InlineSuccessMessage;
 import '../features/financial/widgets/financial_search_bar.dart';
-import '../features/financial/widgets/financial_pagination.dart';
 import '../utils/pinyin_util.dart';
 import '../features/financial/widgets/financial_form_dialog.dart';
 import 'financial_detail_screen.dart';
 import '../features/financial/widgets/financial_statistics_dialog.dart';
 import '../features/financial/widgets/financial_record_edit_dialog.dart';
-import '../features/financial/widgets/financial_hoverable_cards.dart';
-import '../features/financial/widgets/financial_stat_item.dart';
-import '../features/financial/widgets/financial_header_cell.dart';
-import '../features/financial/widgets/financial_compact_tag.dart';
-import '../features/financial/widgets/financial_compact_action_button.dart';
-import '../features/financial/widgets/financial_data_cell.dart';
-import '../features/financial/widgets/financial_date_cell.dart';
-import '../features/financial/widgets/financial_amount_cell.dart';
-import '../features/financial/widgets/financial_action_button.dart';
-import '../features/financial/widgets/financial_stats_section.dart';
-import '../features/financial/widgets/financial_table_header.dart';
 import '../features/financial/widgets/financial_card.dart';
 import '../features/financial/widgets/financial_item_card.dart';
-import '../features/financial/widgets/financial_compact_info_item.dart';
 import '../features/financial/widgets/financial_advanced_filter_dialog.dart';
 import '../features/financial/helpers/financial_calculation_helper.dart';
 import '../features/financial/helpers/financial_pagination_helper.dart';
@@ -51,6 +31,7 @@ import '../features/financial/widgets/financial_date_range_selector.dart';
 import '../features/financial/services/patient_cache_service.dart';
 import '../features/financial/widgets/financial_empty_state.dart';
 import '../features/financial/widgets/financial_records_list_view.dart';
+import '../utils/log_manager.dart';
 
 class FinancialManagementScreen extends StatefulWidget {
   const FinancialManagementScreen({Key? key}) : super(key: key);
@@ -66,11 +47,9 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   Map<int, List<FinancialItem>> _recordItemsMap = {};
   List<Map<String, dynamic>> _financialItemsWithDetails = []; // 按收费记录显示模式的数据
   bool _isLoading = true;
-  bool _hasError = false;
-  String _errorMessage = '';
   String _searchQuery = '';
-  TextEditingController _searchController = TextEditingController();
-  TextEditingController _pageJumpController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _pageJumpController = TextEditingController();
 
   // Route B 支持：按患者聚合后的日期覆盖（由后端聚合直接提供）
   final Map<int, DateTime> _patientLatestChargeDateMap = {}; // key: patientId
@@ -189,7 +168,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     if (min != null) {
       return '$label ≥${_formatFilterValue(min)}';
     }
-    return '$label ≤${_formatFilterValue(max!)}';
+    return max != null ? '$label ≤${_formatFilterValue(max)}' : '';
   }
 
   String _buildAdvancedFilterSummary() {
@@ -238,24 +217,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     _loadData();
   }
 
-  // 应用预设时间范围
-  void _applyPreset(String preset) {
-    final result = FinancialDateRangeSelector.applyPreset(preset);
-
-    if (mounted) {
-      setState(() {
-        _startDate = result.start;
-        _endDate = result.end;
-      });
-      _filterFinancialData();
-    }
-  }
-
-  // 检查日期是否在范围内
-  bool _isWithinRange(DateTime date) {
-    return FinancialDateRangeSelector.isWithinRange(date, _startDate, _endDate);
-  }
-
   String _resolveFinancialPatientsDataSource([
     FinancialProvider? financialProvider,
   ]) {
@@ -267,8 +228,8 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   List<Patient> _decoratePatients(List<Patient> patients) {
     return patients
         .map((patient) => patient.copyWith(
-              name_pinyin: PinyinUtil.toPinyin(patient.name),
-              name_initials: PinyinUtil.getInitials(patient.name),
+              namePinyin: PinyinUtil.toPinyin(patient.name),
+              nameInitials: PinyinUtil.getInitials(patient.name),
             ))
         .toList();
   }
@@ -330,9 +291,13 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     final result = <Map<String, dynamic>>[];
     for (final record in records) {
       final patient = _getPatientById(record.patientId);
-      if (patient == null) continue;
       result.add({
-        'patient': patient,
+        'patient': patient ??
+            Patient.placeholderForFinancialRecord(
+              patientId: record.patientId,
+              recordId: record.id,
+              createdAt: record.createdAt,
+            ),
         'record': record,
         'totalCost': _getPatientTotalReceivable(record.patientId),
         'lastFinancialUpdateDate':
@@ -347,10 +312,14 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     final result = <Map<String, dynamic>>[];
     for (final record in records) {
       final patient = _getPatientById(record.patientId);
-      if (patient == null) continue;
       final pid = record.patientId;
       result.add({
-        'patient': patient,
+        'patient': patient ??
+            Patient.placeholderForFinancialRecord(
+              patientId: pid,
+              recordId: record.id,
+              createdAt: record.createdAt,
+            ),
         'record': record,
         'totalCost': _patientReceivableSumMap[pid] ?? 0.0,
         'receivedSum': _patientReceivedSumMap[pid] ?? 0.0,
@@ -403,51 +372,12 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
   // 跳转到指定页面
   void _goToPage(int page) {
-    print('🔄 _goToPage 调试: 尝试跳转到第 $page 页');
-    print('📑 总页数: $_totalPages');
-    print('📍 当前页码: $_currentPage');
-
     if (page >= 1 && page <= _totalPages) {
-      print('✅ 页码有效，执行跳转');
-
-      print('🔄 缓存未命中，从后端加载数据');
       setState(() {
         _currentPage = page;
       });
       _loadData(); // 重新从后端加载数据
-    } else {
-      print('❌ 页码无效，不执行跳转');
-    }
-  }
-
-  // 从缓存加载数据
-  Future<void> _loadFromCache(int page) async {
-    final rows = _pageCache[page]!.cast<Map<String, dynamic>>();
-    final pagePatientIds =
-        rows.map<int>((r) => r['patient_id'] as int).toList();
-
-    final patientProvider =
-        Provider.of<PatientProvider>(context, listen: false);
-    final patientsDataSource = _resolveFinancialPatientsDataSource();
-
-    // 预加载患者信息
-    final fetchedPatients = await patientProvider.getPatientsByIds(
-      pagePatientIds,
-      effectiveDataSourceType: patientsDataSource,
-    );
-    final patients = _decoratePatients(fetchedPatients);
-    final repRecords =
-        rows.map(_buildFallbackRepresentativeRecordFromRow).toList();
-
-    _applyPatientAggregateMaps(rows);
-
-    if (mounted) {
-      setState(() {
-        _currentPage = page;
-        _financialRecords = repRecords;
-        _patients = patients;
-      });
-    }
+    } else {}
   }
 
   // 跳转到上一页
@@ -459,12 +389,10 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
   // 跳转到下一页
   void _goToNextPage() {
-    print('🔄 _goToNextPage 调试: 当前页 $_currentPage, 总页数 $_totalPages');
-
     if (_currentPage < _totalPages) {
       _goToPage(_currentPage + 1);
     } else {
-      print('⚠️ 已经是最后一页，无法继续下一页');
+      LogManager.e('FinancialManagementScreen', '⚠️ 已经是最后一页，无法继续下一页');
     }
   }
 
@@ -472,13 +400,9 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   Future<void> _loadData({bool showLoading = true}) async {
     if (!mounted) return;
 
-    print('🔄 开始加载数据: 显示模式=$_displayMode, 当前页=$_currentPage');
-
     if (mounted && showLoading) {
       setState(() {
         _isLoading = true;
-        _hasError = false;
-        _errorMessage = '';
       });
     }
 
@@ -499,7 +423,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             effectiveDataSourceType: patientsDataSource,
           );
         } catch (e) {
-          print('搜索患者ID失败: $e');
+          LogManager.e('FinancialManagementScreen', '搜索患者ID失败', error: e);
           filterPatientIds = [];
         }
       }
@@ -572,15 +496,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         final fetchedIds = fetchedPatients.map((p) => p.id).toSet();
         final missingIds =
             pagePatientIds.where((id) => !fetchedIds.contains(id)).toList();
-        if (missingIds.isNotEmpty) {
-          print(
-              '⚠️ _loadData: 本页患者ID列表(${pagePatientIds.length}个): $pagePatientIds');
-          print(
-              '⚠️ _loadData: 查到的患者ID列表(${fetchedIds.length}个): ${fetchedIds.toList()}');
-          print(
-              '⚠️ _loadData: 以下患者ID在患者表中不存在(${missingIds.length}个): $missingIds');
-          print('   数据源类型: $patientsDataSource');
-        }
+        if (missingIds.isNotEmpty) {}
 
         final repRecords =
             await _buildRepresentativeRecords(financialProvider, rows);
@@ -658,22 +574,17 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         final totalRecords = results[0] as int;
         final itemsWithDetails = results[1] as List<Map<String, dynamic>>;
 
-        print(
-            '✅ 按收费记录显示模式加载完成: 收费项数=${itemsWithDetails.length}, 总记录数=$totalRecords');
-
         // 提取当前页患者ID并在SQLite中批量查询
         final pagePatientIds = itemsWithDetails
             .map((data) => data['patient_id'] as int)
             .toSet()
             .toList();
-        print('📋 需要查询的患者ID: $pagePatientIds');
+
         final fetchedPatients = await patientProvider.getPatientsByIds(
           pagePatientIds,
           effectiveDataSourceType: patientsDataSource,
         );
         final patients = _decoratePatients(fetchedPatients);
-
-        print('✅ 查询到 ${patients.length} 个患者信息');
 
         setState(() {
           _financialRecords = [];
@@ -693,14 +604,12 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         });
       }
     } catch (e) {
-      print('❌ 加载数据失败: $e');
-      print('Stack trace: ${StackTrace.current}');
+      LogManager.e('FinancialManagementScreen', '❌ 加载数据失败', error: e);
+
       if (!mounted) return;
 
       setState(() {
         _isLoading = false;
-        _hasError = true;
-        _errorMessage = '加载数据时出错: $e';
       });
     }
   }
@@ -805,7 +714,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
                 gradient: DentalColors.primaryGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.account_balance_wallet,
                 color: Colors.white,
                 size: 24,
@@ -830,13 +739,13 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
               color: _displayMode == 'patient'
-                  ? DentalColors.primary.withOpacity(0.1)
-                  : Colors.grey.withOpacity(0.1),
+                  ? DentalColors.primary.withValues(alpha: 0.1)
+                  : Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: _displayMode == 'patient'
-                    ? DentalColors.primary.withOpacity(0.3)
-                    : Colors.grey.withOpacity(0.3),
+                    ? DentalColors.primary.withValues(alpha: 0.3)
+                    : Colors.grey.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
@@ -873,13 +782,13 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
               color: _displayMode == 'record'
-                  ? DentalColors.primary.withOpacity(0.1)
-                  : Colors.grey.withOpacity(0.1),
+                  ? DentalColors.primary.withValues(alpha: 0.1)
+                  : Colors.grey.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: _displayMode == 'record'
-                    ? DentalColors.primary.withOpacity(0.3)
-                    : Colors.grey.withOpacity(0.3),
+                    ? DentalColors.primary.withValues(alpha: 0.3)
+                    : Colors.grey.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
@@ -911,7 +820,10 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             child: IconButton(
               icon: const Icon(Icons.add_rounded, color: Colors.white),
               onPressed: () async {
-                await this._showFinancialRecordDialog();
+                final changed = await _showFinancialRecordDialog();
+                if (changed && mounted) {
+                  await _loadData(showLoading: false);
+                }
               },
               tooltip: '添加收费记录',
             ),
@@ -920,14 +832,14 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              color: DentalColors.success.withOpacity(0.1),
+              color: DentalColors.success.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.success.withOpacity(0.3),
+                color: DentalColors.success.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.bar_chart_rounded,
                 color: DentalColors.success,
               ),
@@ -945,8 +857,11 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             child: IconButton(
               icon: const Icon(Icons.refresh_rounded, color: Colors.white),
               onPressed: () async {
+                final financialProvider =
+                    Provider.of<FinancialProvider>(context, listen: false);
+                financialProvider.clearCache();
                 await _loadData(showLoading: false);
-                if (!mounted) return;
+                if (!context.mounted) return;
                 AppToastManager.showSuccess(context, message: '刷新数据成功');
               },
               tooltip: '刷新数据',
@@ -1038,7 +953,11 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
                             ? FinancialEmptyState(
                                 searchQuery: _searchQuery,
                                 onAddRecord: () async {
-                                  await _showFinancialRecordDialog();
+                                  final changed =
+                                      await _showFinancialRecordDialog();
+                                  if (changed && mounted) {
+                                    await _loadData(showLoading: false);
+                                  }
                                 },
                               )
                             : Column(
@@ -1070,84 +989,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
   // 构建记录卡片
 
-  // 删除财务记录
-  Future<void> _deleteFinancialRecord(FinancialRecord record) async {
-    // 获取患者信息用于显示删除提示
-    final patient = _getPatientById(record.patientId);
-    final patientName = patient?.name ?? '未知患者';
-
-    final confirmed =
-        await DeleteConfirmDialogManager.showFinancialRecordDelete(
-      context,
-      patientName: patientName,
-    );
-
-    if (confirmed == true) {
-      try {
-        final financialProvider =
-            Provider.of<FinancialProvider>(context, listen: false);
-
-        // 先删除相关的明细项
-        final items = _recordItemsMap[record.id] ?? [];
-        for (final item in items) {
-          await financialProvider.deleteFinancialItem(item.id!);
-        }
-
-        // 删除主记录
-        final success =
-            await financialProvider.deleteFinancialRecord(record.id!);
-
-        if (success) {
-          AppToastManager.showDelete(
-            context,
-            message: '财务记录删除成功',
-          );
-        } else {
-          AppToastManager.showError(
-            context,
-            message: '删除失败',
-          );
-        }
-      } catch (e) {
-        AppToastManager.showError(
-          context,
-          message: '删除失败: $e',
-        );
-      }
-    }
-  }
-
-  // 查看患者详情
-  void _viewPatientDetails(Patient patient) {
-    // 这里可以导航到患者详情页面
-    // 暂时显示一个简单的对话框
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('患者信息'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('姓名: ${patient.name}'),
-            Text('年龄: ${patient.age}岁'),
-            Text('性别: ${patient.gender}'),
-            Text('电话: ${patient.phone.isEmpty ? '未设置' : patient.phone}'),
-            Text('病历号: ${patient.medical_record_number ?? '未设置'}'),
-            Text(
-                '首诊日期: ${DateFormat('yyyy-MM-dd').format(patient.first_visit_date)}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('关闭'),
-          ),
-        ],
-      ),
-    );
-  }
-
   // 显示财务详情（弹窗形式）
   void _showFinancialDetail(Patient patient) {
     showDialog(
@@ -1173,7 +1014,9 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       ),
     ).then((result) {
       // 只有在有数据变动时才刷新（result为true表示有变动）
-      if (result == true) {}
+      if (result == true && mounted) {
+        _loadData(showLoading: false);
+      }
     });
   }
 
@@ -1191,6 +1034,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
     if (confirmed == true) {
       try {
+        if (!mounted) return;
         final financialProvider =
             Provider.of<FinancialProvider>(context, listen: false);
 
@@ -1201,18 +1045,27 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
         // 删除所有相关记录
         for (final patientRecord in patientRecords) {
-          final items = _recordItemsMap[patientRecord.id] ?? [];
+          final recordId = patientRecord.id;
+          if (recordId == null) continue;
+
+          final items = _recordItemsMap[recordId] ?? [];
           for (final item in items) {
-            await financialProvider.deleteFinancialItem(item.id!);
+            final itemId = item.id;
+            if (itemId != null) {
+              await financialProvider.deleteFinancialItem(itemId);
+            }
           }
-          await financialProvider.deleteFinancialRecord(patientRecord.id!);
+          await financialProvider.deleteFinancialRecord(recordId);
         }
 
+        if (!mounted) return;
         AppToastManager.showDelete(
           context,
           message: '患者财务记录删除成功',
         );
+        await _loadData(showLoading: false);
       } catch (e) {
+        if (!mounted) return;
         AppToastManager.showError(
           context,
           message: '删除失败: $e',
@@ -1301,21 +1154,9 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
   // 构建紧凑信息项组件
 
-  // 计算应收金额
-  double _calculateTotalReceivable(FinancialRecord record) {
-    return FinancialCalculationHelper.calculateTotalReceivable(
-        record, _recordItemsMap);
-  }
-
   // 计算已收金额
   double _calculateTotalCollected(FinancialRecord record) {
     return FinancialCalculationHelper.calculateTotalCollected(
-        record, _recordItemsMap);
-  }
-
-  // 计算欠费金额
-  double _calculateOutstandingAmount(FinancialRecord record) {
-    return FinancialCalculationHelper.calculateOutstandingAmount(
         record, _recordItemsMap);
   }
 
@@ -1323,11 +1164,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   double _calculateTotalProcessingFee(FinancialRecord record) {
     return FinancialCalculationHelper.calculateTotalProcessingFee(
         record, _recordItemsMap);
-  }
-
-  // 根据患者性别获取头像背景色
-  Color _getAvatarBackgroundColor(Patient patient) {
-    return FinancialCalculationHelper.getAvatarBackgroundColor(patient);
   }
 
   // 构建收费记录卡片（按收费记录显示模式）
@@ -1361,12 +1197,20 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   // 删除收费记录明细项
   Future<void> _deleteFinancialItem(
       FinancialRecord record, FinancialItem item, Patient patient) async {
+    final recordId = record.id;
+    final itemId = item.id;
+    if (recordId == null || itemId == null) {
+      AppToastManager.showError(context, message: '财务记录或收费项目 ID 为空');
+      return;
+    }
+
     final financialProvider =
         Provider.of<FinancialProvider>(context, listen: false);
     final recordItems =
-        await financialProvider.getFinancialItemsByRecordId(record.id!);
+        await financialProvider.getFinancialItemsByRecordId(recordId);
     final isLastItem = recordItems.length <= 1;
 
+    if (!mounted) return;
     final confirmed = await DeleteConfirmDialogManager.show(
       context,
       title: '确认删除',
@@ -1381,13 +1225,15 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
     if (confirmed == true) {
       try {
+        if (!mounted) return;
         final success =
             await financialProvider.deleteFinancialItemAndCleanupRecord(
-          itemId: item.id!,
-          recordId: record.id!,
+          itemId: itemId,
+          recordId: recordId,
         );
 
         if (success) {
+          if (!mounted) return;
           AppToastManager.showDelete(
             context,
             message: isLastItem
@@ -1395,28 +1241,19 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
                 : '已删除患者 "${patient.name}" 的收费明细项',
           );
         } else {
+          if (!mounted) return;
           AppToastManager.showError(
             context,
             message: '删除失败',
           );
         }
       } catch (e) {
+        if (!mounted) return;
         AppToastManager.showError(
           context,
           message: '删除失败: $e',
         );
       }
-    }
-  }
-
-  /// 获取当前数据源类型
-  String get _dataSourceType {
-    try {
-      final databaseProvider =
-          Provider.of<DatabaseProvider>(context, listen: false);
-      return databaseProvider.dataSourceType;
-    } catch (e) {
-      return 'sqlite'; // 默认使用 SQLite
     }
   }
 
@@ -1441,11 +1278,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       buildFinancialCard: _buildFinancialCard,
       buildFinancialItemCard: _buildFinancialItemCard,
     );
-  }
-
-  // 构建表头
-  Widget _buildTableHeader() {
-    return const FinancialTableHeader();
   }
 
   // 构建财务卡片
@@ -1474,7 +1306,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       debt: debt,
       onTap: () => _showFinancialDetail(patient),
       onEdit: () async {
-        await _showEditFinancialRecordDialog(patient, record);
+        return await _showEditFinancialRecordDialog(patient, record);
       },
       onDelete: () => _deleteAllFinancialRecordsByPatient(record),
     );
@@ -1564,6 +1396,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
       return result ?? false;
     } catch (e) {
+      if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('编辑财务记录失败: $e'),
@@ -1573,7 +1406,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       );
 
       // 记录错误日志
-      print('编辑财务记录时发生错误: $e');
+      LogManager.e('FinancialManagementScreen', '编辑财务记录时发生错误', error: e);
       return false;
     }
   }

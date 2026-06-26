@@ -91,7 +91,7 @@ class PaymentStatusChart extends StatelessWidget {
               LinearProgressIndicator(
                 value: collectedRate,
                 backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.green[600]!),
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade600),
                 minHeight: 8,
               ),
             ],
@@ -128,7 +128,7 @@ class PaymentStatusChart extends StatelessWidget {
               LinearProgressIndicator(
                 value: outstandingRate,
                 backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.red[600]!),
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.red.shade600),
                 minHeight: 8,
               ),
             ],

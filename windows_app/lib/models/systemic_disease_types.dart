@@ -53,13 +53,14 @@ class SystemicDiseaseTypes {
   /// 根据搜索关键词过滤疾病类型
   static Map<String, List<String>> filterDiseases(String keyword) {
     if (keyword.isEmpty) return diseases;
-    
+
     final Map<String, List<String>> filtered = {};
     diseases.forEach((type, subTypes) {
       if (type.contains(keyword)) {
         filtered[type] = subTypes;
       } else {
-        final matchingSubTypes = subTypes.where((subType) => subType.contains(keyword)).toList();
+        final matchingSubTypes =
+            subTypes.where((subType) => subType.contains(keyword)).toList();
         if (matchingSubTypes.isNotEmpty) {
           filtered[type] = matchingSubTypes;
         }
@@ -70,23 +71,23 @@ class SystemicDiseaseTypes {
 
   /// 获取常见疾病类型（用于快速选择）
   static List<String> get commonDiseaseTypes => [
-    '高血压',
-    '糖尿病',
-    '心脏病',
-    '肝炎',
-    '胃炎',
-    '关节炎',
-  ];
+        '高血压',
+        '糖尿病',
+        '心脏病',
+        '肝炎',
+        '胃炎',
+        '关节炎',
+      ];
 
   /// 获取需要特别注意的疾病类型（影响牙科治疗）
   static List<String> get criticalDiseaseTypes => [
-    '心脏病',
-    '高血压',
-    '糖尿病',
-    '血液病',
-    '传染病',
-    '肾脏疾病',
-  ];
+        '心脏病',
+        '高血压',
+        '糖尿病',
+        '血液病',
+        '传染病',
+        '肾脏疾病',
+      ];
 
   /// 检查是否为需要特别注意的疾病
   static bool isCriticalDisease(String diseaseType) {

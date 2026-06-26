@@ -185,6 +185,8 @@ class SettingsBackupRestoreDialogs {
                         selectedDir == null
                             ? null
                             : () async {
+                              final dir = selectedDir;
+                              if (dir == null) return;
                               Navigator.pop(context);
 
                               var filename = filenameController.text.trim();
@@ -193,7 +195,7 @@ class SettingsBackupRestoreDialogs {
                               }
 
                               final backupPath = path.join(
-                                selectedDir!,
+                                dir,
                                 filename,
                               );
 
@@ -510,6 +512,8 @@ class SettingsBackupRestoreDialogs {
                         selectedDir == null
                             ? null
                             : () async {
+                              final dir = selectedDir;
+                              if (dir == null) return;
                               Navigator.pop(context);
 
                               var filename = filenameController.text.trim();
@@ -518,7 +522,7 @@ class SettingsBackupRestoreDialogs {
                               }
 
                               final exportPath = path.join(
-                                selectedDir!,
+                                dir,
                                 filename,
                               );
 

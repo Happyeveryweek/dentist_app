@@ -102,8 +102,9 @@ class UserPermissionService {
     }
 
     // 普通用户只能查看自己医生字段匹配的数据
-    if (user.doctor != null && user.doctor!.isNotEmpty) {
-      return user.doctor!;
+    final doctor = user.doctor;
+    if (doctor != null && doctor.isNotEmpty) {
+      return doctor;
     }
 
     return null;

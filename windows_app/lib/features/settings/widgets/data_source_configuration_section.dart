@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../../theme/app_theme.dart';
 import 'data_source_form_widgets.dart';
 
@@ -56,7 +55,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('数据源配置', Icons.settings_rounded, AppTheme.primaryColor),
+        _buildSectionHeader(
+            '数据源配置', Icons.settings_rounded, AppTheme.primaryColor),
         Container(
           margin: const EdgeInsets.only(bottom: 24),
           decoration: BoxDecoration(
@@ -64,7 +64,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -92,19 +92,19 @@ class DataSourceConfigurationSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+          colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.05)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -132,7 +132,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -159,7 +159,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                   elevation: 2,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -172,7 +173,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 label: const Text('取消'),
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.grey.shade600,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
               ),
               const SizedBox(width: 12),
@@ -184,7 +186,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                   elevation: 2,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -197,10 +200,10 @@ class DataSourceConfigurationSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.05),
+            color: Colors.blue.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.blue.withOpacity(0.2),
+              color: Colors.blue.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -218,7 +221,9 @@ class DataSourceConfigurationSection extends StatelessWidget {
                             Text(
                               sqliteDbPath.isEmpty ? '使用默认数据库文件' : '已选择数据库文件',
                               style: TextStyle(
-                                color: sqliteDbPath.isEmpty ? Colors.grey.shade600 : AppTheme.successColor,
+                                color: sqliteDbPath.isEmpty
+                                    ? Colors.grey.shade600
+                                    : AppTheme.successColor,
                                 fontWeight: FontWeight.w500,
                                 fontSize: 14,
                               ),
@@ -226,16 +231,19 @@ class DataSourceConfigurationSection extends StatelessWidget {
                             if (sqliteDbPath.isNotEmpty) ...[
                               const SizedBox(width: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.successColor.withOpacity(0.1),
+                                  color: AppTheme.successColor
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: AppTheme.successColor.withOpacity(0.3),
+                                    color: AppTheme.successColor
+                                        .withValues(alpha: 0.3),
                                     width: 1,
                                   ),
                                 ),
-                                child: Row(
+                                child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
@@ -243,7 +251,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                                       size: 14,
                                       color: AppTheme.successColor,
                                     ),
-                                    const SizedBox(width: 4),
+                                    SizedBox(width: 4),
                                     Text(
                                       '已配置',
                                       style: TextStyle(
@@ -260,21 +268,32 @@ class DataSourceConfigurationSection extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: sqliteDbPath.isNotEmpty ? BoxDecoration(
-                            color: AppTheme.successColor.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: AppTheme.successColor.withOpacity(0.2),
-                              width: 1,
-                            ),
-                          ) : null,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: sqliteDbPath.isNotEmpty
+                              ? BoxDecoration(
+                                  color: AppTheme.successColor
+                                      .withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: AppTheme.successColor
+                                        .withValues(alpha: 0.2),
+                                    width: 1,
+                                  ),
+                                )
+                              : null,
                           child: Text(
-                            sqliteDbPath.isEmpty ? '系统将使用默认位置的数据库文件' : sqliteDbPath,
+                            sqliteDbPath.isEmpty
+                                ? '系统将使用默认位置的数据库文件'
+                                : sqliteDbPath,
                             style: TextStyle(
-                              color: sqliteDbPath.isEmpty ? Colors.grey.shade500 : AppTheme.successColor,
+                              color: sqliteDbPath.isEmpty
+                                  ? Colors.grey.shade500
+                                  : AppTheme.successColor,
                               fontSize: 12,
-                              fontWeight: sqliteDbPath.isNotEmpty ? FontWeight.w500 : FontWeight.normal,
+                              fontWeight: sqliteDbPath.isNotEmpty
+                                  ? FontWeight.w500
+                                  : FontWeight.normal,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -292,7 +311,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
                         elevation: 2,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -335,7 +355,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
+                color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -362,7 +382,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
                   elevation: 2,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -375,7 +396,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 label: const Text('取消'),
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.grey.shade600,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
               ),
               const SizedBox(width: 12),
@@ -387,7 +409,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
                   elevation: 2,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -410,10 +433,10 @@ class DataSourceConfigurationSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.05),
+        color: Colors.green.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.green.withOpacity(0.2),
+          color: Colors.green.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -425,7 +448,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 child: DataSourceFormWidgets.buildCompactSettingItem(
                   icon: Icons.computer_rounded,
                   title: '主机地址',
-                  value: hostController.text.isEmpty ? '未设置' : hostController.text,
+                  value:
+                      hostController.text.isEmpty ? '未设置' : hostController.text,
                   iconColor: Colors.blue,
                 ),
               ),
@@ -434,7 +458,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 child: DataSourceFormWidgets.buildCompactSettingItem(
                   icon: Icons.settings_ethernet_rounded,
                   title: '端口',
-                  value: portController.text.isEmpty ? '未设置' : portController.text,
+                  value:
+                      portController.text.isEmpty ? '未设置' : portController.text,
                   iconColor: Colors.teal,
                 ),
               ),
@@ -443,7 +468,9 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 child: DataSourceFormWidgets.buildCompactSettingItem(
                   icon: Icons.account_tree_rounded,
                   title: '数据库名称',
-                  value: databaseController.text.isEmpty ? '未设置' : databaseController.text,
+                  value: databaseController.text.isEmpty
+                      ? '未设置'
+                      : databaseController.text,
                   iconColor: Colors.purple,
                 ),
               ),
@@ -452,7 +479,9 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 child: DataSourceFormWidgets.buildCompactSettingItem(
                   icon: Icons.person_rounded,
                   title: '用户名',
-                  value: usernameController.text.isEmpty ? '未设置' : usernameController.text,
+                  value: usernameController.text.isEmpty
+                      ? '未设置'
+                      : usernameController.text,
                   iconColor: Colors.orange,
                 ),
               ),
@@ -503,10 +532,10 @@ class DataSourceConfigurationSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.05),
+        color: Colors.green.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.green.withOpacity(0.2),
+          color: Colors.green.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -600,10 +629,10 @@ class DataSourceConfigurationSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.05),
+                color: Colors.blue.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.blue.withOpacity(0.2),
+                  color: Colors.blue.withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),
@@ -630,11 +659,13 @@ class DataSourceConfigurationSection extends StatelessWidget {
             const SizedBox(height: 20),
             if (connectionTested && connectionSuccess)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                  border:
+                      Border.all(color: Colors.green.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -674,7 +705,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
                     elevation: 2,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

@@ -2,18 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:excel/excel.dart' as excel;
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/rendering.dart';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
 
-import '../../../providers/database_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../models/patient.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
+import '../../../utils/log_manager.dart';
 
 class PatientExportDialog extends StatefulWidget {
   final String? searchQuery;
@@ -44,7 +40,6 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
   String _exportPath = '';
   String _statusMessage = '';
   bool _includeAllPatients = true;
-  bool _includeInactivePatients = false;
   bool _includeDentalCondition = true;
   bool _exportSuccess = false;
   bool _hasError = false;
@@ -52,10 +47,15 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final isPurpleTheme = Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
-    final textColor = isPurpleTheme ? AppTheme.purplePrimaryText : DentalColors.onSurface;
-    final secondaryTextColor = isPurpleTheme ? AppTheme.purpleSecondaryText : (isDarkMode ? Colors.grey[400] : Colors.black54);
-    final accentColor = isPurpleTheme ? AppTheme.purpleColor : Theme.of(context).primaryColor;
+    final isPurpleTheme =
+        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
+    final textColor =
+        isPurpleTheme ? AppTheme.purplePrimaryText : DentalColors.onSurface;
+    final secondaryTextColor = isPurpleTheme
+        ? AppTheme.purpleSecondaryText
+        : (isDarkMode ? Colors.grey[400] : Colors.black54);
+    final accentColor =
+        isPurpleTheme ? AppTheme.purpleColor : Theme.of(context).primaryColor;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -71,66 +71,99 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [accentColor.withOpacity(0.9), accentColor.withOpacity(0.7)]),
+                    gradient: LinearGradient(colors: [
+                      accentColor.withValues(alpha: 0.9),
+                      accentColor.withValues(alpha: 0.7)
+                    ]),
                     borderRadius: BorderRadius.circular(10),
-                    boxShadow: [BoxShadow(color: accentColor.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3))],
+                    boxShadow: [
+                      BoxShadow(
+                          color: accentColor.withValues(alpha: 0.25),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3))
+                    ],
                   ),
-                  child: const Icon(Icons.file_download_outlined, color: Colors.white, size: 22),
+                  child: const Icon(Icons.file_download_outlined,
+                      color: Colors.white, size: 22),
                 ),
                 const SizedBox(width: 12),
-                const Text('导出患者数据到Excel', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                const Text('导出患者数据到Excel',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                 const Spacer(),
-                IconButton(onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints()),
+                IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints()),
               ],
             ),
-
             const SizedBox(height: 4),
-            Divider(color: Colors.black.withOpacity(0.06)),
-
+            Divider(color: Colors.black.withValues(alpha: 0.06)),
             const SizedBox(height: 8),
-            Text('选择导出选项', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor)),
+            Text('选择导出选项',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: textColor)),
             const SizedBox(height: 10),
-
             Container(
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.black.withOpacity(0.06))),
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border:
+                      Border.all(color: Colors.black.withValues(alpha: 0.06))),
               child: Column(children: [
                 SwitchListTile.adaptive(
                   title: const Text('导出所有患者数据'),
-                  subtitle: Text('勾选后导出全部患者；不勾选仅导出当前筛选/搜索结果', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                  subtitle: Text('勾选后导出全部患者；不勾选仅导出当前筛选/搜索结果',
+                      style:
+                          TextStyle(color: secondaryTextColor, fontSize: 12)),
                   value: _includeAllPatients,
-                  onChanged: _isExporting ? null : (v) => setState(() => _includeAllPatients = v),
-                  activeColor: accentColor,
+                  onChanged: _isExporting
+                      ? null
+                      : (v) => setState(() => _includeAllPatients = v),
+                  activeThumbColor: accentColor,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
-                Divider(height: 1, color: Colors.black.withOpacity(0.06)),
+                Divider(height: 1, color: Colors.black.withValues(alpha: 0.06)),
                 SwitchListTile.adaptive(
                   title: const Text('包含牙齿状况图表'),
-                  subtitle: Text('以文本格式附加牙齿状况信息', style: TextStyle(color: secondaryTextColor, fontSize: 12)),
+                  subtitle: Text('以文本格式附加牙齿状况信息',
+                      style:
+                          TextStyle(color: secondaryTextColor, fontSize: 12)),
                   value: _includeDentalCondition,
-                  onChanged: _isExporting ? null : (v) => setState(() => _includeDentalCondition = v),
-                  activeColor: accentColor,
+                  onChanged: _isExporting
+                      ? null
+                      : (v) => setState(() => _includeDentalCondition = v),
+                  activeThumbColor: accentColor,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
               ]),
             ),
-
             const SizedBox(height: 12),
             if (_isExporting || _statusMessage.isNotEmpty) ...[
               Row(children: [
-                Icon(_hasError ? Icons.error_outline : Icons.info_outline, size: 18, color: _hasError ? Colors.red : accentColor),
+                Icon(_hasError ? Icons.error_outline : Icons.info_outline,
+                    size: 18, color: _hasError ? Colors.red : accentColor),
                 const SizedBox(width: 8),
-                Expanded(child: Text('$_statusMessage', style: TextStyle(color: _hasError ? Colors.red : textColor))),
+                Expanded(
+                    child: Text(_statusMessage,
+                        style: TextStyle(
+                            color: _hasError ? Colors.red : textColor))),
               ]),
               if (_exportSuccess && _exportPath.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 6.0),
-                  child: Text('文件已保存至: $_exportPath', style: TextStyle(color: secondaryTextColor)),
+                  child: Text('文件已保存至: $_exportPath',
+                      style: TextStyle(color: secondaryTextColor)),
                 ),
             ],
-
             const SizedBox(height: 12),
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-              TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('关闭')),
+              TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('关闭')),
               const SizedBox(width: 8),
               if (!_exportSuccess)
                 ElevatedButton(
@@ -179,15 +212,18 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
         _statusMessage = '正在获取患者数据...';
       });
 
-      final patientProvider = Provider.of<PatientProvider>(context, listen: false);
+      if (!mounted) return;
+      final patientProvider =
+          Provider.of<PatientProvider>(context, listen: false);
+      final advancedCriteria = widget.advancedCriteria;
+      final searchQuery = widget.searchQuery;
 
       List<Patient> patients;
       if (_includeAllPatients) {
         patients = await patientProvider.getAllPatients();
-        print('获取到所有患者数据: ${patients.length}条记录');
       } else {
         // 使用高级搜索条件或普通搜索条件获取筛选后的患者数据
-        if (widget.advancedCriteria != null && widget.advancedCriteria!.isNotEmpty) {
+        if (advancedCriteria != null && advancedCriteria.isNotEmpty) {
           patients = await patientProvider.searchPatients(
             '',
             sortField: widget.sortField,
@@ -195,20 +231,18 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
             startDate: widget.startDate,
             endDate: widget.endDate,
             dateFilterType: widget.dateFilterType,
-            advancedCriteria: widget.advancedCriteria,
+            advancedCriteria: advancedCriteria,
           );
-          print('使用高级搜索条件获取患者数据: ${patients.length}条记录');
-        } else if (widget.searchQuery != null && widget.searchQuery!.isNotEmpty) {
+        } else if (searchQuery != null && searchQuery.isNotEmpty) {
           // 有搜索词时使用搜索功能
           patients = await patientProvider.searchPatients(
-            widget.searchQuery!,
+            searchQuery,
             sortField: widget.sortField,
             sortAscending: widget.sortAscending,
             startDate: widget.startDate,
             endDate: widget.endDate,
             dateFilterType: widget.dateFilterType,
           );
-          print('使用搜索条件获取患者数据: ${patients.length}条记录');
         } else {
           // 无搜索词但有日期或排序筛选
           var result = await patientProvider.getPatientsPage(
@@ -221,16 +255,12 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
             dateFilterType: widget.dateFilterType,
           );
           patients = result['patients'] as List<Patient>;
-          print('使用分页条件获取患者数据: ${patients.length}条记录');
         }
       }
 
       // 打印第一个患者信息进行调试
       if (patients.isNotEmpty) {
-        print('第一个患者信息: ${patients[0].name}, ID: ${patients[0].id}');
-      } else {
-        print('警告：未获取到任何患者数据');
-      }
+      } else {}
 
       // 3. 创建Excel工作簿
       setState(() {
@@ -252,7 +282,6 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
         await _addPatientToExcel(sheet, patients[i], i + 2); // 行号从2开始（1是表头）
 
         // 调试每个患者数据
-        print('正在导出患者: ${patients[i].name}, ID: ${patients[i].id}');
 
         // 更新状态
         if (i % 10 == 0 || i == patients.length - 1) {
@@ -285,8 +314,6 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
           _statusMessage = '导出完成！共导出${patients.length}条患者记录';
           _exportPath = filePath;
         });
-
-        print('成功保存文件: $filePath，包含${patients.length}条记录');
       } else {
         throw Exception('无法生成Excel文件');
       }
@@ -296,7 +323,7 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
         _hasError = true;
         _statusMessage = '导出失败: $e';
       });
-      print('患者数据导出错误: $e');
+      LogManager.e('PatientExportDialog', '患者数据导出错误', error: e);
     }
   }
 
@@ -328,8 +355,8 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
 
     // 设置表头样式
     for (var i = 0; i < headers.length; i++) {
-      var cell =
-          sheet.cell(excel.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
+      var cell = sheet
+          .cell(excel.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
       cell.cellStyle = excel.CellStyle(
         bold: true,
         horizontalAlign: excel.HorizontalAlign.Center,
@@ -345,9 +372,10 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
 
     // 病历号 (放到第一列)
     sheet
-        .cell(excel.CellIndex.indexByColumnRow(
-            columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = excel.TextCellValue(patient.medical_record_number?.toString() ?? '');
+            .cell(excel.CellIndex.indexByColumnRow(
+                columnIndex: columnIndex++, rowIndex: rowIndex))
+            .value =
+        excel.TextCellValue(patient.medicalRecordNumber?.toString() ?? '');
 
     // 基本信息
     sheet
@@ -401,9 +429,10 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
             columnIndex: columnIndex++, rowIndex: rowIndex))
         .value = excel.TextCellValue(patient.address?.toString() ?? '');
     sheet
-        .cell(excel.CellIndex.indexByColumnRow(
-            columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = excel.TextCellValue(patient.identification_number?.toString() ?? '');
+            .cell(excel.CellIndex.indexByColumnRow(
+                columnIndex: columnIndex++, rowIndex: rowIndex))
+            .value =
+        excel.TextCellValue(patient.identificationNumber?.toString() ?? '');
     sheet
         .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
@@ -415,23 +444,24 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
                 columnIndex: columnIndex++, rowIndex: rowIndex))
             .value =
         excel.TextCellValue(
-            DateFormat('yyyy-MM-dd').format(patient.first_visit_date));
+            DateFormat('yyyy-MM-dd').format(patient.firstVisitDate));
 
     // 金额格式化
     sheet
         .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = excel.DoubleCellValue(patient.total_cost ?? 0.0);
+        .value = excel.DoubleCellValue(patient.totalCost);
 
     // 治疗项目
     sheet
         .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = excel.TextCellValue(patient.treatment_items?.toString() ?? '');
+        .value = excel.TextCellValue(patient.treatmentItems?.toString() ?? '');
 
     // 牙齿状况 - 格式化为易读的文本
-    if (patient.dental_condition != null &&
-        patient.dental_condition!.isNotEmpty &&
+    final dentalCondition = patient.dentalCondition;
+    if (dentalCondition != null &&
+        dentalCondition.isNotEmpty &&
         _includeDentalCondition) {
       // 解析牙齿状况JSON并格式化为文本
       String formattedDentalCondition =
@@ -452,7 +482,7 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
     sheet
         .cell(excel.CellIndex.indexByColumnRow(
             columnIndex: columnIndex++, rowIndex: rowIndex))
-        .value = excel.TextCellValue(patient.dental_condition ?? '');
+        .value = excel.TextCellValue(patient.dentalCondition ?? '');
   }
 
   // 将牙齿状况的JSON格式化为易读的文本格式
@@ -491,16 +521,6 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
       result.writeln('右上-$i: $topRight1');
       result.writeln('左下-$i: $bottomLeft1');
       result.writeln('右下-$i: $bottomRight1');
-
-      // 图表2数据
-      String topLeft2 =
-          _getTranslatedDentalText(dentalCharts['chart2-top-left-$i']);
-      String topRight2 =
-          _getTranslatedDentalText(dentalCharts['chart2-top-right-$i']);
-      String bottomLeft2 =
-          _getTranslatedDentalText(dentalCharts['chart2-bottom-left-$i']);
-      String bottomRight2 =
-          _getTranslatedDentalText(dentalCharts['chart2-bottom-right-$i']);
 
       if (i < rowCount - 1) {
         result.writeln();
@@ -551,19 +571,21 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
 
       for (String part in parts) {
         String trimmedPart = part.trim();
-        if (treatmentTranslations.containsKey(trimmedPart)) {
-          translatedParts.add(treatmentTranslations[trimmedPart]!);
-        } else {
-          translatedParts.add(trimmedPart);
-        }
+        translatedParts.add(
+          treatmentTranslations.containsKey(trimmedPart)
+              ? (treatmentTranslations[trimmedPart] ?? trimmedPart)
+              : trimmedPart,
+        );
       }
 
       return translatedParts.join('-');
     }
 
     // 直接翻译单个数字
-    if (treatmentTranslations.containsKey(dentalCondition.trim())) {
-      return treatmentTranslations[dentalCondition.trim()]!;
+    final trimmedDentalCondition = dentalCondition.trim();
+    if (treatmentTranslations.containsKey(trimmedDentalCondition)) {
+      return treatmentTranslations[trimmedDentalCondition] ??
+          trimmedDentalCondition;
     }
 
     return dentalCondition;

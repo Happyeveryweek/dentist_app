@@ -50,9 +50,10 @@ class FinancialQueryService {
 
   /// 获取财务记录总数
   Future<int> getFinancialRecordsCount() async {
-    if (_dbWrapper == null) return 0;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return 0;
 
-    return await _dbWrapper!.wrapOperation(
+    return await wrapper.wrapOperation(
       'getFinancialRecordsCount',
       () async {
         try {
@@ -124,9 +125,10 @@ class FinancialQueryService {
     int page,
     int pageSize,
   ) async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation(
+    return await wrapper.wrapOperation(
       'getPaginatedFinancialRecords',
       () async {
         try {
@@ -280,9 +282,10 @@ class FinancialQueryService {
     DateTime? startDate,
     DateTime? endDate,
   }) async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('searchFinancialRecords', () async {
+    return await wrapper.wrapOperation('searchFinancialRecords', () async {
       try {
         final trimmed = keyword.trim();
         if (trimmed.isEmpty) return [];
@@ -407,9 +410,10 @@ class FinancialQueryService {
     DateTime? startDate,
     DateTime? endDate,
   }) async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation(
+    return await wrapper.wrapOperation(
       'getPaginatedFinancialRecordsWithDateFilter',
       () async {
         try {
@@ -572,9 +576,10 @@ class FinancialQueryService {
     double? processingMin,
     double? processingMax,
   }) async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation(
+    return await wrapper.wrapOperation(
       'getAllFinancialItemsWithDetailsFiltered',
       () async {
         try {

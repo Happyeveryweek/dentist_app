@@ -8,14 +8,15 @@ class DataSourceSelectionDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-    
+    final settingsProvider =
+        Provider.of<SettingsProvider>(context, listen: false);
+
     return AlertDialog(
-      title: Row(
+      title: const Row(
         children: [
           Icon(Icons.storage, color: AppTheme.primaryColor),
-          const SizedBox(width: 12),
-          const Text('选择检测数据源'),
+          SizedBox(width: 12),
+          Text('选择检测数据源'),
         ],
       ),
       content: Column(
@@ -27,7 +28,7 @@ class DataSourceSelectionDialog extends StatelessWidget {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 20),
-          
+
           // SQLite选项
           Container(
             width: double.infinity,
@@ -68,9 +69,9 @@ class DataSourceSelectionDialog extends StatelessWidget {
               onPressed: () => Navigator.of(context).pop('sqlite'),
             ),
           ),
-          
+
           // MySQL选项
-          Container(
+          SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               icon: Icon(Icons.cloud, color: Colors.green.shade700),

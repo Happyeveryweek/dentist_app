@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import '../../../models/user.dart';
 import '../../../theme/app_theme.dart';
-import '../../../widgets/dental_icons.dart';
 
 class UserCard extends StatelessWidget {
   final User user;
@@ -22,11 +21,11 @@ class UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayName = user.doctor != null && user.doctor!.trim().isNotEmpty
-        ? user.doctor!.trim()
-        : user.username;
-    final showUsername = user.doctor != null &&
-        user.doctor!.trim().isNotEmpty &&
+    final doctorName = user.doctor?.trim();
+    final displayName =
+        doctorName != null && doctorName.isNotEmpty ? doctorName : user.username;
+    final showUsername = doctorName != null &&
+        doctorName.isNotEmpty &&
         user.username.trim().isNotEmpty &&
         user.username.trim() != displayName;
 
@@ -43,7 +42,7 @@ class UserCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -111,16 +110,19 @@ class UserCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                         ],
-                        Row(
-                          children: [
-                            if (user.email != null &&
-                                user.email!.isNotEmpty) ...[
+                        Builder(builder: (context) {
+                          final email = user.email;
+                          if (email == null || email.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return Row(
+                            children: [
                               Icon(Icons.email,
                                   size: 12, color: Colors.grey.shade600),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  user.email!,
+                                  email,
                                   style: TextStyle(
                                     color: Colors.grey.shade600,
                                     fontSize: 11,
@@ -129,8 +131,8 @@ class UserCard extends StatelessWidget {
                                 ),
                               ),
                             ],
-                          ],
-                        ),
+                          );
+                        }),
 
                         // 显示权限信息（仅对非管理员用户）
                         if (user.role != 'admin') ...[
@@ -150,11 +152,11 @@ class UserCard extends StatelessWidget {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
-                    icon: Icon(Icons.lock,
+                    icon: const Icon(Icons.lock,
                         color: AppTheme.primaryColor, size: 16),
                     tooltip: '修改密码',
                     onPressed: onResetPassword,
@@ -166,11 +168,11 @@ class UserCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Container(
                   decoration: BoxDecoration(
-                    color: AppTheme.successColor.withOpacity(0.1),
+                    color: AppTheme.successColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
-                    icon: Icon(Icons.edit,
+                    icon: const Icon(Icons.edit,
                         color: AppTheme.successColor, size: 16),
                     tooltip: '编辑',
                     onPressed: onEdit,
@@ -183,11 +185,11 @@ class UserCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.infoColor.withOpacity(0.1),
+                      color: AppTheme.infoColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.security,
+                      icon: const Icon(Icons.security,
                           color: AppTheme.infoColor, size: 16),
                       tooltip: '权限配置',
                       onPressed: onPermissionPreview,
@@ -201,11 +203,11 @@ class UserCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.errorColor.withOpacity(0.1),
+                      color: AppTheme.errorColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.delete,
+                      icon: const Icon(Icons.delete,
                           color: AppTheme.errorColor, size: 16),
                       tooltip: '删除',
                       onPressed: onDelete,
@@ -233,39 +235,43 @@ class UserCard extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
-        child: user.imageData != null && user.imageData!.isNotEmpty
-            ? Image.memory(
-                Uint8List.fromList(user.imageData!),
-                width: 50,
-                height: 50,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey.shade200,
-                    child: Icon(
-                      Icons.error_outline,
-                      size: 20,
-                      color: Colors.grey.shade400,
-                    ),
-                  );
-                },
-              )
-            : Container(
-                color: Colors.grey.shade100,
-                child: user.role == 'doctor' || user.role == 'admin'
-                    ? Image.asset(
-                        'assets/icons/doctor.png',
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                      )
-                    : Image.asset(
-                        'assets/icons/nurse.png',
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                      ),
-              ),
+        child: Builder(builder: (context) {
+          final imageData = user.imageData;
+          if (imageData != null && imageData.isNotEmpty) {
+            return Image.memory(
+              Uint8List.fromList(imageData),
+              width: 50,
+              height: 50,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Colors.grey.shade200,
+                  child: Icon(
+                    Icons.error_outline,
+                    size: 20,
+                    color: Colors.grey.shade400,
+                  ),
+                );
+              },
+            );
+          }
+          return Container(
+            color: Colors.grey.shade100,
+            child: user.role == 'doctor' || user.role == 'admin'
+                ? Image.asset(
+                    'assets/icons/doctor.png',
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                  )
+                : Image.asset(
+                    'assets/icons/nurse.png',
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                  ),
+          );
+        }),
       ),
     );
   }
@@ -311,10 +317,10 @@ class UserCard extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: (info['color'] as Color).withOpacity(0.1),
+            color: (info['color'] as Color).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: (info['color'] as Color).withOpacity(0.3),
+              color: (info['color'] as Color).withValues(alpha: 0.3),
               width: 0.5,
             ),
           ),

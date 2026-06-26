@@ -17,10 +17,12 @@ class AppointmentPatientSearchDialog extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<AppointmentPatientSearchDialog> createState() => _AppointmentPatientSearchDialogState();
+  State<AppointmentPatientSearchDialog> createState() =>
+      _AppointmentPatientSearchDialogState();
 }
 
-class _AppointmentPatientSearchDialogState extends State<AppointmentPatientSearchDialog> {
+class _AppointmentPatientSearchDialogState
+    extends State<AppointmentPatientSearchDialog> {
   final TextEditingController _searchController = TextEditingController();
   late List<Patient> _filteredPatients;
 
@@ -45,8 +47,8 @@ class _AppointmentPatientSearchDialogState extends State<AppointmentPatientSearc
         _filteredPatients = widget.patients.where((patient) {
           final name = patient.name.toLowerCase();
           final phone = patient.mainPhone.toLowerCase();
-          final pinyin = (patient.name_pinyin ?? '').toLowerCase();
-          final initials = (patient.name_initials ?? '').toLowerCase();
+          final pinyin = (patient.namePinyin ?? '').toLowerCase();
+          final initials = (patient.nameInitials ?? '').toLowerCase();
           return name.contains(normalized) ||
               phone.contains(normalized) ||
               pinyin.contains(normalized) ||
@@ -63,20 +65,21 @@ class _AppointmentPatientSearchDialogState extends State<AppointmentPatientSearc
       backgroundColor: Colors.transparent,
       child: Container(
         width: 500,
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
+        constraints:
+            BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF667eea),
-              const Color(0xFF764ba2),
+              Color(0xFF667eea),
+              Color(0xFF764ba2),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF667eea).withOpacity(0.3),
+              color: const Color(0xFF667eea).withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -84,28 +87,31 @@ class _AppointmentPatientSearchDialogState extends State<AppointmentPatientSearc
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.98),
+            color: Colors.white.withValues(alpha: 0.98),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF667eea).withOpacity(0.1), width: 1),
+            border: Border.all(
+                color: const Color(0xFF667eea).withValues(alpha: 0.1),
+                width: 1),
           ),
           child: Column(
             children: [
               Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      const Color(0xFF667eea),
-                      const Color(0xFF764ba2),
+                      Color(0xFF667eea),
+                      Color(0xFF764ba2),
                     ],
                   ),
-                  borderRadius: const BorderRadius.only(
+                  borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -114,10 +120,11 @@ class _AppointmentPatientSearchDialogState extends State<AppointmentPatientSearc
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.person_search, color: Colors.white, size: 20),
+                          child: const Icon(Icons.person_search,
+                              color: Colors.white, size: 20),
                         ),
                         const SizedBox(width: 12),
                         const Text(
@@ -131,7 +138,8 @@ class _AppointmentPatientSearchDialogState extends State<AppointmentPatientSearc
                       ],
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 18),
                       onPressed: () => Navigator.of(context).pop(),
                       splashRadius: 16,
                     ),
@@ -153,10 +161,12 @@ class _AppointmentPatientSearchDialogState extends State<AppointmentPatientSearc
                             margin: const EdgeInsets.all(8),
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF667eea).withOpacity(0.1),
+                              color: const Color(0xFF667eea)
+                                  .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.search, color: Color(0xFF667eea), size: 20),
+                            child: const Icon(Icons.search,
+                                color: Color(0xFF667eea), size: 20),
                           ),
                           filled: true,
                           fillColor: Colors.white,
@@ -164,16 +174,17 @@ class _AppointmentPatientSearchDialogState extends State<AppointmentPatientSearc
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
                           ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 16, horizontal: 16),
                         ),
                       ),
                       const SizedBox(height: 24),
                       Expanded(
                         child: widget.isLoading
-                            ? Center(
+                            ? const Center(
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
-                                  children: const [
+                                  children: [
                                     CircularProgressIndicator(),
                                     SizedBox(height: 16),
                                     Text('正在加载患者数据...'),
@@ -181,11 +192,12 @@ class _AppointmentPatientSearchDialogState extends State<AppointmentPatientSearc
                                 ),
                               )
                             : _filteredPatients.isEmpty
-                                ? Center(
+                                ? const Center(
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      children: const [
-                                        Icon(Icons.search_off, size: 48, color: Colors.grey),
+                                      children: [
+                                        Icon(Icons.search_off,
+                                            size: 48, color: Colors.grey),
                                         SizedBox(height: 16),
                                         Text('没有找到匹配的患者'),
                                       ],
@@ -196,35 +208,51 @@ class _AppointmentPatientSearchDialogState extends State<AppointmentPatientSearc
                                     itemBuilder: (context, index) {
                                       final patient = _filteredPatients[index];
                                       return Card(
-                                        margin: const EdgeInsets.symmetric(vertical: 6),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        margin: const EdgeInsets.symmetric(
+                                            vertical: 6),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(16)),
                                         child: InkWell(
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                           onTap: () {
                                             widget.onPatientSelected(patient);
                                             Navigator.of(context).pop();
                                           },
                                           child: Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 16, vertical: 14),
                                             child: Row(
                                               children: [
                                                 Expanded(
                                                   child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
                                                     children: [
                                                       Text(patient.name),
                                                       const SizedBox(height: 4),
                                                       Text(
-                                                        patient.mainPhone.isEmpty ? '暂无电话' : patient.mainPhone,
-                                                        style: Theme.of(context).textTheme.bodySmall,
+                                                        patient.mainPhone
+                                                                .isEmpty
+                                                            ? '暂无电话'
+                                                            : patient.mainPhone,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .bodySmall,
                                                       ),
                                                     ],
                                                   ),
                                                 ),
                                                 const SizedBox(width: 12),
                                                 Text(
-                                                  DateFormat('yyyy-MM-dd').format(patient.updated_at),
-                                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                                  DateFormat('yyyy-MM-dd')
+                                                      .format(
+                                                          patient.updatedAt),
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey),
                                                 ),
                                               ],
                                             ),

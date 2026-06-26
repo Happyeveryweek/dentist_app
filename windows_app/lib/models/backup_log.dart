@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/app_paths.dart';
 
 import '../utils/datetime_formatter.dart';
+import '../utils/log_manager.dart';
 
 class BackupLog {
   final DateTime backupDate;
@@ -44,7 +45,7 @@ class BackupLog {
       return AppPaths.backupLogPath;
     } catch (e) {
       // 如果AppPaths未初始化，回退到文档目录
-      print('AppPaths未初始化，使用文档目录: $e');
+      LogManager.e('BackupLog', 'AppPaths未初始化，使用文档目录', error: e);
       final directory = await getApplicationDocumentsDirectory();
       return path.join(directory.path, 'backup_logs.json');
     }
@@ -54,16 +55,16 @@ class BackupLog {
     try {
       final logFilePath = await getLogFilePath();
       final file = File(logFilePath);
-      
+
       if (!await file.exists()) {
         return [];
       }
-      
+
       final content = await file.readAsString();
       final List<dynamic> jsonList = json.decode(content);
       return jsonList.map((json) => BackupLog.fromJson(json)).toList();
     } catch (e) {
-      print('读取备份日志出错: $e');
+      LogManager.e('BackupLog', '读取备份日志出错', error: e);
       return [];
     }
   }
@@ -72,7 +73,7 @@ class BackupLog {
     try {
       final logFilePath = await getLogFilePath();
       final file = File(logFilePath);
-      
+
       List<BackupLog> logs = [];
       if (await file.exists()) {
         final content = await file.readAsString();
@@ -81,18 +82,18 @@ class BackupLog {
           logs = jsonList.map((json) => BackupLog.fromJson(json)).toList();
         }
       }
-      
+
       logs.add(log);
-      
+
       // 保留最近的100条记录
       if (logs.length > 100) {
         logs = logs.sublist(logs.length - 100);
       }
-      
+
       final jsonList = logs.map((log) => log.toJson()).toList();
       await file.writeAsString(json.encode(jsonList));
     } catch (e) {
-      print('添加备份日志出错: $e');
+      LogManager.e('BackupLog', '添加备份日志出错', error: e);
     }
   }
 
@@ -102,7 +103,7 @@ class BackupLog {
       if (logs.isEmpty) {
         return null;
       }
-      
+
       // 按日期排序，找出最近的成功备份
       logs.sort((a, b) => b.backupDate.compareTo(a.backupDate));
       for (var log in logs) {
@@ -110,33 +111,33 @@ class BackupLog {
           return log.backupDate;
         }
       }
-      
+
       return null;
     } catch (e) {
-      print('获取最后备份日期出错: $e');
+      LogManager.e('BackupLog', '获取最后备份日期出错', error: e);
       return null;
     }
   }
-  
+
   // 清空所有备份日志
   static Future<bool> clearAllLogs() async {
     try {
       final logFilePath = await getLogFilePath();
       final file = File(logFilePath);
-      
+
       if (await file.exists()) {
         // 写入空数组，清空日志
         await file.writeAsString('[]');
-        
+
         // 同时重置SettingsProvider中的lastBackupDate
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('lastBackupDate');
-        
+
         return true;
       }
       return false;
     } catch (e) {
-      print('清空备份日志出错: $e');
+      LogManager.e('BackupLog', '清空备份日志出错', error: e);
       return false;
     }
   }

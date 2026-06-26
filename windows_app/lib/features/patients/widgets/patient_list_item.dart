@@ -7,6 +7,7 @@ import '../../../models/patient.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
 import 'patient_action_buttons.dart';
+import '../../../utils/log_manager.dart';
 
 class PatientListItem extends StatelessWidget {
   final Patient patient;
@@ -37,8 +38,8 @@ class PatientListItem extends StatelessWidget {
     final patientName = patient.name;
     final patientGender = patient.gender;
     final avatarBgColor = patientGender == '女'
-        ? const Color(0xFFF48FB1).withOpacity(0.2)
-        : Colors.blue.withOpacity(0.1);
+        ? const Color(0xFFF48FB1).withValues(alpha: 0.2)
+        : Colors.blue.withValues(alpha: 0.1);
     final avatarTextColor =
         patientGender == '女' ? const Color(0xFFEC407A) : Colors.blue;
 
@@ -48,14 +49,14 @@ class PatientListItem extends StatelessWidget {
         elevation: isPurpleTheme ? 0 : 1,
         borderRadius: BorderRadius.circular(12),
         shadowColor:
-            isPurpleTheme ? AppTheme.purpleColor.withOpacity(0.1) : null,
+            isPurpleTheme ? AppTheme.purpleColor.withValues(alpha: 0.1) : null,
         color: isPurpleTheme ? AppTheme.purpleCardBackground : Colors.white,
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: isPurpleTheme
                 ? Border.all(
-                    color: AppTheme.purpleLightColor.withOpacity(0.3),
+                    color: AppTheme.purpleLightColor.withValues(alpha: 0.3),
                     width: 1,
                   )
                 : null,
@@ -63,8 +64,8 @@ class PatientListItem extends StatelessWidget {
                 ? null
                 : LinearGradient(
                     colors: [
-                      Colors.white.withOpacity(0.0),
-                      Colors.grey.shade50.withOpacity(0.3),
+                      Colors.white.withValues(alpha: 0.0),
+                      Colors.grey.shade50.withValues(alpha: 0.3),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -74,8 +75,8 @@ class PatientListItem extends StatelessWidget {
             onTap: onView,
             borderRadius: BorderRadius.circular(12),
             mouseCursor: SystemMouseCursors.click,
-            hoverColor: DentalColors.primary.withOpacity(0.1),
-            splashColor: DentalColors.primary.withOpacity(0.2),
+            hoverColor: DentalColors.primary.withValues(alpha: 0.1),
+            splashColor: DentalColors.primary.withValues(alpha: 0.2),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: Row(
@@ -142,14 +143,14 @@ class _PatientAvatar extends StatelessWidget {
       height: 36,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [avatarBgColor, avatarBgColor.withOpacity(0.8)],
+          colors: [avatarBgColor, avatarBgColor.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: avatarTextColor.withOpacity(0.3),
+            color: avatarTextColor.withValues(alpha: 0.3),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -197,10 +198,10 @@ class _PatientNameRow extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: avatarBgColor.withOpacity(0.15),
+            color: avatarBgColor.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: avatarTextColor.withOpacity(0.2),
+              color: avatarTextColor.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -236,12 +237,13 @@ class _PatientDetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final address = patient.address;
     return Row(
       children: [
-        if (patient.medical_record_number != null) ...[
+        if (patient.medicalRecordNumber != null) ...[
           _InfoChip(
             icon: Icons.badge,
-            value: '${patient.medical_record_number}',
+            value: '${patient.medicalRecordNumber}',
             color: AppTheme.primaryColor,
           ),
           const SizedBox(width: 6),
@@ -259,16 +261,16 @@ class _PatientDetailRow extends StatelessWidget {
         const SizedBox(width: 6),
         _InfoChip(
           icon: Icons.event,
-          value: DateFormat('yyyy-MM-dd').format(patient.first_visit_date),
+          value: DateFormat('yyyy-MM-dd').format(patient.firstVisitDate),
           color: AppTheme.accentColor,
         ),
-        if (patient.address != null && patient.address!.isNotEmpty) ...[
+        if (address != null && address.isNotEmpty) ...[
           const SizedBox(width: 6),
           Flexible(
             flex: 3,
             child: _InfoChip(
               icon: Icons.location_on,
-              value: patient.address ?? '',
+              value: address,
               color: Colors.orange,
               textColor: Colors.orange.shade700,
               flexibleValue: true,
@@ -297,7 +299,7 @@ class _PatientDetailRow extends StatelessWidget {
         }
         return phones[0].toString();
       } catch (e) {
-        print('解析电话号码JSON失败: $e');
+        LogManager.e('PatientListItem', '解析电话号码JSON失败', error: e);
         final content = phoneStr.substring(1, phoneStr.length - 1);
         final regex = RegExp(r'"([^"]*)"');
         final matches = regex.allMatches(content);
@@ -383,7 +385,7 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(

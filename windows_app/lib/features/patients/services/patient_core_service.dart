@@ -37,12 +37,13 @@ class PatientCoreService {
     patientMap['updated_at'] = nowStr;
     patientMap['name_pinyin'] = PinyinUtil.toPinyin(patient.name);
     patientMap['name_initials'] = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null) {
-      patientMap['address_pinyin'] = PinyinUtil.toPinyin(patient.address!);
+    final address = patient.address;
+    if (address != null) {
+      patientMap['address_pinyin'] = PinyinUtil.toPinyin(address);
     }
 
     final id = await dataSource.createPatient(Patient.fromMap(patientMap));
-    
+
     if (getEffectiveDataSourceType() == 'sqlite') {
       _trySyncPatientToMySQL(patientMap, id);
     }
@@ -59,40 +60,148 @@ class PatientCoreService {
     patientMap['updated_at'] = DateTimeFormatter.toDbString(DateTime.now());
     patientMap['name_pinyin'] = PinyinUtil.toPinyin(patient.name);
     patientMap['name_initials'] = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null) {
-      patientMap['address_pinyin'] = PinyinUtil.toPinyin(patient.address!);
+    final address = patient.address;
+    if (address != null) {
+      patientMap['address_pinyin'] = PinyinUtil.toPinyin(address);
     }
 
+    final patientId = patient.id;
     final success = await dataSource.updatePatient(Patient.fromMap(patientMap));
-    
-    if (success && getEffectiveDataSourceType() == 'sqlite') {
-      _trySyncPatientToMySQL(patientMap, patient.id!);
+
+    if (success && patientId != null && getEffectiveDataSourceType() == 'sqlite') {
+      _trySyncPatientToMySQL(patientMap, patientId);
     }
     return success;
   }
 
   /// 删除患者
-  Future<bool> deletePatient(int patientId, {String? patientName, dynamic medicalRecordNumber}) async {
+  Future<bool> deletePatient(int patientId,
+      {String? patientName, dynamic medicalRecordNumber}) async {
     final dataSource = getCurrentDataSource();
     if (dataSource == null) throw Exception('数据源未初始化');
 
+    final effectiveType = getEffectiveDataSourceType();
     final success = await dataSource.deletePatient(patientId);
-    
-    if (success && getEffectiveDataSourceType() == 'sqlite') {
-      _trySyncDeletePatientToMySQL(patientId, patientName: patientName, medicalRecordNumber: medicalRecordNumber);
+
+    // 当患者管理与其他模块使用不同数据库时，同步清理另一数据库中的关联数据
+    if (success) {
+      if (effectiveType == 'sqlite') {
+        await _deleteRelatedDataFromMySQL(patientId);
+      } else if (effectiveType == 'mysql') {
+        await _deleteRelatedDataFromSQLite(patientId);
+      }
+    }
+
+    if (success && effectiveType == 'sqlite') {
+      _trySyncDeletePatientToMySQL(patientId,
+          patientName: patientName, medicalRecordNumber: medicalRecordNumber);
     }
     return success;
   }
 
+  /// 清理 MySQL 中指定患者的关联数据（患者主库为 SQLite 时使用）
+  Future<void> _deleteRelatedDataFromMySQL(int patientId) async {
+    try {
+      final conn = getSyncMysqlConnection();
+      if (conn == null) return;
+
+      await conn.query('SET FOREIGN_KEY_CHECKS = 0');
+      try {
+        final matIds = (await conn.query(
+                'SELECT id FROM patient_materials WHERE patient_id = ?',
+                [patientId]))
+            .map((r) => r['id'] as int)
+            .toList();
+        if (matIds.isNotEmpty) {
+          final placeholders = matIds.map((_) => '?').join(',');
+          await conn.query(
+              'DELETE FROM material_images WHERE material_id IN ($placeholders)',
+              matIds);
+        }
+        await conn.query(
+            'DELETE FROM patient_materials WHERE patient_id = ?', [patientId]);
+
+        final financialRecordIds = (await conn.query(
+                'SELECT id FROM financial_records WHERE patient_id = ?',
+                [patientId]))
+            .map((r) => r['id'] as int)
+            .toList();
+        if (financialRecordIds.isNotEmpty) {
+          final placeholders = financialRecordIds.map((_) => '?').join(',');
+          await conn.query(
+              'DELETE FROM financial_items WHERE financial_record_id IN ($placeholders)',
+              financialRecordIds);
+        }
+        await conn.query(
+            'DELETE FROM financial_records WHERE patient_id = ?', [patientId]);
+        await conn.query(
+            'DELETE FROM appointments WHERE patient_id = ?', [patientId]);
+        await conn.query(
+            'DELETE FROM patient_medical_records WHERE patient_id = ?',
+            [patientId]);
+      } finally {
+        await conn.query('SET FOREIGN_KEY_CHECKS = 1');
+      }
+    } catch (e) {
+      LogManager.e('PatientCoreService', 'PatientCoreService: 清理 MySQL 关联数据失败',
+          error: e);
+    }
+  }
+
+  /// 清理 SQLite 中指定患者的关联数据（患者主库为 MySQL 时使用）
+  Future<void> _deleteRelatedDataFromSQLite(int patientId) async {
+    try {
+      final db = getDatabase();
+      if (db == null) return;
+
+      final materialIds = (await db.rawQuery(
+              'SELECT id FROM patient_materials WHERE patient_id = ?',
+              [patientId]))
+          .map((row) => row['id'] as int)
+          .toList();
+      if (materialIds.isNotEmpty) {
+        final placeholders = materialIds.map((_) => '?').join(',');
+        await db.delete('material_images',
+            where: 'material_id IN ($placeholders)', whereArgs: materialIds);
+      }
+      await db.delete('patient_materials',
+          where: 'patient_id = ?', whereArgs: [patientId]);
+
+      final financialRecordIds = (await db.rawQuery(
+              'SELECT id FROM financial_records WHERE patient_id = ?',
+              [patientId]))
+          .map((row) => row['id'] as int)
+          .toList();
+      if (financialRecordIds.isNotEmpty) {
+        final placeholders = financialRecordIds.map((_) => '?').join(',');
+        await db.delete('financial_items',
+            where: 'financial_record_id IN ($placeholders)',
+            whereArgs: financialRecordIds);
+      }
+      await db.delete('financial_records',
+          where: 'patient_id = ?', whereArgs: [patientId]);
+      await db.delete('appointments',
+          where: 'patient_id = ?', whereArgs: [patientId]);
+      await db.delete('patient_medical_records',
+          where: 'patient_id = ?', whereArgs: [patientId]);
+    } catch (e) {
+      LogManager.e('PatientCoreService', 'PatientCoreService: 清理 SQLite 关联数据失败',
+          error: e);
+    }
+  }
+
   /// 检查病历号是否存在
-  Future<bool> checkMedicalRecordExists(int medicalRecordNumber, [int? excludePatientId]) async {
+  Future<bool> checkMedicalRecordExists(int medicalRecordNumber,
+      [int? excludePatientId]) async {
     final dataSource = getCurrentDataSource();
     if (dataSource == null) throw Exception('数据源未初始化');
-    return await dataSource.checkMedicalRecordExists(medicalRecordNumber, excludePatientId);
+    return await dataSource.checkMedicalRecordExists(
+        medicalRecordNumber, excludePatientId);
   }
 
   /// 检查姓名是否存在
-  Future<bool> checkPatientNameExists(String name, [int? excludePatientId]) async {
+  Future<bool> checkPatientNameExists(String name,
+      [int? excludePatientId]) async {
     final dataSource = getCurrentDataSource();
     if (dataSource == null) throw Exception('数据源未初始化');
     return await dataSource.checkPatientNameExists(name, excludePatientId);
@@ -121,7 +230,9 @@ class PatientCoreService {
       String hexData = match.group(1) ?? '';
       List<int> bytes = [];
       for (int i = 0; i < hexData.length; i += 2) {
-        if (i + 1 < hexData.length) bytes.add(int.parse(hexData.substring(i, i + 2), radix: 16));
+        if (i + 1 < hexData.length) {
+          bytes.add(int.parse(hexData.substring(i, i + 2), radix: 16));
+        }
       }
       return "', '${String.fromCharCodes(bytes)}'";
     });
@@ -133,7 +244,9 @@ class PatientCoreService {
       String hexData = match.group(1) ?? '';
       List<int> bytes = [];
       for (int i = 0; i < hexData.length; i += 2) {
-        if (i + 1 < hexData.length) bytes.add(int.parse(hexData.substring(i, i + 2), radix: 16));
+        if (i + 1 < hexData.length) {
+          bytes.add(int.parse(hexData.substring(i, i + 2), radix: 16));
+        }
       }
       return "$fieldName', '${String.fromCharCodes(bytes)}'";
     });
@@ -145,7 +258,8 @@ class PatientCoreService {
     Future.microtask(() async {
       try {
         final conn = getSyncMysqlConnection();
-        final summary = 'name=${patientMap['name']}, mrn=${patientMap['medical_record_number'] ?? ''}';
+        final summary =
+            'name=${patientMap['name']}, mrn=${patientMap['medical_record_number'] ?? ''}';
         if (conn == null) {
           await LogManager.logSyncOperation(
             module: 'patient',
@@ -158,18 +272,21 @@ class PatientCoreService {
           );
           return;
         }
-        
+
         final name = patientMap['name'];
         final mrn = patientMap['medical_record_number'];
 
-        Results existById = await conn.query('SELECT id, name FROM patients WHERE id = ? LIMIT 1', [sqliteId]);
+        Results existById = await conn.query(
+            'SELECT id, name FROM patients WHERE id = ? LIMIT 1', [sqliteId]);
         bool isUpdate = false;
         int targetId = sqliteId;
 
         if (existById.isNotEmpty && existById.first['name'] == name) {
           isUpdate = true;
         } else if (mrn != null) {
-          Results existByMrn = await conn.query('SELECT id FROM patients WHERE medical_record_number = ? AND name = ? LIMIT 1', [mrn, name]);
+          Results existByMrn = await conn.query(
+              'SELECT id FROM patients WHERE medical_record_number = ? AND name = ? LIMIT 1',
+              [mrn, name]);
           if (existByMrn.isNotEmpty) {
             isUpdate = true;
             targetId = existByMrn.first['id'];
@@ -184,10 +301,24 @@ class PatientCoreService {
               doctor = ?, dental_condition = ?, treatment_items = ?, first_visit_date = ?, total_cost = ?, created_at = ?, updated_at = ?
             WHERE id = ?
           ''', [
-            patientMap['name'], patientMap['name_pinyin'], patientMap['name_initials'], patientMap['age'], patientMap['gender'], patientMap['phone'],
-            patientMap['medical_record_number'], patientMap['address'], patientMap['address_pinyin'], patientMap['identification_number'],
-            patientMap['doctor'], patientMap['dental_condition'], patientMap['treatment_items'], patientMap['first_visit_date'], patientMap['total_cost'],
-            patientMap['created_at'], patientMap['updated_at'], targetId,
+            patientMap['name'],
+            patientMap['name_pinyin'],
+            patientMap['name_initials'],
+            patientMap['age'],
+            patientMap['gender'],
+            patientMap['phone'],
+            patientMap['medical_record_number'],
+            patientMap['address'],
+            patientMap['address_pinyin'],
+            patientMap['identification_number'],
+            patientMap['doctor'],
+            patientMap['dental_condition'],
+            patientMap['treatment_items'],
+            patientMap['first_visit_date'],
+            patientMap['total_cost'],
+            patientMap['created_at'],
+            patientMap['updated_at'],
+            targetId,
           ]);
         } else {
           await conn.query('''
@@ -195,10 +326,24 @@ class PatientCoreService {
             (id, name, name_pinyin, name_initials, age, gender, phone, medical_record_number, address, address_pinyin, identification_number, doctor, dental_condition, treatment_items, first_visit_date, total_cost, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ''', [
-            sqliteId, patientMap['name'], patientMap['name_pinyin'], patientMap['name_initials'], patientMap['age'], patientMap['gender'], patientMap['phone'],
-            patientMap['medical_record_number'], patientMap['address'], patientMap['address_pinyin'], patientMap['identification_number'],
-            patientMap['doctor'], patientMap['dental_condition'], patientMap['treatment_items'], patientMap['first_visit_date'], patientMap['total_cost'],
-            patientMap['created_at'], patientMap['updated_at'],
+            sqliteId,
+            patientMap['name'],
+            patientMap['name_pinyin'],
+            patientMap['name_initials'],
+            patientMap['age'],
+            patientMap['gender'],
+            patientMap['phone'],
+            patientMap['medical_record_number'],
+            patientMap['address'],
+            patientMap['address_pinyin'],
+            patientMap['identification_number'],
+            patientMap['doctor'],
+            patientMap['dental_condition'],
+            patientMap['treatment_items'],
+            patientMap['first_visit_date'],
+            patientMap['total_cost'],
+            patientMap['created_at'],
+            patientMap['updated_at'],
           ]);
         }
         await LogManager.logSyncOperation(
@@ -216,19 +361,23 @@ class PatientCoreService {
           table: 'patients',
           status: 'failed',
           recordId: sqliteId,
-          summary: 'name=${patientMap['name']}, mrn=${patientMap['medical_record_number'] ?? ''}',
+          summary:
+              'name=${patientMap['name']}, mrn=${patientMap['medical_record_number'] ?? ''}',
           error: e.toString(),
         );
-        print('PatientCoreService: MySQL同步失败: $e');
+        LogManager.e('PatientCoreService', 'PatientCoreService: MySQL同步失败',
+            error: e);
       }
     });
   }
 
-  void _trySyncDeletePatientToMySQL(int patientId, {String? patientName, dynamic medicalRecordNumber}) {
+  void _trySyncDeletePatientToMySQL(int patientId,
+      {String? patientName, dynamic medicalRecordNumber}) {
     Future.microtask(() async {
       try {
         final conn = getSyncMysqlConnection();
-        final summary = 'name=${patientName ?? ''}, mrn=${medicalRecordNumber ?? ''}';
+        final summary =
+            'name=${patientName ?? ''}, mrn=${medicalRecordNumber ?? ''}';
         if (conn == null) {
           await LogManager.logSyncOperation(
             module: 'patient',
@@ -241,8 +390,9 @@ class PatientCoreService {
           );
           return;
         }
-        
-        final check = await conn.query('SELECT id, name FROM patients WHERE id = ? LIMIT 1', [patientId]);
+
+        final check = await conn.query(
+            'SELECT id, name FROM patients WHERE id = ? LIMIT 1', [patientId]);
         if (check.isEmpty) {
           await LogManager.logSyncOperation(
             module: 'patient',
@@ -269,18 +419,28 @@ class PatientCoreService {
         }
 
         await conn.query('SET FOREIGN_KEY_CHECKS = 0');
-        
-        final matIds = (await conn.query('SELECT id FROM patient_materials WHERE patient_id = ?', [patientId])).map((r) => r['id'] as int).toList();
+
+        final matIds = (await conn.query(
+                'SELECT id FROM patient_materials WHERE patient_id = ?',
+                [patientId]))
+            .map((r) => r['id'] as int)
+            .toList();
         if (matIds.isNotEmpty) {
           final p = matIds.map((_) => '?').join(',');
-          await conn.query('DELETE FROM material_images WHERE material_id IN ($p)', matIds);
+          await conn.query(
+              'DELETE FROM material_images WHERE material_id IN ($p)', matIds);
         }
-        await conn.query('DELETE FROM patient_materials WHERE patient_id = ?', [patientId]);
-        await conn.query('DELETE FROM financial_records WHERE patient_id = ?', [patientId]);
-        await conn.query('DELETE FROM appointments WHERE patient_id = ?', [patientId]);
-        await conn.query('DELETE FROM patient_medical_records WHERE patient_id = ?', [patientId]);
+        await conn.query(
+            'DELETE FROM patient_materials WHERE patient_id = ?', [patientId]);
+        await conn.query(
+            'DELETE FROM financial_records WHERE patient_id = ?', [patientId]);
+        await conn.query(
+            'DELETE FROM appointments WHERE patient_id = ?', [patientId]);
+        await conn.query(
+            'DELETE FROM patient_medical_records WHERE patient_id = ?',
+            [patientId]);
         await conn.query('DELETE FROM patients WHERE id = ?', [patientId]);
-        
+
         await conn.query('SET FOREIGN_KEY_CHECKS = 1');
         await LogManager.logSyncOperation(
           module: 'patient',
@@ -297,10 +457,12 @@ class PatientCoreService {
           table: 'patients',
           status: 'failed',
           recordId: patientId,
-          summary: 'name=${patientName ?? ''}, mrn=${medicalRecordNumber ?? ''}',
+          summary:
+              'name=${patientName ?? ''}, mrn=${medicalRecordNumber ?? ''}',
           error: e.toString(),
         );
-        print('PatientCoreService: MySQL同步删除失败: $e');
+        LogManager.e('PatientCoreService', 'PatientCoreService: MySQL同步删除失败',
+            error: e);
       }
     });
   }

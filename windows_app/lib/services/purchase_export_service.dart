@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../models/purchase_record.dart';
 import '../models/purchase_item.dart';
+import '../utils/log_manager.dart';
 
 /// 采购记录导出服务
 /// 负责将采购记录导出为图片并保存到文件系统
@@ -40,7 +41,9 @@ class PurchaseExportService {
     if (exportOptions['purchaseDetails'] == true) {
       estimatedHeight += 150 * scaleFactor; // 表头区域
       estimatedHeight += purchaseItems.length * 70 * scaleFactor; // 每行项目
-      estimatedHeight += exportOptions['purchaseSummary'] == true ? 180 * scaleFactor : 100 * scaleFactor; // 总计行（含汇总时更高）
+      estimatedHeight += exportOptions['purchaseSummary'] == true
+          ? 180 * scaleFactor
+          : 100 * scaleFactor; // 总计行（含汇总时更高）
     }
 
     estimatedHeight += 150 * scaleFactor; // 底部信息和边距
@@ -54,37 +57,44 @@ class PurchaseExportService {
 
     // 标题 - 进一步增大和加粗字体
     paint.color = const Color(0xFF000000);
-    final titleStyle = TextStyle(
+    const titleStyle = TextStyle(
       fontSize: 48 * scaleFactor, // 增大到144px
       fontWeight: FontWeight.w900, // 使用最粗字体
-      color: const Color(0xFF000000),
+      color: Color(0xFF000000),
     );
     final titlePainter = TextPainter(
-      text: TextSpan(text: '采购记录详情', style: titleStyle),
+      text: const TextSpan(text: '采购记录详情', style: titleStyle),
       textDirection: ui.TextDirection.ltr,
     );
     titlePainter.layout();
-    titlePainter.paint(canvas, Offset((width - titlePainter.width) / 2, currentY));
+    titlePainter.paint(
+        canvas, Offset((width - titlePainter.width) / 2, currentY));
     currentY += 100 * scaleFactor;
 
     // 采购记录基本信息
     if (exportOptions['purchaseRecord'] == true) {
-      final basicInfoStyle = TextStyle(fontSize: 32 * scaleFactor, fontWeight: FontWeight.w800, color: const Color(0xFF000000));
+      const basicInfoStyle = TextStyle(
+          fontSize: 32 * scaleFactor,
+          fontWeight: FontWeight.w800,
+          color: Color(0xFF000000));
 
       // 构建基本信息文本，包含医生字段
       String basicInfoText = '采购记录 #${record.id}\n'
           '采购日期: ${DateFormat('yyyy-MM-dd').format(record.purchaseDate)}\n';
 
-      if (record.supplier != null && record.supplier!.isNotEmpty) {
-        basicInfoText += '供应商: ${record.supplier}\n';
+      final supplier = record.supplier;
+      if (supplier != null && supplier.isNotEmpty) {
+        basicInfoText += '供应商: $supplier\n';
       }
 
-      if (record.doctor != null && record.doctor!.isNotEmpty) {
-        basicInfoText += '采购医生: ${record.doctor}\n';
+      final doctor = record.doctor;
+      if (doctor != null && doctor.isNotEmpty) {
+        basicInfoText += '采购医生: $doctor\n';
       }
 
-      if (record.notes != null && record.notes!.isNotEmpty) {
-        basicInfoText += '备注: ${record.notes}\n';
+      final notes = record.notes;
+      if (notes != null && notes.isNotEmpty) {
+        basicInfoText += '备注: $notes\n';
       }
 
       final basicInfoPainter = TextPainter(
@@ -102,9 +112,12 @@ class PurchaseExportService {
     // 采购项目明细
     if (exportOptions['purchaseDetails'] == true) {
       // 表格标题
-      final tableTitleStyle = TextStyle(fontSize: 36 * scaleFactor, fontWeight: FontWeight.w900, color: const Color(0xFF1976D2));
+      const tableTitleStyle = TextStyle(
+          fontSize: 36 * scaleFactor,
+          fontWeight: FontWeight.w900,
+          color: Color(0xFF1976D2));
       final tableTitlePainter = TextPainter(
-        text: TextSpan(text: '采购项目明细', style: tableTitleStyle),
+        text: const TextSpan(text: '采购项目明细', style: tableTitleStyle),
         textDirection: ui.TextDirection.ltr,
       );
       tableTitlePainter.layout();
@@ -112,15 +125,26 @@ class PurchaseExportService {
       currentY += 80 * scaleFactor;
 
       // 表格头部 - 进一步增大和加粗字体
-      final headerStyle = TextStyle(fontSize: 26 * scaleFactor, fontWeight: FontWeight.w900, color: const Color(0xFF000000));
+      const headerStyle = TextStyle(
+          fontSize: 26 * scaleFactor,
+          fontWeight: FontWeight.w900,
+          color: Color(0xFF000000));
       final headers = ['材料名称', '数量', '单位', '单价', '总价'];
-      final columnWidths = [450.0 * scaleFactor, 120.0 * scaleFactor, 120.0 * scaleFactor, 150.0 * scaleFactor, 180.0 * scaleFactor];
+      final columnWidths = [
+        450.0 * scaleFactor,
+        120.0 * scaleFactor,
+        120.0 * scaleFactor,
+        150.0 * scaleFactor,
+        180.0 * scaleFactor
+      ];
       double currentX = 75 * scaleFactor;
 
       // 绘制表头背景
-      final headerBgPaint = ui.Paint()..color = const Color(0xFFE0E0E0); // 加深表头灰色
+      final headerBgPaint = ui.Paint()
+        ..color = const Color(0xFFE0E0E0); // 加深表头灰色
       canvas.drawRect(
-        Rect.fromLTWH(75 * scaleFactor, currentY - 8 * scaleFactor, width - 150 * scaleFactor, 50 * scaleFactor),
+        Rect.fromLTWH(75 * scaleFactor, currentY - 8 * scaleFactor,
+            width - 150 * scaleFactor, 50 * scaleFactor),
         headerBgPaint,
       );
 
@@ -134,10 +158,14 @@ class PurchaseExportService {
         // 材料名称列左对齐，其他列居中对齐
         if (i == 0) {
           // 材料名称列左对齐
-          headerPainter.paint(canvas, Offset(currentX + 12 * scaleFactor, currentY));
+          headerPainter.paint(
+              canvas, Offset(currentX + 12 * scaleFactor, currentY));
         } else {
           // 其他列居中对齐
-          headerPainter.paint(canvas, Offset(currentX + (columnWidths[i] - headerPainter.width) / 2, currentY));
+          headerPainter.paint(
+              canvas,
+              Offset(currentX + (columnWidths[i] - headerPainter.width) / 2,
+                  currentY));
         }
         currentX += columnWidths[i];
       }
@@ -153,7 +181,10 @@ class PurchaseExportService {
       currentY += 60 * scaleFactor;
 
       // 表格内容 - 进一步增大和加粗字体
-      final contentStyle = TextStyle(fontSize: 24 * scaleFactor, fontWeight: FontWeight.w700, color: const Color(0xFF000000));
+      const contentStyle = TextStyle(
+          fontSize: 24 * scaleFactor,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF000000));
 
       for (var entry in purchaseItems.asMap().entries) {
         final int index = entry.key;
@@ -162,7 +193,10 @@ class PurchaseExportService {
         // 交替行背景色 (偶数行加背景色)
         if (index % 2 == 1) {
           paint.color = const Color(0xFFF5F5F5);
-          canvas.drawRect(Rect.fromLTWH(75 * scaleFactor, currentY - 8 * scaleFactor, width - 150 * scaleFactor, 70 * scaleFactor), paint);
+          canvas.drawRect(
+              Rect.fromLTWH(75 * scaleFactor, currentY - 8 * scaleFactor,
+                  width - 150 * scaleFactor, 70 * scaleFactor),
+              paint);
         }
 
         currentX = 75 * scaleFactor;
@@ -174,7 +208,8 @@ class PurchaseExportService {
           maxLines: 2,
         );
         namePainter.layout(maxWidth: columnWidths[0]);
-        namePainter.paint(canvas, Offset(currentX + 12 * scaleFactor, currentY));
+        namePainter.paint(
+            canvas, Offset(currentX + 12 * scaleFactor, currentY));
         currentX += columnWidths[0];
 
         // 数量
@@ -183,7 +218,10 @@ class PurchaseExportService {
           textDirection: ui.TextDirection.ltr,
         );
         quantityPainter.layout();
-        quantityPainter.paint(canvas, Offset(currentX + (columnWidths[1] - quantityPainter.width) / 2, currentY));
+        quantityPainter.paint(
+            canvas,
+            Offset(currentX + (columnWidths[1] - quantityPainter.width) / 2,
+                currentY));
         currentX += columnWidths[1];
 
         // 单位
@@ -192,25 +230,38 @@ class PurchaseExportService {
           textDirection: ui.TextDirection.ltr,
         );
         unitPainter.layout();
-        unitPainter.paint(canvas, Offset(currentX + (columnWidths[2] - unitPainter.width) / 2, currentY));
+        unitPainter.paint(
+            canvas,
+            Offset(currentX + (columnWidths[2] - unitPainter.width) / 2,
+                currentY));
         currentX += columnWidths[2];
 
         // 单价
         final unitPricePainter = TextPainter(
-          text: TextSpan(text: '¥${item.unitPrice.toStringAsFixed(2)}', style: contentStyle),
+          text: TextSpan(
+              text: '¥${item.unitPrice.toStringAsFixed(2)}',
+              style: contentStyle),
           textDirection: ui.TextDirection.ltr,
         );
         unitPricePainter.layout();
-        unitPricePainter.paint(canvas, Offset(currentX + (columnWidths[3] - unitPricePainter.width) / 2, currentY));
+        unitPricePainter.paint(
+            canvas,
+            Offset(currentX + (columnWidths[3] - unitPricePainter.width) / 2,
+                currentY));
         currentX += columnWidths[3];
 
         // 总价
         final totalPricePainter = TextPainter(
-          text: TextSpan(text: '¥${item.totalPrice.toStringAsFixed(2)}', style: contentStyle),
+          text: TextSpan(
+              text: '¥${item.totalPrice.toStringAsFixed(2)}',
+              style: contentStyle),
           textDirection: ui.TextDirection.ltr,
         );
         totalPricePainter.layout();
-        totalPricePainter.paint(canvas, Offset(currentX + (columnWidths[4] - totalPricePainter.width) / 2, currentY));
+        totalPricePainter.paint(
+            canvas,
+            Offset(currentX + (columnWidths[4] - totalPricePainter.width) / 2,
+                currentY));
 
         currentY += 70 * scaleFactor; // 增加行高避免重叠
 
@@ -223,56 +274,78 @@ class PurchaseExportService {
         );
       }
       // 总计行（含汇总统计）
-      final totalAmount = purchaseItems.fold<double>(0.0, (sum, item) => sum + item.totalPrice);
       final bool showSummary = exportOptions['purchaseSummary'] == true;
-      final double totalRowHeight = showSummary ? 140 * scaleFactor : 80 * scaleFactor;
+      final double totalRowHeight =
+          showSummary ? 140 * scaleFactor : 80 * scaleFactor;
 
-      final totalRect = Rect.fromLTWH(75 * scaleFactor, currentY, width - 150 * scaleFactor, totalRowHeight);
+      final totalRect = Rect.fromLTWH(75 * scaleFactor, currentY,
+          width - 150 * scaleFactor, totalRowHeight);
       paint.color = const Color(0xFFE8F5E9);
       canvas.drawRect(totalRect, paint);
 
       // "总计" 标签
       final totalLabelPainter = TextPainter(
-        text: TextSpan(text: '总计', style: headerStyle),
+        text: const TextSpan(text: '总计', style: headerStyle),
         textDirection: ui.TextDirection.ltr,
       );
       totalLabelPainter.layout();
-      totalLabelPainter.paint(canvas, Offset(90 * scaleFactor, currentY + 20 * scaleFactor));
+      totalLabelPainter.paint(
+          canvas, Offset(90 * scaleFactor, currentY + 20 * scaleFactor));
 
       // 汇总统计信息（紧跟在总计文字下方，同一背景框内）
       if (showSummary) {
-        final statStyle = TextStyle(fontSize: 24 * scaleFactor, fontWeight: FontWeight.w600, color: const Color(0xFF555555));
+        const statStyle = TextStyle(
+            fontSize: 24 * scaleFactor,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF555555));
         final statPainter = TextPainter(
           text: TextSpan(
-            text: '总采购数量: ${record.totalQuantity}    采购项目数: ${purchaseItems.length}    采购金额: ¥${record.totalAmount.toStringAsFixed(2)}',
+            text:
+                '总采购数量: ${record.totalQuantity}    采购项目数: ${purchaseItems.length}    采购金额: ¥${record.totalAmount.toStringAsFixed(2)}',
             style: statStyle,
           ),
           textDirection: ui.TextDirection.ltr,
         );
-        statPainter.layout(maxWidth: width - 150 * scaleFactor - 30 * scaleFactor);
-        statPainter.paint(canvas, Offset(90 * scaleFactor, currentY + 20 * scaleFactor + totalLabelPainter.height + 10 * scaleFactor));
+        statPainter.layout(
+            maxWidth: width - 150 * scaleFactor - 30 * scaleFactor);
+        statPainter.paint(
+            canvas,
+            Offset(
+                90 * scaleFactor,
+                currentY +
+                    20 * scaleFactor +
+                    totalLabelPainter.height +
+                    10 * scaleFactor));
       }
 
       currentY += totalRowHeight + 20 * scaleFactor;
     }
 
     // 底部信息
-    final footerStyle = TextStyle(fontSize: 20 * scaleFactor, fontWeight: FontWeight.w600, color: const Color(0xFF757575));
+    const footerStyle = TextStyle(
+        fontSize: 20 * scaleFactor,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF757575));
     final footerPainter = TextPainter(
       text: TextSpan(
-        text: '导出时间: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}\n'
+        text:
+            '导出时间: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}\n'
             '牙科诊所管理系统',
         style: footerStyle,
       ),
       textDirection: ui.TextDirection.ltr,
     );
     footerPainter.layout(maxWidth: width - 150 * scaleFactor);
-    footerPainter.paint(canvas, Offset(75 * scaleFactor, currentY + 30 * scaleFactor));
+    footerPainter.paint(
+        canvas, Offset(75 * scaleFactor, currentY + 30 * scaleFactor));
 
     final picture = recorder.endRecording();
     final image = await picture.toImage(width.toInt(), height.toInt());
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    final bytes = byteData!.buffer.asUint8List();
+    if (byteData == null) {
+      throw Exception('导出图片失败：无法生成 PNG 字节数据');
+    }
+    final bytes = byteData.buffer.asUint8List();
 
     return bytes;
   }
@@ -283,16 +356,15 @@ class PurchaseExportService {
     try {
       final directory = await getDownloadsDirectory();
       final saveDir = directory ?? await getApplicationDocumentsDirectory();
-      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
 
       // 始终使用PNG格式保持最佳质量
-      final fileName = '采购记录_${timestamp}.png';
+      const fileName = '采购记录_${1}.png';
       final file = File('${saveDir.path}/$fileName');
 
       await file.writeAsBytes(imageData);
       return file.path;
     } catch (e) {
-      print('保存图片失败: $e');
+      LogManager.e('PurchaseExportService', '保存图片失败', error: e);
       return null;
     }
   }
@@ -306,7 +378,7 @@ class PurchaseExportService {
         Process.run('explorer', ['/select,', filePath]);
       }
     } catch (e) {
-      print('打开文件夹失败: $e');
+      LogManager.e('PurchaseExportService', '打开文件夹失败', error: e);
     }
   }
 }

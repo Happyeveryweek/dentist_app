@@ -31,8 +31,8 @@ class MedicalTemplateEmptyState extends StatelessWidget {
               border: Border.all(color: Colors.orange.shade200),
             ),
             child: Icon(
-              templateType == MedicalTemplateType.treatment 
-                  ? Icons.healing_rounded 
+              templateType == MedicalTemplateType.treatment
+                  ? Icons.healing_rounded
                   : Icons.note_add_rounded,
               size: 64,
               color: Colors.orange.shade400,
@@ -40,7 +40,7 @@ class MedicalTemplateEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            '暂无${title}',
+            '暂无${1}',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -67,7 +67,8 @@ class MedicalTemplateEmptyState extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange.shade600,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -79,7 +80,8 @@ class MedicalTemplateEmptyState extends StatelessWidget {
                 icon: const Icon(Icons.add),
                 label: const Text('添加模板'),
                 style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

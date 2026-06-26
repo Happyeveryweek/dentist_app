@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import '../utils/datetime_formatter.dart';
 import '../utils/app_logger.dart';
+import '../utils/map_parser.dart';
 
 class MaterialImage {
   final int? id;
@@ -31,97 +32,43 @@ class MaterialImage {
   });
 
   factory MaterialImage.fromMap(Map<String, dynamic> map) {
-    // 处理图片数据
-    List<int> imageData = <int>[];
-    if (map['image_data'] != null) {
-      if (map['image_data'] is List<int>) {
-        imageData = map['image_data'];
-      } else if (map['image_data'] is Uint8List) {
-        imageData = map['image_data'].toList();
-      } else if (map['image_data'] is String) {
-        // 如果是String类型，可能是二进制数据的错误表示
-        try {
-          // 尝试直接处理字符串中的字节数据
-          final stringData = map['image_data'] as String;
-          final bytes = <int>[];
-
-          // 处理可能包含特殊字符的二进制字符串
-          // 对于JPEG等二进制数据，直接使用字符代码
-          for (int i = 0; i < stringData.length; i++) {
-            final charCode = stringData.codeUnitAt(i);
-            // 对于二进制数据，直接添加字符代码，不过滤
-            bytes.add(charCode);
-          }
-
-          if (bytes.isNotEmpty) {
-            imageData = bytes;
-          } else {
-            imageData = <int>[];
-          }
-        } catch (e) {
-          AppLogger.info('MaterialImage: 二进制字符串处理失败: $e');
-          imageData = <int>[];
-        }
-      } else {
-        AppLogger.info('MaterialImage: 未知的图片数据类型: ${map['image_data'].runtimeType}');
-        imageData = <int>[];
-      }
-    }
-
-    // 处理缩略图数据
-    List<int>? thumbnailData;
-    if (map['thumbnail_data'] != null) {
-      if (map['thumbnail_data'] is List<int>) {
-        thumbnailData = map['thumbnail_data'];
-      } else if (map['thumbnail_data'] is Uint8List) {
-        thumbnailData = map['thumbnail_data'].toList();
-      } else if (map['thumbnail_data'] is String) {
-        // 如果是String类型，可能是二进制数据的错误表示
-        try {
-          // 尝试直接处理字符串中的字节数据
-          final stringData = map['thumbnail_data'] as String;
-          final bytes = <int>[];
-
-          // 处理可能包含特殊字符的二进制字符串
-          // 对于JPEG等二进制数据，直接使用字符代码
-          for (int i = 0; i < stringData.length; i++) {
-            final charCode = stringData.codeUnitAt(i);
-            // 对于二进制数据，直接添加字符代码，不过滤
-            bytes.add(charCode);
-          }
-
-          if (bytes.isNotEmpty) {
-            thumbnailData = bytes;
-          } else {
-            thumbnailData = <int>[];
-          }
-        } catch (e) {
-          AppLogger.info('MaterialImage: 二进制字符串处理缩略图失败: $e');
-          thumbnailData = <int>[];
-        }
-      } else {
-        AppLogger.info(
-          'MaterialImage: 未知的缩略图数据类型: ${map['thumbnail_data'].runtimeType}',
-        );
-        thumbnailData = <int>[];
-      }
-    }
-
+    final p = MapParser(map, context: 'MaterialImage');
     return MaterialImage(
-      id: map['id'] as int?,
-      materialId: map['material_id'] as int?,
-      imageData: imageData,
-      thumbnailData: thumbnailData,
-      imageType: map['image_type'] as String? ?? 'jpg',
-      fileSize: map['file_size'] as int?,
-      thumbnailSize: map['thumbnail_size'] as int?,
+      id: p.optional('id', (v) => v as int),
+      materialId: p.optional('material_id', (v) => v as int),
+      imageData: _parseImageData(map['image_data']) ?? <int>[],
+      thumbnailData: _parseImageData(map['thumbnail_data']),
+      imageType: p.string('image_type', defaultValue: 'jpg'),
+      fileSize: p.optional('file_size', (v) => v as int),
+      thumbnailSize: p.optional('thumbnail_size', (v) => v as int),
       originalName: _decodeOriginalName(
         map['original_name']?.toString() ?? map['originalName']?.toString(),
       ),
       createdAt: _parseCreatedAt(map['created_at']),
-      hasThumbnail: map['has_thumbnail'] as int?,
-      imagePath: map['image_path'] as String?,
+      hasThumbnail: p.optional('has_thumbnail', (v) => v as int),
+      imagePath: p.stringOptional('image_path'),
     );
+  }
+
+  // 辅助方法：解析图片/缩略图二进制数据
+  static List<int>? _parseImageData(dynamic value) {
+    if (value == null) return null;
+    if (value is List<int>) return value;
+    if (value is Uint8List) return value.toList();
+    if (value is String) {
+      try {
+        final bytes = <int>[];
+        for (int i = 0; i < value.length; i++) {
+          bytes.add(value.codeUnitAt(i));
+        }
+        return bytes.isNotEmpty ? bytes : <int>[];
+      } catch (e) {
+        AppLogger.info('MaterialImage: 二进制字符串处理失败: $e');
+        return <int>[];
+      }
+    }
+    AppLogger.info('MaterialImage: 未知的图片数据类型: ${value.runtimeType}');
+    return <int>[];
   }
 
   static String? _decodeOriginalName(String? value) {

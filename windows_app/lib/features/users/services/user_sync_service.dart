@@ -1,7 +1,8 @@
-import 'dart:typed_data';
 import 'package:mysql1/mysql1.dart';
 import '../../../utils/datetime_formatter.dart';
 import '../../../models/user.dart';
+import 'package:flutter/foundation.dart';
+import '../../../utils/log_manager.dart';
 
 /// 用户同步服务
 /// 负责处理 SQLite → MySQL 的数据同步逻辑（从 UserProvider 中提取）
@@ -23,14 +24,15 @@ class UserSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过用户同步(id=${user.id})');
+          LogManager.w('UserSyncService', 'MySQL连接不可用，跳过用户同步(id=${user.id})');
           return;
         }
 
         // 处理图片数据
         Uint8List? imageBlob;
-        if (user.imageData != null && user.imageData!.isNotEmpty) {
-          imageBlob = Uint8List.fromList(user.imageData!);
+        final imageData = user.imageData;
+        if (imageData != null && imageData.isNotEmpty) {
+          imageBlob = Uint8List.fromList(imageData);
         }
 
         if (isUpdate) {
@@ -50,12 +52,14 @@ class UserSyncService {
               user.avatar,
               user.modulePermissions,
               imageBlob,
-              DateTimeFormatter.toDbString(user.created_at),
+              DateTimeFormatter.toDbString(user.createdAt),
               user.id,
             ]);
-            print('成功更新MySQL用户(id=${user.id})，影响行数: ${result.affectedRows}');
+            LogManager.i('UserSyncService',
+                '成功更新MySQL用户(id=${user.id})，影响行数: ${result.affectedRows}');
           } catch (e) {
-            print('更新MySQL用户(id=${user.id})时出错: $e');
+            LogManager.e('UserSyncService', '更新MySQL用户(id=${user.id})时出错',
+                error: e);
           }
         } else {
           try {
@@ -80,10 +84,11 @@ class UserSyncService {
                 user.avatar,
                 user.modulePermissions,
                 imageBlob,
-                DateTimeFormatter.toDbString(user.created_at),
+                DateTimeFormatter.toDbString(user.createdAt),
                 user.id,
               ]);
-              print('MySQL中已存在用户，执行更新(id=${user.id})，影响行数: ${result.affectedRows}');
+              LogManager.w('UserSyncService',
+                  'MySQL中已存在用户，执行更新(id=${user.id})，影响行数: ${result.affectedRows}');
             } else {
               final result = await conn.query('''
                 INSERT INTO users 
@@ -99,16 +104,18 @@ class UserSyncService {
                 user.avatar,
                 user.modulePermissions,
                 imageBlob,
-                DateTimeFormatter.toDbString(user.created_at),
+                DateTimeFormatter.toDbString(user.createdAt),
               ]);
-              print('成功插入MySQL用户(id=${user.id})，插入ID: ${result.insertId}');
+              LogManager.i('UserSyncService',
+                  '成功插入MySQL用户(id=${user.id})，插入ID: ${result.insertId}');
             }
           } catch (e) {
-            print('同步MySQL用户(id=${user.id})时出错: $e');
+            LogManager.e('UserSyncService', '同步MySQL用户(id=${user.id})时出错',
+                error: e);
           }
         }
       } catch (e) {
-        print('用户同步到MySQL发生不可预期错误: $e');
+        LogManager.e('UserSyncService', '用户同步到MySQL发生不可预期错误', error: e);
       }
     });
   }
@@ -119,7 +126,7 @@ class UserSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过用户删除同步(id=$id)');
+          LogManager.w('UserSyncService', 'MySQL连接不可用，跳过用户删除同步(id=$id)');
           return;
         }
 
@@ -128,12 +135,13 @@ class UserSyncService {
             'DELETE FROM users WHERE id = ?',
             [id],
           );
-          print('成功从MySQL删除用户(id=$id)，影响行数: ${result.affectedRows}');
+          LogManager.i('UserSyncService',
+              '成功从MySQL删除用户(id=$id)，影响行数: ${result.affectedRows}');
         } catch (e) {
-          print('从MySQL删除用户(id=$id)时出错: $e');
+          LogManager.e('UserSyncService', '从MySQL删除用户(id=$id)时出错', error: e);
         }
       } catch (e) {
-        print('用户删除同步到MySQL发生不可预期错误: $e');
+        LogManager.e('UserSyncService', '用户删除同步到MySQL发生不可预期错误', error: e);
       }
     });
   }

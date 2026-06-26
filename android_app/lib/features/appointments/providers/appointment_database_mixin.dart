@@ -49,15 +49,17 @@ mixin AppointmentDatabaseMixin {
   // 获取当前数据源（必须可用，否则抛出异常）
   AppointmentDataSource get currentDataSource {
     if (_dataSourceType == 'mysql') {
-      if (_mysqlDataSource == null) {
+      final dataSource = _mysqlDataSource;
+      if (dataSource == null) {
         throw Exception('MySQL预约数据源未初始化');
       }
-      return _mysqlDataSource!;
+      return dataSource;
     } else {
-      if (_sqliteDataSource == null) {
+      final dataSource = _sqliteDataSource;
+      if (dataSource == null) {
         throw Exception('SQLite预约数据源未初始化');
       }
-      return _sqliteDataSource!;
+      return dataSource;
     }
   }
 

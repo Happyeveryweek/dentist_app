@@ -13,6 +13,7 @@ import 'package:dentist_app/features/appointments/widgets/time_picker_dialog.dar
     as custom;
 import 'package:dentist_app/features/appointments/widgets/teeth_condition_input.dart';
 import 'package:dentist_app/features/appointments/widgets/treatment_items_input.dart';
+import 'package:dentist_app/utils/toast_util.dart';
 import 'package:dentist_app/widgets/date_time_card.dart';
 import '../../../utils/app_logger.dart';
 
@@ -36,8 +37,8 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
   final _formKey = GlobalKey<FormState>();
 
   // 表单数据
-  late DateTime _selectedDate;
-  late TimeOfDay _selectedTime;
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _selectedTime = const TimeOfDay(hour: 9, minute: 0);
   int? _selectedPatientId;
   String _status = 'scheduled';
   String _notes = '';
@@ -86,8 +87,9 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
     // 不再自动加载患者数据，只在需要时加载
 
     // 如果是编辑模式，初始化表单数据
-    if (widget.appointment != null) {
-      final appointment = widget.appointment!;
+    final existingAppointment = widget.appointment;
+    if (existingAppointment != null) {
+      final appointment = existingAppointment;
       _selectedDate = appointment.appointmentDate;
       _selectedTime = TimeOfDay.fromDateTime(appointment.appointmentDate);
       _selectedPatientId = appointment.patientId;
@@ -97,9 +99,9 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
       _cost = appointment.cost;
 
       // 解析 treatment_type 字段
-      if (appointment.treatmentType != null &&
-          appointment.treatmentType!.isNotEmpty) {
-        _parseTreatmentTypeData(appointment.treatmentType!);
+      final treatmentType = appointment.treatmentType;
+      if (treatmentType != null && treatmentType.isNotEmpty) {
+        _parseTreatmentTypeData(treatmentType);
       }
 
       // 设置控制器值
@@ -114,8 +116,9 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
       _isLoading = false;
 
       // 如果有初始日期参数，使用它
-      if (widget.initialDate != null) {
-        _selectedDate = widget.initialDate!;
+      final initialDate = widget.initialDate;
+      if (initialDate != null) {
+        _selectedDate = initialDate;
         _selectedTime = const TimeOfDay(hour: 9, minute: 0);
       } else {
         // 新建预约，默认为当前时间后一小时，向上取整到30分钟
@@ -165,7 +168,8 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
   }
 
   Future<void> _loadSelectedPatientName() async {
-    if (_selectedPatientId == null) return;
+    final selectedPatientId = _selectedPatientId;
+    if (selectedPatientId == null) return;
 
     setState(() {
       _isLoading = true;
@@ -175,7 +179,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
       final patient = await Provider.of<PatientProvider>(
         context,
         listen: false,
-      ).getPatientById(_selectedPatientId!);
+      ).getPatientById(selectedPatientId);
       setState(() {
         if (patient != null) {
           _selectedPatientName = patient.name;
@@ -297,9 +301,17 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
         _selectedTime.minute,
       );
 
+      final selectedPatientId = _selectedPatientId;
+      if (selectedPatientId == null) {
+          if (mounted) {
+            ToastUtil.showError(context, '请选择患者');
+          }
+          return;
+        }
+
       final appointment = Appointment(
         id: widget.appointment?.id,
-        patientId: _selectedPatientId!,
+        patientId: selectedPatientId,
         appointmentDate: appointmentDate,
         // 将表单状态值映射回数据库状态值
         status: _reverseStatusMapping[_status] ?? _status,
@@ -671,8 +683,9 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
           ),
         ],
         onChanged: (value) {
+          if (value == null) return;
           setState(() {
-            _status = value!;
+            _status = value;
           });
         },
         icon: const Icon(Icons.keyboard_arrow_down_rounded),

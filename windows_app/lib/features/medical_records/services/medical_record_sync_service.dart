@@ -33,7 +33,8 @@ class MedicalRecordSyncService {
             summary: summary,
             error: 'mysql_connection_unavailable',
           );
-          print('MySQL连接不可用，跳过病历记录同步(id=$recordId)');
+          LogManager.w(
+              'MedicalRecordSyncService', 'MySQL连接不可用，跳过病历记录同步(id=$recordId)');
           return;
         }
 
@@ -62,7 +63,8 @@ class MedicalRecordSyncService {
               recordId: recordId,
               summary: summary,
             );
-            print('成功更新MySQL病历记录(id=$recordId)，影响行数: ${result.affectedRows}');
+            LogManager.i('MedicalRecordSyncService',
+                '成功更新MySQL病历记录(id=$recordId)，影响行数: ${result.affectedRows}');
           } else {
             final insertFields = ['id', ...fields];
             final placeholders =
@@ -79,7 +81,8 @@ class MedicalRecordSyncService {
               recordId: recordId,
               summary: summary,
             );
-            print('成功将病历记录(id=$recordId)同步到MySQL，插入ID: ${result.insertId}');
+            LogManager.i('MedicalRecordSyncService',
+                '成功将病历记录(id=$recordId)同步到MySQL，插入ID: ${result.insertId}');
           }
         } catch (e) {
           await LogManager.logSyncOperation(
@@ -91,7 +94,7 @@ class MedicalRecordSyncService {
             summary: summary,
             error: e.toString(),
           );
-          print('同步病历记录到MySQL时出错: $e');
+          LogManager.e('MedicalRecordSyncService', '同步病历记录到MySQL时出错', error: e);
         }
       } catch (e) {
         await LogManager.logSyncOperation(
@@ -104,7 +107,8 @@ class MedicalRecordSyncService {
               'patient_id=${recordMap['patient_id'] ?? ''}, record_number=${recordMap['record_number'] ?? ''}',
           error: e.toString(),
         );
-        print('病历记录同步到MySQL发生不可预期错误: $e');
+        LogManager.e('MedicalRecordSyncService', '病历记录同步到MySQL发生不可预期错误',
+            error: e);
       }
     });
   }
@@ -123,7 +127,8 @@ class MedicalRecordSyncService {
             recordId: recordId,
             error: 'mysql_connection_unavailable',
           );
-          print('MySQL连接不可用，跳过病历记录删除同步(id=$recordId)');
+          LogManager.w('MedicalRecordSyncService',
+              'MySQL连接不可用，跳过病历记录删除同步(id=$recordId)');
           return;
         }
 
@@ -138,7 +143,8 @@ class MedicalRecordSyncService {
           status: 'success',
           recordId: recordId,
         );
-        print('成功从MySQL删除病历记录(id=$recordId)，影响行数: ${result.affectedRows}');
+        LogManager.i('MedicalRecordSyncService',
+            '成功从MySQL删除病历记录(id=$recordId)，影响行数: ${result.affectedRows}');
       } catch (e) {
         await LogManager.logSyncOperation(
           module: 'medical_record',
@@ -148,7 +154,7 @@ class MedicalRecordSyncService {
           recordId: recordId,
           error: e.toString(),
         );
-        print('病历记录删除同步到MySQL时出错: $e');
+        LogManager.e('MedicalRecordSyncService', '病历记录删除同步到MySQL时出错', error: e);
       }
     });
   }
@@ -160,7 +166,8 @@ class MedicalRecordSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过病历模板同步(id=$templateId)');
+          LogManager.w('MedicalRecordSyncService',
+              'MySQL连接不可用，跳过病历模板同步(id=$templateId)');
           return;
         }
 
@@ -184,7 +191,8 @@ class MedicalRecordSyncService {
               templateMap['updated_at'],
               templateId,
             ]);
-            print('成功更新MySQL病历模板(id=$templateId)，影响行数: ${result.affectedRows}');
+            LogManager.i('MedicalRecordSyncService',
+                '成功更新MySQL病历模板(id=$templateId)，影响行数: ${result.affectedRows}');
           } else {
             final result = await conn.query('''
               INSERT INTO medical_record_templates
@@ -198,13 +206,15 @@ class MedicalRecordSyncService {
               templateMap['created_at'],
               templateMap['updated_at'],
             ]);
-            print('成功将病历模板(id=$templateId)同步到MySQL，插入ID: ${result.insertId}');
+            LogManager.i('MedicalRecordSyncService',
+                '成功将病历模板(id=$templateId)同步到MySQL，插入ID: ${result.insertId}');
           }
         } catch (e) {
-          print('同步病历模板到MySQL时出错: $e');
+          LogManager.e('MedicalRecordSyncService', '同步病历模板到MySQL时出错', error: e);
         }
       } catch (e) {
-        print('病历模板同步到MySQL发生不可预期错误: $e');
+        LogManager.e('MedicalRecordSyncService', '病历模板同步到MySQL发生不可预期错误',
+            error: e);
       }
     });
   }
@@ -215,7 +225,8 @@ class MedicalRecordSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过病历模板删除同步(id=$templateId)');
+          LogManager.w('MedicalRecordSyncService',
+              'MySQL连接不可用，跳过病历模板删除同步(id=$templateId)');
           return;
         }
 
@@ -224,12 +235,16 @@ class MedicalRecordSyncService {
             'DELETE FROM medical_record_templates WHERE id = ?',
             [templateId],
           );
-          print('成功从MySQL删除病历模板(id=$templateId)，影响行数: ${result.affectedRows}');
+          LogManager.i('MedicalRecordSyncService',
+              '成功从MySQL删除病历模板(id=$templateId)，影响行数: ${result.affectedRows}');
         } catch (e) {
-          print('从MySQL删除病历模板(id=$templateId)时出错: $e');
+          LogManager.e(
+              'MedicalRecordSyncService', '从MySQL删除病历模板(id=$templateId)时出错',
+              error: e);
         }
       } catch (e) {
-        print('病历模板删除同步到MySQL发生不可预期错误: $e');
+        LogManager.e('MedicalRecordSyncService', '病历模板删除同步到MySQL发生不可预期错误',
+            error: e);
       }
     });
   }

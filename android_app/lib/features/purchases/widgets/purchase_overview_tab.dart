@@ -173,7 +173,7 @@ class PurchaseOverviewTab extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.green[50],
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green[200]!),
+              border: Border.all(color: Colors.green.shade200),
             ),
             child: Column(
               children: [
@@ -258,7 +258,7 @@ class PurchaseOverviewTab extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.blue[50],
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue[200]!),
+              border: Border.all(color: Colors.blue.shade200),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

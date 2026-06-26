@@ -33,6 +33,14 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   Patient? _patient;
   bool _isLoading = false;
 
+  int get _recordId {
+    final id = widget.record.id;
+    if (id == null) {
+      throw Exception('财务记录ID无效');
+    }
+    return id;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -123,6 +131,18 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
   /// 加载数据
   Future<void> _loadData() async {
+    final recordId = widget.record.id;
+    if (recordId == null) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('财务记录ID无效'), backgroundColor: Colors.red),
+        );
+      }
+      return;
+    }
     setState(() {
       _isLoading = true;
     });
@@ -138,7 +158,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       );
 
       final items = await financialProvider.getFinancialItemsByRecordId(
-        widget.record.id!,
+        recordId,
       );
       final patient = await patientProvider.getPatientById(
         widget.record.patientId,
@@ -192,7 +212,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
       // 获取该财务记录的所有收费项，重新计算总数量
       final items = await provider.getFinancialItemsByRecordId(
-        widget.record.id!,
+        _recordId,
       );
       final totalQuantity = items.fold<int>(
         0,
@@ -250,7 +270,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
         final provider = Provider.of<FinancialProvider>(context, listen: false);
         // 注意：这里我们假设有一个 `deleteFinancialRecordByPatientId` 方法
         // 但从 `financial_management_screen.dart` 来看，更可能是按 `record.id` 删除
-        await provider.deleteFinancialRecord(widget.record.id!);
+        await provider.deleteFinancialRecord(_recordId);
 
         if (context.mounted) {
           DeleteSuccessToastManager.show(context, message: '财务记录删除成功');
@@ -270,7 +290,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       context: context,
       builder:
           (context) => FinancialItemAddDialog(
-            financialRecordId: widget.record.id!,
+            financialRecordId: _recordId,
             onSave: (newItem) async {
               try {
                 final provider = Provider.of<FinancialProvider>(
@@ -362,9 +382,16 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
   /// 确认删除收费项目
   Future<void> _confirmDeleteItem(FinancialItem item) async {
+    final itemId = item.id;
+    if (itemId == null) {
+      if (mounted) {
+        SuccessToastManager.showError(context, message: '收费项目ID无效，无法删除');
+      }
+      return;
+    }
     try {
       final provider = Provider.of<FinancialProvider>(context, listen: false);
-      await provider.deleteFinancialItem(item.id!);
+      await provider.deleteFinancialItem(itemId);
 
       // 更新财务记录的收费项数量和更新时间
       await _updateFinancialRecordAfterItemChange();

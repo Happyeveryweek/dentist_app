@@ -8,13 +8,12 @@ import '../features/medical_records/widgets/medical_template_initialize_progress
 import '../features/medical_records/widgets/medical_management_empty_state.dart';
 import '../features/medical_records/widgets/medical_template_list_header.dart';
 import '../features/medical_records/widgets/medical_template_type_card.dart';
-import '../features/medical_records/widgets/medical_template_sub_type_tile.dart';
-import '../features/medical_records/helpers/medical_template_category_style_helper.dart';
 import '../features/medical_records/services/medical_template_initialization_service.dart';
 import '../widgets/success_toast.dart';
 import '../widgets/mysql_connection_warning.dart';
 import 'medical_template_management_screen.dart';
 import '../theme/app_theme.dart';
+import '../utils/log_manager.dart';
 
 /// 病历管理界面
 /// 包含三个标签页：牙科疾病、全身疾病、过敏类型
@@ -99,7 +98,9 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
 
       return templates;
     } catch (e) {
-      print('MedicalManagementScreen._loadTemplatesForCategory: 加载模板数据失败: $e');
+      LogManager.e('MedicalManagementScreen',
+          'MedicalManagementScreen._loadTemplatesForCategory: 加载模板数据失败',
+          error: e);
       return [];
     }
   }
@@ -118,14 +119,13 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
       // 等待数据源准备就绪
       int retryCount = 0;
       while (!provider.isDataSourceReady && retryCount < 10) {
-        print(
-            'MedicalManagementScreen: 等待数据源准备就绪... (尝试 ${retryCount + 1}/10)');
         await Future.delayed(const Duration(milliseconds: 100));
         retryCount++;
       }
 
       if (!provider.isDataSourceReady) {
-        print('MedicalManagementScreen: 数据源未准备就绪，显示错误状态');
+        LogManager.e('MedicalManagementScreen',
+            'MedicalManagementScreen: 数据源未准备就绪，显示错误状态');
         setState(() {
           _isLoading = false;
           _errorMessage = '数据源未初始化，请重试';
@@ -154,7 +154,9 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
         _errorMessage = null;
       });
     } catch (e) {
-      print('MedicalManagementScreen: 初始化数据时出错: $e');
+      LogManager.e(
+          'MedicalManagementScreen', 'MedicalManagementScreen: 初始化数据时出错',
+          error: e);
       // 出错时也不显示错误状态，而是显示空状态让用户手动初始化
       setState(() {
         _isLoading = false;
@@ -269,7 +271,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 2),
                 ),
@@ -279,10 +281,10 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
               controller: _tabController,
               padding: const EdgeInsets.all(4),
               indicator: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border:
-                    Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
+                border: Border.all(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.2)),
               ),
               labelColor: AppTheme.primaryColor,
               unselectedLabelColor: Colors.grey[600],
@@ -322,7 +324,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -361,7 +363,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            _errorMessage!,
+            _errorMessage ?? '',
             style: TextStyle(
               fontSize: 16,
               color: Colors.red[700],
@@ -430,11 +432,12 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
     final subTypes = <String, List<MedicalRecordTemplate>>{};
 
     for (final template in templates.where((t) => t.isSubType)) {
-      final parentName = template.parentName!;
+      final parentName = template.parentName;
+      if (parentName == null) continue;
       if (!subTypes.containsKey(parentName)) {
         subTypes[parentName] = [];
       }
-      subTypes[parentName]!.add(template);
+      subTypes[parentName]?.add(template);
     }
 
     return Column(
@@ -550,6 +553,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
         if (mounted) {
           await _initializeData();
 
+          if (!mounted) return;
           // 重置错误状态
           setState(() {
             _isLoading = false;
@@ -572,21 +576,20 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
         throw Exception(result['error']);
       }
     } catch (e) {
-      print('病历模板数据初始化过程中出现异常: $e');
+      LogManager.e('MedicalManagementScreen', '病历模板数据初始化过程中出现异常', error: e);
 
+      if (!mounted) return;
       // 关闭进度对话框
       if (Navigator.canPop(context)) {
         Navigator.of(context).pop();
       }
 
       // 显示错误提示
-      if (mounted) {
-        AppToastManager.showError(
-          context,
-          message: '初始化失败: $e',
-          duration: const Duration(seconds: 4),
-        );
-      }
+      AppToastManager.showError(
+        context,
+        message: '初始化失败: $e',
+        duration: const Duration(seconds: 4),
+      );
     }
   }
 
@@ -677,6 +680,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
       message = '您确定要删除子类型"{itemName}"吗？\n此操作不可撤销。';
     }
 
+    if (!mounted) return;
     final confirmed = await DeleteConfirmDialogManager.show(
       context,
       title: title,
@@ -687,19 +691,18 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
     );
 
     if (confirmed) {
+      if (!mounted) return;
       await _deleteTemplate(template);
     }
   }
 
   /// 删除模板
   Future<void> _deleteTemplate(MedicalRecordTemplate template) async {
-    print(
-        'MedicalManagementScreen._deleteTemplate: 开始删除模板: ${template.name} (ID: ${template.id})');
-
     // 使用 Service 执行删除
     final result = await _initializationService.deleteTemplate(template);
 
     if (result['success'] == true) {
+      if (!mounted) return;
       AppToastManager.showDelete(
         context,
         message: '已删除"${template.name}"',
@@ -708,6 +711,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
 
       _refreshCurrentTab();
     } else {
+      if (!mounted) return;
       AppToastManager.showError(
         context,
         message: '删除失败: ${result['error']}',

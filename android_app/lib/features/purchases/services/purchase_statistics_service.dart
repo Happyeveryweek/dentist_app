@@ -60,15 +60,16 @@ class PurchaseStatisticsService {
       totalAmount += record.totalAmount;
 
       // 获取每个记录的采购项目来计算实际数量和材料种类
-      if (record.id != null) {
+      final recordId = record.id;
+      if (recordId != null) {
         try {
-          final items = await getItemsCallback(record.id!);
+          final items = await getItemsCallback(recordId);
           for (final item in items) {
             totalQuantity += item.quantity; // 使用项目的实际数量
             materials.add(item.materialName); // 收集材料种类
           }
         } catch (e) {
-          AppLogger.info('获取采购记录 ${record.id} 的项目失败: $e');
+          AppLogger.info('获取采购记录 $recordId 的项目失败: $e');
           // 如果获取项目失败，使用记录的总数量作为备用
           totalQuantity += record.totalQuantity;
         }

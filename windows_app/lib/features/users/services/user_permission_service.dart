@@ -1,6 +1,7 @@
 import '../../../models/user.dart';
 import '../../../data_sources/user_data_source.dart';
 import '../helpers/user_cache_helper.dart';
+import '../../../utils/log_manager.dart';
 
 /// 用户权限管理服务
 /// 负责权限查询、更新和缓存管理
@@ -17,10 +18,13 @@ class UserPermissionService {
   Future<Map<String, bool>> getUserPermissions(int userId) async {
     try {
       // 检查缓存
+      final cachedPermissions = cacheHelper.cachedPermissions;
       if (cacheHelper.isPermissionsCacheValid() &&
-          cacheHelper.cachedPermissions!.containsKey(userId)) {
-        print('权限缓存命中，用户ID: $userId');
-        return Map.from(cacheHelper.cachedPermissions![userId]!);
+          cachedPermissions != null) {
+        final userPermissions = cachedPermissions[userId];
+        if (userPermissions != null) {
+          return Map.from(userPermissions);
+        }
       }
 
       // 从数据源获取权限
@@ -31,7 +35,7 @@ class UserPermissionService {
 
       return permissions;
     } catch (e) {
-      print('获取用户权限失败: $e');
+      LogManager.e('UserPermissionService', '获取用户权限失败', error: e);
 
       // 返回默认权限
       return {'dashboard': true};
@@ -44,26 +48,27 @@ class UserPermissionService {
       final permissions = await getUserPermissions(userId);
       return permissions[module] == true;
     } catch (e) {
-      print('检查模块权限失败: $e');
+      LogManager.e('UserPermissionService', '检查模块权限失败', error: e);
       // 仪表盘默认允许访问
       return module == 'dashboard';
     }
   }
 
   // 更新用户权限配置
-  Future<bool> updateUserPermissions(int userId, Map<String, bool> permissions) async {
+  Future<bool> updateUserPermissions(
+      int userId, Map<String, bool> permissions) async {
     try {
-      final success = await dataSource.updateUserPermissions(userId, permissions);
+      final success =
+          await dataSource.updateUserPermissions(userId, permissions);
 
       if (success) {
         // 清除权限缓存
         cacheHelper.clearPermissionsCache();
-        print('用户权限更新成功: 用户ID $userId');
       }
 
       return success;
     } catch (e) {
-      print('更新用户权限失败: $e');
+      LogManager.e('UserPermissionService', '更新用户权限失败', error: e);
       return false;
     }
   }
@@ -74,14 +79,14 @@ class UserPermissionService {
 
     try {
       // 检查权限缓存是否过期
+      final userId = currentUser.id;
       if (!cacheHelper.isPermissionsCacheValid() &&
           !currentUser.isAdmin &&
-          currentUser.id != null) {
-        print('权限缓存已过期，重新加载权限');
-        await getUserPermissions(currentUser.id!);
+          userId != null) {
+        await getUserPermissions(userId);
       }
     } catch (e) {
-      print('确保权限有效性失败: $e');
+      LogManager.e('UserPermissionService', '确保权限有效性失败', error: e);
       // 不抛出异常，使用现有权限继续运行
     }
   }
@@ -91,10 +96,8 @@ class UserPermissionService {
     try {
       // 清除指定用户的权限缓存
       cacheHelper.clearUserPermissionsCache(userId);
-
-      print('权限变更缓存清理完成: 用户ID $userId');
     } catch (e) {
-      print('权限变更缓存清理失败: $e');
+      LogManager.e('UserPermissionService', '权限变更缓存清理失败', error: e);
     }
   }
 
@@ -105,9 +108,8 @@ class UserPermissionService {
     try {
       // 确保权限数据及时更新
       await ensurePermissionsValid(currentUser);
-      print('权限缓存初始化完成');
     } catch (e) {
-      print('权限缓存初始化失败: $e');
+      LogManager.e('UserPermissionService', '权限缓存初始化失败', error: e);
     }
   }
 }

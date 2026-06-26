@@ -37,7 +37,13 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
   ); // 初始化为6个月前
   DateTime _endDate = DateTimeFormatter.nowLocal();
 
-  late TabController _tabController;
+  TabController? _tabController;
+
+  List<FinancialItem> _getItemsForRecord(FinancialRecord record) {
+    final id = record.id;
+    if (id == null) return [];
+    return widget.recordItemsMap[id] ?? [];
+  }
 
   // 预设时间范围
   final List<Map<String, dynamic>> _presets = [
@@ -57,7 +63,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -78,8 +84,8 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
 
     // 遍历所有财务项目，找到最早的收费日期
     for (final record in widget.financialRecords) {
-      if (record.id != null && widget.recordItemsMap.containsKey(record.id)) {
-        final items = widget.recordItemsMap[record.id]!;
+      final items = _getItemsForRecord(record);
+      if (items.isNotEmpty) {
         for (final item in items) {
           final date = DateTime(
             item.chargeDate.year,
@@ -203,9 +209,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
 
     // 获取所有财务项目
     for (final record in widget.financialRecords) {
-      if (record.id != null && widget.recordItemsMap.containsKey(record.id)) {
-        allItems.addAll(widget.recordItemsMap[record.id]!);
-      }
+      allItems.addAll(_getItemsForRecord(record));
     }
 
     // 按收费日期过滤（与Windows端一致）
@@ -452,7 +456,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
                         title: '欠费',
                         value: NumberFormat('#,##0').format(totalOutstanding),
                         icon: Icons.money_off_outlined,
-                        color: Colors.red[700]!,
+                        color: Colors.red.shade700,
                         prefix: '¥',
                       ),
                     ),
@@ -532,16 +536,13 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     // 填充实际数据（按收费日期分组，与Windows端一致）
     for (final item in filteredItems) {
       final monthKey = DateFormat('yyyy-MM').format(item.chargeDate);
-      if (monthlyData.containsKey(monthKey)) {
-        monthlyData[monthKey]!['receivable'] =
-            (monthlyData[monthKey]!['receivable'] ?? 0) + item.itemPrice;
-        monthlyData[monthKey]!['collected'] =
-            (monthlyData[monthKey]!['collected'] ?? 0) + item.totalPrice;
-        monthlyData[monthKey]!['outstanding'] =
-            (monthlyData[monthKey]!['outstanding'] ?? 0) +
-            (item.itemPrice - item.totalPrice);
-        monthlyData[monthKey]!['records'] =
-            (monthlyData[monthKey]!['records'] ?? 0) + 1;
+      final data = monthlyData[monthKey];
+      if (data != null) {
+        data['receivable'] = (data['receivable'] ?? 0) + item.itemPrice;
+        data['collected'] = (data['collected'] ?? 0) + item.totalPrice;
+        data['outstanding'] =
+            (data['outstanding'] ?? 0) + (item.itemPrice - item.totalPrice);
+        data['records'] = (data['records'] ?? 0) + 1;
       }
     }
 
@@ -745,9 +746,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     // 获取所有财务项目
     final List<FinancialItem> allItems = [];
     for (final record in widget.financialRecords) {
-      if (record.id != null && widget.recordItemsMap.containsKey(record.id)) {
-        allItems.addAll(widget.recordItemsMap[record.id]!);
-      }
+      allItems.addAll(_getItemsForRecord(record));
     }
 
     // 按截止日期过滤：只计算结束日期之前的所有财务项目
@@ -806,9 +805,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     // 获取所有财务项目
     final List<FinancialItem> allItems = [];
     for (final record in widget.financialRecords) {
-      if (record.id != null && widget.recordItemsMap.containsKey(record.id)) {
-        allItems.addAll(widget.recordItemsMap[record.id]!);
-      }
+      allItems.addAll(_getItemsForRecord(record));
     }
 
     // 按截止日期过滤：只计算结束日期之前的所有财务项目
@@ -890,10 +887,9 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
       );
 
       // 找到患者姓名
-      String patientName = '未知患者';
-      if (record.patientName != null && record.patientName!.isNotEmpty) {
-        patientName = record.patientName!;
-      }
+      final name = record.patientName;
+      String patientName =
+          name != null && name.isNotEmpty ? name : '未知患者';
 
       patientTotals[patientName] =
           (patientTotals[patientName] ?? 0) + item.totalPrice;
@@ -1117,13 +1113,13 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
   Color _getRankColor(int rank) {
     switch (rank) {
       case 1:
-        return Colors.amber[600]!; // 金色
+        return Colors.amber.shade600; // 金色
       case 2:
-        return Colors.grey[600]!; // 银色
+        return Colors.grey.shade600; // 银色
       case 3:
-        return Colors.brown[400]!; // 铜色
+        return Colors.brown.shade400; // 铜色
       default:
-        return Colors.blue[600]!;
+        return Colors.blue.shade600;
     }
   }
 }

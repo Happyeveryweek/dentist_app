@@ -5,6 +5,15 @@ import '../../../utils/app_logger.dart';
 /// 财务计算服务类
 /// 职责：提供财务金额计算、患者统计、欠费计算等纯计算逻辑
 class FinancialCalculator {
+  static List<FinancialItem> _getItemsForRecord(
+    FinancialRecord record,
+    Map<int, List<FinancialItem>> recordItemsMap,
+  ) {
+    final id = record.id;
+    if (id == null) return [];
+    return recordItemsMap[id] ?? [];
+  }
+
   /// 获取患者最新财务记录
   static FinancialRecord? getLatestFinancialRecord(
     int patientId,
@@ -41,7 +50,7 @@ class FinancialCalculator {
       );
       if (latestRecord == null) return 0.0;
 
-      final items = recordItemsMap[latestRecord.id!] ?? [];
+      final items = _getItemsForRecord(latestRecord, recordItemsMap);
       if (items.isEmpty) return 0.0;
 
       // 计算应收费总额（仅项目价格，不包含加工费）
@@ -69,7 +78,7 @@ class FinancialCalculator {
       );
       if (latestRecord == null) return 0.0;
 
-      final items = recordItemsMap[latestRecord.id!] ?? [];
+      final items = _getItemsForRecord(latestRecord, recordItemsMap);
       if (items.isEmpty) return 0.0;
 
       // 计算已收费总额
@@ -91,7 +100,7 @@ class FinancialCalculator {
   ) {
     double total = 0.0;
     for (final record in filteredRecords) {
-      final items = recordItemsMap[record.id!] ?? [];
+      final items = _getItemsForRecord(record, recordItemsMap);
       for (final item in items) {
         total += item.totalPrice;
       }
@@ -105,7 +114,7 @@ class FinancialCalculator {
     Map<int, List<FinancialItem>> recordItemsMap,
   ) {
     return filteredRecords.where((record) {
-      final items = recordItemsMap[record.id!] ?? [];
+      final items = _getItemsForRecord(record, recordItemsMap);
       return items.isNotEmpty && items.every((item) => item.totalPrice > 0);
     }).length;
   }
@@ -165,9 +174,7 @@ class FinancialCalculator {
 
     // 获取所有财务项目
     for (final record in financialRecords) {
-      if (record.id != null && recordItemsMap.containsKey(record.id)) {
-        allItems.addAll(recordItemsMap[record.id]!);
-      }
+      allItems.addAll(_getItemsForRecord(record, recordItemsMap));
     }
 
     // 按收费日期过滤（与统计图表逻辑完全一致）
@@ -274,9 +281,7 @@ class FinancialCalculator {
     // 获取所有财务项目
     final List<FinancialItem> allItems = [];
     for (final record in financialRecords) {
-      if (record.id != null && recordItemsMap.containsKey(record.id)) {
-        allItems.addAll(recordItemsMap[record.id]!);
-      }
+      allItems.addAll(_getItemsForRecord(record, recordItemsMap));
     }
 
     // 按截止日期过滤：只计算结束日期之前的所有财务项目（与统计图表逻辑一致）

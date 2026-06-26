@@ -48,11 +48,13 @@ class MaterialProvider extends ChangeNotifier {
   // 获取当前数据源（优先使用数据源对象）
   MaterialDataSource get _currentDataSource {
     if (_dataSourceType == 'mysql') {
-      if (_mysqlDataSource == null) throw Exception('MySQL材料数据源未初始化');
-      return _mysqlDataSource!;
+      final dataSource = _mysqlDataSource;
+      if (dataSource == null) throw Exception('MySQL材料数据源未初始化');
+      return dataSource;
     } else {
-      if (_sqliteDataSource == null) throw Exception('SQLite材料数据源未初始化');
-      return _sqliteDataSource!;
+      final dataSource = _sqliteDataSource;
+      if (dataSource == null) throw Exception('SQLite材料数据源未初始化');
+      return dataSource;
     }
   }
 
@@ -100,8 +102,9 @@ class MaterialProvider extends ChangeNotifier {
           () => _currentMysqlConnection,
         );
       } else {
-        if (_database != null) {
-          _sqliteDataSource = SqliteMaterialDataSource(_database!);
+        final db = _database;
+        if (db != null) {
+          _sqliteDataSource = SqliteMaterialDataSource(db);
         }
       }
 
@@ -130,8 +133,9 @@ class MaterialProvider extends ChangeNotifier {
     _dataSourceType = dataSourceType;
     // 初始化数据源实现（如果已经传入连接）
     try {
-      if (_database != null) {
-        _sqliteDataSource = SqliteMaterialDataSource(_database!);
+      final db = _database;
+      if (db != null) {
+        _sqliteDataSource = SqliteMaterialDataSource(db);
       }
       if (_mysqlConnection != null) {
         _mysqlDataSource = MySqlMaterialDataSource.withConnectionGetter(
@@ -241,9 +245,10 @@ class MaterialProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
-    if (_dbWrapper == null) return -1;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return -1;
 
-    return await _dbWrapper!.wrapOperation('addMaterial', () async {
+    return await wrapper.wrapOperation('addMaterial', () async {
       try {
         // 使用数据源模式（统一接口）
         final id = await _currentDataSource.createMaterial(material);
@@ -266,9 +271,10 @@ class MaterialProvider extends ChangeNotifier {
       throw Exception('数据库未初始化或材料ID为空');
     }
 
-    if (_dbWrapper == null) return 0;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return 0;
 
-    return await _dbWrapper!.wrapOperation('updateMaterial', () async {
+    return await wrapper.wrapOperation('updateMaterial', () async {
       try {
         // 使用数据源模式（统一接口）
         final success = await _currentDataSource.updateMaterial(material);
@@ -292,9 +298,10 @@ class MaterialProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
-    if (_dbWrapper == null) return 0;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return 0;
 
-    return await _dbWrapper!.wrapOperation('deleteMaterial', () async {
+    return await wrapper.wrapOperation('deleteMaterial', () async {
       try {
         // 使用数据源模式（统一接口）
         final success = await _currentDataSource.deleteMaterial(materialId);
@@ -416,9 +423,10 @@ class MaterialProvider extends ChangeNotifier {
     String operationName,
     Future<T> Function() operation,
   ) async {
-    if (_dbWrapper == null) {
+    final wrapper = _dbWrapper;
+    if (wrapper == null) {
       return await operation();
     }
-    return await _dbWrapper!.wrapOperation(operationName, operation);
+    return await wrapper.wrapOperation(operationName, operation);
   }
 }

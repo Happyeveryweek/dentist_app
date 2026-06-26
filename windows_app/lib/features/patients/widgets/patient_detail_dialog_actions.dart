@@ -7,7 +7,9 @@ import '../../../models/financial_record.dart';
 import '../../../models/patient_medical_record.dart';
 import '../../../providers/medical_record_provider.dart';
 import '../../../widgets/success_toast.dart';
-import '../../../features/financial/widgets/financial_record_edit_dialog.dart' show FinancialRecordEditDialog;
+import '../../../features/financial/widgets/financial_record_edit_dialog.dart'
+    show FinancialRecordEditDialog;
+import '../../../utils/log_manager.dart';
 
 /// 患者详情页弹窗打开流程收口
 ///
@@ -36,6 +38,7 @@ class PatientDetailDialogActions {
 
       return result ?? false;
     } catch (e) {
+      if (!context.mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('编辑财务记录失败: $e'),
@@ -43,7 +46,7 @@ class PatientDetailDialogActions {
           duration: const Duration(seconds: 3),
         ),
       );
-      print('编辑财务记录时发生错误: $e');
+      LogManager.e('PatientDetailDialogActions', '编辑财务记录时发生错误', error: e);
       return false;
     }
   }
@@ -70,10 +73,10 @@ class PatientDetailDialogActions {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.warning_rounded,
                   size: 32,
                   color: Colors.red,
@@ -168,6 +171,7 @@ class PatientDetailDialogActions {
         clinicName: '牙科诊所',
       );
 
+      if (!context.mounted) return;
       // 关闭加载指示器
       Navigator.of(context).pop();
 
@@ -183,6 +187,7 @@ class PatientDetailDialogActions {
         bytes: pdfBytes,
       );
 
+      if (!context.mounted) return;
       AppToastManager.showSuccess(
         context,
         message: 'PDF已保存成功',
@@ -190,16 +195,17 @@ class PatientDetailDialogActions {
       );
     } catch (e) {
       // 关闭加载指示器（如果还在显示）
-      if (Navigator.of(context).canPop()) {
+      if (context.mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
 
+      if (!context.mounted) return;
       // 显示错误提示
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
-              Icon(Icons.error, color: Colors.white),
+              const Icon(Icons.error, color: Colors.white),
               const SizedBox(width: 8),
               Expanded(child: Text('导出PDF失败: $e')),
             ],

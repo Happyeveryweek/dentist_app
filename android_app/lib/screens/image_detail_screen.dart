@@ -73,12 +73,16 @@ class _ImageDetailScreenState extends State<ImageDetailScreen> {
   }
 
   Widget _buildImageViewer() {
+    final fullImageData = _fullImageData;
+    if (fullImageData == null) {
+      return _buildErrorState();
+    }
     return InteractiveViewer(
       minScale: 0.5,
       maxScale: 4.0,
       child: Center(
         child: Image.memory(
-          _fullImageData!,
+          fullImageData,
           fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) {
             return _buildErrorState();

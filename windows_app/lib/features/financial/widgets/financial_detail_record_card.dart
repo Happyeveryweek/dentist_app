@@ -31,24 +31,26 @@ class FinancialDetailRecordCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final detailItem = item;
+    final hasItem = isDetail && detailItem != null;
     return SizedBox(
       height: FinancialDetailTableLayout.rowHeight,
       child: Container(
         decoration: BoxDecoration(
           color: isHighlighted ? Colors.blue[50] : Colors.white,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.grey[200]!, width: 1),
+          border: Border.all(color: Colors.grey.shade200, width: 1),
           boxShadow: isHighlighted
               ? [
                   BoxShadow(
-                    color: Colors.blue[200]!.withOpacity(0.3),
+                    color: Colors.blue.shade200.withValues(alpha: 0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   )
                 ]
               : [
                   BoxShadow(
-                    color: Colors.grey[300]!.withOpacity(0.1),
+                    color: Colors.grey.shade300.withValues(alpha: 0.1),
                     blurRadius: 2,
                     offset: const Offset(0, 1),
                   )
@@ -59,8 +61,8 @@ class FinancialDetailRecordCard extends StatelessWidget {
         child: FinancialDetailTableLayout.buildRow(
           children: [
             Text(
-              isDetail && item != null
-                  ? DateFormat('yyyy-MM-dd').format(item!.chargeDate)
+              hasItem
+                  ? DateFormat('yyyy-MM-dd').format(detailItem.chargeDate)
                   : DateFormat('yyyy-MM-dd').format(record.createdAt),
               style: Theme.of(context)
                   .textTheme
@@ -72,8 +74,8 @@ class FinancialDetailRecordCard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             Text(
-              isDetail && item != null
-                  ? item!.itemName
+              hasItem
+                  ? detailItem.itemName
                   : (record.notes ?? '收费项目'),
               style: Theme.of(context).textTheme.bodyMedium,
               maxLines: 1,
@@ -82,11 +84,11 @@ class FinancialDetailRecordCard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             Center(
-              child: isDetail && item != null
+              child: hasItem
                   ? (() {
                       final iconPath =
                           FinancialPaymentMethodHelper.iconAssetPathOrNull(
-                        item!.paymentMethod,
+                        detailItem.paymentMethod,
                       );
                       if (iconPath == null) {
                         return const SizedBox.shrink();
@@ -94,7 +96,7 @@ class FinancialDetailRecordCard extends StatelessWidget {
                       return Tooltip(
                         message:
                             FinancialPaymentMethodHelper.displayNameOrDefault(
-                                item!.paymentMethod),
+                                detailItem.paymentMethod),
                         child: SizedBox(
                           width: 20,
                           height: 20,
@@ -109,8 +111,8 @@ class FinancialDetailRecordCard extends StatelessWidget {
                   : const SizedBox.shrink(),
             ),
             Text(
-              isDetail && item != null
-                  ? '¥${((item!.itemPrice * (item!.quantity ?? 1)) % 1 == 0 ? (item!.itemPrice * (item!.quantity ?? 1)).toInt().toString() : (item!.itemPrice * (item!.quantity ?? 1)).toStringAsFixed(2))}'
+              hasItem
+                  ? '¥${((detailItem.itemPrice * detailItem.quantity) % 1 == 0 ? (detailItem.itemPrice * detailItem.quantity).toInt().toString() : (detailItem.itemPrice * detailItem.quantity).toStringAsFixed(2))}'
                   : '¥0',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.blue[700],
@@ -122,8 +124,8 @@ class FinancialDetailRecordCard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             Text(
-              isDetail && item != null
-                  ? '¥${(item!.totalPrice % 1 == 0 ? item!.totalPrice.toInt().toString() : item!.totalPrice.toStringAsFixed(2))}'
+              hasItem
+                  ? '¥${(detailItem.totalPrice % 1 == 0 ? detailItem.totalPrice.toInt().toString() : detailItem.totalPrice.toStringAsFixed(2))}'
                   : '¥0',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.green[700],
@@ -137,8 +139,8 @@ class FinancialDetailRecordCard extends StatelessWidget {
             Text(
               !showProcessingFee
                   ? '****'
-                  : isDetail && item != null
-                      ? '¥${(item!.processingFee % 1 == 0 ? item!.processingFee.toInt().toString() : item!.processingFee.toStringAsFixed(2))}'
+                  : hasItem
+                      ? '¥${(detailItem.processingFee % 1 == 0 ? detailItem.processingFee.toInt().toString() : detailItem.processingFee.toStringAsFixed(2))}'
                       : '¥0',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.orange[700],
@@ -159,7 +161,7 @@ class FinancialDetailRecordCard extends StatelessWidget {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.blue[600]!),
+                              AlwaysStoppedAnimation<Color>(Colors.blue.shade600),
                         ),
                       )
                     : IconButton(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// 费用与状态区域
-/// 
+///
 /// 显示费用输入框和预约状态下拉框
 class CostStatusSection extends StatelessWidget {
   final TextEditingController costController;
@@ -36,15 +36,15 @@ class CostStatusSection extends StatelessWidget {
   }
 
   Widget _buildHeader() {
-    return Row(
+    return const Row(
       children: [
         Icon(
           Icons.attach_money,
-          color: const Color(0xFF4CAF50),
+          color: Color(0xFF4CAF50),
           size: 18,
         ),
-        const SizedBox(width: 8),
-        const Text(
+        SizedBox(width: 8),
+        Text(
           '费用与状态',
           style: TextStyle(
             fontSize: 16,
@@ -71,7 +71,8 @@ class CostStatusSection extends StatelessWidget {
               ),
               filled: true,
               fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
             keyboardType: TextInputType.number,
           ),
@@ -86,9 +87,10 @@ class CostStatusSection extends StatelessWidget {
               ),
               filled: true,
               fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
-            value: status,
+            initialValue: status,
             items: const [
               DropdownMenuItem(value: '已预约', child: Text('已预约')),
               DropdownMenuItem(value: '已完成', child: Text('已完成')),

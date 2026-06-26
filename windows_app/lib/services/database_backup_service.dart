@@ -4,9 +4,9 @@ import 'dart:async';
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
-import 'package:flutter/services.dart';
 import '../utils/datetime_formatter.dart';
 import '../utils/app_paths.dart';
+import '../utils/log_manager.dart';
 
 /// 数据库备份恢复服务
 /// 职责：SQLite 和 MySQL 的备份恢复、SQL 语句处理
@@ -39,7 +39,7 @@ class DatabaseBackupService {
       final userBackupPath = backupPath ?? '';
 
       if (userBackupPath.isEmpty) {
-        final errorMsg = '请设置备份路径';
+        const errorMsg = '请设置备份路径';
         if (onLogFailure != null) {
           onLogFailure(errorMsg);
         }
@@ -51,7 +51,6 @@ class DatabaseBackupService {
       if (!await userBackupDir.exists()) {
         try {
           await userBackupDir.create(recursive: true);
-          print('创建备份目录: $userBackupPath');
         } catch (dirError) {
           final errorMsg = '无法创建备份目录: $dirError';
           if (onLogFailure != null) {
@@ -62,12 +61,14 @@ class DatabaseBackupService {
       }
 
       String finalBackupPath;
-      
+
       // 根据备份数据源设置选择备份方法
       final targetDataSource = backupDataSource ?? dataSourceType;
-      
+
       if (targetDataSource == 'mysql') {
-        if (mysqlHost == null || mysqlDatabase == null || mysqlUsername == null) {
+        if (mysqlHost == null ||
+            mysqlDatabase == null ||
+            mysqlUsername == null) {
           throw Exception('MySQL 备份需要提供连接参数');
         }
         finalBackupPath = await backupMySQLDatabase(
@@ -79,7 +80,8 @@ class DatabaseBackupService {
           password: mysqlPassword ?? '',
         );
       } else {
-        finalBackupPath = await backupSQLiteDatabase(backupPath: userBackupPath);
+        finalBackupPath =
+            await backupSQLiteDatabase(backupPath: userBackupPath);
       }
 
       // 备份成功，记录备份日志
@@ -87,10 +89,11 @@ class DatabaseBackupService {
         onLogSuccess(finalBackupPath);
       }
 
-      print('数据库备份完成: $finalBackupPath (数据源: $targetDataSource)');
+      LogManager.i('DatabaseBackupService',
+          '数据库备份完成: $finalBackupPath (数据源: $targetDataSource)');
       return finalBackupPath;
     } catch (e) {
-      print('执行数据库备份时出错: $e');
+      LogManager.e('DatabaseBackupService', '执行数据库备份时出错', error: e);
       rethrow;
     }
   }
@@ -99,17 +102,17 @@ class DatabaseBackupService {
   Future<String> backupSQLiteDatabase({String? backupPath}) async {
     try {
       // 确保数据库连接已初始化
-      if (sqliteDatabase == null) {
+      final db = sqliteDatabase;
+      if (db == null) {
         throw Exception('SQLite 数据库未初始化');
       }
 
       // 优先使用当前 SQLite 连接对应的真实文件路径，避免退回到默认数据目录
-      String resolvedDbPath = sqliteDatabase!.path;
+      String resolvedDbPath = db.path;
       if (resolvedDbPath.isEmpty) {
         try {
           resolvedDbPath = AppPaths.databasePath;
         } catch (e) {
-          print('AppPaths 未初始化，使用默认路径: $e');
           final dbDir = await getDatabasesPath();
           resolvedDbPath = path.join(dbDir, 'dentist_clinic.db');
         }
@@ -135,18 +138,20 @@ class DatabaseBackupService {
 
       // 生成备份文件名
       final timestamp = DateTimeFormatter.nowDbString().replaceAll(':', '-');
-      final backupFilePath = path.join(userBackupPath, 'sqlite_backup_$timestamp.db');
+      final backupFilePath =
+          path.join(userBackupPath, 'sqlite_backup_$timestamp.db');
 
       // 关闭数据库连接，确保没有写入操作
-      await sqliteDatabase!.close();
+      await db.close();
 
       // 复制数据库文件
       await File(resolvedDbPath).copy(backupFilePath);
 
-      print('SQLite 数据库文件已备份到: $backupFilePath');
+      LogManager.w(
+          'DatabaseBackupService', 'SQLite 数据库文件已备份到: $backupFilePath');
       return backupFilePath;
     } catch (e) {
-      print('SQLite 数据库备份出错: $e');
+      LogManager.e('DatabaseBackupService', 'SQLite 数据库备份出错', error: e);
       rethrow;
     }
   }
@@ -160,8 +165,6 @@ class DatabaseBackupService {
     required String username,
     required String password,
   }) async {
-    print('开始MySQL备份过程...');
-
     if (mysqlConnection == null) {
       throw Exception('MySQL 连接未建立');
     }
@@ -171,21 +174,17 @@ class DatabaseBackupService {
     if (userBackupPath.isEmpty) {
       try {
         userBackupPath = AppPaths.defaultBackupDirectory;
-        print('用户未设置备份路径，使用默认应用数据目录: $userBackupPath');
+        LogManager.w(
+            'DatabaseBackupService', '用户未设置备份路径，使用默认应用数据目录: $userBackupPath');
       } catch (e) {
-        print('AppPaths 未初始化，使用系统默认路径: $e');
         final dbDir = await getDatabasesPath();
         userBackupPath = path.join(dbDir, 'backups');
-        print('使用系统默认备份路径: $userBackupPath');
       }
     }
-
-    print('备份目录: $userBackupPath');
 
     // 确保备份目录存在
     final backupDir = Directory(userBackupPath);
     if (!await backupDir.exists()) {
-      print('创建备份目录: ${backupDir.path}');
       await backupDir.create(recursive: true);
     }
 
@@ -193,11 +192,9 @@ class DatabaseBackupService {
     final timestamp = DateTimeFormatter.nowDbString().replaceAll(':', '-');
     final backupFileName = 'backup_$timestamp.sql';
     final finalBackupPath = path.join(userBackupPath, backupFileName);
-    print('备份文件路径: $finalBackupPath');
 
     // 使用 AppPaths 获取 mysqldump 工具路径
     final toolPath = AppPaths.mysqldumpExePath;
-    print('使用 mysqldump 工具: $toolPath');
 
     // 构建命令参数列表
     final List<String> args = [
@@ -210,7 +207,8 @@ class DatabaseBackupService {
       '--result-file=$finalBackupPath'
     ];
 
-    print('执行 mysqldump 命令: $toolPath ${args.join(' ').replaceAll(password, '******')}');
+    LogManager.w('DatabaseBackupService',
+        '执行 mysqldump 命令: $toolPath ${args.join(' ').replaceAll(password, '******')}');
 
     try {
       final result = await Process.run(
@@ -220,18 +218,18 @@ class DatabaseBackupService {
         stderrEncoding: const SystemEncoding(),
       );
 
-      print('mysqldump 命令执行结果: exitCode=${result.exitCode}');
-      print('标准输出: ${result.stdout}');
+      LogManager.w('DatabaseBackupService',
+          'mysqldump 命令执行结果: exitCode=${result.exitCode}');
 
       if (result.exitCode != 0) {
-        print('备份失败，错误输出: ${result.stderr}');
+        LogManager.e('DatabaseBackupService', '备份失败，错误输出',
+            error: result.stderr);
         throw Exception('备份失败: ${result.stderr}');
       }
 
-      print('MySQL 备份已保存到: $finalBackupPath');
       return finalBackupPath;
     } catch (e) {
-      print('执行备份命令时出错: $e');
+      LogManager.e('DatabaseBackupService', '执行备份命令时出错', error: e);
       throw Exception('备份失败: $e');
     }
   }
@@ -255,9 +253,9 @@ class DatabaseBackupService {
         }
       }
 
-      print('数据库恢复成功');
+      LogManager.i('DatabaseBackupService', '数据库恢复成功');
     } catch (e) {
-      print('执行数据库恢复时出错: $e');
+      LogManager.e('DatabaseBackupService', '执行数据库恢复时出错', error: e);
       rethrow;
     }
   }
@@ -265,8 +263,6 @@ class DatabaseBackupService {
   /// SQLite 数据库恢复方法 - 使用文件复制
   Future<void> restoreSQLiteDatabase(String backupFilePath) async {
     try {
-      print('使用文件复制方式恢复 SQLite 数据库');
-
       final backupFile = File(backupFilePath);
       if (!await backupFile.exists()) {
         throw Exception('备份文件不存在: $backupFilePath');
@@ -277,18 +273,13 @@ class DatabaseBackupService {
       try {
         dbPath = AppPaths.databasePath;
       } catch (e) {
-        print('AppPaths 未初始化，使用默认路径: $e');
         final dbDir = await getDatabasesPath();
         dbPath = path.join(dbDir, 'dentist_clinic.db');
       }
 
       // 复制备份文件到数据库位置
       await backupFile.copy(dbPath);
-      print('SQLite 备份文件已复制到: $dbPath');
-
-      print('SQLite 数据库已恢复');
     } catch (e) {
-      print('使用文件复制方式恢复 SQLite 数据库出错: $e');
       rethrow;
     }
   }
@@ -303,16 +294,19 @@ class DatabaseBackupService {
 
       final backupData = jsonDecode(await backupFile.readAsString());
 
+      final mysqlConnection = this.mysqlConnection;
+      final sqliteDatabase = this.sqliteDatabase;
+
       if (dataSourceType == 'mysql' && mysqlConnection != null) {
         // 清空所有表
-        final tables = await mysqlConnection!.query('SHOW TABLES');
+        final tables = await mysqlConnection.query('SHOW TABLES');
         for (var table in tables) {
           final values = table.values;
           final tableName = values != null && values.isNotEmpty
               ? values.first.toString()
               : '';
           if (tableName.isNotEmpty) {
-            await mysqlConnection!.query('TRUNCATE TABLE $tableName');
+            await mysqlConnection.query('TRUNCATE TABLE $tableName');
           }
         }
 
@@ -336,7 +330,7 @@ class DatabaseBackupService {
               return value;
             }).toList();
 
-            await mysqlConnection!.query(
+            await mysqlConnection.query(
               'INSERT INTO $tableName ($fields) VALUES ($placeholders)',
               values,
             );
@@ -344,12 +338,12 @@ class DatabaseBackupService {
         }
       } else if (sqliteDatabase != null) {
         // 清空所有表
-        final tables = await sqliteDatabase!.query('sqlite_master',
+        final tables = await sqliteDatabase.query('sqlite_master',
             where: 'type = ? AND name NOT LIKE ?',
             whereArgs: ['table', 'sqlite_%']);
         for (var table in tables) {
           final tableName = table['name'] as String;
-          await sqliteDatabase!.delete(tableName);
+          await sqliteDatabase.delete(tableName);
         }
 
         // 恢复数据
@@ -369,22 +363,22 @@ class DatabaseBackupService {
               }
             });
 
-            await sqliteDatabase!.insert(tableName, processedRecord);
+            await sqliteDatabase.insert(tableName, processedRecord);
           }
         }
       }
     } catch (e) {
-      print('执行数据库恢复时出错: $e');
+      LogManager.e('DatabaseBackupService', '执行数据库恢复时出错', error: e);
       rethrow;
     }
   }
 
   /// 从 MySQL dump 恢复
-  Future<void> restoreFromMySQLDump(String dumpFilePath, {
+  Future<void> restoreFromMySQLDump(
+    String dumpFilePath, {
     Function(String)? onLogOperation,
   }) async {
-    print('开始恢复 MySQL 数据库...');
-
+    final mysqlConnection = this.mysqlConnection;
     if (dataSourceType != 'mysql' || mysqlConnection == null) {
       throw Exception('当前数据源不是 MySQL 或连接未建立');
     }
@@ -404,26 +398,28 @@ class DatabaseBackupService {
       try {
         sqlContent = await dumpFile.readAsString(encoding: utf8);
       } catch (e) {
-        print('UTF-8 读取文件失败: $e，尝试 Latin1 编码');
+        LogManager.e('DatabaseBackupService', 'UTF-8 读取文件失败，尝试 Latin1 编码',
+            error: e);
         final bytes = await dumpFile.readAsBytes();
         sqlContent = latin1.decode(bytes);
       }
 
-      print('SQL 文件读取成功，大小: ${sqlContent.length} 字符');
+      LogManager.i(
+          'DatabaseBackupService', 'SQL 文件读取成功，大小: ${sqlContent.length} 字符');
 
       // 分割 SQL 语句并执行
       List<String> statements = _splitSqlStatements(sqlContent);
-      print('分割出 ${statements.length} 条 SQL 语句');
+      LogManager.w(
+          'DatabaseBackupService', '分割出 ${statements.length} 条 SQL 语句');
 
       int successCount = 0;
       int failCount = 0;
 
       // 禁用外键约束检查
       try {
-        await mysqlConnection!.query('SET FOREIGN_KEY_CHECKS = 0');
-        print('已禁用外键约束检查');
+        await mysqlConnection.query('SET FOREIGN_KEY_CHECKS = 0');
       } catch (e) {
-        print('禁用外键约束检查失败: $e');
+        LogManager.e('DatabaseBackupService', '禁用外键约束检查失败', error: e);
       }
 
       // 执行每条 SQL 语句
@@ -434,29 +430,31 @@ class DatabaseBackupService {
         }
 
         try {
-          await mysqlConnection!.query(statement);
+          await mysqlConnection.query(statement);
           successCount++;
 
           if (i % 20 == 0 || i == statements.length - 1) {
-            print('已执行 ${i + 1}/${statements.length} 条 SQL 语句');
+            LogManager.w('DatabaseBackupService',
+                '已执行 ${i + 1}/${statements.length} 条 SQL 语句');
           }
         } catch (e) {
           failCount++;
-          print('执行 SQL 语句失败: $e');
-          print('问题语句: ${statement.length > 100 ? statement.substring(0, 100) + "..." : statement}');
+          LogManager.e('DatabaseBackupService', '执行 SQL 语句失败', error: e);
+          LogManager.w('DatabaseBackupService',
+              '问题语句: ${statement.length > 100 ? "${statement.substring(0, 100)}..." : statement}');
         }
       }
 
       // 重新启用外键约束检查
       try {
-        await mysqlConnection!.query('SET FOREIGN_KEY_CHECKS = 1');
-        print('已重新启用外键约束检查');
+        await mysqlConnection.query('SET FOREIGN_KEY_CHECKS = 1');
       } catch (e) {
-        print('重新启用外键约束检查失败: $e');
+        LogManager.e('DatabaseBackupService', '重新启用外键约束检查失败', error: e);
       }
 
-      print('MySQL 数据库已从文件还原: $dumpFilePath');
-      print('成功执行: $successCount 条语句，失败: $failCount 条语句');
+      LogManager.w('DatabaseBackupService', 'MySQL 数据库已从文件还原: $dumpFilePath');
+      LogManager.e('DatabaseBackupService',
+          '成功执行: $successCount 条语句，失败: $failCount 条语句');
 
       if (successCount == 0 && failCount > 0) {
         throw Exception('所有 SQL 语句执行失败，可能存在格式或编码问题');
@@ -467,7 +465,7 @@ class DatabaseBackupService {
         onLogOperation('MySQL 还原完成: ${success ? '成功' : '部分失败'}');
       }
     } catch (e) {
-      print('执行 MySQL 还原时出错: $e');
+      LogManager.e('DatabaseBackupService', '执行 MySQL 还原时出错', error: e);
       rethrow;
     }
   }

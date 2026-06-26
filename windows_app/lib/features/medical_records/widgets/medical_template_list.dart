@@ -26,7 +26,7 @@ class MedicalTemplateList extends StatelessWidget {
   Widget build(BuildContext context) {
     final isTreatment = templateType == 'treatment';
     final themeColor = isTreatment ? Colors.blue : Colors.green;
-    
+
     return Column(
       children: [
         // 美化的工具栏
@@ -36,15 +36,15 @@ class MedicalTemplateList extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                themeColor.withOpacity(0.1),
-                themeColor.withOpacity(0.05),
+                themeColor.withValues(alpha: 0.1),
+                themeColor.withValues(alpha: 0.05),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: themeColor.withOpacity(0.2),
+              color: themeColor.withValues(alpha: 0.2),
             ),
           ),
           child: Row(
@@ -53,7 +53,7 @@ class MedicalTemplateList extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: themeColor.withOpacity(0.1),
+                  color: themeColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -95,7 +95,7 @@ class MedicalTemplateList extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: themeColor.withOpacity(0.3),
+                      color: themeColor.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -114,14 +114,15 @@ class MedicalTemplateList extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
                   ),
                 ),
               ),
             ],
           ),
         ),
-        
+
         // 列表内容
         Expanded(
           child: ListView.builder(

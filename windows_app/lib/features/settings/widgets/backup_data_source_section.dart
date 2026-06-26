@@ -35,7 +35,8 @@ class BackupDataSourceSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('备份数据源设置', Icons.backup_rounded, AppTheme.accentColor),
+        _buildSectionHeader(
+            '备份数据源设置', Icons.backup_rounded, AppTheme.accentColor),
         Container(
           margin: const EdgeInsets.only(bottom: 24),
           decoration: BoxDecoration(
@@ -43,7 +44,7 @@ class BackupDataSourceSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -64,19 +65,19 @@ class BackupDataSourceSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+          colors: [color.withValues(alpha: 0.1), color.withValues(alpha: 0.05)],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -104,10 +105,10 @@ class BackupDataSourceSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.accentColor.withOpacity(0.1),
+                color: AppTheme.accentColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.backup_rounded,
                 color: AppTheme.accentColor,
                 size: 20,
@@ -131,7 +132,8 @@ class BackupDataSourceSection extends StatelessWidget {
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
                   elevation: 2,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -144,7 +146,8 @@ class BackupDataSourceSection extends StatelessWidget {
                 label: const Text('取消'),
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.grey.shade600,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
               ),
               const SizedBox(width: 12),
@@ -156,7 +159,8 @@ class BackupDataSourceSection extends StatelessWidget {
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
                   elevation: 2,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -171,9 +175,9 @@ class BackupDataSourceSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.05),
+            color: Colors.blue.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.blue.withOpacity(0.2)),
+            border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -204,10 +208,10 @@ class BackupDataSourceSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.accentColor.withOpacity(0.05),
+        color: AppTheme.accentColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.accentColor.withOpacity(0.2),
+          color: AppTheme.accentColor.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -225,14 +229,14 @@ class BackupDataSourceSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(
               Icons.radio_button_checked_rounded,
               size: 16,
               color: AppTheme.accentColor,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               '选择备份数据源',
               style: TextStyle(
@@ -253,9 +257,11 @@ class BackupDataSourceSection extends StatelessWidget {
                 Icons.storage_rounded,
                 Colors.blue,
                 backupDataSource == 'sqlite',
-                isBackupDataSourceEditing ? () {
-                  onSetBackupDataSource('sqlite');
-                } : null,
+                isBackupDataSourceEditing
+                    ? () {
+                        onSetBackupDataSource('sqlite');
+                      }
+                    : null,
               ),
             ),
             const SizedBox(width: 12),
@@ -266,9 +272,11 @@ class BackupDataSourceSection extends StatelessWidget {
                 Icons.cloud_done_rounded,
                 Colors.green,
                 backupDataSource == 'mysql',
-                isBackupDataSourceEditing ? () {
-                  onSetBackupDataSource('mysql');
-                } : null,
+                isBackupDataSourceEditing
+                    ? () {
+                        onSetBackupDataSource('mysql');
+                      }
+                    : null,
               ),
             ),
           ],
@@ -278,21 +286,20 @@ class BackupDataSourceSection extends StatelessWidget {
   }
 
   Widget _buildCompactBackupDataSourceOption(
-      String value,
-      String title,
-      IconData icon,
-      Color color,
-      bool isSelected,
-      VoidCallback? onTap,
-    ) {
-    final isEditable = onTap != null;
-    
+    String value,
+    String title,
+    IconData icon,
+    Color color,
+    bool isSelected,
+    VoidCallback? onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : Colors.grey.shade50,
+          color:
+              isSelected ? color.withValues(alpha: 0.1) : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected ? color : Colors.grey.shade300,
@@ -304,7 +311,9 @@ class BackupDataSourceSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isSelected ? color.withOpacity(0.2) : Colors.grey.shade200,
+                color: isSelected
+                    ? color.withValues(alpha: 0.2)
+                    : Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -358,10 +367,10 @@ class BackupDataSourceSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.05),
+        color: Colors.blue.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Colors.blue.withOpacity(0.2),
+          color: Colors.blue.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -413,17 +422,21 @@ class BackupDataSourceSection extends StatelessWidget {
   }
 
   Widget _buildCompactMySQLBackupInfo() {
-    final hasMySQLConfig = hostController.text.isNotEmpty && 
-                          databaseController.text.isNotEmpty &&
-                          hostController.text.isNotEmpty;
-    
+    final hasMySQLConfig = hostController.text.isNotEmpty &&
+        databaseController.text.isNotEmpty &&
+        hostController.text.isNotEmpty;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: hasMySQLConfig ? Colors.green.withOpacity(0.05) : Colors.orange.withOpacity(0.05),
+        color: hasMySQLConfig
+            ? Colors.green.withValues(alpha: 0.05)
+            : Colors.orange.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: hasMySQLConfig ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
+          color: hasMySQLConfig
+              ? Colors.green.withValues(alpha: 0.2)
+              : Colors.orange.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -433,8 +446,12 @@ class BackupDataSourceSection extends StatelessWidget {
           Row(
             children: [
               Icon(
-                hasMySQLConfig ? Icons.check_circle_rounded : Icons.warning_rounded,
-                color: hasMySQLConfig ? Colors.green.shade700 : Colors.orange.shade700,
+                hasMySQLConfig
+                    ? Icons.check_circle_rounded
+                    : Icons.warning_rounded,
+                color: hasMySQLConfig
+                    ? Colors.green.shade700
+                    : Colors.orange.shade700,
                 size: 16,
               ),
               const SizedBox(width: 6),
@@ -443,7 +460,9 @@ class BackupDataSourceSection extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
-                  color: hasMySQLConfig ? Colors.green.shade700 : Colors.orange.shade700,
+                  color: hasMySQLConfig
+                      ? Colors.green.shade700
+                      : Colors.orange.shade700,
                 ),
               ),
             ],
@@ -458,7 +477,9 @@ class BackupDataSourceSection extends StatelessWidget {
           const SizedBox(height: 4),
           DataSourceFormWidgets.buildCompactBackupInfoItem(
             '备份位置',
-            hasMySQLConfig ? '${hostController.text}:${portController.text}/${databaseController.text}' : 'MySQL配置不完整',
+            hasMySQLConfig
+                ? '${hostController.text}:${portController.text}/${databaseController.text}'
+                : 'MySQL配置不完整',
             Icons.cloud_rounded,
             hasMySQLConfig ? Colors.green : Colors.orange,
           ),
@@ -474,9 +495,9 @@ class BackupDataSourceSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [

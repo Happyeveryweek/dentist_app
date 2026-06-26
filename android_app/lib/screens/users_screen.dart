@@ -201,6 +201,8 @@ class _UsersScreenState extends State<UsersScreen> {
 
   /// 构建用户卡片 - 重新设计以适应头像功能
   Widget _buildUserCard(User user) {
+    final imageData = user.imageData;
+    final hasImage = imageData != null && imageData.isNotEmpty;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: AppCard(
@@ -219,11 +221,11 @@ class _UsersScreenState extends State<UsersScreen> {
                     radius: 32,
                     backgroundColor: _getRoleColor(user.role),
                     backgroundImage:
-                        user.imageData != null && user.imageData!.isNotEmpty
-                            ? MemoryImage(Uint8List.fromList(user.imageData!))
+                        hasImage
+                            ? MemoryImage(Uint8List.fromList(imageData))
                             : _getDefaultAvatarImage(user.role),
                     child:
-                        user.imageData != null && user.imageData!.isNotEmpty
+                        hasImage
                             ? null
                             : (_getDefaultAvatarImage(user.role) != null
                                 ? null
@@ -339,7 +341,7 @@ class _UsersScreenState extends State<UsersScreen> {
                       decoration: BoxDecoration(
                         color: Colors.green[100],
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.green[300]!, width: 1),
+                        border: Border.all(color: Colors.green.shade300, width: 1),
                       ),
                       child: Text(
                         '医生: ${user.doctor}',
@@ -531,9 +533,16 @@ class _UsersScreenState extends State<UsersScreen> {
 
   /// 确认删除用户
   Future<void> _confirmDeleteUser(User user) async {
+    final userId = user.id;
+    if (userId == null) {
+      if (mounted) {
+        SuccessToastManager.showError(context, message: '用户ID无效，无法删除');
+      }
+      return;
+    }
     try {
       final provider = Provider.of<UserProvider>(context, listen: false);
-      await provider.deleteUser(user.id!);
+      await provider.deleteUser(userId);
 
       if (mounted) {
         // 使用公共组件的删除成功提示

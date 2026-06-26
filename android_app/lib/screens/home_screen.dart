@@ -21,11 +21,11 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late int _selectedIndex;
+  int _selectedIndex = 0;
   final ValueNotifier<int> _appointmentsRefreshNotifier = ValueNotifier<int>(0);
 
   // 缓存页面实例，避免重复创建
-  late final List<Widget> _pages = [
+  List<Widget> get _pages => [
     const _KeepAlivePage(child: DashboardScreen()),
     const _KeepAlivePage(child: PatientsScreen()),
     _KeepAlivePage(
@@ -222,10 +222,10 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
   bool get wantKeepAlive => true;
 
   int _selectedTabIndex = 0;
-  late TabController _tabController;
+  TabController? _tabController;
 
   // 缓存子页面实例
-  late final List<Widget> _businessPages = [
+  final List<Widget> _businessPages = [
     const _KeepAlivePage(child: FinancialManagementScreen()),
     const _KeepAlivePage(child: PurchaseRecordsScreen()),
     const _KeepAlivePage(child: UsersScreen()),
@@ -235,19 +235,20 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(() {
-      if (_tabController.indexIsChanging) {
+    final controller = TabController(length: 3, vsync: this);
+    controller.addListener(() {
+      if (controller.indexIsChanging) {
         setState(() {
-          _selectedTabIndex = _tabController.index;
+          _selectedTabIndex = controller.index;
         });
       }
     });
+    _tabController = controller;
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -330,7 +331,7 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
           setState(() {
             _selectedTabIndex = index;
           });
-          _tabController.animateTo(index);
+          _tabController?.animateTo(index);
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),

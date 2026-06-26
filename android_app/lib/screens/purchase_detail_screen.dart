@@ -31,6 +31,14 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
   bool _hasError = false;
   String _errorMessage = '';
 
+  int get _recordId {
+    final id = widget.record.id;
+    if (id == null) {
+      throw Exception('采购记录ID无效');
+    }
+    return id;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -56,7 +64,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
 
       AppLogger.info('🔄 开始加载采购项目，记录ID: ${widget.record.id}');
       final items = await purchaseProvider.getPurchaseItemsByRecordId(
-        widget.record.id!,
+        _recordId,
       );
 
       // ✅ 按更新时间降序排序，确保最新添加/更新的项目显示在最上面
@@ -159,7 +167,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
       context: context,
       builder:
           (context) => PurchaseItemDialog(
-            purchaseRecordId: widget.record.id!, // ✅ 传递采购记录ID
+            purchaseRecordId: _recordId, // ✅ 传递采购记录ID
           ),
     );
 
@@ -175,7 +183,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
         // ✅ 确保项目有正确的采购记录ID和统一的时间格式
         final now = DateTimeFormatter.nowLocal();
         final purchaseItem = result.copyWith(
-          purchaseRecordId: widget.record.id!,
+          purchaseRecordId: _recordId,
           createdAt: now,
           updatedAt: now,
         );
@@ -245,7 +253,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
           listen: false,
         );
         final success = await purchaseProvider.deletePurchaseRecord(
-          widget.record.id!,
+          _recordId,
         );
 
         if (success > 0) {

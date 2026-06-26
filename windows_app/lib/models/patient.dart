@@ -1,127 +1,128 @@
-import 'package:intl/intl.dart';
 import 'dart:convert';
-import 'package:mysql1/mysql1.dart'; // 添加MySQL导入以支持Blob类型
+import 'package:mysql1/mysql1.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/log_manager.dart';
+import '../utils/map_parser.dart';
 
 // 患者模型
 class Patient {
   final int? id;
   final String name;
-  final String? name_pinyin; // 姓名拼音
-  final String? name_initials; // 姓名首字母缩写
+  final String? namePinyin; // 姓名拼音
+  final String? nameInitials; // 姓名首字母缩写
   final int age;
   final String gender;
   final dynamic phone; // 可以是字符串或JSON数组字符串
-  final int? medical_record_number;
+  final int? medicalRecordNumber;
   final String? address;
-  final String? address_pinyin; // 地址拼音
-  final String? identification_number;
+  final String? addressPinyin; // 地址拼音
+  final String? identificationNumber;
   final String? doctor;
-  final String? dental_condition; // JSON字符串格式
-  final String? treatment_items;
-  final DateTime first_visit_date;
-  final double total_cost;
-  final String? medical_history; // 病史信息
-  final DateTime created_at; // 添加创建时间字段
-  final DateTime updated_at; // 添加更新时间字段
+  final String? dentalCondition; // JSON字符串格式
+  final String? treatmentItems;
+  final DateTime firstVisitDate;
+  final double totalCost;
+  final String? medicalHistory; // 病史信息
+  final DateTime createdAt; // 添加创建时间字段
+  final DateTime updatedAt; // 添加更新时间字段
 
   Patient({
     this.id,
     required this.name,
-    this.name_pinyin,
-    this.name_initials,
+    this.namePinyin,
+    this.nameInitials,
     required this.age,
     required this.gender,
     required this.phone,
-    this.medical_record_number,
+    this.medicalRecordNumber,
     this.address,
-    this.address_pinyin,
-    this.identification_number,
+    this.addressPinyin,
+    this.identificationNumber,
     this.doctor,
-    this.dental_condition,
-    this.treatment_items,
-    required this.first_visit_date,
-    this.total_cost = 0.0,
-    this.medical_history, // 病史信息
-    DateTime? created_at, // 添加创建时间参数
-    DateTime? updated_at, // 添加更新时间参数
-  })  : created_at = created_at ?? DateTime.now(), // 如果未提供，则使用当前时间
-        updated_at = updated_at ?? DateTime.now(); // 如果未提供，则使用当前时间
+    this.dentalCondition,
+    this.treatmentItems,
+    required this.firstVisitDate,
+    this.totalCost = 0.0,
+    this.medicalHistory, // 病史信息
+    DateTime? createdAt, // 添加创建时间参数
+    DateTime? updatedAt, // 添加更新时间参数
+  })  : createdAt = createdAt ?? DateTime.now(), // 如果未提供，则使用当前时间
+        updatedAt = updatedAt ?? DateTime.now(); // 如果未提供，则使用当前时间
 
-  // 从Map构造Patient对象
-  factory Patient.fromMap(Map<String, dynamic> map) {
-    // 辅助方法：安全转换字符串，处理BLOB类型
-    String? safeStringFromField(dynamic field) {
-      if (field == null) return null;
-      if (field is String) return field;
-      if (field is Blob) {
-        try {
-          return String.fromCharCodes(field.toBytes());
-        } catch (e) {
-          print('Patient.fromMap: Blob转换失败: $e');
-          return '';
-        }
-      }
-      // 安全地转换为字符串，避免递归调用
+  // 安全转换字符串，处理BLOB类型
+  static String? _safeStringFromField(dynamic field) {
+    if (field == null) return null;
+    if (field is String) return field;
+    if (field is Blob) {
       try {
-        return field.toString();
+        return String.fromCharCodes(field.toBytes());
       } catch (e) {
-        print('Patient.fromMap: 字段转换失败: $e');
+        LogManager.e('Patient', 'Blob转换失败', error: e);
         return '';
       }
     }
-
-    // 处理创建时间和更新时间
-    DateTime createdAt = DateTime.now();
-    if (map['created_at'] != null) {
-      try {
-        if (map['created_at'] is DateTime) {
-          createdAt = map['created_at'];
-        } else {
-          createdAt = DateTimeFormatter.fromDbString(map['created_at'].toString());
-        }
-      } catch (e) {
-        print('解析created_at错误: ${map['created_at']}');
-      }
+    try {
+      return field.toString();
+    } catch (e) {
+      LogManager.e('Patient', '字段转换失败', error: e);
+      return '';
     }
+  }
 
-    DateTime updatedAt = DateTime.now();
-    if (map['updated_at'] != null) {
+  // 从Map构造Patient对象
+  factory Patient.fromMap(Map<String, dynamic> map) {
+    final p = MapParser(map, context: 'Patient');
+
+    DateTime parseDateTime(dynamic value) {
+      if (value is DateTime) return value;
+      final s = _safeStringFromField(value);
+      if (s == null || s.isEmpty) return DateTime.now();
       try {
-        if (map['updated_at'] is DateTime) {
-          updatedAt = map['updated_at'];
-        } else {
-          updatedAt = DateTimeFormatter.fromDbString(map['updated_at'].toString());
-        }
+        return DateTimeFormatter.fromDbString(s);
       } catch (e) {
-        print('解析updated_at错误: ${map['updated_at']}');
+        LogManager.w('Patient', '日期解析失败: $value');
+        return DateTime.now();
       }
     }
 
     return Patient(
-      id: map['id'],
-      name: safeStringFromField(map['name']) ?? '',
-      name_pinyin: safeStringFromField(map['name_pinyin']),
-      name_initials: safeStringFromField(map['name_initials']),
-      age: map['age'] ?? 0,
-      gender: safeStringFromField(map['gender']) ?? '',
+      id: p.optional('id', (v) => v as int),
+      name: _safeStringFromField(map['name']) ?? '',
+      namePinyin: _safeStringFromField(map['name_pinyin']),
+      nameInitials: _safeStringFromField(map['name_initials']),
+      age: p.integer('age'),
+      gender: _safeStringFromField(map['gender']) ?? '',
       phone: map['phone'] ?? '',
-      medical_record_number: map['medical_record_number'],
-      address: safeStringFromField(map['address']),
-      address_pinyin: safeStringFromField(map['address_pinyin']),
-      identification_number: safeStringFromField(map['identification_number']),
-      doctor: safeStringFromField(map['doctor']),
-      dental_condition: safeStringFromField(map['dental_condition']),
-      treatment_items: safeStringFromField(map['treatment_items']),
-      first_visit_date: map['first_visit_date'] is DateTime
-          ? map['first_visit_date']
-          : map['first_visit_date'] != null 
-              ? DateTimeFormatter.fromDbString(safeStringFromField(map['first_visit_date']) ?? DateTimeFormatter.nowDbString())
-              : DateTime.now(),
-      total_cost: map['total_cost']?.toDouble() ?? 0.0,
-      medical_history: safeStringFromField(map['medical_history']), // 病史信息
-      created_at: createdAt, // 设置创建时间
-      updated_at: updatedAt, // 设置更新时间
+      medicalRecordNumber: p.optional('medical_record_number', (v) => v as int),
+      address: _safeStringFromField(map['address']),
+      addressPinyin: _safeStringFromField(map['address_pinyin']),
+      identificationNumber: _safeStringFromField(map['identification_number']),
+      doctor: _safeStringFromField(map['doctor']),
+      dentalCondition: _safeStringFromField(map['dental_condition']),
+      treatmentItems: _safeStringFromField(map['treatment_items']),
+      firstVisitDate: parseDateTime(map['first_visit_date']),
+      totalCost: p.decimal('total_cost'),
+      medicalHistory: _safeStringFromField(map['medical_history']),
+      createdAt: parseDateTime(map['created_at']),
+      updatedAt: parseDateTime(map['updated_at']),
+    );
+  }
+
+  // 为缺失患者信息的财务记录生成占位患者，
+  // 在应显示姓名处展示财务记录 ID 以便定位问题。
+  factory Patient.placeholderForFinancialRecord({
+    required int? patientId,
+    required int? recordId,
+    required DateTime createdAt,
+  }) {
+    return Patient(
+      id: patientId,
+      name: '记录ID: ${recordId ?? patientId}',
+      age: 0,
+      gender: '',
+      phone: '',
+      firstVisitDate: createdAt,
+      medicalRecordNumber: patientId,
     );
   }
 
@@ -130,23 +131,23 @@ class Patient {
     return {
       'id': id,
       'name': name,
-      'name_pinyin': name_pinyin,
-      'name_initials': name_initials,
+      'name_pinyin': namePinyin,
+      'name_initials': nameInitials,
       'age': age,
       'gender': gender,
       'phone': phone,
-      'medical_record_number': medical_record_number,
+      'medical_record_number': medicalRecordNumber,
       'address': address,
-      'address_pinyin': address_pinyin,
-      'identification_number': identification_number,
+      'address_pinyin': addressPinyin,
+      'identification_number': identificationNumber,
       'doctor': doctor,
-      'dental_condition': dental_condition,
-      'treatment_items': treatment_items,
-      'first_visit_date': DateTimeFormatter.toDbString(first_visit_date),
-      'total_cost': total_cost,
-      'medical_history': medical_history, // 病史信息
-      'created_at': DateTimeFormatter.toDbString(created_at),
-      'updated_at': DateTimeFormatter.toDbString(updated_at),
+      'dental_condition': dentalCondition,
+      'treatment_items': treatmentItems,
+      'first_visit_date': DateTimeFormatter.toDbString(firstVisitDate),
+      'total_cost': totalCost,
+      'medical_history': medicalHistory, // 病史信息
+      'created_at': DateTimeFormatter.toDbString(createdAt),
+      'updated_at': DateTimeFormatter.toDbString(updatedAt),
     };
   }
 
@@ -154,46 +155,44 @@ class Patient {
   Patient copyWith({
     int? id,
     String? name,
-    String? name_pinyin,
-    String? name_initials,
+    String? namePinyin,
+    String? nameInitials,
     int? age,
     String? gender,
     dynamic phone,
-    int? medical_record_number,
+    int? medicalRecordNumber,
     String? address,
-    String? address_pinyin,
-    String? identification_number,
+    String? addressPinyin,
+    String? identificationNumber,
     String? doctor,
-    String? dental_condition,
-    String? treatment_items,
-    DateTime? first_visit_date,
-    double? total_cost,
-    String? medical_history, // 病史信息
-    DateTime? created_at, // 添加创建时间参数
-    DateTime? updated_at, // 添加更新时间参数
+    String? dentalCondition,
+    String? treatmentItems,
+    DateTime? firstVisitDate,
+    double? totalCost,
+    String? medicalHistory, // 病史信息
+    DateTime? createdAt, // 添加创建时间参数
+    DateTime? updatedAt, // 添加更新时间参数
   }) {
     return Patient(
       id: id ?? this.id,
       name: name ?? this.name,
-      name_pinyin: name_pinyin ?? this.name_pinyin,
-      name_initials: name_initials ?? this.name_initials,
+      namePinyin: namePinyin ?? this.namePinyin,
+      nameInitials: nameInitials ?? this.nameInitials,
       age: age ?? this.age,
       gender: gender ?? this.gender,
       phone: phone ?? this.phone,
-      medical_record_number:
-          medical_record_number ?? this.medical_record_number,
+      medicalRecordNumber: medicalRecordNumber ?? this.medicalRecordNumber,
       address: address ?? this.address,
-      address_pinyin: address_pinyin ?? this.address_pinyin,
-      identification_number:
-          identification_number ?? this.identification_number,
+      addressPinyin: addressPinyin ?? this.addressPinyin,
+      identificationNumber: identificationNumber ?? this.identificationNumber,
       doctor: doctor ?? this.doctor,
-      dental_condition: dental_condition ?? this.dental_condition,
-      treatment_items: treatment_items ?? this.treatment_items,
-      first_visit_date: first_visit_date ?? this.first_visit_date,
-      total_cost: total_cost ?? this.total_cost,
-      medical_history: medical_history ?? this.medical_history, // 病史信息
-      created_at: created_at ?? this.created_at, // 设置创建时间
-      updated_at: updated_at ?? this.updated_at, // 设置更新时间
+      dentalCondition: dentalCondition ?? this.dentalCondition,
+      treatmentItems: treatmentItems ?? this.treatmentItems,
+      firstVisitDate: firstVisitDate ?? this.firstVisitDate,
+      totalCost: totalCost ?? this.totalCost,
+      medicalHistory: medicalHistory ?? this.medicalHistory, // 病史信息
+      createdAt: createdAt ?? this.createdAt, // 设置创建时间
+      updatedAt: updatedAt ?? this.updatedAt, // 设置更新时间
     );
   }
 
@@ -232,10 +231,14 @@ class Patient {
         RegExp regex = RegExp(r'"([^"]*)"');
         var matches = regex.allMatches(phoneStr);
         if (matches.isNotEmpty) {
-          return matches.map((match) => match.group(1)!).toList();
+          return matches
+              .map((match) => match.group(1))
+              .where((group) => group != null)
+              .cast<String>()
+              .toList();
         }
       } catch (e) {
-        print('解析电话号码时出错: $e');
+        LogManager.e('Patient', '解析电话号码时出错', error: e);
       }
 
       // 如果所有解析都失败，将整个字符串作为一个电话号码
@@ -268,12 +271,13 @@ class Patient {
 
   // 获取牙齿状况数据
   Map<String, dynamic> get dentalCharts {
-    if (dental_condition == null || dental_condition!.isEmpty) return {};
+    final condition = dentalCondition;
+    if (condition == null || condition.isEmpty) return {};
 
     try {
-      return jsonDecode(dental_condition!) as Map<String, dynamic>;
+      return jsonDecode(condition) as Map<String, dynamic>;
     } catch (e) {
-      print('解析牙齿状况数据时出错: $e');
+      LogManager.e('Patient', '解析牙齿状况数据时出错', error: e);
       return {};
     }
   }

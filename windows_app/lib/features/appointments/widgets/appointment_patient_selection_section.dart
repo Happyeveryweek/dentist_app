@@ -18,6 +18,7 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final patient = selectedPatient;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -28,15 +29,15 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.person,
-                color: const Color(0xFF667eea),
+                color: Color(0xFF667eea),
                 size: 18,
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 '患者信息',
                 style: TextStyle(
                   fontSize: 16,
@@ -51,17 +52,18 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF667eea).withOpacity(0.1),
+                color: const Color(0xFF667eea).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF667eea).withOpacity(0.3)),
+                border: Border.all(
+                    color: const Color(0xFF667eea).withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.person, color: const Color(0xFF667eea)),
+                  const Icon(Icons.person, color: Color(0xFF667eea)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      '患者: ${selectedPatient?.name ?? '未选择'}',
+                      '患者: ${patient?.name ?? '未选择'}',
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF667eea),
@@ -89,10 +91,11 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.person, color: AppTheme.primaryColor, size: 18),
+                      const Icon(Icons.person,
+                          color: AppTheme.primaryColor, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: selectedPatient == null
+                        child: patient == null
                             ? Text(
                                 '请选择患者',
                                 style: TextStyle(
@@ -104,7 +107,7 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    selectedPatient!.name,
+                                    patient.name,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w600,
                                       fontSize: 14,
@@ -112,7 +115,7 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '最近就诊: ${selectedPatient!.updated_at.year.toString().padLeft(4, '0')}-${selectedPatient!.updated_at.month.toString().padLeft(2, '0')}-${selectedPatient!.updated_at.day.toString().padLeft(2, '0')}',
+                                    '最近就诊: ${patient.updatedAt.year.toString().padLeft(4, '0')}-${patient.updatedAt.month.toString().padLeft(2, '0')}-${patient.updatedAt.day.toString().padLeft(2, '0')}',
                                     style: TextStyle(
                                       fontSize: 12,
                                       color: Colors.grey.shade600,
@@ -122,7 +125,7 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
                               ),
                       ),
                       const SizedBox(width: 12),
-                      Icon(
+                      const Icon(
                         Icons.search,
                         color: AppTheme.primaryColor,
                         size: 22,

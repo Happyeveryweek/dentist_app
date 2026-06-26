@@ -1,6 +1,7 @@
 import '../../../models/medical_record_template.dart';
 import '../../../data_sources/medical_record_data_source.dart';
 import 'medical_record_sync_service.dart';
+import '../../../utils/log_manager.dart';
 
 /// 病历模板管理服务
 /// 负责处理所有与病历模板相关的业务逻辑
@@ -39,13 +40,13 @@ class MedicalRecordTemplateService {
 
     try {
       // 检查缓存
+      final cached = cachedTemplates?[category];
       if (!forceRefresh &&
           lastTemplateCacheTime != null &&
           DateTime.now().difference(lastTemplateCacheTime) <
               cacheValidDuration &&
-          cachedTemplates != null &&
-          cachedTemplates.containsKey(category)) {
-        return cachedTemplates[category]!;
+          cached != null) {
+        return cached;
       }
 
       setLoading(true);
@@ -61,13 +62,15 @@ class MedicalRecordTemplateService {
       clearError();
       return templates;
     } catch (e) {
-      print('获取模板列表时出错: $e');
+      LogManager.e('MedicalRecordTemplateService', '获取模板列表时出错', error: e);
       setError('获取模板列表失败: $e');
 
       // 优雅降级：如果有缓存数据，返回缓存
-      if (cachedTemplates != null && cachedTemplates.containsKey(category)) {
-        print('MedicalRecordTemplateService: 连接失败，返回缓存数据');
-        return cachedTemplates[category]!;
+      final cached = cachedTemplates?[category];
+      if (cached != null) {
+        LogManager.e('MedicalRecordTemplateService',
+            'MedicalRecordTemplateService: 连接失败，返回缓存数据');
+        return cached;
       }
 
       return [];
@@ -87,13 +90,11 @@ class MedicalRecordTemplateService {
       setLoading(true);
 
       final template = await dataSource.getTemplateById(id);
-      print(
-          'MedicalRecordTemplateService: ${template != null ? '找到模板' : '未找到模板'}');
 
       clearError();
       return template;
     } catch (e) {
-      print('根据ID获取模板时出错: $e');
+      LogManager.e('MedicalRecordTemplateService', '根据ID获取模板时出错', error: e);
       setError('获取模板失败: $e');
       return null;
     } finally {
@@ -144,8 +145,6 @@ class MedicalRecordTemplateService {
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (syncService.needsSync) {
-          print(
-              'MedicalRecordTemplateService: SQLite模板创建成功，开始同步到MySQL: 模板ID=$id');
           syncService.syncTemplateToMySQL(
               template.copyWith(id: id).toMap(), id);
         }
@@ -157,7 +156,7 @@ class MedicalRecordTemplateService {
 
       return id;
     } catch (e) {
-      print('创建模板时出错: $e');
+      LogManager.e('MedicalRecordTemplateService', '创建模板时出错', error: e);
       setError('创建模板失败: $e');
       rethrow;
     } finally {
@@ -210,10 +209,9 @@ class MedicalRecordTemplateService {
         }
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
-        if (syncService.needsSync) {
-          print(
-              'MedicalRecordTemplateService: SQLite模板更新成功，开始同步到MySQL: 模板ID=${template.id}');
-          syncService.syncTemplateToMySQL(template.toMap(), template.id!);
+        final templateId = template.id;
+        if (syncService.needsSync && templateId != null) {
+          syncService.syncTemplateToMySQL(template.toMap(), templateId);
         }
 
         clearError();
@@ -223,7 +221,7 @@ class MedicalRecordTemplateService {
 
       return success;
     } catch (e) {
-      print('更新模板时出错: $e');
+      LogManager.e('MedicalRecordTemplateService', '更新模板时出错', error: e);
       setError('更新模板失败: $e');
       rethrow;
     } finally {
@@ -248,7 +246,9 @@ class MedicalRecordTemplateService {
       final templateToDelete = await dataSource.getTemplateById(id);
 
       if (templateToDelete == null) {
-        print('MedicalRecordTemplateService: 错误：找不到要删除的模板，ID: $id');
+        LogManager.e('MedicalRecordTemplateService',
+            'MedicalRecordTemplateService: 错误：找不到要删除的模板，ID',
+            error: id);
         return false;
       }
 
@@ -260,8 +260,6 @@ class MedicalRecordTemplateService {
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (syncService.needsSync) {
-          print(
-              'MedicalRecordTemplateService: SQLite模板删除成功，开始同步删除到MySQL: 模板ID=$id');
           syncService.syncDeleteTemplateToMySQL(id);
         }
 
@@ -273,7 +271,7 @@ class MedicalRecordTemplateService {
 
       return success;
     } catch (e) {
-      print('删除模板时出错: $e');
+      LogManager.e('MedicalRecordTemplateService', '删除模板时出错', error: e);
       setError('删除模板失败: $e');
       rethrow;
     } finally {
@@ -293,12 +291,9 @@ class MedicalRecordTemplateService {
     try {
       setLoading(true);
 
-      print('MedicalRecordTemplateService: 初始化默认模板');
       final success = await dataSource.initializeDefaultTemplates();
 
       if (success) {
-        print('MedicalRecordTemplateService: 默认模板初始化成功');
-
         // 清除所有模板缓存
         clearTemplateCache?.call();
 
@@ -310,7 +305,7 @@ class MedicalRecordTemplateService {
 
       return success;
     } catch (e) {
-      print('初始化默认模板时出错: $e');
+      LogManager.e('MedicalRecordTemplateService', '初始化默认模板时出错', error: e);
       setError('初始化默认模板失败: $e');
       rethrow;
     } finally {
@@ -330,7 +325,7 @@ class MedicalRecordTemplateService {
       clearError();
       return hasData;
     } catch (e) {
-      print('检查模板数据时出错: $e');
+      LogManager.e('MedicalRecordTemplateService', '检查模板数据时出错', error: e);
       setError('检查模板数据失败: $e');
       return false;
     }
@@ -341,15 +336,12 @@ class MedicalRecordTemplateService {
     try {
       setLoading(true);
 
-      print('MedicalRecordTemplateService: 加载模板数据，类别: $category');
-
       // 强制刷新该类别的模板数据
       await getTemplatesByCategory(category, forceRefresh: true);
 
-      print('MedicalRecordTemplateService: 模板数据加载完成');
       clearError();
     } catch (e) {
-      print('加载模板数据时出错: $e');
+      LogManager.e('MedicalRecordTemplateService', '加载模板数据时出错', error: e);
       setError('加载模板数据失败: $e');
       rethrow;
     } finally {
@@ -377,18 +369,17 @@ class MedicalRecordTemplateService {
           }
         } else {
           // 子类型
-          final parentName = template.parentName!;
-          if (!options.containsKey(parentName)) {
-            options[parentName] = [];
-          }
-          options[parentName]!.add(template.name);
+          final parentName = template.parentName;
+          if (parentName == null) continue;
+          final list = options.putIfAbsent(parentName, () => []);
+          list.add(template.name);
         }
       }
 
       clearError();
       return options;
     } catch (e) {
-      print('获取疾病选项时出错: $e');
+      LogManager.e('MedicalRecordTemplateService', '获取疾病选项时出错', error: e);
       setError('获取疾病选项失败: $e');
       return {};
     }
@@ -409,7 +400,7 @@ class MedicalRecordTemplateService {
       clearError();
       return templates;
     } catch (e) {
-      print('搜索模板时出错: $e');
+      LogManager.e('MedicalRecordTemplateService', '搜索模板时出错', error: e);
       setError('搜索模板失败: $e');
       return [];
     } finally {
@@ -429,7 +420,7 @@ class MedicalRecordTemplateService {
       clearError();
       return hasRelated;
     } catch (e) {
-      print('检查模板关联记录时出错: $e');
+      LogManager.e('MedicalRecordTemplateService', '检查模板关联记录时出错', error: e);
       setError('检查模板关联记录失败: $e');
       return false;
     }
@@ -464,7 +455,7 @@ class MedicalRecordTemplateService {
       clearError();
       return allTemplates;
     } catch (e) {
-      print('获取所有模板时出错: $e');
+      LogManager.e('MedicalRecordTemplateService', '获取所有模板时出错', error: e);
       setError('获取所有模板失败: $e');
       return {};
     } finally {
@@ -508,7 +499,7 @@ class MedicalRecordTemplateService {
 
       return createdIds;
     } catch (e) {
-      print('批量创建模板时出错: $e');
+      LogManager.e('MedicalRecordTemplateService', '批量创建模板时出错', error: e);
       setError('批量创建模板失败: $e');
       rethrow;
     } finally {

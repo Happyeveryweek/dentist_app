@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// 牙齿情况区域
-/// 
+///
 /// 显示两个牙位图，每个牙位图包含四个输入框（左上、右上、左下、右下）
 class TeethConditionSection extends StatelessWidget {
   final List<Map<String, String>> teethData;
@@ -25,15 +25,15 @@ class TeethConditionSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.medical_services,
-                color: const Color(0xFF2196F3),
+                color: Color(0xFF2196F3),
                 size: 18,
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 '牙齿情况',
                 style: TextStyle(
                   fontSize: 16,
@@ -46,13 +46,15 @@ class TeethConditionSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Expanded(child: TeethCrossWidget(
+              Expanded(
+                  child: TeethCrossWidget(
                 crossIndex: 0,
                 teethData: teethData,
                 onChanged: onTeethDataChanged,
               )),
               const SizedBox(width: 4),
-              Expanded(child: TeethCrossWidget(
+              Expanded(
+                  child: TeethCrossWidget(
                 crossIndex: 1,
                 teethData: teethData,
                 onChanged: onTeethDataChanged,
@@ -129,16 +131,16 @@ class TeethCross extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double width = 120.0;
-    final double height = 65.0;
-    final double centerX = width / 2;
-    final double centerY = height / 2;
+    const double width = 120.0;
+    const double height = 65.0;
+    const double centerX = width / 2;
+    const double centerY = height / 2;
 
     return Stack(
       alignment: Alignment.center,
       children: [
         CustomPaint(
-          size: Size(width, height),
+          size: const Size(width, height),
           painter: CrossPainter(),
         ),
         Positioned(
@@ -189,7 +191,8 @@ class TeethCross extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(String field, TextAlign textAlign, EdgeInsets contentPadding) {
+  Widget _buildTextField(
+      String field, TextAlign textAlign, EdgeInsets contentPadding) {
     return TextField(
       textAlign: textAlign,
       textAlignVertical: TextAlignVertical.center,

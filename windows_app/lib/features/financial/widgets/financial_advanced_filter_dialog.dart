@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
 import '../helpers/amount_input_formatter.dart';
 
@@ -26,10 +25,12 @@ class FinancialAdvancedFilterDialog extends StatefulWidget {
   });
 
   @override
-  State<FinancialAdvancedFilterDialog> createState() => _FinancialAdvancedFilterDialogState();
+  State<FinancialAdvancedFilterDialog> createState() =>
+      _FinancialAdvancedFilterDialogState();
 }
 
-class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterDialog> {
+class _FinancialAdvancedFilterDialogState
+    extends State<FinancialAdvancedFilterDialog> {
   late String _chargeItemQuery;
   late String _receivableMin;
   late String _receivableMax;
@@ -65,11 +66,14 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
               children: [
                 const Icon(Icons.tune, size: 18, color: Colors.black54),
                 const SizedBox(width: 8),
-                const Text('高级筛选', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                const Text('高级筛选',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                 const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close, size: 20, color: Colors.black54),
+                  icon:
+                      const Icon(Icons.close, size: 20, color: Colors.black54),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -77,7 +81,8 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
             ),
             const SizedBox(height: 10),
             TextField(
-              decoration: const InputDecoration(labelText: '收费项目（模糊）', prefixIcon: Icon(Icons.receipt_long)),
+              decoration: const InputDecoration(
+                  labelText: '收费项目（模糊）', prefixIcon: Icon(Icons.receipt_long)),
               controller: TextEditingController(text: _chargeItemQuery),
               onChanged: (v) => _chargeItemQuery = v,
             ),
@@ -85,8 +90,11 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
             Row(children: [
               Expanded(
                 child: TextField(
-                  decoration: const InputDecoration(labelText: '应收费最小值', prefixIcon: Icon(Icons.attach_money)),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                      labelText: '应收费最小值',
+                      prefixIcon: Icon(Icons.attach_money)),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [amountInputFormatter],
                   controller: TextEditingController(text: _receivableMin),
                   onChanged: (v) => _receivableMin = v,
@@ -95,8 +103,11 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
               const SizedBox(width: 10),
               Expanded(
                 child: TextField(
-                  decoration: const InputDecoration(labelText: '应收费最大值', prefixIcon: Icon(Icons.attach_money)),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                      labelText: '应收费最大值',
+                      prefixIcon: Icon(Icons.attach_money)),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [amountInputFormatter],
                   controller: TextEditingController(text: _receivableMax),
                   onChanged: (v) => _receivableMax = v,
@@ -107,8 +118,10 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
             Row(children: [
               Expanded(
                 child: TextField(
-                  decoration: const InputDecoration(labelText: '已收费最小值', prefixIcon: Icon(Icons.payments)),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                      labelText: '已收费最小值', prefixIcon: Icon(Icons.payments)),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [amountInputFormatter],
                   controller: TextEditingController(text: _receivedMin),
                   onChanged: (v) => _receivedMin = v,
@@ -117,8 +130,10 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
               const SizedBox(width: 10),
               Expanded(
                 child: TextField(
-                  decoration: const InputDecoration(labelText: '已收费最大值', prefixIcon: Icon(Icons.payments)),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                      labelText: '已收费最大值', prefixIcon: Icon(Icons.payments)),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [amountInputFormatter],
                   controller: TextEditingController(text: _receivedMax),
                   onChanged: (v) => _receivedMax = v,
@@ -129,8 +144,10 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
             Row(children: [
               Expanded(
                 child: TextField(
-                  decoration: const InputDecoration(labelText: '加工费最小值', prefixIcon: Icon(Icons.build)),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                      labelText: '加工费最小值', prefixIcon: Icon(Icons.build)),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [amountInputFormatter],
                   controller: TextEditingController(text: _processingMin),
                   onChanged: (v) => _processingMin = v,
@@ -139,8 +156,10 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
               const SizedBox(width: 10),
               Expanded(
                 child: TextField(
-                  decoration: const InputDecoration(labelText: '加工费最大值', prefixIcon: Icon(Icons.build)),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                      labelText: '加工费最大值', prefixIcon: Icon(Icons.build)),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [amountInputFormatter],
                   controller: TextEditingController(text: _processingMax),
                   onChanged: (v) => _processingMax = v,
@@ -162,7 +181,8 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
                 const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () {
-                    double? p(String s) => s.trim().isEmpty ? null : double.tryParse(s.trim());
+                    double? p(String s) =>
+                        s.trim().isEmpty ? null : double.tryParse(s.trim());
                     Navigator.of(context).pop({
                       'cleared': false,
                       'chargeItemQuery': _chargeItemQuery.trim(),
@@ -174,7 +194,8 @@ class _FinancialAdvancedFilterDialogState extends State<FinancialAdvancedFilterD
                       'processingMax': p(_processingMax),
                     });
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: DentalColors.primary),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: DentalColors.primary),
                   child: const Text('应用筛选'),
                 )
               ],

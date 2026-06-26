@@ -42,7 +42,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.green[50],
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.green[200]!),
+            border: Border.all(color: Colors.green.shade200),
           ),
           child: Row(
             children: [
@@ -69,11 +69,13 @@ class PurchaseFormItemListSection extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     onTap: () => onAddItem(0),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 10),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.add, color: Colors.blue.shade600, size: 16),
+                          Icon(Icons.add,
+                              color: Colors.blue.shade600, size: 16),
                           const SizedBox(width: 6),
                           Text(
                             '添加项目',
@@ -269,10 +271,12 @@ class PurchaseFormItemListSection extends StatelessWidget {
                                   border: InputBorder.none,
                                   enabledBorder: InputBorder.none,
                                   focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 12),
                                 ),
                                 style: const TextStyle(fontSize: 14),
-                                onChanged: (value) => onMaterialNameChanged(index, value),
+                                onChanged: (value) =>
+                                    onMaterialNameChanged(index, value),
                               ),
                             ),
                           ),
@@ -289,7 +293,8 @@ class PurchaseFormItemListSection extends StatelessWidget {
                                     color: Colors.blue.shade100,
                                     borderRadius: BorderRadius.circular(4),
                                   ),
-                                  child: Icon(Icons.search, size: 16, color: Colors.blue.shade600),
+                                  child: Icon(Icons.search,
+                                      size: 16, color: Colors.blue.shade600),
                                 ),
                               ),
                             ),
@@ -310,7 +315,8 @@ class PurchaseFormItemListSection extends StatelessWidget {
                                   border: InputBorder.none,
                                   enabledBorder: InputBorder.none,
                                   focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 12),
                                 ),
                                 style: const TextStyle(fontSize: 14),
                                 textAlign: TextAlign.center,
@@ -338,11 +344,13 @@ class PurchaseFormItemListSection extends StatelessWidget {
                                   border: InputBorder.none,
                                   enabledBorder: InputBorder.none,
                                   focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 12),
                                 ),
                                 style: const TextStyle(fontSize: 14),
                                 textAlign: TextAlign.center,
-                                onChanged: (value) => onUnitChanged(index, value),
+                                onChanged: (value) =>
+                                    onUnitChanged(index, value),
                               ),
                             ),
                           ),
@@ -362,13 +370,17 @@ class PurchaseFormItemListSection extends StatelessWidget {
                                   border: InputBorder.none,
                                   enabledBorder: InputBorder.none,
                                   focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 12),
                                 ),
                                 style: const TextStyle(fontSize: 14),
                                 textAlign: TextAlign.center,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                        decimal: true),
                                 onChanged: (value) {
-                                  final unitPrice = double.tryParse(value) ?? 0.0;
+                                  final unitPrice =
+                                      double.tryParse(value) ?? 0.0;
                                   onUnitPriceChanged(index, unitPrice);
                                 },
                               ),
@@ -409,7 +421,8 @@ class PurchaseFormItemListSection extends StatelessWidget {
                                 color: Colors.red.shade100,
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Icon(Icons.delete_outline, size: 16, color: Colors.red.shade600),
+                              child: Icon(Icons.delete_outline,
+                                  size: 16, color: Colors.red.shade600),
                             ),
                           ),
                         ],

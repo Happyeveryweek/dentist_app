@@ -32,7 +32,7 @@ class MonthlyProcessingChart extends StatelessWidget {
     }
 
     final maxValue = sortedMonths.fold<double>(0.0, (max, month) {
-      final value = monthlyData[month]!;
+      final value = monthlyData[month] ?? 0.0;
       return value > max ? value : max;
     });
 
@@ -76,7 +76,7 @@ class MonthlyProcessingChart extends StatelessWidget {
                 // 反转索引，使最近的月份显示在最上面
                 final reversedIndex = sortedMonths.length - 1 - index;
                 final month = sortedMonths[reversedIndex];
-                final value = monthlyData[month]!;
+                final value = monthlyData[month] ?? 0.0;
 
                 final valueRate = maxValue > 0 ? value / maxValue : 0.0;
 
@@ -149,7 +149,7 @@ class MonthlyProcessingChart extends StatelessWidget {
                               value: valueRate,
                               backgroundColor: Colors.grey[200],
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.teal[600]!,
+                                Colors.teal.shade600,
                               ),
                               minHeight: 3,
                             ),

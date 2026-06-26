@@ -13,13 +13,13 @@ class DataSourceConnectionService {
   });
 
   /// 测试MySQL连接
-  /// 
+  ///
   /// [host] MySQL主机地址
   /// [port] MySQL端口
   /// [database] 数据库名称
   /// [username] 用户名
   /// [password] 密码
-  /// 
+  ///
   /// 返回连接是否成功
   Future<bool> testMySQLConnection({
     required String host,
@@ -38,7 +38,7 @@ class DataSourceConnectionService {
   }
 
   /// 选择SQLite数据库文件
-  /// 
+  ///
   /// 返回选择的文件路径，如果用户取消选择则返回null
   Future<String?> selectSqliteDatabase() async {
     try {
@@ -52,28 +52,31 @@ class DataSourceConnectionService {
         return null;
       }
 
-      String filePath = result.files.single.path!;
+      final selectedPath = result.files.single.path;
+      if (selectedPath == null) {
+        throw Exception('选择的文件路径为空');
+      }
 
       // 检查文件是否存在
-      if (!await File(filePath).exists()) {
+      if (!await File(selectedPath).exists()) {
         throw Exception('选择的文件不存在');
       }
 
-      return filePath;
+      return selectedPath;
     } catch (e) {
       throw Exception('选择文件时出错: $e');
     }
   }
 
   /// 验证SQLite数据库文件路径
-  /// 
+  ///
   /// [filePath] 文件路径
-  /// 
+  ///
   /// 返回文件是否有效
   Future<bool> validateSqliteFile(String filePath) async {
     try {
       final file = File(filePath);
-      
+
       // 检查文件是否存在
       if (!await file.exists()) {
         return false;
@@ -98,15 +101,15 @@ class DataSourceConnectionService {
   }
 
   /// 获取SQLite数据库文件信息
-  /// 
+  ///
   /// [filePath] 文件路径
-  /// 
+  ///
   /// 返回文件信息（文件名、大小等）
   Future<Map<String, dynamic>> getSqliteFileInfo(String filePath) async {
     try {
       final file = File(filePath);
       final stat = await file.stat();
-      
+
       return {
         'path': filePath,
         'name': path.basename(filePath),

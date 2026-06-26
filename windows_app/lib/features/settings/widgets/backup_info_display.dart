@@ -8,14 +8,14 @@ class BackupInfoDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingsProvider = Provider.of<SettingsProvider>(context);
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.05),
+        color: Colors.blue.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withOpacity(0.2)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -53,13 +53,13 @@ class BackupInfoDisplay extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: settingsProvider.backupDataSource == 'mysql' 
-                  ? Colors.green.withOpacity(0.2) 
-                  : Colors.blue.withOpacity(0.2),
+              color: settingsProvider.backupDataSource == 'mysql'
+                  ? Colors.green.withValues(alpha: 0.2)
+                  : Colors.blue.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: settingsProvider.backupDataSource == 'mysql' 
-                    ? Colors.green.shade600 
+                color: settingsProvider.backupDataSource == 'mysql'
+                    ? Colors.green.shade600
                     : Colors.blue.shade600,
                 width: 1,
               ),
@@ -69,8 +69,8 @@ class BackupInfoDisplay extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
-                color: settingsProvider.backupDataSource == 'mysql' 
-                    ? Colors.green.shade700 
+                color: settingsProvider.backupDataSource == 'mysql'
+                    ? Colors.green.shade700
                     : Colors.blue.shade700,
               ),
             ),

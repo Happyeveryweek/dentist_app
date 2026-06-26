@@ -8,7 +8,7 @@ import 'appointment_card.dart';
 
 class AppointmentsScreenBody extends StatelessWidget {
   final bool isLoading;
-  final TabController tabController;
+  final TabController? tabController;
   final bool showCalendar;
   final CalendarFormat calendarFormat;
   final DateTime selectedDay;
@@ -64,9 +64,13 @@ class AppointmentsScreenBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tabController = this.tabController;
+    if (tabController == null) {
+      return const SizedBox.shrink();
+    }
     return Column(
       children: [
-        _buildHeader(),
+        _buildHeader(tabController),
         Expanded(
           child:
               isLoading
@@ -142,7 +146,7 @@ class AppointmentsScreenBody extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(TabController tabController) {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),

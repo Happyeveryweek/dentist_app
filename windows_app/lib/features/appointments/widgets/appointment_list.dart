@@ -29,12 +29,14 @@ class AppointmentList extends StatelessWidget {
     }
 
     if (appointments.isEmpty) {
-      return Center(child: Column(
+      return Center(
+          child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.event_note, size: 64, color: Colors.grey[300]),
           const SizedBox(height: 12),
-          const Text('暂无预约记录', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('暂无预约记录',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         ],
       ));
     }

@@ -10,8 +10,8 @@ class CustomTimePickerDialog extends StatefulWidget {
 }
 
 class CustomTimePickerDialogState extends State<CustomTimePickerDialog> {
-  late int hour;
-  late int minute;
+  int hour = 0;
+  int minute = 0;
 
   @override
   void initState() {

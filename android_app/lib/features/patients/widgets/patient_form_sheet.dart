@@ -42,27 +42,27 @@ class PatientFormSheetState extends State<PatientFormSheet> {
 
     AppLogger.info('PatientFormSheet初始化开始...');
 
-    if (widget.patient != null) {
+    final existingPatient = widget.patient;
+    if (existingPatient != null) {
       // 编辑现有患者
       AppLogger.info('初始化编辑患者表单');
+      final patient = existingPatient;
       _basicInfo = {
-        'name': widget.patient!.name,
-        'age': widget.patient!.age.toString(),
-        'gender': widget.patient!.gender,
-        'address': widget.patient!.address ?? '',
-        'idNumber': widget.patient!.identificationNumber ?? '',
-        'doctor': widget.patient!.doctor ?? '',
-        'medicalRecordNumber':
-            widget.patient!.medicalRecordNumber?.toString() ?? '',
-        'treatmentItems': widget.patient!.treatmentItems ?? '',
-        'firstVisitDate': widget.patient!.firstVisitDate,
+        'name': patient.name,
+        'age': patient.age.toString(),
+        'gender': patient.gender,
+        'address': patient.address ?? '',
+        'idNumber': patient.identificationNumber ?? '',
+        'doctor': patient.doctor ?? '',
+        'medicalRecordNumber': patient.medicalRecordNumber?.toString() ?? '',
+        'treatmentItems': patient.treatmentItems ?? '',
+        'firstVisitDate': patient.firstVisitDate,
       };
-      _phoneData = widget.patient!.phone;
-      _dentalConditionData = widget.patient!.dentalCondition ?? '';
+      _phoneData = patient.phone;
+      _dentalConditionData = patient.dentalCondition ?? '';
 
-      if (widget.patient!.medicalRecordNumber != null) {
-        _medicalRecordController.text =
-            widget.patient!.medicalRecordNumber.toString();
+      if (patient.medicalRecordNumber != null) {
+        _medicalRecordController.text = patient.medicalRecordNumber.toString();
         AppLogger.info('使用现有患者的病历号: ${_medicalRecordController.text}');
       }
     } else {
@@ -87,11 +87,10 @@ class PatientFormSheetState extends State<PatientFormSheet> {
     }
 
     // 设置病历号
-    if (widget.initialMedicalRecordNumber != null &&
-        widget.initialMedicalRecordNumber! > 0) {
-      _medicalRecordController.text =
-          widget.initialMedicalRecordNumber.toString();
-      AppLogger.info('使用传入的初始病历号: ${widget.initialMedicalRecordNumber}');
+    final initialMedicalRecordNumber = widget.initialMedicalRecordNumber;
+    if (initialMedicalRecordNumber != null && initialMedicalRecordNumber > 0) {
+      _medicalRecordController.text = initialMedicalRecordNumber.toString();
+      AppLogger.info('使用传入的初始病历号: $initialMedicalRecordNumber');
     } else {
       _medicalRecordController.text = '加载中...';
       AppLogger.info('未提供初始病历号，设置临时值并异步获取');
@@ -141,13 +140,12 @@ class PatientFormSheetState extends State<PatientFormSheet> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
 
-      if (currentUser != null &&
-          currentUser.doctor != null &&
-          currentUser.doctor!.isNotEmpty) {
+      final doctorName = currentUser?.doctor;
+      if (doctorName != null && doctorName.isNotEmpty) {
         setState(() {
-          _basicInfo['doctor'] = currentUser.doctor!;
+          _basicInfo['doctor'] = doctorName;
         });
-        AppLogger.info('设置患者主治医生默认值: ${currentUser.doctor}');
+        AppLogger.info('设置患者主治医生默认值: $doctorName');
       } else {
         AppLogger.info('当前用户未设置医生姓名，主治医生字段保持为空');
       }
@@ -195,7 +193,8 @@ class PatientFormSheetState extends State<PatientFormSheet> {
       return;
     }
 
-    if (!_formKey.currentState!.validate()) {
+    final formState = _formKey.currentState;
+    if (formState == null || !formState.validate()) {
       widget.onSaved(false, '请检查输入信息是否正确');
       return;
     }

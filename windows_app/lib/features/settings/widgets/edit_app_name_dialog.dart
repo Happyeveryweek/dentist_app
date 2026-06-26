@@ -17,15 +17,17 @@ class EditAppNameDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-    final TextEditingController controller = TextEditingController(text: settingsProvider.appName);
+    final settingsProvider =
+        Provider.of<SettingsProvider>(context, listen: false);
+    final TextEditingController controller =
+        TextEditingController(text: settingsProvider.appName);
 
     return AlertDialog(
-      title: Row(
+      title: const Row(
         children: [
           Icon(Icons.edit, color: AppTheme.primaryColor),
-          const SizedBox(width: 12),
-          const Text('修改应用名称'),
+          SizedBox(width: 12),
+          Text('修改应用名称'),
         ],
       ),
       content: Column(
@@ -46,9 +48,11 @@ class EditAppNameDialog extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
+                borderSide:
+                    const BorderSide(color: AppTheme.primaryColor, width: 2),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
             maxLength: 50,
             autofocus: true,

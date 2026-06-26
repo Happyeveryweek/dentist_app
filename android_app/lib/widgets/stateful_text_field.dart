@@ -27,19 +27,18 @@ class StatefulTextField extends StatefulWidget {
 }
 
 class _StatefulTextFieldState extends State<StatefulTextField> {
-  late TextEditingController _controller;
-  late FocusNode _focusNode;
+  TextEditingController? _controller;
+  FocusNode? _focusNode;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
-    _focusNode = FocusNode();
-
-    // 监听文本变化
-    _controller.addListener(() {
-      widget.onChanged(_controller.text);
+    final controller = TextEditingController(text: widget.initialValue);
+    controller.addListener(() {
+      widget.onChanged(controller.text);
     });
+    _controller = controller;
+    _focusNode = FocusNode();
   }
 
   @override
@@ -47,15 +46,20 @@ class _StatefulTextFieldState extends State<StatefulTextField> {
     super.didUpdateWidget(oldWidget);
 
     // 只有在初始值改变且输入框没有焦点时才更新
-    if (widget.initialValue != oldWidget.initialValue && !_focusNode.hasFocus) {
-      _controller.text = widget.initialValue;
+    final controller = _controller;
+    final focusNode = _focusNode;
+    if (controller != null &&
+        focusNode != null &&
+        widget.initialValue != oldWidget.initialValue &&
+        !focusNode.hasFocus) {
+      controller.text = widget.initialValue;
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
+    _controller?.dispose();
+    _focusNode?.dispose();
     super.dispose();
   }
 

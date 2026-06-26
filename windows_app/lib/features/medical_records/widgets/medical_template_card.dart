@@ -21,7 +21,7 @@ class MedicalTemplateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isTreatment = templateType == 'treatment';
     final cardColor = isTreatment ? Colors.blue : Colors.green;
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -29,13 +29,13 @@ class MedicalTemplateCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
         border: Border.all(
-          color: cardColor.withOpacity(0.2),
+          color: cardColor.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -52,7 +52,7 @@ class MedicalTemplateCard extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     cardColor,
-                    cardColor.withOpacity(0.8),
+                    cardColor.withValues(alpha: 0.8),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -60,22 +60,20 @@ class MedicalTemplateCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: cardColor.withOpacity(0.3),
+                    color: cardColor.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: Icon(
-                isTreatment 
-                    ? Icons.healing_rounded 
-                    : Icons.note_add_rounded,
+                isTreatment ? Icons.healing_rounded : Icons.note_add_rounded,
                 color: Colors.white,
                 size: 28,
               ),
             ),
             const SizedBox(width: 16),
-            
+
             // 模板信息
             Expanded(
               child: Column(
@@ -91,15 +89,16 @@ class MedicalTemplateCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  
+
                   // 模板类型标签
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: cardColor.withOpacity(0.1),
+                      color: cardColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: cardColor.withOpacity(0.3),
+                        color: cardColor.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Text(
@@ -112,7 +111,7 @@ class MedicalTemplateCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // 模板内容预览
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -138,14 +137,14 @@ class MedicalTemplateCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
-            
+
             // 操作按钮
             Column(
               children: [
                 // 编辑按钮
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
@@ -154,15 +153,16 @@ class MedicalTemplateCard extends StatelessWidget {
                     color: Colors.blue,
                     tooltip: '编辑模板',
                     padding: const EdgeInsets.all(8),
-                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    constraints:
+                        const BoxConstraints(minWidth: 40, minHeight: 40),
                   ),
                 ),
                 const SizedBox(height: 8),
-                
+
                 // 删除按钮
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
@@ -171,7 +171,8 @@ class MedicalTemplateCard extends StatelessWidget {
                     color: Colors.red,
                     tooltip: '删除模板',
                     padding: const EdgeInsets.all(8),
-                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    constraints:
+                        const BoxConstraints(minWidth: 40, minHeight: 40),
                   ),
                 ),
               ],

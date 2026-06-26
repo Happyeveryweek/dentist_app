@@ -1,5 +1,5 @@
 import '../utils/datetime_formatter.dart';
-import '../utils/app_logger.dart';
+import '../utils/map_parser.dart';
 
 // 材料信息模型
 class DentalMaterial {
@@ -39,67 +39,22 @@ class DentalMaterial {
     Map<String, dynamic> map, {
     String dataSource = 'sqlite',
   }) {
-    DateTime created = DateTime.now();
-    if (map['created_at'] != null) {
-      try {
-        if (map['created_at'] is DateTime) {
-          created = map['created_at'];
-        } else if (map['created_at'] is String) {
-          created = DateTimeFormatter.fromDbString(map['created_at']);
-        }
-      } catch (e) {
-        AppLogger.info('解析created_at错误: ${map['created_at']}');
-      }
-    }
-
-    DateTime updated = DateTime.now();
-    if (map['updated_at'] != null) {
-      try {
-        if (map['updated_at'] is DateTime) {
-          updated = map['updated_at'];
-        } else if (map['updated_at'] is String) {
-          updated = DateTimeFormatter.fromDbString(map['updated_at']);
-        }
-      } catch (e) {
-        AppLogger.info('解析updated_at错误: ${map['updated_at']}');
-      }
-    }
-
-    // 根据数据源适配字段映射
-    if (dataSource == 'mysql') {
-      return DentalMaterial(
-        id: map['id'],
-        materialName: map['material_name'] ?? '',
-        materialCode: map['material_code'],
-        materialType: map['material_type'] ?? '其他',
-        specification: map['specification'],
-        unit: map['unit'] ?? '个',
-        defaultPrice: (map['default_price'] as num?)?.toDouble() ?? 0.0,
-        stockQuantity: map['stock_quantity'] ?? 0,
-        minStock: map['min_stock'] ?? 0,
-        supplier: map['supplier'],
-        description: map['description'],
-        createdAt: created,
-        updatedAt: updated,
-      );
-    } else {
-      // SQLite数据源
-      return DentalMaterial(
-        id: map['id'],
-        materialName: map['material_name'] ?? '',
-        materialCode: map['material_code'],
-        materialType: map['material_type'] ?? '其他',
-        specification: map['specification'],
-        unit: map['unit'] ?? '个',
-        defaultPrice: (map['default_price'] as num?)?.toDouble() ?? 0.0,
-        stockQuantity: map['stock_quantity'] ?? 0,
-        minStock: map['min_stock'] ?? 0,
-        supplier: map['supplier'],
-        description: map['description'],
-        createdAt: created,
-        updatedAt: updated,
-      );
-    }
+    final p = MapParser(map, context: 'DentalMaterial');
+    return DentalMaterial(
+      id: p.optional('id', (v) => v as int),
+      materialName: p.string('material_name'),
+      materialCode: p.stringOptional('material_code'),
+      materialType: p.string('material_type', defaultValue: '其他'),
+      specification: p.stringOptional('specification'),
+      unit: p.string('unit', defaultValue: '个'),
+      defaultPrice: p.doubleValue('default_price'),
+      stockQuantity: p.integer('stock_quantity'),
+      minStock: p.integer('min_stock'),
+      supplier: p.stringOptional('supplier'),
+      description: p.stringOptional('description'),
+      createdAt: p.dateTime('created_at'),
+      updatedAt: p.dateTime('updated_at'),
+    );
   }
 
   // 将Material对象转换为Map

@@ -41,6 +41,7 @@ class PatientImageViewer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final errorMessage = this.errorMessage;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
@@ -101,7 +102,7 @@ class PatientImageViewer extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      errorMessage!,
+                      errorMessage,
                       style: TextStyle(
                         color: Colors.red.shade600,
                         fontSize: 12,
@@ -254,14 +255,14 @@ class PatientImageViewer extends StatelessWidget {
                                           children: [
                                             // 缩略图
                                             Positioned.fill(
-                                              child:
-                                                  image.thumbnailData != null &&
-                                                          image
-                                                              .thumbnailData!
-                                                              .isNotEmpty
+                                              child: Builder(
+                                                builder: (context) {
+                                                  final thumbnailData = image.thumbnailData;
+                                                  return thumbnailData != null &&
+                                                          thumbnailData.isNotEmpty
                                                       ? Image.memory(
                                                         Uint8List.fromList(
-                                                          image.thumbnailData!,
+                                                          thumbnailData,
                                                         ),
                                                         fit: BoxFit.cover,
                                                         errorBuilder: (
@@ -312,7 +313,9 @@ class PatientImageViewer extends StatelessWidget {
                                                             ),
                                                           );
                                                         },
-                                                      ),
+                                                      );
+                                                },
+                                              ),
                                             ),
                                             // 图片类型标识
                                             Positioned(

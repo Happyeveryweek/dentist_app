@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/log_manager.dart';
+import '../utils/map_parser.dart';
 
 // 材料信息模型
 class MaterialInfo {
@@ -34,48 +36,35 @@ class MaterialInfo {
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
+  static DateTime _parseDateTime(dynamic value) {
+    if (value is DateTime) return value;
+    if (value == null) return DateTime.now();
+    try {
+      return DateTimeFormatter.fromDbString(value.toString());
+    } catch (e) {
+      LogManager.w('Material', '日期解析失败: $value');
+      return DateTime.now();
+    }
+  }
+
   // 从Map创建MaterialInfo对象
   factory MaterialInfo.fromMap(Map<String, dynamic> map) {
-    DateTime created = DateTime.now();
-    if (map['created_at'] != null) {
-      try {
-        if (map['created_at'] is DateTime) {
-          created = map['created_at'];
-        } else {
-          created = DateTimeFormatter.fromDbString(map['created_at']);
-        }
-      } catch (e) {
-        print('解析created_at错误: ${map['created_at']}');
-      }
-    }
-
-    DateTime updated = DateTime.now();
-    if (map['updated_at'] != null) {
-      try {
-        if (map['updated_at'] is DateTime) {
-          updated = map['updated_at'];
-        } else {
-          updated = DateTimeFormatter.fromDbString(map['updated_at']);
-        }
-      } catch (e) {
-        print('解析updated_at错误: ${map['updated_at']}');
-      }
-    }
+    final p = MapParser(map, context: 'MaterialInfo');
 
     return MaterialInfo(
-      id: map['id'],
-      materialName: map['material_name'] ?? '', // 使用标准字段名
-      materialCode: map['material_code'] ?? '',
-      materialType: map['material_type'] ?? '其他', // 使用标准字段名
-      specification: map['specification'], // 规格说明
-      unit: map['unit'] ?? '个',
-      defaultPrice: (map['default_price'])?.toDouble() ?? 0.0, // 使用标准字段名
-      stockQuantity: map['stock_quantity'] ?? 0, // 库存数量
-      minStock: map['min_stock'] ?? 0, // 最小库存
-      supplier: map['supplier'],
-      description: map['description'] ?? '', // 使用标准字段名
-      createdAt: created,
-      updatedAt: updated,
+      id: p.optional('id', (v) => v as int),
+      materialName: p.string('material_name'),
+      materialCode: p.string('material_code'),
+      materialType: p.string('material_type', defaultValue: '其他'),
+      specification: p.optional('specification', (v) => v.toString()),
+      unit: p.string('unit', defaultValue: '个'),
+      defaultPrice: p.decimal('default_price'),
+      stockQuantity: p.integer('stock_quantity'),
+      minStock: p.integer('min_stock'),
+      supplier: p.optional('supplier', (v) => v.toString()),
+      description: p.string('description'),
+      createdAt: _parseDateTime(map['created_at']),
+      updatedAt: _parseDateTime(map['updated_at']),
     );
   }
 

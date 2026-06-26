@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/dental_icons.dart';
-import 'medical_record_form_input_field.dart';
 
 /// 过敏史选择组件
 class AllergySelectionWidget extends StatelessWidget {
@@ -36,17 +35,17 @@ class AllergySelectionWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(
               Icons.warning_rounded,
               size: 18,
               color: DentalColors.error,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               '过敏史',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: DentalColors.onSurface,
@@ -59,10 +58,10 @@ class AllergySelectionWidget extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DentalColors.error.withOpacity(0.05),
+            color: DentalColors.error.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DentalColors.error.withOpacity(0.3),
+              color: DentalColors.error.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -76,29 +75,40 @@ class AllergySelectionWidget extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 8,
                       children: allergyOptions.keys.map((allergyType) {
-                        final isSelected = selectedAllergies.any((selected) => 
-                            selected.startsWith(allergyType));
-                        
+                        final isSelected = selectedAllergies.any(
+                            (selected) => selected.startsWith(allergyType));
+
                         return FilterChip(
                           label: Text(allergyType),
                           selected: isSelected,
-                          onSelected: hasEditPermission ? (selected) {
-                            final newSelected = Set<String>.from(selectedAllergies);
-                            if (selected) {
-                              newSelected.add(allergyType);
-                            } else {
-                              newSelected.removeWhere((item) => item.startsWith(allergyType));
-                            }
-                            onAllergyChanged(newSelected);
-                          } : null,
-                          backgroundColor: hasEditPermission ? DentalColors.surface : Colors.grey.shade200,
-                          selectedColor: DentalColors.error.withOpacity(0.2),
+                          onSelected: hasEditPermission
+                              ? (selected) {
+                                  final newSelected =
+                                      Set<String>.from(selectedAllergies);
+                                  if (selected) {
+                                    newSelected.add(allergyType);
+                                  } else {
+                                    newSelected.removeWhere(
+                                        (item) => item.startsWith(allergyType));
+                                  }
+                                  onAllergyChanged(newSelected);
+                                }
+                              : null,
+                          backgroundColor: hasEditPermission
+                              ? DentalColors.surface
+                              : Colors.grey.shade200,
+                          selectedColor:
+                              DentalColors.error.withValues(alpha: 0.2),
                           checkmarkColor: DentalColors.error,
                           labelStyle: TextStyle(
-                            color: hasEditPermission ? 
-                              (isSelected ? DentalColors.error : DentalColors.onSurface) : 
-                              Colors.grey,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            color: hasEditPermission
+                                ? (isSelected
+                                    ? DentalColors.error
+                                    : DentalColors.onSurface)
+                                : Colors.grey,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                           ),
                         );
                       }).toList(),
@@ -107,15 +117,16 @@ class AllergySelectionWidget extends StatelessWidget {
 
               // 显示选中过敏类型的具体项目
               if (templatesLoaded)
-                ...allergyOptions.entries.where((entry) => 
-                    selectedAllergies.any((selected) => selected.startsWith(entry.key))
-                ).map((entry) => AllergySubTypeSelectionWidget(
-                  allergyType: entry.key,
-                  items: entry.value,
-                  selectedAllergies: selectedAllergies,
-                  hasEditPermission: hasEditPermission,
-                  onAllergyChanged: onAllergyChanged,
-                )),
+                ...allergyOptions.entries
+                    .where((entry) => selectedAllergies
+                        .any((selected) => selected.startsWith(entry.key)))
+                    .map((entry) => AllergySubTypeSelectionWidget(
+                          allergyType: entry.key,
+                          items: entry.value,
+                          selectedAllergies: selectedAllergies,
+                          hasEditPermission: hasEditPermission,
+                          onAllergyChanged: onAllergyChanged,
+                        )),
             ],
           ),
         ),
@@ -159,10 +170,10 @@ class AllergySubTypeSelectionWidget extends StatelessWidget {
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: DentalColors.error.withOpacity(0.1),
+        color: DentalColors.error.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: DentalColors.error.withOpacity(0.3),
+          color: DentalColors.error.withValues(alpha: 0.3),
         ),
       ),
       child: Wrap(
@@ -175,7 +186,7 @@ class AllergySubTypeSelectionWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               '$allergyType 具体项目:',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: DentalColors.error,
@@ -185,26 +196,30 @@ class AllergySubTypeSelectionWidget extends StatelessWidget {
           ...items.map((item) {
             final fullType = '$allergyType - $item';
             final isSelected = selectedAllergies.contains(fullType);
-            
+
             return FilterChip(
               label: Text(item),
               selected: isSelected,
-              onSelected: hasEditPermission ? (selected) {
-                final newSelected = Set<String>.from(selectedAllergies);
-                if (selected) {
-                  newSelected.add(fullType);
-                } else {
-                  newSelected.remove(fullType);
-                }
-                onAllergyChanged(newSelected);
-              } : null,
-              backgroundColor: hasEditPermission ? DentalColors.surface : Colors.grey.shade200,
-              selectedColor: DentalColors.error.withOpacity(0.3),
+              onSelected: hasEditPermission
+                  ? (selected) {
+                      final newSelected = Set<String>.from(selectedAllergies);
+                      if (selected) {
+                        newSelected.add(fullType);
+                      } else {
+                        newSelected.remove(fullType);
+                      }
+                      onAllergyChanged(newSelected);
+                    }
+                  : null,
+              backgroundColor: hasEditPermission
+                  ? DentalColors.surface
+                  : Colors.grey.shade200,
+              selectedColor: DentalColors.error.withValues(alpha: 0.3),
               checkmarkColor: DentalColors.error,
               labelStyle: TextStyle(
-                color: hasEditPermission ? 
-                  (isSelected ? DentalColors.error : DentalColors.onSurface) : 
-                  Colors.grey,
+                color: hasEditPermission
+                    ? (isSelected ? DentalColors.error : DentalColors.onSurface)
+                    : Colors.grey,
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),

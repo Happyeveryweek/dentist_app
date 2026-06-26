@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../widgets/modern_date_picker.dart';
-import '../../../theme/app_theme.dart';
-import '../../../widgets/dental_icons.dart';
 
 /// 采购记录表单的基本信息输入区域
 /// 包含：采购日期、供应商、采购医生、备注
@@ -31,7 +29,7 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.blue[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue[200]!),
+        border: Border.all(color: Colors.blue.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,7 +54,7 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
               Expanded(
                 child: MouseRegion(
                   cursor: SystemMouseCursors.click,
-                  child: Container(
+                  child: SizedBox(
                     height: 48,
                     child: TextField(
                       controller: dateController,
@@ -65,7 +63,8 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        prefixIcon: Icon(Icons.calendar_today, color: Colors.blue[600]),
+                        prefixIcon:
+                            Icon(Icons.calendar_today, color: Colors.blue[600]),
                         filled: true,
                         fillColor: Colors.white,
                       ),
@@ -74,14 +73,18 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
                         final date = await showDialog<DateTime>(
                           context: context,
                           builder: (context) => ModernDatePickerDialog(
-                            initialDate: isEditing ? (initialDate ?? DateTime.now()) : DateTime.now(),
+                            initialDate: isEditing
+                                ? (initialDate ?? DateTime.now())
+                                : DateTime.now(),
                             firstDate: DateTime(2020),
-                            lastDate: DateTime.now().add(const Duration(days: 365)),
+                            lastDate:
+                                DateTime.now().add(const Duration(days: 365)),
                             title: '选择采购日期',
                           ),
                         );
                         if (date != null) {
-                          dateController.text = DateFormat('yyyy-MM-dd').format(date);
+                          dateController.text =
+                              DateFormat('yyyy-MM-dd').format(date);
                         }
                       },
                     ),
@@ -90,7 +93,7 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Container(
+                child: SizedBox(
                   height: 48,
                   child: TextField(
                     controller: supplierController,
@@ -99,7 +102,8 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      prefixIcon: Icon(Icons.business, color: Colors.green[600]),
+                      prefixIcon:
+                          Icon(Icons.business, color: Colors.green[600]),
                       filled: true,
                       fillColor: Colors.white,
                     ),
@@ -112,7 +116,7 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Container(
+                child: SizedBox(
                   height: 48,
                   child: TextField(
                     controller: doctorController,
@@ -131,7 +135,7 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Container(
+                child: SizedBox(
                   height: 48,
                   child: TextField(
                     controller: notesController,

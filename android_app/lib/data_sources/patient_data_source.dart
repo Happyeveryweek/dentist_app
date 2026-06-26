@@ -56,8 +56,9 @@ class SqlitePatientDataSource implements PatientDataSource {
     // 自动生成拼音
     patient.namePinyin = PinyinUtil.toPinyin(patient.name);
     patient.nameInitials = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null && patient.address!.isNotEmpty) {
-      patient.addressPinyin = PinyinUtil.toPinyin(patient.address!);
+    final address = patient.address;
+    if (address != null && address.isNotEmpty) {
+      patient.addressPinyin = PinyinUtil.toPinyin(address);
     }
 
     return await _database.insert('patients', patient.toMap());
@@ -68,8 +69,9 @@ class SqlitePatientDataSource implements PatientDataSource {
     // 自动更新拼音
     patient.namePinyin = PinyinUtil.toPinyin(patient.name);
     patient.nameInitials = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null && patient.address!.isNotEmpty) {
-      patient.addressPinyin = PinyinUtil.toPinyin(patient.address!);
+    final updateAddress = patient.address;
+    if (updateAddress != null && updateAddress.isNotEmpty) {
+      patient.addressPinyin = PinyinUtil.toPinyin(updateAddress);
     }
 
     final count = await _database.update(
@@ -329,8 +331,9 @@ class MySqlPatientDataSource implements PatientDataSource {
     // 自动生成拼音
     patient.namePinyin = PinyinUtil.toPinyin(patient.name);
     patient.nameInitials = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null && patient.address!.isNotEmpty) {
-      patient.addressPinyin = PinyinUtil.toPinyin(patient.address!);
+    final mysqlAddress = patient.address;
+    if (mysqlAddress != null && mysqlAddress.isNotEmpty) {
+      patient.addressPinyin = PinyinUtil.toPinyin(mysqlAddress);
     }
 
     final result = await connection.query(
@@ -370,14 +373,13 @@ class MySqlPatientDataSource implements PatientDataSource {
     // 自动更新拼音
     patient.namePinyin = PinyinUtil.toPinyin(patient.name);
     patient.nameInitials = PinyinUtil.getInitials(patient.name);
-    if (patient.address != null && patient.address!.isNotEmpty) {
-      patient.addressPinyin = PinyinUtil.toPinyin(patient.address!);
+    final mysqlUpdateAddress = patient.address;
+    if (mysqlUpdateAddress != null && mysqlUpdateAddress.isNotEmpty) {
+      patient.addressPinyin = PinyinUtil.toPinyin(mysqlUpdateAddress);
     }
 
     final result = await connection.query(
-      '''
-      UPDATE patients 
-      SET medical_record_number = ?, name = ?, name_pinyin = ?, name_initials = ?, age = ?, gender = ?, phone = ?, 
+      '''UPDATE patients SET medical_record_number = ?, name = ?, name_pinyin = ?, name_initials = ?, age = ?, gender = ?, phone = ?, 
           identification_number = ?, doctor = ?, address = ?, address_pinyin = ?, first_visit_date = ?, 
           dental_condition = ?, treatment_items = ?, total_cost = ?, updated_at = NOW()
       WHERE id = ?

@@ -324,7 +324,11 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
       ],
     );
 
-    return result.insertId!;
+    final insertId = result.insertId;
+    if (insertId == null) {
+      throw Exception('创建采购记录失败：无法获取插入ID');
+    }
+    return insertId;
   }
 
   @override
@@ -350,7 +354,7 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
       ],
     );
 
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -369,7 +373,7 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
       'DELETE FROM purchase_records WHERE id = ?',
       [id],
     );
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -525,7 +529,7 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
       ],
     );
 
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -537,7 +541,6 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
       'DELETE FROM purchase_items WHERE id = ?',
       [itemId],
     );
-
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 }

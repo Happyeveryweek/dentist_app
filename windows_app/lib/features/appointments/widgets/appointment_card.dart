@@ -55,7 +55,8 @@ class _AppointmentCardState extends State<AppointmentCard> {
 
         for (int i = 0; i < teethData.length; i++) {
           final List<String> positions = [];
-          final Map<String, dynamic> tooth = Map<String, dynamic>.from(teethData[i]);
+          final Map<String, dynamic> tooth =
+              Map<String, dynamic>.from(teethData[i]);
 
           final fieldMapping = {
             'topLeft': '右上',
@@ -109,10 +110,10 @@ class _AppointmentCardState extends State<AppointmentCard> {
       width: 34,
       height: 34,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(9),
         border: Border.all(
-          color: color.withOpacity(0.3),
+          color: color.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -127,23 +128,24 @@ class _AppointmentCardState extends State<AppointmentCard> {
   }
 
   Widget _buildStatusSelector(Color statusColor) {
-    final currentStatus = _statusOptions.contains(widget.appointment.statusDisplay)
-        ? widget.appointment.statusDisplay
-        : _statusOptions.first;
+    final currentStatus =
+        _statusOptions.contains(widget.appointment.statusDisplay)
+            ? widget.appointment.statusDisplay
+            : _statusOptions.first;
 
     return Container(
       height: 15,
       padding: const EdgeInsets.only(left: 5, right: 2),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.28),
+        color: Colors.white.withValues(alpha: 0.28),
         borderRadius: BorderRadius.circular(7),
         border: Border.all(
-          color: statusColor.withOpacity(0.28),
+          color: statusColor.withValues(alpha: 0.28),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -155,7 +157,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
           isDense: true,
           itemHeight: 48,
           borderRadius: BorderRadius.circular(14),
-          dropdownColor: Colors.white.withOpacity(0.72),
+          dropdownColor: Colors.white.withValues(alpha: 0.72),
           focusColor: Colors.transparent,
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
@@ -175,7 +177,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                   child: Text(
                     status,
                     style: TextStyle(
-                      color: statusColor.withOpacity(0.92),
+                      color: statusColor.withValues(alpha: 0.92),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),
@@ -186,8 +188,11 @@ class _AppointmentCardState extends State<AppointmentCard> {
           onChanged: widget.onStatusChanged == null
               ? null
               : (status) {
-                  if (status != null && status != widget.appointment.statusDisplay) {
-                    widget.onStatusChanged!(status);
+                  final onStatusChanged = widget.onStatusChanged;
+                  if (status != null &&
+                      onStatusChanged != null &&
+                      status != widget.appointment.statusDisplay) {
+                    onStatusChanged(status);
                   }
                 },
         ),
@@ -197,7 +202,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
 
   @override
   Widget build(BuildContext context) {
-    final appointmentDate = widget.appointment.appointment_date;
+    final appointmentDate = widget.appointment.appointmentDate;
     final appointmentDateStr = _formatAppointmentDate(appointmentDate);
     final appointmentTimeStr = _formatAppointmentTime(appointmentDate);
 
@@ -206,7 +211,11 @@ class _AppointmentCardState extends State<AppointmentCard> {
     );
 
     final gender = widget.appointment.patient?.gender ?? '';
-    final treatmentDisplay = _formatTreatmentTypeForDisplay(widget.appointment.treatment_type);
+    final treatmentDisplay =
+        _formatTreatmentTypeForDisplay(widget.appointment.treatmentType);
+    final appointmentCost = widget.appointment.cost;
+    final onEdit = widget.onEdit;
+    final onDelete = widget.onDelete;
 
     return DentalCard(
       margin: EdgeInsets.zero,
@@ -270,13 +279,13 @@ class _AppointmentCardState extends State<AppointmentCard> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: DentalColors.info.withOpacity(0.1),
+                              color: DentalColors.info.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.access_time_rounded,
                                   size: 10,
                                   color: DentalColors.info,
@@ -284,7 +293,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                                 const SizedBox(width: 2),
                                 Text(
                                   '$appointmentDateStr $appointmentTimeStr',
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: DentalColors.info,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w500,
@@ -300,13 +309,14 @@ class _AppointmentCardState extends State<AppointmentCard> {
                                 Icon(
                                   DentalIcons.tooth,
                                   size: 11,
-                                  color: DentalColors.primary.withOpacity(0.7),
+                                  color: DentalColors.primary
+                                      .withValues(alpha: 0.7),
                                 ),
                                 const SizedBox(width: 3),
                                 Expanded(
                                   child: Text(
                                     treatmentDisplay,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 11,
                                       color: DentalColors.onSurfaceVariant,
                                       fontWeight: FontWeight.w500,
@@ -318,7 +328,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                               ],
                             ),
                           ),
-                          if (widget.appointment.cost != null) ...[
+                          if (appointmentCost != null) ...[
                             const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -326,21 +336,22 @@ class _AppointmentCardState extends State<AppointmentCard> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: DentalColors.success.withOpacity(0.1),
+                                color:
+                                    DentalColors.success.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     Icons.payments_rounded,
                                     size: 10,
                                     color: DentalColors.success,
                                   ),
                                   const SizedBox(width: 2),
                                   Text(
-                                    '¥${widget.appointment.cost!.toStringAsFixed(0)}',
-                                    style: TextStyle(
+                                    '¥${appointmentCost.toStringAsFixed(0)}',
+                                    style: const TextStyle(
                                       fontSize: 10,
                                       color: DentalColors.success,
                                       fontWeight: FontWeight.bold,
@@ -366,12 +377,12 @@ class _AppointmentCardState extends State<AppointmentCard> {
                       onPressed: widget.onView ?? () {},
                     ),
                     const SizedBox(width: 6),
-                    widget.onEdit != null
+                    onEdit != null
                         ? _buildCompactActionButton(
                             icon: Icons.edit_rounded,
                             color: DentalColors.warning,
                             tooltip: '编辑',
-                            onPressed: widget.onEdit!,
+                            onPressed: onEdit,
                           )
                         : _buildCompactActionButton(
                             icon: Icons.lock,
@@ -383,12 +394,12 @@ class _AppointmentCardState extends State<AppointmentCard> {
                             ),
                           ),
                     const SizedBox(width: 6),
-                    widget.onDelete != null
+                    onDelete != null
                         ? _buildCompactActionButton(
                             icon: Icons.delete_rounded,
                             color: DentalColors.error,
                             tooltip: '删除',
-                            onPressed: widget.onDelete!,
+                            onPressed: onDelete,
                           )
                         : _buildCompactActionButton(
                             icon: Icons.lock,

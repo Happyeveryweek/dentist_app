@@ -28,7 +28,8 @@ class PermissionService {
         Map<Permission, PermissionStatus> statuses =
             await [Permission.storage].request();
 
-        if (statuses[Permission.storage]!.isGranted) {
+        final storageStatus = statuses[Permission.storage];
+        if (storageStatus != null && storageStatus.isGranted) {
           return true;
         } else {
           return false;

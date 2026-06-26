@@ -39,7 +39,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   List<Appointment> _appointments = [];
   bool _isLoading = true;
   String _searchQuery = '';
-  late String _filterStatus;
+  String _filterStatus = '全部';
   DateTime _selectedDay = DateTime.now();
   DateTime _focusedDay = DateTime.now();
   final bool _showCalendar = false;
@@ -49,7 +49,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   DateTime? _startDate;
   DateTime? _endDate;
 
-  late TabController _tabController;
+  TabController? _tabController;
   final TextEditingController _searchController = TextEditingController();
   Timer? _searchDebounce;
 
@@ -88,7 +88,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   void dispose() {
     widget.refreshListenable?.removeListener(_handleExternalRefresh);
     _searchDebounce?.cancel();
-    _tabController.dispose();
+    _tabController?.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -203,10 +203,12 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
           appointment.appointmentDate.day,
         );
 
-        if (!appointmentMap.containsKey(dateOnly)) {
-          appointmentMap[dateOnly] = [];
+        var list = appointmentMap[dateOnly];
+        if (list == null) {
+          list = [];
+          appointmentMap[dateOnly] = list;
         }
-        appointmentMap[dateOnly]!.add(appointment);
+        list.add(appointment);
       }
 
       if (mounted) {
@@ -269,18 +271,20 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
       }
     }
 
-    if (_startDate != null && _endDate != null) {
+    final startDate = _startDate;
+    final endDate = _endDate;
+    if (startDate != null && endDate != null) {
       final endDateEndOfDay = DateTime(
-        _endDate!.year,
-        _endDate!.month,
-        _endDate!.day,
+        endDate.year,
+        endDate.month,
+        endDate.day,
         23,
         59,
         59,
       );
       filtered =
           filtered.where((appointment) {
-            return !appointment.appointmentDate.isBefore(_startDate!) &&
+            return !appointment.appointmentDate.isBefore(startDate) &&
                 !appointment.appointmentDate.isAfter(endDateEndOfDay);
           }).toList();
     }
@@ -529,7 +533,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   }
 
   Future<void> _deleteAppointment(Appointment appointment) async {
-    if (appointment.id == null) {
+    final appointmentId = appointment.id;
+    if (appointmentId == null) {
       if (!mounted) return;
       SuccessToastManager.showError(context, message: '无法删除：预约ID无效');
       return;
@@ -540,7 +545,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         context,
         listen: false,
       );
-      await appointmentsProvider.deleteAppointment(appointment.id!);
+      await appointmentsProvider.deleteAppointment(appointmentId);
 
       _loadAppointments(isRefresh: true);
 
@@ -637,11 +642,14 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                               ),
                             ),
                             child: Text(
-                              tempStartDate != null
-                                  ? DateFormat(
-                                    'yyyy-MM-dd',
-                                  ).format(tempStartDate!)
-                                  : '开始日期',
+                              (() {
+                                final date = tempStartDate;
+                                return date != null
+                                    ? DateFormat(
+                                      'yyyy-MM-dd',
+                                    ).format(date)
+                                    : '开始日期';
+                              })(),
                               style: const TextStyle(
                                 color: AppTheme.primaryText,
                               ),
@@ -682,11 +690,14 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                               ),
                             ),
                             child: Text(
-                              tempEndDate != null
-                                  ? DateFormat(
-                                    'yyyy-MM-dd',
-                                  ).format(tempEndDate!)
-                                  : '结束日期',
+                              (() {
+                                final date = tempEndDate;
+                                return date != null
+                                    ? DateFormat(
+                                      'yyyy-MM-dd',
+                                    ).format(date)
+                                    : '结束日期';
+                              })(),
                               style: const TextStyle(
                                 color: AppTheme.primaryText,
                               ),

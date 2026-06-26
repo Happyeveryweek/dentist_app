@@ -15,10 +15,12 @@ class HoverablePurchaseRecordCard extends StatefulWidget {
   });
 
   @override
-  State<HoverablePurchaseRecordCard> createState() => _HoverablePurchaseRecordCardState();
+  State<HoverablePurchaseRecordCard> createState() =>
+      _HoverablePurchaseRecordCardState();
 }
 
-class _HoverablePurchaseRecordCardState extends State<HoverablePurchaseRecordCard> {
+class _HoverablePurchaseRecordCardState
+    extends State<HoverablePurchaseRecordCard> {
   bool _isHovered = false;
 
   @override
@@ -36,13 +38,13 @@ class _HoverablePurchaseRecordCardState extends State<HoverablePurchaseRecordCar
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: _isHovered 
-                ? const Color(0xFFE3F2FD)  // 淡蓝色
+            color: _isHovered
+                ? const Color(0xFFE3F2FD) // 淡蓝色
                 : Colors.white,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 2,
                 offset: const Offset(0, 1),
               ),

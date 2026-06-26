@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:path/path.dart' as path;
 import 'dart:io';
 
 import '../../../theme/app_theme.dart';
@@ -107,7 +106,15 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
         return;
       }
 
-      String filePath = result.files.single.path!;
+      final selectedFile = result.files.single.path;
+      if (selectedFile == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('无法获取文件路径')),
+        );
+        return;
+      }
+      String filePath = selectedFile;
 
       // 检查文件是否存在
       if (!await File(filePath).exists()) {
@@ -118,6 +125,7 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
         return;
       }
 
+      if (!mounted) return;
       // 确认是否恢复
       final confirmRestore = await showDialog<bool>(
         context: context,
@@ -144,6 +152,7 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
         });
 
         try {
+          if (!mounted) return;
           final dbProvider =
               Provider.of<DatabaseProvider>(context, listen: false);
           await dbProvider.restoreDatabase(filePath);
@@ -182,15 +191,15 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(
                   Icons.backup,
                   color: AppTheme.primaryColor,
                   size: 28,
                 ),
-                const SizedBox(width: 12),
-                const Text(
+                SizedBox(width: 12),
+                Text(
                   '数据库备份与还原',
                   style: TextStyle(
                     fontSize: 20,
@@ -204,7 +213,7 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(

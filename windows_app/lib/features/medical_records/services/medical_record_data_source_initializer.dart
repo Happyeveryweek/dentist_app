@@ -65,11 +65,13 @@ class MedicalRecordDataSourceInitializer {
     String dbType = 'sqlite';
 
     // 病历管理始终跟随患者管理的数据源配置
-    if (dataSourceMode == 'modular' &&
-        moduleDataSources != null &&
-        moduleDataSources.containsKey('patients')) {
-      dbType = moduleDataSources['patients']!;
-      printLog('MedicalRecordDataSourceInitializer: 跟随患者模块配置: patients -> $dbType');
+    if (dataSourceMode == 'modular' && moduleDataSources != null) {
+      final patientsType = moduleDataSources['patients'];
+      if (patientsType != null) {
+        dbType = patientsType;
+        printLog(
+            'MedicalRecordDataSourceInitializer: 跟随患者模块配置: patients -> $dbType');
+      }
     } else {
       // 否则使用全局配置
       dbType = dbProvider.dataSourceType ?? 'sqlite';
@@ -115,12 +117,13 @@ class MedicalRecordDataSourceInitializer {
     // 立即初始化数据源
     if (effectiveDataSourceType == 'sqlite') {
       final database = dbProvider?.database;
-      printLog('MedicalRecordDataSourceInitializer: 初始化SQLite数据源，database=${database != null ? "存在" : "null"}');
+      printLog(
+          'MedicalRecordDataSourceInitializer: 初始化SQLite数据源，database=${database != null ? "存在" : "null"}');
       if (database != null) {
         final sqliteDataSource = SqliteMedicalRecordDataSource(
           database,
           doctorName: doctorName,
-          isAdmin: isAdmin ?? false,
+          isAdmin: isAdmin,
         );
 
         onSqliteDataSourceReady?.call(sqliteDataSource);
@@ -149,7 +152,8 @@ class MedicalRecordDataSourceInitializer {
       // 检查MySQL连接是否可用
       final mysqlConn = dbProvider?.mysqlConnection;
       if (mysqlConn == null) {
-        printLog('⚠️ MedicalRecordDataSourceInitializer: MySQL连接不可用，自动降级到SQLite');
+        printLog(
+            '⚠️ MedicalRecordDataSourceInitializer: MySQL连接不可用，自动降级到SQLite');
 
         // 降级到SQLite
         final database = dbProvider?.database;
@@ -157,7 +161,7 @@ class MedicalRecordDataSourceInitializer {
           final sqliteDataSource = SqliteMedicalRecordDataSource(
             database,
             doctorName: doctorName,
-            isAdmin: isAdmin ?? false,
+            isAdmin: isAdmin,
           );
 
           onSqliteDataSourceReady?.call(sqliteDataSource);
@@ -184,13 +188,14 @@ class MedicalRecordDataSourceInitializer {
         }
       } else {
         printLog('MedicalRecordDataSourceInitializer: 初始化MySQL数据源');
-        final mysqlDataSource = MySqlMedicalRecordDataSource.withConnectionGetter(
+        final mysqlDataSource =
+            MySqlMedicalRecordDataSource.withConnectionGetter(
           () async {
             final conn = getCurrentMysqlConnection();
             return conn;
           },
           doctorName: doctorName,
-          isAdmin: isAdmin ?? false,
+          isAdmin: isAdmin,
           reconnectCallback: () async {
             if (dbProvider != null) {
               try {
@@ -259,7 +264,8 @@ class MedicalRecordDataSourceInitializer {
       // 一次性初始化正确的数据源
       if (effectiveDataSourceType == 'sqlite') {
         final database = dbProvider?.database;
-        printLog('MedicalRecordDataSourceInitializer: 初始化SQLite数据源，database=${database != null ? "存在" : "null"}');
+        printLog(
+            'MedicalRecordDataSourceInitializer: 初始化SQLite数据源，database=${database != null ? "存在" : "null"}');
         if (database != null) {
           // 检查并创建必要的表
           onEnsureTablesExist?.call();
@@ -267,7 +273,7 @@ class MedicalRecordDataSourceInitializer {
           final sqliteDataSource = SqliteMedicalRecordDataSource(
             database,
             doctorName: doctorName,
-            isAdmin: isAdmin ?? false,
+            isAdmin: isAdmin,
           );
 
           onSqliteDataSourceReady?.call(sqliteDataSource);
@@ -282,7 +288,8 @@ class MedicalRecordDataSourceInitializer {
             error: null,
           );
 
-          printLog('MedicalRecordDataSourceInitializer: SQLite数据源初始化完成，effectiveDataSourceType=$effectiveDataSourceType');
+          printLog(
+              'MedicalRecordDataSourceInitializer: SQLite数据源初始化完成，effectiveDataSourceType=$effectiveDataSourceType');
         } else {
           printLog('MedicalRecordDataSourceInitializer: SQLite数据库连接不可用');
           setError('SQLite数据库连接不可用');
@@ -296,7 +303,8 @@ class MedicalRecordDataSourceInitializer {
         // 检查MySQL连接是否可用
         final mysqlConn = dbProvider?.mysqlConnection;
         if (mysqlConn == null) {
-          printLog('⚠️ MedicalRecordDataSourceInitializer: MySQL连接不可用，自动降级到SQLite');
+          printLog(
+              '⚠️ MedicalRecordDataSourceInitializer: MySQL连接不可用，自动降级到SQLite');
 
           // 降级到SQLite
           final database = dbProvider?.database;
@@ -307,7 +315,7 @@ class MedicalRecordDataSourceInitializer {
             final sqliteDataSource = SqliteMedicalRecordDataSource(
               database,
               doctorName: doctorName,
-              isAdmin: isAdmin ?? false,
+              isAdmin: isAdmin,
             );
 
             onSqliteDataSourceReady?.call(sqliteDataSource);
@@ -334,20 +342,22 @@ class MedicalRecordDataSourceInitializer {
           }
         } else {
           printLog('MedicalRecordDataSourceInitializer: 初始化MySQL数据源');
-          final mysqlDataSource = MySqlMedicalRecordDataSource.withConnectionGetter(
+          final mysqlDataSource =
+              MySqlMedicalRecordDataSource.withConnectionGetter(
             () async {
               final conn = getCurrentMysqlConnection();
               return conn;
             },
             doctorName: doctorName,
-            isAdmin: isAdmin ?? false,
+            isAdmin: isAdmin,
             reconnectCallback: () async {
               if (dbProvider != null) {
                 try {
                   await dbProvider.initializeMySQL();
                   printLog('✅ MedicalRecordDataSourceInitializer: MySQL重连成功');
                 } catch (e) {
-                  printLog('❌ MedicalRecordDataSourceInitializer: MySQL重连失败: $e');
+                  printLog(
+                      '❌ MedicalRecordDataSourceInitializer: MySQL重连失败: $e');
                 }
               }
             },
@@ -368,9 +378,11 @@ class MedicalRecordDataSourceInitializer {
               error: null,
             );
 
-            printLog('MedicalRecordDataSourceInitializer: MySQL数据源初始化完成，effectiveDataSourceType=$effectiveDataSourceType');
+            printLog(
+                'MedicalRecordDataSourceInitializer: MySQL数据源初始化完成，effectiveDataSourceType=$effectiveDataSourceType');
           } else {
-            printLog('⚠️ MedicalRecordDataSourceInitializer: MySQL连接测试失败，自动降级到SQLite');
+            printLog(
+                '⚠️ MedicalRecordDataSourceInitializer: MySQL连接测试失败，自动降级到SQLite');
 
             // 降级到SQLite
             final database = dbProvider?.database;
@@ -381,7 +393,7 @@ class MedicalRecordDataSourceInitializer {
               final sqliteDataSource = SqliteMedicalRecordDataSource(
                 database,
                 doctorName: doctorName,
-                isAdmin: isAdmin ?? false,
+                isAdmin: isAdmin,
               );
 
               onSqliteDataSourceReady?.call(sqliteDataSource);
@@ -428,8 +440,8 @@ class MedicalRecordDataSourceInitializer {
 
     try {
       await connection.query('SELECT 1').timeout(
-        const Duration(seconds: 10),
-      );
+            const Duration(seconds: 10),
+          );
       return true;
     } catch (e) {
       printLog('MySQL连接测试失败: $e');
@@ -454,11 +466,12 @@ class MedicalRecordDataSourceInitializer {
 
     final dbProvider = getDatabaseProvider();
 
-    if (effectiveDataSourceType == 'sqlite' && dbProvider?.database != null) {
+    final database = dbProvider?.database;
+    if (effectiveDataSourceType == 'sqlite' && database != null) {
       final sqliteDataSource = SqliteMedicalRecordDataSource(
-        dbProvider!.database!,
+        database,
         doctorName: doctorName,
-        isAdmin: isAdmin ?? false,
+        isAdmin: isAdmin,
       );
 
       printLog('MedicalRecordDataSourceInitializer: SQLite数据源权限更新');
@@ -470,15 +483,17 @@ class MedicalRecordDataSourceInitializer {
         database: dbProvider.database,
         error: null,
       );
-    } else if (effectiveDataSourceType == 'mysql' && dbProvider?.mysqlConnection != null) {
+    } else if (effectiveDataSourceType == 'mysql' &&
+        dbProvider?.mysqlConnection != null) {
       final mysqlDataSource = MySqlMedicalRecordDataSource.withConnectionGetter(
         () async {
-          final conn = getCurrentMysqlConnection(cachedConnection: cachedMysqlConnection);
+          final conn = getCurrentMysqlConnection(
+              cachedConnection: cachedMysqlConnection);
           if (conn == null) throw Exception('MySQL连接不可用');
           return conn;
         },
         doctorName: doctorName,
-        isAdmin: isAdmin ?? false,
+        isAdmin: isAdmin,
         reconnectCallback: () async {
           if (dbProvider != null) {
             try {

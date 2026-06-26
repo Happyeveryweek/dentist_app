@@ -1,5 +1,5 @@
 import '../utils/datetime_formatter.dart';
-import '../utils/app_logger.dart';
+import '../utils/map_parser.dart';
 
 class Appointment {
   final int? id;
@@ -29,19 +29,18 @@ class Appointment {
 
   // 从Map创建Appointment对象
   factory Appointment.fromMap(Map<String, dynamic> map) {
+    final p = MapParser(map, context: 'Appointment');
     return Appointment(
-      id: map['id'],
-      patientId: map['patient_id'],
-      appointmentDate: _parseDateTime(map['appointment_date']),
-      appointmentTime: map['appointment_time'],
-      status: map['status'] ?? 'scheduled',
-      treatmentType: map['treatment_type'],
-      notes: map['notes'],
-      cost: map['cost'] != null ? (map['cost'] as num).toDouble() : null,
-      createdAt:
-          map['created_at'] != null ? _parseDateTime(map['created_at']) : null,
-      updatedAt:
-          map['updated_at'] != null ? _parseDateTime(map['updated_at']) : null,
+      id: p.optional('id', (v) => v as int),
+      patientId: p.integerOptional('patient_id'),
+      appointmentDate: p.dateTime('appointment_date'),
+      appointmentTime: p.stringOptional('appointment_time'),
+      status: p.string('status', defaultValue: 'scheduled'),
+      treatmentType: p.stringOptional('treatment_type'),
+      notes: p.stringOptional('notes'),
+      cost: p.doubleOptional('cost'),
+      createdAt: p.dateTime('created_at'),
+      updatedAt: p.dateTime('updated_at'),
     );
   }
 
@@ -86,23 +85,6 @@ class Appointment {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
-  }
-
-  // 帮助函数：解析日期时间字符串或处理DateTime对象
-  static DateTime _parseDateTime(dynamic dateTime) {
-    // 如果已经是DateTime类型，直接返回
-    if (dateTime is DateTime) {
-      return dateTime;
-    }
-
-    // 如果是字符串，使用统一的时间格式工具解析
-    if (dateTime is String) {
-      return DateTimeFormatter.fromDbString(dateTime);
-    }
-
-    // 如果无法解析，返回当前时间
-    AppLogger.info('无法解析日期时间: $dateTime，使用当前时间');
-    return DateTime.now();
   }
 
   // 获取状态显示名称

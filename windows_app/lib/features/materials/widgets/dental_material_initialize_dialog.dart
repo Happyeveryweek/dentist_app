@@ -23,7 +23,7 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
               spreadRadius: 0,
@@ -52,7 +52,7 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -75,7 +75,7 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 内容区域
             Padding(
               padding: const EdgeInsets.all(24),

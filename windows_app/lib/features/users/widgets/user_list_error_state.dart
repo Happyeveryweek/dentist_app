@@ -22,7 +22,7 @@ class UserListErrorState extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -31,13 +31,13 @@ class UserListErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.error_outline,
               color: AppTheme.errorColor,
               size: 64,
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               '加载失败',
               style: TextStyle(
                 color: AppTheme.errorColor,

@@ -102,13 +102,14 @@ class AllergyTypes {
   /// 根据搜索关键词过滤过敏类型
   static Map<String, List<String>> filterAllergies(String keyword) {
     if (keyword.isEmpty) return allergies;
-    
+
     final Map<String, List<String>> filtered = {};
     allergies.forEach((type, allergens) {
       if (type.contains(keyword)) {
         filtered[type] = allergens;
       } else {
-        final matchingAllergens = allergens.where((allergen) => allergen.contains(keyword)).toList();
+        final matchingAllergens =
+            allergens.where((allergen) => allergen.contains(keyword)).toList();
         if (matchingAllergens.isNotEmpty) {
           filtered[type] = matchingAllergens;
         }
@@ -119,38 +120,38 @@ class AllergyTypes {
 
   /// 获取常见药物过敏原（用于快速选择）
   static List<String> get commonDrugAllergens => [
-    '青霉素',
-    '头孢菌素',
-    '磺胺类',
-    '利多卡因',
-    '碘伏',
-  ];
+        '青霉素',
+        '头孢菌素',
+        '磺胺类',
+        '利多卡因',
+        '碘伏',
+      ];
 
   /// 获取常见食物过敏原（用于快速选择）
   static List<String> get commonFoodAllergens => [
-    '海鲜',
-    '牛奶',
-    '鸡蛋',
-    '花生',
-    '坚果',
-  ];
+        '海鲜',
+        '牛奶',
+        '鸡蛋',
+        '花生',
+        '坚果',
+      ];
 
   /// 获取牙科相关过敏原（影响牙科治疗）
   static List<String> get dentalRelatedAllergens => [
-    '利多卡因',
-    '普鲁卡因',
-    '碘伏',
-    '碘酊',
-    '氯己定',
-    '乳胶',
-    '金属',
-    '镍',
-    '汞',
-    '银汞合金',
-    '复合树脂',
-    '印模材料',
-    '粘接剂',
-  ];
+        '利多卡因',
+        '普鲁卡因',
+        '碘伏',
+        '碘酊',
+        '氯己定',
+        '乳胶',
+        '金属',
+        '镍',
+        '汞',
+        '银汞合金',
+        '复合树脂',
+        '印模材料',
+        '粘接剂',
+      ];
 
   /// 检查是否为牙科相关过敏原
   static bool isDentalRelatedAllergen(String allergen) {
@@ -159,23 +160,23 @@ class AllergyTypes {
 
   /// 获取过敏严重程度选项
   static List<String> get severityLevels => [
-    '轻度',
-    '中度',
-    '重度',
-    '过敏性休克',
-  ];
+        '轻度',
+        '中度',
+        '重度',
+        '过敏性休克',
+      ];
 
   /// 获取过敏反应类型
   static List<String> get reactionTypes => [
-    '皮疹',
-    '瘙痒',
-    '红肿',
-    '呼吸困难',
-    '恶心呕吐',
-    '腹泻',
-    '头晕',
-    '心悸',
-    '血压下降',
-    '意识丧失',
-  ];
+        '皮疹',
+        '瘙痒',
+        '红肿',
+        '呼吸困难',
+        '恶心呕吐',
+        '腹泻',
+        '头晕',
+        '心悸',
+        '血压下降',
+        '意识丧失',
+      ];
 }

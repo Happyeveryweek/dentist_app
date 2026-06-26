@@ -31,15 +31,15 @@ class _MaterialTypeDropdownState extends State<MaterialTypeDropdown> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: (widget.value != '全部' || _isHover) 
-                ? DentalColors.primary.withOpacity(0.6) 
-                : Colors.grey[300]!,
+            color: (widget.value != '全部' || _isHover)
+                ? DentalColors.primary.withValues(alpha: 0.6)
+                : Colors.grey.shade300,
             width: 1.5,
           ),
           boxShadow: [
             if (_isHover)
               BoxShadow(
-                color: DentalColors.primary.withOpacity(0.1),
+                color: DentalColors.primary.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -60,14 +60,16 @@ class _MaterialTypeDropdownState extends State<MaterialTypeDropdown> {
               enabled: false,
               height: 44,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   gradient: DentalColors.primaryGradient,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.category_rounded, size: 18, color: Colors.white),
+                    const Icon(Icons.category_rounded,
+                        size: 18, color: Colors.white),
                     const SizedBox(width: 10),
                     const Text(
                       '材料类型',
@@ -79,9 +81,10 @@ class _MaterialTypeDropdownState extends State<MaterialTypeDropdown> {
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -106,9 +109,12 @@ class _MaterialTypeDropdownState extends State<MaterialTypeDropdown> {
                 value: type,
                 height: 38,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: isSelected ? DentalColors.primary.withOpacity(0.1) : Colors.transparent,
+                    color: isSelected
+                        ? DentalColors.primary.withValues(alpha: 0.1)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
@@ -118,14 +124,18 @@ class _MaterialTypeDropdownState extends State<MaterialTypeDropdown> {
                         height: 18,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: isSelected ? DentalColors.primaryGradient : null,
+                          gradient:
+                              isSelected ? DentalColors.primaryGradient : null,
                           border: Border.all(
-                            color: isSelected ? Colors.transparent : Colors.grey.shade400,
+                            color: isSelected
+                                ? Colors.transparent
+                                : Colors.grey.shade400,
                             width: 2,
                           ),
                         ),
                         child: isSelected
-                            ? const Icon(Icons.check, size: 12, color: Colors.white)
+                            ? const Icon(Icons.check,
+                                size: 12, color: Colors.white)
                             : null,
                       ),
                       const SizedBox(width: 12),
@@ -134,19 +144,24 @@ class _MaterialTypeDropdownState extends State<MaterialTypeDropdown> {
                           type,
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                            color: isSelected ? DentalColors.primary : Colors.grey[700],
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? DentalColors.primary
+                                : Colors.grey[700],
                           ),
                         ),
                       ),
                       if (isSelected)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: DentalColors.primary.withOpacity(0.1),
+                            color: DentalColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text(
+                          child: const Text(
                             '已选',
                             style: TextStyle(
                               fontSize: 10,
@@ -169,8 +184,8 @@ class _MaterialTypeDropdownState extends State<MaterialTypeDropdown> {
                 Icon(
                   Icons.filter_list_rounded,
                   size: 18,
-                  color: (widget.value != '全部' || _isHover) 
-                      ? DentalColors.primary 
+                  color: (widget.value != '全部' || _isHover)
+                      ? DentalColors.primary
                       : Colors.grey[600],
                 ),
                 const SizedBox(width: 8),
@@ -179,8 +194,8 @@ class _MaterialTypeDropdownState extends State<MaterialTypeDropdown> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: (widget.value != '全部' || _isHover) 
-                        ? DentalColors.primary 
+                    color: (widget.value != '全部' || _isHover)
+                        ? DentalColors.primary
                         : Colors.grey[600],
                   ),
                 ),
@@ -188,8 +203,8 @@ class _MaterialTypeDropdownState extends State<MaterialTypeDropdown> {
                 Icon(
                   Icons.keyboard_arrow_down_rounded,
                   size: 18,
-                  color: (widget.value != '全部' || _isHover) 
-                      ? DentalColors.primary 
+                  color: (widget.value != '全部' || _isHover)
+                      ? DentalColors.primary
                       : Colors.grey[600],
                 ),
               ],

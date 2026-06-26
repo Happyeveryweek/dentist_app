@@ -10,7 +10,8 @@ class AutoBackupSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingsProvider = Provider.of<SettingsProvider>(context);
-    
+    final lastBackupDate = settingsProvider.lastBackupDate;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -19,10 +20,11 @@ class AutoBackupSettings extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.schedule, color: AppTheme.primaryColor, size: 20),
+              child: const Icon(Icons.schedule,
+                  color: AppTheme.primaryColor, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -51,7 +53,7 @@ class AutoBackupSettings extends StatelessWidget {
             ),
             Switch(
               value: settingsProvider.autoBackup,
-              activeColor: AppTheme.primaryColor,
+              activeThumbColor: AppTheme.primaryColor,
               onChanged: (value) async {
                 await settingsProvider.setAutoBackup(value);
               },
@@ -60,7 +62,7 @@ class AutoBackupSettings extends StatelessWidget {
         ),
 
         // 显示上次备份时间（无论是否启用自动备份）
-        if (settingsProvider.lastBackupDate != null)
+        if (lastBackupDate != null)
           Padding(
             padding: const EdgeInsets.only(left: 36, top: 4, bottom: 8),
             child: Row(
@@ -69,7 +71,7 @@ class AutoBackupSettings extends StatelessWidget {
                     size: 16, color: AppTheme.secondaryText),
                 const SizedBox(width: 8),
                 Text(
-                  '上次备份: ${DateFormat('yyyy-MM-dd HH:mm').format(settingsProvider.lastBackupDate!)}',
+                  '上次备份: ${DateFormat('yyyy-MM-dd HH:mm').format(lastBackupDate)}',
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppTheme.secondaryText,

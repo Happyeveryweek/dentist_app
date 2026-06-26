@@ -24,6 +24,7 @@ class DeleteConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final itemName = this.itemName;
     return AlertDialog(
       title: Row(
         children: [
@@ -47,8 +48,7 @@ class DeleteConfirmDialog extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: Text(
-                itemName != null
-                    ? message.replaceAll('{itemName}', itemName!)
+                itemName != null ? message.replaceAll('{itemName}', itemName)
                     : message,
                 style: const TextStyle(fontSize: 16),
               ),
@@ -181,6 +181,7 @@ class LogoutConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final username = this.username;
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -300,7 +301,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            username!,
+                            username,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -487,6 +488,8 @@ class ModernDeleteDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final effectiveAccentColor = accentColor ?? Colors.red.shade500;
     final effectiveIcon = icon ?? Icons.delete_forever_rounded;
+    final itemName = this.itemName;
+    final itemType = this.itemType;
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -591,7 +594,7 @@ class ModernDeleteDialog extends StatelessWidget {
                               children: [
                                 if (itemType != null)
                                   Text(
-                                    itemType!,
+                                    itemType,
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
@@ -602,7 +605,7 @@ class ModernDeleteDialog extends StatelessWidget {
                                   ),
                                 if (itemName != null)
                                   Text(
-                                    itemName!,
+                                    itemName,
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,

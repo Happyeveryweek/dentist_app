@@ -226,7 +226,9 @@ class FinancialManagementScreenBody extends StatelessWidget {
               }
 
               final record = filteredRecords[index];
-              final items = recordItemsMap[record.id!] ?? [];
+              final recordId = record.id;
+              final List<FinancialItem> items =
+                  recordId == null ? [] : recordItemsMap[recordId] ?? [];
               final totalReceivable =
                   FinancialCalculator.calculatePatientLatestReceivableAmount(
                     record.patientId,

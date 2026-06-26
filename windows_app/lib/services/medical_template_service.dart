@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:path/path.dart' as path;
 import '../models/medical_template.dart';
 import '../utils/app_paths.dart';
+import '../utils/log_manager.dart';
 
 /// 医疗模板服务
 /// 负责管理治疗方案模板和医嘱模板的本地JSON文件存储
@@ -34,21 +35,25 @@ class MedicalTemplateService {
 
   /// 初始化默认模板数据
   static Future<void> initializeDefaultTemplates() async {
-    print('MedicalTemplateService: 开始初始化默认模板数据');
-    
+    LogManager.w(
+        'MedicalTemplateService', 'MedicalTemplateService: 开始初始化默认模板数据');
+
     try {
       // 确保数据目录存在
       await AppPaths.ensureDirectoryExists(AppPaths.dataDirectory);
-      
+
       // 初始化治疗方案模板
       await _initializeTreatmentTemplates();
-      
+
       // 初始化医嘱模板
       await _initializeNotesTemplates();
-      
-      print('MedicalTemplateService: 默认模板数据初始化完成');
+
+      LogManager.i(
+          'MedicalTemplateService', 'MedicalTemplateService: 默认模板数据初始化完成');
     } catch (e) {
-      print('MedicalTemplateService: 初始化默认模板数据失败: $e');
+      LogManager.e(
+          'MedicalTemplateService', 'MedicalTemplateService: 初始化默认模板数据失败',
+          error: e);
       rethrow;
     }
   }
@@ -172,46 +177,51 @@ class MedicalTemplateService {
     try {
       final filePath = _getTemplateFilePath(type);
       final file = File(filePath);
-      
+
       if (!await file.exists()) {
-        print('MedicalTemplateService: 模板文件不存在，返回空列表: $filePath');
+        LogManager.w('MedicalTemplateService',
+            'MedicalTemplateService: 模板文件不存在，返回空列表: $filePath');
         return [];
       }
-      
+
       final jsonString = await file.readAsString();
       final List<dynamic> jsonList = jsonDecode(jsonString);
-      
-      final templates = jsonList
-          .map((json) => MedicalTemplate.fromMap(json))
-          .toList();
-      
+
+      final templates =
+          jsonList.map((json) => MedicalTemplate.fromMap(json)).toList();
+
       // 按排序顺序排列
       templates.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
-      
-      print('MedicalTemplateService: 加载了 ${templates.length} 个 $type 模板');
+
+      LogManager.w('MedicalTemplateService',
+          'MedicalTemplateService: 加载了 ${templates.length} 个 $type 模板');
       return templates;
     } catch (e) {
-      print('MedicalTemplateService: 加载模板失败: $e');
+      LogManager.e('MedicalTemplateService', 'MedicalTemplateService: 加载模板失败',
+          error: e);
       return [];
     }
   }
 
   /// 保存指定类型的模板列表
-  static Future<void> _saveTemplates(String type, List<MedicalTemplate> templates) async {
+  static Future<void> _saveTemplates(
+      String type, List<MedicalTemplate> templates) async {
     try {
       final filePath = _getTemplateFilePath(type);
       final file = File(filePath);
-      
+
       // 确保父目录存在
       await file.parent.create(recursive: true);
-      
+
       final jsonList = templates.map((template) => template.toMap()).toList();
       final jsonString = jsonEncode(jsonList);
-      
+
       await file.writeAsString(jsonString, encoding: utf8);
-      print('MedicalTemplateService: 保存了 ${templates.length} 个 $type 模板到 $filePath');
+      LogManager.w('MedicalTemplateService',
+          'MedicalTemplateService: 保存了 ${templates.length} 个 $type 模板到 $filePath');
     } catch (e) {
-      print('MedicalTemplateService: 保存模板失败: $e');
+      LogManager.e('MedicalTemplateService', 'MedicalTemplateService: 保存模板失败',
+          error: e);
       rethrow;
     }
   }
@@ -220,18 +230,17 @@ class MedicalTemplateService {
   static Future<void> addTemplate(MedicalTemplate template) async {
     try {
       final templates = await getTemplates(template.type);
-      
+
       // 检查ID是否已存在
       if (templates.any((t) => t.id == template.id)) {
         throw Exception('模板ID已存在: ${template.id}');
       }
-      
+
       templates.add(template);
       await _saveTemplates(template.type, templates);
-      
-      print('MedicalTemplateService: 添加模板成功: ${template.title}');
     } catch (e) {
-      print('MedicalTemplateService: 添加模板失败: $e');
+      LogManager.e('MedicalTemplateService', 'MedicalTemplateService: 添加模板失败',
+          error: e);
       rethrow;
     }
   }
@@ -240,18 +249,17 @@ class MedicalTemplateService {
   static Future<void> updateTemplate(MedicalTemplate template) async {
     try {
       final templates = await getTemplates(template.type);
-      
+
       final index = templates.indexWhere((t) => t.id == template.id);
       if (index == -1) {
         throw Exception('模板不存在: ${template.id}');
       }
-      
+
       templates[index] = template;
       await _saveTemplates(template.type, templates);
-      
-      print('MedicalTemplateService: 更新模板成功: ${template.title}');
     } catch (e) {
-      print('MedicalTemplateService: 更新模板失败: $e');
+      LogManager.e('MedicalTemplateService', 'MedicalTemplateService: 更新模板失败',
+          error: e);
       rethrow;
     }
   }
@@ -260,18 +268,17 @@ class MedicalTemplateService {
   static Future<void> deleteTemplate(String type, String id) async {
     try {
       final templates = await getTemplates(type);
-      
+
       final index = templates.indexWhere((t) => t.id == id);
       if (index == -1) {
         throw Exception('模板不存在: $id');
       }
-      
-      final removedTemplate = templates.removeAt(index);
+
+      templates.removeAt(index);
       await _saveTemplates(type, templates);
-      
-      print('MedicalTemplateService: 删除模板成功: ${removedTemplate.title}');
     } catch (e) {
-      print('MedicalTemplateService: 删除模板失败: $e');
+      LogManager.e('MedicalTemplateService', 'MedicalTemplateService: 删除模板失败',
+          error: e);
       rethrow;
     }
   }
@@ -293,28 +300,34 @@ class MedicalTemplateService {
       final notesTemplates = await getNotesTemplates();
       return treatmentTemplates.isNotEmpty || notesTemplates.isNotEmpty;
     } catch (e) {
-      print('MedicalTemplateService: 检查模板数据失败: $e');
+      LogManager.e('MedicalTemplateService', 'MedicalTemplateService: 检查模板数据失败',
+          error: e);
       return false;
     }
   }
 
   /// 重新排序模板
-  static Future<void> reorderTemplates(String type, List<String> orderedIds) async {
+  static Future<void> reorderTemplates(
+      String type, List<String> orderedIds) async {
     try {
       final templates = await getTemplates(type);
-      
+
       // 根据新的顺序重新设置sortOrder
       for (int i = 0; i < orderedIds.length; i++) {
-        final templateIndex = templates.indexWhere((t) => t.id == orderedIds[i]);
+        final templateIndex =
+            templates.indexWhere((t) => t.id == orderedIds[i]);
         if (templateIndex != -1) {
-          templates[templateIndex] = templates[templateIndex].copyWith(sortOrder: i + 1);
+          templates[templateIndex] =
+              templates[templateIndex].copyWith(sortOrder: i + 1);
         }
       }
-      
+
       await _saveTemplates(type, templates);
-      print('MedicalTemplateService: 重新排序模板成功');
+      LogManager.i(
+          'MedicalTemplateService', 'MedicalTemplateService: 重新排序模板成功');
     } catch (e) {
-      print('MedicalTemplateService: 重新排序模板失败: $e');
+      LogManager.e('MedicalTemplateService', 'MedicalTemplateService: 重新排序模板失败',
+          error: e);
       rethrow;
     }
   }
@@ -322,7 +335,8 @@ class MedicalTemplateService {
   /// 生成新的模板ID
   static String generateTemplateId(String type) {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final prefix = type == MedicalTemplateType.treatment ? 'treatment' : 'notes';
+    final prefix =
+        type == MedicalTemplateType.treatment ? 'treatment' : 'notes';
     return '${prefix}_$timestamp';
   }
 
@@ -331,14 +345,15 @@ class MedicalTemplateService {
     try {
       final treatmentTemplates = await getTreatmentTemplates();
       final notesTemplates = await getNotesTemplates();
-      
+
       return {
         'exportTime': DateTime.now().toIso8601String(),
         'treatmentTemplates': treatmentTemplates.map((t) => t.toMap()).toList(),
         'notesTemplates': notesTemplates.map((t) => t.toMap()).toList(),
       };
     } catch (e) {
-      print('MedicalTemplateService: 导出模板数据失败: $e');
+      LogManager.e('MedicalTemplateService', 'MedicalTemplateService: 导出模板数据失败',
+          error: e);
       rethrow;
     }
   }
@@ -348,23 +363,23 @@ class MedicalTemplateService {
     try {
       if (data.containsKey('treatmentTemplates')) {
         final treatmentList = data['treatmentTemplates'] as List<dynamic>;
-        final treatmentTemplates = treatmentList
-            .map((json) => MedicalTemplate.fromMap(json))
-            .toList();
+        final treatmentTemplates =
+            treatmentList.map((json) => MedicalTemplate.fromMap(json)).toList();
         await _saveTemplates(MedicalTemplateType.treatment, treatmentTemplates);
       }
-      
+
       if (data.containsKey('notesTemplates')) {
         final notesList = data['notesTemplates'] as List<dynamic>;
-        final notesTemplates = notesList
-            .map((json) => MedicalTemplate.fromMap(json))
-            .toList();
+        final notesTemplates =
+            notesList.map((json) => MedicalTemplate.fromMap(json)).toList();
         await _saveTemplates(MedicalTemplateType.notes, notesTemplates);
       }
-      
-      print('MedicalTemplateService: 导入模板数据成功');
+
+      LogManager.i(
+          'MedicalTemplateService', 'MedicalTemplateService: 导入模板数据成功');
     } catch (e) {
-      print('MedicalTemplateService: 导入模板数据失败: $e');
+      LogManager.e('MedicalTemplateService', 'MedicalTemplateService: 导入模板数据失败',
+          error: e);
       rethrow;
     }
   }

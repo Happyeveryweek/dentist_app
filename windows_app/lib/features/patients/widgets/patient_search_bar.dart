@@ -29,6 +29,7 @@ class PatientSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final advancedFields = advancedSearchFields;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Container(
@@ -36,10 +37,10 @@ class PatientSearchBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.black.withOpacity(0.06)),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 12,
               offset: const Offset(0, 2),
             ),
@@ -67,7 +68,8 @@ class PatientSearchBar extends StatelessWidget {
                   color: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.black.withOpacity(0.06)),
+                    side:
+                        BorderSide(color: Colors.black.withValues(alpha: 0.06)),
                   ),
                   child: IconButton(
                     icon: Icon(
@@ -85,7 +87,8 @@ class PatientSearchBar extends StatelessWidget {
                   color: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.black.withOpacity(0.06)),
+                    side:
+                        BorderSide(color: Colors.black.withValues(alpha: 0.06)),
                   ),
                   child: IconButton(
                     icon: const Icon(
@@ -98,8 +101,8 @@ class PatientSearchBar extends StatelessWidget {
                 ),
               ],
             ),
-            if (showAdvancedSearch && advancedSearchFields != null)
-              advancedSearchFields!,
+            if (showAdvancedSearch && advancedFields != null)
+              advancedFields,
           ],
         ),
       ),

@@ -14,6 +14,8 @@ class AppointmentInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final notes = appointment.notes;
+    final treatmentType = appointment.treatmentType;
     return AppCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -45,10 +47,9 @@ class AppointmentInfoCard extends StatelessWidget {
             '预约时间',
             DateFormat('HH:mm').format(appointment.appointmentDate),
           ),
-          if (appointment.treatmentType != null &&
-              appointment.treatmentType!.isNotEmpty) ...[
+          if (treatmentType != null && treatmentType.isNotEmpty) ...[
             const SizedBox(height: 12),
-            TreatmentInfoDisplay(treatmentTypeJson: appointment.treatmentType!),
+            TreatmentInfoDisplay(treatmentTypeJson: treatmentType),
           ],
           if (appointment.cost > 0) ...[
             const SizedBox(height: 12),
@@ -59,12 +60,12 @@ class AppointmentInfoCard extends StatelessWidget {
               valueColor: AppTheme.accentColor,
             ),
           ],
-          if (appointment.notes != null && appointment.notes!.isNotEmpty) ...[
+          if (notes != null && notes.isNotEmpty) ...[
             const SizedBox(height: 12),
             _buildInfoRow(
               CupertinoIcons.doc_text,
               '备注',
-              appointment.notes!,
+              notes,
               alignTop: true,
             ),
           ],

@@ -38,6 +38,7 @@ class ModernTimePickerDialog extends StatefulWidget {
   final Function(TimeOfDay) onTimeSelected;
 
   const ModernTimePickerDialog({
+    super.key,
     required this.initialTime,
     required this.onTimeSelected,
   });
@@ -69,7 +70,7 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -84,7 +85,7 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                 gradient: LinearGradient(
                   colors: [
                     AppTheme.primaryColor,
-                    AppTheme.primaryColor.withOpacity(0.8),
+                    AppTheme.primaryColor.withValues(alpha: 0.8),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -99,7 +100,7 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -130,7 +131,7 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                 ],
               ),
             ),
-            
+
             // 时间显示区域
             Container(
               padding: const EdgeInsets.all(16),
@@ -152,7 +153,10 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                     margin: const EdgeInsets.symmetric(horizontal: 8),
                     child: const Text(
                       ':',
-                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.grey),
+                      style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.grey),
                     ),
                   ),
                   _buildTimeSelector(
@@ -175,14 +179,19 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('快捷选择', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey)),
+                  const Text('快捷选择',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey)),
                   const SizedBox(height: 4),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SizedBox(
+                      const SizedBox(
                         width: 36,
-                        child: Text('上午', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        child: Text('上午',
+                            style: TextStyle(fontSize: 12, color: Colors.grey)),
                       ),
                       Expanded(
                         child: Wrap(
@@ -204,9 +213,10 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SizedBox(
+                      const SizedBox(
                         width: 36,
-                        child: Text('下午', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        child: Text('下午',
+                            style: TextStyle(fontSize: 12, color: Colors.grey)),
                       ),
                       Expanded(
                         child: Wrap(
@@ -227,7 +237,7 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                 ],
               ),
             ),
-            
+
             // 底部按钮
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -256,7 +266,8 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                     child: ElevatedButton(
                       onPressed: () {
                         widget.onTimeSelected(
-                          TimeOfDay(hour: _selectedHour, minute: _selectedMinute),
+                          TimeOfDay(
+                              hour: _selectedHour, minute: _selectedMinute),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -300,19 +311,19 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
           height: 96,
           width: 64,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: ListView.builder(
             itemCount: items.length,
             itemBuilder: (context, index) {
               final value = items[index];
               final isSelected = value == selectedValue;
-              
+              bool hovering = false;
+
               return StatefulBuilder(
                 builder: (context, setLocal) {
-                  bool hovering = false;
                   return MouseRegion(
                     cursor: SystemMouseCursors.click,
                     onEnter: (_) => setLocal(() => hovering = true),
@@ -324,17 +335,23 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                         height: 32,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: hovering && !isSelected ? Colors.grey.shade100 : Colors.transparent,
+                          color: hovering && !isSelected
+                              ? Colors.grey.shade100
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           value.toString().padLeft(2, '0'),
                           style: TextStyle(
                             fontSize: isSelected ? 24 : 18,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                             color: isSelected
                                 ? color
-                                : (hovering ? AppTheme.primaryColor : Colors.grey.shade600),
+                                : (hovering
+                                    ? AppTheme.primaryColor
+                                    : Colors.grey.shade600),
                           ),
                         ),
                       ),
@@ -386,7 +403,9 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                 border: Border.all(
                   color: isSelected
                       ? AppTheme.primaryColor
-                      : (hovering ? AppTheme.primaryColor : Colors.grey.shade300),
+                      : (hovering
+                          ? AppTheme.primaryColor
+                          : Colors.grey.shade300),
                 ),
               ),
               child: Text(
@@ -396,65 +415,9 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                   fontWeight: FontWeight.w600,
                   color: isSelected
                       ? Colors.white
-                      : (hovering ? AppTheme.primaryColor : Colors.grey.shade800),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildQuickTimeButton(String label, String time, int hour, int minute) {
-    final isSelected = _selectedHour == hour && _selectedMinute == minute;
-    
-    bool hovering = false;
-    return StatefulBuilder(
-      builder: (context, setLocal) {
-        return MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setLocal(() => hovering = true),
-          onExit: (_) => setLocal(() => hovering = false),
-          child: GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedHour = hour;
-                _selectedMinute = minute;
-              });
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 120),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppTheme.primaryColor
-                    : (hovering ? Colors.grey.shade200 : Colors.grey.shade100),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: isSelected
-                      ? AppTheme.primaryColor
-                      : (hovering ? AppTheme.primaryColor : Colors.grey.shade300),
-                ),
-                boxShadow: hovering && !isSelected
-                    ? [
-                        BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.15),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        )
-                      ]
-                    : null,
-              ),
-              child: Text(
-                '$label\n$time',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: isSelected
-                      ? Colors.white
-                      : (hovering ? AppTheme.primaryColor : Colors.grey.shade700),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      : (hovering
+                          ? AppTheme.primaryColor
+                          : Colors.grey.shade800),
                 ),
               ),
             ),

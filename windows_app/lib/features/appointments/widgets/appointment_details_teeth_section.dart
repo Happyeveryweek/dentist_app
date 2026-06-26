@@ -18,7 +18,7 @@ class AppointmentDetailsTeethSection extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: DentalColors.divider.withOpacity(0.5),
+          color: DentalColors.divider.withValues(alpha: 0.5),
           width: 1,
         ),
       ),
@@ -27,10 +27,10 @@ class AppointmentDetailsTeethSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(DentalIcons.tooth, color: Colors.blue, size: 18),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   '牙齿情况',
                   style: TextStyle(

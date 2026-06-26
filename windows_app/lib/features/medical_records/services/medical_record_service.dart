@@ -3,6 +3,7 @@ import '../../../data_sources/medical_record_data_source.dart';
 import 'medical_record_sync_service.dart';
 import 'medical_record_permission_service.dart';
 import '../helpers/medical_record_cache_helper.dart';
+import '../../../utils/log_manager.dart';
 
 /// 病历记录管理服务
 /// 负责处理病历记录的CRUD操作
@@ -33,7 +34,8 @@ class MedicalRecordService {
       return '患者ID无效';
     }
 
-    if (record.recordDate.isAfter(DateTime.now().add(Duration(days: 1)))) {
+    if (record.recordDate
+        .isAfter(DateTime.now().add(const Duration(days: 1)))) {
       return '病历日期不能是未来日期';
     }
 
@@ -49,7 +51,8 @@ class MedicalRecordService {
   }
 
   /// 获取患者的所有病历记录
-  Future<List<PatientMedicalRecord>> getPatientMedicalRecords(int patientId, {bool forceRefresh = false}) async {
+  Future<List<PatientMedicalRecord>> getPatientMedicalRecords(int patientId,
+      {bool forceRefresh = false}) async {
     final dataSource = getCurrentDataSource();
     if (dataSource == null) {
       throw Exception('数据源未初始化');
@@ -59,8 +62,11 @@ class MedicalRecordService {
       setLoading(true);
 
       // 检查缓存
-      if (!forceRefresh && cacheHelper.isCacheValid() && cacheHelper.cachedMedicalRecords.containsKey(patientId)) {
-        return cacheHelper.cachedMedicalRecords[patientId]!;
+      if (!forceRefresh && cacheHelper.isCacheValid()) {
+        final cached = cacheHelper.cachedMedicalRecords[patientId];
+        if (cached != null) {
+          return cached;
+        }
       }
 
       // 从数据源获取数据
@@ -71,13 +77,15 @@ class MedicalRecordService {
       clearError();
       return records;
     } catch (e) {
-      print('获取患者病历记录时出错: $e');
+      LogManager.e('MedicalRecordService', '获取患者病历记录时出错', error: e);
       setError('获取病历记录失败: $e');
 
       // 优雅降级：如果有缓存数据，返回缓存
-      if (cacheHelper.cachedMedicalRecords.containsKey(patientId)) {
-        print('MedicalRecordService: 连接失败，返回缓存数据');
-        return cacheHelper.cachedMedicalRecords[patientId]!;
+      final cached = cacheHelper.cachedMedicalRecords[patientId];
+      if (cached != null) {
+        LogManager.e(
+            'MedicalRecordService', 'MedicalRecordService: 连接失败，返回缓存数据');
+        return cached;
       }
 
       return [];
@@ -96,15 +104,12 @@ class MedicalRecordService {
     try {
       setLoading(true);
 
-      print('MedicalRecordService: 获取病历记录，ID: $id');
-
       final record = await dataSource.getMedicalRecordById(id);
-      print('MedicalRecordService: ${record != null ? '找到病历记录' : '未找到病历记录'}');
 
       clearError();
       return record;
     } catch (e) {
-      print('根据ID获取病历记录时出错: $e');
+      LogManager.e('MedicalRecordService', '根据ID获取病历记录时出错', error: e);
       setError('获取病历记录失败: $e');
       return null;
     } finally {
@@ -141,26 +146,21 @@ class MedicalRecordService {
 
       // 非管理员用户只能创建自己的病历记录
       if (currentUser.role != 'admin' &&
-          currentUser.doctor != null &&
-          currentUser.doctor!.isNotEmpty &&
+          currentUser.doctor?.isNotEmpty == true &&
           recordWithCreator.doctorName != currentUser.doctor) {
         throw Exception('权限不足：只能创建自己的病历记录');
       }
 
-      print('MedicalRecordService: 创建病历记录，患者ID: ${record.patientId}');
-
       final id = await dataSource.createMedicalRecord(recordWithCreator);
 
       if (id > 0) {
-        print('MedicalRecordService: 病历记录创建成功，ID: $id');
-
         // 清除相关缓存
         cacheHelper.cachedMedicalRecords.remove(recordWithCreator.patientId);
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (syncService.needsSync) {
-          print('MedicalRecordService: SQLite病历记录创建成功，开始同步到MySQL: 病历ID=$id');
-          syncService.syncMedicalRecordToMySQL(recordWithCreator.copyWith(id: id).toMap(), id);
+          syncService.syncMedicalRecordToMySQL(
+              recordWithCreator.copyWith(id: id).toMap(), id);
         }
 
         clearError();
@@ -171,7 +171,7 @@ class MedicalRecordService {
 
       return id;
     } catch (e) {
-      print('创建病历记录时出错: $e');
+      LogManager.e('MedicalRecordService', '创建病历记录时出错', error: e);
       setError('创建病历记录失败: $e');
       rethrow;
     } finally {
@@ -201,37 +201,37 @@ class MedicalRecordService {
         throw Exception('用户未登录');
       }
 
+      final recordId = record.id;
+      if (recordId == null) {
+        throw Exception('病历记录 ID 不存在');
+      }
+
       // 非管理员用户只能更新自己创建的病历记录
       if (currentUser.role != 'admin' &&
-          currentUser.doctor != null &&
-          currentUser.doctor!.isNotEmpty) {
+          currentUser.doctor?.isNotEmpty == true) {
         // 先获取原记录检查权限
-        final originalRecord = await getMedicalRecordById(record.id!);
+        final originalRecord = await getMedicalRecordById(recordId);
         if (originalRecord == null) {
           throw Exception('病历记录不存在');
         }
 
         // 检查是否是自己创建的病历记录
-        final createdByDoctor = originalRecord.createdByDoctor ?? originalRecord.doctorName;
+        final createdByDoctor =
+            originalRecord.createdByDoctor ?? originalRecord.doctorName;
         if (createdByDoctor != currentUser.doctor) {
           throw Exception('权限不足：只能更新自己创建的病历记录');
         }
       }
 
-      print('MedicalRecordService: 更新病历记录，ID: ${record.id}');
-
       final success = await dataSource.updateMedicalRecord(record);
 
       if (success) {
-        print('MedicalRecordService: 病历记录更新成功');
-
         // 清除相关缓存
         cacheHelper.cachedMedicalRecords.remove(record.patientId);
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (syncService.needsSync) {
-          print('MedicalRecordService: SQLite病历记录更新成功，开始同步到MySQL: 病历ID=${record.id}');
-          syncService.syncMedicalRecordToMySQL(record.toMap(), record.id!);
+          syncService.syncMedicalRecordToMySQL(record.toMap(), recordId);
         }
 
         clearError();
@@ -242,7 +242,7 @@ class MedicalRecordService {
 
       return success;
     } catch (e) {
-      print('更新病历记录时出错: $e');
+      LogManager.e('MedicalRecordService', '更新病历记录时出错', error: e);
       setError('更新病历记录失败: $e');
       rethrow;
     } finally {
@@ -268,8 +268,7 @@ class MedicalRecordService {
 
       // 非管理员用户只能删除自己创建的病历记录
       if (currentUser.role != 'admin' &&
-          currentUser.doctor != null &&
-          currentUser.doctor!.isNotEmpty) {
+          currentUser.doctor?.isNotEmpty == true) {
         // 先获取原记录检查权限
         final originalRecord = await getMedicalRecordById(id);
         if (originalRecord == null) {
@@ -277,13 +276,12 @@ class MedicalRecordService {
         }
 
         // 检查是否是自己创建的病历记录
-        final createdByDoctor = originalRecord.createdByDoctor ?? originalRecord.doctorName;
+        final createdByDoctor =
+            originalRecord.createdByDoctor ?? originalRecord.doctorName;
         if (createdByDoctor != currentUser.doctor) {
           throw Exception('权限不足：只能删除自己创建的病历记录');
         }
       }
-
-      print('MedicalRecordService: 删除病历记录，ID: $id');
 
       // 先获取记录信息用于清除缓存
       final recordToDelete = await dataSource.getMedicalRecordById(id);
@@ -291,15 +289,12 @@ class MedicalRecordService {
       final success = await dataSource.deleteMedicalRecord(id);
 
       if (success) {
-        print('MedicalRecordService: 病历记录删除成功');
-
         // 清除相关缓存
         if (recordToDelete != null) {
           cacheHelper.cachedMedicalRecords.remove(recordToDelete.patientId);
         }
 
         if (syncService.needsSync) {
-          print('MedicalRecordService: SQLite病历记录删除成功，开始同步删除到MySQL: 病历ID=$id');
           syncService.syncDeleteMedicalRecordToMySQL(id);
         }
 
@@ -311,7 +306,7 @@ class MedicalRecordService {
 
       return success;
     } catch (e) {
-      print('删除病历记录时出错: $e');
+      LogManager.e('MedicalRecordService', '删除病历记录时出错', error: e);
       setError('删除病历记录失败: $e');
       rethrow;
     } finally {
@@ -320,7 +315,8 @@ class MedicalRecordService {
   }
 
   /// 搜索病历记录
-  Future<List<PatientMedicalRecord>> searchMedicalRecords(String query, {int? patientId}) async {
+  Future<List<PatientMedicalRecord>> searchMedicalRecords(String query,
+      {int? patientId}) async {
     final dataSource = getCurrentDataSource();
     if (dataSource == null) {
       throw Exception('数据源未初始化');
@@ -333,13 +329,12 @@ class MedicalRecordService {
     try {
       setLoading(true);
 
-      print('MedicalRecordService: 搜索病历记录，关键词: $query');
-
-      final records = await dataSource.searchMedicalRecords(query, patientId: patientId);
+      final records =
+          await dataSource.searchMedicalRecords(query, patientId: patientId);
       clearError();
       return records;
     } catch (e) {
-      print('搜索病历记录时出错: $e');
+      LogManager.e('MedicalRecordService', '搜索病历记录时出错', error: e);
       setError('搜索病历记录失败: $e');
       return [];
     } finally {
@@ -359,7 +354,7 @@ class MedicalRecordService {
       clearError();
       return count;
     } catch (e) {
-      print('获取病历记录数量时出错: $e');
+      LogManager.e('MedicalRecordService', '获取病历记录数量时出错', error: e);
       setError('获取病历记录数量失败: $e');
       return 0;
     }
@@ -382,8 +377,6 @@ class MedicalRecordService {
     try {
       setLoading(true);
 
-      print('MedicalRecordService: 分页获取病历记录，患者ID: $patientId, 页码: $page');
-
       final result = await dataSource.getMedicalRecordsPage(
         patientId: patientId,
         page: page,
@@ -393,12 +386,10 @@ class MedicalRecordService {
         sortAscending: sortAscending,
       );
 
-      print('MedicalRecordService: 分页查询成功，总数: ${result['totalCount']}, 当前页: ${result['records'].length}');
-
       clearError();
       return result;
     } catch (e) {
-      print('分页获取病历记录时出错: $e');
+      LogManager.e('MedicalRecordService', '分页获取病历记录时出错', error: e);
       setError('分页获取病历记录失败: $e');
       return {
         'records': <PatientMedicalRecord>[],

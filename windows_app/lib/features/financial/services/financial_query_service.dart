@@ -1,5 +1,6 @@
 import '../../../data_sources/financial_data_source.dart';
 import '../../../models/financial_record.dart';
+import '../../../utils/log_manager.dart';
 
 /// 财务查询服务
 /// 负责处理财务相关的查询与聚合逻辑（从 FinancialProvider 中提取）
@@ -37,7 +38,8 @@ class FinancialQueryService {
         endDate: endDate,
       );
     } catch (e) {
-      print('❌ getPatientAggregatesPage 失败: $e');
+      LogManager.e('FinancialQueryService', 'getPatientAggregatesPage 失败',
+          error: e);
       rethrow;
     }
   }
@@ -48,18 +50,21 @@ class FinancialQueryService {
     try {
       return await getCurrentDataSource().getLatestRecordForPatient(patientId);
     } catch (e) {
-      print('❌ getLatestRecordForPatient 失败: $e');
+      LogManager.e('FinancialQueryService', 'getLatestRecordForPatient 失败',
+          error: e);
     }
     return null;
   }
 
   /// 按患者ID获取全部财务记录
-  Future<List<FinancialRecord>> getFinancialRecordsByPatientId(int patientId) async {
+  Future<List<FinancialRecord>> getFinancialRecordsByPatientId(
+      int patientId) async {
     if (!isInitialized()) return [];
     try {
-      return await getCurrentDataSource().getFinancialRecordsByPatientId(patientId);
+      return await getCurrentDataSource()
+          .getFinancialRecordsByPatientId(patientId);
     } catch (e) {
-      print('获取患者财务记录失败: $e');
+      LogManager.e('FinancialQueryService', '获取患者财务记录失败', error: e);
     }
     return [];
   }
@@ -70,7 +75,7 @@ class FinancialQueryService {
     try {
       return await getCurrentDataSource().getFinancialRecordById(id);
     } catch (e) {
-      print('获取财务记录失败: $e');
+      LogManager.e('FinancialQueryService', '获取财务记录失败', error: e);
     }
     return null;
   }
@@ -105,7 +110,7 @@ class FinancialQueryService {
         processingMax: processingMax,
       );
     } catch (e) {
-      print('❌ 获取收费项总数失败: $e');
+      LogManager.e('FinancialQueryService', '获取收费项总数失败', error: e);
       rethrow;
     }
   }
@@ -148,7 +153,7 @@ class FinancialQueryService {
         processingMax: processingMax,
       );
     } catch (e) {
-      print('❌ 获取分页收费项失败: $e');
+      LogManager.e('FinancialQueryService', '获取分页收费项失败', error: e);
       rethrow;
     }
   }
@@ -171,7 +176,8 @@ class FinancialQueryService {
   }) async {
     if (!isInitialized()) return [];
     try {
-      return await getCurrentDataSource().getAllFinancialItemsWithDetailsFiltered(
+      return await getCurrentDataSource()
+          .getAllFinancialItemsWithDetailsFiltered(
         sortBy: sortBy,
         sortOrder: sortOrder,
         searchQuery: searchQuery,
@@ -188,7 +194,7 @@ class FinancialQueryService {
         doctorFilter: getDoctorFilter(),
       );
     } catch (e) {
-      print('❌ 获取所有收费项(用于统计)失败: $e');
+      LogManager.e('FinancialQueryService', '获取所有收费项(用于统计)失败', error: e);
       rethrow;
     }
   }

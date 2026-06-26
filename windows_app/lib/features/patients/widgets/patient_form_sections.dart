@@ -41,7 +41,7 @@ class PatientFormBasicSection extends StatelessWidget {
         gradient: DentalColors.cardGradient,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: DentalColors.primary.withOpacity(0.1),
+          color: DentalColors.primary.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -168,7 +168,7 @@ class PatientFormContactSection extends StatelessWidget {
         gradient: DentalColors.cardGradient,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: DentalColors.info.withOpacity(0.1),
+          color: DentalColors.info.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -196,8 +196,8 @@ class PatientFormContactSection extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     color: hasBackupPhone
-                        ? DentalColors.error.withOpacity(0.1)
-                        : DentalColors.info.withOpacity(0.1),
+                        ? DentalColors.error.withValues(alpha: 0.1)
+                        : DentalColors.info.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
@@ -297,7 +297,7 @@ class PatientFormTreatmentSection extends StatelessWidget {
         gradient: DentalColors.cardGradient,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: DentalColors.success.withOpacity(0.1),
+          color: DentalColors.success.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -329,7 +329,7 @@ class PatientFormDentalConditionSection extends StatelessWidget {
         gradient: DentalColors.cardGradient,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: DentalColors.dentalTeal.withOpacity(0.1),
+          color: DentalColors.dentalTeal.withValues(alpha: 0.1),
           width: 1,
         ),
       ),

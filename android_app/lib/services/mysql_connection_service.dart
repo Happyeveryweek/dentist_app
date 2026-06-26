@@ -19,7 +19,8 @@ class MySQLConnectionService {
 
   /// 初始化 MySQL 连接（启动时快速失败）
   Future<void> initConnection({bool isStartup = true}) async {
-    if (_dbConfig == null) {
+    final config = _dbConfig;
+    if (config == null) {
       throw Exception('数据库配置未设置');
     }
 
@@ -33,21 +34,21 @@ class MySQLConnectionService {
 
         // 检查并转换localhost为10.0.2.2（如果在Android平台）
         if (Platform.isAndroid &&
-            (_dbConfig!.mysql.host == 'localhost' ||
-                _dbConfig!.mysql.host == '127.0.0.1')) {
+            (config.mysql.host == 'localhost' ||
+                config.mysql.host == '127.0.0.1')) {
           AppLogger.info('Android平台检测到localhost配置，自动转换为10.0.2.2');
-          _dbConfig!.mysql.host = '10.0.2.2';
+          config.mysql.host = '10.0.2.2';
 
           // 保存更新后的配置
-          await _dbConfig!.saveConfig();
+          await config.saveConfig();
           AppLogger.info('已自动更新配置文件中的MySQL主机为10.0.2.2');
         }
 
-        final host = _dbConfig!.mysql.host;
-        final port = _dbConfig!.mysql.port;
-        final database = _dbConfig!.mysql.database;
-        final username = _dbConfig!.mysql.username;
-        final password = _dbConfig!.mysql.password;
+        final host = config.mysql.host;
+        final port = config.mysql.port;
+        final database = config.mysql.database;
+        final username = config.mysql.username;
+        final password = config.mysql.password;
 
         AppLogger.info('MySQL连接参数: $host:$port/$database, 用户: $username');
 
@@ -97,16 +98,17 @@ class MySQLConnectionService {
         AppLogger.info('准备连接到MySQL: $host:$port/$database');
 
         try {
-          _mysqlConnection = await MySqlConnection.connect(settings);
+          final connection = await MySqlConnection.connect(settings);
+          _mysqlConnection = connection;
 
           // 设置会话字符编码，确保中文字符正确显示
-          await _mysqlConnection!.query("SET NAMES 'utf8mb4'");
-          await _mysqlConnection!.query("SET CHARACTER SET utf8mb4");
-          await _mysqlConnection!.query("SET character_set_connection=utf8mb4");
+          await connection.query("SET NAMES 'utf8mb4'");
+          await connection.query("SET CHARACTER SET utf8mb4");
+          await connection.query("SET character_set_connection=utf8mb4");
 
           // 设置连接保持参数
-          await _mysqlConnection!.query("SET wait_timeout = 28800"); // 8小时
-          await _mysqlConnection!.query(
+          await connection.query("SET wait_timeout = 28800"); // 8小时
+          await connection.query(
             "SET interactive_timeout = 28800",
           ); // 8小时
           AppLogger.info('MySQL字符编码和连接超时已设置');
@@ -130,8 +132,12 @@ class MySQLConnectionService {
         }
 
         // 测试连接
+        final currentConnection = _mysqlConnection;
+        if (currentConnection == null) {
+          throw Exception('MySQL连接未建立');
+        }
         try {
-          final results = await _mysqlConnection!.query('SELECT 1');
+          final results = await currentConnection.query('SELECT 1');
           if (results.isNotEmpty) {
             AppLogger.info('MySQL连接测试成功');
             break; // 连接成功，退出重试循环
@@ -174,8 +180,9 @@ class MySQLConnectionService {
       AppLogger.info('使用参数初始化MySQL连接...');
 
       // 首先关闭已有连接
-      if (_mysqlConnection != null) {
-        await _mysqlConnection!.close();
+      final existingConnection = _mysqlConnection;
+      if (existingConnection != null) {
+        await existingConnection.close();
         _mysqlConnection = null;
       }
 
@@ -231,12 +238,13 @@ class MySQLConnectionService {
       AppLogger.info('准备连接到MySQL: $effectiveHost:$port/$database');
 
       try {
-        _mysqlConnection = await MySqlConnection.connect(settings);
+        final connection = await MySqlConnection.connect(settings);
+        _mysqlConnection = connection;
 
         // 设置会话字符编码，确保中文字符正确显示
-        await _mysqlConnection!.query("SET NAMES 'utf8mb4'");
-        await _mysqlConnection!.query("SET CHARACTER SET utf8mb4");
-        await _mysqlConnection!.query("SET character_set_connection=utf8mb4");
+        await connection.query("SET NAMES 'utf8mb4'");
+        await connection.query("SET CHARACTER SET utf8mb4");
+        await connection.query("SET character_set_connection=utf8mb4");
         AppLogger.info('MySQL字符编码已设置为utf8mb4');
       } catch (e) {
         AppLogger.info('MySQL连接错误: $e');
@@ -252,8 +260,12 @@ class MySQLConnectionService {
       }
 
       // 测试连接
+      final newConnection = _mysqlConnection;
+      if (newConnection == null) {
+        throw Exception('MySQL连接未建立');
+      }
       try {
-        final results = await _mysqlConnection!.query('SELECT 1');
+        final results = await newConnection.query('SELECT 1');
         if (results.isNotEmpty) {
           AppLogger.info('MySQL连接测试成功');
         } else {
@@ -323,10 +335,11 @@ class MySQLConnectionService {
 
   /// 关闭MySQL连接
   Future<void> closeConnection() async {
-    if (_mysqlConnection != null) {
+    final connection = _mysqlConnection;
+    if (connection != null) {
       try {
         AppLogger.info('关闭MySQL连接');
-        await _mysqlConnection!.close();
+        await connection.close();
         AppLogger.info('MySQL连接已关闭');
       } catch (e) {
         AppLogger.info('关闭MySQL连接时出错: $e');

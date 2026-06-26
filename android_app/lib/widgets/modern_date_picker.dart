@@ -21,15 +21,15 @@ class ModernDatePickerDialog extends StatefulWidget {
 
 class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
     with TickerProviderStateMixin {
-  late DateTime _selectedDate;
-  late DateTime _currentMonth;
-  late AnimationController _fadeController;
-  late AnimationController _scaleController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
+  DateTime _selectedDate = DateTime.now();
+  DateTime _currentMonth = DateTime.now();
+  AnimationController? _fadeController;
+  AnimationController? _scaleController;
+  Animation<double> _fadeAnimation = const AlwaysStoppedAnimation<double>(1.0);
+  Animation<double> _scaleAnimation = const AlwaysStoppedAnimation<double>(1.0);
 
   // 手动输入相关变量
-  late TextEditingController _dateTextController;
+  TextEditingController? _dateTextController;
   String? _dateErrorText;
 
   @override
@@ -47,31 +47,33 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
       text: DateFormat('yyyy-MM-dd').format(widget.initialDate),
     );
 
-    _fadeController = AnimationController(
+    final fadeController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _scaleController = AnimationController(
+    final scaleController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
+    _fadeController = fadeController;
+    _scaleController = scaleController;
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+      CurvedAnimation(parent: fadeController, curve: Curves.easeInOut),
     );
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut),
+      CurvedAnimation(parent: scaleController, curve: Curves.elasticOut),
     );
 
-    _fadeController.forward();
-    _scaleController.forward();
+    fadeController.forward();
+    scaleController.forward();
   }
 
   @override
   void dispose() {
-    _fadeController.dispose();
-    _scaleController.dispose();
-    _dateTextController.dispose();
+    _fadeController?.dispose();
+    _scaleController?.dispose();
+    _dateTextController?.dispose();
     super.dispose();
   }
 
@@ -88,10 +90,11 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
   }
 
   void _selectDate(DateTime date) {
+    final dateTextController = _dateTextController;
     setState(() {
       _selectedDate = date;
       _currentMonth = DateTime(date.year, date.month, 1);
-      _dateTextController.text = DateFormat('yyyy-MM-dd').format(date);
+      dateTextController?.text = DateFormat('yyyy-MM-dd').format(date);
       _dateErrorText = null;
     });
   }
@@ -192,6 +195,7 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
 
   @override
   Widget build(BuildContext context) {
+    final title = widget.title;
     final days = _getDaysInMonth();
     final monthNames = [
       '一月',
@@ -251,9 +255,9 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (widget.title != null) ...[
+                            if (title != null) ...[
                               Text(
-                                widget.title!,
+                                title,
                                 style: const TextStyle(
                                   color: Colors.black87,
                                   fontSize: 16,
@@ -325,8 +329,12 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
                             borderRadius: BorderRadius.circular(12),
                           ),
                           suffixIcon: IconButton(
-                            onPressed:
-                                () => _parseTextDate(_dateTextController.text),
+                            onPressed: () {
+                              final text = _dateTextController?.text;
+                              if (text != null) {
+                                _parseTextDate(text);
+                              }
+                            },
                             icon: const Icon(Icons.check_circle),
                             tooltip: '确认日期',
                           ),

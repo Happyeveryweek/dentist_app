@@ -37,14 +37,14 @@ class PatientFormDentalSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
+              const Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.medical_services,
                     color: AppTheme.primaryColor,
                     size: 20,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     '牙齿状况',
                     style: TextStyle(
@@ -116,6 +116,7 @@ class PatientFormDentalChartRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final createdByDoctor = row.createdByDoctor;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
@@ -124,13 +125,13 @@ class PatientFormDentalChartRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: canEdit
-              ? Colors.green.withOpacity(0.3)
-              : Colors.grey.withOpacity(0.3),
+              ? Colors.green.withValues(alpha: 0.3)
+              : Colors.grey.withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 3,
             offset: const Offset(0, 1),
           ),
@@ -139,14 +140,14 @@ class PatientFormDentalChartRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (row.createdByDoctor != null && row.createdByDoctor!.isNotEmpty)
+          if (createdByDoctor != null && createdByDoctor.isNotEmpty)
             Container(
               margin: const EdgeInsets.only(bottom: 6),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: canEdit
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.grey.withOpacity(0.1),
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.grey.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Row(
@@ -158,11 +159,12 @@ class PatientFormDentalChartRow extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '创建医生: ${row.createdByDoctor}',
+                    '创建医生: $createdByDoctor',
                     style: TextStyle(
                       fontSize: 10,
-                      color:
-                          canEdit ? Colors.green.shade700 : Colors.grey.shade600,
+                      color: canEdit
+                          ? Colors.green.shade700
+                          : Colors.grey.shade600,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -275,7 +277,7 @@ class PatientFormDentalChartRow extends StatelessWidget {
                     minWidth: 30,
                     minHeight: 30,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.lock_outline,
                     color: Colors.grey,
                     size: 18,

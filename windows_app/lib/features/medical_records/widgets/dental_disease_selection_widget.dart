@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/dental_icons.dart';
-import 'medical_record_form_input_field.dart';
 
 /// 牙科疾病选择组件
 class DentalDiseaseSelectionWidget extends StatelessWidget {
@@ -36,17 +35,17 @@ class DentalDiseaseSelectionWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(
               Icons.medical_services_rounded,
               size: 18,
               color: DentalColors.primary,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               '当前牙科疾病',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: DentalColors.onSurface,
@@ -76,29 +75,40 @@ class DentalDiseaseSelectionWidget extends StatelessWidget {
                       spacing: 8,
                       runSpacing: 8,
                       children: dentalDiseaseOptions.keys.map((diseaseType) {
-                        final isSelected = selectedDentalDiseases.any((selected) => 
-                            selected.startsWith(diseaseType));
-                        
+                        final isSelected = selectedDentalDiseases.any(
+                            (selected) => selected.startsWith(diseaseType));
+
                         return FilterChip(
                           label: Text(diseaseType),
                           selected: isSelected,
-                          onSelected: hasEditPermission ? (selected) {
-                            final newSelected = Set<String>.from(selectedDentalDiseases);
-                            if (selected) {
-                              newSelected.add(diseaseType);
-                            } else {
-                              newSelected.removeWhere((item) => item.startsWith(diseaseType));
-                            }
-                            onSelectionChanged(newSelected);
-                          } : null,
-                          backgroundColor: hasEditPermission ? DentalColors.surface : Colors.grey.shade200,
-                          selectedColor: DentalColors.primary.withOpacity(0.2),
+                          onSelected: hasEditPermission
+                              ? (selected) {
+                                  final newSelected =
+                                      Set<String>.from(selectedDentalDiseases);
+                                  if (selected) {
+                                    newSelected.add(diseaseType);
+                                  } else {
+                                    newSelected.removeWhere(
+                                        (item) => item.startsWith(diseaseType));
+                                  }
+                                  onSelectionChanged(newSelected);
+                                }
+                              : null,
+                          backgroundColor: hasEditPermission
+                              ? DentalColors.surface
+                              : Colors.grey.shade200,
+                          selectedColor:
+                              DentalColors.primary.withValues(alpha: 0.2),
                           checkmarkColor: DentalColors.primary,
                           labelStyle: TextStyle(
-                            color: hasEditPermission ? 
-                              (isSelected ? DentalColors.primary : DentalColors.onSurface) : 
-                              Colors.grey,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            color: hasEditPermission
+                                ? (isSelected
+                                    ? DentalColors.primary
+                                    : DentalColors.onSurface)
+                                : Colors.grey,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                           ),
                         );
                       }).toList(),
@@ -107,15 +117,16 @@ class DentalDiseaseSelectionWidget extends StatelessWidget {
 
               // 显示选中疾病类型的子类型
               if (templatesLoaded)
-                ...dentalDiseaseOptions.entries.where((entry) => 
-                    selectedDentalDiseases.any((selected) => selected.startsWith(entry.key))
-                ).map((entry) => DentalDiseaseSubTypeSelectionWidget(
-                  diseaseType: entry.key,
-                  subTypes: entry.value,
-                  selectedDentalDiseases: selectedDentalDiseases,
-                  hasEditPermission: hasEditPermission,
-                  onSelectionChanged: onSelectionChanged,
-                )),
+                ...dentalDiseaseOptions.entries
+                    .where((entry) => selectedDentalDiseases
+                        .any((selected) => selected.startsWith(entry.key)))
+                    .map((entry) => DentalDiseaseSubTypeSelectionWidget(
+                          diseaseType: entry.key,
+                          subTypes: entry.value,
+                          selectedDentalDiseases: selectedDentalDiseases,
+                          hasEditPermission: hasEditPermission,
+                          onSelectionChanged: onSelectionChanged,
+                        )),
             ],
           ),
         ),
@@ -159,10 +170,10 @@ class DentalDiseaseSubTypeSelectionWidget extends StatelessWidget {
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: DentalColors.primary.withOpacity(0.05),
+        color: DentalColors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: DentalColors.primary.withOpacity(0.2),
+          color: DentalColors.primary.withValues(alpha: 0.2),
         ),
       ),
       child: Wrap(
@@ -175,7 +186,7 @@ class DentalDiseaseSubTypeSelectionWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               '$diseaseType 详细类型:',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: DentalColors.primary,
@@ -185,24 +196,30 @@ class DentalDiseaseSubTypeSelectionWidget extends StatelessWidget {
           ...subTypes.map((subType) {
             final fullType = '$diseaseType - $subType';
             final isSelected = selectedDentalDiseases.contains(fullType);
-            
+
             return FilterChip(
               label: Text(subType),
               selected: isSelected,
-              onSelected: hasEditPermission ? (selected) {
-                final newSelected = Set<String>.from(selectedDentalDiseases);
-                if (selected) {
-                  newSelected.add(fullType);
-                } else {
-                  newSelected.remove(fullType);
-                }
-                onSelectionChanged(newSelected);
-              } : null,
-              backgroundColor: hasEditPermission ? DentalColors.surface : Colors.grey.shade200,
-              selectedColor: DentalColors.primary.withOpacity(0.3),
+              onSelected: hasEditPermission
+                  ? (selected) {
+                      final newSelected =
+                          Set<String>.from(selectedDentalDiseases);
+                      if (selected) {
+                        newSelected.add(fullType);
+                      } else {
+                        newSelected.remove(fullType);
+                      }
+                      onSelectionChanged(newSelected);
+                    }
+                  : null,
+              backgroundColor: hasEditPermission
+                  ? DentalColors.surface
+                  : Colors.grey.shade200,
+              selectedColor: DentalColors.primary.withValues(alpha: 0.3),
               checkmarkColor: DentalColors.primary,
               labelStyle: TextStyle(
-                color: isSelected ? DentalColors.primary : DentalColors.onSurface,
+                color:
+                    isSelected ? DentalColors.primary : DentalColors.onSurface,
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),

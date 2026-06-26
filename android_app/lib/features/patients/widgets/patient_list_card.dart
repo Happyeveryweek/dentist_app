@@ -25,6 +25,8 @@ class PatientListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // 获取显示的电话号码（如果是JSON格式，显示第一个）
     final displayPhone = _getDisplayPhone(patient.phone);
+    final doctor = patient.doctor;
+    final address = patient.address;
 
     // 为每个患者生成一个稳定的随机颜色，基于姓名
     final int colorSeed = patient.name.hashCode;
@@ -223,11 +225,10 @@ class PatientListCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child:
-                              (patient.doctor != null &&
-                                      patient.doctor!.isNotEmpty)
+                              (doctor != null && doctor.isNotEmpty)
                                   ? _buildInfoItem(
                                     icon: Icons.medical_services_outlined,
-                                    text: '医生: ${patient.doctor}',
+                                    text: '医生: $doctor',
                                     color: AppTheme.secondaryColor,
                                   )
                                   : _buildInfoItem(
@@ -238,11 +239,10 @@ class PatientListCard extends StatelessWidget {
                         ),
                         Expanded(
                           child:
-                              (patient.address != null &&
-                                      patient.address!.isNotEmpty)
+                              (address != null && address.isNotEmpty)
                                   ? _buildInfoItem(
                                     icon: Icons.location_on_outlined,
-                                    text: patient.address!,
+                                    text: address,
                                     color: AppTheme.accentColor,
                                   )
                                   : _buildInfoItem(

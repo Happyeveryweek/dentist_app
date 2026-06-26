@@ -25,16 +25,17 @@ class PatientDeletionService {
 
         int appointmentsDeleted = 0;
         for (final appointment in appointments) {
-          if (appointment.id != null) {
+          final appointmentId = appointment.id;
+          if (appointmentId != null) {
             try {
               final result = await _deleteAppointment(
-                appointment.id!,
+                appointmentId,
                 initService,
               );
               appointmentsDeleted += result;
-              AppLogger.info('已删除预约 ID: ${appointment.id}');
+              AppLogger.info('已删除预约 ID: $appointmentId');
             } catch (e) {
-              AppLogger.info('删除患者相关预约时出错 ID: ${appointment.id}, 错误: $e');
+              AppLogger.info('删除患者相关预约时出错 ID: $appointmentId, 错误: $e');
             }
           }
         }

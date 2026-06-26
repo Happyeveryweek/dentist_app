@@ -20,7 +20,8 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
   @override
   void initState() {
     super.initState();
-    _localTeethData = widget.teethData.map((item) => Map<String, String>.from(item)).toList();
+    _localTeethData =
+        widget.teethData.map((item) => Map<String, String>.from(item)).toList();
   }
 
   void _updateTeethData(int crossIndex, String quadrant, String value) {
@@ -42,15 +43,15 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.medical_services,
-                color: const Color(0xFF2196F3),
+                color: Color(0xFF2196F3),
                 size: 18,
               ),
-              const SizedBox(width: 8),
-              const Text(
+              SizedBox(width: 8),
+              Text(
                 '牙齿情况',
                 style: TextStyle(
                   fontSize: 16,
@@ -102,16 +103,16 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
   }
 
   Widget _buildCross(int crossIndex) {
-    final double width = 120.0;
-    final double height = 65.0;
-    final double centerX = width / 2;
-    final double centerY = height / 2;
+    const double width = 120.0;
+    const double height = 65.0;
+    const double centerX = width / 2;
+    const double centerY = height / 2;
 
     return Stack(
       alignment: Alignment.center,
       children: [
         CustomPaint(
-          size: Size(width, height),
+          size: const Size(width, height),
           painter: CrossPainter(),
         ),
         Positioned(
@@ -136,8 +137,10 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
               fillColor: Colors.transparent,
             ),
             style: const TextStyle(fontSize: 12),
-            controller: TextEditingController(text: _localTeethData[crossIndex]['topLeft']),
-            onChanged: (value) => _updateTeethData(crossIndex, 'topLeft', value),
+            controller: TextEditingController(
+                text: _localTeethData[crossIndex]['topLeft']),
+            onChanged: (value) =>
+                _updateTeethData(crossIndex, 'topLeft', value),
           ),
         ),
         Positioned(
@@ -162,8 +165,10 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
               fillColor: Colors.transparent,
             ),
             style: const TextStyle(fontSize: 12),
-            controller: TextEditingController(text: _localTeethData[crossIndex]['topRight']),
-            onChanged: (value) => _updateTeethData(crossIndex, 'topRight', value),
+            controller: TextEditingController(
+                text: _localTeethData[crossIndex]['topRight']),
+            onChanged: (value) =>
+                _updateTeethData(crossIndex, 'topRight', value),
           ),
         ),
         Positioned(
@@ -188,8 +193,10 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
               fillColor: Colors.transparent,
             ),
             style: const TextStyle(fontSize: 12),
-            controller: TextEditingController(text: _localTeethData[crossIndex]['bottomLeft']),
-            onChanged: (value) => _updateTeethData(crossIndex, 'bottomLeft', value),
+            controller: TextEditingController(
+                text: _localTeethData[crossIndex]['bottomLeft']),
+            onChanged: (value) =>
+                _updateTeethData(crossIndex, 'bottomLeft', value),
           ),
         ),
         Positioned(
@@ -214,8 +221,10 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
               fillColor: Colors.transparent,
             ),
             style: const TextStyle(fontSize: 12),
-            controller: TextEditingController(text: _localTeethData[crossIndex]['bottomRight']),
-            onChanged: (value) => _updateTeethData(crossIndex, 'bottomRight', value),
+            controller: TextEditingController(
+                text: _localTeethData[crossIndex]['bottomRight']),
+            onChanged: (value) =>
+                _updateTeethData(crossIndex, 'bottomRight', value),
           ),
         ),
       ],

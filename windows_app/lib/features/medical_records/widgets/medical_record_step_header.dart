@@ -46,7 +46,7 @@ class MedicalRecordStepHeader extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   color: DentalColors.onSurfaceVariant,
                 ),

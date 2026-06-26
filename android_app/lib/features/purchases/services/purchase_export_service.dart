@@ -103,12 +103,15 @@ class PurchaseExportService {
         fontFamily: 'Roboto',
         height: 1.5, // 增加行高
       );
+      final supplier = record.supplier;
+      final doctor = record.doctor;
+      final notes = record.notes;
       final basicInfoText =
           '记录ID: #${record.id}\n'
           '采购日期: ${DateFormat('yyyy年MM月dd日').format(record.purchaseDate)}\n'
-          '${record.supplier != null && record.supplier!.isNotEmpty ? '供应商: ${record.supplier}\n' : ''}'
-          '${record.doctor != null && record.doctor!.isNotEmpty ? '采购医生: ${record.doctor}\n' : ''}'
-          '${record.notes != null && record.notes!.isNotEmpty ? '备注: ${record.notes}\n' : ''}'
+          '${supplier != null && supplier.isNotEmpty ? '供应商: ${record.supplier}\n' : ''}'
+          '${doctor != null && doctor.isNotEmpty ? '采购医生: ${record.doctor}\n' : ''}'
+          '${notes != null && notes.isNotEmpty ? '备注: ${record.notes}\n' : ''}'
           '创建时间: ${DateFormat('yyyy年MM月dd日 HH:mm').format(record.createdAt)}\n'
           '${record.updatedAt != record.createdAt ? '更新时间: ${DateFormat('yyyy年MM月dd日 HH:mm').format(record.updatedAt)}' : ''}';
 
@@ -483,7 +486,10 @@ class PurchaseExportService {
       finalHeight.toInt(),
     );
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    final bytes = byteData!.buffer.asUint8List();
+    if (byteData == null) {
+      throw Exception('导出图片数据失败');
+    }
+    final bytes = byteData.buffer.asUint8List();
 
     return bytes;
   }

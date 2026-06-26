@@ -25,7 +25,7 @@ class FinancialItemCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,25 +94,31 @@ class FinancialItemCard extends StatelessWidget {
               children: [
                 Icon(Icons.payment, size: 16, color: Colors.grey[600]),
                 const SizedBox(width: 6),
-                if (FinancialPaymentMethodHelper.iconAssetPathOrNull(
+                Builder(
+                  builder: (context) {
+                    final iconPath = FinancialPaymentMethodHelper.iconAssetPathOrNull(
                       item.paymentMethod,
-                    ) !=
-                    null) ...[
-                  Image.asset(
-                    FinancialPaymentMethodHelper.iconAssetPathOrNull(
-                      item.paymentMethod,
-                    )!,
-                    width: 16,
-                    height: 16,
-                    errorBuilder:
-                        (_, __, ___) => Icon(
-                          Icons.payment,
-                          size: 16,
-                          color: Colors.grey[600],
+                    );
+                    if (iconPath == null) return const SizedBox.shrink();
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          iconPath,
+                          width: 16,
+                          height: 16,
+                          errorBuilder:
+                              (_, __, ___) => Icon(
+                                Icons.payment,
+                                size: 16,
+                                color: Colors.grey[600],
+                              ),
                         ),
-                  ),
-                  const SizedBox(width: 6),
-                ],
+                        const SizedBox(width: 6),
+                      ],
+                    );
+                  },
+                ),
                 Text(
                   FinancialPaymentMethodHelper.displayName(item.paymentMethod),
                   style: TextStyle(
@@ -140,14 +146,14 @@ class FinancialItemCard extends StatelessWidget {
                 child: _buildAmountInfo(
                   '已收费',
                   '¥${NumberFormat('#,##0').format(item.totalPrice)}',
-                  Colors.orange[600]!,
+                  Colors.orange.shade600,
                 ),
               ),
               Expanded(
                 child: _buildAmountInfo(
                   '加工费',
                   '¥${NumberFormat('#,##0').format(item.processingFee)}',
-                  Colors.green[600]!,
+                  Colors.green.shade600,
                 ),
               ),
             ],

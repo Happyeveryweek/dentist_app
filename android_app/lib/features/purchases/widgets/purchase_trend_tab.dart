@@ -62,12 +62,12 @@ class PurchaseTrendTab extends StatelessWidget {
     }
 
     final maxAmount = sortedMonths.fold<double>(0.0, (max, month) {
-      final amount = monthlyData[month]!['amount']!;
+      final amount = monthlyData[month]?['amount'] ?? 0.0;
       return amount > max ? amount : max;
     });
 
     final maxQuantity = sortedMonths.fold<double>(0.0, (max, month) {
-      final quantity = monthlyData[month]!['quantity']!;
+      final quantity = monthlyData[month]?['quantity'] ?? 0.0;
       return quantity > max ? quantity : max;
     });
 
@@ -102,10 +102,10 @@ class PurchaseTrendTab extends StatelessWidget {
                 // 反转索引，使最近的月份显示在最上面
                 final reversedIndex = sortedMonths.length - 1 - index;
                 final month = sortedMonths[reversedIndex];
-                final data = monthlyData[month]!;
-                final amount = data['amount']!;
-                final quantity = data['quantity']!;
-                final records = data['records']!.toInt();
+                final data = monthlyData[month];
+                final amount = data?['amount'] ?? 0.0;
+                final quantity = data?['quantity'] ?? 0.0;
+                final records = (data?['records'] ?? 0.0).toInt();
 
                 final amountRate = maxAmount > 0 ? amount / maxAmount : 0.0;
                 final quantityRate =
@@ -117,7 +117,7 @@ class PurchaseTrendTab extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: Colors.grey[50],
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[200]!),
+                    border: Border.all(color: Colors.grey.shade200),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -161,7 +161,7 @@ class PurchaseTrendTab extends StatelessWidget {
                               value: amountRate,
                               backgroundColor: Colors.grey[200],
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.green[600]!,
+                                Colors.green.shade600,
                               ),
                               minHeight: 6,
                             ),
@@ -201,7 +201,7 @@ class PurchaseTrendTab extends StatelessWidget {
                               value: quantityRate,
                               backgroundColor: Colors.grey[200],
                               valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.orange[600]!,
+                                Colors.orange.shade600,
                               ),
                               minHeight: 6,
                             ),
@@ -272,10 +272,10 @@ class PurchaseTrendTab extends StatelessWidget {
               ],
               rows:
                   reversedMonths.map((month) {
-                    final data = monthlyData[month]!;
-                    final amount = data['amount']!;
-                    final quantity = data['quantity']!;
-                    final records = data['records']!.toInt();
+                    final data = monthlyData[month];
+                    final amount = data?['amount'] ?? 0.0;
+                    final quantity = data?['quantity'] ?? 0.0;
+                    final records = (data?['records'] ?? 0.0).toInt();
                     final avgPrice = quantity > 0 ? amount / quantity : 0.0;
 
                     return DataRow(

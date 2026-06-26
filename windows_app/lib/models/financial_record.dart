@@ -1,5 +1,5 @@
-import 'package:intl/intl.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/map_parser.dart';
 
 class FinancialRecord {
   final int? id;
@@ -20,13 +20,21 @@ class FinancialRecord {
 
   // 从Map创建FinancialRecord
   factory FinancialRecord.fromMap(Map<String, dynamic> map) {
+    final p = MapParser(map, context: 'FinancialRecord');
+
     return FinancialRecord(
-      id: map['id'] as int?,
-      patientId: map['patient_id'] as int,
-      totalQuantity: map['total_quantity'] as int, // 新增：收费总条数
-      notes: map['notes'] as String?,
-      createdAt: DateTimeFormatter.fromDbString(map['created_at'] as String),
-      updatedAt: DateTimeFormatter.fromDbString(map['updated_at'] as String),
+      id: p.optional('id', (v) => v as int),
+      patientId: p.required('patient_id', (v) => v as int),
+      totalQuantity: p.integer('total_quantity'),
+      notes: p.optional('notes', (v) => v.toString()),
+      createdAt: p.required(
+        'created_at',
+        (v) => v is DateTime ? v : DateTimeFormatter.fromDbString(v.toString()),
+      ),
+      updatedAt: p.required(
+        'updated_at',
+        (v) => v is DateTime ? v : DateTimeFormatter.fromDbString(v.toString()),
+      ),
     );
   }
 

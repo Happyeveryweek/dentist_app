@@ -17,20 +17,22 @@ class FinancialPermissionService {
 
   /// 获取医生过滤条件（用于数据访问权限控制）
   String? getDoctorFilter() {
-    if (_userProvider == null || _userProvider!.currentUser == null) {
+    final provider = _userProvider;
+    if (provider == null) return null;
+    final currentUser = provider.currentUser;
+    if (currentUser == null) {
       return null;
     }
 
-    return _userProvider!.buildDoctorFilter(_userProvider!.currentUser);
+    return provider.buildDoctorFilter(currentUser);
   }
 
   /// 财务管理需要数据过滤 - 普通用户只能查看自己医生的数据
   bool shouldFilterByDoctor() {
-    if (_userProvider == null || _userProvider!.currentUser == null) {
+    final currentUser = _userProvider?.currentUser;
+    if (currentUser == null) {
       return false;
     }
-
-    final currentUser = _userProvider!.currentUser!;
 
     // 管理员不需要数据过滤
     if (currentUser.role == 'admin') {
@@ -38,7 +40,8 @@ class FinancialPermissionService {
     }
 
     // 财务管理：有医生字段的用户需要数据过滤
-    return currentUser.doctor != null && currentUser.doctor!.isNotEmpty;
+    final doctor = currentUser.doctor;
+    return doctor != null && doctor.isNotEmpty;
   }
 
   /// 获取过滤后的财务记录（基于医生字段）

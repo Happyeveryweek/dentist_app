@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 import '../utils/datetime_formatter.dart';
+import '../utils/log_manager.dart';
 
 // 采购记录模型
 class PurchaseRecord {
@@ -34,10 +35,11 @@ class PurchaseRecord {
         if (map['created_at'] is DateTime) {
           created = map['created_at'];
         } else {
-          created = DateTimeFormatter.fromDbString(map['created_at'].toString());
+          created =
+              DateTimeFormatter.fromDbString(map['created_at'].toString());
         }
       } catch (e) {
-        print('解析created_at错误: ${map['created_at']}');
+        LogManager.e('PurchaseRecord', '解析created_at错误: ${map['created_at']}');
       }
     }
 
@@ -47,10 +49,11 @@ class PurchaseRecord {
         if (map['updated_at'] is DateTime) {
           updated = map['updated_at'];
         } else {
-          updated = DateTimeFormatter.fromDbString(map['updated_at'].toString());
+          updated =
+              DateTimeFormatter.fromDbString(map['updated_at'].toString());
         }
       } catch (e) {
-        print('解析updated_at错误: ${map['updated_at']}');
+        LogManager.e('PurchaseRecord', '解析updated_at错误: ${map['updated_at']}');
       }
     }
 
@@ -60,24 +63,54 @@ class PurchaseRecord {
         if (map['purchase_date'] is DateTime) {
           purchaseDate = map['purchase_date'];
         } else {
-          purchaseDate = DateTimeFormatter.fromDbString(map['purchase_date'].toString());
+          purchaseDate =
+              DateTimeFormatter.fromDbString(map['purchase_date'].toString());
         }
       } catch (e) {
-        print('解析purchase_date错误: ${map['purchase_date']}');
+        LogManager.e(
+            'PurchaseRecord', '解析purchase_date错误: ${map['purchase_date']}');
       }
     }
 
     return PurchaseRecord(
-      id: map['id'],
+      id: _parseIntOrNull(map['id']),
       purchaseDate: purchaseDate,
-      totalQuantity: map['total_quantity'] ?? 0,
-      totalAmount: map['total_amount']?.toDouble() ?? 0.0,
-      supplier: map['supplier'],
-      doctor: map['doctor'],
-      notes: map['notes'],
+      totalQuantity: _parseInt(map['total_quantity']),
+      totalAmount: _parseDouble(map['total_amount']),
+      supplier: _parseStringOrNull(map['supplier']),
+      doctor: _parseStringOrNull(map['doctor']),
+      notes: _parseStringOrNull(map['notes']),
       createdAt: created,
       updatedAt: updated,
     );
+  }
+
+  static int _parseInt(dynamic value, {int defaultValue = 0}) {
+    if (value == null) return defaultValue;
+    if (value is int) return value;
+    if (value is BigInt) return value.toInt();
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? defaultValue;
+  }
+
+  static int? _parseIntOrNull(dynamic value) {
+    if (value == null) return null;
+    return _parseInt(value);
+  }
+
+  static double _parseDouble(dynamic value, {double defaultValue = 0.0}) {
+    if (value == null) return defaultValue;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is BigInt) return value.toDouble();
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? defaultValue;
+  }
+
+  static String? _parseStringOrNull(dynamic value) {
+    if (value == null) return null;
+    final text = value.toString();
+    return text.isEmpty ? null : text;
   }
 
   // 将PurchaseRecord对象转换为Map

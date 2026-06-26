@@ -53,13 +53,14 @@ class DentalDiseaseTypes {
   /// 根据搜索关键词过滤疾病类型
   static Map<String, List<String>> filterDiseases(String keyword) {
     if (keyword.isEmpty) return diseases;
-    
+
     final Map<String, List<String>> filtered = {};
     diseases.forEach((type, subTypes) {
       if (type.contains(keyword)) {
         filtered[type] = subTypes;
       } else {
-        final matchingSubTypes = subTypes.where((subType) => subType.contains(keyword)).toList();
+        final matchingSubTypes =
+            subTypes.where((subType) => subType.contains(keyword)).toList();
         if (matchingSubTypes.isNotEmpty) {
           filtered[type] = matchingSubTypes;
         }

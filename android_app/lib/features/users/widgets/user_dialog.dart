@@ -56,14 +56,16 @@ class _UserDialogState extends State<UserDialog> {
 
   /// 初始化表单
   void _initializeForm() {
-    if (widget.user != null) {
+    final existingUser = widget.user;
+    if (existingUser != null) {
       // 编辑模式
       _isEditMode = true;
-      _usernameController.text = widget.user!.username;
-      _emailController.text = widget.user!.email ?? '';
+      final user = existingUser;
+      _usernameController.text = user.username;
+      _emailController.text = user.email ?? '';
 
       // 确保角色值在有效范围内
-      final userRole = widget.user!.role;
+      final userRole = user.role;
       if (_roles.contains(userRole)) {
         _selectedRole = userRole;
       } else {
@@ -72,17 +74,17 @@ class _UserDialogState extends State<UserDialog> {
         _selectedRole = 'user';
       }
 
-      _doctorController.text = widget.user!.doctor ?? '';
+      _doctorController.text = user.doctor ?? '';
 
       // 编辑模式下密码字段可以为空
       _passwordController.text = '';
       _confirmPasswordController.text = '';
 
       // 加载现有的头像数据
-      if (widget.user!.imageData != null &&
-          widget.user!.imageData!.isNotEmpty) {
-        _uploadedImageData = widget.user!.imageData;
-        _avatarFileName = widget.user!.avatar;
+      final imageData = user.imageData;
+      if (imageData != null && imageData.isNotEmpty) {
+        _uploadedImageData = imageData;
+        _avatarFileName = user.avatar;
       }
     } else {
       // 新增模式
@@ -93,6 +95,7 @@ class _UserDialogState extends State<UserDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final uploadedImageData = _uploadedImageData;
     return Dialog(
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
@@ -116,7 +119,7 @@ class _UserDialogState extends State<UserDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 头像上传
-                      _buildAvatarUploadSection(),
+                      _buildAvatarUploadSection(uploadedImageData),
 
                       const SizedBox(height: 24),
 
@@ -335,10 +338,11 @@ class _UserDialogState extends State<UserDialog> {
             );
           }).toList(),
       onChanged: (value) {
-        setState(() {
-          _selectedRole = value!;
-        });
-      },
+          if (value == null) return;
+          setState(() {
+            _selectedRole = value;
+          });
+        },
       validator: (value) {
         if (value == null || value.isEmpty) {
           return '请选择用户角色';
@@ -370,7 +374,7 @@ class _UserDialogState extends State<UserDialog> {
   }
 
   /// 构建头像上传部分
-  Widget _buildAvatarUploadSection() {
+  Widget _buildAvatarUploadSection(List<int>? uploadedImageData) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -390,13 +394,13 @@ class _UserDialogState extends State<UserDialog> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.grey[200],
-                border: Border.all(color: Colors.grey[300]!, width: 1),
+                border: Border.all(color: Colors.grey.shade300, width: 1),
               ),
               child:
-                  _uploadedImageData != null && _uploadedImageData!.isNotEmpty
+                  uploadedImageData != null && uploadedImageData.isNotEmpty
                       ? CircleAvatar(
                         backgroundImage: MemoryImage(
-                          Uint8List.fromList(_uploadedImageData!),
+                          Uint8List.fromList(uploadedImageData),
                         ),
                       )
                       : CircleAvatar(
@@ -432,8 +436,7 @@ class _UserDialogState extends State<UserDialog> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                if (_uploadedImageData != null &&
-                    _uploadedImageData!.isNotEmpty)
+                if (uploadedImageData != null && uploadedImageData.isNotEmpty)
                   ElevatedButton.icon(
                     onPressed: () {
                       setState(() {
@@ -481,18 +484,22 @@ class _UserDialogState extends State<UserDialog> {
         Uint8List? bytes;
 
         // 优先使用bytes属性
-        if (file.bytes != null) {
-          bytes = file.bytes!;
+        final fileBytes = file.bytes;
+        if (fileBytes != null) {
+          bytes = fileBytes;
           AppLogger.info('从bytes属性获取数据: ${bytes.length} 字节');
         }
         // 如果bytes为空，尝试从路径读取
-        else if (file.path != null) {
-          try {
-            final imageFile = File(file.path!);
-            bytes = await imageFile.readAsBytes();
-            AppLogger.info('从文件路径读取数据: ${bytes.length} 字节');
-          } catch (e) {
-            AppLogger.info('从文件路径读取失败: $e');
+        else {
+          final filePath = file.path;
+          if (filePath != null) {
+            try {
+              final imageFile = File(filePath);
+              bytes = await imageFile.readAsBytes();
+              AppLogger.info('从文件路径读取数据: ${bytes.length} 字节');
+            } catch (e) {
+              AppLogger.info('从文件路径读取失败: $e');
+            }
           }
         }
 
@@ -575,7 +582,7 @@ class _UserDialogState extends State<UserDialog> {
           bottomLeft: Radius.circular(12),
           bottomRight: Radius.circular(12),
         ),
-        border: Border(top: BorderSide(color: Colors.grey[300]!, width: 1)),
+        border: Border(top: BorderSide(color: Colors.grey.shade300, width: 1)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -637,7 +644,8 @@ class _UserDialogState extends State<UserDialog> {
 
   /// 保存用户
   Future<void> _saveUser() async {
-    if (!_formKey.currentState!.validate()) {
+    final formState = _formKey.currentState;
+    if (formState == null || !formState.validate()) {
       return;
     }
 

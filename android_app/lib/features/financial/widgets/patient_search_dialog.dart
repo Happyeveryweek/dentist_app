@@ -194,11 +194,11 @@ class _PatientSearchDialogState extends State<PatientSearchDialog> {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
                   ),
                   filled: true,
                   fillColor: Colors.grey[50],
@@ -245,7 +245,7 @@ class _PatientSearchDialogState extends State<PatientSearchDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.grey[50],
-                border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
+                border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
               ),
               child: Row(
                 children: [
@@ -378,7 +378,7 @@ class _PatientSearchDialogState extends State<PatientSearchDialog> {
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: Colors.grey[200]!),
+                                  border: Border.all(color: Colors.grey.shade200),
                                 ),
                                 child: Row(
                                   children: [

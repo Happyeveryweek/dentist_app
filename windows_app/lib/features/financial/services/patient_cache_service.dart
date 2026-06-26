@@ -1,10 +1,9 @@
 import '../../../models/patient.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../utils/pinyin_util.dart';
-import 'package:flutter/material.dart';
 
 /// 患者缓存服务
-/// 
+///
 /// 提供患者信息缓存和查询功能
 class PatientCacheService {
   final Map<int, Patient?> _cache = {};
@@ -23,7 +22,8 @@ class PatientCacheService {
   }
 
   /// 从预加载列表中获取患者信息
-  Patient? getFromPreloadedList(int patientId, List<Patient> preloadedPatients) {
+  Patient? getFromPreloadedList(
+      int patientId, List<Patient> preloadedPatients) {
     try {
       return preloadedPatients.firstWhere((p) => p.id == patientId);
     } catch (e) {
@@ -52,14 +52,16 @@ class PatientCacheService {
 
     // 从数据库重新加载所有患者
     try {
-      final allPatients = await _patientProvider.getAllPatients();
+      final allPatients = await _patientProvider.getAllPatientsInDataSource(
+        effectiveDataSourceType,
+      );
 
       // 查找目标患者
       try {
         final targetPatient = allPatients.firstWhere((p) => p.id == patientId);
         final patientWithPinyin = targetPatient.copyWith(
-          name_pinyin: PinyinUtil.toPinyin(targetPatient.name),
-          name_initials: PinyinUtil.getInitials(targetPatient.name),
+          namePinyin: PinyinUtil.toPinyin(targetPatient.name),
+          nameInitials: PinyinUtil.getInitials(targetPatient.name),
         );
 
         // 更新患者列表和缓存

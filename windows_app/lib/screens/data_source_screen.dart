@@ -5,12 +5,8 @@ import 'package:path/path.dart' as path;
 import '../theme/app_theme.dart';
 import '../providers/settings_provider.dart';
 import '../providers/database_provider.dart';
-import '../providers/purchase_provider.dart';
-import '../providers/financial_provider.dart';
-import '../providers/material_provider.dart';
 import '../widgets/dental_icons.dart';
 import '../widgets/success_toast.dart';
-import '../features/settings/widgets/data_source_form_widgets.dart';
 import '../features/settings/widgets/data_source_page_header.dart';
 import '../features/settings/widgets/data_source_configuration_section.dart';
 import '../features/settings/widgets/data_source_type_switch_section.dart';
@@ -19,7 +15,6 @@ import '../features/settings/services/data_source_config_service.dart';
 import '../features/settings/services/data_source_connection_service.dart';
 import '../features/settings/services/data_source_provider_sync_service.dart';
 import '../features/settings/helpers/data_source_state_helper.dart';
-
 
 const List<String> _dataSourceModuleKeys = [
   'patients',
@@ -45,7 +40,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
 
   // 数据源类型
   String _selectedDataSource = 'sqlite'; // sqlite 或 mysql
-  
+
   // 数据源切换模式：'global' 或 'modular'
   String _dataSourceMode = 'global';
 
@@ -67,7 +62,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
 
   // 原始设置备份（用于取消时恢复）
   late DataSourceStateBackup _originalBackup;
-  
+
   // 各个部分的编辑状态
   bool _isDataSourceTypeEditing = false;
   bool _isBackupDataSourceEditing = false;
@@ -75,12 +70,12 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
 
   final _formKey = GlobalKey<FormState>();
   bool _isTestingConnection = false;
-  bool _isSavingSettings = false;
   bool _connectionTested = false;
   bool _connectionSuccess = false;
   bool _isEditing = false;
 
-  static Map<String, String> _buildDefaultModuleDataSources([String dataSource = 'sqlite']) {
+  static Map<String, String> _buildDefaultModuleDataSources(
+      [String dataSource = 'sqlite']) {
     return {
       for (final module in _dataSourceModuleKeys) module: dataSource,
     };
@@ -111,7 +106,8 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
   }
 
   void _syncProvidersModuleDataSources() {
-    _providerSyncService.updateAllProvidersModuleDataSources(_moduleDataSources);
+    _providerSyncService
+        .updateAllProvidersModuleDataSources(_moduleDataSources);
   }
 
   void _loadSettingsFromProvider(SettingsProvider settingsProvider) {
@@ -154,7 +150,6 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
         );
         _providerSyncService = DataSourceProviderSyncService(context: context);
         _loadSettingsFromProvider(settingsProvider);
-        print('初始化完成 - 模式: $_dataSourceMode, 数据源: $_selectedDataSource, 模块配置: $_moduleDataSources');
       });
 
       // 如果已经配置过MySQL，就默认为已测试通过
@@ -224,7 +219,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
               getModuleDisplayName: _getModuleDisplayName,
             ),
             const SizedBox(height: 24),
-            
+
             // 第一区域：数据源配置
             DataSourceConfigurationSection(
               sqliteDbPath: _sqliteDbPath,
@@ -258,7 +253,8 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
               onCancelSqliteEdit: () {
                 setState(() {
                   _isSqliteEditing = false;
-                  final restore = DataSourceStateHelper.restoreFromBackup(_originalBackup);
+                  final restore =
+                      DataSourceStateHelper.restoreFromBackup(_originalBackup);
                   _sqliteDbPath = restore.sqliteDbPath;
                 });
               },
@@ -273,7 +269,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
               formKey: _formKey,
             ),
             const SizedBox(height: 24),
-            
+
             // 第二区域：数据源类型切换
             DataSourceTypeSwitchSection(
               dataSourceMode: _dataSourceMode,
@@ -312,7 +308,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
               getModuleDisplayName: _getModuleDisplayName,
             ),
             const SizedBox(height: 24),
-            
+
             // 第三区域：备份数据源设置
             BackupDataSourceSection(
               backupDataSource: _backupDataSource,
@@ -322,7 +318,8 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
               portController: _portController,
               databaseController: _databaseController,
               onCancelBackupDataSourceChanges: _cancelBackupDataSourceChanges,
-              onSaveBackupDataSourceSettingsOnly: _saveBackupDataSourceSettingsOnly,
+              onSaveBackupDataSourceSettingsOnly:
+                  _saveBackupDataSourceSettingsOnly,
               onSetBackupDataSourceEditing: () {
                 setState(() {
                   _isBackupDataSourceEditing = true;
@@ -335,8 +332,8 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
               },
             ),
             const SizedBox(height: 24),
-            
-                         // 移除主保存按钮，只保留各模块的独立按钮
+
+            // 移除主保存按钮，只保留各模块的独立按钮
           ],
         ),
       ),
@@ -380,10 +377,8 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
 
       if (!mounted) return;
       // 使用公用成功提示组件
-      AppToastManager.showSuccess(
-        context, 
-        message: '已选择数据库文件: ${path.basename(filePath)}'
-      );
+      AppToastManager.showSuccess(context,
+          message: '已选择数据库文件: ${path.basename(filePath)}');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -395,7 +390,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
 
   // 测试MySQL连接
   Future<void> _testMySQLConnection() async {
-    if (!_formKey.currentState!.validate()) {
+    if (_formKey.currentState?.validate() != true) {
       return;
     }
 
@@ -456,87 +451,6 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
 
   // 构建紧凑的备份数据源内容
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // 保存所有设置方法（保留原有方法以兼容）
-  Future<void> _saveSettings() async {
-    setState(() {
-      _isSavingSettings = true;
-    });
-
-    try {
-      // 验证表单
-      if (_selectedDataSource == 'mysql' &&
-          !_formKey.currentState!.validate()) {
-        setState(() {
-          _isSavingSettings = false;
-        });
-        return;
-      }
-
-      // 使用配置服务保存完整配置
-      await _configService.saveDataSourceTypeConfig(
-        dataSourceMode: _dataSourceMode,
-        selectedDataSource: _selectedDataSource,
-        sqliteDbPath: _sqliteDbPath,
-        host: _hostController.text,
-        port: _portController.text,
-        database: _databaseController.text,
-        username: _usernameController.text,
-        password: _passwordController.text,
-        moduleDataSources: _moduleDataSources,
-      );
-
-      // 保存备份数据源设置
-      await _configService.saveBackupDataSource(_backupDataSource);
-
-      // 更新所有Provider的模块数据源配置
-      _syncProvidersModuleDataSources();
-
-      if (!mounted) return;
-
-      // 使用公用成功提示组件
-      AppToastManager.showSuccess(
-        context, 
-        message: '所有设置已保存，将在应用重启后完全生效'
-      );
-
-      // 更新原始设置备份
-      _snapshotOriginalBackup();
-
-      // 关闭编辑模式
-      setState(() {
-        _isEditing = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('保存设置失败: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() {
-        _isSavingSettings = false;
-      });
-    }
-  }
-
-
-
   // 取消数据源类型切换更改
   void _cancelDataSourceTypeChanges() {
     setState(() {
@@ -546,7 +460,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
       _dataSourceMode = restore.dataSourceMode;
       _selectedDataSource = restore.dataSource;
       _moduleDataSources = restore.moduleDataSources;
-      
+
       // 如果恢复到模块化模式，需要重新从配置文件加载模块配置
       if (_dataSourceMode == 'modular') {
         // 重新加载模块配置，确保显示的是保存的配置
@@ -586,10 +500,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
       if (!mounted) return;
 
       // 使用公用成功提示组件
-      AppToastManager.showSuccess(
-        context, 
-        message: '数据源类型切换设置已保存'
-      );
+      AppToastManager.showSuccess(context, message: '数据源类型切换设置已保存');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -636,13 +547,10 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
       if (!mounted) return;
 
       // 使用公用成功提示组件
-      AppToastManager.showSuccess(
-        context, 
-        message: '备份数据源设置已保存'
-      );
+      AppToastManager.showSuccess(context, message: '备份数据源设置已保存');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of( context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('保存设置失败: $e'),
           backgroundColor: Colors.red,
@@ -653,16 +561,9 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
 
   // 保存MySQL设置
   Future<void> _saveMySQLSettings() async {
-    setState(() {
-      _isSavingSettings = true;
-    });
-
     try {
       // 验证表单
-      if (!_formKey.currentState!.validate()) {
-        setState(() {
-          _isSavingSettings = false;
-        });
+      if (_formKey.currentState?.validate() != true) {
         return;
       }
 
@@ -679,10 +580,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
       if (!mounted) return;
 
       // 使用公用成功提示组件
-      AppToastManager.showSuccess(
-        context, 
-        message: 'MySQL配置已保存'
-      );
+      AppToastManager.showSuccess(context, message: 'MySQL配置已保存');
 
       // 关闭编辑模式
       setState(() {
@@ -698,41 +596,34 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
           backgroundColor: Colors.red,
         ),
       );
-    } finally {
-      setState(() {
-        _isSavingSettings = false;
-      });
     }
   }
 
   // 重新加载模块配置
   void _reloadModuleDataSources() {
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-    
+    final settingsProvider =
+        Provider.of<SettingsProvider>(context, listen: false);
+
     // 不要重新加载数据源模式，保持当前选择
     // _dataSourceMode 已经在调用此方法之前设置好了
-    
+
     if (_dataSourceMode == 'global') {
       // 全局模式：所有模块使用相同的数据源
       _selectedDataSource = settingsProvider.dataSourceType;
       _applyGlobalDataSourceToModules();
-      print('重新加载全局模式配置: 模式=$_dataSourceMode, 数据源=$_selectedDataSource');
     } else {
       // 模块化模式：加载每个模块的独立配置
       final moduleDataSources = settingsProvider.moduleDataSources;
-      print('重新加载模块化配置: $moduleDataSources');
-      
+
       if (moduleDataSources.isNotEmpty) {
         // 使用保存的模块配置
         setState(() {
           _moduleDataSources = Map<String, String>.from(moduleDataSources);
-          print('重新加载后的模块配置: $_moduleDataSources');
         });
       } else {
         // 如果没有保存的配置，使用默认的sqlite配置
         setState(() {
           _moduleDataSources = _buildDefaultModuleDataSources();
-          print('使用默认模块配置: $_moduleDataSources');
         });
       }
     }
@@ -740,10 +631,6 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
 
   // 保存SQLite设置
   Future<void> _saveSqliteSettings() async {
-    setState(() {
-      _isSavingSettings = true;
-    });
-
     try {
       // 使用配置服务保存并应用SQLite配置
       await _configService.saveAndApplySqliteConfig(
@@ -757,10 +644,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
       if (!mounted) return;
 
       // 使用公用成功提示组件
-      AppToastManager.showSuccess(
-        context, 
-        message: 'SQLite配置已保存'
-      );
+      AppToastManager.showSuccess(context, message: 'SQLite配置已保存');
 
       // 关闭编辑模式
       setState(() {
@@ -774,10 +658,6 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
           backgroundColor: Colors.red,
         ),
       );
-    } finally {
-      setState(() {
-        _isSavingSettings = false;
-      });
     }
   }
 }

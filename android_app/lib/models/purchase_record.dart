@@ -1,5 +1,5 @@
 import '../utils/datetime_formatter.dart';
-import '../utils/app_logger.dart';
+import '../utils/map_parser.dart';
 
 // 采购记录模型
 class PurchaseRecord {
@@ -31,58 +31,23 @@ class PurchaseRecord {
     Map<String, dynamic> map, {
     String dataSource = 'sqlite',
   }) {
-    DateTime created = DateTimeFormatter.nowLocal();
-    DateTime updated = DateTimeFormatter.nowLocal();
-    DateTime purchaseDate = DateTimeFormatter.nowLocal();
-
-    // 使用统一的时间解析方法，确保本地时间
-    try {
-      if (map['created_at'] is DateTime) {
-        final dt = map['created_at'] as DateTime;
-        created = dt.isUtc ? dt.toLocal() : dt;
-      } else if (map['created_at'] is String) {
-        created = DateTimeFormatter.fromDbString(map['created_at']);
-      }
-    } catch (e) {
-      AppLogger.info('created_at解析失败: ${map['created_at']}, 使用当前时间');
-      created = DateTimeFormatter.nowLocal();
-    }
-
-    try {
-      if (map['updated_at'] is DateTime) {
-        final dt = map['updated_at'] as DateTime;
-        updated = dt.isUtc ? dt.toLocal() : dt;
-      } else if (map['updated_at'] is String) {
-        updated = DateTimeFormatter.fromDbString(map['updated_at']);
-      }
-    } catch (e) {
-      AppLogger.info('updated_at解析失败: ${map['updated_at']}, 使用当前时间');
-      updated = DateTimeFormatter.nowLocal();
-    }
-
-    try {
-      if (map['purchase_date'] is DateTime) {
-        final dt = map['purchase_date'] as DateTime;
-        purchaseDate = dt.isUtc ? dt.toLocal() : dt;
-      } else if (map['purchase_date'] is String) {
-        purchaseDate = DateTimeFormatter.fromDbString(map['purchase_date']);
-      }
-    } catch (e) {
-      AppLogger.info('purchase_date解析失败: ${map['purchase_date']}, 使用当前时间');
-      purchaseDate = DateTimeFormatter.nowLocal();
-    }
-
+    final p = MapParser(map, context: 'PurchaseRecord');
     return PurchaseRecord(
-      id: map['id'],
-      purchaseDate: purchaseDate,
-      totalQuantity: map['total_quantity'] ?? 0,
-      totalAmount: map['total_amount']?.toDouble() ?? 0.0,
-      supplier: map['supplier'],
-      notes: map['notes'],
-      doctor: map['doctor'],
-      createdAt: created,
-      updatedAt: updated,
+      id: p.optional('id', (v) => v as int),
+      purchaseDate: _toLocalDateTime(p.dateTime('purchase_date')),
+      totalQuantity: p.integer('total_quantity'),
+      totalAmount: p.doubleValue('total_amount'),
+      supplier: p.stringOptional('supplier'),
+      notes: p.stringOptional('notes'),
+      doctor: p.stringOptional('doctor'),
+      createdAt: _toLocalDateTime(p.dateTime('created_at')),
+      updatedAt: _toLocalDateTime(p.dateTime('updated_at')),
     );
+  }
+
+  // 辅助方法：将DateTime转换为本地时间
+  static DateTime _toLocalDateTime(DateTime dt) {
+    return dt.isUtc ? dt.toLocal() : dt;
   }
 
   // 将PurchaseRecord对象转换为Map

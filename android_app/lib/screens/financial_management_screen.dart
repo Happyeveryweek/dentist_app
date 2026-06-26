@@ -231,9 +231,10 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           _isLoading = false;
         });
         // 统计数据
-        if (financialProvider.cachedStats != null) {
+        final cachedStats = financialProvider.cachedStats;
+        if (cachedStats != null) {
           setState(() {
-            _globalStats = financialProvider.cachedStats!;
+            _globalStats = cachedStats;
           });
         }
         _loadGlobalStats(financialProvider, forceRefresh: false);
@@ -269,12 +270,13 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       final itemsMap = <int, List<FinancialItem>>{};
       for (final record in records) {
         if (!mounted) return;
-        if (record.id != null) {
+        final recordId = record.id;
+        if (recordId != null) {
           try {
-            itemsMap[record.id!] = await financialProvider
-                .getFinancialItemsByRecordId(record.id!);
+            itemsMap[recordId] = await financialProvider
+                .getFinancialItemsByRecordId(recordId);
           } catch (e) {
-            itemsMap[record.id!] = [];
+            itemsMap[recordId] = [];
           }
         }
       }
@@ -350,9 +352,11 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   void _onProviderStatsUpdated() {
     if (!mounted) return; // 安全检查，unmount 后不执行
     final financialProvider = _financialProviderRef;
-    if (financialProvider != null && financialProvider.cachedStats != null) {
+    if (financialProvider == null) return;
+    final cachedStats = financialProvider.cachedStats;
+    if (cachedStats != null) {
       setState(() {
-        _globalStats = financialProvider.cachedStats!;
+        _globalStats = cachedStats;
         _isStatsLoading = financialProvider.isBackgroundLoadingFull;
       });
     }
@@ -394,12 +398,13 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       final itemsMap = Map<int, List<FinancialItem>>.from(_recordItemsMap);
       for (final record in records) {
         if (!mounted) return;
-        if (record.id != null) {
+        final recordId = record.id;
+        if (recordId != null) {
           try {
-            itemsMap[record.id!] = await financialProvider
-                .getFinancialItemsByRecordId(record.id!);
+            itemsMap[recordId] = await financialProvider
+                .getFinancialItemsByRecordId(recordId);
           } catch (e) {
-            itemsMap[record.id!] = [];
+            itemsMap[recordId] = [];
           }
         }
       }
@@ -466,12 +471,13 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       final itemsMap = <int, List<FinancialItem>>{};
       for (final record in records) {
         if (!mounted) return;
-        if (record.id != null) {
+        final recordId = record.id;
+        if (recordId != null) {
           try {
-            itemsMap[record.id!] = await financialProvider
-                .getFinancialItemsByRecordId(record.id!);
+            itemsMap[recordId] = await financialProvider
+                .getFinancialItemsByRecordId(recordId);
           } catch (e) {
-            itemsMap[record.id!] = [];
+            itemsMap[recordId] = [];
           }
         }
       }
@@ -717,7 +723,10 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     // 有完整 itemsMap 缓存，直接打开，不转圈
     if (financialProvider.hasFullItemsCache) {
       final allRecords = financialProvider.cachedRecords;
-      final allItemsMap = financialProvider.cachedFullItemsMap!;
+      final allItemsMap = financialProvider.cachedFullItemsMap;
+      if (allItemsMap == null) {
+        return;
+      }
       _openStatisticsDialog(
         financialProvider,
         allRecords,
@@ -738,12 +747,13 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           .getPaginatedFinancialRecords(1, 10);
       final initialItemsMap = <int, List<FinancialItem>>{};
       for (final r in initialRecords) {
-        if (r.id != null) {
+        final recordId = r.id;
+        if (recordId != null) {
           try {
-            initialItemsMap[r.id!] = await financialProvider
-                .getFinancialItemsByRecordId(r.id!);
+            initialItemsMap[recordId] = await financialProvider
+                .getFinancialItemsByRecordId(recordId);
           } catch (_) {
-            initialItemsMap[r.id!] = [];
+            initialItemsMap[recordId] = [];
           }
         }
       }
@@ -807,6 +817,13 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
   /// 删除财务记录
   Future<void> _deleteFinancialRecord(FinancialRecord record) async {
+    final recordId = record.id;
+    if (recordId == null) {
+      if (mounted) {
+        SuccessToastManager.showError(context, message: '记录ID无效，无法删除');
+      }
+      return;
+    }
     // 直接使用记录中的患者姓名
     final patientName = record.patientName ?? '未知患者';
 
@@ -820,7 +837,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       if (!mounted) return;
       try {
         final provider = Provider.of<FinancialProvider>(context, listen: false);
-        await provider.deleteFinancialRecord(record.id!);
+        await provider.deleteFinancialRecord(recordId);
 
         if (mounted) {
           // 使用新的成功提示组件

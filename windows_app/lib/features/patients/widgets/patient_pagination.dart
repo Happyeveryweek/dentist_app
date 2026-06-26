@@ -27,10 +27,6 @@ class PatientPagination extends StatelessWidget {
     final String resultText =
         '每页 $patientsPerPage 条 · 共 $totalPatients 条 / $totalPages 页';
 
-    print(
-      '构建分页: 搜索词="$searchQuery", 日期筛选=$hasDateFilter, 总记录数=$totalPatients, 总页数=$totalPages',
-    );
-
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
       decoration: BoxDecoration(
@@ -42,12 +38,12 @@ class PatientPagination extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 2),
           ),
@@ -58,9 +54,8 @@ class PatientPagination extends StatelessWidget {
         children: [
           _PaginationButton(
             icon: Icons.keyboard_arrow_left,
-            onPressed: currentPage > 1
-                ? () => onPageChanged(currentPage - 1)
-                : null,
+            onPressed:
+                currentPage > 1 ? () => onPageChanged(currentPage - 1) : null,
             isActive: currentPage > 1,
           ),
           const SizedBox(width: 8),
@@ -100,7 +95,7 @@ class PatientPagination extends StatelessWidget {
                               end: Alignment.bottomRight,
                               colors: [
                                 AppTheme.primaryColor,
-                                AppTheme.primaryColor.withOpacity(0.8),
+                                AppTheme.primaryColor.withValues(alpha: 0.8),
                               ],
                             )
                           : null,
@@ -109,20 +104,22 @@ class PatientPagination extends StatelessWidget {
                       border: isCurrentPage
                           ? null
                           : Border.all(
-                              color: AppTheme.dividerColor.withOpacity(0.3),
+                              color:
+                                  AppTheme.dividerColor.withValues(alpha: 0.3),
                               width: 1.5,
                             ),
                       boxShadow: isCurrentPage
                           ? [
                               BoxShadow(
-                                color: AppTheme.primaryColor.withOpacity(0.3),
+                                color: AppTheme.primaryColor
+                                    .withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
                             ]
                           : [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -131,9 +128,8 @@ class PatientPagination extends StatelessWidget {
                     child: Text(
                       '$pageNumber',
                       style: TextStyle(
-                        color: isCurrentPage
-                            ? Colors.white
-                            : AppTheme.primaryText,
+                        color:
+                            isCurrentPage ? Colors.white : AppTheme.primaryText,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
                       ),
@@ -203,7 +199,7 @@ class _PaginationButton extends StatelessWidget {
                     end: Alignment.bottomRight,
                     colors: [
                       AppTheme.primaryColor,
-                      AppTheme.primaryColor.withOpacity(0.8),
+                      AppTheme.primaryColor.withValues(alpha: 0.8),
                     ],
                   )
                 : null,
@@ -211,21 +207,21 @@ class _PaginationButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isActive
-                  ? AppTheme.primaryColor.withOpacity(0.3)
-                  : AppTheme.dividerColor.withOpacity(0.3),
+                  ? AppTheme.primaryColor.withValues(alpha: 0.3)
+                  : AppTheme.dividerColor.withValues(alpha: 0.3),
               width: 1.5,
             ),
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.3),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -235,7 +231,7 @@ class _PaginationButton extends StatelessWidget {
             icon,
             color: isActive
                 ? Colors.white
-                : AppTheme.primaryColor.withOpacity(0.7),
+                : AppTheme.primaryColor.withValues(alpha: 0.7),
             size: 22,
           ),
         ),
@@ -257,14 +253,14 @@ class _HomePageButton extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.primaryColor.withOpacity(0.8),
-            AppTheme.primaryColor.withOpacity(0.6),
+            AppTheme.primaryColor.withValues(alpha: 0.8),
+            AppTheme.primaryColor.withValues(alpha: 0.6),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.2),
+            color: AppTheme.primaryColor.withValues(alpha: 0.2),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -305,12 +301,12 @@ class _PageInfo extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.dividerColor.withOpacity(0.2),
+          color: AppTheme.dividerColor.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -323,19 +319,19 @@ class _PageInfo extends StatelessWidget {
             height: 8,
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.9),
+              color: AppTheme.primaryColor.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(4),
             ),
           ),
           Icon(
             Icons.info_outline,
             size: 16,
-            color: AppTheme.primaryColor.withOpacity(0.9),
+            color: AppTheme.primaryColor.withValues(alpha: 0.9),
           ),
           const SizedBox(width: 6),
           Text(
             resultText,
-            style: TextStyle(
+            style: const TextStyle(
               color: AppTheme.primaryText,
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -379,13 +375,13 @@ class _PageJumper extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.dividerColor.withOpacity(0.3),
+          color: AppTheme.dividerColor.withValues(alpha: 0.3),
           width: 1.5,
         ),
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -404,7 +400,7 @@ class _PageJumper extends StatelessWidget {
                 bottomLeft: Radius.circular(11),
               ),
             ),
-            child: Text(
+            child: const Text(
               '转到',
               style: TextStyle(
                 fontSize: 14,
@@ -424,7 +420,7 @@ class _PageJumper extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: '页码',
                 hintStyle: TextStyle(
-                  color: AppTheme.secondaryText.withOpacity(0.6),
+                  color: AppTheme.secondaryText.withValues(alpha: 0.6),
                   fontSize: 13,
                 ),
                 border: InputBorder.none,
@@ -457,7 +453,7 @@ class _PageJumper extends StatelessWidget {
                     end: Alignment.bottomRight,
                     colors: [
                       AppTheme.primaryColor,
-                      AppTheme.primaryColor.withOpacity(0.8),
+                      AppTheme.primaryColor.withValues(alpha: 0.8),
                     ],
                   ),
                 ),

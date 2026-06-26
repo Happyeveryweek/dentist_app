@@ -29,7 +29,7 @@ class MedicalTemplateInitializeConfirmDialog extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
               spreadRadius: 0,
@@ -58,7 +58,7 @@ class MedicalTemplateInitializeConfirmDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -81,7 +81,7 @@ class MedicalTemplateInitializeConfirmDialog extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 内容区域
             Padding(
               padding: const EdgeInsets.all(24),
@@ -124,7 +124,7 @@ class MedicalTemplateInitializeConfirmDialog extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 按钮栏
             Container(
               padding: const EdgeInsets.all(24),
@@ -141,7 +141,8 @@ class MedicalTemplateInitializeConfirmDialog extends StatelessWidget {
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(false),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(color: Colors.grey.shade400),
@@ -164,7 +165,8 @@ class MedicalTemplateInitializeConfirmDialog extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange.shade600,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

@@ -27,11 +27,9 @@ class _HoverablePatientCardState extends State<HoverablePatientCard> {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) {
-        print('鼠标进入卡片');
         setState(() => _isHovered = true);
       },
       onExit: (_) {
-        print('鼠标离开卡片');
         setState(() => _isHovered = false);
       },
       child: AnimatedContainer(
@@ -39,7 +37,7 @@ class _HoverablePatientCardState extends State<HoverablePatientCard> {
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: _isHovered
-              ? DentalColors.primary.withOpacity(0.1)
+              ? DentalColors.primary.withValues(alpha: 0.1)
               : (widget.isPurpleTheme
                   ? AppTheme.purpleCardBackground
                   : AppTheme.cardBackground),
@@ -47,7 +45,7 @@ class _HoverablePatientCardState extends State<HoverablePatientCard> {
           boxShadow: _isHovered
               ? [
                   BoxShadow(
-                    color: DentalColors.primary.withOpacity(0.4),
+                    color: DentalColors.primary.withValues(alpha: 0.4),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                     spreadRadius: 2,
@@ -56,7 +54,7 @@ class _HoverablePatientCardState extends State<HoverablePatientCard> {
               : widget.isPurpleTheme
                   ? [
                       BoxShadow(
-                        color: AppTheme.purpleColor.withOpacity(0.1),
+                        color: AppTheme.purpleColor.withValues(alpha: 0.1),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -66,7 +64,7 @@ class _HoverablePatientCardState extends State<HoverablePatientCard> {
             color: _isHovered
                 ? DentalColors.primary
                 : (widget.isPurpleTheme
-                    ? AppTheme.purpleLightColor.withOpacity(0.3)
+                    ? AppTheme.purpleLightColor.withValues(alpha: 0.3)
                     : Colors.transparent),
             width: _isHovered ? 3 : 1,
           ),

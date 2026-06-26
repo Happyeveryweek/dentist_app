@@ -18,14 +18,12 @@ class ReusableDateRangePicker extends StatefulWidget {
   }) : super(key: key);
 
   static Future<DateTimeRange?> show(BuildContext context,
-      {DateTime? start,
-      DateTime? end,
-      String title = '选择日期范围'}) async {
+      {DateTime? start, DateTime? end, String title = '选择日期范围'}) async {
     final now = DateTime.now();
     final DateTime s = start ?? DateTime(now.year, now.month, 1);
     final DateTime e = end ?? now;
-    DateTime? pickedStart;
-    DateTime? pickedEnd;
+    DateTime pickedStart = s;
+    DateTime pickedEnd = e;
     String? activePreset;
 
     bool hoverStart = false;
@@ -34,12 +32,10 @@ class ReusableDateRangePicker extends StatefulWidget {
       context: context,
       builder: (ctx) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: StatefulBuilder(
             builder: (context, setState) {
-              pickedStart ??= s;
-              pickedEnd ??= e;
-
               void applyPreset(String preset) {
                 final now = DateTime.now();
                 DateTime start;
@@ -73,7 +69,7 @@ class ReusableDateRangePicker extends StatefulWidget {
                     end = DateTime(now.year - 1, 12, 31);
                     break;
                   default:
-                    start = pickedStart!;
+                    start = pickedStart;
                 }
                 setState(() {
                   pickedStart = start;
@@ -82,7 +78,10 @@ class ReusableDateRangePicker extends StatefulWidget {
                 });
               }
 
-              Widget buildDateTile(String label, DateTime date, {required VoidCallback onTap, required bool hovering, required void Function(bool) onHover}) {
+              Widget buildDateTile(String label, DateTime date,
+                  {required VoidCallback onTap,
+                  required bool hovering,
+                  required void Function(bool) onHover}) {
                 return MouseRegion(
                   cursor: SystemMouseCursors.click,
                   onEnter: (_) => onHover(true),
@@ -90,17 +89,33 @@ class ReusableDateRangePicker extends StatefulWidget {
                   child: GestureDetector(
                     onTap: onTap,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
-                        color: hovering ? Colors.blue.withOpacity(0.06) : Colors.grey.shade50,
-                        border: Border.all(color: hovering ? AppTheme.primaryColor : Colors.grey.shade300),
+                        color: hovering
+                            ? Colors.blue.withValues(alpha: 0.06)
+                            : Colors.grey.shade50,
+                        border: Border.all(
+                            color: hovering
+                                ? AppTheme.primaryColor
+                                : Colors.grey.shade300),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.calendar_today, size: 18, color: hovering ? AppTheme.primaryColor : Colors.blueAccent),
+                          Icon(Icons.calendar_today,
+                              size: 18,
+                              color: hovering
+                                  ? AppTheme.primaryColor
+                                  : Colors.blueAccent),
                           const SizedBox(width: 10),
-                          Text('${label}: ${DateFormat('yyyy年MM月dd日').format(date)}', style: TextStyle(fontSize: 14, color: hovering ? AppTheme.primaryColor : Colors.black87)),
+                          Text(
+                              '${1}: ${DateFormat('yyyy年MM月dd日').format(date)}',
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  color: hovering
+                                      ? AppTheme.primaryColor
+                                      : Colors.black87)),
                         ],
                       ),
                     ),
@@ -110,36 +125,67 @@ class ReusableDateRangePicker extends StatefulWidget {
 
               return Container(
                 width: 360,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(children: [
-                      Expanded(child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
-                      IconButton(onPressed: () => Navigator.of(context).pop(false), icon: const Icon(Icons.close, size: 20), padding: EdgeInsets.zero, constraints: const BoxConstraints()),
+                      Expanded(
+                          child: Text(title,
+                              style: const TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.w600))),
+                      IconButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          icon: const Icon(Icons.close, size: 20),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints()),
                     ]),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: [
-                        _PresetChip(label: '今天', selected: activePreset == 'today', onTap: () => applyPreset('today')),
-                        _PresetChip(label: '本月', selected: activePreset == 'this_month', onTap: () => applyPreset('this_month')),
-                        _PresetChip(label: '上月', selected: activePreset == 'last_month', onTap: () => applyPreset('last_month')),
-                        _PresetChip(label: '30天', selected: activePreset == '30d', onTap: () => applyPreset('30d')),
-                        _PresetChip(label: '半年', selected: activePreset == '6m', onTap: () => applyPreset('6m')),
-                        _PresetChip(label: '今年', selected: activePreset == 'this_year', onTap: () => applyPreset('this_year')),
+                        _PresetChip(
+                            label: '今天',
+                            selected: activePreset == 'today',
+                            onTap: () => applyPreset('today')),
+                        _PresetChip(
+                            label: '本月',
+                            selected: activePreset == 'this_month',
+                            onTap: () => applyPreset('this_month')),
+                        _PresetChip(
+                            label: '上月',
+                            selected: activePreset == 'last_month',
+                            onTap: () => applyPreset('last_month')),
+                        _PresetChip(
+                            label: '30天',
+                            selected: activePreset == '30d',
+                            onTap: () => applyPreset('30d')),
+                        _PresetChip(
+                            label: '半年',
+                            selected: activePreset == '6m',
+                            onTap: () => applyPreset('6m')),
+                        _PresetChip(
+                            label: '今年',
+                            selected: activePreset == 'this_year',
+                            onTap: () => applyPreset('this_year')),
                       ],
                     ),
                     const SizedBox(height: 10),
                     const Text('开始日期:', style: TextStyle(fontSize: 13)),
                     const SizedBox(height: 6),
-                    buildDateTile('开始', pickedStart!, hovering: hoverStart, onHover: (v){ setState((){ hoverStart = v; }); }, onTap: () async {
+                    buildDateTile('开始', pickedStart, hovering: hoverStart,
+                        onHover: (v) {
+                      setState(() {
+                        hoverStart = v;
+                      });
+                    }, onTap: () async {
                       final d = await showDialog<DateTime>(
                         context: context,
                         builder: (c) => ModernDatePickerDialog(
-                          initialDate: pickedStart!,
+                          initialDate: pickedStart,
                           firstDate: DateTime(2000),
                           lastDate: DateTime(2100),
                           title: '选择开始日期',
@@ -149,19 +195,26 @@ class ReusableDateRangePicker extends StatefulWidget {
                         setState(() {
                           pickedStart = d;
                           activePreset = null;
-                          if (pickedEnd!.isBefore(pickedStart!)) pickedEnd = pickedStart;
+                          if (pickedEnd.isBefore(pickedStart)) {
+                            pickedEnd = pickedStart;
+                          }
                         });
                       }
                     }),
                     const SizedBox(height: 10),
                     const Text('结束日期:', style: TextStyle(fontSize: 13)),
                     const SizedBox(height: 6),
-                    buildDateTile('结束', pickedEnd!, hovering: hoverEnd, onHover: (v){ setState((){ hoverEnd = v; }); }, onTap: () async {
+                    buildDateTile('结束', pickedEnd, hovering: hoverEnd,
+                        onHover: (v) {
+                      setState(() {
+                        hoverEnd = v;
+                      });
+                    }, onTap: () async {
                       final d = await showDialog<DateTime>(
                         context: context,
                         builder: (c) => ModernDatePickerDialog(
-                          initialDate: pickedEnd!,
-                          firstDate: pickedStart!,
+                          initialDate: pickedEnd,
+                          firstDate: pickedStart,
                           lastDate: DateTime(2100),
                           title: '选择结束日期',
                         ),
@@ -175,7 +228,9 @@ class ReusableDateRangePicker extends StatefulWidget {
                     }),
                     const SizedBox(height: 12),
                     Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                      TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text('取消')),
+                      TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text('取消')),
                       const SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: () => Navigator.of(context).pop(true),
@@ -196,13 +251,14 @@ class ReusableDateRangePicker extends StatefulWidget {
     );
 
     if (ok == true) {
-      return DateTimeRange(start: pickedStart!, end: pickedEnd!);
+      return DateTimeRange(start: pickedStart, end: pickedEnd);
     }
     return null;
   }
 
   @override
-  State<ReusableDateRangePicker> createState() => _ReusableDateRangePickerState();
+  State<ReusableDateRangePicker> createState() =>
+      _ReusableDateRangePickerState();
 }
 
 class _ReusableDateRangePickerState extends State<ReusableDateRangePicker> {
@@ -214,7 +270,8 @@ class _PresetChip extends StatefulWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _PresetChip({required this.label, required this.selected, required this.onTap});
+  const _PresetChip(
+      {required this.label, required this.selected, required this.onTap});
 
   @override
   State<_PresetChip> createState() => _PresetChipState();
@@ -237,7 +294,7 @@ class _PresetChipState extends State<_PresetChip> {
             color: widget.selected
                 ? AppTheme.primaryColor
                 : _hovering
-                    ? Colors.blue.withOpacity(0.08)
+                    ? Colors.blue.withValues(alpha: 0.08)
                     : Colors.grey.shade100,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
@@ -248,7 +305,12 @@ class _PresetChipState extends State<_PresetChip> {
                       : Colors.grey.shade300,
             ),
             boxShadow: _hovering
-                ? [BoxShadow(color: AppTheme.primaryColor.withOpacity(0.15), blurRadius: 6, offset: const Offset(0, 2))]
+                ? [
+                    BoxShadow(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2))
+                  ]
                 : null,
           ),
           child: Text(
@@ -260,7 +322,9 @@ class _PresetChipState extends State<_PresetChip> {
                   : _hovering
                       ? AppTheme.primaryColor
                       : Colors.black87,
-              fontWeight: widget.selected || _hovering ? FontWeight.w600 : FontWeight.w500,
+              fontWeight: widget.selected || _hovering
+                  ? FontWeight.w600
+                  : FontWeight.w500,
             ),
           ),
         ),

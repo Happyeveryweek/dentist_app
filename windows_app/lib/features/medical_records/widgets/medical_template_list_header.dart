@@ -25,15 +25,18 @@ class MedicalTemplateListHeader extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            MedicalTemplateCategoryStyleHelper.getCategoryColor(category).withOpacity(0.1),
-            MedicalTemplateCategoryStyleHelper.getCategoryColor(category).withOpacity(0.05),
+            MedicalTemplateCategoryStyleHelper.getCategoryColor(category)
+                .withValues(alpha: 0.1),
+            MedicalTemplateCategoryStyleHelper.getCategoryColor(category)
+                .withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: MedicalTemplateCategoryStyleHelper.getCategoryColor(category).withOpacity(0.2),
+          color: MedicalTemplateCategoryStyleHelper.getCategoryColor(category)
+              .withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -42,12 +45,15 @@ class MedicalTemplateListHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: MedicalTemplateCategoryStyleHelper.getCategoryColor(category).withOpacity(0.1),
+              color:
+                  MedicalTemplateCategoryStyleHelper.getCategoryColor(category)
+                      .withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               MedicalTemplateCategoryStyleHelper.getCategoryIcon(category),
-              color: MedicalTemplateCategoryStyleHelper.getCategoryColor(category),
+              color:
+                  MedicalTemplateCategoryStyleHelper.getCategoryColor(category),
               size: 20,
             ),
           ),
@@ -61,7 +67,9 @@ class MedicalTemplateListHeader extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: MedicalTemplateCategoryStyleHelper.getCategoryColorDark(category),
+                    color:
+                        MedicalTemplateCategoryStyleHelper.getCategoryColorDark(
+                            category),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -69,7 +77,8 @@ class MedicalTemplateListHeader extends StatelessWidget {
                   '共 $count 个疾病类型',
                   style: TextStyle(
                     fontSize: 12,
-                    color: MedicalTemplateCategoryStyleHelper.getCategoryColorMedium(category),
+                    color: MedicalTemplateCategoryStyleHelper
+                        .getCategoryColorMedium(category),
                   ),
                 ),
               ],
@@ -81,13 +90,16 @@ class MedicalTemplateListHeader extends StatelessWidget {
               gradient: LinearGradient(
                 colors: [
                   MedicalTemplateCategoryStyleHelper.getCategoryColor(category),
-                  MedicalTemplateCategoryStyleHelper.getCategoryColorMedium(category),
+                  MedicalTemplateCategoryStyleHelper.getCategoryColorMedium(
+                      category),
                 ],
               ),
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
-                  color: MedicalTemplateCategoryStyleHelper.getCategoryColor(category).withOpacity(0.3),
+                  color: MedicalTemplateCategoryStyleHelper.getCategoryColor(
+                          category)
+                      .withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -95,7 +107,8 @@ class MedicalTemplateListHeader extends StatelessWidget {
             ),
             child: ElevatedButton.icon(
               onPressed: onAdd,
-              icon: const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+              icon:
+                  const Icon(Icons.add_rounded, color: Colors.white, size: 20),
               label: const Text(
                 '添加类型',
                 style: TextStyle(
@@ -107,7 +120,8 @@ class MedicalTemplateListHeader extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),

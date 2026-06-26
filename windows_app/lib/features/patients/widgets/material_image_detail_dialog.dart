@@ -4,7 +4,7 @@ import '../../../models/material_image.dart';
 import '../../../theme/app_theme.dart';
 
 /// 图片详情弹窗组件
-/// 
+///
 /// 用于显示材料图片的详细信息，支持缩放查看
 class MaterialImageDetailDialog extends StatelessWidget {
   final MaterialImage image;
@@ -30,7 +30,7 @@ class MaterialImageDetailDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.25),
+              color: Colors.black.withValues(alpha: 0.25),
               blurRadius: 15,
               spreadRadius: 2,
               offset: const Offset(0, 8),
@@ -44,7 +44,7 @@ class MaterialImageDetailDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.7),
+                color: AppTheme.primaryColor.withValues(alpha: 0.7),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(12),
                   topRight: Radius.circular(12),
@@ -70,16 +70,18 @@ class MaterialImageDetailDialog extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                    icon:
+                        const Icon(Icons.close, color: Colors.white, size: 20),
                     onPressed: () => Navigator.of(context).pop(),
                     tooltip: '关闭',
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    constraints:
+                        const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                 ],
               ),
             ),
-            
+
             // 图片内容 - 无边框无边距
             Expanded(
               child: InteractiveViewer(
@@ -88,7 +90,7 @@ class MaterialImageDetailDialog extends StatelessWidget {
                 child: _buildDetailImage(),
               ),
             ),
-            
+
             // 极简底部信息栏
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -121,9 +123,12 @@ class MaterialImageDetailDialog extends StatelessWidget {
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.15),
+                      color: Theme.of(context)
+                          .primaryColor
+                          .withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -145,16 +150,17 @@ class MaterialImageDetailDialog extends StatelessWidget {
   }
 
   Widget _buildDetailImage() {
-    if (file != null) {
+    final localFile = file;
+    if (localFile != null) {
       return Image.file(
-        file!,
+        localFile,
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
           return _buildErrorContainer('图片加载失败');
         },
       );
     }
-    
+
     if (image.imageData.isNotEmpty) {
       return Image.memory(
         image.imageData,
@@ -165,9 +171,10 @@ class MaterialImageDetailDialog extends StatelessWidget {
       );
     } else {
       // 如果没有原图数据，尝试使用缩略图
-      if (image.thumbnailData != null && image.thumbnailData!.isNotEmpty) {
+      final thumbnailData = image.thumbnailData;
+      if (thumbnailData != null && thumbnailData.isNotEmpty) {
         return Image.memory(
-          image.thumbnailData!,
+          thumbnailData,
           fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) {
             return _buildErrorContainer('图片数据不可用');
@@ -207,7 +214,7 @@ class MaterialImageDetailDialog extends StatelessWidget {
 }
 
 /// 文件图片详情弹窗组件
-/// 
+///
 /// 用于显示本地文件图片的详细信息
 class MaterialFileImageDetailDialog extends StatelessWidget {
   final File file;
@@ -231,7 +238,7 @@ class MaterialFileImageDetailDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 20,
               spreadRadius: 5,
               offset: const Offset(0, 10),
@@ -245,7 +252,7 @@ class MaterialFileImageDetailDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 3),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.7),
+                color: AppTheme.primaryColor.withValues(alpha: 0.7),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -278,7 +285,7 @@ class MaterialFileImageDetailDialog extends StatelessWidget {
                 ],
               ),
             ),
-            
+
             // 图片内容 - 无边框无边距
             Expanded(
               child: InteractiveViewer(
@@ -315,7 +322,7 @@ class MaterialFileImageDetailDialog extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // 底部信息栏
             Container(
               padding: const EdgeInsets.all(20),

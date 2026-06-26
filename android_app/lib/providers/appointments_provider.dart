@@ -52,10 +52,12 @@ class AppointmentsProvider extends ChangeNotifier
       database = result.database;
       mysqlConnection = result.mysqlConnection;
       dataSourceType = result.dataSourceType;
-      if (dataSourceType == 'mysql' && mysqlConnection != null) {
-        setMySqlDataSource(mysqlConnection!);
-      } else if (database != null) {
-        setSqliteDataSource(database!);
+      final conn = mysqlConnection;
+      final db = database;
+      if (dataSourceType == 'mysql' && conn != null) {
+        setMySqlDataSource(conn);
+      } else if (db != null) {
+        setSqliteDataSource(db);
       }
 
       // 初始化数据库操作包装器
@@ -80,14 +82,16 @@ class AppointmentsProvider extends ChangeNotifier
       return cachedAppointments ?? []; // 优雅降级而不是抛出异常
     }
 
-    if (_dbWrapper == null) return cachedAppointments ?? [];
+    final wrapper = _dbWrapper;
+    final cached = cachedAppointments;
+    if (wrapper == null) return cached ?? [];
 
-    return await _dbWrapper!.wrapOperation('getAllAppointments', () async {
+    return await wrapper.wrapOperation('getAllAppointments', () async {
       try {
         // 优先检查缓存
-        if (isCacheValid()) {
-          AppLogger.info('使用缓存的预约数据: ${cachedAppointments!.length} 条');
-          return cachedAppointments!;
+        if (isCacheValid() && cached != null) {
+          AppLogger.info('使用缓存的预约数据: ${cached.length} 条');
+          return cached;
         }
 
         AppLogger.info('🔄 从数据库获取最新预约数据...');
@@ -108,9 +112,9 @@ class AppointmentsProvider extends ChangeNotifier
         if (_isConnectionError(e)) rethrow;
 
         // 优雅降级：如果有缓存就返回缓存，否则返回空列表
-        if (isCacheValid()) {
+        if (isCacheValid() && cached != null) {
           AppLogger.info('使用缓存的预约数据，查询失败: $e');
-          return cachedAppointments!;
+          return cached;
         }
 
         return []; // 返回空列表而不是抛出异常
@@ -134,9 +138,10 @@ class AppointmentsProvider extends ChangeNotifier
 
   // 获取预约总数
   Future<int> getAppointmentCount() async {
-    if (_dbWrapper == null) return 0;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return 0;
 
-    return await _dbWrapper!.wrapOperation('getAppointmentCount', () async {
+    return await wrapper.wrapOperation('getAppointmentCount', () async {
       try {
         AppLogger.info('正在获取预约总数...');
 
@@ -156,9 +161,10 @@ class AppointmentsProvider extends ChangeNotifier
 
   // 获取今日预约
   Future<List<Appointment>> getTodayAppointments() async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('getTodayAppointments', () async {
+    return await wrapper.wrapOperation('getTodayAppointments', () async {
       try {
         final today = DateTime.now();
         final startDate = DateTime(today.year, today.month, today.day);
@@ -191,9 +197,10 @@ class AppointmentsProvider extends ChangeNotifier
       throw Exception('数据库未初始化');
     }
 
-    if (_dbWrapper == null) return -1;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return -1;
 
-    return await _dbWrapper!.wrapOperation('addAppointment', () async {
+    return await wrapper.wrapOperation('addAppointment', () async {
       try {
         // 使用数据源模式（统一接口）
         final id = await currentDataSource.createAppointment(appointment);
@@ -219,9 +226,10 @@ class AppointmentsProvider extends ChangeNotifier
       throw Exception('数据库未初始化或预约ID为空');
     }
 
-    if (_dbWrapper == null) return false;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return false;
 
-    return await _dbWrapper!.wrapOperation('updateAppointment', () async {
+    return await wrapper.wrapOperation('updateAppointment', () async {
       try {
         // 使用数据源模式（统一接口）
         final success = await currentDataSource.updateAppointment(appointment);
@@ -247,9 +255,10 @@ class AppointmentsProvider extends ChangeNotifier
       throw Exception('数据库未初始化');
     }
 
-    if (_dbWrapper == null) return false;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return false;
 
-    return await _dbWrapper!.wrapOperation('deleteAppointment', () async {
+    return await wrapper.wrapOperation('deleteAppointment', () async {
       try {
         // 使用数据源模式（统一接口）
         final success = await currentDataSource.deleteAppointment(id);
@@ -271,9 +280,10 @@ class AppointmentsProvider extends ChangeNotifier
 
   // 根据患者ID获取预约
   Future<List<Appointment>> getAppointmentsByPatientId(int patientId) async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation(
+    return await wrapper.wrapOperation(
       'getAppointmentsByPatientId',
       () async {
         try {
@@ -293,9 +303,10 @@ class AppointmentsProvider extends ChangeNotifier
 
   // 搜索预约
   Future<List<Appointment>> searchAppointments(String keyword) async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('searchAppointments', () async {
+    return await wrapper.wrapOperation('searchAppointments', () async {
       try {
         // 使用数据源模式（统一接口）
         final doctorFilter = getDoctorFilter();
@@ -315,9 +326,10 @@ class AppointmentsProvider extends ChangeNotifier
     DateTime startDate,
     DateTime endDate,
   ) async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation(
+    return await wrapper.wrapOperation(
       'getAppointmentsByDateRange',
       () async {
         try {

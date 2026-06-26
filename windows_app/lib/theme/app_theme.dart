@@ -48,7 +48,7 @@ class AppTheme {
   static const double smallBorderRadius = 8.0;
   static final List<BoxShadow> cardShadow = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.05),
+      color: Colors.black.withValues(alpha: 0.05),
       blurRadius: 8,
       offset: const Offset(0, 2),
     ),
@@ -197,7 +197,7 @@ class AppTheme {
     color: cardBackground,
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.05),
+        color: Colors.black.withValues(alpha: 0.05),
         blurRadius: 4,
         offset: const Offset(0, 1),
       ),
@@ -217,7 +217,7 @@ class AppTheme {
   static const Color purpleSecondaryBackground = Color(0xFFF8F5FD); // 次级背景色
   static final List<BoxShadow> purpleCardShadow = [
     BoxShadow(
-      color: purpleColor.withOpacity(0.08),
+      color: purpleColor.withValues(alpha: 0.08),
       blurRadius: 8,
       offset: const Offset(0, 2),
     ),
@@ -233,7 +233,6 @@ class AppTheme {
       secondary: secondaryColor,
       tertiary: accentColor,
       error: tertiaryColor,
-      background: backgroundColor,
       surface: cardBackground,
       brightness: Brightness.light,
     ),
@@ -271,7 +270,7 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: backgroundColor.withOpacity(0.8),
+      fillColor: backgroundColor.withValues(alpha: 0.8),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(borderRadius),
         borderSide: BorderSide.none,
@@ -289,16 +288,16 @@ class AppTheme {
       bodyMedium: bodyStyle,
       bodySmall: captionStyle,
     ),
-    navigationRailTheme: NavigationRailThemeData(
+    navigationRailTheme: const NavigationRailThemeData(
       backgroundColor: cardBackground,
-      selectedIconTheme: const IconThemeData(color: primaryColor, size: 24),
-      unselectedIconTheme: const IconThemeData(color: secondaryText, size: 24),
-      selectedLabelTextStyle: const TextStyle(
+      selectedIconTheme: IconThemeData(color: primaryColor, size: 24),
+      unselectedIconTheme: IconThemeData(color: secondaryText, size: 24),
+      selectedLabelTextStyle: TextStyle(
         color: primaryColor,
         fontWeight: FontWeight.w600,
         fontSize: 14,
       ),
-      unselectedLabelTextStyle: const TextStyle(
+      unselectedLabelTextStyle: TextStyle(
         color: secondaryText,
         fontSize: 14,
       ),
@@ -319,7 +318,6 @@ class AppTheme {
       secondary: secondaryColor,
       tertiary: accentColor,
       error: tertiaryColor,
-      background: darkBackground,
       surface: darkCardBackground,
       brightness: Brightness.dark,
     ),
@@ -342,8 +340,8 @@ class AppTheme {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: primaryButtonStyle.copyWith(
-        backgroundColor: MaterialStateProperty.all(primaryColor),
-        foregroundColor: MaterialStateProperty.all(darkPrimaryText),
+        backgroundColor: WidgetStateProperty.all(primaryColor),
+        foregroundColor: WidgetStateProperty.all(darkPrimaryText),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -365,7 +363,7 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: darkBackground.withOpacity(0.8),
+      fillColor: darkBackground.withValues(alpha: 0.8),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(borderRadius),
         borderSide: BorderSide.none,
@@ -383,17 +381,16 @@ class AppTheme {
       bodyMedium: bodyStyle.copyWith(color: darkSecondaryText),
       bodySmall: captionStyle.copyWith(color: darkLightText),
     ),
-    navigationRailTheme: NavigationRailThemeData(
+    navigationRailTheme: const NavigationRailThemeData(
       backgroundColor: darkCardBackground,
-      selectedIconTheme: const IconThemeData(color: primaryColor, size: 24),
-      unselectedIconTheme:
-          const IconThemeData(color: darkSecondaryText, size: 24),
-      selectedLabelTextStyle: const TextStyle(
+      selectedIconTheme: IconThemeData(color: primaryColor, size: 24),
+      unselectedIconTheme: IconThemeData(color: darkSecondaryText, size: 24),
+      selectedLabelTextStyle: TextStyle(
         color: primaryColor,
         fontWeight: FontWeight.w600,
         fontSize: 14,
       ),
-      unselectedLabelTextStyle: const TextStyle(
+      unselectedLabelTextStyle: TextStyle(
         color: darkSecondaryText,
         fontSize: 14,
       ),
@@ -414,7 +411,6 @@ class AppTheme {
       secondary: secondaryColor,
       tertiary: accentColor,
       error: tertiaryColor,
-      background: greyBackground,
       surface: greyCardBackground,
       brightness: Brightness.light,
     ),
@@ -426,7 +422,7 @@ class AppTheme {
         fontSize: 18,
         color: greyPrimaryText,
       ),
-      iconTheme: IconThemeData(color: greyPrimaryText),
+      iconTheme: const IconThemeData(color: greyPrimaryText),
     ),
     cardTheme: CardThemeData(
       color: greyCardBackground,
@@ -437,8 +433,8 @@ class AppTheme {
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: primaryButtonStyle.copyWith(
-        backgroundColor: MaterialStateProperty.all(primaryColor),
-        foregroundColor: MaterialStateProperty.all(Colors.white),
+        backgroundColor: WidgetStateProperty.all(primaryColor),
+        foregroundColor: WidgetStateProperty.all(Colors.white),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -478,11 +474,11 @@ class AppTheme {
       bodyMedium: bodyStyle.copyWith(color: greySecondaryText),
       bodySmall: captionStyle.copyWith(color: greyLightText),
     ),
-    navigationRailTheme: NavigationRailThemeData(
+    navigationRailTheme: const NavigationRailThemeData(
       backgroundColor: greyCardBackground,
-      selectedIconTheme: const IconThemeData(color: primaryColor, size: 24),
+      selectedIconTheme: IconThemeData(color: primaryColor, size: 24),
       unselectedIconTheme: IconThemeData(color: greySecondaryText, size: 24),
-      selectedLabelTextStyle: const TextStyle(
+      selectedLabelTextStyle: TextStyle(
         color: primaryColor,
         fontWeight: FontWeight.w600,
         fontSize: 14,
@@ -503,12 +499,10 @@ class AppTheme {
   static ThemeData purpleTheme = ThemeData(
     scaffoldBackgroundColor: purpleBackground,
     primaryColor: purpleColor,
-    colorScheme: ColorScheme.light(
+    colorScheme: const ColorScheme.light(
       primary: purpleColor,
       secondary: purpleLightColor,
       surface: purpleCardBackground,
-      background: purpleBackground,
-      onBackground: purplePrimaryText,
       onSurface: purplePrimaryText,
     ),
     cardColor: purpleCardBackground,
@@ -526,9 +520,9 @@ class AppTheme {
       foregroundColor: purplePrimaryText,
       elevation: 0,
       titleTextStyle: titleStyle.copyWith(color: purplePrimaryText),
-      iconTheme: IconThemeData(color: purplePrimaryText),
+      iconTheme: const IconThemeData(color: purplePrimaryText),
     ),
-    dialogTheme: DialogThemeData(
+    dialogTheme: const DialogThemeData(
       backgroundColor: purpleCardBackground,
       titleTextStyle: TextStyle(
         color: purplePrimaryText,
@@ -554,8 +548,8 @@ class AppTheme {
     inputDecorationTheme: InputDecorationTheme(
       fillColor: purpleSecondaryBackground,
       filled: true,
-      labelStyle: TextStyle(color: purplePrimaryText),
-      hintStyle: TextStyle(color: purpleLightText),
+      labelStyle: const TextStyle(color: purplePrimaryText),
+      hintStyle: const TextStyle(color: purpleLightText),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide.none,
@@ -566,13 +560,13 @@ class AppTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: purpleColor),
+        borderSide: const BorderSide(color: purpleColor),
       ),
     ),
-    iconTheme: IconThemeData(
+    iconTheme: const IconThemeData(
       color: purplePrimaryText,
     ),
-    navigationRailTheme: NavigationRailThemeData(
+    navigationRailTheme: const NavigationRailThemeData(
       backgroundColor: purpleCardBackground,
       selectedIconTheme: IconThemeData(color: purpleColor, size: 24),
       unselectedIconTheme: IconThemeData(color: purpleSecondaryText, size: 24),
@@ -587,23 +581,23 @@ class AppTheme {
       ),
     ),
     checkboxTheme: CheckboxThemeData(
-      fillColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      fillColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return purpleColor;
         }
         return null;
       }),
     ),
     switchTheme: SwitchThemeData(
-      thumbColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return purpleColor;
         }
         return null;
       }),
-      trackColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
-          return purpleColor.withOpacity(0.5);
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return purpleColor.withValues(alpha: 0.5);
         }
         return null;
       }),

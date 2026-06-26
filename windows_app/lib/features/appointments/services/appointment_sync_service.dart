@@ -1,4 +1,5 @@
 import 'package:mysql1/mysql1.dart';
+import '../../../utils/log_manager.dart';
 
 /// 预约同步服务
 /// 负责处理 SQLite → MySQL 的数据同步逻辑（从 AppointmentProvider 中提取）
@@ -21,7 +22,8 @@ class AppointmentSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过预约同步(id=$appointmentId)');
+          LogManager.w(
+              'AppointmentSyncService', 'MySQL连接不可用，跳过预约同步(id=$appointmentId)');
           return;
         }
 
@@ -52,7 +54,8 @@ class AppointmentSyncService {
               appointmentMap['updated_at'],
               appointmentId,
             ]);
-            print('成功更新MySQL预约(id=$appointmentId)，影响行数: ${result.affectedRows}');
+            LogManager.i('AppointmentSyncService',
+                '成功更新MySQL预约(id=$appointmentId)，影响行数: ${result.affectedRows}');
           } else {
             // 插入操作
             final result = await conn.query('''
@@ -71,13 +74,14 @@ class AppointmentSyncService {
               appointmentMap['created_at'],
               appointmentMap['updated_at'],
             ]);
-            print('成功将预约(id=$appointmentId)同步到MySQL（新建），插入ID: ${result.insertId}');
+            LogManager.i('AppointmentSyncService',
+                '成功将预约(id=$appointmentId)同步到MySQL（新建），插入ID: ${result.insertId}');
           }
         } catch (e) {
-          print('同步预约到MySQL时出错: $e');
+          LogManager.e('AppointmentSyncService', '同步预约到MySQL时出错', error: e);
         }
       } catch (e) {
-        print('预约同步到MySQL发生不可预期错误: $e');
+        LogManager.e('AppointmentSyncService', '预约同步到MySQL发生不可预期错误', error: e);
       }
     });
   }
@@ -88,7 +92,8 @@ class AppointmentSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
-          print('MySQL连接不可用，跳过预约删除同步(id=$appointmentId)');
+          LogManager.w('AppointmentSyncService',
+              'MySQL连接不可用，跳过预约删除同步(id=$appointmentId)');
           return;
         }
 
@@ -97,12 +102,16 @@ class AppointmentSyncService {
             'DELETE FROM appointments WHERE id = ?',
             [appointmentId],
           );
-          print('成功从MySQL删除预约(id=$appointmentId)，影响行数: ${result.affectedRows}');
+          LogManager.i('AppointmentSyncService',
+              '成功从MySQL删除预约(id=$appointmentId)，影响行数: ${result.affectedRows}');
         } catch (e) {
-          print('从MySQL删除预约(id=$appointmentId)时出错: $e');
+          LogManager.e(
+              'AppointmentSyncService', '从MySQL删除预约(id=$appointmentId)时出错',
+              error: e);
         }
       } catch (e) {
-        print('预约删除同步到MySQL发生不可预期错误: $e');
+        LogManager.e('AppointmentSyncService', '预约删除同步到MySQL发生不可预期错误',
+            error: e);
       }
     });
   }

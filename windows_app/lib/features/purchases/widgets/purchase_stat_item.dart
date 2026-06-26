@@ -25,18 +25,18 @@ class PurchaseStatItem extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.grey[600],
-            fontSize: 12,
-          ),
+                color: Colors.grey[600],
+                fontSize: 12,
+              ),
         ),
         const SizedBox(height: 2),
         Text(
           value,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: color,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
         ),
       ],
     );

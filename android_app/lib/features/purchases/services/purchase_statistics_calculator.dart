@@ -28,13 +28,11 @@ class PurchaseStatisticsCalculator {
     // 填充实际数据
     for (final record in records) {
       final monthKey = DateFormat('yyyy-MM').format(record.purchaseDate);
-      if (monthlyData.containsKey(monthKey)) {
-        monthlyData[monthKey]!['amount'] =
-            (monthlyData[monthKey]!['amount'] ?? 0) + record.totalAmount;
-        monthlyData[monthKey]!['quantity'] =
-            (monthlyData[monthKey]!['quantity'] ?? 0) + record.totalQuantity;
-        monthlyData[monthKey]!['records'] =
-            (monthlyData[monthKey]!['records'] ?? 0) + 1;
+      final data = monthlyData[monthKey];
+      if (data != null) {
+        data['amount'] = (data['amount'] ?? 0) + record.totalAmount;
+        data['quantity'] = (data['quantity'] ?? 0) + record.totalQuantity;
+        data['records'] = (data['records'] ?? 0) + 1;
       }
     }
 

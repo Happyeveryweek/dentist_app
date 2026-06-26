@@ -36,7 +36,7 @@ class MaterialFormField extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: DentalColors.onSurface,
@@ -70,7 +70,8 @@ class MaterialFormField extends StatelessWidget {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: DentalColors.primary, width: 2),
+              borderSide:
+                  const BorderSide(color: DentalColors.primary, width: 2),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -78,7 +79,8 @@ class MaterialFormField extends StatelessWidget {
             ),
             filled: true,
             fillColor: isReadOnly ? Colors.grey.shade100 : Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
         ),
       ],

@@ -17,21 +17,21 @@ class UserCurrentPermissionService {
        _getUserById = getUserById;
 
   Future<void> primeCurrentUserPermissions(User currentUser) async {
-    if (currentUser.id == null) {
+    final userId = currentUser.id;
+    if (userId == null) {
       AppLogger.info('当前用户为空或ID无效，无法加载权限');
       return;
     }
 
     try {
-      if (_permissionService == null) return;
-      final permissions = await _permissionService.getUserPermissions(
-        currentUser.id!,
-      );
+      final permissionService = _permissionService;
+      if (permissionService == null) return;
+      final permissions = await permissionService.getUserPermissions(userId);
       if (permissions != null) {
-        AppLogger.info('当前用户权限加载成功，用户ID: ${currentUser.id}');
+        AppLogger.info('当前用户权限加载成功，用户ID: $userId');
         AppLogger.info('权限配置: $permissions');
       } else {
-        AppLogger.info('当前用户无权限配置，用户ID: ${currentUser.id}');
+        AppLogger.info('当前用户无权限配置，用户ID: $userId');
       }
     } catch (e) {
       AppLogger.info('加载当前用户权限失败: $e');
@@ -51,16 +51,22 @@ class UserCurrentPermissionService {
 
   Future<void> refreshCurrentUserPermissions() async {
     final currentUser = _currentUserGetter();
-    if (currentUser == null || currentUser.id == null) {
-      AppLogger.info('当前用户为空或ID无效，无法刷新权限');
+    if (currentUser == null) {
+      AppLogger.info('当前用户为空，无法刷新权限');
+      return;
+    }
+    final userId = currentUser.id;
+    if (userId == null) {
+      AppLogger.info('当前用户ID无效，无法刷新权限');
       return;
     }
 
     try {
-      if (_permissionService == null) return;
-      _permissionService.clearPermissionsCache(currentUser.id!);
+      final permissionService = _permissionService;
+      if (permissionService == null) return;
+      permissionService.clearPermissionsCache(userId);
       await primeCurrentUserPermissions(currentUser);
-      AppLogger.info('当前用户权限刷新成功，用户ID: ${currentUser.id}');
+      AppLogger.info('当前用户权限刷新成功，用户ID: $userId');
     } catch (e) {
       AppLogger.info('刷新当前用户权限失败: $e');
       rethrow;
@@ -69,13 +75,15 @@ class UserCurrentPermissionService {
 
   Future<bool> hasCurrentUserModulePermission(String module) async {
     final currentUser = _currentUserGetter();
-    if (currentUser == null || currentUser.id == null) {
+    final userId = currentUser?.id;
+    if (userId == null) {
       return false;
     }
 
-    if (_permissionService == null) return false;
-    return await _permissionService.hasModulePermission(
-      currentUser.id!,
+    final permissionService = _permissionService;
+    if (permissionService == null) return false;
+    return await permissionService.hasModulePermission(
+      userId,
       module,
       _getUserById,
     );
@@ -83,11 +91,13 @@ class UserCurrentPermissionService {
 
   Future<Map<String, bool>?> getCurrentUserPermissions() async {
     final currentUser = _currentUserGetter();
-    if (currentUser == null || currentUser.id == null) {
+    final userId = currentUser?.id;
+    if (userId == null) {
       return null;
     }
 
-    if (_permissionService == null) return null;
-    return await _permissionService.getUserPermissions(currentUser.id!);
+    final permissionService = _permissionService;
+    if (permissionService == null) return null;
+    return await permissionService.getUserPermissions(userId);
   }
 }

@@ -1,14 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../../theme/app_theme.dart';
-import 'dart:ui' as ui;
-import 'dart:typed_data';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:intl/intl.dart';
-import '../../../models/purchase_record.dart';
-import '../../../models/purchase_item.dart';
-import '../../../widgets/success_toast.dart';
 
 class PurchaseExportDialog extends StatefulWidget {
   const PurchaseExportDialog({
@@ -21,9 +12,9 @@ class PurchaseExportDialog extends StatefulWidget {
 
 class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
   // 导出内容选择
-  bool _includePurchaseRecord = false;     // 采购记录
-  bool _includePurchaseSummary = true;    // 采购汇总（默认勾选）
-  bool _includePurchaseDetails = true;     // 采购项目明细（默认勾选）
+  bool _includePurchaseRecord = false; // 采购记录
+  bool _includePurchaseSummary = true; // 采购汇总（默认勾选）
+  bool _includePurchaseDetails = true; // 采购项目明细（默认勾选）
 
   @override
   void initState() {
@@ -35,7 +26,6 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final isPurpleTheme =
         Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
 
@@ -54,7 +44,7 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
           ),
         ],
       ),
-      content: Container(
+      content: SizedBox(
         width: 400,
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -69,7 +59,7 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
               ),
             ),
             const SizedBox(height: 20),
-            
+
             // 采购记录选项
             _buildExportOption(
               title: '采购记录',
@@ -83,9 +73,9 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
                 });
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // 采购汇总选项
             _buildExportOption(
               title: '采购汇总',
@@ -99,9 +89,9 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
                 });
               },
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // 采购项目明细选项
             _buildExportOption(
               title: '采购项目明细',
@@ -115,9 +105,9 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
                 });
               },
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // 提示信息
             Container(
               padding: const EdgeInsets.all(12),
@@ -128,7 +118,8 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue.shade600, size: 20),
+                  Icon(Icons.info_outline,
+                      color: Colors.blue.shade600, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -156,12 +147,14 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
           child: const Text('取消'),
         ),
         ElevatedButton(
-          onPressed: _canExport() ? () {
-            Navigator.of(context).pop(getExportOptions());
-          } : null,
+          onPressed: _canExport()
+              ? () {
+                  Navigator.of(context).pop(getExportOptions());
+                }
+              : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: accentColor,
-            disabledBackgroundColor: accentColor.withOpacity(0.5),
+            disabledBackgroundColor: accentColor.withValues(alpha: 0.5),
           ),
           child: const Text('确认导出'),
         ),
@@ -180,10 +173,11 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: value ? iconColor.withOpacity(0.1) : Colors.grey.shade50,
+        color: value ? iconColor.withValues(alpha: 0.1) : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: value ? iconColor.withOpacity(0.3) : Colors.grey.shade300,
+          color:
+              value ? iconColor.withValues(alpha: 0.3) : Colors.grey.shade300,
           width: value ? 2 : 1,
         ),
       ),
@@ -227,7 +221,9 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
   }
 
   bool _canExport() {
-    return _includePurchaseRecord || _includePurchaseSummary || _includePurchaseDetails;
+    return _includePurchaseRecord ||
+        _includePurchaseSummary ||
+        _includePurchaseDetails;
   }
 
   // 获取导出选项

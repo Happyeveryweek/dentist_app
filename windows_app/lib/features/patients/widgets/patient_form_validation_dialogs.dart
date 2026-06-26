@@ -14,7 +14,7 @@ class DuplicateMedicalRecordDialog extends StatelessWidget {
         style: TextStyle(fontSize: 16),
       ),
       content: const Text('此病历号已被使用，请重新输入'),
-      backgroundColor: Colors.white.withOpacity(0.9),
+      backgroundColor: Colors.white.withValues(alpha: 0.9),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: const BorderSide(color: Colors.red, width: 1),
@@ -74,7 +74,7 @@ class ExistingPatientChoiceDialog extends StatelessWidget {
                 Text('性别: ${patient.gender}'),
                 Text('电话: ${patient.mainPhone}'),
                 Text(
-                  '首诊日期: ${DateFormat('yyyy-MM-dd').format(patient.first_visit_date)}',
+                  '首诊日期: ${DateFormat('yyyy-MM-dd').format(patient.firstVisitDate)}',
                 ),
               ],
             ),
@@ -83,7 +83,7 @@ class ExistingPatientChoiceDialog extends StatelessWidget {
           const Text('请选择：'),
         ],
       ),
-      backgroundColor: Colors.white.withOpacity(0.9),
+      backgroundColor: Colors.white.withValues(alpha: 0.9),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: const BorderSide(color: Colors.orange, width: 1),

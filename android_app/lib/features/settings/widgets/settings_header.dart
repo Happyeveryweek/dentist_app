@@ -4,13 +4,13 @@ import 'package:dentist_app/theme/app_theme.dart';
 /// 设置页面头部组件
 /// 包含标题、退出登录按钮、帮助按钮和 TabBar
 class SettingsHeader extends StatelessWidget {
-  final TabController tabController;
+  final TabController? tabController;
   final VoidCallback onLogout;
   final VoidCallback onHelp;
 
   const SettingsHeader({
     super.key,
-    required this.tabController,
+    this.tabController,
     required this.onLogout,
     required this.onHelp,
   });

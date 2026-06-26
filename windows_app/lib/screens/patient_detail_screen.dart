@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -22,11 +21,10 @@ import '../features/appointments/widgets/appointment_form_dialog.dart';
 import './appointment_details_screen.dart';
 import '../features/financial/widgets/financial_form_dialog.dart';
 import './financial_detail_screen.dart';
-import 'patients_screen.dart';
-import '../widgets/success_toast.dart' show DeleteConfirmDialogManager;
 import '../features/medical_records/widgets/medical_record_form_dialog.dart';
 import '../features/patients/services/patient_detail_loader_service.dart';
 import '../features/patients/widgets/patient_detail_components.dart';
+import '../utils/log_manager.dart';
 
 class PatientDetailScreen extends StatefulWidget {
   final Patient patient;
@@ -44,6 +42,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     with SingleTickerProviderStateMixin {
   bool _isLoading = true;
   Patient? _patient;
+  Patient? _appointmentContextPatient;
+  Patient? _financialContextPatient;
   List<Appointment> _appointments = [];
   // 移除_patientMaterials变量 - 材料管理已迁移到MaterialDetailManager
   List<FinancialRecord> _financialRecords = [];
@@ -96,6 +96,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       if (mounted) {
         setState(() {
           _patient = data.patient;
+          _appointmentContextPatient = data.appointmentContextPatient;
+          _financialContextPatient = data.financialContextPatient;
           _appointments = data.appointments;
           _financialRecords = data.financialRecords;
           _financialItems = data.financialItems;
@@ -104,7 +106,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         });
       }
     } catch (e) {
-      print('加载患者数据错误: $e');
+      LogManager.e('PatientDetailScreen', '加载患者数据错误', error: e);
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -148,11 +150,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) {
+        if (didPop) return;
         // 系统返回按钮也要传递数据更改标志
         Navigator.of(context).pop(_dataChanged);
-        return false; // 阻止默认返回行为，因为我们已经手动处理了
       },
       child: PatientDetailScaffold(
         patientName: _patient?.name ?? '患者详情',
@@ -185,21 +188,25 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   }
 
   Widget _buildPatientInfoTab() {
-    if (_patient == null) {
+    final patient = _patient;
+    if (patient == null) {
       return const Center(child: Text('无法加载患者信息'));
     }
+
+    final dentalCondition = patient.dentalCondition;
+    final treatmentItems = patient.treatmentItems;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          PatientDetailOverviewCard(patient: _patient!),
+          PatientDetailOverviewCard(patient: patient),
 
           // 用分区标签分割内容
           const PatientDetailSectionHeader(
               title: '个人信息', icon: Icons.person, color: Color(0xFF2ecc71)),
-          PatientPersonalInfoCard(patient: _patient!),
+          PatientPersonalInfoCard(patient: patient),
 
           // 牙齿状况和治疗分区
           const PatientDetailSectionHeader(
@@ -207,23 +214,22 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
               icon: Icons.medical_information,
               color: Color(0xFFe74c3c)),
           PatientClinicalInfoCard(
-            dentalCondition: _buildDentalCondition(),
-            treatmentItems: _patient!.treatment_items,
-            showDivider: _patient!.dental_condition != null &&
-                _patient!.dental_condition!.isNotEmpty &&
-                _patient!.treatment_items != null &&
-                _patient!.treatment_items!.isNotEmpty,
-            showEmptyState: _patient!.dental_condition == null &&
-                _patient!.treatment_items == null,
+            dentalCondition: _buildDentalCondition(patient),
+            treatmentItems: treatmentItems,
+            showDivider: dentalCondition != null &&
+                dentalCondition.isNotEmpty &&
+                treatmentItems != null &&
+                treatmentItems.isNotEmpty,
+            showEmptyState: dentalCondition == null && treatmentItems == null,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDentalCondition() {
-    if (_patient!.dental_condition == null ||
-        _patient!.dental_condition!.isEmpty) {
+  Widget _buildDentalCondition(Patient patient) {
+    final dentalCondition = patient.dentalCondition;
+    if (dentalCondition == null || dentalCondition.isEmpty) {
       return const PatientDentalConditionEmptyState();
     }
 
@@ -235,10 +241,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
               .dataSourceType ==
           'mysql') {
         // MySQL数据源
-        print('使用MySQL数据源解析dental_condition');
 
         // 处理dental_condition字段的数据
-        final dynamic rawData = _patient!.dental_condition;
+        final dynamic rawData = dentalCondition;
         String jsonStr = '';
 
         try {
@@ -256,11 +261,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
             // 其他类型，尝试toString()
             jsonStr = rawData.toString();
           }
-
-          print(
-              '处理后的dental_condition: ${jsonStr.length > 50 ? jsonStr.substring(0, 50) + "..." : jsonStr}');
         } catch (e) {
-          print('转换dental_condition错误: $e');
+          LogManager.e('PatientDetailScreen', '转换dental_condition错误', error: e);
           // 转换失败，使用toString作为后备方案
           jsonStr = rawData != null ? rawData.toString() : '{}';
         }
@@ -281,7 +283,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
             throw FormatException('期望Map类型，实际为: ${decodedData.runtimeType}');
           }
         } catch (e) {
-          print('JSON解析错误: $e，尝试修复格式问题');
+          LogManager.e('PatientDetailScreen', 'JSON解析错误，尝试修复格式问题', error: e);
 
           // 尝试清理JSON字符串中可能存在的问题字符
           final cleanedJson =
@@ -303,7 +305,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                   '清理后期望Map类型，实际为: ${decodedData.runtimeType}');
             }
           } catch (e2) {
-            print('清理后JSON解析仍然失败: $e2');
+            LogManager.e('PatientDetailScreen', '清理后JSON解析仍然失败2', error: e);
             // 尝试最后的修复方法
             try {
               // 对于MySQL，尝试手动处理JSON字符串中的编码问题
@@ -328,7 +330,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 );
               }
             } catch (e3) {
-              print('所有修复尝试均失败: $e3');
+              LogManager.e('PatientDetailScreen', '所有修复尝试均失败3', error: e);
               // 解析失败，使用空Map
               dentalCharts = {};
               return Padding(
@@ -340,7 +342,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         }
       } else {
         // SQLite数据源
-        dentalCharts = _patient!.dentalCharts;
+        dentalCharts = patient.dentalCharts;
       }
 
       if (dentalCharts.isEmpty) {
@@ -383,7 +385,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           dateStr = DateFormat('yyyy-MM-dd').format(date);
         } catch (e) {
           // 解析失败时使用原始字符串和当前日期
-          print('日期解析错误: $e，使用原始日期字符串');
+          LogManager.e('PatientDetailScreen', '日期解析错误，使用原始日期字符串', error: e);
           dateStr = rawDateStr;
           date = DateTime.now(); // 使用当前日期作为fallback
         }
@@ -526,13 +528,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 return latin1Result;
               }
             } catch (e) {
-              print('latin1转换失败: $e');
+              LogManager.e('PatientDetailScreen', 'latin1转换失败', error: e);
             }
           }
 
           return utf8Result;
         } catch (e) {
-          print('二进制数据转换为字符串失败: $e');
+          LogManager.e('PatientDetailScreen', '二进制数据转换为字符串失败', error: e);
           // 尝试直接从字符码转换
           return String.fromCharCodes(value);
         }
@@ -555,13 +557,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 return latin1Result;
               }
             } catch (e) {
-              print('latin1转换失败: $e');
+              LogManager.e('PatientDetailScreen', 'latin1转换失败', error: e);
             }
           }
 
           return utf8Result;
         } catch (e) {
-          print('Uint8List转换为字符串失败: $e');
+          LogManager.e('PatientDetailScreen', 'Uint8List转换为字符串失败', error: e);
           // 尝试直接从字符码转换
           return String.fromCharCodes(value);
         }
@@ -580,13 +582,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
               return decodedString;
             }
           } catch (e) {
-            print('字符串重新解码失败: $e');
+            LogManager.e('PatientDetailScreen', '字符串重新解码失败', error: e);
           }
         }
         return value;
       }
     } catch (e) {
-      print('字符串处理异常: $e');
+      LogManager.e('PatientDetailScreen', '字符串处理异常', error: e);
     }
 
     // 默认返回toString结果
@@ -625,7 +627,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
               fixedValue = utf8Decoded;
             }
           } catch (e) {
-            print('UTF-8解码失败: $e');
+            LogManager.e('PatientDetailScreen', 'UTF-8解码失败', error: e);
           }
 
           // 尝试直接使用String.fromCharCodes
@@ -636,17 +638,16 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 fixedValue = directDecoded;
               }
             } catch (e) {
-              print('直接解码失败: $e');
+              LogManager.e('PatientDetailScreen', '直接解码失败', error: e);
             }
           }
 
           // 如果找到修复的值，更新Map
           if (fixedValue != null && fixedValue != value) {
             map[key] = fixedValue;
-            print('修复编码问题: "$value" -> "$fixedValue"');
           }
         } catch (e) {
-          print('修复编码过程中出错: $e');
+          LogManager.e('PatientDetailScreen', '修复编码过程中出错', error: e);
         }
       }
     });
@@ -663,10 +664,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     fixedJson =
         fixedJson.replaceAllMapped(RegExp(r'\\u([0-9a-fA-F]{4})'), (match) {
       try {
-        final codePoint = int.parse(match.group(1)!, radix: 16);
+        final group = match.group(1);
+        if (group == null) return match.group(0) ?? '';
+        final codePoint = int.parse(group, radix: 16);
         return String.fromCharCode(codePoint);
       } catch (e) {
-        return match.group(0)!;
+        return match.group(0) ?? '';
       }
     });
 
@@ -681,7 +684,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           return jsonEncode(decoded);
         }
       } catch (e) {
-        print('尝试解决双重编码问题失败: $e');
+        LogManager.e('PatientDetailScreen', '尝试解决双重编码问题失败', error: e);
       }
     }
 
@@ -694,7 +697,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           return decodedStr;
         }
       } catch (e) {
-        print('尝试特殊处理编码失败: $e');
+        LogManager.e('PatientDetailScreen', '尝试特殊处理编码失败', error: e);
       }
     }
 
@@ -735,8 +738,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         return PatientAppointmentCard(
           appointment: appointment,
           treatmentTypeText:
-              _formatTreatmentTypeForDisplay(appointment.treatment_type) ??
-                  '未指定',
+              _formatTreatmentTypeForDisplay(appointment.treatmentType),
           canEdit: PermissionUtils.canEditDoctor(
               context, appointment.patient?.doctor),
           canDelete: PermissionUtils.canDeleteDoctor(
@@ -760,7 +762,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   }
 
   void _editPatient() async {
-    if (_patient == null) return;
+    final patient = _patient;
+    if (patient == null) return;
 
     // 所有医生都可以编辑任何患者，但编辑权限在表单内部控制
 
@@ -770,21 +773,18 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     // 从数据库获取最新的患者信息，确保包含完整的牙齿状况数据
     Patient? freshPatient;
     try {
-      if (_patient!.id != null) {
-        print('编辑前获取最新患者数据: ID ${_patient!.id}');
-        freshPatient = await patientProvider.getPatient(_patient!.id!);
+      final patientId = patient.id;
+      if (patientId != null) {
+        freshPatient = await patientProvider.getPatient(patientId);
         if (freshPatient == null) {
-          print('无法获取最新患者数据，使用当前患者数据');
-          freshPatient = _patient;
-        } else {
-          print(
-              '成功获取最新患者数据，包含牙齿状况: ${freshPatient.dental_condition?.substring(0, 50)}...');
+          LogManager.e('PatientDetailScreen', '无法获取最新患者数据，使用当前患者数据');
+          freshPatient = patient;
         }
       } else {
-        freshPatient = _patient;
+        freshPatient = patient;
       }
     } catch (e) {
-      print('获取最新患者数据失败: $e，使用当前患者数据');
+      LogManager.e('PatientDetailScreen', '获取最新患者数据失败，使用当前患者数据', error: e);
       freshPatient = _patient;
     }
 
@@ -828,12 +828,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       context: context,
       builder: (context) => AppointmentFormDialog(
         initialDate: DateTime.now(),
-        preselectedPatient: widget.patient,
+        preselectedPatient: _appointmentContextPatient ?? widget.patient,
       ),
     );
 
     if (result != null) {
       try {
+        if (!mounted) return;
         final appointmentProvider =
             Provider.of<AppointmentProvider>(context, listen: false);
         await appointmentProvider.addAppointment(result);
@@ -841,55 +842,31 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         // 重新加载数据
         await _reloadPatientData();
 
-        if (mounted) {
-          // 使用公用成功提示组件
-          AppToastManager.showSuccess(context, message: '预约已添加');
-        }
+        if (!mounted) return;
+        // 使用公用成功提示组件
+        AppToastManager.showSuccess(context, message: '预约已添加');
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('添加预约失败: $e')),
-          );
-        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('添加预约失败: $e')),
+        );
       }
     }
   }
 
   void _viewAppointmentDetails(Appointment appointment) {
     // 跳转到预约详情页面
+    final appointmentId = appointment.id;
+    if (appointmentId == null) {
+      LogManager.w('PatientDetailScreen', '无法查看无 ID 的预约详情');
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => AppointmentDetailsScreen(
-          appointmentId: appointment.id!,
+          appointmentId: appointmentId,
         ),
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -909,13 +886,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       context: context,
       builder: (context) => AppointmentFormDialog(
         initialDate: DateTime.now(),
-        preselectedPatient: widget.patient,
+        preselectedPatient: _appointmentContextPatient ?? widget.patient,
         appointment: appointment,
       ),
     );
 
     if (result != null) {
       try {
+        if (!mounted) return;
         final appointmentProvider =
             Provider.of<AppointmentProvider>(context, listen: false);
         await appointmentProvider.updateAppointment(result);
@@ -923,16 +901,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         // 重新加载数据
         await _reloadPatientData();
 
-        if (mounted) {
-          // 使用公用成功提示组件
-          AppToastManager.showSuccess(context, message: '预约已更新');
-        }
+        if (!mounted) return;
+        // 使用公用成功提示组件
+        AppToastManager.showSuccess(context, message: '预约已更新');
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('更新预约失败: $e')),
-          );
-        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('更新预约失败: $e')),
+        );
       }
     }
   }
@@ -956,23 +932,29 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
     if (confirm == true) {
       try {
+        final appointmentId = appointment.id;
+        if (appointmentId == null) {
+          if (!mounted) return;
+          AppToastManager.showError(context,
+              message: '无法删除无 ID 的预约');
+          return;
+        }
+        if (!mounted) return;
         final appointmentProvider =
             Provider.of<AppointmentProvider>(context, listen: false);
-        await appointmentProvider.deleteAppointment(appointment.id!);
+        await appointmentProvider.deleteAppointment(appointmentId);
 
         // 重新加载数据
         await _reloadPatientData();
 
-        if (mounted) {
-          // 使用公用删除成功提示组件
-          AppToastManager.showDelete(context, message: '预约已删除');
-        }
+        if (!mounted) return;
+        // 使用公用删除成功提示组件
+        AppToastManager.showDelete(context, message: '预约已删除');
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('删除预约失败: $e')),
-          );
-        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('删除预约失败: $e')),
+        );
       }
     }
   }
@@ -1065,7 +1047,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     return PatientFinancialRecordsList(
       records: _financialRecords,
       financialItems: _financialItems,
-      patient: widget.patient,
+      patient: _financialContextPatient ?? widget.patient,
       patientTotalReceivable: _calculatePatientTotalReceivable(),
       canViewRecords: _canViewPatientFinancialRecords(),
       onViewRecord: _viewFinancialRecordDetails,
@@ -1086,14 +1068,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           if (r.id != null) {
             for (final item in _financialItems) {
               if (item.financialRecordId == r.id) {
-                patientTotalReceivable +=
-                    (item.itemPrice * (item.quantity ?? 1));
+                patientTotalReceivable += (item.itemPrice * item.quantity);
               }
             }
           }
         }
       } catch (e) {
-        print('计算患者应收费总额时出错: $e');
+        LogManager.e('PatientDetailScreen', '计算患者应收费总额时出错', error: e);
         patientTotalReceivable = 0.0;
       }
     }
@@ -1111,12 +1092,43 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       return;
     }
 
+    Patient? financialContextPatient = _financialContextPatient;
+    if (financialContextPatient == null) {
+      final patient = _patient ?? widget.patient;
+      final patientProvider =
+          Provider.of<PatientProvider>(context, listen: false);
+      final financialProvider =
+          Provider.of<FinancialProvider>(context, listen: false);
+
+      financialContextPatient = await patientProvider.ensurePatientInDataSource(
+        patient,
+        targetDataSourceType: financialProvider.dataSourceType,
+      );
+
+      if (financialContextPatient == null) {
+        if (!mounted) return;
+        AppToastManager.showError(
+          context,
+          message: '当前患者写入财务数据源失败，无法新增收费记录',
+        );
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _financialContextPatient = financialContextPatient;
+        });
+      }
+    }
+
+    if (!mounted) return;
+
     // 实现添加收费记录功能
     await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => FinancialFormDialog(
-        contextPatient: widget.patient,
+        contextPatient: financialContextPatient,
         onResult: (success) {
           if (success) {
             // 保存成功后重新加载数据但不关闭页面
@@ -1141,12 +1153,21 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       return;
     }
 
+    final financialContextPatient = _financialContextPatient;
+    if (financialContextPatient == null) {
+      AppToastManager.showError(
+        context,
+        message: '当前患者未在财务数据源中匹配到对应档案，请先同步患者数据',
+      );
+      return;
+    }
+
     // 跳转到收费记录详情页面，并等待返回结果
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => FinancialDetailScreen(
-          patient: widget.patient,
+          patient: financialContextPatient,
           initialRecordId: record.id,
         ),
       ),
@@ -1168,10 +1189,19 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       return;
     }
 
+    final financialContextPatient = _financialContextPatient;
+    if (financialContextPatient == null) {
+      AppToastManager.showError(
+        context,
+        message: '当前患者未在财务数据源中匹配到对应档案，请先同步患者数据',
+      );
+      return;
+    }
+
     final result =
         await PatientDetailDialogActions.showEditFinancialRecordDialog(
       context: context,
-      patient: widget.patient,
+      patient: financialContextPatient,
       record: record,
     );
     if (result) {
@@ -1196,20 +1226,25 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
     if (confirm) {
       try {
+        final recordId = record.id;
+        if (recordId == null) {
+          if (!mounted) return;
+          AppToastManager.showError(context, message: '无法删除无 ID 的财务记录');
+          return;
+        }
+        if (!mounted) return;
         final financialProvider =
             Provider.of<FinancialProvider>(context, listen: false);
-        await financialProvider.deleteFinancialRecord(record.id!);
+        await financialProvider.deleteFinancialRecord(recordId);
 
         // 重新加载数据
         await _reloadPatientData();
 
-        if (mounted) {
-          AppToastManager.showSuccess(context, message: '收费记录已删除');
-        }
+        if (!mounted) return;
+        AppToastManager.showSuccess(context, message: '收费记录已删除');
       } catch (e) {
-        if (mounted) {
-          AppToastManager.showError(context, message: '删除收费记录失败: $e');
-        }
+        if (!mounted) return;
+        AppToastManager.showError(context, message: '删除收费记录失败: $e');
       }
     }
   }
@@ -1241,14 +1276,15 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       }
 
       // 非管理员用户只能编辑自己创建的病历记录
-      if (currentUser.doctor != null && currentUser.doctor!.isNotEmpty) {
+      final currentDoctor = currentUser.doctor;
+      if (currentDoctor != null && currentDoctor.isNotEmpty) {
         final createdByDoctor = record.createdByDoctor ?? record.doctorName;
-        return createdByDoctor == currentUser.doctor;
+        return createdByDoctor == currentDoctor;
       }
 
       return false;
     } catch (e) {
-      print('检查病历编辑权限时出错: $e');
+      LogManager.e('PatientDetailScreen', '检查病历编辑权限时出错', error: e);
       return false;
     }
   }
@@ -1260,20 +1296,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   }
 
   void _addMedicalRecord() async {
-    if (_patient == null) {
-      print('_addMedicalRecord: _patient is null');
+    final patient = _patient;
+    if (patient == null) {
       return;
     }
-
-    print(
-        '_addMedicalRecord: patient id = ${_patient!.id}, name = ${_patient!.name}');
 
     try {
       final result = await showDialog<PatientMedicalRecord>(
         context: context,
         barrierDismissible: false,
         builder: (context) => MedicalRecordFormDialog(
-          patient: _patient!,
+          patient: patient,
           onSave: (record) async {
             try {
               // 调用MedicalRecordProvider保存病历
@@ -1283,6 +1316,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                   await medicalRecordProvider.createMedicalRecord(record);
 
               if (recordId > 0) {
+                if (!context.mounted) return;
                 // 保存成功，返回带ID的记录
                 final savedRecord = record.copyWith(id: recordId);
                 Navigator.of(context).pop(savedRecord);
@@ -1290,6 +1324,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 throw Exception('保存病历失败');
               }
             } catch (e) {
+              if (!context.mounted) return;
               // 显示错误信息
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -1321,11 +1356,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   }
 
   void _viewMedicalRecordDetails(PatientMedicalRecord record) {
+    final patient = _patient;
+    if (patient == null) return;
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (context) => PatientMedicalRecordDetailDialog(
-        patient: _patient!,
+        patient: patient,
         record: record,
         canEdit: _canEditMedicalRecord(record),
         canDelete: _canDeleteMedicalRecord(record),
@@ -1343,7 +1380,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   }
 
   void _editMedicalRecord(PatientMedicalRecord record) async {
-    if (_patient == null) return;
+    final patient = _patient;
+    if (patient == null) return;
 
     // 检查编辑权限
     if (!_canEditMedicalRecord(record)) {
@@ -1361,7 +1399,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         context: context,
         barrierDismissible: false,
         builder: (context) => MedicalRecordFormDialog(
-          patient: _patient!,
+          patient: patient,
           medicalRecord: record,
           onSave: (updatedRecord) async {
             try {
@@ -1372,11 +1410,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                   .updateMedicalRecord(updatedRecord);
 
               if (success) {
+                if (!context.mounted) return;
                 Navigator.of(context).pop(updatedRecord);
               } else {
                 throw Exception('更新病历失败');
               }
             } catch (e) {
+              if (!context.mounted) return;
               // 显示错误信息
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -1408,7 +1448,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   }
 
   Future<void> _deleteMedicalRecord(PatientMedicalRecord record) async {
-    if (_patient == null) return;
+    final patient = _patient;
+    if (patient == null) return;
 
     // 检查删除权限
     if (!_canDeleteMedicalRecord(record)) {
@@ -1430,45 +1471,58 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
     if (confirmed) {
       try {
+        final recordId = record.id;
+        if (recordId == null) {
+          if (!mounted) return;
+          AppToastManager.showError(context, message: '无法删除无 ID 的病历记录');
+          return;
+        }
+        if (!mounted) return;
         final medicalRecordProvider =
             Provider.of<MedicalRecordProvider>(context, listen: false);
-        await medicalRecordProvider.deleteMedicalRecord(record.id!);
+        await medicalRecordProvider.deleteMedicalRecord(recordId);
 
         // 重新加载病历数据
         await _reloadPatientData(showLoading: false);
 
-        if (mounted) {
-          AppToastManager.showDelete(context, message: '病历记录已删除');
-        }
+        if (!mounted) return;
+        AppToastManager.showDelete(context, message: '病历记录已删除');
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('删除病历失败: $e')),
-          );
-        }
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('删除病历失败: $e')),
+        );
       }
     }
   }
 
   void _exportMedicalRecordToPdf(PatientMedicalRecord record) {
-    if (_patient == null) return;
+    final patient = _patient;
+    if (patient == null) return;
     PatientDetailDialogActions.exportMedicalRecordToPdf(
       context: context,
-      patient: _patient!,
+      patient: patient,
       record: record,
     );
   }
 
   /// 刷新病历记录数据
   Future<void> _refreshMedicalRecords() async {
-    if (_patient == null) return;
+    final patient = _patient;
+    if (patient == null) return;
+
+    final patientId = patient.id;
+    if (patientId == null) {
+      AppToastManager.showError(context, message: '无法刷新无 ID 患者的病历数据');
+      return;
+    }
 
     try {
       await _runWithLoadingState(() async {
         final medicalRecords =
             await PatientDetailLoaderService.loadMedicalRecords(
           context: context,
-          patientId: _patient!.id!,
+          patientId: patientId,
         );
 
         if (mounted) {
@@ -1508,40 +1562,31 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
 
-      print('=== 财务记录权限检查 ===');
-      print('当前用户: ${currentUser?.username}');
-      print('用户角色: ${currentUser?.role}');
-      print('用户医生: ${currentUser?.doctor}');
-      print('患者姓名: ${patient.name}');
-      print('患者医生: ${patient.doctor}');
-      print('用户是否为管理员: ${currentUser?.isAdmin}');
-
       if (currentUser == null) {
-        print('权限检查结果: false (用户未登录)');
         return false;
       }
 
       // 管理员拥有所有权限
       if (currentUser.isAdmin) {
-        print('权限检查结果: true (管理员权限)');
         return true;
       }
 
       // 非管理员用户只能查看自己医生的患者的财务记录
       // 如果患者没有指定医生，或者当前用户的医生与患者的医生匹配，则允许查看
-      if (patient.doctor == null || patient.doctor!.isEmpty) {
+      final patientDoctor = patient.doctor;
+      if (patientDoctor == null || patientDoctor.isEmpty) {
         // 如果患者没有指定医生，所有用户都可以查看
-        print('权限检查结果: true (患者未指定医生)');
+
         return true;
       }
 
       // 检查当前用户的医生是否与患者的医生匹配
       final hasPermission =
-          currentUser.doctor != null && currentUser.doctor == patient.doctor;
-      print('权限检查结果: $hasPermission (医生匹配检查)');
+          currentUser.doctor != null && currentUser.doctor == patientDoctor;
+
       return hasPermission;
     } catch (e) {
-      print('检查财务记录查看权限时出错: $e');
+      LogManager.e('PatientDetailScreen', '检查财务记录查看权限时出错', error: e);
       return false;
     }
   }

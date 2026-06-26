@@ -33,10 +33,10 @@ class FinancialItemCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -56,8 +56,8 @@ class FinancialItemCard extends StatelessWidget {
                 SizedBox(
                   width: 90,
                   child: FinancialDataCell(
-                    value: '${patient.medical_record_number ?? '未设置'}',
-                    color: Colors.orange[700]!,
+                    value: '${patient.medicalRecordNumber ?? '未设置'}',
+                    color: Colors.orange.shade700,
                     isBold: true,
                     fontSize: 13,
                     textAlign: TextAlign.center,
@@ -84,18 +84,18 @@ class FinancialItemCard extends StatelessWidget {
                   child: FinancialDateCell(
                     date: item.chargeDate,
                     icon: Icons.event,
-                    color: Colors.teal[600]!,
+                    color: Colors.teal.shade600,
                   ),
                 ),
                 const SizedBox(width: 12),
-                
+
                 // 最近更新列
                 Expanded(
                   flex: 2,
                   child: FinancialDateCell(
                     date: record.updatedAt,
                     icon: Icons.update,
-                    color: Colors.indigo[600]!,
+                    color: Colors.indigo.shade600,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -104,16 +104,18 @@ class FinancialItemCard extends StatelessWidget {
                 Expanded(
                   flex: 2,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.green[50],
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.green[200]!, width: 1),
+                      border: Border.all(color: Colors.green.shade200, width: 1),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.medical_services, size: 14, color: Colors.green[700]),
+                        Icon(Icons.medical_services,
+                            size: 14, color: Colors.green[700]),
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
@@ -145,10 +147,10 @@ class FinancialItemCard extends StatelessWidget {
                 Expanded(
                   flex: 2,
                   child: FinancialAmountCell(
-                    amount: item.itemPrice * (item.quantity ?? 1),
+                    amount: item.itemPrice * item.quantity,
                     icon: Icons.request_quote,
-                    color: Colors.blue[700]!,
-                    bgColor: Colors.blue[50]!,
+                    color: Colors.blue.shade700,
+                    bgColor: Colors.blue.shade50,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -159,8 +161,8 @@ class FinancialItemCard extends StatelessWidget {
                   child: FinancialAmountCell(
                     amount: item.totalPrice,
                     icon: Icons.check_circle,
-                    color: Colors.green[700]!,
-                    bgColor: Colors.green[50]!,
+                    color: Colors.green.shade700,
+                    bgColor: Colors.green.shade50,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -171,8 +173,8 @@ class FinancialItemCard extends StatelessWidget {
                   child: FinancialAmountCell(
                     amount: item.processingFee,
                     icon: Icons.build,
-                    color: Colors.orange[700]!,
-                    bgColor: Colors.orange[50]!,
+                    color: Colors.orange.shade700,
+                    bgColor: Colors.orange.shade50,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -186,7 +188,7 @@ class FinancialItemCard extends StatelessWidget {
                       // 编辑按钮
                       FinancialActionButton(
                         icon: Icons.edit_rounded,
-                        color: Colors.blue[600]!,
+                        color: Colors.blue.shade600,
                         tooltip: '编辑',
                         onPressed: onEdit,
                       ),
@@ -194,7 +196,7 @@ class FinancialItemCard extends StatelessWidget {
                       // 删除按钮
                       FinancialActionButton(
                         icon: Icons.delete_rounded,
-                        color: Colors.red[600]!,
+                        color: Colors.red.shade600,
                         tooltip: '删除',
                         onPressed: onDelete,
                       ),
@@ -222,7 +224,7 @@ class FinancialItemCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.purple[50],
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.purple[200]!, width: 1),
+        border: Border.all(color: Colors.purple.shade200, width: 1),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,

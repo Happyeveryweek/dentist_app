@@ -1,5 +1,6 @@
 import 'package:mysql1/mysql1.dart';
 import '../models/material.dart' as material_models;
+import '../utils/log_manager.dart';
 import 'base_mysql_data_source.dart';
 import 'material_data_source.dart';
 
@@ -262,7 +263,7 @@ class MySqlMaterialDataSource extends BaseMySqlDataSource
 
       return 'M301'; // 默认起始编码
     } catch (e) {
-      print('MySQL获取下一个材料编码失败: $e');
+      LogManager.e('MySqlMaterialDataSource', '获取下一个材料编码失败', error: e);
       return 'M301';
     }
   }
@@ -273,7 +274,7 @@ class MySqlMaterialDataSource extends BaseMySqlDataSource
       final result = await executeQuery('DELETE FROM materials');
       return (result.affectedRows ?? 0) > 0;
     } catch (e) {
-      print('MySQL清空所有材料失败: $e');
+      LogManager.e('MySqlMaterialDataSource', '清空所有材料失败', error: e);
       return false;
     }
   }

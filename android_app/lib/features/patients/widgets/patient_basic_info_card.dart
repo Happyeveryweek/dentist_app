@@ -25,6 +25,11 @@ class PatientBasicInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final doctor = patient.doctor;
+    final address = patient.address;
+    final identificationNumber = patient.identificationNumber;
+    final treatmentItems = patient.treatmentItems;
+
     return AppCard(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -86,29 +91,28 @@ class PatientBasicInfoCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
           ],
-          if (patient.doctor != null && patient.doctor!.isNotEmpty) ...[
+          if (doctor != null && doctor.isNotEmpty) ...[
             PatientInfoRow(
               icon: CupertinoIcons.person_2,
               label: '主治医生',
-              value: patient.doctor!,
+              value: doctor,
             ),
             const SizedBox(height: 12),
           ],
-          if (patient.address != null && patient.address!.isNotEmpty) ...[
+          if (address != null && address.isNotEmpty) ...[
             PatientInfoRow(
               icon: CupertinoIcons.location,
               label: '地址',
-              value: patient.address!,
+              value: address,
               alignTop: true,
             ),
             const SizedBox(height: 12),
           ],
-          if (patient.identificationNumber != null &&
-              patient.identificationNumber!.isNotEmpty) ...[
+          if (identificationNumber != null && identificationNumber.isNotEmpty) ...[
             PatientInfoRow(
               icon: CupertinoIcons.creditcard,
               label: '身份证号',
-              value: patient.identificationNumber!,
+              value: identificationNumber,
             ),
             const SizedBox(height: 12),
           ],
@@ -126,8 +130,7 @@ class PatientBasicInfoCard extends StatelessWidget {
             valueColor: AppTheme.accentColor,
             onTap: onTotalCostTap,
           ),
-          if (patient.treatmentItems != null &&
-              patient.treatmentItems!.isNotEmpty) ...[
+          if (treatmentItems != null && treatmentItems.isNotEmpty) ...[
             const SizedBox(height: 20),
             const Text(
               '治疗项目',
@@ -146,7 +149,7 @@ class PatientBasicInfoCard extends StatelessWidget {
                 border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: Text(
-                patient.treatmentItems!,
+                treatmentItems,
                 style: const TextStyle(fontSize: 14, color: AppTheme.textColor),
               ),
             ),

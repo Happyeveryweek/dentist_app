@@ -75,6 +75,8 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
 
   @override
   Widget build(BuildContext context) {
+    final startDate = widget.startDate;
+    final endDate = widget.endDate;
     return Container(
       padding: const EdgeInsets.all(AppTheme.padding),
       color: AppTheme.cardBackground,
@@ -137,14 +139,14 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
             ),
           const SizedBox(height: 16),
           // 时间筛选区域
-          _buildTimeFilterSection(),
+          _buildTimeFilterSection(startDate, endDate),
         ],
       ),
     );
   }
 
   // 构建时间筛选区域
-  Widget _buildTimeFilterSection() {
+  Widget _buildTimeFilterSection(DateTime? startDate, DateTime? endDate) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
@@ -224,7 +226,8 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
                 Expanded(
                   child: _buildDateField(
                     '开始日期',
-                    widget.startDate,
+                    startDate,
+                    endDate,
                     (date) => widget.onStartDateChange(date),
                     isStartDate: true,
                   ),
@@ -233,7 +236,8 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
                 Expanded(
                   child: _buildDateField(
                     '结束日期',
-                    widget.endDate,
+                    endDate,
+                    startDate,
                     (date) => widget.onEndDateChange(date),
                     isStartDate: false,
                   ),
@@ -249,7 +253,7 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed:
-                        widget.startDate != null && widget.endDate != null
+                        startDate != null && endDate != null
                             ? widget.onApplyTimeFilter
                             : null,
                     icon: const Icon(Icons.filter_list),
@@ -284,8 +288,8 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
 
             // 当前筛选状态显示
             if (widget.isDateRangeFiltering &&
-                widget.startDate != null &&
-                widget.endDate != null) ...[
+                startDate != null &&
+                endDate != null) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -306,7 +310,7 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '当前筛选: ${DateFormat('yyyy-MM-dd').format(widget.startDate!)} 至 ${DateFormat('yyyy-MM-dd').format(widget.endDate!)} (${widget.dateFilterType == 'first_visit_date' ? '首诊时间' : '更新时间'})',
+                        '当前筛选: ${DateFormat('yyyy-MM-dd').format(startDate)} 至 ${DateFormat('yyyy-MM-dd').format(endDate)} (${widget.dateFilterType == 'first_visit_date' ? '首诊时间' : '更新时间'})',
                         style: const TextStyle(
                           fontSize: 13,
                           color: AppTheme.primaryColor,
@@ -367,6 +371,7 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
   Widget _buildDateField(
     String label,
     DateTime? date,
+    DateTime? peerDate,
     Function(DateTime?) onDateSelected, {
     required bool isStartDate,
   }) {
@@ -392,10 +397,10 @@ class _PatientSearchFilterBarState extends State<PatientSearchFilterBar> {
                   firstDate:
                       isStartDate
                           ? DateTime(2000)
-                          : (widget.startDate ?? DateTime(2000)),
+                          : (peerDate ?? DateTime(2000)),
                   lastDate:
                       isStartDate
-                          ? (widget.endDate ?? DateTime(2100))
+                          ? (peerDate ?? DateTime(2100))
                           : DateTime(2100),
                   title: '选择$label',
                 );

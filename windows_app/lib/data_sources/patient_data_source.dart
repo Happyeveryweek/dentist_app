@@ -14,7 +14,7 @@ abstract class PatientDataSource {
   Future<bool> updatePatient(Patient patient);
   Future<bool> deletePatient(int id);
   Future<List<Patient>> searchPatients(String query);
-  
+
   // 分页查询方法
   Future<int> getPatientsCount({String? searchQuery});
   Future<Map<String, dynamic>> getPatientsPage({
@@ -27,21 +27,22 @@ abstract class PatientDataSource {
     DateTime? endDate,
     String dateFilterType = 'first_visit_date',
   });
-  
+
   // 患者特有方法
   Future<List<Patient>> getPatientsByDoctor(String doctorName);
   Future<List<int>> searchPatientIds(String query);
   Future<List<Patient>> getPatientsByIds(List<int> ids);
-  Future<bool> checkMedicalRecordExists(int medicalRecordNumber, [int? excludePatientId]);
+  Future<bool> checkMedicalRecordExists(int medicalRecordNumber,
+      [int? excludePatientId]);
   Future<bool> checkPatientNameExists(String name, [int? excludePatientId]);
   Future<void> updateAllPatientsPinyin();
-  
+
   // 患者材料相关方法
   Future<PatientMaterial> addPatientMaterial(PatientMaterial material);
   Future<List<PatientMaterial>> getPatientMaterials(int patientId);
   Future<bool> updatePatientMaterial(PatientMaterial material);
   Future<bool> deletePatientMaterial(int id);
-  
+
   // 患者材料图片相关方法
   Future<List<MaterialImage>> getMaterialImages(int materialId);
   Future<MaterialImage?> getMaterialImage(int imageId);

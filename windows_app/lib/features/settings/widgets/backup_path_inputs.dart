@@ -63,11 +63,11 @@ class BackupPathInputs extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(Icons.folder, color: AppTheme.secondaryColor, size: 18),
+            const Icon(Icons.folder, color: AppTheme.secondaryColor, size: 18),
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: AppTheme.secondaryColor,
               ),
@@ -92,13 +92,15 @@ class BackupPathInputs extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: AppTheme.secondaryColor, width: 2),
+                    borderSide: const BorderSide(
+                        color: AppTheme.secondaryColor, width: 2),
                   ),
                   filled: true,
                   fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
-                  suffixIcon: _getSuffixIcon(settingsProvider, controller, isSecondPath),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  suffixIcon: _getSuffixIcon(
+                      settingsProvider, controller, isSecondPath),
                 ),
                 onChanged: (value) async {
                   if (isSecondPath) {
@@ -127,7 +129,9 @@ class BackupPathInputs extends StatelessWidget {
     TextEditingController controller,
     bool isSecondPath,
   ) {
-    final path = isSecondPath ? settingsProvider.backupPath2 : settingsProvider.backupPath;
+    final path = isSecondPath
+        ? settingsProvider.backupPath2
+        : settingsProvider.backupPath;
     if (path.isNotEmpty) {
       return IconButton(
         icon: const Icon(Icons.clear, size: 18),

@@ -15,14 +15,20 @@ class PurchaseCacheService {
   bool get hasValidCache => _isCacheValid();
   DateTime? get lastCacheTime => _lastCacheTime;
   int get cachedRecordsCount => _cachedRecords?.length ?? 0;
-  bool get hasCache => _cachedRecords != null && _cachedRecords!.isNotEmpty;
+  bool get hasCache {
+    final cachedRecords = _cachedRecords;
+    return cachedRecords != null && cachedRecords.isNotEmpty;
+  }
+
   List<PurchaseRecord> get cachedRecords => _cachedRecords ?? [];
 
   /// 检查缓存是否有效
   bool _isCacheValid() {
-    return _cachedRecords != null &&
-        _lastCacheTime != null &&
-        DateTime.now().difference(_lastCacheTime!) < _cacheValidDuration;
+    final cachedRecords = _cachedRecords;
+    final lastCacheTime = _lastCacheTime;
+    return cachedRecords != null &&
+        lastCacheTime != null &&
+        DateTime.now().difference(lastCacheTime) < _cacheValidDuration;
   }
 
   /// 更新缓存

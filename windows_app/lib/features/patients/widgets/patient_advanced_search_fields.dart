@@ -35,11 +35,11 @@ class PatientAdvancedSearchFields extends StatelessWidget {
           color: (isPurpleTheme
                   ? AppTheme.purpleLightColor
                   : AppTheme.primaryColor)
-              .withOpacity(0.08),
+              .withValues(alpha: 0.08),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -139,12 +139,13 @@ class _CompactSearchField extends StatelessWidget {
     return Container(
       height: 48,
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withOpacity(0.06),
+        color: AppTheme.primaryColor.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.12)),
+        border:
+            Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.12)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -159,7 +160,7 @@ class _CompactSearchField extends StatelessWidget {
             decoration: BoxDecoration(
               color:
                   (isPurpleTheme ? AppTheme.purpleColor : AppTheme.primaryColor)
-                      .withOpacity(0.1),
+                      .withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(
@@ -181,14 +182,14 @@ class _CompactSearchField extends StatelessWidget {
                   color: (isPurpleTheme
                           ? AppTheme.purpleColor
                           : AppTheme.primaryColor)
-                      .withOpacity(0.7),
+                      .withValues(alpha: 0.7),
                 ),
                 hintStyle: TextStyle(
                   fontSize: 13,
                   color: (isPurpleTheme
                           ? AppTheme.purpleSecondaryText
                           : AppTheme.secondaryText)
-                      .withOpacity(0.6),
+                      .withValues(alpha: 0.6),
                 ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(

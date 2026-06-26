@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart'; // Added for kDebugMode
 import 'schemas/table_schema.dart';
 import '../utils/datetime_formatter.dart';
 import '../utils/app_logger.dart';
+import '../utils/map_parser.dart';
 
 // 数据库助手类
 class DatabaseHelper {
@@ -86,7 +87,7 @@ class DatabaseHelper {
   Future<void> _upgradeUsersTable(Database db) async {
     try {
       final result = await db.rawQuery("PRAGMA table_info(users)");
-      final columns = result.map((e) => e['name'] as String).toList();
+      final columns = result.map((e) => e['name']?.toString() ?? '').toList();
 
       if (!columns.contains('updated_at')) {
         await db.execute('ALTER TABLE users ADD COLUMN updated_at TEXT');
@@ -107,7 +108,7 @@ class DatabaseHelper {
   Future<void> _upgradePatientsTable(Database db) async {
     try {
       final result = await db.rawQuery("PRAGMA table_info(patients)");
-      final columns = result.map((e) => e['name'] as String).toList();
+      final columns = result.map((e) => e['name']?.toString() ?? '').toList();
 
       if (!columns.contains('name_initials')) {
         await db.execute(
@@ -322,24 +323,16 @@ class User {
   }
 
   factory User.fromMap(Map<String, dynamic> map) {
-    DateTime parseCreatedAt(dynamic value) {
-      if (value == null) return DateTime.now();
-      if (value is DateTime) return value;
-      if (value is String) {
-        return DateTimeFormatter.fromDbString(value);
-      }
-      return DateTime.now();
-    }
-
+    final p = MapParser(map, context: 'User');
     return User(
-      id: map['id'],
-      username: map['username'],
-      email: map['email'],
-      password: map['password'],
-      role: map['role'],
-      doctor: map['doctor'],
-      avatar: map['avatar'],
-      createdAt: parseCreatedAt(map['created_at']),
+      id: p.optional('id', (v) => v as int),
+      username: p.string('username'),
+      email: p.string('email'),
+      password: p.string('password'),
+      role: p.string('role', defaultValue: 'staff'),
+      doctor: p.stringOptional('doctor'),
+      avatar: p.string('avatar', defaultValue: 'avatar_1'),
+      createdAt: p.dateTime('created_at'),
     );
   }
 }

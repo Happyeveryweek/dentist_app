@@ -121,7 +121,11 @@ class MySqlPurchaseDataSource extends BaseMySqlDataSource
       DateTimeFormatter.toDbString(purchase.updatedAt),
     ]);
 
-    return result.insertId!;
+    final insertId = result.insertId;
+    if (insertId == null) {
+      throw Exception('创建采购记录后未返回 insertId');
+    }
+    return insertId;
   }
 
   @override
@@ -141,7 +145,7 @@ class MySqlPurchaseDataSource extends BaseMySqlDataSource
       purchase.id,
     ]);
 
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -153,7 +157,7 @@ class MySqlPurchaseDataSource extends BaseMySqlDataSource
     // 再删除采购记录
     final result =
         await executeQuery('DELETE FROM purchase_records WHERE id = ?', [id]);
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
@@ -181,7 +185,13 @@ class MySqlPurchaseDataSource extends BaseMySqlDataSource
       parts.whereArgs,
     );
     final row = results.first;
-    return (row['total'] as num?)?.toDouble() ?? 0.0;
+    final total = row['total'];
+    if (total == null) return 0.0;
+    if (total is double) return total;
+    if (total is int) return total.toDouble();
+    if (total is BigInt) return total.toDouble();
+    if (total is num) return total.toDouble();
+    return double.tryParse(total.toString()) ?? 0.0;
   }
 
   @override
@@ -284,7 +294,11 @@ class MySqlPurchaseDataSource extends BaseMySqlDataSource
       DateTimeFormatter.toDbString(item.updatedAt),
     ]);
 
-    return result.insertId!;
+    final insertId = result.insertId;
+    if (insertId == null) {
+      throw Exception('创建采购项目后未返回 insertId');
+    }
+    return insertId;
   }
 
   @override
@@ -304,14 +318,14 @@ class MySqlPurchaseDataSource extends BaseMySqlDataSource
       item.id
     ]);
 
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override
   Future<bool> deletePurchaseItem(int id) async {
     final result =
         await executeQuery('DELETE FROM purchase_items WHERE id = ?', [id]);
-    return result.affectedRows! > 0;
+    return (result.affectedRows ?? 0) > 0;
   }
 
   @override

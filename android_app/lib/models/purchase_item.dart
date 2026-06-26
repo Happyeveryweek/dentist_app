@@ -1,5 +1,6 @@
 import '../utils/datetime_formatter.dart';
 import '../utils/app_logger.dart';
+import '../utils/map_parser.dart';
 
 // 采购项目明细模型
 class PurchaseItem {
@@ -33,40 +34,18 @@ class PurchaseItem {
     Map<String, dynamic> map, {
     String dataSource = 'sqlite',
   }) {
-    DateTime created = _parseDateTimeFlexible(map['created_at']);
-    DateTime updated = _parseDateTimeFlexible(map['updated_at']);
-
+    final p = MapParser(map, context: 'PurchaseItem');
     return PurchaseItem(
-      id:
-          map['id'] is int
-              ? map['id']
-              : int.tryParse(map['id']?.toString() ?? '0'),
-      purchaseRecordId:
-          map['purchase_record_id'] is int
-              ? map['purchase_record_id']
-              : int.tryParse(map['purchase_record_id']?.toString() ?? '0'),
-      materialId:
-          map['material_id'] != null
-              ? (map['material_id'] is int
-                  ? map['material_id']
-                  : int.tryParse(map['material_id']?.toString() ?? '0'))
-              : null,
-      materialName: map['material_name']?.toString() ?? '',
-      quantity:
-          map['quantity'] is int
-              ? map['quantity']
-              : int.tryParse(map['quantity']?.toString() ?? '0'),
-      unitPrice:
-          map['unit_price'] is double
-              ? map['unit_price']
-              : double.tryParse(map['unit_price']?.toString() ?? '0.0'),
-      totalPrice:
-          map['total_price'] is double
-              ? map['total_price']
-              : double.tryParse(map['total_price']?.toString() ?? '0.0'),
-      unit: map['unit']?.toString(), // 材料单位
-      createdAt: created,
-      updatedAt: updated,
+      id: p.optional('id', (v) => v as int),
+      purchaseRecordId: p.integer('purchase_record_id'),
+      materialId: p.integerOptional('material_id'),
+      materialName: p.string('material_name'),
+      quantity: p.integer('quantity'),
+      unitPrice: p.doubleValue('unit_price'),
+      totalPrice: p.doubleValue('total_price'),
+      unit: p.stringOptional('unit'), // 材料单位
+      createdAt: _parseDateTimeFlexible(map['created_at']),
+      updatedAt: _parseDateTimeFlexible(map['updated_at']),
     );
   }
 

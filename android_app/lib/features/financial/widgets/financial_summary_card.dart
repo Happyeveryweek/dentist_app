@@ -41,7 +41,7 @@ class FinancialSummaryCard extends StatelessWidget {
                     '应收费',
                     '¥${NumberFormat('#,##0').format(totalReceivable)}',
                     Icons.account_balance_wallet,
-                    Colors.green[600]!,
+                    Colors.green.shade600,
                   ),
                 ),
                 Expanded(
@@ -49,7 +49,7 @@ class FinancialSummaryCard extends StatelessWidget {
                     '已收费',
                     '¥${NumberFormat('#,##0').format(totalCollected)}',
                     Icons.payment,
-                    Colors.orange[600]!,
+                    Colors.orange.shade600,
                   ),
                 ),
                 Expanded(
@@ -57,7 +57,7 @@ class FinancialSummaryCard extends StatelessWidget {
                     '总欠费',
                     '¥${NumberFormat('#,##0').format(totalOutstanding)}',
                     Icons.money_off,
-                    totalOutstanding > 0 ? Colors.red[600]! : Colors.grey[600]!,
+                    totalOutstanding > 0 ? Colors.red.shade600 : Colors.grey.shade600,
                   ),
                 ),
               ],

@@ -25,9 +25,9 @@ class PurchaseDetailItemCard extends StatelessWidget {
               child: Text(
                 item.materialName,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -38,10 +38,10 @@ class PurchaseDetailItemCard extends StatelessWidget {
               child: Text(
                 '${item.quantity}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.green[700],
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
+                      color: Colors.green[700],
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -51,10 +51,10 @@ class PurchaseDetailItemCard extends StatelessWidget {
               child: Text(
                 '¥${item.unitPrice.toStringAsFixed(2)}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.blue[700],
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -64,10 +64,10 @@ class PurchaseDetailItemCard extends StatelessWidget {
               child: Text(
                 item.formattedUnit,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.purple[700],
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
+                      color: Colors.purple[700],
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -77,10 +77,10 @@ class PurchaseDetailItemCard extends StatelessWidget {
               child: Text(
                 '¥${item.totalPrice.toStringAsFixed(2)}',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.orange[700],
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
+                      color: Colors.orange[700],
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
                 textAlign: TextAlign.center,
               ),
             ),

@@ -2,10 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../models/patient.dart';
-import 'medical_record_info_item.dart';
-import 'medical_record_summary_item.dart';
-import 'medical_record_form_input_field.dart';
-import 'medical_record_form_date_field.dart';
 
 /// 患者信息展示组件
 class PatientInfoDisplayWidget extends StatelessWidget {
@@ -20,29 +16,30 @@ class PatientInfoDisplayWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final identificationNumber = patient.identificationNumber;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: DentalColors.primary.withOpacity(0.05),
+        color: DentalColors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: DentalColors.primary.withOpacity(0.2),
+          color: DentalColors.primary.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               Icon(
                 Icons.person_rounded,
                 size: 18,
                 color: DentalColors.primary,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 '患者信息',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: DentalColors.onSurface,
@@ -51,7 +48,7 @@ class PatientInfoDisplayWidget extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // 第一行：姓名、年龄、性别
           Row(
             children: [
@@ -67,7 +64,7 @@ class PatientInfoDisplayWidget extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // 第二行：电话、病历号、首诊日期
           Row(
             children: [
@@ -75,18 +72,20 @@ class PatientInfoDisplayWidget extends StatelessWidget {
                 child: buildInfoItem('电话', patient.displayPhone()),
               ),
               Expanded(
-                child: buildInfoItem('病历号', patient.medical_record_number?.toString() ?? '无'),
+                child: buildInfoItem(
+                    '病历号', patient.medicalRecordNumber?.toString() ?? '无'),
               ),
               Expanded(
-                child: buildInfoItem('首诊', DateFormat('yyyy-MM-dd').format(patient.first_visit_date)),
+                child: buildInfoItem('首诊',
+                    DateFormat('yyyy-MM-dd').format(patient.firstVisitDate)),
               ),
             ],
           ),
-          
+
           // 身份证号（如果有）
-          if (patient.identification_number != null) ...[
+          if (identificationNumber != null) ...[
             const SizedBox(height: 12),
-            buildInfoItem('身份证号', patient.identification_number!.toString()),
+            buildInfoItem('身份证号', identificationNumber.toString()),
           ],
         ],
       ),
@@ -132,17 +131,17 @@ class MedicalRecordInfoDisplayWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(
               Icons.medical_services_rounded,
               size: 18,
               color: DentalColors.secondary,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               '病历信息',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: DentalColors.onSurface,
@@ -151,7 +150,7 @@ class MedicalRecordInfoDisplayWidget extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        
+
         // 病历编号和日期
         Row(
           children: [
@@ -229,14 +228,14 @@ class RecordSummaryDisplayWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        const Row(
           children: [
             Icon(
               Icons.summarize_rounded,
               size: 16,
               color: DentalColors.primary,
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               '病历摘要',
               style: TextStyle(
@@ -251,10 +250,10 @@ class RecordSummaryDisplayWidget extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DentalColors.primary.withOpacity(0.05),
+            color: DentalColors.primary.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DentalColors.primary.withOpacity(0.2),
+              color: DentalColors.primary.withValues(alpha: 0.2),
             ),
           ),
           child: Column(
@@ -262,16 +261,18 @@ class RecordSummaryDisplayWidget extends StatelessWidget {
             children: [
               buildSummaryItem('患者姓名', patient.name),
               buildSummaryItem('病历编号', recordNumber),
-              buildSummaryItem('病历日期', DateFormat('yyyy年MM月dd日').format(recordDate)),
+              buildSummaryItem(
+                  '病历日期', DateFormat('yyyy年MM月dd日').format(recordDate)),
               buildSummaryItem('主治医生', doctorName),
               if (chiefComplaint.isNotEmpty)
                 buildSummaryItem('主诉', chiefComplaint),
-              if (diagnosis.isNotEmpty)
-                buildSummaryItem('诊断', diagnosis),
+              if (diagnosis.isNotEmpty) buildSummaryItem('诊断', diagnosis),
               if (selectedDentalConditionDates.isNotEmpty)
-                buildSummaryItem('关联牙齿状况', selectedDentalConditionDates.join(', ')),
+                buildSummaryItem(
+                    '关联牙齿状况', selectedDentalConditionDates.join(', ')),
               if (selectedSystemicDiseases.isNotEmpty)
-                buildSummaryItem('全身疾病既往史', selectedSystemicDiseases.join(', ')),
+                buildSummaryItem(
+                    '全身疾病既往史', selectedSystemicDiseases.join(', ')),
               if (selectedDentalDiseases.isNotEmpty)
                 buildSummaryItem('口腔疾病既往史', selectedDentalDiseases.join(', ')),
               if (selectedAllergies.isNotEmpty)

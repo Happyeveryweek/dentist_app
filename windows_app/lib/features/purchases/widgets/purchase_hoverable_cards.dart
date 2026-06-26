@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 // 可悬浮的采购记录卡片组件
 class HoverablePurchaseRecordCard extends StatefulWidget {
   final VoidCallback onTap;
@@ -13,10 +14,12 @@ class HoverablePurchaseRecordCard extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<HoverablePurchaseRecordCard> createState() => HoverablePurchaseRecordCardState();
+  State<HoverablePurchaseRecordCard> createState() =>
+      HoverablePurchaseRecordCardState();
 }
 
-class HoverablePurchaseRecordCardState extends State<HoverablePurchaseRecordCard> {
+class HoverablePurchaseRecordCardState
+    extends State<HoverablePurchaseRecordCard> {
   bool _isHovered = false;
 
   @override
@@ -34,13 +37,13 @@ class HoverablePurchaseRecordCardState extends State<HoverablePurchaseRecordCard
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: _isHovered 
-                ? Color(0xFFE3F2FD)  // 淡蓝色
+            color: _isHovered
+                ? const Color(0xFFE3F2FD) // 淡蓝色
                 : Colors.white,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 2,
                 offset: const Offset(0, 1),
               ),

@@ -12,6 +12,7 @@ import '../../../widgets/success_toast.dart'
 import '../helpers/amount_input_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import 'financial_detail_table_layout.dart';
+import '../../../utils/log_manager.dart';
 
 /// 财务记录编辑对话框
 /// 显示收费信息列表并允许编辑备注信息
@@ -75,16 +76,18 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
 
   // 加载财务明细项
   Future<void> _loadFinancialItems() async {
+    final recordId = widget.record.id;
+    if (recordId == null) return;
+
     try {
       final financialProvider =
           Provider.of<FinancialProvider>(context, listen: false);
-      final items = await financialProvider
-          .getFinancialItemsByRecordId(widget.record.id!);
+      final items = await financialProvider.getFinancialItemsByRecordId(recordId);
       setState(() {
         _financialItems = items;
       });
     } catch (e) {
-      print('加载财务明细项失败: $e');
+      LogManager.e('FinancialRecordEditDialog', '加载财务明细项失败', error: e);
     }
   }
 
@@ -98,7 +101,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue[600]!, Colors.indigo[600]!],
+            colors: [Colors.blue.shade600, Colors.indigo.shade600],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -112,7 +115,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -171,9 +174,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
         (widget.patient.gender.toLowerCase() == 'female');
     final Color? infoBgColor = isFemale ? Colors.pink[50] : Colors.blue[50];
     final Color infoBorderColor =
-        isFemale ? Colors.pink[200]! : Colors.blue[200]!;
+        isFemale ? Colors.pink.shade200 : Colors.blue.shade200;
     final Color avatarBgColor =
-        isFemale ? Colors.pink[400]! : Colors.blue[300]!;
+        isFemale ? Colors.pink.shade400 : Colors.blue.shade300;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -183,7 +186,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
         border: Border.all(color: infoBorderColor, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: infoBorderColor.withOpacity(0.1),
+            color: infoBorderColor.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -242,10 +245,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                       child: _buildInfoChip(
                         icon: Icons.badge,
                         label: '病历号',
-                        value:
-                            widget.patient.medical_record_number?.toString() ??
-                                '未设置',
-                        color: Colors.orange[600]!,
+                        value: widget.patient.medicalRecordNumber?.toString() ??
+                            '未设置',
+                        color: Colors.orange.shade600,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -254,8 +256,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                         icon: Icons.calendar_today,
                         label: '首诊日期',
                         value: DateFormat('MM-dd')
-                            .format(widget.patient.first_visit_date),
-                        color: Colors.purple[600]!,
+                            .format(widget.patient.firstVisitDate),
+                        color: Colors.purple.shade600,
                       ),
                     ),
                   ],
@@ -278,9 +280,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,7 +322,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
       decoration: BoxDecoration(
         color: Colors.orange[50],
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange[200]!, width: 1.5),
+        border: Border.all(color: Colors.orange.shade200, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -372,7 +374,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: Colors.grey.shade300),
               ),
               child: Center(
                 child: Column(
@@ -393,7 +395,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: Colors.grey.shade300),
               ),
               child: Column(
                 children: [
@@ -417,7 +419,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                           color: Colors.green[50],
                           border: Border(
                             bottom: BorderSide(
-                                color: Colors.grey[200]!, width: 0.5),
+                                color: Colors.grey.shade200, width: 0.5),
                           ),
                         ),
                         child: _buildEditingItemRow(null),
@@ -440,7 +442,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                                   : Colors.grey[50]),
                           border: Border(
                             bottom: BorderSide(
-                                color: Colors.grey[200]!, width: 0.5),
+                                color: Colors.grey.shade200, width: 0.5),
                           ),
                         ),
                         child: isEditing
@@ -464,10 +466,10 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
       decoration: BoxDecoration(
         color: Colors.green[50],
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green[200]!, width: 1.5),
+        border: Border.all(color: Colors.green.shade200, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.green[200]!.withOpacity(0.1),
+            color: Colors.green.shade200.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -508,10 +510,10 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.green[300]!, width: 1.5),
+              border: Border.all(color: Colors.green.shade300, width: 1.5),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.green[300]!.withOpacity(0.1),
+                  color: Colors.green.shade300.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -527,7 +529,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                   margin: const EdgeInsets.all(8),
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.green[600]!.withOpacity(0.1),
+                    color: Colors.green.shade600.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child:
@@ -539,7 +541,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.green[600]!, width: 2),
+                  borderSide: BorderSide(color: Colors.green.shade600, width: 2),
                 ),
                 filled: true,
                 fillColor: Colors.white,
@@ -557,13 +559,14 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
 
   // 构建操作按钮
   List<Widget> _buildActions() {
+    final successMessage = _successMessage;
     return [
       // 成功消息显示区域（在按钮上方）
-      if (_showSuccessMessage && _successMessage != null)
+      if (_showSuccessMessage && successMessage != null)
         Padding(
           padding: const EdgeInsets.only(left: 24, right: 24, bottom: 8),
           child: InlineSuccessMessage(
-            message: _successMessage!,
+            message: successMessage,
             isDelete: _isDeleteMessage,
             onDismiss: () {
               setState(() {
@@ -582,7 +585,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey[300]!),
+                border: Border.all(color: Colors.grey.shade300),
               ),
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
@@ -615,14 +618,14 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.blue[500]!, Colors.indigo[500]!],
+                  colors: [Colors.blue.shade500, Colors.indigo.shade500],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.blue.withOpacity(0.3),
+                    color: Colors.blue.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -739,6 +742,12 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
 
   // 保存当前编辑的收费项
   Future<bool> _commitEditingItem({bool showSuccessMessage = true}) async {
+    final recordId = widget.record.id;
+    if (recordId == null) {
+      AppToastManager.showError(context, message: '财务记录ID为空');
+      return false;
+    }
+
     // 验证表单
     if (_editItemNameController.text.trim().isEmpty) {
       AppToastManager.showError(context, message: '请输入收费项目名称');
@@ -752,7 +761,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
       if (_editingItemId == -1) {
         // 新增收费项
         final newItem = FinancialItem(
-          financialRecordId: widget.record.id!,
+          financialRecordId: recordId,
           itemName: _editItemNameController.text.trim(),
           paymentMethod: FinancialPaymentMethodHelper.toStorageValue(
             _editPaymentMethod,
@@ -924,7 +933,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           ),
         ),
         Text(
-          '¥${(item.itemPrice * (item.quantity ?? 1)).toStringAsFixed(0)}',
+          '¥${(item.itemPrice * item.quantity).toStringAsFixed(0)}',
           style: TextStyle(
             fontSize: 13,
             color: Colors.blue[700],
@@ -1008,7 +1017,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Colors.blue[300]!),
+              border: Border.all(color: Colors.blue.shade300),
             ),
             child: Row(
               children: [
@@ -1031,7 +1040,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: Colors.grey.shade300),
           ),
           child: TextField(
             controller: _editItemNameController,
@@ -1062,10 +1071,13 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: Colors.grey.shade300),
           ),
           child: DropdownButtonFormField<String>(
-            value: FinancialPaymentMethodHelper.uiValue(_editPaymentMethod),
+            key: ValueKey<String?>(
+                FinancialPaymentMethodHelper.uiValue(_editPaymentMethod)),
+            initialValue:
+                FinancialPaymentMethodHelper.uiValue(_editPaymentMethod),
             hint: Text(
               '未选',
               style: TextStyle(color: Colors.grey[500], fontSize: 11),
@@ -1142,7 +1154,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: Colors.grey.shade300),
           ),
           child: TextField(
             controller: _editItemPriceController,
@@ -1174,7 +1186,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: Colors.grey.shade300),
           ),
           child: TextField(
             controller: _editTotalPriceController,
@@ -1206,7 +1218,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: Colors.grey.shade300),
           ),
           child: TextField(
             controller: _editProcessingFeeController,
@@ -1257,15 +1269,18 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
 
   // 更新财务记录的收费项数量和更新时间
   Future<void> _updateFinancialRecordAfterItemChange() async {
+    final recordId = widget.record.id;
+    final patientId = widget.patient.id;
+    if (recordId == null || patientId == null) return;
+
     try {
       final financialProvider =
           Provider.of<FinancialProvider>(context, listen: false);
 
       // 获取该财务记录的所有收费项，重新计算总数量
-      final items = await financialProvider
-          .getFinancialItemsByRecordId(widget.record.id!);
+      final items = await financialProvider.getFinancialItemsByRecordId(recordId);
       final totalQuantity =
-          items.fold<int>(0, (sum, item) => sum + (item.quantity ?? 1));
+          items.fold<int>(0, (sum, item) => sum + item.quantity);
 
       // 更新财务记录
       final updatedRecord = widget.record.copyWith(
@@ -1274,9 +1289,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
       );
 
       await financialProvider.updateFinancialRecord(updatedRecord);
-      await financialProvider.updatePatientFinancialSummary(widget.patient.id!);
+      await financialProvider.updatePatientFinancialSummary(patientId);
     } catch (e) {
-      print('更新财务记录失败: $e');
+      LogManager.e('FinancialRecordEditDialog', '更新财务记录失败', error: e);
     }
   }
 
@@ -1298,21 +1313,30 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
 
     if (confirmed == true) {
       try {
+        if (!mounted) return;
         final financialProvider =
             Provider.of<FinancialProvider>(context, listen: false);
-        final success = await financialProvider.deleteFinancialItem(item.id!);
+        final itemId = item.id;
+        if (itemId == null) {
+          AppToastManager.showError(context, message: '收费项ID为空');
+          return;
+        }
+        final success = await financialProvider.deleteFinancialItem(itemId);
 
         if (success) {
           // 更新财务记录的收费项数量和更新时间
           await _updateFinancialRecordAfterItemChange();
           await _loadFinancialItems();
 
+          if (!mounted) return;
           // 显示成功消息（在对话框内，橙色）
           _showSuccessMessageInDialog('收费记录删除成功', isDelete: true);
         } else {
+          if (!mounted) return;
           AppToastManager.showError(context, message: '删除失败');
         }
       } catch (e) {
+        if (!mounted) return;
         AppToastManager.showError(context, message: '删除失败: $e');
       }
     }
@@ -1320,6 +1344,12 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
 
   // 保存备注信息
   Future<void> _saveNotes() async {
+    final patientId = widget.patient.id;
+    if (patientId == null) {
+      AppToastManager.showError(context, message: '患者ID为空');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -1332,30 +1362,43 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
         }
       }
 
+      if (!mounted) return;
       final financialProvider =
           Provider.of<FinancialProvider>(context, listen: false);
 
-      // 创建更新后的财务记录，只更新备注字段
-      final updatedRecord = widget.record.copyWith(
-        notes: _notesController.text.trim().isEmpty
-            ? null
-            : _notesController.text.trim(),
-        updatedAt: DateTime.now(),
-      );
+      // 备注没有变化时，收费项已经在 _commitEditingItem 中保存并更新过财务记录，
+      // 直接成功即可，避免重复调用 updateFinancialRecord 误报失败
+      // 空字符串与 null 视为相同（数据库中可能存为空字符串）
+      final newNotes = _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim();
+      final notesChanged = (newNotes ?? '') != (widget.record.notes ?? '');
 
-      // 更新财务记录
-      final success =
-          await financialProvider.updateFinancialRecord(updatedRecord);
+      if (notesChanged) {
+        // 创建更新后的财务记录，只更新备注字段
+        final updatedRecord = widget.record.copyWith(
+          notes: newNotes,
+          updatedAt: DateTime.now(),
+        );
 
-      if (success) {
-        AppToastManager.showSuccess(context, message: '财务记录更新成功');
-        await financialProvider
-            .updatePatientFinancialSummary(widget.patient.id!);
-        Navigator.of(context).pop(true);
-      } else {
-        AppToastManager.showError(context, message: '更新失败，请重试');
+        // 更新财务记录
+        final success =
+            await financialProvider.updateFinancialRecord(updatedRecord);
+
+        if (!success) {
+          if (!mounted) return;
+          AppToastManager.showError(context, message: '更新失败，请重试');
+          return;
+        }
       }
+
+      if (!mounted) return;
+      AppToastManager.showSuccess(context, message: '财务记录更新成功');
+      await financialProvider.updatePatientFinancialSummary(patientId);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
     } catch (e) {
+      if (!mounted) return;
       AppToastManager.showError(context, message: '操作出错: $e');
     } finally {
       if (mounted) {

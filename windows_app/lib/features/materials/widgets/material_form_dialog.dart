@@ -7,6 +7,7 @@ import '../../../widgets/success_toast.dart';
 import 'material_form_field.dart';
 import 'material_dropdown_field.dart';
 import 'material_unit_dropdown.dart';
+import '../../../utils/log_manager.dart';
 
 /// 材料表单对话框
 ///
@@ -161,7 +162,7 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
           try {
             materialCode = await materialProvider.getNextMaterialCode();
           } catch (e) {
-            print('自动生成材料编码失败: $e');
+            LogManager.e('MaterialFormDialog', '自动生成材料编码失败', error: e);
             materialCode = 'M001';
           }
         } else {
@@ -185,6 +186,7 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
             : _descriptionController.text.trim(),
       );
 
+      if (!mounted) return;
       final materialProvider =
           Provider.of<MaterialProvider>(context, listen: false);
       bool success;
@@ -193,18 +195,21 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
         success = await materialProvider.updateMaterial(newMaterial);
       } else {
         final newId = await materialProvider.addMaterial(newMaterial);
-        success = newId != null && newId > 0;
+        success = newId > 0;
       }
 
       if (success) {
+        if (!mounted) return;
         Navigator.of(context).pop(true);
         widget.onSuccess();
         AppToastManager.showSuccess(context,
             message: isEditing ? '材料更新成功' : '材料添加成功');
       } else {
+        if (!mounted) return;
         AppToastManager.showError(context, message: '操作失败');
       }
     } catch (e) {
+      if (!mounted) return;
       AppToastManager.showError(context, message: '操作失败: $e');
     }
   }
@@ -229,7 +234,7 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
               spreadRadius: 0,
@@ -251,9 +256,9 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: AppTheme.primaryGradient,
-        borderRadius: const BorderRadius.only(
+        borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -263,7 +268,7 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -347,11 +352,11 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
                           Icon(Icons.straighten_rounded,
                               size: 20, color: AppTheme.primaryColor),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Text(
                             '单位',
                             style: TextStyle(

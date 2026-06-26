@@ -12,7 +12,7 @@ abstract class FinancialDataSource {
   Future<int> createFinancialRecord(FinancialRecord record);
   Future<bool> updateFinancialRecord(FinancialRecord record);
   Future<bool> deleteFinancialRecord(int id);
-  
+
   // 分页查询方法
   Future<int> getFinancialRecordsCount({String? searchQuery});
   Future<List<FinancialRecord>> getPaginatedFinancialRecords({
@@ -22,13 +22,13 @@ abstract class FinancialDataSource {
     String sortOrder = 'DESC',
     String? searchQuery,
   });
-  
+
   // 财务项目相关方法
   Future<List<FinancialItem>> getFinancialItemsByRecordId(int recordId);
   Future<int> createFinancialItem(FinancialItem item);
   Future<bool> updateFinancialItem(FinancialItem item);
   Future<bool> deleteFinancialItem(int id);
-  
+
   // 统计方法
   Future<double> getTotalReceivableAmount();
   Future<double> getTotalReceivedAmount();

@@ -23,9 +23,10 @@ class FinancialCacheHelper {
 
   /// 检查缓存是否有效
   bool _isCacheValid() {
+    final lastCacheTime = _lastCacheTime;
     return _cachedRecords != null &&
-        _lastCacheTime != null &&
-        DateTime.now().difference(_lastCacheTime!) < _cacheValidDuration;
+        lastCacheTime != null &&
+        DateTime.now().difference(lastCacheTime) < _cacheValidDuration;
   }
 
   /// 更新缓存（供外部调用，用于后台加载过程中实时更新）
@@ -40,7 +41,7 @@ class FinancialCacheHelper {
   }
 
   /// 检查是否有缓存
-  bool get hasCache => _cachedRecords != null && _cachedRecords!.isNotEmpty;
+  bool get hasCache => _cachedRecords?.isNotEmpty == true;
 
   /// 检查缓存是否有效
   bool get hasValidCache => _isCacheValid();
@@ -66,18 +67,23 @@ class FinancialCacheHelper {
   }
 
   /// 是否有有效的统计缓存
-  bool get hasValidStatsCache =>
-      _cachedStats != null &&
-      _lastStatsCacheTime != null &&
-      DateTime.now().difference(_lastStatsCacheTime!) <
-          _statsCacheValidDuration;
+  bool get hasValidStatsCache {
+    final lastStatsCacheTime = _lastStatsCacheTime;
+    return _cachedStats != null &&
+        lastStatsCacheTime != null &&
+        DateTime.now().difference(lastStatsCacheTime) <
+            _statsCacheValidDuration;
+  }
 
   /// 是否有完整的 itemsMap 缓存（记录数与全量记录一致）
-  bool get hasFullItemsCache =>
-      hasValidStatsCache &&
-      _cachedFullItemsMap != null &&
-      _cachedRecords != null &&
-      _cachedFullItemsMap!.length >= _cachedRecords!.length;
+  bool get hasFullItemsCache {
+    final fullItemsMap = _cachedFullItemsMap;
+    final records = _cachedRecords;
+    return hasValidStatsCache &&
+        fullItemsMap != null &&
+        records != null &&
+        fullItemsMap.length >= records.length;
+  }
 
   /// 获取缓存的统计数据
   Map<String, dynamic>? get cachedStats => _cachedStats;
@@ -128,8 +134,9 @@ class FinancialCacheHelper {
       final allItemsMap = <int, List<FinancialItem>>{};
 
       // 先复制已有的缓存 itemsMap
-      if (_cachedFullItemsMap != null) {
-        allItemsMap.addAll(_cachedFullItemsMap!);
+      final existingFullItemsMap = _cachedFullItemsMap;
+      if (existingFullItemsMap != null) {
+        allItemsMap.addAll(existingFullItemsMap);
       }
 
       const batchSize = 20;
@@ -141,11 +148,12 @@ class FinancialCacheHelper {
       for (int i = 0; i < missing.length; i += batchSize) {
         final batch = missing.skip(i).take(batchSize).toList();
         for (final r in batch) {
-          if (r.id != null) {
+          final recordId = r.id;
+          if (recordId != null) {
             try {
-              allItemsMap[r.id!] = await getItemsByRecordId(r.id!);
+              allItemsMap[recordId] = await getItemsByRecordId(recordId);
             } catch (_) {
-              allItemsMap[r.id!] = [];
+              allItemsMap[recordId] = [];
             }
           }
         }
@@ -183,8 +191,9 @@ class FinancialCacheHelper {
     final Map<int, double> receivedByPatient = {};
 
     for (final record in records) {
-      if (record.id == null) continue;
-      final items = itemsMap[record.id!] ?? [];
+      final recordId = record.id;
+      if (recordId == null) continue;
+      final items = itemsMap[recordId] ?? [];
       for (final item in items) {
         patientIds.add(record.patientId);
         totalCollected += item.totalPrice;

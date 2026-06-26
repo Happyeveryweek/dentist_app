@@ -33,7 +33,7 @@ class MaterialDetailCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 8,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -49,7 +49,7 @@ class MaterialDetailCard extends StatelessWidget {
             // 材料标题和操作按钮
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.description,
                   color: AppTheme.primaryColor,
                   size: 20,
@@ -113,15 +113,15 @@ class MaterialDetailCard extends StatelessWidget {
     return canEdit
         ? Container(
             decoration: BoxDecoration(
-              color: AppTheme.warningColor.withOpacity(0.1),
+              color: AppTheme.warningColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: AppTheme.warningColor.withOpacity(0.3),
+                color: AppTheme.warningColor.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
               onPressed: onEdit,
-              icon: Icon(
+              icon: const Icon(
                 Icons.edit,
                 color: AppTheme.warningColor,
                 size: 18,
@@ -157,15 +157,15 @@ class MaterialDetailCard extends StatelessWidget {
     return canDelete
         ? Container(
             decoration: BoxDecoration(
-              color: AppTheme.errorColor.withOpacity(0.1),
+              color: AppTheme.errorColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: AppTheme.errorColor.withOpacity(0.3),
+                color: AppTheme.errorColor.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
               onPressed: onDelete,
-              icon: Icon(
+              icon: const Icon(
                 Icons.delete,
                 color: AppTheme.errorColor,
                 size: 18,
@@ -218,7 +218,7 @@ class MaterialDetailCard extends StatelessWidget {
               border: Border.all(color: Colors.grey.shade300, width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 2,
                   spreadRadius: 0,
                   offset: const Offset(0, 1),
@@ -243,9 +243,10 @@ class MaterialDetailCard extends StatelessWidget {
                     left: 0,
                     right: 0,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 2, vertical: 1),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
+                        color: Colors.black.withValues(alpha: 0.7),
                         borderRadius: const BorderRadius.only(
                           bottomLeft: Radius.circular(6),
                           bottomRight: Radius.circular(6),
@@ -274,10 +275,13 @@ class MaterialDetailCard extends StatelessWidget {
   }
 
   Widget _buildThumbnail(dynamic image) {
+    final thumbnailData = image.thumbnailData;
     // 优先显示缩略图，如果没有缩略图才显示原图
-    if (image.hasValidThumbnail && image.thumbnailData != null && image.thumbnailData!.isNotEmpty) {
+    if (image.hasValidThumbnail &&
+        thumbnailData != null &&
+        thumbnailData.isNotEmpty) {
       return Image.memory(
-        image.thumbnailData!,
+        thumbnailData,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           // 缩略图显示失败，回退到原图

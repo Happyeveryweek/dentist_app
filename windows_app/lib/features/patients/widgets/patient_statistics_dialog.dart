@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'dart:ui' as ui;
-import '../../../theme/app_theme.dart';
 import '../../../models/patient.dart';
 import 'interactable_pie_chart.dart';
 import '../../../widgets/dental_icons.dart';
@@ -26,10 +24,10 @@ class PatientStatisticsDialog extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _PatientStatisticsDialogState createState() => _PatientStatisticsDialogState();
+  PatientStatisticsDialogState createState() => PatientStatisticsDialogState();
 }
 
-class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
+class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 365));
   DateTime _endDate = DateTime.now();
   String _activePreset = '6m'; // 记录当前激活的预设按钮
@@ -41,10 +39,12 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
   }
 
   void _setDefaultDateRange() {
+    final startDate = widget.initialStartDate;
+    final endDate = widget.initialEndDate;
     // 如果父页面传递了日期范围，使用父页面的日期范围
-    if (widget.initialStartDate != null && widget.initialEndDate != null) {
-      _startDate = widget.initialStartDate!;
-      _endDate = widget.initialEndDate!;
+    if (startDate != null && endDate != null) {
+      _startDate = startDate;
+      _endDate = endDate;
       _activePreset = ''; // 自定义日期范围
     } else {
       // 默认显示全部数据
@@ -61,7 +61,8 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
     }
     DateTime earliest = DateTime(9999);
     for (final patient in widget.patients) {
-      final d = DateTime(patient.first_visit_date.year, patient.first_visit_date.month, patient.first_visit_date.day);
+      final d = DateTime(patient.firstVisitDate.year,
+          patient.firstVisitDate.month, patient.firstVisitDate.day);
       if (d.isBefore(earliest)) earliest = d;
     }
     return earliest;
@@ -83,25 +84,17 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
     }
   }
 
-  void _selectAllTime() {
-    if (mounted) {
-      setState(() {
-        _startDate = _getEarliestPatientDate();
-        _endDate = DateTime.now();
-      });
-    }
-  }
-
   bool _isWithinRange(DateTime date) {
     final d = DateTime(date.year, date.month, date.day);
     final s = DateTime(_startDate.year, _startDate.month, _startDate.day);
     final e = DateTime(_endDate.year, _endDate.month, _endDate.day);
-    return (d.isAtSameMomentAs(s) || d.isAfter(s)) && (d.isAtSameMomentAs(e) || d.isBefore(e));
+    return (d.isAtSameMomentAs(s) || d.isAfter(s)) &&
+        (d.isAtSameMomentAs(e) || d.isBefore(e));
   }
 
   List<Patient> _getFilteredPatients() {
     return widget.patients.where((patient) {
-      return _isWithinRange(patient.first_visit_date);
+      return _isWithinRange(patient.firstVisitDate);
     }).toList();
   }
 
@@ -119,7 +112,8 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
       start = DateTime(now.year, now.month - 5, 1);
       end = DateTime(now.year, now.month, now.day);
     } else if (preset == '30d') {
-      start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 30));
+      start = DateTime(now.year, now.month, now.day)
+          .subtract(const Duration(days: 30));
     } else if (preset == '90d') {
       start = now.subtract(const Duration(days: 90));
     } else if (preset == '12m') {
@@ -152,15 +146,16 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
 
     DateTime currentMonth = DateTime(_startDate.year, _startDate.month, 1);
     final endMonth = DateTime(_endDate.year, _endDate.month, 1);
-    
-    while (currentMonth.isBefore(endMonth) || currentMonth.isAtSameMomentAs(endMonth)) {
+
+    while (currentMonth.isBefore(endMonth) ||
+        currentMonth.isAtSameMomentAs(endMonth)) {
       final monthKey = DateFormat('yyyy-MM').format(currentMonth);
       monthlyData[monthKey] = 0;
       currentMonth = DateTime(currentMonth.year, currentMonth.month + 1, 1);
     }
 
     for (final patient in filteredPatients) {
-      final monthKey = DateFormat('yyyy-MM').format(patient.first_visit_date);
+      final monthKey = DateFormat('yyyy-MM').format(patient.firstVisitDate);
       monthlyData[monthKey] = (monthlyData[monthKey] ?? 0) + 1;
     }
 
@@ -173,22 +168,27 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
 
     DateTime currentMonth = DateTime(_startDate.year, _startDate.month, 1);
     final endMonth = DateTime(_endDate.year, _endDate.month, 1);
-    
-    while (currentMonth.isBefore(endMonth) || currentMonth.isAtSameMomentAs(endMonth)) {
+
+    while (currentMonth.isBefore(endMonth) ||
+        currentMonth.isAtSameMomentAs(endMonth)) {
       final monthKey = DateFormat('yyyy-MM').format(currentMonth);
       monthlyPatients[monthKey] = {};
       currentMonth = DateTime(currentMonth.year, currentMonth.month + 1, 1);
     }
 
     for (final patient in widget.patients) {
+      final patientId = patient.id;
+      if (patientId == null) continue;
+
       // 首诊日期
-      if (_isWithinRange(patient.first_visit_date)) {
-        final monthKey = DateFormat('yyyy-MM').format(patient.first_visit_date);
-        monthlyPatients[monthKey]?.add(patient.id!);
+      if (_isWithinRange(patient.firstVisitDate)) {
+        final monthKey = DateFormat('yyyy-MM').format(patient.firstVisitDate);
+        monthlyPatients[monthKey]?.add(patientId);
       }
 
       // 牙齿状况记录的日期（复诊）
-      if (patient.dental_condition != null && patient.dental_condition!.isNotEmpty) {
+      final dentalCondition = patient.dentalCondition;
+      if (dentalCondition != null && dentalCondition.isNotEmpty) {
         try {
           final dentalCharts = patient.dentalCharts;
           int rowCount = 0;
@@ -214,7 +214,7 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
 
                 if (_isWithinRange(visitDate)) {
                   final monthKey = DateFormat('yyyy-MM').format(visitDate);
-                  monthlyPatients[monthKey]?.add(patient.id!);
+                  monthlyPatients[monthKey]?.add(patientId);
                 }
               } catch (e) {
                 // 忽略日期解析错误
@@ -238,7 +238,7 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
     for (final patient in filteredPatients) {
       String address = patient.address ?? '未填写';
       if (address.isEmpty) address = '未填写';
-      
+
       // 提取地址的主要部分（如城市或区）
       String mainAddress = _extractMainAddress(address);
       addressData[mainAddress] = (addressData[mainAddress] ?? 0) + 1;
@@ -247,10 +247,10 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
     // 按数量排序，取前30个
     final sortedEntries = addressData.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    
+
     final Map<String, int> topAddresses = {};
     int otherCount = 0;
-    
+
     for (int i = 0; i < sortedEntries.length; i++) {
       if (i < 30) {
         topAddresses[sortedEntries[i].key] = sortedEntries[i].value;
@@ -258,7 +258,7 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
         otherCount += sortedEntries[i].value;
       }
     }
-    
+
     if (otherCount > 0) {
       topAddresses['其他'] = otherCount;
     }
@@ -271,24 +271,24 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
     if (address.contains('市')) {
       final parts = address.split('市');
       if (parts.isNotEmpty) {
-        return parts[0] + '市';
+        return '${parts[0]}市';
       }
     }
     if (address.contains('区')) {
       final parts = address.split('区');
       if (parts.length > 1) {
-        return parts[0] + '区';
+        return '${parts[0]}区';
       }
     }
     if (address.contains('县')) {
       final parts = address.split('县');
       if (parts.isNotEmpty) {
-        return parts[0] + '县';
+        return '${parts[0]}县';
       }
     }
     // 如果地址太长，截取前10个字符
     if (address.length > 10) {
-      return address.substring(0, 10) + '...';
+      return '${address.substring(0, 10)}...';
     }
     return address;
   }
@@ -306,15 +306,15 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
 
     for (final patient in filteredPatients) {
       if (patient.age <= 18) {
-        ageData['0-18岁'] = ageData['0-18岁']! + 1;
+        ageData['0-18岁'] = (ageData['0-18岁'] ?? 0) + 1;
       } else if (patient.age <= 30) {
-        ageData['19-30岁'] = ageData['19-30岁']! + 1;
+        ageData['19-30岁'] = (ageData['19-30岁'] ?? 0) + 1;
       } else if (patient.age <= 45) {
-        ageData['31-45岁'] = ageData['31-45岁']! + 1;
+        ageData['31-45岁'] = (ageData['31-45岁'] ?? 0) + 1;
       } else if (patient.age <= 60) {
-        ageData['46-60岁'] = ageData['46-60岁']! + 1;
+        ageData['46-60岁'] = (ageData['46-60岁'] ?? 0) + 1;
       } else {
-        ageData['60岁以上'] = ageData['60岁以上']! + 1;
+        ageData['60岁以上'] = (ageData['60岁以上'] ?? 0) + 1;
       }
     }
 
@@ -328,9 +328,9 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
 
     for (final patient in filteredPatients) {
       if (patient.gender == '男') {
-        genderData['男'] = genderData['男']! + 1;
+        genderData['男'] = (genderData['男'] ?? 0) + 1;
       } else if (patient.gender == '女') {
-        genderData['女'] = genderData['女']! + 1;
+        genderData['女'] = (genderData['女'] ?? 0) + 1;
       }
     }
 
@@ -370,10 +370,15 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
         foregroundColor: active ? Colors.white : Colors.black87,
         elevation: active ? 3 : 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        side: BorderSide(color: active ? Colors.transparent : Colors.grey.withOpacity(0.12)),
+        side: BorderSide(
+            color: active
+                ? Colors.transparent
+                : Colors.grey.withValues(alpha: 0.12)),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
-      child: Text(label, style: TextStyle(fontSize: 13, color: active ? Colors.white : Colors.black87)),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 13, color: active ? Colors.white : Colors.black87)),
     );
   }
 
@@ -388,9 +393,10 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
     final addressData = _calculateAddressDistribution();
     final ageData = _calculateAgeDistribution();
     final genderData = _calculateGenderDistribution();
-    
+
     final sortedNewMonths = monthlyNewData.keys.toList()..sort();
     final sortedVisitMonths = monthlyVisitData.keys.toList()..sort();
+    final searchQuery = widget.searchQuery;
 
     return Scaffold(
       appBar: AppBar(
@@ -447,7 +453,6 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
               ],
             ),
           ),
-
           MouseRegion(
             cursor: SystemMouseCursors.click,
             child: SizedBox(
@@ -456,23 +461,28 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                 color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.grey.withOpacity(0.12)),
+                  side: BorderSide(color: Colors.grey.withValues(alpha: 0.12)),
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(8),
-                  onTap: () async { await _showCustomDateRangePicker(); },
+                  onTap: () async {
+                    await _showCustomDateRangePicker();
+                  },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.calendar_today, size: 16, color: Colors.black54),
+                        const Icon(Icons.calendar_today,
+                            size: 16, color: Colors.black54),
                         const SizedBox(width: 6),
                         ConstrainedBox(
-                          constraints: const BoxConstraints(minWidth: 140, maxWidth: 180),
+                          constraints: const BoxConstraints(
+                              minWidth: 140, maxWidth: 180),
                           child: Text(
                             '${DateFormat('yyyy-MM-dd').format(_startDate)} - ${DateFormat('yyyy-MM-dd').format(_endDate)}',
-                            style: const TextStyle(color: Colors.black87, fontSize: 11),
+                            style: const TextStyle(
+                                color: Colors.black87, fontSize: 11),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -495,31 +505,37 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 显示搜索条件提示
-            if (widget.searchQuery != null && widget.searchQuery!.isNotEmpty)
+            if (searchQuery != null && searchQuery.isNotEmpty)
               Container(
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: DentalColors.info.withOpacity(0.1),
+                  color: DentalColors.info.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: DentalColors.info.withOpacity(0.3)),
+                  border: Border.all(
+                      color: DentalColors.info.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, color: DentalColors.info, size: 20),
+                    const Icon(Icons.info_outline,
+                        color: DentalColors.info, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '当前显示搜索结果的统计数据：${widget.searchQuery}${widget.dateFilterType != null ? " (按${widget.dateFilterType == 'first_visit_date' ? '首诊时间' : '最后就诊时间'}筛选)" : ""}',
-                        style: TextStyle(color: DentalColors.info, fontSize: 13, fontWeight: FontWeight.w500),
+                        '当前显示搜索结果的统计数据：$searchQuery${widget.dateFilterType != null ? " (按${widget.dateFilterType == 'first_visit_date' ? '首诊时间' : '最后就诊时间'}筛选)" : ""}',
+                        style: const TextStyle(
+                            color: DentalColors.info,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
                 ),
               ),
-            _buildSummaryCards(totalPatients, malePatients, femalePatients, averageAge),
+            _buildSummaryCards(
+                totalPatients, malePatients, femalePatients, averageAge),
             const SizedBox(height: 20),
-            
+
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
@@ -540,14 +556,16 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                             Expanded(
                               child: _buildChartCard(
                                 '月度初诊患者趋势',
-                                _buildMonthlyNewPatientsChart(sortedNewMonths, monthlyNewData),
+                                _buildMonthlyNewPatientsChart(
+                                    sortedNewMonths, monthlyNewData),
                               ),
                             ),
                             const SizedBox(height: 12),
                             Expanded(
                               child: _buildChartCard(
                                 '月度就诊患者趋势（含复诊）',
-                                _buildMonthlyVisitPatientsChart(sortedVisitMonths, monthlyVisitData),
+                                _buildMonthlyVisitPatientsChart(
+                                    sortedVisitMonths, monthlyVisitData),
                               ),
                             ),
                           ],
@@ -559,11 +577,14 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                         width: rightW,
                         child: Column(
                           children: [
-                            Expanded(child: _buildPieChartCard('地址分布', addressData)),
+                            Expanded(
+                                child: _buildPieChartCard('地址分布', addressData)),
                             const SizedBox(height: 12),
-                            Expanded(child: _buildPieChartCard('年龄分布', ageData)),
+                            Expanded(
+                                child: _buildPieChartCard('年龄分布', ageData)),
                             const SizedBox(height: 12),
-                            Expanded(child: _buildPieChartCard('性别分布', genderData)),
+                            Expanded(
+                                child: _buildPieChartCard('性别分布', genderData)),
                           ],
                         ),
                       ),
@@ -578,21 +599,31 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
     );
   }
 
-  Widget _buildSummaryCards(int totalPatients, int malePatients, int femalePatients, double averageAge) {
+  Widget _buildSummaryCards(int totalPatients, int malePatients,
+      int femalePatients, double averageAge) {
     return Row(
       children: [
-        Expanded(child: _buildStatCard('总患者数', totalPatients.toString(), Icons.people, Colors.purple)),
+        Expanded(
+            child: _buildStatCard(
+                '总患者数', totalPatients.toString(), Icons.people, Colors.purple)),
         const SizedBox(width: 16),
-        Expanded(child: _buildStatCard('男性患者', malePatients.toString(), Icons.male, Colors.blue)),
+        Expanded(
+            child: _buildStatCard(
+                '男性患者', malePatients.toString(), Icons.male, Colors.blue)),
         const SizedBox(width: 16),
-        Expanded(child: _buildStatCard('女性患者', femalePatients.toString(), Icons.female, Colors.pink)),
+        Expanded(
+            child: _buildStatCard(
+                '女性患者', femalePatients.toString(), Icons.female, Colors.pink)),
         const SizedBox(width: 16),
-        Expanded(child: _buildStatCard('平均年龄', '${averageAge.toStringAsFixed(1)}岁', Icons.cake, DentalColors.warning)),
+        Expanded(
+            child: _buildStatCard('平均年龄', '${averageAge.toStringAsFixed(1)}岁',
+                Icons.cake, DentalColors.warning)),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color cardColor) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color cardColor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -600,7 +631,7 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: cardColor.withOpacity(0.3),
+            color: cardColor.withValues(alpha: 0.3),
             spreadRadius: 2,
             blurRadius: 8,
             offset: const Offset(0, 4),
@@ -659,129 +690,151 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
     );
   }
 
-  Widget _buildMonthlyNewPatientsChart(List<String> sortedMonths, Map<String, int> monthlyData) {
+  Widget _buildMonthlyNewPatientsChart(
+      List<String> sortedMonths, Map<String, int> monthlyData) {
     if (sortedMonths.isEmpty) {
       return const Center(child: Text('暂无数据'));
     }
 
-    final maxValue = monthlyData.values.isEmpty ? 1 : monthlyData.values.reduce((a, b) => a > b ? a : b);
+    final maxValue = monthlyData.values.isEmpty
+        ? 1
+        : monthlyData.values.reduce((a, b) => a > b ? a : b);
     final maxY = (maxValue * 1.2).toDouble();
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool enableScroll = sortedMonths.length > 12;
-        final double chartWidth = enableScroll 
-            ? (sortedMonths.length * 70.0 + 60.0).clamp(constraints.maxWidth, double.infinity)
+        final double chartWidth = enableScroll
+            ? (sortedMonths.length * 70.0 + 60.0)
+                .clamp(constraints.maxWidth, double.infinity)
             : constraints.maxWidth;
 
         final double interval = maxY / 4 == 0 ? 1.0 : maxY / 4;
 
         SideTitles leftTitlesConfig() => SideTitles(
-          showTitles: true,
-          reservedSize: 40,
-          interval: interval,
-          getTitlesWidget: (value, meta) {
-            if (value == 0) return const Text('0', style: TextStyle(fontSize: 10, color: Colors.black54));
-            return Text('${value.toInt()}', style: const TextStyle(fontSize: 10, color: Colors.black54));
-          },
-        );
+              showTitles: true,
+              reservedSize: 40,
+              interval: interval,
+              getTitlesWidget: (value, meta) {
+                if (value == 0) {
+                  return const Text('0',
+                      style: TextStyle(fontSize: 10, color: Colors.black54));
+                }
+                return Text('${value.toInt()}',
+                    style:
+                        const TextStyle(fontSize: 10, color: Colors.black54));
+              },
+            );
 
         SideTitles bottomTitlesConfig({bool showLabels = true}) => SideTitles(
-          showTitles: true,
-          reservedSize: 22,
-          interval: 1,
-          getTitlesWidget: (value, meta) {
-            if (!showLabels) return const Text('');
-            if (value % 1 != 0) return const Text('');
-            final index = value.toInt();
-            if (index >= 0 && index < sortedMonths.length) {
-              final month = sortedMonths[index];
+              showTitles: true,
+              reservedSize: 22,
+              interval: 1,
+              getTitlesWidget: (value, meta) {
+                if (!showLabels) return const Text('');
+                if (value % 1 != 0) return const Text('');
+                final index = value.toInt();
+                if (index >= 0 && index < sortedMonths.length) {
+                  final month = sortedMonths[index];
 
-              return Text(month.substring(5), style: const TextStyle(fontSize: 10));
-            }
-            return const Text('');
-          },
-        );
+                  return Text(month.substring(5),
+                      style: const TextStyle(fontSize: 10));
+                }
+                return const Text('');
+              },
+            );
 
         LineChartData mainChartData(bool showLeftTitles) => LineChartData(
-          lineTouchData: LineTouchData(
-            enabled: true,
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (spot) => Colors.white,
-              getTooltipItems: (touchedSpots) {
-                return touchedSpots.map((spot) {
-                  final index = spot.x.toInt();
-                  if (index >= 0 && index < sortedMonths.length) {
-                    final month = sortedMonths[index];
-                    final count = monthlyData[month] ?? 0;
-                    return LineTooltipItem(
-                      '$month\n$count人',
-                      const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
-                    );
-                  }
-                  return const LineTooltipItem('', TextStyle());
-                }).toList();
-              },
-              fitInsideHorizontally: true,
-              fitInsideVertically: true,
-            ),
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: interval,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
-          ),
-          titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(sideTitles: bottomTitlesConfig(showLabels: true)),
-            leftTitles: AxisTitles(sideTitles: showLeftTitles ? leftTitlesConfig() : SideTitles(showTitles: false)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 20)),
-            rightTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true, 
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) => const Text(''),
+              lineTouchData: LineTouchData(
+                enabled: true,
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipColor: (spot) => Colors.white,
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((spot) {
+                      final index = spot.x.toInt();
+                      if (index >= 0 && index < sortedMonths.length) {
+                        final month = sortedMonths[index];
+                        final count = monthlyData[month] ?? 0;
+                        return LineTooltipItem(
+                          '$month\n$count人',
+                          const TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.bold),
+                        );
+                      }
+                      return const LineTooltipItem('', TextStyle());
+                    }).toList();
+                  },
+                  fitInsideHorizontally: true,
+                  fitInsideVertically: true,
+                ),
               ),
-            ),
-          ),
-          borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300, width: 1)),
-          minX: 0,
-          maxX: (sortedMonths.length - 1).toDouble(),
-          minY: 0,
-          maxY: maxY,
-          lineBarsData: [
-            LineChartBarData(
-              spots: sortedMonths.asMap().entries.map((entry) {
-                final count = monthlyData[entry.value] ?? 0;
-                return FlSpot(entry.key.toDouble(), count.toDouble());
-              }).toList(),
-              isCurved: true,
-              color: DentalColors.primary,
-              barWidth: 3,
-              isStrokeCapRound: true,
-              dotData: FlDotData(
+              gridData: FlGridData(
                 show: true,
-                getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                  radius: 3,
+                drawVerticalLine: false,
+                horizontalInterval: interval,
+                getDrawingHorizontalLine: (value) =>
+                    FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+              ),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                    sideTitles: bottomTitlesConfig(showLabels: true)),
+                leftTitles: AxisTitles(
+                    sideTitles: showLeftTitles
+                        ? leftTitlesConfig()
+                        : const SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(
+                    sideTitles:
+                        SideTitles(showTitles: false, reservedSize: 20)),
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    getTitlesWidget: (value, meta) => const Text(''),
+                  ),
+                ),
+              ),
+              borderData: FlBorderData(
+                  show: true,
+                  border: Border.all(color: Colors.grey.shade300, width: 1)),
+              minX: 0,
+              maxX: (sortedMonths.length - 1).toDouble(),
+              minY: 0,
+              maxY: maxY,
+              lineBarsData: [
+                LineChartBarData(
+                  spots: sortedMonths.asMap().entries.map((entry) {
+                    final count = monthlyData[entry.value] ?? 0;
+                    return FlSpot(entry.key.toDouble(), count.toDouble());
+                  }).toList(),
+                  isCurved: true,
                   color: DentalColors.primary,
-                  strokeWidth: 2,
-                  strokeColor: Colors.white,
+                  barWidth: 3,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) =>
+                        FlDotCirclePainter(
+                      radius: 3,
+                      color: DentalColors.primary,
+                      strokeWidth: 2,
+                      strokeColor: Colors.white,
+                    ),
+                  ),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        DentalColors.primary.withValues(alpha: 0.3),
+                        DentalColors.primary.withValues(alpha: 0.1),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    DentalColors.primary.withOpacity(0.3),
-                    DentalColors.primary.withOpacity(0.1),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
+              ],
+            );
 
         if (enableScroll) {
           final ScrollController scrollController = ScrollController();
@@ -791,13 +844,17 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                 width: 40,
                 child: LineChart(
                   LineChartData(
-                    lineTouchData: LineTouchData(enabled: false),
-                    gridData: FlGridData(show: false),
+                    lineTouchData: const LineTouchData(enabled: false),
+                    gridData: const FlGridData(show: false),
                     titlesData: FlTitlesData(
-                      bottomTitles: AxisTitles(sideTitles: bottomTitlesConfig(showLabels: false)),
+                      bottomTitles: AxisTitles(
+                          sideTitles: bottomTitlesConfig(showLabels: false)),
                       leftTitles: AxisTitles(sideTitles: leftTitlesConfig()),
-                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 20)),
-                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: const AxisTitles(
+                          sideTitles:
+                              SideTitles(showTitles: false, reservedSize: 20)),
+                      rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
                     ),
                     borderData: FlBorderData(show: false),
                     minX: 0,
@@ -831,129 +888,151 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
     );
   }
 
-  Widget _buildMonthlyVisitPatientsChart(List<String> sortedMonths, Map<String, int> monthlyData) {
+  Widget _buildMonthlyVisitPatientsChart(
+      List<String> sortedMonths, Map<String, int> monthlyData) {
     if (sortedMonths.isEmpty) {
       return const Center(child: Text('暂无数据'));
     }
 
-    final maxValue = monthlyData.values.isEmpty ? 1 : monthlyData.values.reduce((a, b) => a > b ? a : b);
+    final maxValue = monthlyData.values.isEmpty
+        ? 1
+        : monthlyData.values.reduce((a, b) => a > b ? a : b);
     final maxY = (maxValue * 1.2).toDouble();
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final bool enableScroll = sortedMonths.length > 12;
-        final double chartWidth = enableScroll 
-            ? (sortedMonths.length * 70.0 + 60.0).clamp(constraints.maxWidth, double.infinity)
+        final double chartWidth = enableScroll
+            ? (sortedMonths.length * 70.0 + 60.0)
+                .clamp(constraints.maxWidth, double.infinity)
             : constraints.maxWidth;
 
         final double interval = maxY / 4 == 0 ? 1.0 : maxY / 4;
 
         SideTitles leftTitlesConfig() => SideTitles(
-          showTitles: true,
-          reservedSize: 40,
-          interval: interval,
-          getTitlesWidget: (value, meta) {
-            if (value == 0) return const Text('0', style: TextStyle(fontSize: 10, color: Colors.black54));
-            return Text('${value.toInt()}', style: const TextStyle(fontSize: 10, color: Colors.black54));
-          },
-        );
+              showTitles: true,
+              reservedSize: 40,
+              interval: interval,
+              getTitlesWidget: (value, meta) {
+                if (value == 0) {
+                  return const Text('0',
+                      style: TextStyle(fontSize: 10, color: Colors.black54));
+                }
+                return Text('${value.toInt()}',
+                    style:
+                        const TextStyle(fontSize: 10, color: Colors.black54));
+              },
+            );
 
         SideTitles bottomTitlesConfig({bool showLabels = true}) => SideTitles(
-          showTitles: true,
-          reservedSize: 22,
-          interval: 1,
-          getTitlesWidget: (value, meta) {
-            if (!showLabels) return const Text('');
-            if (value % 1 != 0) return const Text('');
-            final index = value.toInt();
-            if (index >= 0 && index < sortedMonths.length) {
-              final month = sortedMonths[index];
+              showTitles: true,
+              reservedSize: 22,
+              interval: 1,
+              getTitlesWidget: (value, meta) {
+                if (!showLabels) return const Text('');
+                if (value % 1 != 0) return const Text('');
+                final index = value.toInt();
+                if (index >= 0 && index < sortedMonths.length) {
+                  final month = sortedMonths[index];
 
-              return Text(month.substring(5), style: const TextStyle(fontSize: 10));
-            }
-            return const Text('');
-          },
-        );
+                  return Text(month.substring(5),
+                      style: const TextStyle(fontSize: 10));
+                }
+                return const Text('');
+              },
+            );
 
         LineChartData mainChartData(bool showLeftTitles) => LineChartData(
-          lineTouchData: LineTouchData(
-            enabled: true,
-            touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (spot) => Colors.white,
-              getTooltipItems: (touchedSpots) {
-                return touchedSpots.map((spot) {
-                  final index = spot.x.toInt();
-                  if (index >= 0 && index < sortedMonths.length) {
-                    final month = sortedMonths[index];
-                    final count = monthlyData[month] ?? 0;
-                    return LineTooltipItem(
-                      '$month\n$count人',
-                      const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
-                    );
-                  }
-                  return const LineTooltipItem('', TextStyle());
-                }).toList();
-              },
-              fitInsideHorizontally: true,
-              fitInsideVertically: true,
-            ),
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            horizontalInterval: interval,
-            getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
-          ),
-          titlesData: FlTitlesData(
-            bottomTitles: AxisTitles(sideTitles: bottomTitlesConfig(showLabels: true)),
-            leftTitles: AxisTitles(sideTitles: showLeftTitles ? leftTitlesConfig() : SideTitles(showTitles: false)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 20)),
-            rightTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true, 
-                reservedSize: 30,
-                getTitlesWidget: (value, meta) => const Text(''),
+              lineTouchData: LineTouchData(
+                enabled: true,
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipColor: (spot) => Colors.white,
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((spot) {
+                      final index = spot.x.toInt();
+                      if (index >= 0 && index < sortedMonths.length) {
+                        final month = sortedMonths[index];
+                        final count = monthlyData[month] ?? 0;
+                        return LineTooltipItem(
+                          '$month\n$count人',
+                          const TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.bold),
+                        );
+                      }
+                      return const LineTooltipItem('', TextStyle());
+                    }).toList();
+                  },
+                  fitInsideHorizontally: true,
+                  fitInsideVertically: true,
+                ),
               ),
-            ),
-          ),
-          borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey.shade300, width: 1)),
-          minX: 0,
-          maxX: (sortedMonths.length - 1).toDouble(),
-          minY: 0,
-          maxY: maxY,
-          lineBarsData: [
-            LineChartBarData(
-              spots: sortedMonths.asMap().entries.map((entry) {
-                final count = monthlyData[entry.value] ?? 0;
-                return FlSpot(entry.key.toDouble(), count.toDouble());
-              }).toList(),
-              isCurved: true,
-              color: Colors.green,
-              barWidth: 3,
-              isStrokeCapRound: true,
-              dotData: FlDotData(
+              gridData: FlGridData(
                 show: true,
-                getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                  radius: 3,
+                drawVerticalLine: false,
+                horizontalInterval: interval,
+                getDrawingHorizontalLine: (value) =>
+                    FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+              ),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                    sideTitles: bottomTitlesConfig(showLabels: true)),
+                leftTitles: AxisTitles(
+                    sideTitles: showLeftTitles
+                        ? leftTitlesConfig()
+                        : const SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(
+                    sideTitles:
+                        SideTitles(showTitles: false, reservedSize: 20)),
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    getTitlesWidget: (value, meta) => const Text(''),
+                  ),
+                ),
+              ),
+              borderData: FlBorderData(
+                  show: true,
+                  border: Border.all(color: Colors.grey.shade300, width: 1)),
+              minX: 0,
+              maxX: (sortedMonths.length - 1).toDouble(),
+              minY: 0,
+              maxY: maxY,
+              lineBarsData: [
+                LineChartBarData(
+                  spots: sortedMonths.asMap().entries.map((entry) {
+                    final count = monthlyData[entry.value] ?? 0;
+                    return FlSpot(entry.key.toDouble(), count.toDouble());
+                  }).toList(),
+                  isCurved: true,
                   color: Colors.green,
-                  strokeWidth: 2,
-                  strokeColor: Colors.white,
+                  barWidth: 3,
+                  isStrokeCapRound: true,
+                  dotData: FlDotData(
+                    show: true,
+                    getDotPainter: (spot, percent, barData, index) =>
+                        FlDotCirclePainter(
+                      radius: 3,
+                      color: Colors.green,
+                      strokeWidth: 2,
+                      strokeColor: Colors.white,
+                    ),
+                  ),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.green.withValues(alpha: 0.3),
+                        Colors.green.withValues(alpha: 0.1),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              belowBarData: BarAreaData(
-                show: true,
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.green.withOpacity(0.3),
-                    Colors.green.withOpacity(0.1),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
+              ],
+            );
 
         if (enableScroll) {
           final ScrollController scrollController = ScrollController();
@@ -963,13 +1042,17 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                 width: 40,
                 child: LineChart(
                   LineChartData(
-                    lineTouchData: LineTouchData(enabled: false),
-                    gridData: FlGridData(show: false),
+                    lineTouchData: const LineTouchData(enabled: false),
+                    gridData: const FlGridData(show: false),
                     titlesData: FlTitlesData(
-                      bottomTitles: AxisTitles(sideTitles: bottomTitlesConfig(showLabels: false)),
+                      bottomTitles: AxisTitles(
+                          sideTitles: bottomTitlesConfig(showLabels: false)),
                       leftTitles: AxisTitles(sideTitles: leftTitlesConfig()),
-                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 20)),
-                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: const AxisTitles(
+                          sideTitles:
+                              SideTitles(showTitles: false, reservedSize: 20)),
+                      rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false)),
                     ),
                     borderData: FlBorderData(show: false),
                     minX: 0,
@@ -1038,20 +1121,16 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
   void _navigateToFilteredPatients(String chartType, String category) {
     // 根据图表类型和分类筛选患者
     List<Patient> filteredPatients = [];
-    
-    print('导航到筛选患者: chartType=$chartType, category=$category');
-    print('当前日期范围内的患者总数: ${_getFilteredPatients().length}');
-    
+
     if (chartType == '地址分布') {
       // 按地址筛选
       if (category == '其他') {
         // 处理"其他"分类：获取所有不在前10名的地址
         final addressData = _calculateAddressDistribution();
         // 移除"其他"项，获取前10名的地址列表
-        final topAddresses = addressData.keys.where((key) => key != '其他').toSet();
-        
-        print('前10名地址: $topAddresses');
-        
+        final topAddresses =
+            addressData.keys.where((key) => key != '其他').toSet();
+
         // 筛选出地址不在前10名的患者
         filteredPatients = _getFilteredPatients().where((patient) {
           String address = patient.address ?? '未填写';
@@ -1091,8 +1170,6 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
       }).toList();
     }
 
-    print('筛选后的患者数量: ${filteredPatients.length}');
-
     // 导航到患者列表页面
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -1104,7 +1181,4 @@ class _PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
       ),
     );
   }
-
 }
-
-

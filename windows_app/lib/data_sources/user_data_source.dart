@@ -12,10 +12,10 @@ abstract class UserDataSource {
   Future<int> createUser(User user);
   Future<bool> updateUser(User user);
   Future<bool> deleteUser(int id);
-  
+
   // 认证相关方法
   Future<User?> authenticateUser(String username, String password);
-  
+
   // 分页查询方法
   Future<int> getUsersCount({String? searchQuery});
   Future<List<User>> getPaginatedUsers({
@@ -25,15 +25,16 @@ abstract class UserDataSource {
     String sortOrder = 'DESC',
     String? searchQuery,
   });
-  
+
   // 统计方法
   Future<Map<String, dynamic>> getUserStatistics();
-  
+
   // 权限相关方法
   Future<Map<String, bool>> getUserPermissions(int userId);
   Future<bool> updateUserPermissions(int userId, Map<String, bool> permissions);
 
   // 注册与密码管理
-  Future<bool> registerUser(String username, String? email, String hashedPassword, String role);
+  Future<bool> registerUser(
+      String username, String? email, String hashedPassword, String role);
   Future<int> updateUserPassword(int userId, String hashedPassword);
 }

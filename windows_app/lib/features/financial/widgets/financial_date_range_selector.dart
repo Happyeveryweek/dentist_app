@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../widgets/reusable_date_range_picker.dart';
 
 /// 财务日期范围选择器
-/// 
+///
 /// 提供日期范围选择和预设时间范围功能
 class FinancialDateRangeSelector {
   /// 显示自定义日期范围选择器
@@ -69,7 +68,8 @@ class FinancialDateRangeSelector {
   }
 
   /// 检查日期是否在范围内
-  static bool isWithinRange(DateTime? date, DateTime? startDate, DateTime? endDate) {
+  static bool isWithinRange(
+      DateTime? date, DateTime? startDate, DateTime? endDate) {
     if (startDate == null && endDate == null) {
       return true;
     }

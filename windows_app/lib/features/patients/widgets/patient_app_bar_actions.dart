@@ -23,8 +23,8 @@ class PatientAppBarActions extends StatelessWidget {
       children: [
         _PatientAppBarActionButton(
           margin: const EdgeInsets.only(right: 8),
-          backgroundColor: DentalColors.success.withOpacity(0.1),
-          borderColor: DentalColors.success.withOpacity(0.3),
+          backgroundColor: DentalColors.success.withValues(alpha: 0.1),
+          borderColor: DentalColors.success.withValues(alpha: 0.3),
           icon: Icons.file_download_rounded,
           iconColor: DentalColors.success,
           tooltip: '导出患者数据',
@@ -40,8 +40,8 @@ class PatientAppBarActions extends StatelessWidget {
         ),
         _PatientAppBarActionButton(
           margin: const EdgeInsets.only(right: 8),
-          backgroundColor: Colors.purple.withOpacity(0.1),
-          borderColor: Colors.purple.withOpacity(0.3),
+          backgroundColor: Colors.purple.withValues(alpha: 0.1),
+          borderColor: Colors.purple.withValues(alpha: 0.3),
           icon: Icons.bar_chart_rounded,
           iconColor: Colors.purple,
           tooltip: '患者统计图表',
@@ -49,8 +49,8 @@ class PatientAppBarActions extends StatelessWidget {
         ),
         _PatientAppBarActionButton(
           margin: const EdgeInsets.only(right: 16),
-          backgroundColor: DentalColors.info.withOpacity(0.1),
-          borderColor: DentalColors.info.withOpacity(0.3),
+          backgroundColor: DentalColors.info.withValues(alpha: 0.1),
+          borderColor: DentalColors.info.withValues(alpha: 0.3),
           icon: Icons.refresh_rounded,
           iconColor: DentalColors.info,
           tooltip: '刷新数据',
@@ -87,13 +87,14 @@ class _PatientAppBarActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderColorData = borderColor;
     return Container(
       margin: margin,
       decoration: BoxDecoration(
         color: backgroundColor,
         gradient: gradient,
         borderRadius: BorderRadius.circular(12),
-        border: borderColor == null ? null : Border.all(color: borderColor!),
+        border: borderColorData == null ? null : Border.all(color: borderColorData),
       ),
       child: IconButton(
         icon: Icon(icon, color: iconColor),

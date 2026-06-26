@@ -100,10 +100,11 @@ class PatientProvider extends ChangeNotifier {
 
   // 导出患者表
   Future<String> exportPatientsTable(String destinationDir) async {
-    if (_exportService == null) {
+    final service = _exportService;
+    if (service == null) {
       throw Exception('导出服务未初始化');
     }
-    return await _exportService!.exportPatientsTable(destinationDir);
+    return await service.exportPatientsTable(destinationDir);
   }
 
   // 使用SAF保存患者数据备份
@@ -111,21 +112,24 @@ class PatientProvider extends ChangeNotifier {
     String jsonData,
     String fileName,
   ) async {
-    if (_exportService == null) {
+    final service = _exportService;
+    if (service == null) {
       throw Exception('导出服务未初始化');
     }
-    return await _exportService!.savePatientBackupWithSaf(jsonData, fileName);
+    return await service.savePatientBackupWithSaf(jsonData, fileName);
   }
 
   // 获取所有患者（Android端不过滤查看权限）
   Future<List<Patient>> getAllPatients() async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('getAllPatients', () async {
+    return await wrapper.wrapOperation('getAllPatients', () async {
       try {
-        if (_cacheHelper.hasCache()) {
+        final cachedPatients = _cacheHelper.cachedPatients;
+        if (_cacheHelper.hasCache() && cachedPatients != null) {
           // Android端：返回所有缓存数据，不过滤
-          return _cacheHelper.cachedPatients!;
+          return cachedPatients;
         }
 
         // 使用数据源模式（统一接口）
@@ -144,9 +148,10 @@ class PatientProvider extends ChangeNotifier {
 
   // 获取患者总数（Android端不过滤查看权限）
   Future<int> getPatientCount() async {
-    if (_dbWrapper == null) return 0;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return 0;
 
-    return await _dbWrapper!.wrapOperation('getPatientCount', () async {
+    return await wrapper.wrapOperation('getPatientCount', () async {
       try {
         // Android端：所有用户都能查看所有数据，直接返回数据库总数
         final count = await _currentDataSource.getPatientsCount();
@@ -198,9 +203,10 @@ class PatientProvider extends ChangeNotifier {
     String? sortField,
     bool? ascending,
   }) async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
-    return await _dbWrapper!.wrapOperation('getPatientsPage', () async {
+    return await wrapper.wrapOperation('getPatientsPage', () async {
       try {
         // 使用数据源模式（统一接口），传递排序参数
         final patients = await _currentDataSource.getPaginatedPatients(
@@ -222,12 +228,13 @@ class PatientProvider extends ChangeNotifier {
 
   // 搜索患者（带权限过滤）
   Future<List<Patient>> searchPatients(String query) async {
-    if (_dbWrapper == null) return [];
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return [];
 
     // 统一在入口处trim，防止前后空格导致搜索失败
     final trimmedQuery = query.trim();
 
-    return await _dbWrapper!.wrapOperation('searchPatients', () async {
+    return await wrapper.wrapOperation('searchPatients', () async {
       try {
         // 使用数据源模式（统一接口）
         final patients = await _currentDataSource.searchPatients(trimmedQuery);
@@ -271,9 +278,10 @@ class PatientProvider extends ChangeNotifier {
 
   // 根据ID获取患者
   Future<Patient?> getPatientById(int id) async {
-    if (_dbWrapper == null) return null;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return null;
 
-    return await _dbWrapper!.wrapOperation('getPatientById', () async {
+    return await wrapper.wrapOperation('getPatientById', () async {
       try {
         // 使用数据源模式（统一接口）
         return await _currentDataSource.getPatientById(id);
@@ -287,9 +295,10 @@ class PatientProvider extends ChangeNotifier {
 
   // 添加患者
   Future<int> addPatient(Patient patient) async {
-    if (_dbWrapper == null) return -1;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return -1;
 
-    return await _dbWrapper!.wrapOperation('addPatient', () async {
+    return await wrapper.wrapOperation('addPatient', () async {
       try {
         // 使用数据源模式（统一接口）
         final result = await _currentDataSource.createPatient(patient);
@@ -307,9 +316,10 @@ class PatientProvider extends ChangeNotifier {
 
   // 更新患者
   Future<bool> updatePatient(Patient patient) async {
-    if (_dbWrapper == null) return false;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return false;
 
-    return await _dbWrapper!.wrapOperation('updatePatient', () async {
+    return await wrapper.wrapOperation('updatePatient', () async {
       try {
         AppLogger.info('开始更新患者数据: ${patient.toMap()}');
 
@@ -336,12 +346,13 @@ class PatientProvider extends ChangeNotifier {
 
   // 删除患者
   Future<int> deletePatient(int id) async {
-    if (_dbWrapper == null) return 0;
+    final wrapper = _dbWrapper;
+    if (wrapper == null) return 0;
 
     final result = await _deletionService.deletePatient(
       patientId: id,
       initService: _initService,
-      dbWrapper: _dbWrapper!,
+      dbWrapper: wrapper,
       cacheHelper: _cacheHelper,
     );
     _safeNotifyListeners();
