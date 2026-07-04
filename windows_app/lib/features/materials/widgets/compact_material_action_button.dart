@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class CompactMaterialActionButton extends StatelessWidget {
   final IconData icon;
-  final MaterialColor color;
+  final Color color;
   final String tooltip;
   final VoidCallback onPressed;
 
@@ -29,7 +29,7 @@ class CompactMaterialActionButton extends StatelessWidget {
       ),
       child: IconButton(
         onPressed: onPressed,
-        icon: Icon(icon, size: 20, color: color[600]),
+        icon: Icon(icon, size: 20, color: color),
         tooltip: tooltip,
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(),

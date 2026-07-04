@@ -3,10 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'package:path/path.dart' as path;
 
-import '../theme/app_theme.dart';
 import '../providers/settings_provider.dart';
 import '../providers/database_provider.dart';
-import '../widgets/dental_icons.dart';
 import '../widgets/success_toast.dart';
 import '../features/settings/widgets/data_source_page_header.dart';
 import '../features/settings/widgets/data_source_configuration_section.dart';
@@ -178,14 +176,14 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: context.tokens.pageBackground,
       appBar: AppBar(
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: DentalColors.primaryGradient,
+                gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -205,7 +203,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
           ],
         ),
         backgroundColor: context.tokens.cardBackground,
-        foregroundColor: DentalColors.onSurface,
+        foregroundColor: context.colors.onSurface,
         elevation: 0,
       ),
       body: Container(
@@ -384,7 +382,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('选择文件时出错: $e'),
-        backgroundColor: Colors.red,
+        backgroundColor: context.tokens.error,
       ));
     }
   }
@@ -421,17 +419,14 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('连接成功！'),
-            backgroundColor: Theme.of(context).scaffoldBackgroundColor ==
-                    AppTheme.purpleBackground
-                ? AppTheme.purpleColor
-                : AppTheme.successColor,
+            backgroundColor: context.tokens.success,
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('连接失败，请检查连接参数'),
-            backgroundColor: Colors.red,
+            backgroundColor: Color(0xFFFF375F),
           ),
         );
       }
@@ -440,7 +435,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('连接错误: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: context.tokens.error,
         ),
       );
     } finally {
@@ -507,7 +502,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('保存设置失败: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: context.tokens.error,
         ),
       );
     }
@@ -554,7 +549,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('保存设置失败: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: context.tokens.error,
         ),
       );
     }
@@ -594,7 +589,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('保存MySQL设置失败: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: context.tokens.error,
         ),
       );
     }
@@ -656,7 +651,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('保存SQLite设置失败: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: context.tokens.error,
         ),
       );
     }

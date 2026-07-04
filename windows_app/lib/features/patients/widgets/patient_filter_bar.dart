@@ -27,7 +27,7 @@ class PatientFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPurpleTheme =
-        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
+        false;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -75,7 +75,7 @@ class PatientFilterBar extends StatelessWidget {
                 style: TextButton.styleFrom(
                   foregroundColor: isPurpleTheme
                       ? AppTheme.purpleColor
-                      : AppTheme.primaryColor,
+                      : context.tokens.primaryAccent,
                 ),
               ),
             ],
@@ -252,15 +252,15 @@ class _SortOptions extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            color: context.tokens.primaryAccent.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppTheme.primaryColor.withValues(alpha: 0.3),
+              color: context.tokens.primaryAccent.withValues(alpha: 0.3),
               width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
@@ -273,10 +273,10 @@ class _SortOptions extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 '总患者数: $totalPatients',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.primaryColor,
+                  color: context.tokens.primaryAccent,
                 ),
               ),
             ],
@@ -313,11 +313,11 @@ class _SortButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isActive
-              ? AppTheme.primaryColor.withValues(alpha: 0.1)
+              ? context.tokens.primaryAccent.withValues(alpha: 0.1)
               : context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isActive ? AppTheme.primaryColor : Colors.grey.shade300,
+            color: isActive ? context.tokens.primaryAccent : Colors.grey.shade300,
           ),
         ),
         child: Row(
@@ -328,7 +328,7 @@ class _SortButton extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 color:
-                    isActive ? AppTheme.primaryColor : AppTheme.secondaryText,
+                    isActive ? context.tokens.primaryAccent : context.colors.onSurfaceVariant,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
@@ -337,7 +337,7 @@ class _SortButton extends StatelessWidget {
               Icon(
                 sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
                 size: 16,
-                color: AppTheme.primaryColor,
+                color: context.tokens.primaryAccent,
               ),
             ],
           ],
@@ -370,10 +370,10 @@ class _FilterTypeChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: active ? AppTheme.primaryColor : Colors.white,
+          color: active ? context.tokens.primaryAccent : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: active ? AppTheme.primaryColor : Colors.grey.shade300,
+            color: active ? context.tokens.primaryAccent : Colors.grey.shade300,
             width: 1,
           ),
         ),
@@ -383,7 +383,7 @@ class _FilterTypeChip extends StatelessWidget {
             Icon(
               value == 'first_visit_date' ? Icons.event_note : Icons.update,
               size: 14,
-              color: active ? Colors.white : AppTheme.primaryColor,
+              color: active ? Colors.white : context.tokens.primaryAccent,
             ),
             const SizedBox(width: 6),
             Text(
@@ -391,7 +391,7 @@ class _FilterTypeChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: active ? Colors.white : AppTheme.primaryColor,
+                color: active ? Colors.white : context.tokens.primaryAccent,
               ),
             ),
           ],

@@ -22,7 +22,7 @@ class ResetPasswordDialog extends StatelessWidget {
 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final isPurpleTheme =
-        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
+        false;
 
     final accentColor = isPurpleTheme
         ? AppTheme.purpleColor

@@ -23,7 +23,7 @@ class PatientAdvancedSearchFields extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPurpleTheme =
-        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
+        false;
 
     return Container(
       margin: const EdgeInsets.only(top: 12),
@@ -134,7 +134,7 @@ class _CompactSearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPurpleTheme =
-        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
+        false;
 
     return Container(
       height: 48,

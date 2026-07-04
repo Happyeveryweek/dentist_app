@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class UserFormField extends StatelessWidget {
   final TextEditingController controller;
@@ -25,12 +25,13 @@ class UserFormField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: tokens.shadow,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -44,26 +45,25 @@ class UserFormField extends StatelessWidget {
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          prefixIcon: Icon(icon, color: AppTheme.primaryColor),
+          prefixIcon: Icon(icon, color: tokens.primaryAccent),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            borderSide: BorderSide(color: tokens.border),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            borderSide: BorderSide(color: tokens.border),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: AppTheme.primaryColor, width: 2),
+            borderSide: BorderSide(color: tokens.primaryAccent, width: 2),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.errorColor),
+            borderSide: BorderSide(color: tokens.error),
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: tokens.cardBackground,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           errorText: errorText,

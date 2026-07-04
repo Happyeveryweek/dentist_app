@@ -28,7 +28,7 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
   @override
   Widget build(BuildContext context) {
     final isPurpleTheme =
-        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
+        false;
 
     final textColor = isPurpleTheme ? AppTheme.purplePrimaryText : null;
     final accentColor =

@@ -49,9 +49,9 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final isPurpleTheme =
-        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
+        false;
     final textColor =
-        isPurpleTheme ? AppTheme.purplePrimaryText : DentalColors.onSurface;
+        isPurpleTheme ? AppTheme.purplePrimaryText : context.colors.onSurface;
     final secondaryTextColor = isPurpleTheme
         ? AppTheme.purpleSecondaryText
         : (isDarkMode ? Colors.grey[400] : Colors.black54);

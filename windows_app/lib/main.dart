@@ -805,29 +805,14 @@ class _AppWithProvidersState extends State<AppWithProviders> {
   Widget build(BuildContext context) {
     try {
       final appState = Provider.of<AppState>(context);
-      final settings = Provider.of<SettingsProvider>(context);
 
       return MaterialApp(
         title: '牙科诊所管理系统',
         navigatorKey: appState.navigatorKey,
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: settings.themeMode,
+        theme: AppTheme.standardTheme(),
         builder: (context, child) {
           final content = child;
           if (content == null) return const SizedBox.shrink();
-          // 处理特殊主题模式
-          if (settings.extendedThemeMode == ExtendedThemeMode.grey) {
-            return Theme(
-              data: AppTheme.greyTheme,
-              child: content,
-            );
-          } else if (settings.extendedThemeMode == ExtendedThemeMode.purple) {
-            return Theme(
-              data: AppTheme.purpleTheme,
-              child: content,
-            );
-          }
           return content;
         },
         debugShowCheckedModeBanner: false,
@@ -947,8 +932,8 @@ class _MainScreenState extends State<MainScreen> {
                   Container(
                     height: 60,
                     width: 60,
-                    decoration: const BoxDecoration(
-                      color: AppTheme.primaryColor,
+                    decoration: BoxDecoration(
+                      color: context.tokens.primaryAccent,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -967,7 +952,7 @@ class _MainScreenState extends State<MainScreen> {
                 ],
               ),
             ),
-            backgroundColor: AppTheme.cardBackground,
+            backgroundColor: context.tokens.cardBackground,
             elevation: 3,
           ),
 
@@ -984,15 +969,6 @@ class _MainScreenState extends State<MainScreen> {
 
 // 获取当前主题的ThemeData
 ThemeData getThemeData(BuildContext context) {
-  final settings = Provider.of<SettingsProvider>(context);
-
-  // 处理特殊主题模式
-  if (settings.extendedThemeMode == ExtendedThemeMode.purple) {
-    return AppTheme.purpleTheme;
-  } else if (settings.extendedThemeMode == ExtendedThemeMode.grey) {
-    return AppTheme.greyTheme;
-  }
-
-  // 默认返回浅色主题
-  return AppTheme.lightTheme;
+  // 统一返回标准主题
+  return AppTheme.standardTheme();
 }

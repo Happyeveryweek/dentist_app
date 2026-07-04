@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import '../theme/app_theme.dart';
 
 import '../models/user.dart';
 import '../providers/user_provider.dart';
@@ -150,7 +151,7 @@ class _UsersScreenState extends State<UsersScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: DentalColors.primaryGradient,
+                gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -170,7 +171,7 @@ class _UsersScreenState extends State<UsersScreen> {
           ],
         ),
         backgroundColor: context.tokens.cardBackground,
-        foregroundColor: DentalColors.onSurface,
+        foregroundColor: context.colors.onSurface,
         elevation: 0,
         actions: [
           Container(
@@ -199,7 +200,7 @@ class _UsersScreenState extends State<UsersScreen> {
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              gradient: DentalColors.primaryGradient,
+              gradient: context.tokens.primaryHeaderGradient,
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(

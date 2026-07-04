@@ -12,8 +12,8 @@ import 'package:dentist_app_windows/models/database_structure_log.dart';
 import 'package:dentist_app_windows/utils/datetime_formatter.dart';
 import '../utils/log_manager.dart';
 
-// 扩展主题模式枚举，支持更多主题选项
-enum ExtendedThemeMode { light, grey, purple }
+// 扩展主题模式枚举（历史兼容，当前只保留标准主题）
+enum ExtendedThemeMode { light }
 
 class SettingsProvider extends ChangeNotifier {
   // ==================== Service 实例 ====================
@@ -35,15 +35,7 @@ class SettingsProvider extends ChangeNotifier {
 
   // 兼容原有的ThemeMode
   ThemeMode _themeMode = ThemeMode.light;
-  ThemeMode get themeMode {
-    switch (_extendedThemeMode) {
-      case ExtendedThemeMode.light:
-        return ThemeMode.light;
-      case ExtendedThemeMode.grey:
-      case ExtendedThemeMode.purple:
-        return ThemeMode.light;
-    }
-  }
+  ThemeMode get themeMode => ThemeMode.light;
 
   // 字体大小设置
   double _fontSize = 1.0;
@@ -123,12 +115,8 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   void _applyLoadedSettings(Map<String, dynamic> settings) {
-    // 加载主题设置
-    final extendedThemeModeIndex = settings['extendedThemeMode'] ?? 0;
-    if (extendedThemeModeIndex is int &&
-        extendedThemeModeIndex < ExtendedThemeMode.values.length) {
-      _extendedThemeMode = ExtendedThemeMode.values[extendedThemeModeIndex];
-    }
+    // 主题设置：历史配置迁移，任何旧值统一映射到标准主题
+    _extendedThemeMode = ExtendedThemeMode.light;
 
     final themeModeIndex = settings['themeMode'] ?? 0;
     if (themeModeIndex is int && themeModeIndex < ThemeMode.values.length) {

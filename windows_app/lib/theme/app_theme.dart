@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_theme_tokens.dart';
+
 // 全局样式变量 - 现代牙科诊疗系统设计
 class AppTheme {
   // 主要配色 - 医疗专业配色
@@ -14,15 +16,6 @@ class AppTheme {
   static const Color darkBackground = Color(0xFF121214); // 更深的暗黑背景
   static const Color darkCardBackground = Color(0xFF2C2C2E);
   static const Color darkDividerColor = Color(0xFF3A3A3C); // 深色模式分隔线颜色
-
-  // 灰色主题颜色
-  static const Color greyBackground = Color(0xFFE5E5E5);
-  static const Color greyCardBackground = Color(0xFFF0F0F0);
-  static const Color greySecondaryBackground = Color(0xFFDDDDDD);
-  static const Color greyPrimaryText = Color(0xFF333333);
-  static const Color greySecondaryText = Color(0xFF666666);
-  static const Color greyLightText = Color(0xFF999999);
-  static const Color greyDividerColor = Color(0xFFCCCCCC);
 
   // 文本颜色
   static const Color primaryText = Color(0xFF111111); // 更深的黑色
@@ -204,17 +197,17 @@ class AppTheme {
     ],
   );
 
-  // 紫色主题颜色
-  static const Color purpleColor = Color(0xFFB69BB0); // 中等紫色主色调
-  static const Color purpleLightColor = Color(0xFFE0CCDA); // 浅紫色
-  static const Color purpleDarkColor = Color(0xFF9D7F97); // 深紫色
-  static const Color purpleBackground = Color(0xFFF5EEF2); // 非常浅的紫色背景
-  static const Color purpleCardBackground = Color(0xFFF8F1FF); // 更明显但柔和的紫色卡片背景
-  static const Color purplePrimaryText = Color(0xFF4A2C4D); // 深紫色文本
-  static const Color purpleSecondaryText = Color(0xFF6E5A7D); // 中等紫色文本
-  static const Color purpleLightText = Color(0xFF9182A0); // 浅紫色文本
-  static const Color purpleDividerColor = Color(0xFFE9DFF8); // 浅紫色分隔线
-  static const Color purpleSecondaryBackground = Color(0xFFF8F5FD); // 次级背景色
+  // 紫色主题颜色（历史兼容，阶段6清理）
+  static const Color purpleColor = Color(0xFFB69BB0);
+  static const Color purpleLightColor = Color(0xFFE0CCDA);
+  static const Color purpleDarkColor = Color(0xFF9D7F97);
+  static const Color purpleBackground = Color(0xFFF5EEF2);
+  static const Color purpleCardBackground = Color(0xFFF8F1FF);
+  static const Color purplePrimaryText = Color(0xFF4A2C4D);
+  static const Color purpleSecondaryText = Color(0xFF6E5A7D);
+  static const Color purpleLightText = Color(0xFF9182A0);
+  static const Color purpleDividerColor = Color(0xFFE9DFF8);
+  static const Color purpleSecondaryBackground = Color(0xFFF8F5FD);
   static final List<BoxShadow> purpleCardShadow = [
     BoxShadow(
       color: purpleColor.withValues(alpha: 0.08),
@@ -223,384 +216,146 @@ class AppTheme {
     ),
   ];
 
-  // 应用主题 - 浅色主题
-  static ThemeData lightTheme = ThemeData(
-    primaryColor: primaryColor,
-    scaffoldBackgroundColor: backgroundColor,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: primaryColor,
-      primary: primaryColor,
-      secondary: secondaryColor,
-      tertiary: accentColor,
-      error: tertiaryColor,
-      surface: cardBackground,
+  // 应用主题 - 浅色主题（通过 token 构建）
+  static ThemeData lightTheme = standardTheme();
+
+  // ==================== 统一主题构建入口 ====================
+
+  /// 由 token 构建 ColorScheme
+  static ColorScheme _buildColorScheme(AppThemeTokens tokens) {
+    return ColorScheme(
+      primary: tokens.primaryAccent,
+      secondary: tokens.secondaryAccent,
+      surface: tokens.cardBackground,
+      error: tokens.error,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onSurface: const Color(0xFF111111),
+      onError: Colors.white,
       brightness: Brightness.light,
-    ),
-    appBarTheme: AppBarTheme(
-      backgroundColor: cardBackground,
-      foregroundColor: primaryText,
-      elevation: 0,
-      titleTextStyle: titleStyle.copyWith(fontSize: 18),
-      iconTheme: const IconThemeData(color: primaryText),
-    ),
-    cardTheme: CardThemeData(
-      color: cardBackground,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(style: primaryButtonStyle),
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: primaryColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-        ),
-      ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: primaryColor,
-        side: const BorderSide(color: primaryColor),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-        ),
-      ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: backgroundColor.withValues(alpha: 0.8),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: const BorderSide(color: primaryColor, width: 1.5),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    ),
-    textTheme: const TextTheme(
-      displayLarge: headingStyle,
-      displayMedium: titleStyle,
-      bodyLarge: subtitleStyle,
-      bodyMedium: bodyStyle,
-      bodySmall: captionStyle,
-    ),
-    navigationRailTheme: const NavigationRailThemeData(
-      backgroundColor: cardBackground,
-      selectedIconTheme: IconThemeData(color: primaryColor, size: 24),
-      unselectedIconTheme: IconThemeData(color: secondaryText, size: 24),
-      selectedLabelTextStyle: TextStyle(
-        color: primaryColor,
-        fontWeight: FontWeight.w600,
-        fontSize: 14,
-      ),
-      unselectedLabelTextStyle: TextStyle(
-        color: secondaryText,
-        fontSize: 14,
-      ),
-      elevation: 2,
-      labelType: NavigationRailLabelType.all,
-      groupAlignment: -0.85,
-      minWidth: windowsNavRailWidth,
-    ),
-  );
+    );
+  }
 
-  // 应用主题 - 深色主题
-  static ThemeData darkTheme = ThemeData(
-    primaryColor: primaryColor,
-    scaffoldBackgroundColor: darkBackground,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: primaryColor,
-      primary: primaryColor,
-      secondary: secondaryColor,
-      tertiary: accentColor,
-      error: tertiaryColor,
-      surface: darkCardBackground,
-      brightness: Brightness.dark,
-    ),
-    appBarTheme: AppBarTheme(
-      backgroundColor: darkCardBackground,
-      foregroundColor: darkPrimaryText,
-      elevation: 0,
-      titleTextStyle: titleStyle.copyWith(
-        fontSize: 18,
-        color: darkPrimaryText,
+  /// 由 token 集中构建 ThemeData 覆盖清单
+  static ThemeData _buildTheme(AppThemeTokens tokens) {
+    return ThemeData(
+      primaryColor: tokens.primaryAccent,
+      scaffoldBackgroundColor: tokens.pageBackground,
+      colorScheme: _buildColorScheme(tokens),
+      extensions: [tokens],
+      useMaterial3: true,
+      appBarTheme: AppBarTheme(
+        backgroundColor: tokens.shellBackground,
+        foregroundColor: const Color(0xFF111111),
+        elevation: 0,
+        titleTextStyle: titleStyle.copyWith(fontSize: 18),
+        iconTheme: IconThemeData(color: tokens.primaryAccent),
       ),
-      iconTheme: const IconThemeData(color: darkPrimaryText),
-    ),
-    cardTheme: CardThemeData(
-      color: darkCardBackground,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: primaryButtonStyle.copyWith(
-        backgroundColor: WidgetStateProperty.all(primaryColor),
-        foregroundColor: WidgetStateProperty.all(darkPrimaryText),
-      ),
-    ),
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: primaryColor,
+      cardTheme: CardThemeData(
+        color: tokens.cardBackground,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
+          borderRadius: BorderRadius.circular(tokens.borderRadius),
         ),
       ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: primaryColor,
-        side: const BorderSide(color: primaryColor),
+      dividerTheme: DividerThemeData(
+        color: tokens.divider,
+        thickness: 1,
+        space: 1,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: tokens.panelBackground,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
+          borderRadius: BorderRadius.circular(tokens.borderRadius),
         ),
       ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: darkBackground.withValues(alpha: 0.8),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: BorderSide.none,
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: tokens.primaryAccent,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(tokens.borderRadius),
+          ),
+        ),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: const BorderSide(color: primaryColor, width: 1.5),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: tokens.primaryAccent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(tokens.borderRadius),
+          ),
+        ),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    ),
-    textTheme: TextTheme(
-      displayLarge: headingStyle.copyWith(color: darkPrimaryText),
-      displayMedium: titleStyle.copyWith(color: darkPrimaryText),
-      bodyLarge: subtitleStyle.copyWith(color: darkPrimaryText),
-      bodyMedium: bodyStyle.copyWith(color: darkSecondaryText),
-      bodySmall: captionStyle.copyWith(color: darkLightText),
-    ),
-    navigationRailTheme: const NavigationRailThemeData(
-      backgroundColor: darkCardBackground,
-      selectedIconTheme: IconThemeData(color: primaryColor, size: 24),
-      unselectedIconTheme: IconThemeData(color: darkSecondaryText, size: 24),
-      selectedLabelTextStyle: TextStyle(
-        color: primaryColor,
-        fontWeight: FontWeight.w600,
-        fontSize: 14,
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: tokens.primaryAccent,
+          side: BorderSide(color: tokens.primaryAccent),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(tokens.borderRadius),
+          ),
+        ),
       ),
-      unselectedLabelTextStyle: TextStyle(
-        color: darkSecondaryText,
-        fontSize: 14,
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: tokens.inputBackground,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(tokens.borderRadius),
+          borderSide: BorderSide(color: tokens.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(tokens.borderRadius),
+          borderSide: BorderSide(color: tokens.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(tokens.borderRadius),
+          borderSide: BorderSide(color: tokens.primaryAccent, width: 1.5),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
-      elevation: 2,
-      labelType: NavigationRailLabelType.all,
-      groupAlignment: -0.85,
-      minWidth: windowsNavRailWidth,
-    ),
-  );
+      textTheme: const TextTheme(
+        displayLarge: headingStyle,
+        displayMedium: titleStyle,
+        bodyLarge: subtitleStyle,
+        bodyMedium: bodyStyle,
+        bodySmall: captionStyle,
+      ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: tokens.shellBackground,
+        selectedIconTheme:
+            IconThemeData(color: tokens.primaryAccent, size: 24),
+        unselectedIconTheme: IconThemeData(color: tokens.iconMuted, size: 24),
+        selectedLabelTextStyle: TextStyle(
+          color: tokens.primaryAccent,
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+        unselectedLabelTextStyle: TextStyle(
+          color: tokens.textMuted,
+          fontSize: 14,
+        ),
+        elevation: 2,
+        labelType: NavigationRailLabelType.all,
+        groupAlignment: -0.85,
+        minWidth: windowsNavRailWidth,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: tokens.panelBackground,
+        contentTextStyle: const TextStyle(color: Color(0xFF111111)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
+        ),
+      ),
+      dataTableTheme: DataTableThemeData(
+        headingRowColor:
+            WidgetStateProperty.all(tokens.tableHeaderBackground),
+        dividerThickness: 1,
+      ),
+    );
+  }
 
-  // 灰色主题
-  static ThemeData greyTheme = ThemeData(
-    primaryColor: primaryColor,
-    scaffoldBackgroundColor: greyBackground,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: primaryColor,
-      primary: primaryColor,
-      secondary: secondaryColor,
-      tertiary: accentColor,
-      error: tertiaryColor,
-      surface: greyCardBackground,
-      brightness: Brightness.light,
-    ),
-    appBarTheme: AppBarTheme(
-      backgroundColor: greyCardBackground,
-      foregroundColor: greyPrimaryText,
-      elevation: 0,
-      titleTextStyle: titleStyle.copyWith(
-        fontSize: 18,
-        color: greyPrimaryText,
-      ),
-      iconTheme: const IconThemeData(color: greyPrimaryText),
-    ),
-    cardTheme: CardThemeData(
-      color: greyCardBackground,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: primaryButtonStyle.copyWith(
-        backgroundColor: WidgetStateProperty.all(primaryColor),
-        foregroundColor: WidgetStateProperty.all(Colors.white),
-      ),
-    ),
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: primaryColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-        ),
-      ),
-    ),
-    outlinedButtonTheme: OutlinedButtonThemeData(
-      style: OutlinedButton.styleFrom(
-        foregroundColor: primaryColor,
-        side: const BorderSide(color: primaryColor),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(borderRadius),
-        ),
-      ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: const BorderSide(color: primaryColor, width: 1.5),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    ),
-    textTheme: TextTheme(
-      displayLarge: headingStyle.copyWith(color: greyPrimaryText),
-      displayMedium: titleStyle.copyWith(color: greyPrimaryText),
-      bodyLarge: subtitleStyle.copyWith(color: greyPrimaryText),
-      bodyMedium: bodyStyle.copyWith(color: greySecondaryText),
-      bodySmall: captionStyle.copyWith(color: greyLightText),
-    ),
-    navigationRailTheme: const NavigationRailThemeData(
-      backgroundColor: greyCardBackground,
-      selectedIconTheme: IconThemeData(color: primaryColor, size: 24),
-      unselectedIconTheme: IconThemeData(color: greySecondaryText, size: 24),
-      selectedLabelTextStyle: TextStyle(
-        color: primaryColor,
-        fontWeight: FontWeight.w600,
-        fontSize: 14,
-      ),
-      unselectedLabelTextStyle: TextStyle(
-        color: greySecondaryText,
-        fontSize: 14,
-      ),
-      elevation: 2,
-      labelType: NavigationRailLabelType.all,
-      groupAlignment: -0.85,
-      minWidth: windowsNavRailWidth,
-    ),
-    dividerColor: greyDividerColor,
-  );
-
-  // 紫色主题
-  static ThemeData purpleTheme = ThemeData(
-    scaffoldBackgroundColor: purpleBackground,
-    primaryColor: purpleColor,
-    colorScheme: const ColorScheme.light(
-      primary: purpleColor,
-      secondary: purpleLightColor,
-      surface: purpleCardBackground,
-      onSurface: purplePrimaryText,
-    ),
-    cardColor: purpleCardBackground,
-    canvasColor: purpleBackground,
-    dividerColor: purpleDividerColor,
-    textTheme: TextTheme(
-      displayLarge: headingStyle.copyWith(color: purplePrimaryText),
-      displayMedium: titleStyle.copyWith(color: purplePrimaryText),
-      bodyLarge: subtitleStyle.copyWith(color: purplePrimaryText),
-      bodyMedium: bodyStyle.copyWith(color: purpleSecondaryText),
-      bodySmall: captionStyle.copyWith(color: purpleLightText),
-    ),
-    appBarTheme: AppBarTheme(
-      backgroundColor: purpleCardBackground,
-      foregroundColor: purplePrimaryText,
-      elevation: 0,
-      titleTextStyle: titleStyle.copyWith(color: purplePrimaryText),
-      iconTheme: const IconThemeData(color: purplePrimaryText),
-    ),
-    dialogTheme: const DialogThemeData(
-      backgroundColor: purpleCardBackground,
-      titleTextStyle: TextStyle(
-        color: purplePrimaryText,
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-      ),
-      contentTextStyle: TextStyle(
-        color: purpleSecondaryText,
-        fontSize: 16,
-      ),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: purpleColor,
-        foregroundColor: Colors.white,
-      ),
-    ),
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: purpleColor,
-      ),
-    ),
-    inputDecorationTheme: InputDecorationTheme(
-      fillColor: purpleSecondaryBackground,
-      filled: true,
-      labelStyle: const TextStyle(color: purplePrimaryText),
-      hintStyle: const TextStyle(color: purpleLightText),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: purpleColor),
-      ),
-    ),
-    iconTheme: const IconThemeData(
-      color: purplePrimaryText,
-    ),
-    navigationRailTheme: const NavigationRailThemeData(
-      backgroundColor: purpleCardBackground,
-      selectedIconTheme: IconThemeData(color: purpleColor, size: 24),
-      unselectedIconTheme: IconThemeData(color: purpleSecondaryText, size: 24),
-      selectedLabelTextStyle: TextStyle(
-        color: purpleColor,
-        fontWeight: FontWeight.w600,
-        fontSize: 14,
-      ),
-      unselectedLabelTextStyle: TextStyle(
-        color: purpleSecondaryText,
-        fontSize: 14,
-      ),
-    ),
-    checkboxTheme: CheckboxThemeData(
-      fillColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return purpleColor;
-        }
-        return null;
-      }),
-    ),
-    switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return purpleColor;
-        }
-        return null;
-      }),
-      trackColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return purpleColor.withValues(alpha: 0.5);
-        }
-        return null;
-      }),
-    ),
-  );
+  /// 标准主题入口
+  static ThemeData standardTheme() => _buildTheme(AppThemeTokens.standard());
 }

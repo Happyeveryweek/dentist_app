@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/dental_icons.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class MaterialPaginationButton extends StatelessWidget {
   final IconData? icon;
@@ -17,14 +17,16 @@ class MaterialPaginationButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Container(
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        color: isActive ? DentalColors.primary : Colors.white,
+        color: isActive ? tokens.primaryAccent : tokens.cardBackground,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isActive ? DentalColors.primary : Colors.grey.shade300,
+          color: isActive ? tokens.primaryAccent : tokens.border,
           width: 1,
         ),
       ),
@@ -38,14 +40,14 @@ class MaterialPaginationButton extends StatelessWidget {
                 ? Icon(
                     icon,
                     size: 18,
-                    color: isActive ? Colors.white : Colors.grey.shade700,
+                    color: isActive ? Colors.white : colors.onSurfaceVariant,
                   )
                 : Text(
                     pageNumber.toString(),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isActive ? Colors.white : Colors.grey.shade700,
+                      color: isActive ? Colors.white : colors.onSurfaceVariant,
                     ),
                   ),
           ),

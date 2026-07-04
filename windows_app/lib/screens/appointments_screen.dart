@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import '../theme/app_theme.dart';
 
 import '../models/appointment.dart';
 
@@ -281,7 +282,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: DentalColors.primaryGradient,
+                gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -301,13 +302,13 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           ],
         ),
         backgroundColor: context.tokens.cardBackground,
-        foregroundColor: DentalColors.onSurface,
+        foregroundColor: context.colors.onSurface,
         elevation: 0,
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              gradient: DentalColors.primaryGradient,
+              gradient: context.tokens.primaryHeaderGradient,
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -435,7 +436,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddEditAppointmentDialog(),
         tooltip: '添加预约',
-        backgroundColor: DentalColors.primary,
+        backgroundColor: context.tokens.primaryAccent,
         child: Icon(DentalIcons.calendarPlus, color: context.tokens.cardBackground),
       ),
     );

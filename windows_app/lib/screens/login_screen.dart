@@ -4,8 +4,8 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:crypto/crypto.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
-import '../theme/app_theme.dart';
 import '../providers/database_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/settings_provider.dart';
@@ -402,17 +402,18 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         padding: EdgeInsets.all(isSmallScreen ? 20.0 : 32.0),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.25),
+                          color:
+                              context.tokens.panelBackground.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(20.0),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
+                              color: context.tokens.shadow.withValues(alpha: 0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
                           ],
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.25),
+                            color: context.tokens.border.withValues(alpha: 0.6),
                             width: 1.0,
                           ),
                         ),
@@ -431,23 +432,22 @@ class _LoginScreenState extends State<LoginScreen>
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                     colors: [
-                                      const Color(0xFF2196F3)
+                                      context.tokens.primaryAccent
                                           .withValues(alpha: 0.15),
-                                      const Color(0xFF03DAC6)
+                                      context.tokens.secondaryAccent
                                           .withValues(alpha: 0.1),
-                                      const Color(0xFF00BCD4)
-                                          .withValues(alpha: 0.05),
+                                      context.tokens.info.withValues(alpha: 0.05),
                                     ],
                                   ),
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color: const Color(0xFF2196F3)
+                                    color: context.tokens.primaryAccent
                                         .withValues(alpha: 0.2),
                                     width: 2,
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF2196F3)
+                                      color: context.tokens.primaryAccent
                                           .withValues(alpha: 0.15),
                                       blurRadius: 20,
                                       spreadRadius: 0,
@@ -458,11 +458,11 @@ class _LoginScreenState extends State<LoginScreen>
                                 child: Stack(
                                   children: [
                                     // 主医疗图标
-                                    const Center(
+                                    Center(
                                       child: Icon(
                                         Icons.medical_services_rounded,
                                         size: 50,
-                                        color: Color(0xFF2196F3),
+                                        color: context.tokens.primaryAccent,
                                       ),
                                     ),
                                     // 装饰性十字符号
@@ -473,7 +473,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         width: 16,
                                         height: 16,
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFF03DAC6),
+                                          color: context.tokens.secondaryAccent,
                                           borderRadius:
                                               BorderRadius.circular(8),
                                         ),
@@ -491,7 +491,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       child: Icon(
                                         Icons.favorite,
                                         size: 12,
-                                        color: const Color(0xFFE91E63)
+                                        color: context.tokens.error
                                             .withValues(alpha: 0.7),
                                       ),
                                     ),
@@ -503,19 +503,19 @@ class _LoginScreenState extends State<LoginScreen>
                                 builder: (context, settingsProvider, child) {
                                   return Text(
                                     settingsProvider.appName,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.bold,
-                                      color: AppTheme.primaryText,
+                                      color: context.colors.onSurface,
                                     ),
                                   );
                                 },
                               ),
                               const SizedBox(height: 8),
-                              const Text(
+                              Text(
                                 '请登录以继续使用',
                                 style: TextStyle(
-                                  color: AppTheme.secondaryText,
+                                  color: context.tokens.textMuted,
                                   fontSize: 16,
                                 ),
                               ),
@@ -537,28 +537,28 @@ class _LoginScreenState extends State<LoginScreen>
                                         prefixIcon: Container(
                                           margin: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF2196F3)
+                                            color: context.tokens.primaryAccent
                                                 .withValues(alpha: 0.1),
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                           ),
-                                          child: const Icon(
+                                          child: Icon(
                                             Icons.person_rounded,
-                                            color: Color(0xFF2196F3),
+                                            color: context.tokens.primaryAccent,
                                           ),
                                         ),
                                         filled: true,
-                                        fillColor: const Color(0xFFF8FCFF),
+                                        fillColor: context.tokens.inputBackground,
                                         border: OutlineInputBorder(
                                           borderRadius:
                                               BorderRadius.circular(16),
                                           borderSide: BorderSide.none,
                                         ),
                                         enabledBorder: OutlineInputBorder(
-                                          borderRadius:
+                                            borderRadius:
                                               BorderRadius.circular(16),
                                           borderSide: BorderSide(
-                                            color: const Color(0xFF2196F3)
+                                            color: context.tokens.primaryAccent
                                                 .withValues(alpha: 0.2),
                                             width: 1.5,
                                           ),
@@ -566,13 +566,13 @@ class _LoginScreenState extends State<LoginScreen>
                                         focusedBorder: OutlineInputBorder(
                                           borderRadius:
                                               BorderRadius.circular(16),
-                                          borderSide: const BorderSide(
-                                            color: Color(0xFF2196F3),
+                                          borderSide: BorderSide(
+                                            color: context.tokens.primaryAccent,
                                             width: 2.5,
                                           ),
                                         ),
-                                        labelStyle: const TextStyle(
-                                          color: Color(0xFF2196F3),
+                                        labelStyle: TextStyle(
+                                          color: context.tokens.primaryAccent,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -595,18 +595,18 @@ class _LoginScreenState extends State<LoginScreen>
                                         prefixIcon: Container(
                                           margin: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF03DAC6)
+                                            color: context.tokens.secondaryAccent
                                                 .withValues(alpha: 0.1),
                                             borderRadius:
                                                 BorderRadius.circular(8),
                                           ),
-                                          child: const Icon(
+                                          child: Icon(
                                             Icons.lock_rounded,
-                                            color: Color(0xFF03DAC6),
+                                            color: context.tokens.secondaryAccent,
                                           ),
                                         ),
                                         filled: true,
-                                        fillColor: const Color(0xFFF0FFFE),
+                                        fillColor: context.tokens.inputBackground,
                                         suffixIcon: Container(
                                           margin:
                                               const EdgeInsets.only(right: 8),
@@ -615,7 +615,8 @@ class _LoginScreenState extends State<LoginScreen>
                                               _obscurePassword
                                                   ? Icons.visibility_off_rounded
                                                   : Icons.visibility_rounded,
-                                              color: const Color(0xFF03DAC6),
+                                              color:
+                                                  context.tokens.secondaryAccent,
                                             ),
                                             onPressed: () {
                                               setState(() {
@@ -634,7 +635,7 @@ class _LoginScreenState extends State<LoginScreen>
                                           borderRadius:
                                               BorderRadius.circular(16),
                                           borderSide: BorderSide(
-                                            color: const Color(0xFF03DAC6)
+                                            color: context.tokens.secondaryAccent
                                                 .withValues(alpha: 0.2),
                                             width: 1.5,
                                           ),
@@ -642,13 +643,13 @@ class _LoginScreenState extends State<LoginScreen>
                                         focusedBorder: OutlineInputBorder(
                                           borderRadius:
                                               BorderRadius.circular(16),
-                                          borderSide: const BorderSide(
-                                            color: Color(0xFF03DAC6),
+                                          borderSide: BorderSide(
+                                            color: context.tokens.secondaryAccent,
                                             width: 2.5,
                                           ),
                                         ),
-                                        labelStyle: const TextStyle(
-                                          color: Color(0xFF03DAC6),
+                                        labelStyle: TextStyle(
+                                          color: context.tokens.secondaryAccent,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -676,7 +677,7 @@ class _LoginScreenState extends State<LoginScreen>
                                               });
                                             },
                                             activeColor:
-                                                const Color(0xFF2196F3),
+                                                context.tokens.primaryAccent,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(4),
@@ -691,10 +692,10 @@ class _LoginScreenState extends State<LoginScreen>
                                                   !_rememberPassword;
                                             });
                                           },
-                                          child: const Text(
+                                          child: Text(
                                             '记住密码',
                                             style: TextStyle(
-                                              color: Color(0xFF2196F3),
+                                              color: context.tokens.primaryAccent,
                                               fontSize: 14,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -710,18 +711,19 @@ class _LoginScreenState extends State<LoginScreen>
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 8.0, horizontal: 12),
                                         decoration: BoxDecoration(
-                                          color: Colors.red.shade50,
+                                          color: context.tokens.errorContainer,
                                           borderRadius:
                                               BorderRadius.circular(8),
                                           border: Border.all(
-                                            color: Colors.red.shade200,
+                                            color: context.tokens.error
+                                                .withValues(alpha: 0.3),
                                           ),
                                         ),
                                         child: Row(
                                           children: [
                                             Icon(
                                               Icons.error_outline,
-                                              color: Colors.red.shade400,
+                                              color: context.tokens.error,
                                               size: 16,
                                             ),
                                             const SizedBox(width: 8),
@@ -729,7 +731,7 @@ class _LoginScreenState extends State<LoginScreen>
                                               child: Text(
                                                 _errorMessage ?? '',
                                                 style: TextStyle(
-                                                  color: Colors.red.shade700,
+                                                  color: context.tokens.error,
                                                   fontSize: 14,
                                                 ),
                                               ),
@@ -744,18 +746,10 @@ class _LoginScreenState extends State<LoginScreen>
                                     Container(
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(16),
-                                        gradient: const LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            Color(0xFF2196F3),
-                                            Color(0xFF03DAC6),
-                                            Color(0xFF00BCD4),
-                                          ],
-                                        ),
+                                        gradient: context.tokens.primaryHeaderGradient,
                                         boxShadow: [
                                           BoxShadow(
-                                            color: const Color(0xFF2196F3)
+                                            color: context.tokens.primaryAccent
                                                 .withValues(alpha: 0.3),
                                             blurRadius: 15,
                                             offset: const Offset(0, 8),
@@ -820,15 +814,15 @@ class _LoginScreenState extends State<LoginScreen>
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                           colors: [
-                                            const Color(0xFF2196F3)
+                                            context.tokens.primaryAccent
                                                 .withValues(alpha: 0.08),
-                                            const Color(0xFF03DAC6)
+                                            context.tokens.secondaryAccent
                                                 .withValues(alpha: 0.05),
                                           ],
                                         ),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
-                                          color: const Color(0xFF2196F3)
+                                          color: context.tokens.primaryAccent
                                               .withValues(alpha: 0.2),
                                           width: 1,
                                         ),
@@ -840,22 +834,22 @@ class _LoginScreenState extends State<LoginScreen>
                                           Container(
                                             padding: const EdgeInsets.all(4),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFF2196F3)
+                                              color: context.tokens.primaryAccent
                                                   .withValues(alpha: 0.1),
                                               borderRadius:
                                                   BorderRadius.circular(6),
                                             ),
-                                            child: const Icon(
+                                            child: Icon(
                                               Icons.info_outline_rounded,
                                               size: 16,
-                                              color: Color(0xFF2196F3),
+                                              color: context.tokens.primaryAccent,
                                             ),
                                           ),
                                           const SizedBox(width: 12),
-                                          const Text(
+                                          Text(
                                             '初始用户名: admin，密码: 123456',
                                             style: TextStyle(
-                                              color: Color(0xFF2196F3),
+                                              color: context.tokens.primaryAccent,
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
                                             ),

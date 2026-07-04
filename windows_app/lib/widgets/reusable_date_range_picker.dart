@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../theme/app_theme.dart';
 import 'modern_date_picker.dart';
 
 class ReusableDateRangePicker extends StatefulWidget {
@@ -94,12 +93,12 @@ class ReusableDateRangePicker extends StatefulWidget {
                           horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
                         color: hovering
-                            ? Colors.blue.withValues(alpha: 0.06)
-                            : Colors.grey.shade50,
+                            ? context.tokens.primaryAccent.withValues(alpha: 0.06)
+                            : context.tokens.inputBackground,
                         border: Border.all(
                             color: hovering
-                                ? AppTheme.primaryColor
-                                : Colors.grey.shade300),
+                                ? context.tokens.primaryAccent
+                                : context.tokens.border),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -107,16 +106,16 @@ class ReusableDateRangePicker extends StatefulWidget {
                           Icon(Icons.calendar_today,
                               size: 18,
                               color: hovering
-                                  ? AppTheme.primaryColor
-                                  : Colors.blueAccent),
+                                  ? context.tokens.primaryAccent
+                                  : context.tokens.iconMuted),
                           const SizedBox(width: 10),
                           Text(
                               '${1}: ${DateFormat('yyyy年MM月dd日').format(date)}',
                               style: TextStyle(
                                   fontSize: 14,
                                   color: hovering
-                                      ? AppTheme.primaryColor
-                                      : Colors.black87)),
+                                      ? context.tokens.primaryAccent
+                                      : context.colors.onSurface)),
                         ],
                       ),
                     ),
@@ -236,7 +235,7 @@ class ReusableDateRangePicker extends StatefulWidget {
                       ElevatedButton(
                         onPressed: () => Navigator.of(context).pop(true),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
+                          backgroundColor: context.tokens.primaryAccent,
                           foregroundColor: context.tokens.cardBackground,
                         ),
                         child: const Text('确定'),
@@ -293,22 +292,22 @@ class _PresetChipState extends State<_PresetChip> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: widget.selected
-                ? AppTheme.primaryColor
+                ? context.tokens.primaryAccent
                 : _hovering
-                    ? Colors.blue.withValues(alpha: 0.08)
-                    : Colors.grey.shade100,
+                    ? context.tokens.primaryAccent.withValues(alpha: 0.08)
+                    : context.tokens.inputBackground,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: widget.selected
-                  ? AppTheme.primaryColor
+                  ? context.tokens.primaryAccent
                   : _hovering
-                      ? AppTheme.primaryColor
-                      : Colors.grey.shade300,
+                      ? context.tokens.primaryAccent
+                      : context.tokens.border,
             ),
             boxShadow: _hovering
                 ? [
                     BoxShadow(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                        color: context.tokens.primaryAccent.withValues(alpha: 0.15),
                         blurRadius: 6,
                         offset: const Offset(0, 2))
                   ]
@@ -321,8 +320,8 @@ class _PresetChipState extends State<_PresetChip> {
               color: widget.selected
                   ? context.tokens.cardBackground
                   : _hovering
-                      ? AppTheme.primaryColor
-                      : Colors.black87,
+                      ? context.tokens.primaryAccent
+                      : context.colors.onSurface,
               fontWeight: widget.selected || _hovering
                   ? FontWeight.w600
                   : FontWeight.w500,

@@ -12,7 +12,7 @@ import '../features/medical_records/services/medical_template_initialization_ser
 import '../widgets/success_toast.dart';
 import '../widgets/mysql_connection_warning.dart';
 import 'medical_template_management_screen.dart';
-import '../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../utils/log_manager.dart';
 
 /// 病历管理界面
@@ -174,14 +174,14 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: context.tokens.pageBackground,
       appBar: AppBar(
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
+                gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -200,15 +200,15 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
             ),
           ],
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: context.tokens.cardBackground,
+        foregroundColor: context.colors.onSurface,
         elevation: 0,
         actions: [
           // 刷新按钮
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
+              gradient: context.tokens.primaryHeaderGradient,
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -222,7 +222,10 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.green.shade400, Colors.green.shade600],
+                colors: [
+                  context.tokens.secondaryAccent.withValues(alpha: 0.85),
+                  context.tokens.secondaryAccent,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -240,7 +243,10 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.orange.shade400, Colors.orange.shade600],
+                colors: [
+                  context.tokens.warning.withValues(alpha: 0.85),
+                  context.tokens.warning,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -267,27 +273,21 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.tokens.cardBackground,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              boxShadow: context.tokens.cardShadow,
             ),
             child: TabBar(
               controller: _tabController,
               padding: const EdgeInsets.all(4),
               indicator: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                color: context.tokens.selectedBackground,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.2)),
+                    color: context.tokens.focusRing),
               ),
-              labelColor: AppTheme.primaryColor,
-              unselectedLabelColor: Colors.grey[600],
+              labelColor: context.tokens.primaryAccent,
+              unselectedLabelColor: context.colors.onSurfaceVariant,
               labelStyle: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
@@ -320,15 +320,9 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
               margin: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                boxShadow: context.tokens.elevatedShadow,
               ),
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
@@ -359,14 +353,14 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
           Icon(
             Icons.error_outline,
             size: 64,
-            color: Colors.red[300],
+            color: context.tokens.error.withValues(alpha: 0.7),
           ),
           const SizedBox(height: 16),
           Text(
             _errorMessage ?? '',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.red[700],
+              color: context.tokens.error,
             ),
             textAlign: TextAlign.center,
           ),
@@ -396,6 +390,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.error, size: 48, color: Colors.red[300]),
+                
                 const SizedBox(height: 16),
                 Text('加载失败: ${snapshot.error}'),
                 const SizedBox(height: 16),

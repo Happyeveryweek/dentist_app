@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import '../models/user.dart';
 import '../utils/log_manager.dart';
+import '../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 // import 'package:line_icons/line_icons.dart'; // 暂时注释掉，使用FontAwesome替代
 
 class DentalIcons {
@@ -270,10 +272,10 @@ class DentalCard extends StatelessWidget {
       margin: margin ?? const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.0),
-        gradient: color == null ? DentalColors.cardGradient : null,
+        gradient: color == null ? LinearGradient(colors: [context.tokens.cardBackground, context.tokens.mutedBackground]) : null,
         boxShadow: [
           BoxShadow(
-            color: DentalColors.shadowLight,
+            color: context.tokens.shadow,
             blurRadius: 10.0,
             offset: const Offset(0, 4),
             spreadRadius: 0,
@@ -332,7 +334,7 @@ class DentalGradientButton extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12.0),
           border: Border.all(
-            color: DentalColors.primary,
+            color: context.tokens.primaryAccent,
             width: 2.0,
           ),
         ),
@@ -350,23 +352,23 @@ class DentalGradientButton extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       if (isLoading) ...[
-                        const SizedBox(
+                        SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                            color: DentalColors.primary,
+                            color: context.tokens.primaryAccent,
                             strokeWidth: 2,
                           ),
                         ),
                         const SizedBox(width: 8),
                       ] else if (icon != null) ...[
-                        Icon(icon, color: DentalColors.primary, size: 20),
+                        Icon(icon, color: context.tokens.primaryAccent, size: 20),
                         const SizedBox(width: 8),
                       ],
                       Text(
                         text ?? '',
-                        style: const TextStyle(
-                          color: DentalColors.primary,
+                        style: TextStyle(
+                          color: context.tokens.primaryAccent,
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
                         ),
@@ -381,11 +383,11 @@ class DentalGradientButton extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        gradient: gradient ?? DentalColors.primaryGradient,
+        gradient: gradient ?? context.tokens.primaryHeaderGradient,
         borderRadius: BorderRadius.circular(12.0),
         boxShadow: [
           BoxShadow(
-            color: DentalColors.primary.withValues(alpha: 0.3),
+            color: context.tokens.primaryAccent.withValues(alpha: 0.3),
             blurRadius: 8.0,
             offset: const Offset(0, 4),
           ),
@@ -409,19 +411,19 @@ class DentalGradientButton extends StatelessWidget {
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                          color: DentalColors.onPrimary,
+                          color: Colors.white,
                           strokeWidth: 2,
                         ),
                       ),
                       const SizedBox(width: 8),
                     ] else if (icon != null) ...[
-                      Icon(icon, color: DentalColors.onPrimary, size: 20),
+                      Icon(icon, color: Colors.white, size: 20),
                       const SizedBox(width: 8),
                     ],
                     Text(
                       text ?? '',
                       style: const TextStyle(
-                        color: DentalColors.onPrimary,
+                        color: Colors.white,
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
                       ),
@@ -557,7 +559,7 @@ class DentalStatusIndicator extends StatelessWidget {
       case '紧急':
         return DentalColors.urgent;
       default:
-        return DentalColors.onSurfaceVariant;
+        return AppTheme.secondaryText;
     }
   }
 
@@ -627,7 +629,7 @@ class UserAvatar extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(borderRadius),
-          border: Border.all(color: DentalColors.primary, width: 2),
+          border: Border.all(color: context.tokens.primaryAccent, width: 2),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(clipRadius),

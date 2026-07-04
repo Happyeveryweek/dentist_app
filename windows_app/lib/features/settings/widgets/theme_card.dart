@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../../../theme/app_theme.dart';
+
+import '../../../theme/theme_context_extensions.dart';
 import '../../../providers/settings_provider.dart';
 
+/// 主题卡片组件（历史兼容）
+///
+/// 当前只保留标准主题，此组件仅用于显示当前主题状态。
+/// 未来新增主题时，在此处恢复主题选择功能即可。
 class ThemeCard extends StatelessWidget {
   final ExtendedThemeMode mode;
   final String title;
   final IconData icon;
   final bool isSelected;
-  final Color? cardColor;
-  final Color? textColor;
-  final Color? iconColor;
 
   const ThemeCard({
     Key? key,
@@ -19,34 +20,13 @@ class ThemeCard extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.isSelected,
-    this.cardColor,
-    this.textColor,
-    this.iconColor,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final settingsProvider =
         Provider.of<SettingsProvider>(context, listen: false);
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
-    Color defaultCardColor;
-    Color defaultTextColor;
-
-    switch (mode) {
-      case ExtendedThemeMode.light:
-        defaultCardColor = context.tokens.cardBackground;
-        defaultTextColor = Colors.black87;
-        break;
-      case ExtendedThemeMode.grey:
-        defaultCardColor = const Color(0xFFEEEEEE);
-        defaultTextColor = Colors.black87;
-        break;
-      case ExtendedThemeMode.purple:
-        defaultCardColor = AppTheme.purpleCardBackground;
-        defaultTextColor = AppTheme.purplePrimaryText;
-        break;
-    }
+    final tokens = context.tokens;
 
     return GestureDetector(
       onTap: () {
@@ -56,21 +36,13 @@ class ThemeCard extends StatelessWidget {
         width: 120,
         height: 100,
         decoration: BoxDecoration(
-          color: cardColor ?? defaultCardColor,
+          color: tokens.cardBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : Colors.transparent,
+            color: isSelected ? tokens.primaryAccent : Colors.transparent,
             width: 3,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? AppTheme.primaryColor.withValues(alpha: 0.3)
-                  : Colors.black.withValues(alpha: 0.08),
-              blurRadius: isSelected ? 12 : 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          boxShadow: isSelected ? tokens.elevatedShadow : tokens.cardShadow,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -78,8 +50,7 @@ class ThemeCard extends StatelessWidget {
             Icon(
               icon,
               size: 32,
-              color: iconColor ??
-                  (isDarkMode ? context.tokens.cardBackground : context.tokens.iconMuted),
+              color: isSelected ? tokens.primaryAccent : tokens.iconMuted,
             ),
             const SizedBox(height: 8),
             Text(
@@ -87,7 +58,7 @@ class ThemeCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: textColor ?? defaultTextColor,
+                color: context.colors.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
@@ -98,14 +69,14 @@ class ThemeCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    color: tokens.primaryAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
+                  child: Text(
                     '当前',
                     style: TextStyle(
                       fontSize: 10,
-                      color: AppTheme.primaryColor,
+                      color: tokens.primaryAccent,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

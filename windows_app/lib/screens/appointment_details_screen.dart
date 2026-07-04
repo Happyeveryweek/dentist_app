@@ -18,6 +18,8 @@ import '../utils/permission_utils.dart';
 import '../widgets/success_toast.dart';
 import './patient_detail_screen.dart';
 import '../utils/log_manager.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import '../theme/app_theme.dart';
 
 // 牙位映射表 - 从医生视角看患者牙齿
 final Map<String, String> positionMap = {
@@ -231,7 +233,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: DentalColors.primaryGradient,
+                gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -256,7 +258,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
           ],
         ),
         backgroundColor: Colors.white,
-        foregroundColor: DentalColors.onSurface,
+        foregroundColor: context.colors.onSurface,
         elevation: 0,
         actions: [
           if (!_isLoading && _appointment != null)
@@ -333,22 +335,22 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                   color:
-                      DentalColors.divider.withValues(alpha: 0.5)),
+                      context.tokens.divider.withValues(alpha: 0.5)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.update_rounded,
+                    const Icon(Icons.update_rounded,
                         size: 16, color: Colors.orange),
-                    SizedBox(width: 6),
+                    const SizedBox(width: 6),
                     Text(
                       '更新预约状态',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
-                        color: DentalColors.onSurface,
+                        color: context.colors.onSurface,
                       ),
                     ),
                   ],
@@ -446,15 +448,15 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: DentalColors.surface,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: DentalColors.divider.withValues(alpha: 0.3),
+          color: context.tokens.divider.withValues(alpha: 0.3),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: DentalColors.primary.withValues(alpha: 0.05),
+            color: context.tokens.primaryAccent.withValues(alpha: 0.05),
             blurRadius: 8,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -467,13 +469,13 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: DentalColors.primary.withValues(alpha: 0.1),
+              color: context.tokens.primaryAccent.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.info_outline_rounded,
               size: 16,
-              color: DentalColors.primary,
+              color: context.tokens.primaryAccent,
             ),
           ),
           const SizedBox(width: 12),
@@ -483,18 +485,18 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: DentalColors.onSurfaceVariant,
+                    color: context.tokens.textMuted,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
-                    color: DentalColors.onSurface,
+                    color: context.colors.onSurface,
                   ),
                 ),
               ],

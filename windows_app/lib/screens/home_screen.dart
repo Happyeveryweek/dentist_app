@@ -19,6 +19,7 @@ import '../providers/user_provider.dart';
 import '../providers/patient_provider.dart';
 import '../widgets/dental_icons.dart';
 import '../utils/log_manager.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -264,6 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
+    final tokens = context.tokens;
 
     // 确保当前索引在可见项范围内
     int currentIndex = appState.activePageIndex;
@@ -279,20 +281,14 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             width: 260,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: tokens.shellBackground,
               border: Border(
                 right: BorderSide(
-                  color: Colors.grey.shade200,
+                  color: tokens.border,
                   width: 1,
                 ),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 0),
-                ),
-              ],
+              boxShadow: tokens.cardShadow,
             ),
             child: Column(
               children: [
@@ -303,10 +299,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     margin: const EdgeInsets.all(12),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
+                      color: tokens.warningContainer,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Colors.orange.shade200,
+                        color: tokens.warningAccent,
                         width: 1,
                       ),
                     ),
@@ -317,7 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Icon(
                               Icons.warning_rounded,
-                              color: Colors.orange.shade700,
+                              color: tokens.warning,
                               size: 18,
                             ),
                             const SizedBox(width: 8),
@@ -325,7 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Text(
                                 'MySQL连接失败',
                                 style: TextStyle(
-                                  color: Colors.orange.shade700,
+                                  color: tokens.warning,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -337,7 +333,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Text(
                           'MySQL连接失败以下模块降级到SQLite: ${appState.getAffectedModulesInChinese().join('、')}',
                           style: TextStyle(
-                            color: Colors.orange.shade600,
+                            color: tokens.warning,
                             fontSize: 11,
                           ),
                           maxLines: 3,
@@ -356,18 +352,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         height: 72,
                         width: 72,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF4FACFE), // 亮蓝
-                              Color(0xFF00F2FE), // 青色
-                            ],
-                          ),
+                          gradient: tokens.primaryHeaderGradient,
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF4FACFE)
+                              color: tokens.primaryAccent
                                   .withValues(alpha: 0.4),
                               blurRadius: 16,
                               offset: const Offset(0, 8),
@@ -385,18 +374,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
+                                  color: context.colors.onPrimary.withValues(alpha: 0.2),
                                   shape: BoxShape.circle,
                                 ),
                               ),
                             ),
                             Icon(
                               DentalIcons.tooth,
-                              color: Colors.white,
+                              color: context.colors.onPrimary,
                               size: 36,
                               shadows: [
                                 Shadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
+                                  color: tokens.shadow,
                                   offset: const Offset(0, 2),
                                   blurRadius: 4,
                                 ),
@@ -413,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
-                              color: Colors.grey[800],
+                              color: context.colors.onSurface,
                               letterSpacing: 0.5,
                             ),
                           );
@@ -424,7 +413,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         'DENTAL CLINIC',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.grey[500],
+                          color: tokens.textMuted,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 1.5,
                         ),
@@ -433,7 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                Divider(height: 1, color: Colors.grey[200]),
+                Divider(height: 1, color: tokens.divider),
                 const SizedBox(height: 16),
 
                 // 导航按钮列表
@@ -502,7 +491,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: TextStyle(
                                         color: isActive
                                             ? item.color
-                                            : Colors.grey[700],
+                                            : context.colors.onSurfaceVariant,
                                         fontWeight: isActive
                                             ? FontWeight.w600
                                             : FontWeight.w500,
@@ -524,7 +513,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 const UserInfoSection(),
 
                 const SizedBox(height: 12),
-                Divider(color: Colors.grey.shade300, height: 1),
+                Divider(color: tokens.divider, height: 1),
                 const SizedBox(height: 12),
 
                 // 版本信息
@@ -533,14 +522,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Icon(
                       Icons.info_outline_rounded,
-                      color: Colors.grey[400],
+                      color: tokens.textMuted,
                       size: 14,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       'v1.0.0',
                       style: TextStyle(
-                        color: Colors.grey[500],
+                        color: tokens.textMuted,
                         fontSize: 12,
                       ),
                     ),
@@ -558,14 +547,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 Container(
                   height: 64,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
+                    color: tokens.shellBackground,
+                    boxShadow: tokens.cardShadow,
                   ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -577,8 +560,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             Container(
                               width: 12,
                               height: 12,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF4FACFE), // 亮蓝
+                              decoration: BoxDecoration(
+                                color: tokens.primaryAccent,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -587,8 +570,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: 12,
                               height: 12,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF00F2FE)
-                                    .withValues(alpha: 0.6), // 青色
+                                color: tokens.secondaryAccent
+                                    .withValues(alpha: 0.6),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -597,8 +580,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: 12,
                               height: 12,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF4FACFE)
-                                    .withValues(alpha: 0.3), // 浅蓝
+                                color: tokens.primaryAccent
+                                    .withValues(alpha: 0.3),
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -610,7 +593,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
+                            color: tokens.mutedBackground,
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(
@@ -619,14 +602,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               Icon(
                                 Icons.calendar_today_rounded,
                                 size: 14,
-                                color: Colors.grey[600],
+                                color: tokens.textMuted,
                               ),
                               const SizedBox(width: 6),
                               Text(
                                 _getCurrentDate(),
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.grey[700],
+                                  color: context.colors.onSurfaceVariant,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -678,7 +661,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // 页面内容
                 Expanded(
                   child: Container(
-                    color: DentalColors.background,
+                    color: context.tokens.pageBackground,
                     child: IndexedStack(
                       index: currentIndex,
                       children: _visiblePages,

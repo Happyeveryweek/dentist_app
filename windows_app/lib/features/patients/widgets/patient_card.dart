@@ -36,7 +36,7 @@ class PatientCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final displayPhone = _getDisplayPhone(patient.phone);
     final isPurpleTheme =
-        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
+        false;
 
     return HoverablePatientCard(
       isPurpleTheme: isPurpleTheme,

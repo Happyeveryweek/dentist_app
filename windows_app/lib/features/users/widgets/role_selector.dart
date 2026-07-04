@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../../../theme/app_theme.dart';
 
 class RoleSelector extends StatelessWidget {
   final String selectedRole;
@@ -20,22 +19,22 @@ class RoleSelector extends StatelessWidget {
       'admin': {
         'name': '管理员',
         'icon': Icons.admin_panel_settings,
-        'color': AppTheme.errorColor
+        'color': context.tokens.error
       },
       'doctor': {
         'name': '医生',
         'icon': Icons.medical_services,
-        'color': AppTheme.successColor
+        'color': context.tokens.success
       },
       'assistant': {
         'name': '助理',
         'icon': Icons.assistant,
-        'color': AppTheme.warningColor
+        'color': context.tokens.warning
       },
       'receptionist': {
         'name': '前台',
         'icon': Icons.person_outline,
-        'color': AppTheme.infoColor
+        'color': context.tokens.info
       },
     };
 
@@ -55,15 +54,15 @@ class RoleSelector extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: context.tokens.border),
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
             value: selectedRole,
             isExpanded: true,
-            icon: const Icon(Icons.keyboard_arrow_down,
-                color: AppTheme.primaryColor),
-            style: const TextStyle(fontSize: 16, color: Colors.black87),
+            icon: Icon(Icons.keyboard_arrow_down,
+                color: context.tokens.primaryAccent),
+            style: TextStyle(fontSize: 16, color: context.colors.onSurface),
             dropdownColor: context.tokens.cardBackground,
             borderRadius: BorderRadius.circular(12),
             elevation: 8,
@@ -73,12 +72,12 @@ class RoleSelector extends StatelessWidget {
                 final info = roleInfo[role] ?? {
                   'name': role,
                   'icon': Icons.person,
-                  'color': Colors.grey,
+                  'color': context.tokens.textMuted,
                 };
                 return Row(
                   children: [
-                    const Icon(Icons.work,
-                        color: AppTheme.primaryColor, size: 20),
+                    Icon(Icons.work,
+                        color: context.tokens.primaryAccent, size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -95,9 +94,9 @@ class RoleSelector extends StatelessWidget {
                           ),
                           Text(
                             info['name'] as String,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
-                              color: Colors.black87,
+                              color: context.colors.onSurface,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -112,7 +111,7 @@ class RoleSelector extends StatelessWidget {
               final info = roleInfo[role] ?? {
                 'name': role,
                 'icon': Icons.person,
-                'color': Colors.grey,
+                'color': context.tokens.textMuted,
               };
               return DropdownMenuItem<String>(
                 value: role,
@@ -150,7 +149,7 @@ class RoleSelector extends StatelessWidget {
                               : FontWeight.w500,
                           color: selectedRole == role
                               ? (info['color'] as Color)
-                              : Colors.black87,
+                              : context.colors.onSurface,
                         ),
                       ),
                     ],

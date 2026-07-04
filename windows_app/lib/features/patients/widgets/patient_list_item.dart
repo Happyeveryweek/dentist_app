@@ -35,7 +35,7 @@ class PatientListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPurpleTheme =
-        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
+        false;
     final patientName = patient.name;
     final patientGender = patient.gender;
     final avatarBgColor = patientGender == '女'
@@ -245,7 +245,7 @@ class _PatientDetailRow extends StatelessWidget {
           _InfoChip(
             icon: Icons.badge,
             value: '${patient.medicalRecordNumber}',
-            color: AppTheme.primaryColor,
+            color: context.tokens.primaryAccent,
           ),
           const SizedBox(width: 6),
         ],
@@ -263,7 +263,7 @@ class _PatientDetailRow extends StatelessWidget {
         _InfoChip(
           icon: Icons.event,
           value: DateFormat('yyyy-MM-dd').format(patient.firstVisitDate),
-          color: AppTheme.accentColor,
+          color: context.tokens.info,
         ),
         if (address != null && address.isNotEmpty) ...[
           const SizedBox(width: 6),

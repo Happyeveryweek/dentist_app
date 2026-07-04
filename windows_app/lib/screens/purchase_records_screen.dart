@@ -6,7 +6,6 @@ import '../models/purchase_record.dart';
 import '../models/purchase_item.dart';
 import '../providers/purchase_provider.dart';
 import '../widgets/mysql_connection_warning.dart';
-import '../theme/app_theme.dart';
 import '../widgets/dental_icons.dart';
 import '../widgets/unified_search_field.dart';
 import '../features/purchases/widgets/purchase_export_dialog.dart';
@@ -19,6 +18,7 @@ import '../features/purchases/widgets/stat_card.dart';
 import '../features/purchases/widgets/pagination_widget.dart';
 import '../services/purchase_export_service.dart';
 import '../utils/log_manager.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class PurchaseRecordsScreen extends StatefulWidget {
   const PurchaseRecordsScreen({Key? key}) : super(key: key);
@@ -250,12 +250,8 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
   }
 
   Widget _buildPurchaseRecordCard(PurchaseRecord record) {
-    final isPurpleTheme =
-        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
-
     return _HoverablePurchaseRecordCard(
       onTap: () => _showPurchaseDetail(record),
-      isPurpleTheme: isPurpleTheme,
       child: Row(
         children: [
           // 采购图标
@@ -263,9 +259,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: isPurpleTheme
-                  ? AppTheme.purpleColor
-                  : Theme.of(context).primaryColor,
+              color: context.tokens.primaryAccent,
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
@@ -290,14 +284,14 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.1),
+                        color: context.tokens.info.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.calendar_today,
-                              size: 11, color: Colors.blue[700]),
+                              size: 11, color: context.tokens.info),
                           const SizedBox(width: 3),
                           Text(
                             DateFormat('yyyy-MM-dd')
@@ -305,7 +299,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: Colors.blue[700],
+                              color: context.tokens.info,
                             ),
                           ),
                         ],
@@ -318,14 +312,14 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withValues(alpha: 0.1),
+                            color: context.tokens.warning.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.business,
-                                  size: 11, color: Colors.orange[700]),
+                                  size: 11, color: context.tokens.warning),
                               const SizedBox(width: 3),
                               Flexible(
                                 child: Text(
@@ -333,7 +327,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.orange[700],
+                                    color: context.tokens.warning,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -350,14 +344,14 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.purple.withValues(alpha: 0.1),
+                            color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.person,
-                                  size: 11, color: Colors.purple[700]),
+                                  size: 11, color: context.tokens.primaryAccent),
                               const SizedBox(width: 3),
                               Flexible(
                                 child: Text(
@@ -365,7 +359,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.purple[700],
+                                    color: context.tokens.primaryAccent,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -387,21 +381,21 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.1),
+                        color: context.tokens.success.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.inventory,
-                              size: 11, color: Colors.green[700]),
+                              size: 11, color: context.tokens.success),
                           const SizedBox(width: 3),
                           Text(
                             '数量: ${record.totalQuantity}',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: Colors.green[700],
+                              color: context.tokens.success,
                             ),
                           ),
                         ],
@@ -412,21 +406,21 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.red.withValues(alpha: 0.1),
+                        color: context.tokens.error.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.attach_money,
-                              size: 11, color: Colors.red[700]),
+                              size: 11, color: context.tokens.error),
                           const SizedBox(width: 3),
                           Text(
                             '¥${record.totalAmount.toStringAsFixed(2)}',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: Colors.red[700],
+                              color: context.tokens.error,
                             ),
                           ),
                         ],
@@ -439,14 +433,14 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.grey.withValues(alpha: 0.1),
+                            color: context.tokens.inputBackground,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.note,
-                                  size: 11, color: Colors.grey[600]),
+                                  size: 11, color: context.tokens.textMuted),
                               const SizedBox(width: 3),
                               Flexible(
                                 child: Text(
@@ -454,7 +448,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.grey[600],
+                                    color: context.tokens.textMuted,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -478,14 +472,14 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
             children: [
               _buildCompactActionButton(
                 icon: Icons.visibility,
-                color: Colors.blue,
+                color: context.tokens.info,
                 tooltip: '查看',
                 onPressed: () => _showPurchaseDetail(record),
               ),
               const SizedBox(width: 6),
               _buildCompactActionButton(
                 icon: Icons.edit,
-                color: Colors.orange,
+                color: context.tokens.warning,
                 tooltip: '编辑',
                 onPressed: () => showPurchaseFormDialog(
                   context: context,
@@ -496,7 +490,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
               const SizedBox(width: 6),
               _buildCompactActionButton(
                 icon: Icons.delete,
-                color: Colors.red,
+                color: context.tokens.error,
                 tooltip: '删除',
                 onPressed: () => _deletePurchaseRecord(record),
               ),
@@ -510,7 +504,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
   // 紧凑型操作按钮
   Widget _buildCompactActionButton({
     required IconData icon,
-    required MaterialColor color,
+    required Color color,
     required String tooltip,
     required VoidCallback onPressed,
   }) {
@@ -527,7 +521,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
       ),
       child: IconButton(
         onPressed: onPressed,
-        icon: Icon(icon, size: 20, color: color[600]),
+        icon: Icon(icon, size: 20, color: color),
         tooltip: tooltip,
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(),
@@ -549,7 +543,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: DentalColors.primaryGradient,
+                gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -568,15 +562,15 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
             ),
           ],
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: DentalColors.onSurface,
+        backgroundColor: context.tokens.shellBackground,
+        foregroundColor: context.colors.onSurface,
         elevation: 0,
         actions: [
           // 刷新按钮
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              gradient: DentalColors.primaryGradient,
+              gradient: context.tokens.primaryHeaderGradient,
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -594,7 +588,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              gradient: DentalColors.primaryGradient,
+              gradient: context.tokens.primaryHeaderGradient,
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -609,16 +603,16 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              color: DentalColors.success.withValues(alpha: 0.1),
+              color: context.tokens.success.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.success.withValues(alpha: 0.3),
+                color: context.tokens.success.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.bar_chart_rounded,
-                color: DentalColors.success,
+                color: context.tokens.success,
               ),
               onPressed: _showPurchaseChart,
               tooltip: '采购图表统计',
@@ -637,12 +631,12 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+                border: Border.all(color: context.tokens.border),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: context.tokens.shadow,
                       blurRadius: 12,
                       offset: const Offset(0, 2)),
                 ],
@@ -684,7 +678,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                     icon: Icons.shopping_cart_rounded,
                     label: '采购记录数',
                     value: _totalRecords.toString(),
-                    color: DentalColors.primary,
+                    color: context.tokens.primaryAccent,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -722,7 +716,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.error_outline,
-                                  size: 64, color: Colors.red[300]),
+                                  size: 64, color: context.tokens.error),
                               const SizedBox(height: 16),
                               Text(
                                 '加载失败',
@@ -730,7 +724,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                                     .textTheme
                                     .titleLarge
                                     ?.copyWith(
-                                      color: Colors.red[300],
+                                      color: context.tokens.error,
                                     ),
                               ),
                               const SizedBox(height: 8),
@@ -740,7 +734,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                                     .textTheme
                                     .bodyMedium
                                     ?.copyWith(
-                                      color: Colors.red[300],
+                                      color: context.tokens.error,
                                     ),
                                 textAlign: TextAlign.center,
                               ),
@@ -764,7 +758,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                                         ? Icons.shopping_cart_outlined
                                         : Icons.search_off,
                                     size: 64,
-                                    color: Colors.grey[400],
+                                    color: context.tokens.iconMuted,
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
@@ -775,7 +769,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                                         .textTheme
                                         .titleLarge
                                         ?.copyWith(
-                                          color: Colors.grey[600],
+                                          color: context.tokens.textMuted,
                                         ),
                                   ),
                                   if (_searchQuery.isEmpty) ...[
@@ -786,7 +780,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                                           .textTheme
                                           .bodyMedium
                                           ?.copyWith(
-                                            color: Colors.grey[500],
+                                            color: context.tokens.textMuted,
                                           ),
                                     ),
                                     const SizedBox(height: 16),
@@ -920,13 +914,11 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
 // 可悬浮的采购记录卡片组件
 class _HoverablePurchaseRecordCard extends StatefulWidget {
   final VoidCallback onTap;
-  final bool isPurpleTheme;
   final Widget child;
 
   const _HoverablePurchaseRecordCard({
     Key? key,
     required this.onTap,
-    required this.isPurpleTheme,
     required this.child,
   }) : super(key: key);
 
@@ -941,6 +933,7 @@ class _HoverablePurchaseRecordCardState
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -954,17 +947,10 @@ class _HoverablePurchaseRecordCardState
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: _isHovered
-                ? const Color(0xFFE3F2FD) // 淡蓝色
-                : Colors.white,
+            color:
+                _isHovered ? tokens.listItemHoverBackground : tokens.cardBackground,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 2,
-                offset: const Offset(0, 1),
-              ),
-            ],
+            boxShadow: tokens.cardShadow,
           ),
           child: widget.child,
         ),

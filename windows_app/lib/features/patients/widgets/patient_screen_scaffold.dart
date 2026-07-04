@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../theme/theme_context_extensions.dart';
 import '../../../widgets/dental_icons.dart';
 
 class PatientScreenScaffold extends StatelessWidget {
@@ -21,8 +22,8 @@ class PatientScreenScaffold extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: title,
-        backgroundColor: Colors.white,
-        foregroundColor: DentalColors.onSurface,
+        backgroundColor: context.tokens.shellBackground,
+        foregroundColor: context.colors.onSurface,
         elevation: 0,
         actions: [actions],
       ),

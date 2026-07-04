@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'dart:typed_data';
 import '../../../models/user.dart';
-import '../../../theme/app_theme.dart';
 
 class UserCard extends StatelessWidget {
   final User user;
@@ -31,10 +30,22 @@ class UserCard extends StatelessWidget {
         user.username.trim() != displayName;
 
     final roleColors = {
-      'admin': AppTheme.dangerGradient,
-      'doctor': AppTheme.successGradient,
-      'assistant': AppTheme.warningGradient,
-      'receptionist': AppTheme.infoGradient,
+      'admin': LinearGradient(colors: [
+        context.tokens.error,
+        context.tokens.error.withValues(alpha: 0.75),
+      ]),
+      'doctor': LinearGradient(colors: [
+        context.tokens.success,
+        context.tokens.success.withValues(alpha: 0.75),
+      ]),
+      'assistant': LinearGradient(colors: [
+        context.tokens.warning,
+        context.tokens.warning.withValues(alpha: 0.75),
+      ]),
+      'receptionist': LinearGradient(colors: [
+        context.tokens.info,
+        context.tokens.info.withValues(alpha: 0.75),
+      ]),
     };
 
     return Container(
@@ -43,7 +54,7 @@ class UserCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: context.tokens.shadow.withValues(alpha: 0.12),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -60,7 +71,7 @@ class UserCard extends StatelessWidget {
               child: Row(
                 children: [
                   // 用户头像
-                  _buildUserAvatar(),
+                  _buildUserAvatar(context),
                   const SizedBox(width: 12),
 
                   // 用户信息
@@ -84,7 +95,7 @@ class UserCard extends StatelessWidget {
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 gradient: roleColors[user.role] ??
-                                    AppTheme.primaryGradient,
+                                    context.tokens.primaryHeaderGradient,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
@@ -138,7 +149,7 @@ class UserCard extends StatelessWidget {
                         // 显示权限信息（仅对非管理员用户）
                         if (user.role != 'admin') ...[
                           const SizedBox(height: 4),
-                          _buildPermissionTags(),
+                          _buildPermissionTags(context),
                         ],
                       ],
                     ),
@@ -153,12 +164,12 @@ class UserCard extends StatelessWidget {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.lock,
-                        color: AppTheme.primaryColor, size: 16),
+                    icon: Icon(Icons.lock,
+                        color: context.tokens.primaryAccent, size: 16),
                     tooltip: '修改密码',
                     onPressed: onResetPassword,
                     padding: const EdgeInsets.all(6),
@@ -169,12 +180,12 @@ class UserCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Container(
                   decoration: BoxDecoration(
-                    color: AppTheme.successColor.withValues(alpha: 0.1),
+                      color: context.tokens.success.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.edit,
-                        color: AppTheme.successColor, size: 16),
+                    icon: Icon(Icons.edit,
+                        color: context.tokens.success, size: 16),
                     tooltip: '编辑',
                     onPressed: onEdit,
                     padding: const EdgeInsets.all(6),
@@ -186,12 +197,12 @@ class UserCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.infoColor.withValues(alpha: 0.1),
+                      color: context.tokens.info.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.security,
-                          color: AppTheme.infoColor, size: 16),
+                      icon: Icon(Icons.security,
+                          color: context.tokens.info, size: 16),
                       tooltip: '权限配置',
                       onPressed: onPermissionPreview,
                       padding: const EdgeInsets.all(6),
@@ -204,12 +215,12 @@ class UserCard extends StatelessWidget {
                   const SizedBox(width: 6),
                   Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.errorColor.withValues(alpha: 0.1),
+                      color: context.tokens.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.delete,
-                          color: AppTheme.errorColor, size: 16),
+                      icon: Icon(Icons.delete,
+                          color: context.tokens.error, size: 16),
                       tooltip: '删除',
                       onPressed: onDelete,
                       padding: const EdgeInsets.all(6),
@@ -226,13 +237,13 @@ class UserCard extends StatelessWidget {
     );
   }
 
-  Widget _buildUserAvatar() {
+  Widget _buildUserAvatar(BuildContext context) {
     return Container(
       width: 50,
       height: 50,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppTheme.primaryColor, width: 2),
+        border: Border.all(color: context.tokens.primaryAccent, width: 2),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
@@ -257,7 +268,7 @@ class UserCard extends StatelessWidget {
             );
           }
           return Container(
-            color: Colors.grey.shade100,
+            color: context.tokens.mutedBackground,
             child: user.role == 'doctor' || user.role == 'admin'
                 ? Image.asset(
                     'assets/icons/doctor.png',
@@ -277,14 +288,14 @@ class UserCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPermissionTags() {
+  Widget _buildPermissionTags(BuildContext context) {
     final moduleInfo = {
-      'patients': {'name': '患者', 'color': AppTheme.successColor},
-      'appointments': {'name': '预约', 'color': AppTheme.infoColor},
-      'financial': {'name': '财务', 'color': AppTheme.warningColor},
-      'materials': {'name': '材料', 'color': AppTheme.primaryColor},
-      'purchase': {'name': '采购', 'color': AppTheme.errorColor},
-      'medical_records': {'name': '病历', 'color': Colors.teal},
+      'patients': {'name': '患者', 'color': context.tokens.success},
+      'appointments': {'name': '预约', 'color': context.tokens.info},
+      'financial': {'name': '财务', 'color': context.tokens.warning},
+      'materials': {'name': '材料', 'color': context.tokens.primaryAccent},
+      'purchase': {'name': '采购', 'color': context.tokens.error},
+      'medical_records': {'name': '病历', 'color': context.tokens.secondaryAccent},
     };
 
     final allowedModules = user.allowedModules
@@ -294,12 +305,12 @@ class UserCard extends StatelessWidget {
     if (allowedModules.isEmpty) {
       return Row(
         children: [
-          Icon(Icons.info_outline, size: 12, color: Colors.grey.shade500),
+          Icon(Icons.info_outline, size: 12, color: context.tokens.textMuted),
           const SizedBox(width: 4),
           Text(
             '仅可访问仪表盘',
             style: TextStyle(
-              color: Colors.grey.shade500,
+              color: context.tokens.textMuted,
               fontSize: 11,
               fontStyle: FontStyle.italic,
             ),
@@ -341,13 +352,13 @@ class UserCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
+                    color: context.tokens.disabledBackground,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     '+${allowedModules.length - 3}',
                     style: TextStyle(
-                      color: Colors.grey.shade700,
+                      color: context.colors.onSurfaceVariant,
                       fontSize: 10,
                       fontWeight: FontWeight.w500,
                     ),

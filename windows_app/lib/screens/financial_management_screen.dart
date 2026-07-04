@@ -9,7 +9,6 @@ import '../providers/financial_provider.dart';
 import '../providers/patient_provider.dart';
 import '../providers/app_state.dart';
 import '../widgets/mysql_connection_warning.dart';
-import '../widgets/dental_icons.dart';
 import '../widgets/success_toast.dart';
 import '../features/financial/widgets/financial_search_bar.dart';
 import '../utils/pinyin_util.dart';
@@ -32,6 +31,7 @@ import '../features/financial/services/patient_cache_service.dart';
 import '../features/financial/widgets/financial_empty_state.dart';
 import '../features/financial/widgets/financial_records_list_view.dart';
 import '../utils/log_manager.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class FinancialManagementScreen extends StatefulWidget {
   const FinancialManagementScreen({Key? key}) : super(key: key);
@@ -711,7 +711,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: DentalColors.primaryGradient,
+                gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -730,8 +730,8 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             ),
           ],
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: DentalColors.onSurface,
+        backgroundColor: context.tokens.shellBackground,
+        foregroundColor: context.colors.onSurface,
         elevation: 0,
         actions: [
           // 显示模式切换按钮
@@ -739,21 +739,21 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
               color: _displayMode == 'patient'
-                  ? DentalColors.primary.withValues(alpha: 0.1)
-                  : Colors.grey.withValues(alpha: 0.1),
+                  ? context.tokens.primaryAccent.withValues(alpha: 0.1)
+                  : context.tokens.inputBackground,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: _displayMode == 'patient'
-                    ? DentalColors.primary.withValues(alpha: 0.3)
-                    : Colors.grey.withValues(alpha: 0.3),
+                    ? context.tokens.primaryAccent.withValues(alpha: 0.3)
+                    : context.tokens.border,
               ),
             ),
             child: IconButton(
               icon: Icon(
                 Icons.people_rounded,
                 color: _displayMode == 'patient'
-                    ? DentalColors.primary
-                    : Colors.grey[600],
+                    ? context.tokens.primaryAccent
+                    : context.tokens.textMuted,
               ),
               onPressed: () {
                 setState(() {
@@ -782,21 +782,21 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
               color: _displayMode == 'record'
-                  ? DentalColors.primary.withValues(alpha: 0.1)
-                  : Colors.grey.withValues(alpha: 0.1),
+                  ? context.tokens.primaryAccent.withValues(alpha: 0.1)
+                  : context.tokens.inputBackground,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: _displayMode == 'record'
-                    ? DentalColors.primary.withValues(alpha: 0.3)
-                    : Colors.grey.withValues(alpha: 0.3),
+                    ? context.tokens.primaryAccent.withValues(alpha: 0.3)
+                    : context.tokens.border,
               ),
             ),
             child: IconButton(
               icon: Icon(
                 Icons.list_alt_rounded,
                 color: _displayMode == 'record'
-                    ? DentalColors.primary
-                    : Colors.grey[600],
+                    ? context.tokens.primaryAccent
+                    : context.tokens.textMuted,
               ),
               onPressed: () {
                 setState(() {
@@ -814,7 +814,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              gradient: DentalColors.primaryGradient,
+              gradient: context.tokens.primaryHeaderGradient,
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -832,16 +832,16 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              color: DentalColors.success.withValues(alpha: 0.1),
+              color: context.tokens.success.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.success.withValues(alpha: 0.3),
+                color: context.tokens.success.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.bar_chart_rounded,
-                color: DentalColors.success,
+                color: context.tokens.success,
               ),
               onPressed: _showFinancialStatistics,
               tooltip: '收费图表统计',
@@ -851,7 +851,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              gradient: DentalColors.primaryGradient,
+              gradient: context.tokens.primaryHeaderGradient,
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -1400,7 +1400,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('编辑财务记录失败: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: context.tokens.error,
           duration: const Duration(seconds: 3),
         ),
       );

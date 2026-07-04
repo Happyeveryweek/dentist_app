@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class PatientPagination extends StatelessWidget {
   final int totalPages;
@@ -24,30 +23,16 @@ class PatientPagination extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final String resultText =
         '每页 $patientsPerPage 条 · 共 $totalPatients 条 / $totalPages 页';
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.white, Colors.grey.shade50],
-        ),
+        gradient: tokens.subtleHeaderGradient,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: tokens.elevatedShadow,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -94,25 +79,25 @@ class PatientPagination extends StatelessWidget {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                AppTheme.primaryColor,
-                                AppTheme.primaryColor.withValues(alpha: 0.8),
+                                tokens.primaryAccent,
+                                tokens.primaryAccent.withValues(alpha: 0.8),
                               ],
                             )
                           : null,
-                      color: isCurrentPage ? null : Colors.white,
+                      color: isCurrentPage ? null : tokens.cardBackground,
                       borderRadius: BorderRadius.circular(12),
                       border: isCurrentPage
                           ? null
                           : Border.all(
                               color:
-                                  AppTheme.dividerColor.withValues(alpha: 0.3),
+                                  tokens.border,
                               width: 1.5,
                             ),
                       boxShadow: isCurrentPage
                           ? [
                               BoxShadow(
-                                color: AppTheme.primaryColor
-                                    .withValues(alpha: 0.3),
+                                color:
+                                    tokens.primaryAccent.withValues(alpha: 0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
@@ -129,7 +114,9 @@ class PatientPagination extends StatelessWidget {
                       '$pageNumber',
                       style: TextStyle(
                         color:
-                            isCurrentPage ? Colors.white : AppTheme.primaryText,
+                            isCurrentPage
+                                ? Colors.white
+                                : context.colors.onSurface,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
                       ),
@@ -198,23 +185,23 @@ class _PaginationButton extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      AppTheme.primaryColor,
-                      AppTheme.primaryColor.withValues(alpha: 0.8),
+                      context.tokens.primaryAccent,
+                      context.tokens.primaryAccent.withValues(alpha: 0.8),
                     ],
                   )
                 : null,
-            color: isActive ? null : Colors.white,
+            color: isActive ? null : context.tokens.cardBackground,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isActive
-                  ? AppTheme.primaryColor.withValues(alpha: 0.3)
-                  : AppTheme.dividerColor.withValues(alpha: 0.3),
+                  ? context.tokens.primaryAccent.withValues(alpha: 0.3)
+                  : context.tokens.border,
               width: 1.5,
             ),
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                      color: context.tokens.primaryAccent.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
@@ -231,7 +218,7 @@ class _PaginationButton extends StatelessWidget {
             icon,
             color: isActive
                 ? Colors.white
-                : AppTheme.primaryColor.withValues(alpha: 0.7),
+                : context.tokens.primaryAccent.withValues(alpha: 0.7),
             size: 22,
           ),
         ),
@@ -253,14 +240,14 @@ class _HomePageButton extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.primaryColor.withValues(alpha: 0.8),
-            AppTheme.primaryColor.withValues(alpha: 0.6),
+            context.tokens.primaryAccent.withValues(alpha: 0.8),
+            context.tokens.primaryAccent.withValues(alpha: 0.6),
           ],
         ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.2),
+            color: context.tokens.primaryAccent.withValues(alpha: 0.2),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -294,14 +281,10 @@ class _PageInfo extends StatelessWidget {
       margin: const EdgeInsets.only(right: 20),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.white, Colors.white],
-        ),
+        gradient: context.tokens.subtleHeaderGradient,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.dividerColor.withValues(alpha: 0.2),
+          color: context.tokens.border,
           width: 1,
         ),
         boxShadow: [
@@ -319,20 +302,20 @@ class _PageInfo extends StatelessWidget {
             height: 8,
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.9),
+              color: context.tokens.primaryAccent.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(4),
             ),
           ),
           Icon(
             Icons.info_outline,
             size: 16,
-            color: AppTheme.primaryColor.withValues(alpha: 0.9),
+            color: context.tokens.primaryAccent.withValues(alpha: 0.9),
           ),
           const SizedBox(width: 6),
           Text(
             resultText,
-            style: const TextStyle(
-              color: AppTheme.primaryText,
+            style: TextStyle(
+              color: context.colors.onSurface,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -375,17 +358,11 @@ class _PageJumper extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.dividerColor.withValues(alpha: 0.3),
+          color: context.tokens.border,
           width: 1.5,
         ),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: context.tokens.cardBackground,
+        boxShadow: context.tokens.cardShadow,
       ),
       child: Row(
         children: [
@@ -400,13 +377,9 @@ class _PageJumper extends StatelessWidget {
                 bottomLeft: Radius.circular(11),
               ),
             ),
-            child: const Text(
+            child: Text(
               '转到',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.primaryText,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ),
           Container(
@@ -420,7 +393,7 @@ class _PageJumper extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: '页码',
                 hintStyle: TextStyle(
-                  color: AppTheme.secondaryText.withValues(alpha: 0.6),
+                color: context.tokens.textMuted.withValues(alpha: 0.8),
                   fontSize: 13,
                 ),
                 border: InputBorder.none,
@@ -452,8 +425,8 @@ class _PageJumper extends StatelessWidget {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      AppTheme.primaryColor,
-                      AppTheme.primaryColor.withValues(alpha: 0.8),
+                      context.tokens.primaryAccent,
+                      context.tokens.primaryAccent.withValues(alpha: 0.8),
                     ],
                   ),
                 ),
@@ -496,7 +469,7 @@ class _PageJumper extends StatelessWidget {
             ),
           ],
         ),
-        backgroundColor: Colors.orange.shade600,
+        backgroundColor: context.tokens.warningAccent,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

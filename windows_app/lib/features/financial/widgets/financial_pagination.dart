@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/dental_icons.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 财务管理分页控件
 class FinancialPagination extends StatelessWidget {
@@ -26,20 +26,15 @@ class FinancialPagination extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        boxShadow: tokens.cardShadow,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -97,16 +92,10 @@ class FinancialPagination extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: tokens.cardBackground,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              border: Border.all(color: tokens.border),
+              boxShadow: tokens.cardShadow,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -116,20 +105,19 @@ class FinancialPagination extends StatelessWidget {
                   height: 8,
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color:
-                        Theme.of(context).primaryColor.withValues(alpha: 0.9),
+                    color: tokens.primaryAccent.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
                 Icon(Icons.info_outline,
                     size: 16,
                     color:
-                        Theme.of(context).primaryColor.withValues(alpha: 0.9)),
+                        tokens.primaryAccent.withValues(alpha: 0.9)),
                 const SizedBox(width: 6),
                 Text(
                   '每页 $recordsPerPage 条 · 共 $totalRecords 条 / $totalPages 页',
                   style: TextStyle(
-                    color: Colors.grey[900],
+                    color: colors.onSurface,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -141,11 +129,10 @@ class FinancialPagination extends StatelessWidget {
           // 页面跳转
           Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.06),
+              color: tokens.selectedBackground,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                  color:
-                      Theme.of(context).primaryColor.withValues(alpha: 0.12)),
+                  color: tokens.focusRing),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -164,7 +151,7 @@ class FinancialPagination extends StatelessWidget {
                   child: Text(
                     '转到',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[700],
+                          color: colors.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
                   ),
@@ -172,7 +159,7 @@ class FinancialPagination extends StatelessWidget {
                 Container(
                   height: 36,
                   width: 72,
-                  color: Colors.white,
+                  color: tokens.cardBackground,
                   child: TextField(
                     controller: pageJumpController,
                     textAlign: TextAlign.center,
@@ -205,12 +192,12 @@ class FinancialPagination extends StatelessWidget {
                       height: 36,
                       alignment: Alignment.center,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         borderRadius: BorderRadius.only(
                           topRight: Radius.circular(10),
                           bottomRight: Radius.circular(10),
                         ),
-                        gradient: DentalColors.primaryGradient,
+                        gradient: tokens.primaryHeaderGradient,
                       ),
                       child: const Text('确定',
                           style: TextStyle(
@@ -234,20 +221,16 @@ class FinancialPagination extends StatelessWidget {
     VoidCallback? onPressed,
     required bool isActive,
   }) {
-    final isPurpleTheme =
-        Theme.of(context).scaffoldBackgroundColor == Colors.purple[50];
+    final tokens = context.tokens;
+    final colors = context.colors;
 
     if (icon != null) {
       return IconButton(
         icon: Icon(icon, size: 20),
         onPressed: onPressed,
         splashRadius: 20,
-        color: isActive
-            ? (isPurpleTheme
-                ? Colors.purple[600]
-                : Theme.of(context).primaryColor)
-            : Colors.grey[400],
-        disabledColor: Colors.grey[300],
+        color: isActive ? tokens.primaryAccent : tokens.disabledText,
+        disabledColor: tokens.disabledText,
       );
     } else {
       return Container(
@@ -262,24 +245,20 @@ class FinancialPagination extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: isActive
-                    ? (isPurpleTheme
-                        ? Colors.purple[600]
-                        : Theme.of(context).primaryColor)
+                    ? tokens.primaryAccent
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isActive
-                      ? (isPurpleTheme
-                          ? Colors.purple.shade600
-                          : Theme.of(context).primaryColor)
-                      : Colors.grey.shade300,
+                      ? tokens.primaryAccent
+                      : tokens.border,
                 ),
               ),
               child: Center(
                 child: Text(
                   '$pageNumber',
                   style: TextStyle(
-                    color: isActive ? Colors.white : Colors.grey[700],
+                    color: isActive ? Colors.white : colors.onSurfaceVariant,
                     fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),

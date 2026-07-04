@@ -38,9 +38,9 @@ class UserInfoSection extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFFF3E5F5), // 淡紫色
+          color: context.tokens.panelBackground,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE1BEE7)), // 淡紫色边框
+          border: Border.all(color: context.tokens.border),
         ),
         child: Row(
           children: [
@@ -75,7 +75,7 @@ class UserInfoSection extends StatelessWidget {
                               },
                             )
                           : Container(
-                              color: Colors.grey.shade100,
+                              color: context.tokens.inputBackground,
                               child: currentUser.role == 'doctor' ||
                                       currentUser.role == 'admin'
                                   ? Image.asset(
@@ -118,7 +118,7 @@ class UserInfoSection extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: Colors.grey[800],
+                      color: context.colors.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -128,7 +128,7 @@ class UserInfoSection extends StatelessWidget {
                     currentUser?.roleDisplay ?? '管理员',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: context.tokens.textMuted,
                     ),
                   ),
                 ],
@@ -138,7 +138,7 @@ class UserInfoSection extends StatelessWidget {
             IconButton(
               icon: Icon(
                 Icons.logout_rounded,
-                color: Colors.grey[600],
+                color: context.tokens.textMuted,
                 size: 20,
               ),
               onPressed: () async {

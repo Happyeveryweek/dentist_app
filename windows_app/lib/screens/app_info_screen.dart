@@ -4,7 +4,7 @@ import 'dart:io';
 import '../utils/app_paths.dart';
 import '../features/settings/widgets/app_info_widgets.dart';
 import '../providers/settings_provider.dart';
-import '../theme/app_theme.dart';
+import '../theme/theme_context_extensions.dart';
 import '../utils/log_manager.dart';
 
 /// App Info Screen - Redesigned
@@ -50,11 +50,11 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: context.tokens.pageBackground,
       appBar: AppBar(
         title: const Text('系统信息'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor: context.tokens.shellBackground,
+        foregroundColor: context.colors.onSurface,
         elevation: 0,
         centerTitle: true,
       ),
@@ -110,18 +110,11 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primaryColor,
-            AppTheme.primaryColor.withValues(alpha: 0.8)
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: context.tokens.primaryHeaderGradient,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+            color: context.tokens.primaryAccent.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -132,11 +125,11 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: context.colors.onPrimary.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.local_hospital_rounded,
-                color: Colors.white, size: 40),
+            child: Icon(Icons.local_hospital_rounded,
+                color: context.colors.onPrimary, size: 40),
           ),
           const SizedBox(width: 24),
           Expanded(
@@ -145,17 +138,17 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               children: [
                 Text(
                   settingsProvider.appName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: context.colors.onPrimary,
                   ),
                 ),
                 Text(
                   '牙科诊所管理系统 - Windows Desktop Client',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: context.colors.onPrimary.withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -163,7 +156,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
           ),
           IconButton(
             onPressed: _loadAppInfo,
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(Icons.refresh, color: context.colors.onPrimary),
             tooltip: '刷新信息',
           ),
         ],
@@ -179,7 +172,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     return InfoSectionCard(
       title: '环境配置',
       icon: Icons.settings_suggest_rounded,
-      color: Colors.orange,
+      color: context.tokens.warning,
       children: [
         StatusRow(
           label: '配置文件路径',
@@ -198,8 +191,9 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.green.shade50,
-              border: Border.all(color: Colors.green.shade200),
+              color: context.tokens.successContainer,
+              border:
+                  Border.all(color: context.tokens.success.withValues(alpha: 0.25)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: StatusRow(
@@ -218,7 +212,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     return InfoSectionCard(
       title: '目录完整性状态',
       icon: Icons.folder_special_rounded,
-      color: Colors.blue,
+      color: context.tokens.info,
       action: TextButton.icon(
         onPressed: _openDataDirectory,
         icon: const Icon(Icons.open_in_new, size: 16),
@@ -241,7 +235,9 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                               dir['exists']
                                   ? Icons.check_circle_rounded
                                   : Icons.cancel_rounded,
-                              color: dir['exists'] ? Colors.green : Colors.red,
+                              color: dir['exists']
+                                  ? context.tokens.success
+                                  : context.tokens.error,
                               size: 20,
                             ),
                             const SizedBox(width: 12),
@@ -255,7 +251,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                             if (!dir['exists'])
                               Text('缺失',
                                   style: TextStyle(
-                                      color: Colors.red.shade700,
+                                      color: context.tokens.error,
                                       fontSize: 12)),
                           ],
                         ),
@@ -276,7 +272,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     return InfoSectionCard(
       title: 'MySQL 工具链',
       icon: Icons.storage_rounded,
-      color: Colors.purple,
+      color: context.tokens.primaryAccent,
       children: [
         StatusRow(
           label: '状态',
@@ -284,19 +280,21 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color:
-                  allToolsAvailable ? Colors.green.shade50 : Colors.red.shade50,
+                  allToolsAvailable
+                      ? context.tokens.successContainer
+                      : context.tokens.errorContainer,
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
                   color: allToolsAvailable
-                      ? Colors.green.shade200
-                      : Colors.red.shade200),
+                      ? context.tokens.success.withValues(alpha: 0.25)
+                      : context.tokens.error.withValues(alpha: 0.25)),
             ),
             child: Text(
               allToolsAvailable ? '运行正常' : '组件缺失',
               style: TextStyle(
                 color: allToolsAvailable
-                    ? Colors.green.shade700
-                    : Colors.red.shade700,
+                    ? context.tokens.success
+                    : context.tokens.error,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
@@ -329,7 +327,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               child: ElevatedButton(
                 onPressed: allToolsAvailable ? _testMySQLTools : null,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
+                  backgroundColor: context.tokens.primaryAccent,
                   foregroundColor: Colors.white,
                 ),
                 child: const Text('连通性测试'),
@@ -347,7 +345,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     return InfoSectionCard(
       title: '系统日志',
       icon: Icons.receipt_long_rounded,
-      color: Colors.teal,
+      color: context.tokens.secondaryAccent,
       children: [
         if (logStats != null) ...[
           Row(
@@ -392,8 +390,8 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                   icon: const Icon(Icons.delete_sweep_rounded, size: 16),
                   label: const Text('清理'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.orange,
-                    side: const BorderSide(color: Colors.orange),
+                    foregroundColor: context.tokens.warning,
+                    side: BorderSide(color: context.tokens.warning),
                   ),
                 ),
               ),
@@ -512,7 +510,9 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.tokens.error,
+            ),
             child: const Text('确认删除'),
           ),
         ],

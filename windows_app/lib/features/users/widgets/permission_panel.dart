@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../../../theme/app_theme.dart';
 
 class PermissionPanel extends StatelessWidget {
   final Map<String, bool> permissions;
@@ -42,7 +41,7 @@ class PermissionPanel extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: context.tokens.border),
         color: context.tokens.cardBackground,
       ),
       child: Column(
@@ -55,8 +54,8 @@ class PermissionPanel extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  const Icon(Icons.security,
-                      color: AppTheme.primaryColor, size: 20),
+                  Icon(Icons.security,
+                      color: context.tokens.primaryAccent, size: 20),
                   const SizedBox(width: 12),
                   const Text(
                     '模块权限配置',
@@ -72,8 +71,8 @@ class PermissionPanel extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 14,
                         color: selectedPermissions.isEmpty
-                            ? Colors.grey.shade500
-                            : AppTheme.primaryColor,
+                            ? context.tokens.textMuted
+                            : context.tokens.primaryAccent,
                         fontWeight: selectedPermissions.isEmpty
                             ? FontWeight.normal
                             : FontWeight.w500,
@@ -85,7 +84,7 @@ class PermissionPanel extends StatelessWidget {
                     isExpanded
                         ? Icons.keyboard_arrow_up
                         : Icons.keyboard_arrow_down,
-                    color: AppTheme.primaryColor,
+                    color: context.tokens.primaryAccent,
                   ),
                 ],
               ),
@@ -96,7 +95,7 @@ class PermissionPanel extends StatelessWidget {
             const Divider(height: 1),
             Container(
               padding: const EdgeInsets.all(16),
-              child: _buildPermissionConfigPanel(),
+              child: _buildPermissionConfigPanel(context),
             ),
           ],
         ],
@@ -104,37 +103,37 @@ class PermissionPanel extends StatelessWidget {
     );
   }
 
-  Widget _buildPermissionConfigPanel() {
+  Widget _buildPermissionConfigPanel(BuildContext context) {
     final moduleInfo = {
       'patients': {
         'name': '患者管理',
         'icon': Icons.people,
-        'color': AppTheme.successColor
+        'color': context.tokens.success
       },
       'appointments': {
         'name': '预约管理',
         'icon': Icons.calendar_today,
-        'color': AppTheme.infoColor
+        'color': context.tokens.info
       },
       'financial': {
         'name': '财务管理',
         'icon': Icons.account_balance_wallet,
-        'color': AppTheme.warningColor
+        'color': context.tokens.warning
       },
       'materials': {
         'name': '材料管理',
         'icon': Icons.inventory,
-        'color': AppTheme.primaryColor
+        'color': context.tokens.primaryAccent
       },
       'purchase': {
         'name': '采购管理',
         'icon': Icons.shopping_cart,
-        'color': AppTheme.errorColor
+        'color': context.tokens.error
       },
       'medical_records': {
         'name': '病历管理',
         'icon': Icons.medical_services,
-        'color': Colors.teal
+        'color': context.tokens.secondaryAccent
       },
     };
 
@@ -145,7 +144,7 @@ class PermissionPanel extends StatelessWidget {
           '选择用户可以访问的功能模块（仪表盘默认对所有用户可见）',
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey.shade700,
+            color: context.colors.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 12),
@@ -161,12 +160,12 @@ class PermissionPanel extends StatelessWidget {
             decoration: BoxDecoration(
               color: hasPermission
                   ? (info['color'] as Color).withValues(alpha: 0.05)
-                  : Colors.grey.shade50,
+                  : context.tokens.mutedBackground,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: hasPermission
                     ? (info['color'] as Color).withValues(alpha: 0.3)
-                    : Colors.grey.shade200,
+                    : context.tokens.border,
               ),
             ),
             child: InkWell(
@@ -188,7 +187,7 @@ class PermissionPanel extends StatelessWidget {
                       info['icon'] as IconData,
                       color: hasPermission
                           ? (info['color'] as Color)
-                          : Colors.grey.shade500,
+                          : context.tokens.textMuted,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -202,7 +201,7 @@ class PermissionPanel extends StatelessWidget {
                               : FontWeight.normal,
                           color: hasPermission
                               ? (info['color'] as Color)
-                              : Colors.grey.shade700,
+                              : context.colors.onSurfaceVariant,
                         ),
                       ),
                     ),

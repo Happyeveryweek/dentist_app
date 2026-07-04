@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../widgets/dental_icons.dart';
+import '../../../theme/theme_context_extensions.dart';
 
 class PatientAppBarTitle extends StatelessWidget {
   const PatientAppBarTitle({Key? key}) : super(key: key);
@@ -12,12 +12,12 @@ class PatientAppBarTitle extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            gradient: DentalColors.primaryGradient,
+            gradient: context.tokens.primaryHeaderGradient,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.people_rounded,
-            color: Colors.white,
+            color: context.colors.onPrimary,
             size: 24,
           ),
         ),

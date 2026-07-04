@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../models/user.dart';
-import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
 
 /// 权限预览对话框
@@ -23,55 +22,41 @@ class PermissionPreviewDialog extends StatelessWidget {
       'dashboard': {
         'name': '仪表盘',
         'icon': Icons.dashboard,
-        'color': AppTheme.primaryColor
+        'color': context.tokens.primaryAccent
       },
       'patients': {
         'name': '患者管理',
         'icon': Icons.people,
-        'color': AppTheme.successColor
+        'color': context.tokens.success
       },
       'appointments': {
         'name': '预约管理',
         'icon': Icons.calendar_today,
-        'color': AppTheme.infoColor
+        'color': context.tokens.info
       },
       'financial': {
         'name': '财务管理',
         'icon': Icons.account_balance_wallet,
-        'color': AppTheme.warningColor
+        'color': context.tokens.warning
       },
       'materials': {
         'name': '材料管理',
         'icon': Icons.inventory,
-        'color': AppTheme.primaryColor
+        'color': context.tokens.primaryAccent
       },
       'purchase': {
         'name': '采购管理',
         'icon': Icons.shopping_cart,
-        'color': AppTheme.errorColor
+        'color': context.tokens.error
       },
       'medical_records': {
         'name': '病历管理',
         'icon': Icons.medical_services,
-        'color': Colors.teal
+        'color': context.tokens.secondaryAccent
       },
     };
-
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final isPurpleTheme =
-        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
-
-    final accentColor = isPurpleTheme
-        ? AppTheme.purpleColor
-        : isDarkMode
-            ? AppTheme.primaryColor
-            : AppTheme.primaryColor;
-
-    final textColor = isPurpleTheme
-        ? AppTheme.purplePrimaryText
-        : isDarkMode
-            ? AppTheme.darkPrimaryText
-            : null;
+    final accentColor = context.tokens.primaryAccent;
+    final textColor = context.colors.onSurface;
 
     return AlertDialog(
       title: Row(
@@ -117,12 +102,12 @@ class PermissionPreviewDialog extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: hasPermission
                           ? (info['color'] as Color).withValues(alpha: 0.1)
-                          : Colors.grey.shade100,
+                          : context.tokens.mutedBackground,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
                         color: hasPermission
                             ? (info['color'] as Color).withValues(alpha: 0.3)
-                            : Colors.grey.shade300,
+                            : context.tokens.border,
                       ),
                     ),
                     child: Row(
@@ -152,7 +137,7 @@ class PermissionPreviewDialog extends StatelessWidget {
                         Icon(
                           hasPermission ? Icons.check_circle : Icons.cancel,
                           color: hasPermission
-                              ? AppTheme.successColor
+                              ? context.tokens.success
                               : context.tokens.textMuted,
                           size: 20,
                         ),

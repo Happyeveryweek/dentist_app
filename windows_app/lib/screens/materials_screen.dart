@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../models/material.dart' as material_models;
 import '../providers/material_provider.dart';
-import '../theme/app_theme.dart';
 import '../widgets/dental_icons.dart';
 import '../widgets/unified_search_field.dart';
 import '../widgets/success_toast.dart';
@@ -18,6 +17,7 @@ import '../features/materials/widgets/material_form_dialog.dart';
 import '../features/materials/services/material_initialization_service.dart';
 import '../features/materials/services/material_filter_pagination_service.dart';
 import '../utils/log_manager.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class MaterialsScreen extends StatefulWidget {
   const MaterialsScreen({Key? key}) : super(key: key);
@@ -378,7 +378,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: DentalColors.primaryGradient,
+                gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -397,15 +397,15 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             ),
           ],
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: DentalColors.onSurface,
+        backgroundColor: context.tokens.shellBackground,
+        foregroundColor: context.colors.onSurface,
         elevation: 0,
         actions: [
           // 刷新按钮
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              gradient: DentalColors.primaryGradient,
+              gradient: context.tokens.primaryHeaderGradient,
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -424,7 +424,10 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.orange.shade400, Colors.orange.shade600],
+                colors: [
+                  context.tokens.warning.withValues(alpha: 0.85),
+                  context.tokens.warning,
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -441,7 +444,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              gradient: DentalColors.primaryGradient,
+              gradient: context.tokens.primaryHeaderGradient,
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -462,12 +465,12 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+                border: Border.all(color: context.tokens.border),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
+                      color: context.tokens.shadow,
                       blurRadius: 12,
                       offset: const Offset(0, 2)),
                 ],
@@ -504,14 +507,14 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.category_rounded,
-                            color: DentalColors.primary, size: 20),
+                        Icon(Icons.category_rounded,
+                            color: context.tokens.primaryAccent, size: 20),
                         const SizedBox(width: 8),
-                        const Text('类型:',
+                        Text('类型:',
                             style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: DentalColors.onSurface)),
+                                color: context.colors.onSurface)),
                         const SizedBox(width: 12),
                         _buildModernTypeDropdown(
                           value: _selectedType,
@@ -540,7 +543,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                     icon: Icons.inventory_rounded,
                     label: '材料总数',
                     value: _filteredMaterials.length.toString(),
-                    color: DentalColors.primary,
+                    color: context.tokens.primaryAccent,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -550,7 +553,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                     label: '总价值',
                     value:
                         '¥${_filteredMaterials.fold<double>(0.0, (sum, material) => sum + material.defaultPrice).toStringAsFixed(0)}',
-                    color: DentalColors.success,
+                    color: context.tokens.success,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -563,7 +566,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         .toSet()
                         .length
                         .toString(),
-                    color: Colors.purple,
+                    color: context.tokens.primaryAccent,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -577,7 +580,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         .toSet()
                         .length
                         .toString(),
-                    color: DentalColors.warning,
+                    color: context.tokens.warning,
                   ),
                 ),
               ],
@@ -598,7 +601,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.error_outline,
-                                size: 64, color: Colors.red[300]),
+                                size: 64, color: context.tokens.error),
                             const SizedBox(height: 16),
                             Text(
                               '加载失败',
@@ -606,7 +609,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                                   .textTheme
                                   .titleLarge
                                   ?.copyWith(
-                                    color: Colors.red[300],
+                                    color: context.tokens.error,
                                   ),
                             ),
                             const SizedBox(height: 8),
@@ -616,7 +619,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                                   .textTheme
                                   .bodyMedium
                                   ?.copyWith(
-                                    color: Colors.grey[600],
+                                    color: context.tokens.textMuted,
                                   ),
                               textAlign: TextAlign.center,
                             ),
@@ -638,7 +641,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                                       ? Icons.inventory_outlined
                                       : Icons.search_off,
                                   size: 64,
-                                  color: Colors.grey[400],
+                                  color: context.tokens.iconMuted,
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
@@ -647,7 +650,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                                       .textTheme
                                       .titleLarge
                                       ?.copyWith(
-                                        color: Colors.grey[600],
+                                        color: context.tokens.textMuted,
                                       ),
                                 ),
                                 if (_searchQuery.isEmpty) ...[
@@ -658,7 +661,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                                         .textTheme
                                         .bodyMedium
                                         ?.copyWith(
-                                          color: Colors.grey[500],
+                                          color: context.tokens.textMuted,
                                         ),
                                   ),
                                   const SizedBox(height: 16),
@@ -697,21 +700,15 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   }
 
   Widget _buildMaterialCard(material_models.MaterialInfo material) {
-    final isPurpleTheme =
-        Theme.of(context).scaffoldBackgroundColor == AppTheme.purpleBackground;
-
     return HoverableMaterialCard(
       onTap: () => _showMaterialDetail(material),
-      isPurpleTheme: isPurpleTheme,
       child: Row(
         children: [
           Container(
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: isPurpleTheme
-                  ? AppTheme.purpleColor
-                  : Theme.of(context).primaryColor,
+              color: context.tokens.primaryAccent,
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
@@ -740,21 +737,21 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.1),
+                        color: context.tokens.success.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.attach_money,
-                              size: 11, color: Colors.green[700]),
+                              size: 11, color: context.tokens.success),
                           const SizedBox(width: 3),
                           Text(
                             '¥${material.defaultPrice.toStringAsFixed(0)}',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: Colors.green[700],
+                              color: context.tokens.success,
                             ),
                           ),
                         ],
@@ -765,21 +762,21 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.1),
+                        color: context.tokens.info.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.inventory,
-                              size: 11, color: Colors.blue[700]),
+                              size: 11, color: context.tokens.info),
                           const SizedBox(width: 3),
                           Text(
                             material.unit,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: Colors.blue[700],
+                              color: context.tokens.info,
                             ),
                           ),
                         ],
@@ -791,14 +788,14 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.purple.withValues(alpha: 0.1),
+                          color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.category_rounded,
-                                size: 11, color: Colors.purple[700]),
+                                size: 11, color: context.tokens.primaryAccent),
                             const SizedBox(width: 3),
                             Flexible(
                               child: Text(
@@ -806,7 +803,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.purple[700],
+                                  color: context.tokens.primaryAccent,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -822,14 +819,14 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.orange.withValues(alpha: 0.1),
+                            color: context.tokens.warning.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.business,
-                                  size: 11, color: Colors.orange[700]),
+                                  size: 11, color: context.tokens.warning),
                               const SizedBox(width: 3),
                               Flexible(
                                 child: Text(
@@ -837,7 +834,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                                   style: TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w500,
-                                    color: Colors.orange[700],
+                                    color: context.tokens.warning,
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -858,21 +855,21 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             children: [
               CompactMaterialActionButton(
                 icon: Icons.visibility,
-                color: Colors.blue,
+                color: context.tokens.info,
                 tooltip: '查看',
                 onPressed: () => _showMaterialDetail(material),
               ),
               const SizedBox(width: 6),
               CompactMaterialActionButton(
                 icon: Icons.edit,
-                color: Colors.orange,
+                color: context.tokens.warning,
                 tooltip: '编辑',
                 onPressed: () => _showMaterialDialog(material),
               ),
               const SizedBox(width: 6),
               CompactMaterialActionButton(
                 icon: Icons.delete,
-                color: Colors.red,
+                color: context.tokens.error,
                 tooltip: '删除',
                 onPressed: () => _deleteMaterial(material),
               ),
@@ -908,18 +905,18 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
       onExit: (_) => setState(() => _isTypeHover = false),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: (_selectedType != '全部' || _isTypeHover)
-                ? DentalColors.primary.withValues(alpha: 0.6)
-                : Colors.grey.shade300,
+                ? context.tokens.primaryAccent.withValues(alpha: 0.6)
+                : context.tokens.border,
             width: 1.5,
           ),
           boxShadow: [
             if (_isTypeHover)
               BoxShadow(
-                color: DentalColors.primary.withValues(alpha: 0.1),
+                color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -943,7 +940,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  gradient: DentalColors.primaryGradient,
+                  gradient: context.tokens.primaryHeaderGradient,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -993,7 +990,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? DentalColors.primary.withValues(alpha: 0.1)
+                        ? context.tokens.primaryAccent.withValues(alpha: 0.1)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -1005,11 +1002,11 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient:
-                              isSelected ? DentalColors.primaryGradient : null,
+                              isSelected ? context.tokens.primaryHeaderGradient : null,
                           border: Border.all(
                             color: isSelected
                                 ? Colors.transparent
-                                : Colors.grey.shade400,
+                                : context.tokens.border,
                             width: 2,
                           ),
                         ),
@@ -1028,8 +1025,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                                 ? FontWeight.w600
                                 : FontWeight.normal,
                             color: isSelected
-                                ? DentalColors.primary
-                                : Colors.grey[700],
+                                ? context.tokens.primaryAccent
+                                : context.colors.onSurface,
                           ),
                         ),
                       ),
@@ -1038,14 +1035,14 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: DentalColors.primary.withValues(alpha: 0.1),
+                            color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text(
+                          child: Text(
                             '已选',
                             style: TextStyle(
                               fontSize: 10,
-                              color: DentalColors.primary,
+                              color: context.tokens.primaryAccent,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -1065,8 +1062,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                   Icons.filter_list_rounded,
                   size: 18,
                   color: (_selectedType != '全部' || _isTypeHover)
-                      ? DentalColors.primary
-                      : Colors.grey[600],
+                      ? context.tokens.primaryAccent
+                      : context.tokens.textMuted,
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -1075,8 +1072,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: (_selectedType != '全部' || _isTypeHover)
-                        ? DentalColors.primary
-                        : Colors.grey[600],
+                        ? context.tokens.primaryAccent
+                        : context.tokens.textMuted,
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -1084,8 +1081,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                   Icons.keyboard_arrow_down_rounded,
                   size: 18,
                   color: (_selectedType != '全部' || _isTypeHover)
-                      ? DentalColors.primary
-                      : Colors.grey[600],
+                      ? context.tokens.primaryAccent
+                      : context.tokens.textMuted,
                 ),
               ],
             ),
@@ -1139,13 +1136,13 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
+                  color: context.tokens.warning.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(40),
                 ),
                 child: CircularProgressIndicator(
                   strokeWidth: 4,
                   valueColor:
-                      AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+                      AlwaysStoppedAnimation<Color>(context.tokens.warning),
                 ),
               ),
               const SizedBox(height: 24),
@@ -1154,7 +1151,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.orange.shade800,
+                  color: context.tokens.warning,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -1163,7 +1160,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 '请稍候，系统正在添加304种默认材料到数据库中。\n此过程可能需要几秒钟时间。',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade600,
+                  color: context.tokens.textMuted,
                   height: 1.4,
                 ),
                 textAlign: TextAlign.center,

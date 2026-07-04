@@ -15,6 +15,7 @@ import '../features/patients/services/patient_list_state_service.dart';
 import '../features/patients/services/patient_operation_feedback_service.dart';
 import '../features/patients/services/patient_search_criteria_service.dart';
 import '../features/patients/widgets/patient_screen_components.dart';
+import '../theme/theme_context_extensions.dart';
 import '../utils/log_manager.dart';
 
 class PatientsScreen extends StatefulWidget {
@@ -147,7 +148,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
           PatientSnackBars.showSimple(
             context,
             message: '数据库连接异常，正在尝试重新连接...',
-            backgroundColor: Colors.orange,
+            backgroundColor: context.tokens.warning,
           );
 
           // 延迟后重试
@@ -163,7 +164,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
           PatientSnackBars.showSimple(
             context,
             message: '加载患者数据失败: $e',
-            backgroundColor: Colors.red,
+            backgroundColor: context.tokens.error,
           );
 
           setState(() {
@@ -566,7 +567,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
       PatientSnackBars.showSimple(
         context,
         message: '加载统计数据失败: $e',
-        backgroundColor: Colors.red,
+        backgroundColor: context.tokens.error,
       );
     }
   }
@@ -752,8 +753,8 @@ class _PatientsScreenState extends State<PatientsScreen> {
           ? Icons.check_circle_outline
           : Icons.error_outline,
       backgroundColor: feedback.type == PatientOperationFeedbackType.success
-          ? Colors.green.shade600
-          : Colors.red.shade500,
+          ? context.tokens.success
+          : context.tokens.error,
       duration: feedback.duration,
     );
   }

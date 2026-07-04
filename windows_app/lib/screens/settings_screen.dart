@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 
-import '../theme/app_theme.dart';
 import '../providers/settings_provider.dart';
 import '../providers/database_provider.dart';
 import '../providers/material_provider.dart';
@@ -29,6 +28,7 @@ import '../features/settings/services/database_structure_check_service.dart';
 import '../features/settings/services/app_reset_service.dart';
 import '../features/settings/widgets/backup_log_dialog.dart';
 import '../features/settings/widgets/structure_log_dialog.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -183,7 +183,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('数据库备份成功到: ${result.successPaths.join(", ")}'),
-            backgroundColor: AppTheme.successColor,
+            backgroundColor: context.tokens.success,
             duration: const Duration(seconds: 4),
           ),
         );
@@ -277,7 +277,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SnackBar(
                 content: Text(
                     isMySQL ? 'MySQL数据库已成功从SQL文件恢复' : 'SQLite数据库已成功从备份文件恢复'),
-                backgroundColor: AppTheme.successColor,
+                backgroundColor: context.tokens.success,
               ),
             );
           } else {
@@ -318,14 +318,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: context.tokens.pageBackground,
       appBar: AppBar(
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: DentalColors.primaryGradient,
+                gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(
@@ -345,7 +345,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
         backgroundColor: Colors.white,
-        foregroundColor: DentalColors.onSurface,
+        foregroundColor: context.colors.onSurface,
         elevation: 0,
       ),
       body: LayoutBuilder(
@@ -383,7 +383,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('应用名称已更新为：$result'),
-                    backgroundColor: AppTheme.successColor,
+                    backgroundColor: context.tokens.success,
                   ),
                 );
               }
@@ -435,7 +435,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('应用名称已更新为：$result'),
-                              backgroundColor: AppTheme.successColor,
+                              backgroundColor: context.tokens.success,
                             ),
                           );
                         }
@@ -476,23 +476,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildDataManagementSection() {
     return Column(
       children: [
-        const SettingsSectionHeader(
+        SettingsSectionHeader(
           title: '数据管理',
           icon: Icons.storage,
-          color: AppTheme.secondaryColor,
+          color: context.tokens.secondaryAccent,
         ),
         Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.tokens.cardBackground,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: context.tokens.elevatedShadow,
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -520,12 +514,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const CircularProgressIndicator(
+                          child: CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(
-                                AppTheme.primaryColor),
+                                context.tokens.primaryAccent),
                             strokeWidth: 2,
                           ),
                         )
@@ -580,18 +574,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SettingsSectionHeader(
+        SettingsSectionHeader(
           title: '备份设置',
           icon: Icons.backup,
-          color: AppTheme.secondaryColor,
+          color: context.tokens.secondaryAccent,
         ),
         Container(
           margin: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey.shade50,
+            color: context.tokens.mutedBackground,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(color: context.tokens.border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -756,7 +750,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.green.shade600),
+            Icon(Icons.check_circle, color: context.tokens.success),
             const SizedBox(width: 12),
             const Text('重置完成'),
           ],
@@ -776,9 +770,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: context.tokens.infoContainer,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
+                border: Border.all(color: context.tokens.info.withValues(alpha: 0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -786,7 +780,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Row(
                     children: [
                       Icon(Icons.info_outline,
-                          color: Colors.blue.shade700, size: 20),
+                          color: context.tokens.info, size: 20),
                       const SizedBox(width: 8),
                       const Text(
                         '重置内容：',
@@ -803,7 +797,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     '✓ 主题：浅色模式',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.blue.shade700,
+                      color: context.tokens.info,
                       height: 1.5,
                     ),
                   ),
@@ -814,21 +808,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
+                color: context.tokens.warningContainer,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.shade200),
+                border: Border.all(color: context.tokens.warning.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
                   Icon(Icons.restart_alt,
-                      color: Colors.orange.shade700, size: 20),
+                      color: context.tokens.warning, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       '请重启应用以使配置生效',
                       style: TextStyle(
                         fontSize: 13,
-                        color: Colors.orange.shade700,
+                        color: context.tokens.warning,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -845,7 +839,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // 可以在这里添加退出应用的逻辑
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
+              backgroundColor: context.tokens.primaryAccent,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
