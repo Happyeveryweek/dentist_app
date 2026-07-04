@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/appointment.dart';
 import '../../../widgets/dental_icons.dart';
 
@@ -21,7 +22,7 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white,
+            context.tokens.cardBackground,
             DentalColors.background.withValues(alpha: 0.5),
           ],
         ),
@@ -74,9 +75,9 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.event_note_rounded,
-                    color: Colors.white,
+                    color: context.tokens.cardBackground,
                     size: 28,
                   ),
                 ),

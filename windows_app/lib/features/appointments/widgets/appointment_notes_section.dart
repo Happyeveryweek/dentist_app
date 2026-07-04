@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class AppointmentNotesSection extends StatelessWidget {
   final TextEditingController notesController;
@@ -15,7 +16,7 @@ class AppointmentNotesSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,7 +49,7 @@ class AppointmentNotesSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: context.tokens.cardBackground,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),

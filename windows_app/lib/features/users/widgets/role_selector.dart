@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../theme/app_theme.dart';
 
 class RoleSelector extends StatelessWidget {
@@ -43,7 +44,7 @@ class RoleSelector extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: context.tokens.shadow,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -52,7 +53,7 @@ class RoleSelector extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey.shade300),
         ),
@@ -63,7 +64,7 @@ class RoleSelector extends StatelessWidget {
             icon: const Icon(Icons.keyboard_arrow_down,
                 color: AppTheme.primaryColor),
             style: const TextStyle(fontSize: 16, color: Colors.black87),
-            dropdownColor: Colors.white,
+            dropdownColor: context.tokens.cardBackground,
             borderRadius: BorderRadius.circular(12),
             elevation: 8,
             onChanged: onRoleChanged,
@@ -88,7 +89,7 @@ class RoleSelector extends StatelessWidget {
                             '角色',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade600,
+                              color: context.tokens.iconMuted,
                               fontWeight: FontWeight.w400,
                             ),
                           ),

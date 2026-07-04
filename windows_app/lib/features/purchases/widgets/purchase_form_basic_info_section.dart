@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../widgets/modern_date_picker.dart';
 
 /// 采购记录表单的基本信息输入区域
@@ -66,7 +67,7 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
                         prefixIcon:
                             Icon(Icons.calendar_today, color: Colors.blue[600]),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: context.tokens.cardBackground,
                       ),
                       readOnly: true,
                       onTap: () async {
@@ -105,7 +106,7 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
                       prefixIcon:
                           Icon(Icons.business, color: Colors.green[600]),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: context.tokens.cardBackground,
                     ),
                   ),
                 ),
@@ -127,7 +128,7 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
                       ),
                       prefixIcon: Icon(Icons.person, color: Colors.purple[600]),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: context.tokens.cardBackground,
                     ),
                     maxLines: 1,
                   ),
@@ -146,7 +147,7 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
                       ),
                       prefixIcon: Icon(Icons.note, color: Colors.orange[600]),
                       filled: true,
-                      fillColor: Colors.white,
+                      fillColor: context.tokens.cardBackground,
                     ),
                     maxLines: 1,
                   ),

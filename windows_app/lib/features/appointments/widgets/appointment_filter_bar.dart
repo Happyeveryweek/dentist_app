@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../widgets/dental_icons.dart';
 import '../../../widgets/unified_search_field.dart';
@@ -49,7 +50,7 @@ class AppointmentFilterBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
         boxShadow: [
@@ -78,7 +79,7 @@ class AppointmentFilterBar extends StatelessWidget {
             child: SizedBox(
               height: 44,
               child: Material(
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(color: Colors.grey.withValues(alpha: 0.12)),

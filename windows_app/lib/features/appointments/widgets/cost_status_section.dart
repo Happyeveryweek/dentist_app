@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 费用与状态区域
 ///
@@ -22,14 +23,14 @@ class CostStatusSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(),
           const SizedBox(height: 16),
-          _buildFields(),
+          _buildFields(context),
         ],
       ),
     );
@@ -56,7 +57,7 @@ class CostStatusSection extends StatelessWidget {
     );
   }
 
-  Widget _buildFields() {
+  Widget _buildFields(BuildContext context) {
     return Row(
       children: [
         Expanded(
@@ -70,7 +71,7 @@ class CostStatusSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: context.tokens.cardBackground,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
@@ -86,7 +87,7 @@ class CostStatusSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: context.tokens.cardBackground,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),

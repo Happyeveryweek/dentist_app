@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class ResetDataItem extends StatelessWidget {
   final String title;
@@ -18,7 +19,7 @@ class ResetDataItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Row(
         children: [
@@ -31,7 +32,7 @@ class ResetDataItem extends StatelessWidget {
             child: Icon(
               icon,
               size: 16,
-              color: Colors.red.shade600,
+              color: context.tokens.error,
             ),
           ),
           const SizedBox(width: 12),
@@ -40,7 +41,7 @@ class ResetDataItem extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
-              color: Colors.grey.shade700,
+              color: context.tokens.iconMuted,
             ),
           ),
         ],

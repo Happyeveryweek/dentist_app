@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../models/patient.dart';
 import '../../../theme/app_theme.dart';
@@ -64,7 +65,7 @@ class PatientListItem extends StatelessWidget {
                 ? null
                 : LinearGradient(
                     colors: [
-                      Colors.white.withValues(alpha: 0.0),
+                      context.tokens.cardBackground.withValues(alpha: 0.0),
                       Colors.grey.shade50.withValues(alpha: 0.3),
                     ],
                     begin: Alignment.topLeft,
@@ -254,7 +255,7 @@ class _PatientDetailRow extends StatelessWidget {
             icon: Icons.phone,
             value: _getDisplayPhone(patient.phone),
             color: Colors.green,
-            textColor: Colors.green.shade700,
+            textColor: context.tokens.success,
             flexibleValue: true,
           ),
         ),

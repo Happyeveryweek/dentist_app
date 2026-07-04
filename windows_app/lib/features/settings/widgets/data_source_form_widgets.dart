@@ -47,7 +47,7 @@ class DataSourceFormWidgets {
                   style: TextStyle(
                     color: value == '未设置'
                         ? Colors.grey.shade500
-                        : Colors.grey.shade700,
+                        : Colors.grey.shade600,
                     fontSize: 14,
                   ),
                 ),
@@ -162,7 +162,7 @@ class DataSourceFormWidgets {
                   style: TextStyle(
                     color: value == '未设置'
                         ? Colors.grey.shade500
-                        : Colors.grey.shade700,
+                        : Colors.grey.shade600,
                     fontSize: 14,
                   ),
                 ),

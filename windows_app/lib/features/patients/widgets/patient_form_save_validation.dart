@@ -109,7 +109,7 @@ class ExistingPatientOverlayBuilder {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             '⚠️ 发现同名患者',
             style: TextStyle(
               fontWeight: FontWeight.bold,

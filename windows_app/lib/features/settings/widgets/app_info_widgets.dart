@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class InfoSectionCard extends StatelessWidget {
   final String title;
@@ -22,7 +23,7 @@ class InfoSectionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -90,7 +91,7 @@ class StatusRow extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey.shade600,
+            color: context.tokens.iconMuted,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -104,7 +105,7 @@ class StatusRow extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.grey.shade50,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: context.tokens.border),
             ),
             child: SelectableText(
               value ?? '-',
@@ -172,7 +173,7 @@ class StatBox extends StatelessWidget {
               style:
                   const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           Text(label,
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
+              style: TextStyle(fontSize: 11, color: context.tokens.iconMuted)),
         ],
       ),
     );

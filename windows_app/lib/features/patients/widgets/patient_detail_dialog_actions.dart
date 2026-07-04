@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/patient.dart';
 import '../../../models/financial_record.dart';
 import '../../../models/patient_medical_record.dart';
@@ -205,7 +206,7 @@ class PatientDetailDialogActions {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.error, color: Colors.white),
+              Icon(Icons.error, color: context.tokens.cardBackground),
               const SizedBox(width: 8),
               Expanded(child: Text('导出PDF失败: $e')),
             ],

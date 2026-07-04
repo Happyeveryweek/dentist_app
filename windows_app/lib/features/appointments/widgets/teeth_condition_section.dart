@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 牙齿情况区域
 ///
@@ -20,7 +21,7 @@ class TeethConditionSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,7 +87,7 @@ class TeethCrossWidget extends StatelessWidget {
       width: 140,
       height: 100,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -220,10 +221,14 @@ class TeethCross extends StatelessWidget {
 
 /// 牙位十字图绘制器
 class CrossPainter extends CustomPainter {
+  final Color lineColor;
+
+  CrossPainter({this.lineColor = const Color(0xFF8892A3)});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.grey.shade400
+      ..color = lineColor
       ..strokeWidth = 1.5;
 
     final centerX = size.width / 2;

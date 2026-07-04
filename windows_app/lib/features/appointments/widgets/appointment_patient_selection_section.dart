@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/patient.dart';
 import '../../../theme/app_theme.dart';
 
@@ -24,7 +25,7 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,7 +86,7 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
                 child: Ink(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.tokens.cardBackground,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
@@ -99,7 +100,7 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
                             ? Text(
                                 '请选择患者',
                                 style: TextStyle(
-                                  color: Colors.grey.shade600,
+                                  color: context.tokens.iconMuted,
                                   fontSize: 14,
                                 ),
                               )
@@ -118,7 +119,7 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
                                     '最近就诊: ${patient.updatedAt.year.toString().padLeft(4, '0')}-${patient.updatedAt.month.toString().padLeft(2, '0')}-${patient.updatedAt.day.toString().padLeft(2, '0')}',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey.shade600,
+                                      color: context.tokens.iconMuted,
                                     ),
                                   ),
                                 ],

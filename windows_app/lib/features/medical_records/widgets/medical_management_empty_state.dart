@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 病历管理空状态组件
 /// 显示病历模板数据未初始化的空状态
@@ -73,7 +74,7 @@ class MedicalManagementEmptyState extends StatelessWidget {
                   label: const Text('初始化模板数据'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange.shade600,
-                    foregroundColor: Colors.white,
+                    foregroundColor: context.tokens.cardBackground,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(

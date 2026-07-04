@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../models/financial_record.dart';
 import '../models/financial_item.dart';
@@ -198,7 +199,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
     if (isInDialog) {
       // 弹窗模式：不显示AppBar，直接显示内容
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: context.tokens.cardBackground,
         body: Column(
           children: [
             // 自定义标题栏
@@ -219,18 +220,18 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(_hasDataChanged),
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: Icon(Icons.arrow_back, color: context.tokens.cardBackground),
                     tooltip: '返回',
                   ),
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: context.tokens.cardBackground.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.account_balance_wallet,
-                      color: Colors.white,
+                      color: context.tokens.cardBackground,
                       size: 20,
                     ),
                   ),
@@ -238,8 +239,8 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
                   Expanded(
                     child: Text(
                       '${widget.patient.name} - 财务详情',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.tokens.cardBackground,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -247,12 +248,12 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
                   ),
                   IconButton(
                     onPressed: _openPatientDetail,
-                    icon: const Icon(Icons.person_search, color: Colors.white),
+                    icon: Icon(Icons.person_search, color: context.tokens.cardBackground),
                     tooltip: '查看患者详情',
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(_hasDataChanged),
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: Icon(Icons.close, color: context.tokens.cardBackground),
                     tooltip: '关闭',
                   ),
                 ],
@@ -273,7 +274,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             tooltip: '返回',
           ),
           title: Text('${widget.patient.name} - 财务详情'),
-          backgroundColor: Colors.white,
+          backgroundColor: context.tokens.cardBackground,
           foregroundColor: Colors.black87,
           elevation: 0,
           actions: [
@@ -344,7 +345,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
               label: const Text('添加记录'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: Colors.white,
+                foregroundColor: context.tokens.cardBackground,
               ),
             ),
           ],

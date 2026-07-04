@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../models/appointment.dart';
 import '../../../widgets/dental_icons.dart';
@@ -157,7 +158,7 @@ class PatientAppointmentCard extends StatelessWidget {
                                     Icon(
                                       DentalIcons.tooth,
                                       size: 16,
-                                      color: Colors.blue.shade600,
+                                      color: context.tokens.primaryAccent,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(

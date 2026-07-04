@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../theme/app_theme.dart';
 import '../../../providers/settings_provider.dart';
 
@@ -51,7 +52,7 @@ class DataSourceSelectionDialog extends StatelessWidget {
                     '检测本地SQLite数据库表结构',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.blue.shade600,
+                      color: context.tokens.primaryAccent,
                     ),
                   ),
                 ],
@@ -74,7 +75,7 @@ class DataSourceSelectionDialog extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              icon: Icon(Icons.cloud, color: Colors.green.shade700),
+              icon: Icon(Icons.cloud, color: context.tokens.success),
               label: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -83,7 +84,7 @@ class DataSourceSelectionDialog extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green.shade700,
+                      color: context.tokens.success,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -95,7 +96,7 @@ class DataSourceSelectionDialog extends StatelessWidget {
                       fontSize: 12,
                       color: settingsProvider.isMySQLSettingsComplete()
                           ? Colors.green.shade600
-                          : Colors.red.shade600,
+                          : context.tokens.error,
                     ),
                   ),
                 ],
@@ -105,8 +106,8 @@ class DataSourceSelectionDialog extends StatelessWidget {
                     ? Colors.green.shade50
                     : Colors.grey.shade100,
                 foregroundColor: settingsProvider.isMySQLSettingsComplete()
-                    ? Colors.green.shade700
-                    : Colors.grey.shade700,
+                    ? context.tokens.success
+                    : context.tokens.iconMuted,
                 padding: const EdgeInsets.all(16),
                 alignment: Alignment.centerLeft,
                 shape: RoundedRectangleBorder(

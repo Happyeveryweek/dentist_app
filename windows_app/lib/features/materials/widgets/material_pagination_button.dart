@@ -38,7 +38,7 @@ class MaterialPaginationButton extends StatelessWidget {
                 ? Icon(
                     icon,
                     size: 18,
-                    color: isActive ? Colors.white : Colors.grey.shade600,
+                    color: isActive ? Colors.white : Colors.grey.shade700,
                   )
                 : Text(
                     pageNumber.toString(),

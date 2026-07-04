@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class AppointmentCostStatusSection extends StatelessWidget {
   final TextEditingController costController;
@@ -19,7 +20,7 @@ class AppointmentCostStatusSection extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,7 +57,7 @@ class AppointmentCostStatusSection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: context.tokens.cardBackground,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 16),
                   ),
@@ -67,7 +68,7 @@ class AppointmentCostStatusSection extends StatelessWidget {
               Expanded(
                 child: DropdownButtonFormField<String>(
                   borderRadius: BorderRadius.circular(12),
-                  dropdownColor: Colors.white,
+                  dropdownColor: context.tokens.cardBackground,
                   focusColor: Colors.transparent,
                   decoration: InputDecoration(
                     labelText: '预约状态',
@@ -75,7 +76,7 @@ class AppointmentCostStatusSection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: context.tokens.cardBackground,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 16),
                   ),

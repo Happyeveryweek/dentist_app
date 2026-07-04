@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../widgets/dental_icons.dart';
 
 class InteractablePieChart extends StatefulWidget {
@@ -66,7 +67,7 @@ class InteractablePieChartState extends State<InteractablePieChart> {
         titleStyle: TextStyle(
           fontSize: fontSize,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: context.tokens.cardBackground,
           shadows: const [Shadow(color: Colors.black26, blurRadius: 2)],
         ),
       );
@@ -164,7 +165,7 @@ class InteractablePieChartState extends State<InteractablePieChart> {
                         Icon(
                           Icons.arrow_forward_ios,
                           size: 12,
-                          color: Colors.grey.shade400,
+                          color: context.tokens.textMuted,
                         ),
                       ],
                     ),

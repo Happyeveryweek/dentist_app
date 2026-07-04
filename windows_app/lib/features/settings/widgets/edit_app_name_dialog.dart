@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../theme/app_theme.dart';
 import '../../../providers/settings_provider.dart';
@@ -104,7 +105,7 @@ class EditAppNameDialog extends StatelessWidget {
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
+            foregroundColor: context.tokens.cardBackground,
           ),
           child: const Text('确定'),
         ),

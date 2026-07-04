@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../models/patient.dart';
 
@@ -14,7 +15,7 @@ class DuplicateMedicalRecordDialog extends StatelessWidget {
         style: TextStyle(fontSize: 16),
       ),
       content: const Text('此病历号已被使用，请重新输入'),
-      backgroundColor: Colors.white.withValues(alpha: 0.9),
+      backgroundColor: context.tokens.cardBackground.withValues(alpha: 0.9),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: const BorderSide(color: Colors.red, width: 1),
@@ -83,7 +84,7 @@ class ExistingPatientChoiceDialog extends StatelessWidget {
           const Text('请选择：'),
         ],
       ),
-      backgroundColor: Colors.white.withValues(alpha: 0.9),
+      backgroundColor: context.tokens.cardBackground.withValues(alpha: 0.9),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
         side: const BorderSide(color: Colors.orange, width: 1),
@@ -103,7 +104,7 @@ class ExistingPatientChoiceDialog extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(true),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.orange,
-            foregroundColor: Colors.white,
+            foregroundColor: context.tokens.cardBackground,
           ),
           child: const Text('编辑已存在患者'),
         ),

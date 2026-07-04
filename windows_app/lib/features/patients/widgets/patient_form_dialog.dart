@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import '../../../models/patient.dart';
@@ -784,7 +785,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.95),
+            color: context.tokens.cardBackground.withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: DentalColors.primary.withValues(alpha: 0.1),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../theme/app_theme.dart';
 
 class PurchaseExportDialog extends StatefulWidget {
@@ -119,7 +120,7 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
               child: Row(
                 children: [
                   Icon(Icons.info_outline,
-                      color: Colors.blue.shade600, size: 20),
+                      color: context.tokens.primaryAccent, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -187,7 +188,7 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
             value: value,
             onChanged: (value) => onChanged(value ?? false),
             activeColor: iconColor,
-            checkColor: Colors.white,
+            checkColor: context.tokens.cardBackground,
           ),
           const SizedBox(width: 8),
           Icon(icon, color: iconColor, size: 24),
@@ -209,7 +210,7 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
                   subtitle,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade600,
+                    color: context.tokens.iconMuted,
                   ),
                 ),
               ],

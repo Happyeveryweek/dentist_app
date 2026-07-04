@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class DentalMaterialInitializeDialog extends StatelessWidget {
   const DentalMaterialInitializeDialog({Key? key}) : super(key: key);
@@ -17,7 +18,7 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.white,
+              context.tokens.cardBackground,
               Colors.orange.shade50,
             ],
           ),
@@ -52,21 +53,21 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: context.tokens.cardBackground.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.settings_backup_restore_rounded,
-                      color: Colors.white,
+                      color: context.tokens.cardBackground,
                       size: 24,
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       '初始化默认材料',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: context.tokens.cardBackground,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -122,7 +123,7 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
                         onPressed: () => Navigator.of(context).pop(true),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange.shade500,
-                          foregroundColor: Colors.white,
+                          foregroundColor: context.tokens.cardBackground,
                         ),
                         child: const Text('确认初始化'),
                       ),

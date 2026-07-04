@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../models/user.dart';
 import '../../../theme/app_theme.dart';
@@ -97,7 +98,7 @@ class PermissionPreviewDialog extends StatelessWidget {
             Text(
               '当前用户可以访问以下功能模块：',
               style: TextStyle(
-                color: Colors.grey.shade600,
+                color: context.tokens.iconMuted,
                 fontSize: 14,
               ),
             ),
@@ -130,7 +131,7 @@ class PermissionPreviewDialog extends StatelessWidget {
                           info['icon'] as IconData,
                           color: hasPermission
                               ? (info['color'] as Color)
-                              : Colors.grey.shade400,
+                              : context.tokens.textMuted,
                           size: 20,
                         ),
                         const SizedBox(width: 12),
@@ -144,7 +145,7 @@ class PermissionPreviewDialog extends StatelessWidget {
                                   : FontWeight.normal,
                               color: hasPermission
                                   ? (info['color'] as Color)
-                                  : Colors.grey.shade600,
+                                  : context.tokens.iconMuted,
                             ),
                           ),
                         ),
@@ -152,7 +153,7 @@ class PermissionPreviewDialog extends StatelessWidget {
                           hasPermission ? Icons.check_circle : Icons.cancel,
                           color: hasPermission
                               ? AppTheme.successColor
-                              : Colors.grey.shade400,
+                              : context.tokens.textMuted,
                           size: 20,
                         ),
                       ],

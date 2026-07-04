@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../widgets/unified_search_field.dart';
 
@@ -47,7 +48,7 @@ class FinancialSearchBar extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
           boxShadow: [
@@ -87,7 +88,7 @@ class FinancialSearchBar extends StatelessWidget {
               child: SizedBox(
                 height: 44,
                 child: Material(
-                  color: Colors.white,
+                  color: context.tokens.cardBackground,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                     side:
@@ -141,7 +142,7 @@ class FinancialSearchBar extends StatelessWidget {
                 height: 44,
                 width: 44,
                 child: Material(
-                  color: Colors.white,
+                  color: context.tokens.cardBackground,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side:

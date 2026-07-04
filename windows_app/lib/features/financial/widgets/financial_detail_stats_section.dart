@@ -51,7 +51,7 @@ class FinancialDetailStatsSection extends StatelessWidget {
               value:
                   '¥${(totalOutstanding % 1 == 0 ? totalOutstanding.toInt().toString() : totalOutstanding.toStringAsFixed(2))}',
               color:
-                  totalOutstanding > 0 ? Colors.red.shade700 : Colors.grey.shade600,
+                  totalOutstanding > 0 ? Colors.red.shade700 : Colors.grey.shade700,
             ),
           ),
         ],

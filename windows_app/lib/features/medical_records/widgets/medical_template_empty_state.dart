@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/medical_template.dart';
 
 /// 医疗模板空状态组件
@@ -66,7 +67,7 @@ class MedicalTemplateEmptyState extends StatelessWidget {
                 label: const Text('初始化默认模板'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange.shade600,
-                  foregroundColor: Colors.white,
+                  foregroundColor: context.tokens.cardBackground,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(

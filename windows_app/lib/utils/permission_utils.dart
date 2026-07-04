@@ -132,7 +132,7 @@ class PermissionUtils {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.warning, color: Colors.white),
+            Icon(Icons.warning, color: Colors.white),
             const SizedBox(width: 8),
             Expanded(
               child: Text(message ?? '权限不足，无法执行此操作'),

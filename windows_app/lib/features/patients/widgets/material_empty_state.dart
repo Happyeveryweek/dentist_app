@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/success_toast.dart';
 
@@ -22,7 +23,7 @@ class MaterialEmptyState extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -30,7 +31,7 @@ class MaterialEmptyState extends StatelessWidget {
           Icon(
             Icons.photo_library_outlined,
             size: 64,
-            color: Colors.grey.shade400,
+            color: context.tokens.textMuted,
           ),
           const SizedBox(height: 16),
           Text(
@@ -38,7 +39,7 @@ class MaterialEmptyState extends StatelessWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey.shade600,
+              color: context.tokens.iconMuted,
             ),
           ),
           const SizedBox(height: 8),
@@ -64,7 +65,7 @@ class MaterialEmptyState extends StatelessWidget {
             label: const Text('添加第一个材料'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
+              foregroundColor: context.tokens.cardBackground,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           )

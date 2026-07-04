@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../theme/app_theme.dart';
 import '../../../providers/settings_provider.dart';
 
@@ -34,7 +35,7 @@ class ThemeCard extends StatelessWidget {
 
     switch (mode) {
       case ExtendedThemeMode.light:
-        defaultCardColor = Colors.white;
+        defaultCardColor = context.tokens.cardBackground;
         defaultTextColor = Colors.black87;
         break;
       case ExtendedThemeMode.grey:
@@ -78,7 +79,7 @@ class ThemeCard extends StatelessWidget {
               icon,
               size: 32,
               color: iconColor ??
-                  (isDarkMode ? Colors.white : Colors.grey.shade700),
+                  (isDarkMode ? context.tokens.cardBackground : context.tokens.iconMuted),
             ),
             const SizedBox(height: 8),
             Text(

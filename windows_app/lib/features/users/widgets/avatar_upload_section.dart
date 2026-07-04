@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'dart:typed_data';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
@@ -33,7 +34,7 @@ class AvatarUploadSection extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
-        color: Colors.white,
+        color: context.tokens.cardBackground,
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -74,11 +75,11 @@ class AvatarUploadSection extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
-                        color: Colors.grey.shade200,
+                        color: context.tokens.border,
                         child: Icon(
                           Icons.error_outline,
                           size: 40,
-                          color: Colors.grey.shade400,
+                          color: context.tokens.textMuted,
                         ),
                       );
                     },
@@ -117,7 +118,7 @@ class AvatarUploadSection extends StatelessWidget {
               '未上传头像时将使用默认头像',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.shade600,
+                color: context.tokens.iconMuted,
               ),
             ),
           ],

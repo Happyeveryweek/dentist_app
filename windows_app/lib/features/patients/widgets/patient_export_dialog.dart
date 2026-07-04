@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:excel/excel.dart' as excel;
 import 'package:file_picker/file_picker.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../providers/patient_provider.dart';
 import '../../../models/patient.dart';
@@ -83,8 +84,8 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
                           offset: const Offset(0, 3))
                     ],
                   ),
-                  child: const Icon(Icons.file_download_outlined,
-                      color: Colors.white, size: 22),
+                  child: Icon(Icons.file_download_outlined,
+                      color: context.tokens.cardBackground, size: 22),
                 ),
                 const SizedBox(width: 12),
                 const Text('导出患者数据到Excel',
@@ -109,7 +110,7 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
             const SizedBox(height: 10),
             Container(
               decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.tokens.cardBackground,
                   borderRadius: BorderRadius.circular(12),
                   border:
                       Border.all(color: Colors.black.withValues(alpha: 0.06))),

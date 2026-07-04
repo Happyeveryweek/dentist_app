@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../models/user.dart';
 import '../providers/user_provider.dart';
@@ -152,9 +153,9 @@ class _UsersScreenState extends State<UsersScreen> {
                 gradient: DentalColors.primaryGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.people_rounded,
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 size: 24,
               ),
             ),
@@ -168,7 +169,7 @@ class _UsersScreenState extends State<UsersScreen> {
             ),
           ],
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: context.tokens.cardBackground,
         foregroundColor: DentalColors.onSurface,
         elevation: 0,
         actions: [
@@ -202,7 +203,7 @@ class _UsersScreenState extends State<UsersScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.person_add_rounded, color: Colors.white),
+              icon: Icon(Icons.person_add_rounded, color: context.tokens.cardBackground),
               onPressed: () => _showAddEditUserDialog(),
               tooltip: '添加用户',
             ),

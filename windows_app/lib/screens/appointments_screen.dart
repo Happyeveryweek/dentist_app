@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../models/appointment.dart';
 
@@ -146,11 +147,11 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Row(
+              content: Row(
                 children: [
                   Icon(
                     Icons.check_circle_outline,
-                    color: Colors.white,
+                    color: context.tokens.cardBackground,
                     size: 20,
                   ),
                   SizedBox(width: 12),
@@ -158,7 +159,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     child: Text(
                       '预约已更新',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: context.tokens.cardBackground,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -283,9 +284,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                 gradient: DentalColors.primaryGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.calendar_month_rounded,
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 size: 24,
               ),
             ),
@@ -299,7 +300,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             ),
           ],
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: context.tokens.cardBackground,
         foregroundColor: DentalColors.onSurface,
         elevation: 0,
         actions: [
@@ -310,7 +311,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.add_rounded, color: Colors.white),
+              icon: Icon(Icons.add_rounded, color: context.tokens.cardBackground),
               onPressed: () => _showAddEditAppointmentDialog(),
               tooltip: '添加预约',
             ),
@@ -435,7 +436,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
         onPressed: () => _showAddEditAppointmentDialog(),
         tooltip: '添加预约',
         backgroundColor: DentalColors.primary,
-        child: const Icon(DentalIcons.calendarPlus, color: Colors.white),
+        child: Icon(DentalIcons.calendarPlus, color: context.tokens.cardBackground),
       ),
     );
   }

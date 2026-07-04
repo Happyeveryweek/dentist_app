@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'package:path/path.dart' as path;
 
 import '../theme/app_theme.dart';
@@ -187,9 +188,9 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
                 gradient: DentalColors.primaryGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.storage_rounded,
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 size: 24,
               ),
             ),
@@ -203,7 +204,7 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
             ),
           ],
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: context.tokens.cardBackground,
         foregroundColor: DentalColors.onSurface,
         elevation: 0,
       ),

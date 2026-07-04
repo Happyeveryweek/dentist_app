@@ -146,7 +146,7 @@ class StructureCheckResultDialog extends StatelessWidget {
             '检测时间: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTimeFormatter.fromDbString(result['detectionTime']))}',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade600,
+              color: Colors.grey.shade700,
             ),
           ),
         ],

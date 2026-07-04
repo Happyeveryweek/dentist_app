@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 采购记录表单的操作按钮区域
 /// 包含：取消按钮、保存/更新按钮
@@ -29,7 +30,7 @@ class PurchaseFormActionsSection extends StatelessWidget {
             gradient: LinearGradient(
               colors: [
                 Colors.grey.shade100,
-                Colors.grey.shade200,
+                context.tokens.border,
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -67,7 +68,7 @@ class PurchaseFormActionsSection extends StatelessWidget {
                       child: Icon(
                         Icons.close_rounded,
                         size: 16,
-                        color: Colors.grey.shade600,
+                        color: context.tokens.iconMuted,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -76,7 +77,7 @@ class PurchaseFormActionsSection extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: Colors.grey.shade700,
+                        color: context.tokens.iconMuted,
                         letterSpacing: 0.3,
                       ),
                     ),
@@ -118,36 +119,36 @@ class PurchaseFormActionsSection extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (isLoading) ...[
-                      const SizedBox(
+                      SizedBox(
                         width: 16,
                         height: 16,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: context.tokens.cardBackground,
                           strokeWidth: 2,
                         ),
                       ),
                       const SizedBox(width: 10),
                       Text(
                         isEditing ? '更新中...' : '保存中...',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: context.tokens.cardBackground,
                         ),
                       ),
                     ] else ...[
                       Icon(
                         isEditing ? Icons.update : Icons.add,
                         size: 16,
-                        color: Colors.white,
+                        color: context.tokens.cardBackground,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         isEditing ? '更新记录' : '添加记录',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: context.tokens.cardBackground,
                         ),
                       ),
                     ],

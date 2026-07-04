@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../theme/app_theme.dart';
 
@@ -111,7 +112,7 @@ class PatientDateFilterChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.grey.shade300, width: 1),
       ),
@@ -148,7 +149,7 @@ class PatientDateFilterChip extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.grey.shade300),
               ),
@@ -313,7 +314,7 @@ class _SortButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: isActive
               ? AppTheme.primaryColor.withValues(alpha: 0.1)
-              : Colors.white,
+              : context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isActive ? AppTheme.primaryColor : Colors.grey.shade300,

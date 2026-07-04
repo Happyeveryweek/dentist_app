@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'dart:io';
 
 import '../../../theme/app_theme.dart';
@@ -296,7 +297,7 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
                   label: const Text('还原'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
+                    foregroundColor: context.tokens.cardBackground,
                   ),
                 ),
               ],

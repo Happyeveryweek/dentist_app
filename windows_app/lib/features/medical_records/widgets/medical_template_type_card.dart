@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/medical_record_template.dart';
 import '../helpers/medical_template_category_style_helper.dart';
 import 'medical_template_sub_type_tile.dart';
@@ -44,11 +45,11 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: context.tokens.shadow,
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -78,8 +79,8 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                     child: Center(
                       child: Text(
                         widget.mainType.name.substring(0, 1),
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: context.tokens.cardBackground,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -106,7 +107,7 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: context.tokens.iconMuted,
                               fontSize: 12,
                             ),
                           ),
@@ -171,7 +172,7 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                     child: Icon(
                       Icons.keyboard_arrow_down,
                       size: 20,
-                      color: Colors.grey.shade600,
+                      color: context.tokens.iconMuted,
                     ),
                   ),
                 ],

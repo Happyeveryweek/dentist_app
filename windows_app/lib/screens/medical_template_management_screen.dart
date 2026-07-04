@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../models/medical_template.dart';
 import '../services/medical_template_service.dart';
 import '../features/medical_records/widgets/medical_template_edit_dialog.dart';
@@ -97,9 +98,9 @@ class _MedicalTemplateManagementScreenState
                 gradient: AppTheme.primaryGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.library_books_rounded,
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 size: 24,
               ),
             ),
@@ -113,7 +114,7 @@ class _MedicalTemplateManagementScreenState
             ),
           ],
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: context.tokens.cardBackground,
         foregroundColor: Colors.black87,
         elevation: 0,
         bottom: PreferredSize(
@@ -132,7 +133,7 @@ class _MedicalTemplateManagementScreenState
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              icon: Icon(Icons.refresh_rounded, color: context.tokens.cardBackground),
               onPressed: _refreshData,
               tooltip: '刷新数据',
             ),
@@ -150,8 +151,8 @@ class _MedicalTemplateManagementScreenState
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.settings_backup_restore_rounded,
-                  color: Colors.white),
+              icon: Icon(Icons.settings_backup_restore_rounded,
+                  color: context.tokens.cardBackground),
               onPressed: _showInitializeDialog,
               tooltip: '初始化默认模板',
             ),

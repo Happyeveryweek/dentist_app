@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/medical_record_template.dart';
 import '../helpers/medical_template_category_style_helper.dart';
 
@@ -25,7 +26,7 @@ class MedicalTemplateSubTypeTile extends StatelessWidget {
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.grey.shade200,
+          color: context.tokens.border,
         ),
       ),
       child: Padding(
@@ -71,7 +72,7 @@ class MedicalTemplateSubTypeTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: context.tokens.iconMuted,
                         fontSize: 12,
                       ),
                     ),

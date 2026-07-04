@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
@@ -39,7 +40,7 @@ class _HoverableFinancialListCardState
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: _isHovered ? const Color(0xFFE3F2FD) : Colors.white,
+            color: _isHovered ? Color(0xFFE3F2FD) : context.tokens.cardBackground,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -105,7 +106,7 @@ class _HoverableFinancialCardState extends State<HoverableFinancialCard> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: _isHovered ? const Color(0xFFE3F2FD) : Colors.white,
+          color: _isHovered ? Color(0xFFE3F2FD) : context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(8),
           boxShadow: _isHovered
               ? [

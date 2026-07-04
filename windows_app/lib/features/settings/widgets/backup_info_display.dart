@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../providers/settings_provider.dart';
 
 class BackupInfoDisplay extends StatelessWidget {
@@ -44,7 +45,7 @@ class BackupInfoDisplay extends StatelessWidget {
                       : 'SQLite 本地数据库 (文件复制备份)',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.blue.shade600,
+                    color: context.tokens.primaryAccent,
                   ),
                 ),
               ],
@@ -60,7 +61,7 @@ class BackupInfoDisplay extends StatelessWidget {
               border: Border.all(
                 color: settingsProvider.backupDataSource == 'mysql'
                     ? Colors.green.shade600
-                    : Colors.blue.shade600,
+                    : context.tokens.primaryAccent,
                 width: 1,
               ),
             ),
@@ -70,7 +71,7 @@ class BackupInfoDisplay extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 color: settingsProvider.backupDataSource == 'mysql'
-                    ? Colors.green.shade700
+                    ? context.tokens.success
                     : Colors.blue.shade700,
               ),
             ),

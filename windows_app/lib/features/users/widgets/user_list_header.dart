@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../theme/app_theme.dart';
 
 class UserListHeader extends StatelessWidget {
@@ -28,19 +29,19 @@ class UserListHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.people,
-            color: Colors.white,
+            color: context.tokens.cardBackground,
             size: 24,
           ),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 '系统用户管理',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: context.tokens.cardBackground,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -48,7 +49,7 @@ class UserListHeader extends StatelessWidget {
               Text(
                 '共 $userCount 个用户账户',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: context.tokens.cardBackground.withValues(alpha: 0.9),
                   fontSize: 13,
                 ),
               ),
@@ -58,18 +59,18 @@ class UserListHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: context.tokens.cardBackground.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               children: [
-                const Icon(Icons.admin_panel_settings,
-                    color: Colors.white, size: 16),
+                Icon(Icons.admin_panel_settings,
+                    color: context.tokens.cardBackground, size: 16),
                 const SizedBox(width: 6),
                 Text(
                   '$adminCount 管理员',
-                  style: const TextStyle(
-                      color: Colors.white,
+                  style: TextStyle(
+                      color: context.tokens.cardBackground,
                       fontWeight: FontWeight.w500,
                       fontSize: 13),
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'material_pagination_button.dart';
 
 class MaterialPagination extends StatelessWidget {
@@ -29,7 +30,7 @@ class MaterialPagination extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
@@ -102,7 +103,7 @@ class MaterialPagination extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.tokens.cardBackground,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
               boxShadow: [
@@ -120,7 +121,7 @@ class MaterialPagination extends StatelessWidget {
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade400,
+                    color: context.tokens.textMuted,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -130,7 +131,7 @@ class MaterialPagination extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade700,
+                    color: context.tokens.iconMuted,
                   ),
                 ),
               ],

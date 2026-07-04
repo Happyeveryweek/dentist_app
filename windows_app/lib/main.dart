@@ -9,6 +9,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import 'theme/app_theme.dart';
 import 'providers/database_provider.dart';
@@ -950,10 +951,10 @@ class _MainScreenState extends State<MainScreen> {
                       color: AppTheme.primaryColor,
                       shape: BoxShape.circle,
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Icon(
                         Icons.medical_services,
-                        color: Colors.white,
+                        color: context.tokens.cardBackground,
                         size: 30,
                       ),
                     ),

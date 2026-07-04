@@ -32,7 +32,7 @@ class AppState extends ChangeNotifier {
               Expanded(
                 child: Text(
                   message,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,

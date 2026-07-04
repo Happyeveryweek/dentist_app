@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'dart:typed_data';
 import '../../../models/user.dart';
 import '../../../theme/app_theme.dart';
@@ -38,7 +39,7 @@ class UserCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -88,8 +89,8 @@ class UserCard extends StatelessWidget {
                               ),
                               child: Text(
                                 user.roleDisplay,
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: context.tokens.cardBackground,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -102,7 +103,7 @@ class UserCard extends StatelessWidget {
                           Text(
                             '@${user.username}',
                             style: TextStyle(
-                              color: Colors.grey.shade700,
+                              color: context.tokens.iconMuted,
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                             ),
@@ -118,13 +119,13 @@ class UserCard extends StatelessWidget {
                           return Row(
                             children: [
                               Icon(Icons.email,
-                                  size: 12, color: Colors.grey.shade600),
+                                  size: 12, color: context.tokens.iconMuted),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
                                   email,
                                   style: TextStyle(
-                                    color: Colors.grey.shade600,
+                                    color: context.tokens.iconMuted,
                                     fontSize: 11,
                                   ),
                                   overflow: TextOverflow.ellipsis,
@@ -245,11 +246,11 @@ class UserCard extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
-                  color: Colors.grey.shade200,
+                  color: context.tokens.border,
                   child: Icon(
                     Icons.error_outline,
                     size: 20,
-                    color: Colors.grey.shade400,
+                    color: context.tokens.textMuted,
                   ),
                 );
               },
@@ -346,7 +347,7 @@ class UserCard extends StatelessWidget {
                   child: Text(
                     '+${allowedModules.length - 3}',
                     style: TextStyle(
-                      color: Colors.grey.shade600,
+                      color: Colors.grey.shade700,
                       fontSize: 10,
                       fontWeight: FontWeight.w500,
                     ),

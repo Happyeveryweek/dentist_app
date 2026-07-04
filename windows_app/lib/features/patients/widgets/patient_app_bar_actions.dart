@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../widgets/dental_icons.dart';
 
@@ -34,7 +35,7 @@ class PatientAppBarActions extends StatelessWidget {
           margin: const EdgeInsets.only(right: 8),
           gradient: DentalColors.primaryGradient,
           icon: Icons.add_rounded,
-          iconColor: Colors.white,
+          iconColor: context.tokens.cardBackground,
           tooltip: '添加患者',
           onPressed: onAddPatient,
         ),

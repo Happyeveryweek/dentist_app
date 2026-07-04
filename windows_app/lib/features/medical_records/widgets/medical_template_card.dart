@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/medical_template.dart';
 
 /// 医疗模板卡片组件
@@ -25,7 +26,7 @@ class MedicalTemplateCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -68,7 +69,7 @@ class MedicalTemplateCard extends StatelessWidget {
               ),
               child: Icon(
                 isTreatment ? Icons.healing_rounded : Icons.note_add_rounded,
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 size: 28,
               ),
             ),
@@ -119,7 +120,7 @@ class MedicalTemplateCard extends StatelessWidget {
                       color: Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Colors.grey.shade200,
+                        color: context.tokens.border,
                       ),
                     ),
                     child: Text(
@@ -127,7 +128,7 @@ class MedicalTemplateCard extends StatelessWidget {
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.grey.shade700,
+                        color: context.tokens.iconMuted,
                         fontSize: 14,
                         height: 1.4,
                       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/patient.dart';
 
 /// 财务详情页患者基本信息区域组件
@@ -38,8 +39,8 @@ class FinancialPatientInfoSection extends StatelessWidget {
             backgroundColor: avatarBgColor,
             child: Text(
               patient.name.substring(0, 1),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.tokens.cardBackground,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),

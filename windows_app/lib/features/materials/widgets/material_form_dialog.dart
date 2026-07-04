@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/material.dart' as material_models;
 import '../../../providers/material_provider.dart';
 import '../../../theme/app_theme.dart';
@@ -228,7 +229,7 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.white,
+              context.tokens.cardBackground,
               Colors.grey.shade50,
             ],
           ),
@@ -268,12 +269,12 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: context.tokens.cardBackground.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               isEditing ? Icons.edit_rounded : Icons.add_rounded,
-              color: Colors.white,
+              color: context.tokens.cardBackground,
               size: 24,
             ),
           ),
@@ -281,8 +282,8 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
           Expanded(
             child: Text(
               isEditing ? '编辑材料' : '添加材料',
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: context.tokens.cardBackground,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -290,7 +291,7 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
           ),
           IconButton(
             onPressed: () => Navigator.of(context).pop(false),
-            icon: const Icon(Icons.close_rounded, color: Colors.white),
+            icon: Icon(Icons.close_rounded, color: context.tokens.cardBackground),
             tooltip: '关闭',
           ),
         ],
@@ -431,7 +432,7 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-                side: BorderSide(color: Colors.grey.shade400),
+                side: BorderSide(color: context.tokens.textMuted),
               ),
             ),
             child: const Text(
@@ -447,7 +448,7 @@ class _MaterialFormDialogState extends State<MaterialFormDialog> {
             onPressed: _handleSubmit,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
+              foregroundColor: context.tokens.cardBackground,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

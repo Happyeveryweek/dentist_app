@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../theme/app_theme.dart';
 import 'modern_date_picker.dart';
 
@@ -236,7 +237,7 @@ class ReusableDateRangePicker extends StatefulWidget {
                         onPressed: () => Navigator.of(context).pop(true),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: Colors.white,
+                          foregroundColor: context.tokens.cardBackground,
                         ),
                         child: const Text('确定'),
                       ),
@@ -318,7 +319,7 @@ class _PresetChipState extends State<_PresetChip> {
             style: TextStyle(
               fontSize: 12,
               color: widget.selected
-                  ? Colors.white
+                  ? context.tokens.cardBackground
                   : _hovering
                       ? AppTheme.primaryColor
                       : Colors.black87,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'dart:typed_data';
 import '../../../providers/user_provider.dart';
 import '../../../widgets/dental_icons.dart';
@@ -64,11 +65,11 @@ class UserInfoSection extends StatelessWidget {
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
-                                  color: Colors.grey.shade200,
+                                  color: context.tokens.border,
                                   child: Icon(
                                     Icons.error_outline,
                                     size: 18,
-                                    color: Colors.grey.shade400,
+                                    color: context.tokens.textMuted,
                                   ),
                                 );
                               },

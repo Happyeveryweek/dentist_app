@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'dart:ui' as ui;
 
 import '../../../models/material.dart' as material_models;
@@ -56,7 +57,7 @@ class MaterialSelectionDialog {
                 width: 500,
                 height: 600,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: context.tokens.cardBackground.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
@@ -91,17 +92,17 @@ class MaterialSelectionDialog {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             '选择材料',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: context.tokens.cardBackground,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           IconButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(Icons.close, color: Colors.white),
+                            icon: Icon(Icons.close, color: context.tokens.cardBackground),
                           ),
                         ],
                       ),
@@ -130,7 +131,7 @@ class MaterialSelectionDialog {
                             borderSide: BorderSide.none,
                           ),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: context.tokens.cardBackground,
                           contentPadding:
                               const EdgeInsets.symmetric(vertical: 10),
                         ),
@@ -161,9 +162,9 @@ class MaterialSelectionDialog {
                                     horizontal: 16, vertical: 14),
                                 child: Row(
                                   children: [
-                                    const CircleAvatar(
+                                    CircleAvatar(
                                       backgroundColor: AppTheme.primaryColor,
-                                      foregroundColor: Colors.white,
+                                      foregroundColor: context.tokens.cardBackground,
                                       child: Icon(DentalIcons.pills, size: 20),
                                     ),
                                     const SizedBox(width: 12),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/patient.dart';
 
 class AppointmentPatientSearchDialog extends StatefulWidget {
@@ -87,7 +88,7 @@ class _AppointmentPatientSearchDialogState
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.98),
+            color: context.tokens.cardBackground.withValues(alpha: 0.98),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
                 color: const Color(0xFF667eea).withValues(alpha: 0.1),
@@ -120,26 +121,26 @@ class _AppointmentPatientSearchDialogState
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: context.tokens.cardBackground.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.person_search,
-                              color: Colors.white, size: 20),
+                          child: Icon(Icons.person_search,
+                              color: context.tokens.cardBackground, size: 20),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
+                        Text(
                           '选择患者',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: context.tokens.cardBackground,
                           ),
                         ),
                       ],
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close,
-                          color: Colors.white, size: 18),
+                      icon: Icon(Icons.close,
+                          color: context.tokens.cardBackground, size: 18),
                       onPressed: () => Navigator.of(context).pop(),
                       splashRadius: 16,
                     ),
@@ -169,7 +170,7 @@ class _AppointmentPatientSearchDialogState
                                 color: Color(0xFF667eea), size: 20),
                           ),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: context.tokens.cardBackground,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,

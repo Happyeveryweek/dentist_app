@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import 'patient_detail_common_widgets.dart';
 
@@ -24,10 +25,10 @@ class PatientClinicalInfoCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.grey.shade200,
+          color: context.tokens.border,
           width: 1,
         ),
         boxShadow: [

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../theme/app_theme.dart';
 
 class PermissionPanel extends StatelessWidget {
@@ -42,7 +43,7 @@ class PermissionPanel extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade300),
-        color: Colors.white,
+        color: context.tokens.cardBackground,
       ),
       child: Column(
         children: [
@@ -144,7 +145,7 @@ class PermissionPanel extends StatelessWidget {
           '选择用户可以访问的功能模块（仪表盘默认对所有用户可见）',
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey.shade600,
+            color: Colors.grey.shade700,
           ),
         ),
         const SizedBox(height: 12),

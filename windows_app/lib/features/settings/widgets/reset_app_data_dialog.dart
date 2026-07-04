@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import 'reset_data_item.dart';
 
@@ -37,20 +38,20 @@ class ResetAppDataDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: context.tokens.cardBackground.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.refresh_rounded,
-                      color: Colors.white,
+                      color: context.tokens.cardBackground,
                       size: 24,
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Text(
+                  Text(
                     '重置应用配置',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: context.tokens.cardBackground,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -109,7 +110,7 @@ class ResetAppDataDialog extends StatelessWidget {
                           child: Text(
                             '您的数据库文件和业务数据不会被删除',
                             style: TextStyle(
-                              color: Colors.green.shade700,
+                              color: context.tokens.success,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -134,7 +135,7 @@ class ResetAppDataDialog extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.info_rounded,
-                          color: Colors.blue.shade600,
+                          color: context.tokens.primaryAccent,
                           size: 20,
                         ),
                         const SizedBox(width: 12),
@@ -169,7 +170,7 @@ class ResetAppDataDialog extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        side: BorderSide(color: Colors.grey.shade400),
+                        side: BorderSide(color: context.tokens.textMuted),
                       ),
                       child: const Text(
                         '取消',
@@ -186,7 +187,7 @@ class ResetAppDataDialog extends StatelessWidget {
                       onPressed: () => Navigator.of(context).pop(true),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange.shade600,
-                        foregroundColor: Colors.white,
+                        foregroundColor: context.tokens.cardBackground,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

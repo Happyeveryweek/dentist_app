@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class PatientSnackBars {
   const PatientSnackBars._();
@@ -29,13 +30,13 @@ class PatientSnackBars {
       SnackBar(
         content: Row(
           children: [
-            Icon(icon, color: Colors.white, size: 20),
+            Icon(icon, color: context.tokens.cardBackground, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: context.tokens.cardBackground,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -65,15 +66,15 @@ class PatientSnackBars {
           children: [
             Icon(
               isError ? Icons.error_outline : Icons.info_outline,
-              color: Colors.white,
+              color: context.tokens.cardBackground,
               size: 20,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: context.tokens.cardBackground,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),

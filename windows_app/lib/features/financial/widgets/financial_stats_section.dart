@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'financial_stat_item.dart';
 
 /// 财务统计区域组件
@@ -46,7 +47,7 @@ class FinancialStatsSection extends StatelessWidget {
                   icon: Icons.people,
                   label: '涉及患者',
                   value: totalPatients.toString(),
-                  color: Colors.green.shade700,
+                  color: context.tokens.success,
                 ),
               ),
             ],

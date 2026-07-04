@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../models/medical_template.dart';
 import '../../../services/medical_template_service.dart';
@@ -83,7 +84,7 @@ class TemplateSelectionWidget extends StatelessWidget {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: color,
-                            foregroundColor: Colors.white,
+                            foregroundColor: context.tokens.cardBackground,
                             elevation: 2,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,

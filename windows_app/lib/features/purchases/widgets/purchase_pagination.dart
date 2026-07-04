@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 采购记录的分页组件
 /// 用于显示分页控件和分页信息
@@ -31,7 +32,7 @@ class PurchasePagination extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         boxShadow: [
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -75,13 +76,13 @@ class PurchasePagination extends StatelessWidget {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color:
-                        active ? Theme.of(context).primaryColor : Colors.white,
+                        active ? Theme.of(context).primaryColor : context.tokens.cardBackground,
                     borderRadius: BorderRadius.circular(10),
                     border:
                         Border.all(color: Colors.grey.withValues(alpha: 0.25)),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: context.tokens.shadow,
                           blurRadius: 6,
                           offset: const Offset(0, 2))
                     ],
@@ -106,7 +107,7 @@ class PurchasePagination extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.tokens.cardBackground,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
               boxShadow: [

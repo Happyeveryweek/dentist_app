@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class SettingsCard extends StatelessWidget {
   final IconData icon;
@@ -19,11 +20,11 @@ class SettingsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: context.tokens.shadow,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -37,7 +38,7 @@ class SettingsCard extends StatelessWidget {
               color: Colors.blue.shade50,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: Colors.blue.shade600, size: 24),
+            child: Icon(icon, color: context.tokens.primaryAccent, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -55,7 +56,7 @@ class SettingsCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: context.tokens.iconMuted,
                     fontSize: 13,
                   ),
                 ),

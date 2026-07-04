@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../theme/app_theme.dart';
 
@@ -125,11 +126,11 @@ class PatientDentalChartCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: context.tokens.shadow,
               blurRadius: 3,
               offset: const Offset(0, 1),
             ),
@@ -152,7 +153,7 @@ class PatientDentalChartCard extends StatelessWidget {
                     Icon(
                       Icons.person,
                       size: 10,
-                      color: Colors.blue.shade600,
+                      color: context.tokens.primaryAccent,
                     ),
                     const SizedBox(width: 3),
                     Text(

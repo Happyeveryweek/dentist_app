@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class TeethConditionWidget extends StatefulWidget {
   final List<Map<String, String>> teethData;
@@ -38,7 +39,7 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,7 +80,7 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
       width: 140,
       height: 100,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(

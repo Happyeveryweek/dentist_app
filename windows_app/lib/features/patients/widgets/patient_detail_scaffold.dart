@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../widgets/dental_icons.dart';
 import '../../../widgets/loading_indicator.dart';
@@ -37,9 +38,9 @@ class PatientDetailScaffold extends StatelessWidget {
                 gradient: DentalColors.primaryGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.person_rounded,
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 size: 24,
               ),
             ),
@@ -53,7 +54,7 @@ class PatientDetailScaffold extends StatelessWidget {
             ),
           ],
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: context.tokens.cardBackground,
         foregroundColor: DentalColors.onSurface,
         elevation: 0,
         actions: [
