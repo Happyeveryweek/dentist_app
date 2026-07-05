@@ -52,6 +52,18 @@ class PurchaseInitializationService {
     var currentDataSourceType = dataSourceType;
     SqlitePurchaseDataSource? sqliteDataSource;
     MySqlPurchaseDataSource? mysqlDataSource;
+    MySqlConnection? currentMySqlConnection() {
+      try {
+        final latestConnection = dbProvider.mysqlConnection;
+        if (latestConnection is MySqlConnection) {
+          currentMysqlConnection = latestConnection;
+          return latestConnection;
+        }
+      } catch (e) {
+        log('获取最新MySQL连接失败: $e');
+      }
+      return currentMysqlConnection;
+    }
 
     log('PurchaseProvider开始初始化...');
 
@@ -68,7 +80,7 @@ class PurchaseInitializationService {
         currentMysqlConnection = mysqlConn;
         currentDataSourceType = 'mysql';
         mysqlDataSource = MySqlPurchaseDataSource.withConnectionGetter(
-          () => currentMysqlConnection,
+          currentMySqlConnection,
         );
         log('✅ PurchaseProvider MySQL数据源设置成功');
       } else {
@@ -95,6 +107,7 @@ class PurchaseInitializationService {
             statisticsService: PurchaseDatabaseStatisticsService(
               sqliteDatabase: currentDatabase,
               mysqlConnection: currentMysqlConnection,
+              mysqlConnectionGetter: currentMySqlConnection,
               dataSourceType: currentDataSourceType,
               getDoctorFilter:
                   () => userProvider?.buildDoctorFilter(
@@ -139,6 +152,7 @@ class PurchaseInitializationService {
             statisticsService: PurchaseDatabaseStatisticsService(
               sqliteDatabase: currentDatabase,
               mysqlConnection: currentMysqlConnection,
+              mysqlConnectionGetter: currentMySqlConnection,
               dataSourceType: currentDataSourceType,
               getDoctorFilter:
                   () => userProvider?.buildDoctorFilter(
@@ -181,6 +195,7 @@ class PurchaseInitializationService {
             statisticsService: PurchaseDatabaseStatisticsService(
               sqliteDatabase: currentDatabase,
               mysqlConnection: currentMysqlConnection,
+              mysqlConnectionGetter: currentMySqlConnection,
               dataSourceType: currentDataSourceType,
               getDoctorFilter:
                   () => userProvider?.buildDoctorFilter(
@@ -211,11 +226,12 @@ class PurchaseInitializationService {
     final statisticsService = PurchaseDatabaseStatisticsService(
       sqliteDatabase: currentDatabase,
       mysqlConnection: currentMysqlConnection,
+      mysqlConnectionGetter: currentMySqlConnection,
       dataSourceType: currentDataSourceType,
       getDoctorFilter: () => permissionService.getDoctorFilter(),
       shouldFilterByDoctor: () => permissionService.shouldFilterByDoctor(),
       testMySqlConnection:
-          () => connectionService.testMySqlConnection(currentMysqlConnection),
+          () => connectionService.testMySqlConnection(currentMySqlConnection()),
     );
 
     return PurchaseInitializationResult(

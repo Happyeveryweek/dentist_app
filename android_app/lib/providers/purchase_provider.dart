@@ -574,6 +574,7 @@ class PurchaseProvider extends ChangeNotifier {
         _statisticsService = PurchaseDatabaseStatisticsService(
           sqliteDatabase: _database,
           mysqlConnection: _currentMysqlConnection,
+          mysqlConnectionGetter: () => _currentMysqlConnection,
           dataSourceType: _dataSourceType,
           getDoctorFilter: () => _permissionService?.getDoctorFilter(),
           shouldFilterByDoctor:
@@ -626,6 +627,7 @@ class PurchaseProvider extends ChangeNotifier {
           _statisticsService = PurchaseDatabaseStatisticsService(
             sqliteDatabase: _database,
             mysqlConnection: _currentMysqlConnection,
+            mysqlConnectionGetter: () => _currentMysqlConnection,
             dataSourceType: _dataSourceType,
             getDoctorFilter: () => _permissionService?.getDoctorFilter(),
             shouldFilterByDoctor:

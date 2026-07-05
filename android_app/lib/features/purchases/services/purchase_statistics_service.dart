@@ -128,6 +128,7 @@ class PurchaseStatisticsService {
 class PurchaseDatabaseStatisticsService {
   final Database? _sqliteDatabase;
   final MySqlConnection? _mysqlConnection;
+  final MySqlConnection? Function()? _mysqlConnectionGetter;
   final String _dataSourceType;
   final String? Function()? _getDoctorFilter;
   final bool Function()? _shouldFilterByDoctor;
@@ -136,16 +137,21 @@ class PurchaseDatabaseStatisticsService {
   PurchaseDatabaseStatisticsService({
     Database? sqliteDatabase,
     MySqlConnection? mysqlConnection,
+    MySqlConnection? Function()? mysqlConnectionGetter,
     required String dataSourceType,
     String? Function()? getDoctorFilter,
     bool Function()? shouldFilterByDoctor,
     Future<bool> Function()? testMySqlConnection,
   }) : _sqliteDatabase = sqliteDatabase,
        _mysqlConnection = mysqlConnection,
+       _mysqlConnectionGetter = mysqlConnectionGetter,
        _dataSourceType = dataSourceType,
        _getDoctorFilter = getDoctorFilter,
        _shouldFilterByDoctor = shouldFilterByDoctor,
        _testMySqlConnection = testMySqlConnection;
+
+  MySqlConnection? get _currentMysqlConnection =>
+      _mysqlConnectionGetter?.call() ?? _mysqlConnection;
 
   /// 获取采购统计信息
   Future<Map<String, dynamic>> getPurchaseStatistics() async {
@@ -189,7 +195,7 @@ class PurchaseDatabaseStatisticsService {
         stats['supplierCount'] = result.first['supplier_count'] ?? 0;
       }
     } else if (_dataSourceType == 'mysql') {
-      final conn = _mysqlConnection;
+      final conn = _currentMysqlConnection;
       if (conn == null) return stats;
 
       // 测试连接是否有效
@@ -276,7 +282,7 @@ class PurchaseDatabaseStatisticsService {
         stats['totalQuantity'] = result.first['total_quantity'] ?? 0;
       }
     } else if (_dataSourceType == 'mysql') {
-      final conn = _mysqlConnection;
+      final conn = _currentMysqlConnection;
       if (conn == null) return stats;
 
       // 测试连接是否有效
