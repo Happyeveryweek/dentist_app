@@ -13,16 +13,18 @@ class _FakeUserProvider extends UserProvider {
 }
 
 void main() {
-  group('UserValidationService', () {
-    test('hashPassword returns consistent sha256 hex', () {
+  group('用户管理-密码加密', () {
+    test('相同密码生成一致的SHA256哈希', () {
       final hash1 = UserValidationService.hashPassword('123456');
       final hash2 = UserValidationService.hashPassword('123456');
       expect(hash1, hash2);
       expect(hash1.length, 64);
       expect(hash1, isNot(equals('123456')));
     });
+  });
 
-    test('checkEmailExists returns true when email used by another user', () {
+  group('用户管理-邮箱唯一性校验', () {
+    test('邮箱被其他用户占用时返回true', () {
       final provider = _FakeUserProvider([
         User(
           id: 1,
@@ -40,7 +42,7 @@ void main() {
       );
     });
 
-    test('checkEmailExists returns false when checking self', () {
+    test('校验当前用户自身邮箱时返回false', () {
       final provider = _FakeUserProvider([
         User(
           id: 1,
@@ -58,7 +60,7 @@ void main() {
       );
     });
 
-    test('checkEmailExists returns false when email not found', () {
+    test('邮箱不存在时返回false', () {
       final provider = _FakeUserProvider([
         User(
           id: 1,
@@ -75,9 +77,10 @@ void main() {
         completion(isFalse),
       );
     });
+  });
 
-    test('checkUsernameExists returns true when username used by another user',
-        () {
+  group('用户管理-用户名唯一性校验', () {
+    test('用户名被其他用户占用时返回true', () {
       final provider = _FakeUserProvider([
         User(
           id: 1,
@@ -94,7 +97,7 @@ void main() {
       );
     });
 
-    test('checkUsernameExists returns false when checking self', () {
+    test('校验当前用户自身用户名时返回false', () {
       final provider = _FakeUserProvider([
         User(
           id: 1,

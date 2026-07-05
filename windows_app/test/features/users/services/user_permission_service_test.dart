@@ -72,8 +72,8 @@ class _FakeUserDataSource implements UserDataSource {
 }
 
 void main() {
-  group('UserPermissionService', () {
-    test('getUserPermissions reads from data source when cache empty', () async {
+  group('用户管理-权限查询', () {
+    test('缓存为空时从数据源读取用户权限', () async {
       final dataSource = _FakeUserDataSource({
         1: {'dashboard': true, 'patients': true},
       });
@@ -87,7 +87,7 @@ void main() {
       expect(permissions['patients'], true);
     });
 
-    test('hasModulePermission returns correct value', () async {
+    test('查询模块权限返回正确布尔值', () async {
       final dataSource = _FakeUserDataSource({
         1: {'dashboard': true, 'patients': false},
       });
@@ -100,7 +100,20 @@ void main() {
       expect(await service.hasModulePermission(1, 'patients'), false);
     });
 
-    test('updateUserPermissions clears cache after success', () async {
+    test('未知用户默认拥有dashboard权限', () async {
+      final dataSource = _FakeUserDataSource({});
+      final service = UserPermissionService(
+        dataSource: dataSource,
+        cacheHelper: UserCacheHelper(),
+      );
+
+      final permissions = await service.getUserPermissions(999);
+      expect(permissions['dashboard'], true);
+    });
+  });
+
+  group('用户管理-权限缓存', () {
+    test('更新用户权限后清除缓存', () async {
       final dataSource = _FakeUserDataSource({});
       final cacheHelper = UserCacheHelper();
       final service = UserPermissionService(
@@ -108,7 +121,7 @@ void main() {
         cacheHelper: cacheHelper,
       );
 
-      // prime cache
+      // 预热缓存
       await service.getUserPermissions(1);
       expect(cacheHelper.isPermissionsCacheValid(), true);
 
@@ -116,7 +129,7 @@ void main() {
       expect(cacheHelper.isPermissionsCacheValid(), false);
     });
 
-    test('onPermissionChanged clears user-specific cache', () async {
+    test('权限变更事件清除对应用户缓存', () async {
       final dataSource = _FakeUserDataSource({
         1: {'dashboard': true},
       });
@@ -129,17 +142,6 @@ void main() {
       await service.getUserPermissions(1);
       service.onPermissionChanged(1, null);
       expect(cacheHelper.cachedPermissions?.containsKey(1), false);
-    });
-
-    test('returns default dashboard permission for unknown user', () async {
-      final dataSource = _FakeUserDataSource({});
-      final service = UserPermissionService(
-        dataSource: dataSource,
-        cacheHelper: UserCacheHelper(),
-      );
-
-      final permissions = await service.getUserPermissions(999);
-      expect(permissions['dashboard'], true);
     });
   });
 }

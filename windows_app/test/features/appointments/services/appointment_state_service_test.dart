@@ -35,7 +35,7 @@ Patient _makePatient({
 }
 
 void main() {
-  group('AppointmentStateService pagination', () {
+  group('预约管理-分页功能', () {
     late AppointmentProvider provider;
     late AppointmentStateService service;
 
@@ -44,13 +44,13 @@ void main() {
       service = AppointmentStateService(appointmentProvider: provider);
     });
 
-    test('empty list returns empty paginated appointments', () {
+    test('空预约列表分页结果为空', () {
       service.setAppointments([]);
       expect(service.paginatedAppointments, isEmpty);
       expect(service.currentPage, 1);
     });
 
-    test('slices list into pages of 10', () {
+    test('每页10条正确切片并翻页', () {
       final appointments = List.generate(
         25,
         (i) => _makeAppointment(
@@ -77,7 +77,7 @@ void main() {
       expect(thirdPageIds.intersection(secondPageIds), isEmpty);
     });
 
-    test('setPage clamps to valid range', () {
+    test('页码越界时自动Clamp到合法范围', () {
       final appointments = List.generate(
         15,
         (i) => _makeAppointment(
@@ -95,7 +95,7 @@ void main() {
       expect(service.currentPage, 2);
     });
 
-    test('filters reduce total pages and reset current page', () {
+    test('搜索筛选后自动重置到第一页', () {
       final appointments = List.generate(
         25,
         (i) => _makeAppointment(
@@ -113,7 +113,7 @@ void main() {
     });
   });
 
-  group('AppointmentStateService date filtering', () {
+  group('预约管理-日期筛选', () {
     late AppointmentStateService service;
 
     setUp(() {
@@ -122,7 +122,7 @@ void main() {
       );
     });
 
-    test('filters by selected date', () {
+    test('按选定日期筛选预约', () {
       final today = DateTime(2026, 7, 5);
       final tomorrow = DateTime(2026, 7, 6);
       service.setAppointments([
@@ -136,7 +136,7 @@ void main() {
       expect(service.filteredAppointments.map((a) => a.id), containsAll([1, 2]));
     });
 
-    test('filters by date range', () {
+    test('按日期范围筛选预约', () {
       final d1 = DateTime(2026, 7, 5);
       final d2 = DateTime(2026, 7, 6);
       final d3 = DateTime(2026, 7, 7);
@@ -151,7 +151,7 @@ void main() {
       expect(service.filteredAppointments.map((a) => a.id), containsAll([1, 2]));
     });
 
-    test('toggle filtering disables date filter', () {
+    test('关闭日期筛选后显示全部预约', () {
       final today = DateTime(2026, 7, 5);
       final tomorrow = DateTime(2026, 7, 6);
       service.setAppointments([
@@ -168,7 +168,7 @@ void main() {
     });
   });
 
-  group('AppointmentStateService search', () {
+  group('预约管理-患者搜索', () {
     late AppointmentStateService service;
 
     setUp(() {
@@ -177,7 +177,7 @@ void main() {
       );
     });
 
-    test('searches by patient name', () {
+    test('按患者姓名搜索预约', () {
       service.setAppointments([
         _makeAppointment(
           id: 1,
@@ -196,7 +196,7 @@ void main() {
       expect(service.filteredAppointments.first.id, 1);
     });
 
-    test('searches by pinyin initials', () {
+    test('按患者姓名拼音首字母搜索预约', () {
       service.setAppointments([
         _makeAppointment(
           id: 1,
@@ -215,7 +215,7 @@ void main() {
       expect(service.filteredAppointments.first.patient?.name, '张三');
     });
 
-    test('empty search query shows all filtered appointments', () {
+    test('清空搜索关键词后显示全部结果', () {
       service.setAppointments([
         _makeAppointment(id: 1, date: DateTime(2026, 7, 5)),
         _makeAppointment(id: 2, date: DateTime(2026, 7, 5)),
@@ -226,7 +226,7 @@ void main() {
     });
   });
 
-  group('AppointmentStateService mutations', () {
+  group('预约管理-数据变更', () {
     late AppointmentStateService service;
 
     setUp(() {
@@ -235,7 +235,7 @@ void main() {
       );
     });
 
-    test('replaceAppointment updates existing appointment', () {
+    test('更新已存在预约状态', () {
       final appointment = _makeAppointment(id: 1, date: DateTime(2026, 7, 5));
       service.setAppointments([appointment]);
 
@@ -246,7 +246,7 @@ void main() {
       expect(service.filteredAppointments.first.status, 'completed');
     });
 
-    test('replaceAppointment adds new appointment when id not found', () {
+    test('新增预约时补充到列表', () {
       service.setAppointments([
         _makeAppointment(id: 1, date: DateTime(2026, 7, 5)),
       ]);
@@ -258,7 +258,7 @@ void main() {
       expect(service.appointments.length, 2);
     });
 
-    test('removeAppointmentById deletes appointment', () {
+    test('按ID删除预约', () {
       service.setAppointments([
         _makeAppointment(id: 1, date: DateTime(2026, 7, 5)),
         _makeAppointment(id: 2, date: DateTime(2026, 7, 5)),
@@ -271,7 +271,7 @@ void main() {
     });
   });
 
-  group('AppointmentStateService notifications', () {
+  group('预约管理-状态通知', () {
     late AppointmentStateService service;
 
     setUp(() {
@@ -280,7 +280,7 @@ void main() {
       );
     });
 
-    test('setPage notifies when page changes', () {
+    test('翻页变化时通知监听者', () {
       service.isFiltering = false;
       service.setAppointments(
         List.generate(

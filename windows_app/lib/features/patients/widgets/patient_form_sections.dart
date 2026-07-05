@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/theme_context_extensions.dart';
 import '../../../theme/medical_semantic_colors.dart';
+import '../services/patient_form_validators.dart';
 import 'patient_form_fields.dart';
 
 class PatientFormBasicSection extends StatelessWidget {
@@ -70,12 +71,7 @@ class PatientFormBasicSection extends StatelessWidget {
               hintText: '输入患者姓名',
               icon: Icons.person,
               enabled: canEditBasicInfo,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '请输入姓名';
-                }
-                return null;
-              },
+              validator: PatientFormValidators.validateName,
               onTap: onNameTap,
               onChanged: (value) {},
               onFieldSubmitted: onNameSubmitted,
@@ -91,13 +87,7 @@ class PatientFormBasicSection extends StatelessWidget {
               icon: Icons.cake,
               enabled: canEditBasicInfo,
               keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null || value.isEmpty) return null;
-                if (int.tryParse(value) == null) {
-                  return '请输入有效年龄';
-                }
-                return null;
-              },
+              validator: PatientFormValidators.validateAge,
             ),
           ),
           const SizedBox(width: 12),
@@ -192,7 +182,7 @@ class PatientFormContactSection extends StatelessWidget {
                     icon: Icons.phone,
                     enabled: canEditBasicInfo,
                     keyboardType: TextInputType.phone,
-                    validator: _validatePhone,
+                    validator: PatientFormValidators.validatePhone,
                   ),
                 ),
                 Container(
@@ -226,7 +216,7 @@ class PatientFormContactSection extends StatelessWidget {
                       icon: Icons.phone_forwarded,
                       enabled: canEditBasicInfo,
                       keyboardType: TextInputType.phone,
-                      validator: _validateOptionalPhone,
+                      validator: PatientFormValidators.validateOptionalPhone,
                     ),
                   )
                 else
@@ -265,21 +255,6 @@ class PatientFormContactSection extends StatelessWidget {
     );
   }
 
-  static String? _validatePhone(String? value) {
-    if (value == null || value.isEmpty) return null;
-    final RegExp phoneRegex = RegExp(r'^1[3-9]\d{9}$');
-    if (!phoneRegex.hasMatch(value)) {
-      return '请输入正确的11位手机号码';
-    }
-    return null;
-  }
-
-  static String? _validateOptionalPhone(String? value) {
-    if (value != null && value.isNotEmpty) {
-      return _validatePhone(value);
-    }
-    return null;
-  }
 }
 
 class PatientFormTreatmentSection extends StatelessWidget {

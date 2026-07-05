@@ -3,8 +3,8 @@ import 'package:dentist_app_windows/models/purchase_record.dart';
 import 'package:dentist_app_windows/models/purchase_item.dart';
 
 void main() {
-  group('PurchaseItem', () {
-    test('calculateTotalPrice returns unitPrice * quantity', () {
+  group('采购管理-采购明细计算', () {
+    test('采购明细总价等于单价乘以数量', () {
       final item = PurchaseItem(
         purchaseRecordId: 1,
         materialName: '树脂',
@@ -15,7 +15,7 @@ void main() {
       expect(item.calculateTotalPrice(), 62.5);
     });
 
-    test('formattedUnit returns default unit when null', () {
+    test('未提供单位时显示默认单位“个”', () {
       final item = PurchaseItem(
         purchaseRecordId: 1,
         materialName: '树脂',
@@ -26,7 +26,7 @@ void main() {
       expect(item.formattedUnit, '个');
     });
 
-    test('formattedUnit returns provided unit', () {
+    test('提供单位时显示对应单位', () {
       final item = PurchaseItem(
         purchaseRecordId: 1,
         materialName: '树脂',
@@ -38,7 +38,7 @@ void main() {
       expect(item.formattedUnit, '盒');
     });
 
-    test('formatted price strings use two decimals', () {
+    test('金额格式化保留两位小数并带货币符号', () {
       final item = PurchaseItem(
         purchaseRecordId: 1,
         materialName: '树脂',
@@ -50,7 +50,7 @@ void main() {
       expect(item.formattedTotalPrice, '¥30.00');
     });
 
-    test('copyWith updates fields', () {
+    test('copyWith仅更新指定字段', () {
       final item = PurchaseItem(
         purchaseRecordId: 1,
         materialName: '树脂',
@@ -65,8 +65,8 @@ void main() {
     });
   });
 
-  group('PurchaseRecord', () {
-    test('formattedTotalAmount formats with currency', () {
+  group('采购管理-采购记录', () {
+    test('采购记录总金额格式化为人民币', () {
       final record = PurchaseRecord(
         purchaseDate: DateTime(2026, 7, 5),
         totalQuantity: 10,
@@ -75,7 +75,7 @@ void main() {
       expect(record.formattedTotalAmount, '¥1234.50');
     });
 
-    test('formattedPurchaseDate formats as yyyy-MM-dd', () {
+    test('采购日期格式化为yyyy-MM-dd', () {
       final record = PurchaseRecord(
         purchaseDate: DateTime(2026, 7, 5),
         totalQuantity: 1,
@@ -84,7 +84,7 @@ void main() {
       expect(record.formattedPurchaseDate, '2026-07-05');
     });
 
-    test('copyWith updates fields', () {
+    test('采购记录copyWith仅更新指定字段', () {
       final record = PurchaseRecord(
         purchaseDate: DateTime(2026, 7, 5),
         totalQuantity: 10,
@@ -97,7 +97,7 @@ void main() {
       expect(updated.totalQuantity, 10);
     });
 
-    test('equality compares by id', () {
+    test('采购记录按ID判等', () {
       final a = PurchaseRecord(
         id: 1,
         purchaseDate: DateTime(2026, 7, 5),

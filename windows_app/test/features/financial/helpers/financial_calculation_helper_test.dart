@@ -36,8 +36,8 @@ FinancialItem _makeItem({
 }
 
 void main() {
-  group('FinancialCalculationHelper', () {
-    test('calculateTotalReceivable sums itemPrice * quantity', () {
+  group('财务管理-收费计算', () {
+    test('应收金额等于各项目单价乘以数量之和', () {
       final record = _makeRecord(id: 1, patientId: 1);
       final items = {
         1: [
@@ -49,13 +49,13 @@ void main() {
           250.0);
     });
 
-    test('calculateTotalReceivable returns 0 when no items', () {
+    test('无收费明细时应收金额为0', () {
       final record = _makeRecord(id: 1, patientId: 1);
       expect(FinancialCalculationHelper.calculateTotalReceivable(record, {}),
           0.0);
     });
 
-    test('calculateTotalCollected sums totalPrice', () {
+    test('已收金额等于各项目实收价格之和', () {
       final record = _makeRecord(id: 1, patientId: 1);
       final items = {
         1: [
@@ -67,7 +67,7 @@ void main() {
           250.0);
     });
 
-    test('calculateOutstandingAmount equals receivable minus collected', () {
+    test('欠费金额等于应收减去已收', () {
       final record = _makeRecord(id: 1, patientId: 1);
       final items = {
         1: [
@@ -85,7 +85,7 @@ void main() {
       );
     });
 
-    test('calculateTotalProcessingFee sums processing fees', () {
+    test('加工费总额累加各项目加工费', () {
       final record = _makeRecord(id: 1, patientId: 1);
       final items = {
         1: [
@@ -98,8 +98,10 @@ void main() {
         50.0,
       );
     });
+  });
 
-    test('getAvatarBackgroundColor returns color for gender', () {
+  group('财务管理-患者头像颜色', () {
+    test('根据患者性别返回不同头像背景色', () {
       final male = Patient(
         name: '男患者',
         age: 30,
