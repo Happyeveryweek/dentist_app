@@ -23,7 +23,8 @@ class UsersScreen extends StatefulWidget {
   State<UsersScreen> createState() => _UsersScreenState();
 }
 
-class _UsersScreenState extends State<UsersScreen> {
+class _UsersScreenState extends State<UsersScreen>
+    with AutomaticKeepAliveClientMixin<UsersScreen> {
   List<User> _users = [];
   bool _isLoading = true;
   bool _hasError = false;
@@ -47,29 +48,44 @@ class _UsersScreenState extends State<UsersScreen> {
     super.didChangeDependencies();
     final userProvider = Provider.of<UserProvider>(context, listen: false);
     if (userProvider.usersNeedRefresh) {
-      _loadUsers(forceRefresh: true);
+      _loadUsers(forceRefresh: true, showLoading: false);
       userProvider.resetUsersRefreshFlag();
     }
   }
 
   // 加载所有用户
-  Future<void> _loadUsers({bool forceRefresh = true}) async {
-    setState(() {
-      _isLoading = true;
-      _hasError = false;
-      _errorMessage = '';
-    });
+  Future<void> _loadUsers({
+    bool forceRefresh = true,
+    bool showLoading = true,
+  }) async {
+    final shouldShowLoading = showLoading && _users.isEmpty;
+    if (shouldShowLoading) {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+        _errorMessage = '';
+      });
+    } else if (_hasError || _errorMessage.isNotEmpty) {
+      setState(() {
+        _hasError = false;
+        _errorMessage = '';
+      });
+    }
 
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
 
       // 使用强制刷新参数，确保获取最新数据
       final users = await userProvider.getAllUsers(forceRefresh: forceRefresh);
+      if (!mounted) return;
       setState(() {
         _users = users;
         _isLoading = false;
+        _hasError = false;
+        _errorMessage = '';
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _hasError = true;
@@ -141,6 +157,7 @@ class _UsersScreenState extends State<UsersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       backgroundColor: context.colors.surface,
       appBar: AppBar(
@@ -188,7 +205,7 @@ class _UsersScreenState extends State<UsersScreen> {
               ),
               onPressed: () async {
                 // 强制刷新数据
-                await _loadUsers(forceRefresh: true);
+                await _loadUsers(forceRefresh: true, showLoading: false);
                 if (!context.mounted) return;
                 AppToastManager.showSuccess(context, message: '刷新数据成功');
               },
@@ -230,7 +247,7 @@ class _UsersScreenState extends State<UsersScreen> {
     if (_hasError) {
       return UserListErrorState(
         errorMessage: _errorMessage,
-        onRetry: () => _loadUsers(forceRefresh: true),
+        onRetry: () => _loadUsers(forceRefresh: true, showLoading: true),
       );
     }
 
@@ -289,4 +306,7 @@ class _UsersScreenState extends State<UsersScreen> {
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }

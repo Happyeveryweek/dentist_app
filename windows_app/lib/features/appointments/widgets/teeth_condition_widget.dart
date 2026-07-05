@@ -40,7 +40,7 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: tokens.mutedBackground,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: tokens.border),
       ),
@@ -51,7 +51,7 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
             children: [
               Icon(
                 Icons.medical_services,
-                color: colors.primary,
+                color: tokens.iconMuted,
                 size: 18,
               ),
               const SizedBox(width: 8),
@@ -60,7 +60,7 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: colors.primary,
+                  color: colors.onSurface,
                 ),
               ),
             ],
@@ -99,7 +99,7 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
-                color: colors.primary,
+                color: colors.onSurface,
               ),
             ),
           ),
@@ -111,6 +111,7 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
 
   Widget _buildCross(int crossIndex) {
     final tokens = context.tokens;
+    final crossLineColor = tokens.textMuted.withValues(alpha: 0.45);
     const double width = 120.0;
     const double height = 65.0;
     const double centerX = width / 2;
@@ -121,7 +122,7 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
       children: [
         CustomPaint(
           size: const Size(width, height),
-          painter: CrossPainter(lineColor: tokens.border),
+          painter: CrossPainter(lineColor: crossLineColor),
         ),
         Positioned(
           top: centerY - 20,

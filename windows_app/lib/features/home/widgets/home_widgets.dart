@@ -62,6 +62,7 @@ class UserInfoSection extends StatelessWidget {
                               width: 44,
                               height: 44,
                               fit: BoxFit.cover,
+                              gaplessPlayback: true,
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
                                   color: context.tokens.border,
@@ -82,12 +83,14 @@ class UserInfoSection extends StatelessWidget {
                                       width: 44,
                                       height: 44,
                                       fit: BoxFit.cover,
+                                      gaplessPlayback: true,
                                     )
                                   : Image.asset(
                                       'assets/icons/nurse.png',
                                       width: 44,
                                       height: 44,
                                       fit: BoxFit.cover,
+                                      gaplessPlayback: true,
                                     ),
                             );
                         }(),

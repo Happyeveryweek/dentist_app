@@ -255,6 +255,7 @@ class UserCard extends StatelessWidget {
               width: 50,
               height: 50,
               fit: BoxFit.cover,
+              gaplessPlayback: true,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   color: context.tokens.border,
@@ -275,12 +276,14 @@ class UserCard extends StatelessWidget {
                     width: 50,
                     height: 50,
                     fit: BoxFit.cover,
+                    gaplessPlayback: true,
                   )
                 : Image.asset(
                     'assets/icons/nurse.png',
                     width: 50,
                     height: 50,
                     fit: BoxFit.cover,
+                    gaplessPlayback: true,
                   ),
           );
         }),

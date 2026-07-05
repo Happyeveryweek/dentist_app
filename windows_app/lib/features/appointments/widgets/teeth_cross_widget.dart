@@ -48,6 +48,8 @@ class TeethCrossWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final colors = context.colors;
+    final crossLineColor = tokens.textMuted.withValues(alpha: 0.45);
 
     return SizedBox(
       height: 120, // 恢复原始尺寸
@@ -59,17 +61,20 @@ class TeethCrossWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text('牙位 ${index + 1}',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: colors.onSurface,
+                  )),
             ],
           ),
           const SizedBox(height: 4),
-          _buildCross(tokens),
+          _buildCross(crossLineColor),
         ],
       ),
     );
   }
 
-  Widget _buildCross(AppThemeTokens tokens) {
+  Widget _buildCross(Color crossLineColor) {
     // 使用固定尺寸而非LayoutBuilder，避免潜在的布局计算问题（恢复原值）
     const double width = 170.0;
     const double height = 90.0;
@@ -82,7 +87,7 @@ class TeethCrossWidget extends StatelessWidget {
         // 自定义画笔绘制十字
         CustomPaint(
           size: const Size(width, height),
-          painter: CrossPainter(lineColor: tokens.border),
+          painter: CrossPainter(lineColor: crossLineColor),
         ),
 
         // 上左象限

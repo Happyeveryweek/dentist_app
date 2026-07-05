@@ -60,7 +60,13 @@ class FinancialPatientInfoSection extends StatelessWidget {
                       ),
                 ),
                 const SizedBox(height: 4),
-                Text('病历号: ${patient.medicalRecordNumber ?? '未设置'}'),
+                Text(
+                  '病历号: ${patient.medicalRecordNumber ?? '未设置'}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: context.colors.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
                 Text(
                     '首诊日期: ${DateFormat('yyyy-MM-dd').format(patient.firstVisitDate)}'),
                 const SizedBox(height: 4),

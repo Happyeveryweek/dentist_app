@@ -279,12 +279,16 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
     required String value,
     required Color color,
   }) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+    final hasValue = value.trim().isNotEmpty && value != '未设置';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.24), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,7 +311,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           Text(
             value,
             style: TextStyle(
-              color: color,
+              color: hasValue ? colors.onSurface : tokens.textMuted,
               fontWeight: FontWeight.bold,
               fontSize: 11,
             ),

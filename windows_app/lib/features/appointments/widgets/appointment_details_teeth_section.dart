@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../widgets/dental_icons.dart';
-import '../../../theme/medical_semantic_colors.dart';
 import 'teeth_cross_widget.dart';
 
 class AppointmentDetailsTeethSection extends StatelessWidget {
@@ -33,9 +32,9 @@ class AppointmentDetailsTeethSection extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   DentalIcons.tooth,
-                  color: MedicalSemanticColors.toothIcon,
+                  color: tokens.iconMuted,
                   size: 18,
                 ),
                 const SizedBox(width: 8),

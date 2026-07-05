@@ -26,13 +26,13 @@ class MedicalManagementScreen extends StatefulWidget {
 }
 
 class _MedicalManagementScreenState extends State<MedicalManagementScreen>
-    with SingleTickerProviderStateMixin {
+    with
+        SingleTickerProviderStateMixin,
+        AutomaticKeepAliveClientMixin<MedicalManagementScreen> {
   late TabController _tabController;
   bool _isLoading = false;
   String? _errorMessage;
-
-  // 用于强制刷新的键
-  int _refreshKey = 0;
+  final Map<String, Future<List<MedicalRecordTemplate>>> _templateFutures = {};
 
   late MedicalTemplateInitializationService _initializationService;
 
@@ -88,13 +88,18 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
 
   /// 加载指定类别的模板数据
   Future<List<MedicalRecordTemplate>> _loadTemplatesForCategory(
-      String category) async {
+    String category, {
+    bool forceRefresh = false,
+  }) async {
     try {
       final provider =
           Provider.of<MedicalRecordProvider>(context, listen: false);
 
       // 优先使用缓存，必要时由 provider 自行回源
-      final templates = await provider.getTemplatesByCategory(category);
+      final templates = await provider.getTemplatesByCategory(
+        category,
+        forceRefresh: forceRefresh,
+      );
 
       return templates;
     } catch (e) {
@@ -147,6 +152,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
 
       // 预加载所有类别的模板数据
       await provider.getAllTemplates(forceRefresh: true);
+      _primeTemplateFutures(forceRefresh: false);
 
       // 数据加载完成
       setState(() {
@@ -173,6 +179,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final tokens = context.tokens;
     return Scaffold(
       backgroundColor: context.tokens.pageBackground,
@@ -378,8 +385,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
   /// 构建标签页内容
   Widget _buildTabContent(String category, String title) {
     return FutureBuilder<List<MedicalRecordTemplate>>(
-      key: ValueKey('${category}_$_refreshKey'), // 使用刷新键强制重建
-      future: _loadTemplatesForCategory(category),
+      future: _getTemplateFuture(category),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -418,6 +424,29 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
         return _buildTemplateList(templates, category, title);
       },
     );
+  }
+
+  Future<List<MedicalRecordTemplate>> _getTemplateFuture(
+    String category, {
+    bool forceRefresh = false,
+  }) {
+    if (forceRefresh || !_templateFutures.containsKey(category)) {
+      _templateFutures[category] = _loadTemplatesForCategory(
+        category,
+        forceRefresh: forceRefresh,
+      );
+    }
+    return _templateFutures[category]!;
+  }
+
+  void _primeTemplateFutures({required bool forceRefresh}) {
+    for (final tab in _tabs) {
+      final category = tab['category'] as String;
+      _templateFutures[category] = _loadTemplatesForCategory(
+        category,
+        forceRefresh: forceRefresh,
+      );
+    }
   }
 
   /// 构建模板列表
@@ -487,9 +516,8 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
       // 使用 Service 强制刷新所有模板数据
       await _initializationService.refreshAllTemplates();
 
-      // 增加刷新键强制重建UI
       setState(() {
-        _refreshKey++;
+        _primeTemplateFutures(forceRefresh: true);
       });
 
       // 显示刷新成功提示
@@ -620,9 +648,12 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
 
   /// 刷新当前标签页
   void _refreshCurrentTab() {
-    // 增加刷新键并触发界面重建
+    final category = _tabs[_tabController.index]['category'] as String;
     setState(() {
-      _refreshKey++;
+      _templateFutures[category] = _loadTemplatesForCategory(
+        category,
+        forceRefresh: true,
+      );
     });
   }
 
@@ -638,6 +669,9 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
         break;
     }
   }
+
+  @override
+  bool get wantKeepAlive => true;
 
   /// 处理子类型操作
   void _handleSubTypeAction(

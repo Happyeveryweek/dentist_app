@@ -39,6 +39,7 @@ class AppointmentsScreen extends StatefulWidget {
 
 class _AppointmentsScreenState extends State<AppointmentsScreen> {
   AppointmentStateService? _stateService;
+  bool _hasLoadedInitialAppointments = false;
   AppointmentStateService get _requireStateService {
     final service = _stateService;
     if (service == null) {
@@ -102,10 +103,16 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
       _appointmentProviderListenerAttached = true;
     }
 
-    stateService.loadAppointments();
-
     if (appointmentProvider.appointmentsNeedRefresh) {
       appointmentProvider.resetAppointmentsRefreshFlag();
+      stateService.loadAppointments(forceRefresh: true);
+      _hasLoadedInitialAppointments = true;
+      return;
+    }
+
+    if (!_hasLoadedInitialAppointments) {
+      _hasLoadedInitialAppointments = true;
+      stateService.loadAppointments();
     }
   }
 
