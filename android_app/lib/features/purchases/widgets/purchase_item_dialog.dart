@@ -47,6 +47,7 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
   ];
 
   int? _selectedMaterialId; // 添加选中的材料ID
+  bool _isLoadingMaterials = false;
 
   @override
   void initState() {
@@ -77,30 +78,67 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
   }
 
   Future<void> _loadMaterials() async {
+    if (_isLoadingMaterials) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingMaterials = true;
+    });
+
     try {
-      // 从MaterialProvider获取真实材料数据
       final materialProvider = Provider.of<MaterialProvider>(
         context,
         listen: false,
       );
+      final ready = await materialProvider.ensureReady();
+      if (!ready) {
+        AppLogger.info('材料库仍在初始化，跳过本次预加载');
+        return;
+      }
       await materialProvider.getAllMaterials();
     } catch (e) {
       AppLogger.info('加载材料库失败: $e');
-      // 如果加载失败，显示错误提示
       if (mounted) {
         SuccessToastManager.showError(context, message: '加载材料库失败: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingMaterials = false;
+        });
       }
     }
   }
 
   // 显示材料搜索对话框（改为在弹窗内部通过 MaterialProvider 获取数据）
   Future<void> _showMaterialSearchDialog() async {
+    final materialProvider = Provider.of<MaterialProvider>(
+      context,
+      listen: false,
+    );
+    final ready = await materialProvider.ensureReady();
+    if (!ready) {
+      if (mounted) {
+        SuccessToastManager.showInfo(context, message: '材料库正在初始化，请稍后重试');
+      }
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
     final result = await showDialog<DentalMaterial>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.3), // 设置半透明背景
       barrierDismissible: true, // 允许点击背景关闭
       builder: (context) => const _MaterialSearchDialog(),
     );
+
+    if (!mounted) {
+      return;
+    }
 
     if (result != null) {
       setState(() {
@@ -249,9 +287,13 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                           ),
                           const SizedBox(width: 8),
                           IconButton(
-                            onPressed: _showMaterialSearchDialog,
+                            onPressed:
+                                _isLoadingMaterials
+                                    ? null
+                                    : _showMaterialSearchDialog,
                             icon: const Icon(Icons.search, color: Colors.blue),
-                            tooltip: '从材料库搜索',
+                            tooltip:
+                                _isLoadingMaterials ? '材料库加载中' : '从材料库搜索',
                             style: IconButton.styleFrom(
                               backgroundColor: Colors.blue[50],
                               padding: const EdgeInsets.all(8), // 进一步减少padding
@@ -635,15 +677,23 @@ class _MaterialSearchDialogState extends State<_MaterialSearchDialog> {
   }
 
   Future<void> _loadMaterials() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       final materialProvider = Provider.of<MaterialProvider>(
         context,
         listen: false,
       );
+      final ready = await materialProvider.ensureReady();
+      if (!ready) {
+        _allMaterials = [];
+        _filteredMaterials = [];
+        return;
+      }
       final materials = await materialProvider.getAllMaterials();
       _allMaterials = materials;
       _filteredMaterials = List.from(_allMaterials);
@@ -652,9 +702,11 @@ class _MaterialSearchDialogState extends State<_MaterialSearchDialog> {
       _allMaterials = [];
       _filteredMaterials = [];
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 

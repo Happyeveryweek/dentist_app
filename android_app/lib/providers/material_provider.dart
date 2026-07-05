@@ -28,6 +28,7 @@ class MaterialProvider extends ChangeNotifier {
 
   // 初始化标志
   bool _isInitializedFlag = false;
+  bool _isInitializing = false;
 
   // 刷新标志
   bool _materialsNeedRefresh = false;
@@ -79,9 +80,13 @@ class MaterialProvider extends ChangeNotifier {
   // 获取当前数据源类型
   String get dataSourceType => _dataSourceType;
 
+  bool get isInitializing => _isInitializing;
+
   // 从DatabaseProvider获取数据库连接
   Future<void> initializeFromDatabase(dynamic dbProvider) async {
-    if (_isInitializedFlag) return;
+    if (_isInitializedFlag || _isInitializing) return;
+
+    _isInitializing = true;
 
     try {
       AppLogger.info('MaterialProvider开始初始化...');
@@ -112,14 +117,58 @@ class MaterialProvider extends ChangeNotifier {
       _dbWrapper = DatabaseOperationWrapper(dbProvider);
 
       _isInitializedFlag = result.initialized;
+      if (!_isInitializedFlag) {
+        AppLogger.info('警告：MaterialProvider未完成初始化，延迟重试...');
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (!_isInitializedFlag) {
+            initializeFromDatabase(dbProvider);
+          }
+        });
+        return;
+      }
+
       AppLogger.info('MaterialProvider初始化完成');
     } catch (e) {
       AppLogger.info('MaterialProvider初始化失败: $e');
-      _dataSourceType = 'sqlite';
-      _isInitializedFlag = true;
+      _isInitializedFlag = false;
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (!_isInitializedFlag) {
+          initializeFromDatabase(dbProvider);
+        }
+      });
+    } finally {
+      _isInitializing = false;
     }
 
     Future.microtask(() => notifyListeners());
+  }
+
+  Future<bool> ensureReady() async {
+    if (initialized) {
+      return true;
+    }
+
+    final dbProvider = _databaseProvider;
+    if (dbProvider == null) {
+      return false;
+    }
+
+    if (!_isInitializing) {
+      await initializeFromDatabase(dbProvider);
+    }
+
+    for (int attempt = 0; attempt < 10; attempt++) {
+      if (initialized) {
+        return true;
+      }
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
+    if (!initialized && !_isInitializing) {
+      await initializeFromDatabase(dbProvider);
+    }
+
+    return initialized;
   }
 
   // 构造函数

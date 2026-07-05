@@ -23,17 +23,21 @@ class PurchaseExportService {
 
     // 优化安卓端图片尺寸 - 更高的DPI和更适合手机屏幕的比例
     const double baseWidth = 1080.0; // 增加宽度以提高清晰度
-    double baseHeight = 1920.0; // 基础高度，会根据内容动态调整
 
     // 设置高DPI以获得更清晰的图像
     const double scale = 3.0; // 3x DPI for high resolution
 
     const double scaledWidth = baseWidth * scale;
+    final estimatedHeight = _estimateCanvasHeight(
+      purchaseItems: purchaseItems,
+      exportOptions: exportOptions,
+      scale: scale,
+    );
 
-    // 先绘制一个足够大的白色背景（使用一个很大的高度，最后会裁剪到实际需要的高度）
+    // 先按内容估算高度铺满白底，避免导出长图底部出现黑边
     paint.color = const Color(0xFFFFFFFF);
     canvas.drawRect(
-      Rect.fromLTWH(0, 0, scaledWidth, baseHeight * scale * 2),
+      Rect.fromLTWH(0, 0, scaledWidth, estimatedHeight),
       paint,
     );
 
@@ -492,6 +496,31 @@ class PurchaseExportService {
     final bytes = byteData.buffer.asUint8List();
 
     return bytes;
+  }
+
+  double _estimateCanvasHeight({
+    required List<PurchaseItem> purchaseItems,
+    required Map<String, bool> exportOptions,
+    required double scale,
+  }) {
+    double height = 900 * scale;
+
+    if (exportOptions['purchaseRecord'] == true) {
+      height += 420 * scale;
+    }
+
+    if (exportOptions['purchaseDetails'] == true) {
+      height += 180 * scale;
+      if (purchaseItems.isEmpty) {
+        height += 160 * scale;
+      } else {
+        height += 80 * scale;
+        height += purchaseItems.length * 100 * scale;
+        height += (exportOptions['purchaseSummary'] == true ? 180 : 100) * scale;
+      }
+    }
+
+    return height + 260 * scale;
   }
 
   /// 保存图片到下载目录
