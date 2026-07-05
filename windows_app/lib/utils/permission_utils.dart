@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../theme/theme_context_extensions.dart';
 
 /// 权限工具类
 /// 提供通用的权限检查方法和UI组件
@@ -104,14 +105,15 @@ class PermissionUtils {
   /// 显示权限不足提示
   static void showPermissionDeniedDialog(BuildContext context,
       {String? message}) {
+    final tokens = context.tokens;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.warning, color: Colors.orange),
-            SizedBox(width: 8),
-            Text('权限不足'),
+            Icon(Icons.warning, color: tokens.warning),
+            const SizedBox(width: 8),
+            const Text('权限不足'),
           ],
         ),
         content: Text(message ?? '您没有执行此操作的权限，请联系管理员。'),
@@ -128,18 +130,20 @@ class PermissionUtils {
   /// 显示权限不足的SnackBar
   static void showPermissionDeniedSnackBar(BuildContext context,
       {String? message}) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.warning, color: Colors.white),
+            Icon(Icons.warning, color: colors.onPrimary),
             const SizedBox(width: 8),
             Expanded(
               child: Text(message ?? '权限不足，无法执行此操作'),
             ),
           ],
         ),
-        backgroundColor: Colors.orange,
+        backgroundColor: tokens.warning,
         duration: const Duration(seconds: 3),
       ),
     );
@@ -276,15 +280,17 @@ class PermissionButton extends StatelessWidget {
                 message: permissionDeniedMessage,
               );
             },
-      style: hasPermission ? style : (disabledStyle ?? _getDisabledStyle()),
+      style: hasPermission ? style : (disabledStyle ?? _getDisabledStyle(context)),
       child: hasPermission ? child : _getDisabledChild(),
     );
   }
 
-  ButtonStyle _getDisabledStyle() {
+  ButtonStyle _getDisabledStyle(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return ElevatedButton.styleFrom(
-      backgroundColor: Colors.grey[300],
-      foregroundColor: Colors.grey[600],
+      backgroundColor: tokens.disabledBackground,
+      foregroundColor: colors.onSurfaceVariant,
       elevation: 0,
     );
   }
@@ -351,7 +357,9 @@ class PermissionIconButton extends StatelessWidget {
     }
 
     return IconButton(
-      icon: hasPermission ? icon : const Icon(Icons.lock, color: Colors.grey),
+      icon: hasPermission
+          ? icon
+          : Icon(Icons.lock, color: context.tokens.iconMuted),
       onPressed: hasPermission
           ? onPressed
           : () {
@@ -361,7 +369,7 @@ class PermissionIconButton extends StatelessWidget {
               );
             },
       tooltip: hasPermission ? tooltip : '权限不足',
-      color: hasPermission ? null : Colors.grey,
+      color: hasPermission ? null : context.tokens.iconMuted,
     );
   }
 }

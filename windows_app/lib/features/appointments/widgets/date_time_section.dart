@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 预约时间区域
 ///
@@ -20,46 +21,48 @@ class DateTimeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: tokens.mutedBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(tokens),
           const SizedBox(height: 16),
-          _buildDateTimeRow(),
+          _buildDateTimeRow(tokens),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return const Row(
+  Widget _buildHeader(AppThemeTokens tokens) {
+    return Row(
       children: [
         Icon(
           Icons.schedule,
-          color: Color(0xFFFF8A65),
+          color: tokens.primaryAccent,
           size: 18,
         ),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         Text(
           '预约时间',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Color(0xFFFF8A65),
+            color: tokens.primaryAccent,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDateTimeRow() {
+  Widget _buildDateTimeRow(AppThemeTokens tokens) {
     return Row(
       children: [
         Expanded(
@@ -68,13 +71,13 @@ class DateTimeSection extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: tokens.cardBackground,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: tokens.divider),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today, color: Color(0xFFFF8A65)),
+                  Icon(Icons.calendar_today, color: tokens.primaryAccent),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -97,13 +100,13 @@ class DateTimeSection extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: tokens.cardBackground,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: tokens.divider),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.access_time, color: Color(0xFFFF8A65)),
+                  Icon(Icons.access_time, color: tokens.primaryAccent),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(

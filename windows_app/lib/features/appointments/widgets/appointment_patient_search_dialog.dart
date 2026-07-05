@@ -69,18 +69,11 @@ class _AppointmentPatientSearchDialogState
         constraints:
             BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF667eea),
-              Color(0xFF764ba2),
-            ],
-          ),
+          gradient: context.tokens.primaryHeaderGradient,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF667eea).withValues(alpha: 0.3),
+              color: context.tokens.primaryAccent.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -91,22 +84,15 @@ class _AppointmentPatientSearchDialogState
             color: context.tokens.cardBackground.withValues(alpha: 0.98),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-                color: const Color(0xFF667eea).withValues(alpha: 0.1),
+                color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                 width: 1),
           ),
           child: Column(
             children: [
               Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF667eea),
-                      Color(0xFF764ba2),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  gradient: context.tokens.primaryHeaderGradient,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
@@ -162,12 +148,12 @@ class _AppointmentPatientSearchDialogState
                             margin: const EdgeInsets.all(8),
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF667eea)
+                              color: context.tokens.primaryAccent
                                   .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.search,
-                                color: Color(0xFF667eea), size: 20),
+                            child: Icon(Icons.search,
+                                color: context.tokens.primaryAccent, size: 20),
                           ),
                           filled: true,
                           fillColor: context.tokens.cardBackground,
@@ -193,14 +179,15 @@ class _AppointmentPatientSearchDialogState
                                 ),
                               )
                             : _filteredPatients.isEmpty
-                                ? const Center(
+                                ? Center(
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(Icons.search_off,
-                                            size: 48, color: Colors.grey),
-                                        SizedBox(height: 16),
-                                        Text('没有找到匹配的患者'),
+                                            size: 48,
+                                            color: context.tokens.iconMuted),
+                                        const SizedBox(height: 16),
+                                        const Text('没有找到匹配的患者'),
                                       ],
                                     ),
                                   )
@@ -251,9 +238,10 @@ class _AppointmentPatientSearchDialogState
                                                   DateFormat('yyyy-MM-dd')
                                                       .format(
                                                           patient.updatedAt),
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                       fontSize: 12,
-                                                      color: Colors.grey),
+                                                      color: context
+                                                          .tokens.textMuted),
                                                 ),
                                               ],
                                             ),

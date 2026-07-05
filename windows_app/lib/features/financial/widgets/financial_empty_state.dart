@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/theme_context_extensions.dart';
 
 /// 财务管理空状态组件
 class FinancialEmptyState extends StatelessWidget {
@@ -25,7 +26,7 @@ class FinancialEmptyState extends StatelessWidget {
                   ? Icons.account_balance_wallet_outlined
                   : Icons.search_off,
               size: 64,
-              color: Colors.grey[400],
+              color: context.tokens.iconMuted,
             ),
             const SizedBox(height: 16),
             Text(

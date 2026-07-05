@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../theme/app_theme.dart';
+import '../../../theme/theme_context_extensions.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../widgets/dental_icons.dart';
 
@@ -58,18 +58,19 @@ class BackupPathInputs extends StatelessWidget {
     String label,
     bool isSecondPath,
   ) {
+    final tokens = context.tokens;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Icon(Icons.folder, color: AppTheme.secondaryColor, size: 18),
+            Icon(Icons.folder, color: tokens.secondaryAccent, size: 18),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: AppTheme.secondaryColor,
+                color: tokens.secondaryAccent,
               ),
             ),
           ],
@@ -84,19 +85,19 @@ class BackupPathInputs extends StatelessWidget {
                   hintText: '请输入备份目录或留空',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide(color: tokens.divider),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide(color: tokens.divider),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                        color: AppTheme.secondaryColor, width: 2),
+                    borderSide: BorderSide(
+                        color: tokens.secondaryAccent, width: 2),
                   ),
                   filled: true,
-                  fillColor: Colors.white,
+                  fillColor: tokens.cardBackground,
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   suffixIcon: _getSuffixIcon(

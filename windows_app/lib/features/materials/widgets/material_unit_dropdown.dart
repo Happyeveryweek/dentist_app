@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class MaterialUnitDropdown extends StatelessWidget {
   final TextEditingController controller;
@@ -16,12 +17,12 @@ class MaterialUnitDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: context.tokens.divider),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: context.tokens.shadow,
             blurRadius: 4,
             offset: const Offset(0, 1),
           ),
@@ -45,7 +46,7 @@ class MaterialUnitDropdown extends StatelessWidget {
           Container(
             width: 1,
             height: 24,
-            color: Colors.grey.shade300,
+            color: context.tokens.divider,
           ),
           PopupMenuButton<String>(
             icon: Container(
@@ -53,7 +54,7 @@ class MaterialUnitDropdown extends StatelessWidget {
               child: Icon(
                 Icons.expand_more_rounded,
                 size: 20,
-                color: Colors.grey[600],
+                color: context.tokens.textMuted,
               ),
             ),
             constraints: const BoxConstraints(maxHeight: 240, minWidth: 180),
@@ -73,7 +74,10 @@ class MaterialUnitDropdown extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Colors.blue.shade400, Colors.blue.shade600],
+                      colors: [
+                        context.tokens.primaryAccent,
+                        context.tokens.primaryAccent.withValues(alpha: 0.8),
+                      ],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
@@ -81,15 +85,15 @@ class MaterialUnitDropdown extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.straighten_rounded,
-                          size: 16, color: Colors.white),
+                      Icon(Icons.straighten_rounded,
+                          size: 16, color: context.colors.onPrimary),
                       const SizedBox(width: 8),
-                      const Text(
+                      Text(
                         '常用单位',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: context.colors.onPrimary,
                         ),
                       ),
                       const Spacer(),
@@ -97,14 +101,14 @@ class MaterialUnitDropdown extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: context.colors.onPrimary.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
                           '${options.length}个',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
-                            color: Colors.white,
+                            color: context.colors.onPrimary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -127,11 +131,12 @@ class MaterialUnitDropdown extends StatelessWidget {
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? Colors.blue.withValues(alpha: 0.1)
+                          ? context.tokens.primaryAccent.withValues(alpha: 0.1)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
                       border: isSelected
-                          ? Border.all(color: Colors.blue.shade300, width: 1)
+                          ? Border.all(
+                              color: context.tokens.primaryAccent, width: 1)
                           : null,
                     ),
                     child: Row(
@@ -141,18 +146,19 @@ class MaterialUnitDropdown extends StatelessWidget {
                           height: 16,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color:
-                                isSelected ? Colors.blue : Colors.transparent,
+                            color: isSelected
+                                ? context.tokens.primaryAccent
+                                : Colors.transparent,
                             border: Border.all(
                               color: isSelected
-                                  ? Colors.blue
-                                  : Colors.grey.shade400,
+                                  ? context.tokens.primaryAccent
+                                  : context.tokens.textMuted,
                               width: 1.5,
                             ),
                           ),
                           child: isSelected
-                              ? const Icon(Icons.check,
-                                  size: 10, color: Colors.white)
+                              ? Icon(Icons.check,
+                                  size: 10, color: context.colors.onPrimary)
                               : null,
                         ),
                         const SizedBox(width: 10),
@@ -165,8 +171,8 @@ class MaterialUnitDropdown extends StatelessWidget {
                                   ? FontWeight.w600
                                   : FontWeight.normal,
                               color: isSelected
-                                  ? Colors.blue.shade700
-                                  : Colors.grey[700],
+                                  ? context.tokens.primaryAccent
+                                  : context.colors.onSurfaceVariant,
                             ),
                           ),
                         ),

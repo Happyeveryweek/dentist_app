@@ -18,46 +18,47 @@ class CostStatusSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: tokens.mutedBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.tokens.border),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(tokens),
           const SizedBox(height: 16),
-          _buildFields(context),
+          _buildFields(context, tokens),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return const Row(
+  Widget _buildHeader(AppThemeTokens tokens) {
+    return Row(
       children: [
         Icon(
           Icons.attach_money,
-          color: Color(0xFF4CAF50),
+          color: tokens.success,
           size: 18,
         ),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         Text(
           '费用与状态',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF4CAF50),
+            color: tokens.success,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildFields(BuildContext context) {
+  Widget _buildFields(BuildContext context, AppThemeTokens tokens) {
     return Row(
       children: [
         Expanded(
@@ -71,7 +72,7 @@ class CostStatusSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              fillColor: context.tokens.cardBackground,
+              fillColor: tokens.cardBackground,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
@@ -87,7 +88,7 @@ class CostStatusSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               filled: true,
-              fillColor: context.tokens.cardBackground,
+              fillColor: tokens.cardBackground,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),

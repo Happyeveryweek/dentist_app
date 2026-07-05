@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../models/purchase_record.dart';
 import '../../../models/purchase_item.dart';
@@ -226,9 +227,9 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
     // 验证基本信息
     if (_dateController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('采购日期不能为空'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('采购日期不能为空'),
+          backgroundColor: context.tokens.error,
         ),
       );
       return;
@@ -246,7 +247,7 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('第${i + 1}个项目的材料名称不能为空'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.tokens.error,
           ),
         );
         return;
@@ -255,7 +256,7 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('第${i + 1}个项目的数量必须大于0'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.tokens.error,
           ),
         );
         return;
@@ -264,7 +265,7 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('第${i + 1}个项目的单价不能为负数'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.tokens.error,
           ),
         );
         return;
@@ -442,6 +443,7 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final isEditing = widget.record != null;
     final screenSize = MediaQuery.of(context).size;
 
@@ -458,8 +460,7 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
           maxHeight: screenSize.height * 0.9,
         ),
         child: Material(
-          color: Theme.of(context).dialogTheme.backgroundColor ??
-              Theme.of(context).colorScheme.surface,
+          color: tokens.cardBackground,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
             child: Column(
@@ -469,7 +470,7 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
                 Row(
                   children: [
                     Icon(DentalIcons.shoppingCart,
-                        color: Theme.of(context).primaryColor, size: 20),
+                        color: tokens.primaryAccent, size: 20),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(

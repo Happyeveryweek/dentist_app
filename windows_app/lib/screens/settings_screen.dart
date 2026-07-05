@@ -191,7 +191,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('备份失败: ${result.errorMessage}'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.tokens.error,
           ),
         );
       }
@@ -200,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('备份失败: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: context.tokens.error,
         ),
       );
     } finally {
@@ -229,7 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(validationError),
-            backgroundColor: Colors.red,
+            backgroundColor: context.tokens.error,
           ),
         );
         return;
@@ -255,7 +255,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(backgroundColor: context.tokens.error),
               child: const Text('恢复'),
             ),
           ],
@@ -284,13 +284,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                   content: Text('恢复失败: ${result.errorMessage}'),
-                  backgroundColor: Colors.red),
+                  backgroundColor: context.tokens.error),
             );
           }
         } catch (e) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('恢复失败: $e'), backgroundColor: Colors.red),
+            SnackBar(content: Text('恢复失败: $e'), backgroundColor: context.tokens.error),
           );
         } finally {
           setState(() {
@@ -317,20 +317,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Scaffold(
-      backgroundColor: context.tokens.pageBackground,
+      backgroundColor: tokens.pageBackground,
       appBar: AppBar(
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: context.tokens.primaryHeaderGradient,
+                gradient: tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.settings_rounded,
-                color: Colors.white,
+                color: tokens.cardBackground,
                 size: 24,
               ),
             ),
@@ -344,7 +346,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: tokens.cardBackground,
         foregroundColor: context.colors.onSurface,
         elevation: 0,
       ),
@@ -646,7 +648,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('数据库结构检测失败: ${result.errorMessage}'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.tokens.error,
           ),
         );
       }
@@ -655,7 +657,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('数据库结构检测失败: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: context.tokens.error,
         ),
       );
     } finally {
@@ -712,7 +714,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('重置失败: ${result.errorMessage}'),
-                backgroundColor: Colors.red,
+                backgroundColor: context.tokens.error,
               ),
             );
           }
@@ -725,7 +727,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('重置失败: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: context.tokens.error,
             ),
           );
         }
@@ -736,7 +738,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('重置操作出错: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: context.tokens.error,
         ),
       );
     }
@@ -840,7 +842,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: context.tokens.primaryAccent,
-              foregroundColor: Colors.white,
+              foregroundColor: context.tokens.cardBackground,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
             child: const Text('确定'),

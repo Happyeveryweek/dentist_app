@@ -20,6 +20,8 @@ class MedicalTemplateEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -27,16 +29,16 @@ class MedicalTemplateEmptyState extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.orange.shade200),
-            ),
+            color: tokens.warningContainer,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: tokens.warning),
+          ),
             child: Icon(
               templateType == MedicalTemplateType.treatment
                   ? Icons.healing_rounded
                   : Icons.note_add_rounded,
               size: 64,
-              color: Colors.orange.shade400,
+              color: tokens.warning,
             ),
           ),
           const SizedBox(height: 24),
@@ -45,7 +47,7 @@ class MedicalTemplateEmptyState extends StatelessWidget {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
+              color: colors.onSurface,
             ),
           ),
           const SizedBox(height: 12),
@@ -53,7 +55,7 @@ class MedicalTemplateEmptyState extends StatelessWidget {
             '您可以添加自定义模板或初始化默认模板',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[600],
+              color: colors.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
@@ -66,8 +68,8 @@ class MedicalTemplateEmptyState extends StatelessWidget {
                 icon: const Icon(Icons.settings_backup_restore_rounded),
                 label: const Text('初始化默认模板'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange.shade600,
-                  foregroundColor: context.tokens.cardBackground,
+                  backgroundColor: tokens.warning,
+                  foregroundColor: tokens.cardBackground,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class FinancialCompactTag extends StatelessWidget {
   final IconData icon;
   final String label;
-  final MaterialColor color;
+  final Color color;
 
   const FinancialCompactTag({
     super.key,
@@ -28,7 +28,7 @@ class FinancialCompactTag extends StatelessWidget {
           Icon(
             icon,
             size: 11,
-            color: color[700],
+            color: color,
           ),
           const SizedBox(width: 3),
           Flexible(
@@ -37,7 +37,7 @@ class FinancialCompactTag extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: color[700],
+                color: color,
               ),
               overflow: TextOverflow.ellipsis,
             ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class PatientSortOptionsSheet extends StatelessWidget {
   final String sortField;
@@ -103,7 +103,7 @@ class _PatientSortOption extends StatelessWidget {
                 icon,
                 size: 20,
                 color:
-                    isSelected ? AppTheme.primaryColor : AppTheme.secondaryText,
+                    isSelected ? context.tokens.primaryAccent : context.tokens.textMuted,
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -119,7 +119,7 @@ class _PatientSortOption extends StatelessWidget {
               Icon(
                 isAscending ? Icons.arrow_upward : Icons.arrow_downward,
                 size: 16,
-                color: AppTheme.secondaryText,
+                color: context.tokens.textMuted,
               ),
             ],
           ),

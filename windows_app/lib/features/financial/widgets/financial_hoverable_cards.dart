@@ -27,6 +27,7 @@ class _HoverableFinancialListCardState
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _isHovered = true),
@@ -40,11 +41,13 @@ class _HoverableFinancialListCardState
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: _isHovered ? Color(0xFFE3F2FD) : context.tokens.cardBackground,
+            color: _isHovered
+                ? tokens.primaryAccent.withValues(alpha: 0.1)
+                : tokens.cardBackground,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: tokens.shadow.withValues(alpha: 0.1),
                 blurRadius: 2,
                 offset: const Offset(0, 1),
               ),
@@ -89,6 +92,7 @@ class _HoverableFinancialCardState extends State<HoverableFinancialCard> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) {
@@ -106,19 +110,21 @@ class _HoverableFinancialCardState extends State<HoverableFinancialCard> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: _isHovered ? Color(0xFFE3F2FD) : context.tokens.cardBackground,
+          color: _isHovered
+              ? tokens.primaryAccent.withValues(alpha: 0.1)
+              : tokens.cardBackground,
           borderRadius: BorderRadius.circular(8),
           boxShadow: _isHovered
               ? [
                   BoxShadow(
-                    color: Colors.blue.withValues(alpha: 0.5),
+                    color: tokens.primaryAccent.withValues(alpha: 0.5),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
                 ]
               : [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: tokens.shadow.withValues(alpha: 0.1),
                     blurRadius: 2,
                     offset: const Offset(0, 1),
                   ),

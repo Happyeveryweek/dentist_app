@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/patient.dart';
 import 'patient_form_fields.dart';
 
@@ -22,6 +23,9 @@ class ExistingPatientOverlayBuilder {
     required VoidCallback onLoadExisting,
     required VoidCallback onClose,
   }) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     // 使用姓名输入框的 GlobalKey 来精确定位弹窗
     final RenderBox? nameFieldBox =
         nameFieldKey.currentContext?.findRenderObject() as RenderBox?;
@@ -67,12 +71,12 @@ class ExistingPatientOverlayBuilder {
             width: 320,
             constraints: const BoxConstraints(maxHeight: 280),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: tokens.cardBackground,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.orange, width: 2),
+              border: Border.all(color: tokens.warning, width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
+                  color: tokens.shadow.withValues(alpha: 0.15),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -83,11 +87,11 @@ class ExistingPatientOverlayBuilder {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // 标题栏
-                _buildHeader(onClose),
+                _buildHeader(onClose, tokens),
                 // 患者信息区域
-                _buildPatientInfo(existingPatient),
+                _buildPatientInfo(existingPatient, tokens),
                 // 操作按钮
-                _buildActions(onContinue, onLoadExisting),
+                _buildActions(onContinue, onLoadExisting, tokens, colors),
               ],
             ),
           ),
@@ -96,12 +100,12 @@ class ExistingPatientOverlayBuilder {
     );
   }
 
-  static Widget _buildHeader(VoidCallback onClose) {
+  static Widget _buildHeader(VoidCallback onClose, AppThemeTokens tokens) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.orange,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: tokens.warning,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(12),
           topRight: Radius.circular(12),
         ),
@@ -114,7 +118,7 @@ class ExistingPatientOverlayBuilder {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
-              color: Colors.white,
+              color: tokens.cardBackground,
             ),
           ),
           IconButton(
@@ -122,14 +126,17 @@ class ExistingPatientOverlayBuilder {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             onPressed: onClose,
-            color: Colors.white,
+            color: tokens.cardBackground,
           ),
         ],
       ),
     );
   }
 
-  static Widget _buildPatientInfo(Patient existingPatient) {
+  static Widget _buildPatientInfo(
+    Patient existingPatient,
+    AppThemeTokens tokens,
+  ) {
     final address = existingPatient.address;
     return Expanded(
       child: SingleChildScrollView(
@@ -162,15 +169,15 @@ class ExistingPatientOverlayBuilder {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
+                color: tokens.warningContainer,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                border: Border.all(color: tokens.warning.withValues(alpha: 0.3)),
               ),
-              child: const Text(
+              child: Text(
                 '请确认是否为新患者，或选择填充现有患者信息（包括材料）',
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.orange,
+                  color: tokens.warning,
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -184,11 +191,13 @@ class ExistingPatientOverlayBuilder {
   static Widget _buildActions(
     VoidCallback onContinue,
     VoidCallback onLoadExisting,
+    AppThemeTokens tokens,
+    ColorScheme colors,
   ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.withValues(alpha: 0.05),
+        color: tokens.mutedBackground,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(12),
           bottomRight: Radius.circular(12),
@@ -200,7 +209,7 @@ class ExistingPatientOverlayBuilder {
             child: TextButton(
               onPressed: onContinue,
               style: TextButton.styleFrom(
-                foregroundColor: Colors.grey[600],
+                foregroundColor: colors.onSurfaceVariant,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
@@ -217,8 +226,8 @@ class ExistingPatientOverlayBuilder {
             child: ElevatedButton(
               onPressed: onLoadExisting,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                foregroundColor: Colors.white,
+                backgroundColor: tokens.warning,
+                foregroundColor: tokens.cardBackground,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),

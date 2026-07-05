@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/patient.dart';
+import '../../../theme/theme_context_extensions.dart';
 
 // 患者选择对话框
 class PatientSelectionDialog extends StatefulWidget {
@@ -62,6 +63,9 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     // 根据患者信息的更新时间排序，最新的排到最前面
     List<Patient> sortedPatients = List.from(widget.patients);
     sortedPatients.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
@@ -79,30 +83,16 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
           minHeight: 300,
         ),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF667eea),
-              Color(0xFF764ba2),
-            ],
-          ),
+          gradient: tokens.primaryHeaderGradient,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF667eea).withValues(alpha: 0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-              spreadRadius: 0,
-            ),
-          ],
+          boxShadow: tokens.elevatedShadow,
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.98),
+            color: tokens.cardBackground.withValues(alpha: 0.98),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFF667eea).withValues(alpha: 0.1),
+              color: tokens.primaryAccent.withValues(alpha: 0.1),
               width: 1,
             ),
           ),
@@ -112,16 +102,9 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
             children: [
               // 标题栏 - 带渐变背景
               Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF667eea),
-                      Color(0xFF764ba2),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  gradient: tokens.primaryHeaderGradient,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
@@ -136,27 +119,27 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: colors.onPrimary.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.person_search,
-                            color: Colors.white,
+                            color: colors.onPrimary,
                             size: 18,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
+                        Text(
                           '选择患者',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: colors.onPrimary,
                             shadows: [
                               Shadow(
-                                offset: Offset(0, 1),
+                                offset: const Offset(0, 1),
                                 blurRadius: 2,
-                                color: Colors.black26,
+                                color: colors.shadow.withValues(alpha: 0.26),
                               ),
                             ],
                           ),
@@ -165,12 +148,12 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: colors.onPrimary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.close,
-                            color: Colors.white, size: 16),
+                        icon: Icon(Icons.close,
+                            color: colors.onPrimary, size: 16),
                         onPressed: () => Navigator.of(context).pop(),
                         splashRadius: 14,
                         tooltip: '关闭',
@@ -196,18 +179,18 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                         decoration: InputDecoration(
                           hintText: '搜索患者 (姓名/拼音/首字母/病历号)',
                           prefixIcon:
-                              Icon(Icons.search, color: Colors.grey[600]),
+                              Icon(Icons.search, color: tokens.iconMuted),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(tokens.borderRadius),
+                            borderSide: BorderSide(color: tokens.border),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(tokens.borderRadius),
                             borderSide:
-                                BorderSide(color: Colors.blue.shade400, width: 2),
+                                BorderSide(color: tokens.primaryAccent, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: tokens.inputBackground,
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 2),
                         ),
@@ -219,18 +202,18 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                       // 患者列表标题
                       Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.people,
-                            color: Color(0xFF667eea),
+                            color: tokens.primaryAccent,
                             size: 18,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             '患者列表 (${_filteredPatients.length})',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF667eea),
+                              color: tokens.primaryAccent,
                             ),
                           ),
                         ],
@@ -250,7 +233,7 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                           ? Icons.people_outline
                                           : Icons.search_off,
                                       size: 48,
-                                      color: Colors.grey.shade400,
+                                      color: tokens.iconMuted,
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
@@ -258,7 +241,7 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                           ? '暂无患者数据'
                                           : '未找到匹配的患者',
                                       style: TextStyle(
-                                        color: Colors.grey.shade600,
+                                        color: tokens.textMuted,
                                         fontSize: 16,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -268,7 +251,7 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                       Text(
                                         '请尝试其他搜索关键词',
                                         style: TextStyle(
-                                          color: Colors.grey.shade500,
+                                          color: tokens.textMuted,
                                           fontSize: 14,
                                         ),
                                       ),
@@ -278,17 +261,11 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                               )
                             : Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: tokens.cardBackground,
                                   borderRadius: BorderRadius.circular(16),
                                   border:
-                                      Border.all(color: Colors.grey.shade200),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withValues(alpha: 0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
+                                      Border.all(color: tokens.border),
+                                  boxShadow: tokens.cardShadow,
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(16),
@@ -297,14 +274,7 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                       // 表头
                                       Container(
                                         decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              const Color(0xFF667eea)
-                                                  .withValues(alpha: 0.1),
-                                              const Color(0xFF667eea)
-                                                  .withValues(alpha: 0.05),
-                                            ],
-                                          ),
+                                          gradient: tokens.subtleHeaderGradient,
                                           borderRadius: const BorderRadius.only(
                                             topLeft: Radius.circular(12),
                                             topRight: Radius.circular(12),
@@ -312,7 +282,7 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                         ),
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 4, horizontal: 16),
-                                        child: const Row(
+                                        child: Row(
                                           children: [
                                             Expanded(
                                               flex: 3,
@@ -321,15 +291,15 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                                   Icon(
                                                     Icons.person,
                                                     size: 16,
-                                                    color: Color(0xFF667eea),
+                                                    color: tokens.primaryAccent,
                                                   ),
-                                                  SizedBox(width: 8),
+                                                  const SizedBox(width: 8),
                                                   Text(
                                                     '姓名',
                                                     style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.w600,
-                                                      color: Color(0xFF667eea),
+                                                      color: tokens.primaryAccent,
                                                       fontSize: 14,
                                                     ),
                                                   ),
@@ -343,15 +313,15 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                                   Icon(
                                                     Icons.calendar_today,
                                                     size: 16,
-                                                    color: Color(0xFF667eea),
+                                                    color: tokens.primaryAccent,
                                                   ),
-                                                  SizedBox(width: 8),
+                                                  const SizedBox(width: 8),
                                                   Text(
                                                     '最近就诊',
                                                     style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.w600,
-                                                      color: Color(0xFF667eea),
+                                                      color: tokens.primaryAccent,
                                                       fontSize: 14,
                                                     ),
                                                   ),
@@ -380,8 +350,8 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                                       vertical: 1),
                                               decoration: BoxDecoration(
                                                 color: index % 2 == 0
-                                                    ? Colors.white
-                                                    : Colors.grey.shade50,
+                                                    ? tokens.cardBackground
+                                                    : tokens.mutedBackground,
                                                 borderRadius:
                                                     BorderRadius.circular(12),
                                                 border: Border.all(
@@ -410,11 +380,10 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                                           flex: 3,
                                                           child: Row(
                                                             children: [
-                                                              const Icon(
+                                                              Icon(
                                                                 Icons.person,
                                                                 size: 16,
-                                                                color: Color(
-                                                                    0xFF667eea),
+                                                                color: tokens.primaryAccent,
                                                               ),
                                                               const SizedBox(
                                                                   width: 8),
@@ -437,8 +406,8 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                                             lastVisitDate,
                                                             style: TextStyle(
                                                               fontSize: 14,
-                                                              color: Colors
-                                                                  .grey[600],
+                                                              color: tokens
+                                                                  .textMuted,
                                                             ),
                                                           ),
                                                         ),

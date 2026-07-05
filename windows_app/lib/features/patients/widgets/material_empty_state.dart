@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../../../theme/app_theme.dart';
 import '../../../widgets/success_toast.dart';
 
 /// 材料空状态组件
@@ -17,13 +16,15 @@ class MaterialEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: tokens.mutedBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.tokens.border),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -31,7 +32,7 @@ class MaterialEmptyState extends StatelessWidget {
           Icon(
             Icons.photo_library_outlined,
             size: 64,
-            color: context.tokens.textMuted,
+            color: tokens.textMuted,
           ),
           const SizedBox(height: 16),
           Text(
@@ -39,7 +40,7 @@ class MaterialEmptyState extends StatelessWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: context.tokens.iconMuted,
+              color: tokens.iconMuted,
             ),
           ),
           const SizedBox(height: 8),
@@ -47,7 +48,7 @@ class MaterialEmptyState extends StatelessWidget {
             '该患者还没有添加任何材料记录',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade500,
+              color: tokens.textMuted,
             ),
           ),
           const SizedBox(height: 20),
@@ -58,14 +59,17 @@ class MaterialEmptyState extends StatelessWidget {
   }
 
   Widget _buildAddButton(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     return canEdit
         ? ElevatedButton.icon(
             onPressed: onAddMaterial,
             icon: const Icon(Icons.add),
             label: const Text('添加第一个材料'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: context.tokens.cardBackground,
+              backgroundColor: tokens.primaryAccent,
+              foregroundColor: tokens.cardBackground,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           )
@@ -77,8 +81,8 @@ class MaterialEmptyState extends StatelessWidget {
             icon: const Icon(Icons.lock),
             label: const Text('权限不足'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[300],
-              foregroundColor: Colors.grey[600],
+              backgroundColor: tokens.divider,
+              foregroundColor: colors.onSurfaceVariant,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
           );

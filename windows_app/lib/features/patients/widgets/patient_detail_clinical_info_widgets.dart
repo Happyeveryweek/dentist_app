@@ -21,19 +21,20 @@ class PatientClinicalInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = treatmentItems;
     final hasTreatmentItems = items != null && items.isNotEmpty;
+    final tokens = context.tokens;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: context.tokens.cardBackground,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: context.tokens.border,
+          color: tokens.border,
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: tokens.shadow.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -52,7 +53,7 @@ class PatientClinicalInfoCard extends StatelessWidget {
                   gradient: LinearGradient(
                     colors: [
                       Colors.transparent,
-                      const Color(0xFFe74c3c).withValues(alpha: 0.3),
+                      tokens.error.withValues(alpha: 0.3),
                       Colors.transparent,
                     ],
                   ),
@@ -63,7 +64,7 @@ class PatientClinicalInfoCard extends StatelessWidget {
                 label: '治疗项目',
                 value: items,
                 icon: Icons.medical_services,
-                color: const Color(0xFFe74c3c),
+                color: tokens.error,
               ),
             if (showEmptyState) const PatientClinicalInfoEmptyState(),
           ],
@@ -78,13 +79,14 @@ class PatientClinicalInfoEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.all(32.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFe74c3c).withValues(alpha: 0.05),
+        color: tokens.errorContainer,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFe74c3c).withValues(alpha: 0.1),
+          color: tokens.error.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -93,13 +95,13 @@ class PatientClinicalInfoEmptyState extends StatelessWidget {
           Icon(
             Icons.medical_information_outlined,
             size: 48,
-            color: const Color(0xFFe74c3c).withValues(alpha: 0.5),
+            color: tokens.error.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
             '暂无诊疗信息',
             style: TextStyle(
-              color: const Color(0xFFe74c3c).withValues(alpha: 0.7),
+              color: tokens.error.withValues(alpha: 0.7),
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),

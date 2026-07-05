@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../../../widgets/dental_icons.dart';
 
 class InteractablePieChart extends StatefulWidget {
   final Map<String, int> data;
@@ -24,25 +23,15 @@ class InteractablePieChartState extends State<InteractablePieChart> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final total = widget.data.values.fold(0, (sum, value) => sum + value);
     // Safety check, though parent handles empty case often
     if (total == 0) {
       return const Center(child: Text('暂无数据'));
     }
 
-    final colors = [
-      DentalColors.primary,
-      DentalColors.success,
-      DentalColors.warning,
-      DentalColors.error,
-      DentalColors.info,
-      Colors.purple,
-      Colors.orange,
-      Colors.teal,
-      Colors.indigo,
-      Colors.brown,
-      Colors.cyan,
-    ];
+    final chartColors = tokens.chartPalette;
 
     // 按数量从大到小排序，最多的排最上面
     final sortedEntries = widget.data.entries.toList()
@@ -60,15 +49,15 @@ class InteractablePieChartState extends State<InteractablePieChart> {
       final showTitle = isTouched || percentage >= 5;
 
       return PieChartSectionData(
-        color: colors[index % colors.length],
+        color: chartColors[index % chartColors.length],
         value: dataEntry.value.toDouble(),
         title: showTitle ? '${percentage.toStringAsFixed(1)}%' : '',
         radius: radius,
         titleStyle: TextStyle(
           fontSize: fontSize,
           fontWeight: FontWeight.bold,
-          color: context.tokens.cardBackground,
-          shadows: const [Shadow(color: Colors.black26, blurRadius: 2)],
+          color: tokens.cardBackground,
+          shadows: [Shadow(color: tokens.shadow, blurRadius: 2)],
         ),
       );
     }).toList();
@@ -132,7 +121,7 @@ class InteractablePieChartState extends State<InteractablePieChart> {
                         const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                     decoration: BoxDecoration(
                       color: isTouched
-                          ? colors[index % colors.length].withValues(alpha: 0.1)
+                          ? chartColors[index % chartColors.length].withValues(alpha: 0.1)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
                     ),
@@ -142,7 +131,7 @@ class InteractablePieChartState extends State<InteractablePieChart> {
                           width: 12,
                           height: 12,
                           decoration: BoxDecoration(
-                            color: colors[index % colors.length],
+                            color: chartColors[index % chartColors.length],
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -156,8 +145,8 @@ class InteractablePieChartState extends State<InteractablePieChart> {
                                   ? FontWeight.bold
                                   : FontWeight.normal,
                               color: isTouched
-                                  ? colors[index % colors.length]
-                                  : Colors.black87,
+                                  ? chartColors[index % chartColors.length]
+                                  : colors.onSurface,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -165,7 +154,7 @@ class InteractablePieChartState extends State<InteractablePieChart> {
                         Icon(
                           Icons.arrow_forward_ios,
                           size: 12,
-                          color: context.tokens.textMuted,
+                          color: tokens.textMuted,
                         ),
                       ],
                     ),

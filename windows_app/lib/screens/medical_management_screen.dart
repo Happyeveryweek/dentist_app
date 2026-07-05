@@ -173,6 +173,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Scaffold(
       backgroundColor: context.tokens.pageBackground,
       appBar: AppBar(
@@ -184,9 +185,9 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
                 gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.medical_information_rounded,
-                color: Colors.white,
+                color: tokens.cardBackground,
                 size: 24,
               ),
             ),
@@ -212,7 +213,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              icon: Icon(Icons.refresh_rounded, color: tokens.cardBackground),
               onPressed: _refreshData,
               tooltip: '刷新数据',
             ),
@@ -233,7 +234,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
             ),
             child: IconButton(
               icon:
-                  const Icon(Icons.library_books_rounded, color: Colors.white),
+                  Icon(Icons.library_books_rounded, color: tokens.cardBackground),
               onPressed: _openTemplateManagement,
               tooltip: '模板管理',
             ),
@@ -253,8 +254,8 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.settings_backup_restore_rounded,
-                  color: Colors.white),
+              icon: Icon(Icons.settings_backup_restore_rounded,
+                  color: tokens.cardBackground),
               onPressed: _showInitializeDialog,
               tooltip: '初始化',
             ),
@@ -389,7 +390,7 @@ class _MedicalManagementScreenState extends State<MedicalManagementScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error, size: 48, color: Colors.red[300]),
+                Icon(Icons.error, size: 48, color: context.tokens.error.withValues(alpha: 0.7)),
                 
                 const SizedBox(height: 16),
                 Text('加载失败: ${snapshot.error}'),

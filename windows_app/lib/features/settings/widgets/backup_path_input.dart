@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_theme.dart';
+import '../../../theme/theme_context_extensions.dart';
 
 class BackupPathInput extends StatelessWidget {
   final TextEditingController controller;
@@ -20,13 +20,13 @@ class BackupPathInput extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.folder, color: AppTheme.secondaryColor, size: 18),
+            Icon(Icons.folder, color: context.tokens.secondaryAccent, size: 18),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: AppTheme.secondaryColor,
+                color: context.tokens.secondaryAccent,
               ),
             ),
           ],
@@ -41,7 +41,7 @@ class BackupPathInput extends StatelessWidget {
                   hintText: '请输入备份目录或留空',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: BorderSide(color: context.tokens.divider),
                   ),
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -54,8 +54,8 @@ class BackupPathInput extends StatelessWidget {
               icon: const Icon(Icons.folder_open, size: 18),
               label: const Text('浏览'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.secondaryColor,
-                foregroundColor: Colors.white,
+                backgroundColor: context.tokens.secondaryAccent,
+                foregroundColor: context.tokens.cardBackground,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               ),

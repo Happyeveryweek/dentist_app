@@ -20,17 +20,19 @@ class MedicalTemplateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final isTreatment = templateType == 'treatment';
-    final cardColor = isTreatment ? Colors.blue : Colors.green;
+    final cardColor = isTreatment ? tokens.info : tokens.success;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: context.tokens.cardBackground,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: tokens.shadow.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -69,7 +71,7 @@ class MedicalTemplateCard extends StatelessWidget {
               ),
               child: Icon(
                 isTreatment ? Icons.healing_rounded : Icons.note_add_rounded,
-                color: context.tokens.cardBackground,
+                color: tokens.cardBackground,
                 size: 28,
               ),
             ),
@@ -83,10 +85,10 @@ class MedicalTemplateCard extends StatelessWidget {
                   // 模板标题
                   Text(
                     template.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
-                      color: Colors.black87,
+                      color: colors.onSurface,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -117,10 +119,10 @@ class MedicalTemplateCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
+                      color: tokens.mutedBackground,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: context.tokens.border,
+                        color: tokens.border,
                       ),
                     ),
                     child: Text(
@@ -128,7 +130,7 @@ class MedicalTemplateCard extends StatelessWidget {
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: context.tokens.iconMuted,
+                        color: tokens.iconMuted,
                         fontSize: 14,
                         height: 1.4,
                       ),
@@ -145,13 +147,13 @@ class MedicalTemplateCard extends StatelessWidget {
                 // 编辑按钮
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
+                    color: tokens.primaryAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
                     onPressed: onEdit,
                     icon: const Icon(Icons.edit_outlined, size: 20),
-                    color: Colors.blue,
+                    color: tokens.primaryAccent,
                     tooltip: '编辑模板',
                     padding: const EdgeInsets.all(8),
                     constraints:
@@ -163,13 +165,13 @@ class MedicalTemplateCard extends StatelessWidget {
                 // 删除按钮
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
+                    color: tokens.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
                     onPressed: onDelete,
                     icon: const Icon(Icons.delete_outline, size: 20),
-                    color: Colors.red,
+                    color: tokens.error,
                     tooltip: '删除模板',
                     padding: const EdgeInsets.all(8),
                     constraints:

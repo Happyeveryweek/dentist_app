@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/dental_icons.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 采购统计卡片组件
 /// 用于显示采购相关的统计信息
@@ -22,7 +22,7 @@ class PurchaseStatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: DentalColors.surface,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: color.withValues(alpha: 0.2),
@@ -56,8 +56,8 @@ class PurchaseStatCard extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    color: DentalColors.onSurfaceVariant,
+                  style: TextStyle(
+                    color: context.colors.onSurfaceVariant,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),

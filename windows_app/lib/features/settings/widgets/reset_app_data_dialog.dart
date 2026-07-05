@@ -9,6 +9,8 @@ class ResetAppDataDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
@@ -24,7 +26,7 @@ class ResetAppDataDialog extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.orange.shade400, Colors.orange.shade600],
+                  colors: [tokens.warning, tokens.warningAccent],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -71,7 +73,7 @@ class ResetAppDataDialog extends StatelessWidget {
                     '此操作将重置所有应用配置到初始状态：',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey[700],
+                      color: colors.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -94,15 +96,15 @@ class ResetAppDataDialog extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.green.shade50,
+                      color: tokens.successContainer,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.green.shade200),
+                      border: Border.all(color: tokens.success.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.check_circle_rounded,
-                          color: Colors.green.shade600,
+                          color: tokens.success,
                           size: 24,
                         ),
                         const SizedBox(width: 12),
@@ -127,9 +129,9 @@ class ResetAppDataDialog extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
+                      color: tokens.infoContainer,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue.shade200),
+                      border: Border.all(color: tokens.info.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       children: [
@@ -143,7 +145,7 @@ class ResetAppDataDialog extends StatelessWidget {
                           child: Text(
                             '重置后需要重启应用才能生效',
                             style: TextStyle(
-                              color: Colors.blue.shade700,
+                              color: tokens.primaryAccent,
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
@@ -170,7 +172,7 @@ class ResetAppDataDialog extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        side: BorderSide(color: context.tokens.textMuted),
+                        side: BorderSide(color: tokens.textMuted),
                       ),
                       child: const Text(
                         '取消',
@@ -186,8 +188,8 @@ class ResetAppDataDialog extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () => Navigator.of(context).pop(true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange.shade600,
-                        foregroundColor: context.tokens.cardBackground,
+                        backgroundColor: tokens.warning,
+                        foregroundColor: tokens.cardBackground,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

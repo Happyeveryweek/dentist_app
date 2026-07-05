@@ -34,7 +34,7 @@ class MaterialPagination extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: context.tokens.shadow,
             spreadRadius: 1,
             blurRadius: 3,
             offset: const Offset(0, 1),
@@ -105,10 +105,10 @@ class MaterialPagination extends StatelessWidget {
             decoration: BoxDecoration(
               color: context.tokens.cardBackground,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              border: Border.all(color: context.tokens.divider),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
+                  color: context.tokens.shadow,
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),

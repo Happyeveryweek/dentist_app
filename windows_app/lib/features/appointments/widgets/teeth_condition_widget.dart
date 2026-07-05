@@ -34,30 +34,33 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: tokens.mutedBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.tokens.border),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.medical_services,
-                color: Color(0xFF2196F3),
+                color: colors.primary,
                 size: 18,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 '牙齿情况',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF2196F3),
+                  color: colors.primary,
                 ),
               ),
             ],
@@ -76,11 +79,14 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
   }
 
   Widget _buildCrossWidget(int crossIndex) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     return Container(
       width: 140,
       height: 100,
       decoration: BoxDecoration(
-        border: Border.all(color: context.tokens.border),
+        border: Border.all(color: tokens.border),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -90,10 +96,10 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               '牙位 ${crossIndex + 1}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
-                color: Color(0xFF2196F3),
+                color: colors.primary,
               ),
             ),
           ),
@@ -104,6 +110,7 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
   }
 
   Widget _buildCross(int crossIndex) {
+    final tokens = context.tokens;
     const double width = 120.0;
     const double height = 65.0;
     const double centerX = width / 2;
@@ -114,7 +121,7 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
       children: [
         CustomPaint(
           size: const Size(width, height),
-          painter: CrossPainter(),
+          painter: CrossPainter(lineColor: tokens.border),
         ),
         Positioned(
           top: centerY - 20,
@@ -234,10 +241,14 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
 }
 
 class CrossPainter extends CustomPainter {
+  final Color lineColor;
+
+  const CrossPainter({required this.lineColor});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.blue
+      ..color = lineColor
       ..strokeWidth = 1.5;
 
     canvas.drawLine(

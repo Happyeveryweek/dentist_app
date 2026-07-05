@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/dental_icons.dart';
+import '../../../theme/theme_context_extensions.dart';
 import 'material_dropdown_container.dart';
 
 class MaterialDropdownField extends StatelessWidget {
@@ -25,14 +25,14 @@ class MaterialDropdownField extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, size: 20, color: DentalColors.primary),
+            Icon(icon, size: 20, color: context.tokens.primaryAccent),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: DentalColors.onSurface,
+                color: context.colors.onSurface,
               ),
             ),
           ],

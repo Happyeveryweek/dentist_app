@@ -22,15 +22,17 @@ class FinancialStatsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Column(
       children: [
         Container(
           padding: const EdgeInsets.all(16),
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.blue[50],
+            color: tokens.primaryAccent.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.blue.shade200),
+            border: Border.all(color: tokens.primaryAccent.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -39,7 +41,7 @@ class FinancialStatsSection extends StatelessWidget {
                   icon: Icons.receipt_long,
                   label: '总记录数',
                   value: totalRecords.toString(),
-                  color: Colors.blue.shade700,
+                  color: tokens.primaryAccent,
                 ),
               ),
               Expanded(
@@ -47,7 +49,7 @@ class FinancialStatsSection extends StatelessWidget {
                   icon: Icons.people,
                   label: '涉及患者',
                   value: totalPatients.toString(),
-                  color: context.tokens.success,
+                  color: tokens.success,
                 ),
               ),
             ],
@@ -64,14 +66,14 @@ class FinancialStatsSection extends StatelessWidget {
               children: [
                 Icon(
                   Icons.pages_rounded,
-                  color: Colors.blue[600],
+                  color: tokens.primaryAccent,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   '第 $currentPage 页，共 $totalPages 页',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: colors.onSurfaceVariant,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -80,7 +82,7 @@ class FinancialStatsSection extends StatelessWidget {
                 Text(
                   '每页显示 $recordsPerPage 条记录',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: colors.onSurfaceVariant,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),

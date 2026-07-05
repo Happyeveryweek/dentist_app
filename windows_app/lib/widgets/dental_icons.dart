@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import '../models/user.dart';
 import '../utils/log_manager.dart';
-import '../theme/app_theme.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 // import 'package:line_icons/line_icons.dart'; // 暂时注释掉，使用FontAwesome替代
 
@@ -506,7 +505,7 @@ class DentalStatusIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color statusColor = color ?? _getStatusColor(status);
+    Color statusColor = color ?? _getStatusColor(context, status);
     IconData statusIcon = icon ?? _getStatusIcon(status);
 
     return Container(
@@ -546,7 +545,7 @@ class DentalStatusIndicator extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(BuildContext context, String status) {
     switch (status) {
       case '已完成':
         return DentalColors.completed;
@@ -559,7 +558,7 @@ class DentalStatusIndicator extends StatelessWidget {
       case '紧急':
         return DentalColors.urgent;
       default:
-        return AppTheme.secondaryText;
+        return context.tokens.textMuted;
     }
   }
 

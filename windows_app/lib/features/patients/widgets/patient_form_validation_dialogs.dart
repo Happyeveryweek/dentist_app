@@ -9,16 +9,17 @@ class DuplicateMedicalRecordDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return AlertDialog(
       title: const Text(
         '重复的病历号',
         style: TextStyle(fontSize: 16),
       ),
       content: const Text('此病历号已被使用，请重新输入'),
-      backgroundColor: context.tokens.cardBackground.withValues(alpha: 0.9),
+      backgroundColor: tokens.cardBackground.withValues(alpha: 0.9),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: Colors.red, width: 1),
+        side: BorderSide(color: tokens.error, width: 1),
       ),
       contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
       titlePadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -26,9 +27,9 @@ class DuplicateMedicalRecordDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text(
+          child: Text(
             '确定',
-            style: TextStyle(color: Colors.red),
+            style: TextStyle(color: tokens.error),
           ),
         ),
       ],
@@ -46,6 +47,7 @@ class ExistingPatientChoiceDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return AlertDialog(
       title: const Text(
         '发现同名患者',
@@ -60,9 +62,9 @@ class ExistingPatientChoiceDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: tokens.infoContainer,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.shade200),
+              border: Border.all(color: tokens.info),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,10 +86,10 @@ class ExistingPatientChoiceDialog extends StatelessWidget {
           const Text('请选择：'),
         ],
       ),
-      backgroundColor: context.tokens.cardBackground.withValues(alpha: 0.9),
+      backgroundColor: tokens.cardBackground.withValues(alpha: 0.9),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: Colors.orange, width: 1),
+        side: BorderSide(color: tokens.warning, width: 1),
       ),
       contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
       titlePadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -95,16 +97,16 @@ class ExistingPatientChoiceDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text(
+          child: Text(
             '继续添加新患者',
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: tokens.textMuted),
           ),
         ),
         ElevatedButton(
           onPressed: () => Navigator.of(context).pop(true),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange,
-            foregroundColor: context.tokens.cardBackground,
+            backgroundColor: tokens.warning,
+            foregroundColor: tokens.cardBackground,
           ),
           child: const Text('编辑已存在患者'),
         ),

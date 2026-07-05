@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
-import '../../../theme/app_theme.dart';
 import '../../../providers/settings_provider.dart';
 
 class EditAppNameDialog extends StatelessWidget {
@@ -22,13 +21,14 @@ class EditAppNameDialog extends StatelessWidget {
         Provider.of<SettingsProvider>(context, listen: false);
     final TextEditingController controller =
         TextEditingController(text: settingsProvider.appName);
+    final tokens = context.tokens;
 
     return AlertDialog(
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.edit, color: AppTheme.primaryColor),
-          SizedBox(width: 12),
-          Text('修改应用名称'),
+          Icon(Icons.edit, color: context.tokens.primaryAccent),
+          const SizedBox(width: 12),
+          const Text('修改应用名称'),
         ],
       ),
       content: Column(
@@ -50,7 +50,7 @@ class EditAppNameDialog extends StatelessWidget {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide:
-                    const BorderSide(color: AppTheme.primaryColor, width: 2),
+                    BorderSide(color: context.tokens.primaryAccent, width: 2),
               ),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -62,20 +62,20 @@ class EditAppNameDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
+              color: tokens.infoContainer,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.shade200),
+              border: Border.all(color: tokens.info),
             ),
             child: Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                Icon(Icons.info_outline, color: tokens.primaryAccent, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     '应用名称将显示在侧边栏顶部',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.blue.shade700,
+                      color: tokens.primaryAccent,
                     ),
                   ),
                 ),
@@ -94,9 +94,9 @@ class EditAppNameDialog extends StatelessWidget {
             final newName = controller.text.trim();
             if (newName.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('应用名称不能为空'),
-                  backgroundColor: Colors.red,
+                SnackBar(
+                  content: const Text('应用名称不能为空'),
+                  backgroundColor: tokens.error,
                 ),
               );
               return;
@@ -104,7 +104,7 @@ class EditAppNameDialog extends StatelessWidget {
             Navigator.of(context).pop(newName);
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
+            backgroundColor: context.tokens.primaryAccent,
             foregroundColor: context.tokens.cardBackground,
           ),
           child: const Text('确定'),

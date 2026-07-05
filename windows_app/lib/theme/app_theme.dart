@@ -197,25 +197,6 @@ class AppTheme {
     ],
   );
 
-  // 紫色主题颜色（历史兼容，阶段6清理）
-  static const Color purpleColor = Color(0xFFB69BB0);
-  static const Color purpleLightColor = Color(0xFFE0CCDA);
-  static const Color purpleDarkColor = Color(0xFF9D7F97);
-  static const Color purpleBackground = Color(0xFFF5EEF2);
-  static const Color purpleCardBackground = Color(0xFFF8F1FF);
-  static const Color purplePrimaryText = Color(0xFF4A2C4D);
-  static const Color purpleSecondaryText = Color(0xFF6E5A7D);
-  static const Color purpleLightText = Color(0xFF9182A0);
-  static const Color purpleDividerColor = Color(0xFFE9DFF8);
-  static const Color purpleSecondaryBackground = Color(0xFFF8F5FD);
-  static final List<BoxShadow> purpleCardShadow = [
-    BoxShadow(
-      color: purpleColor.withValues(alpha: 0.08),
-      blurRadius: 8,
-      offset: const Offset(0, 2),
-    ),
-  ];
-
   // 应用主题 - 浅色主题（通过 token 构建）
   static ThemeData lightTheme = standardTheme();
 

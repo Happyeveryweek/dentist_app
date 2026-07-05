@@ -20,27 +20,27 @@ class AppointmentDateTimeSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: context.tokens.mutedBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: context.tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.schedule,
-                color: Color(0xFFFF8A65),
+                color: context.tokens.warning,
                 size: 18,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 '预约时间',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFFFF8A65),
+                  color: context.tokens.warning,
                 ),
               ),
             ],
@@ -56,12 +56,12 @@ class AppointmentDateTimeSection extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: context.tokens.cardBackground,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(color: context.tokens.border),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.calendar_today,
-                            color: Color(0xFFFF8A65)),
+                        Icon(Icons.calendar_today,
+                            color: context.tokens.warning),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -86,11 +86,11 @@ class AppointmentDateTimeSection extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: context.tokens.cardBackground,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(color: context.tokens.border),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.access_time, color: Color(0xFFFF8A65)),
+                        Icon(Icons.access_time, color: context.tokens.warning),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(

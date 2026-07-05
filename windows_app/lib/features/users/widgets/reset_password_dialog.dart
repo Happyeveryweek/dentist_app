@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../theme/app_theme.dart';
+import '../../../theme/theme_context_extensions.dart';
 import '../../../providers/user_provider.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../widgets/success_toast.dart';
@@ -20,21 +20,9 @@ class ResetPasswordDialog extends StatelessWidget {
     final formKey = GlobalKey<FormState>();
     final passwordController = TextEditingController();
 
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final isPurpleTheme =
-        false;
+    final accentColor = context.tokens.primaryAccent;
 
-    final accentColor = isPurpleTheme
-        ? AppTheme.purpleColor
-        : isDarkMode
-            ? AppTheme.primaryColor
-            : AppTheme.primaryColor;
-
-    final textColor = isPurpleTheme
-        ? AppTheme.purplePrimaryText
-        : isDarkMode
-            ? AppTheme.darkPrimaryText
-            : null;
+    const Color? textColor = null;
 
     return AlertDialog(
       title: Row(
@@ -42,7 +30,7 @@ class ResetPasswordDialog extends StatelessWidget {
           Icon(Icons.lock_reset, color: accentColor, size: 24),
           const SizedBox(width: 12),
           Text('修改${user.username}的密码',
-              style: TextStyle(
+              style: const TextStyle(
                   color: textColor, fontSize: 20, fontWeight: FontWeight.bold)),
         ],
       ),

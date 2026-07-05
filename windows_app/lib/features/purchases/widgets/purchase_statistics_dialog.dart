@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/purchase_record.dart';
 import '../../../models/purchase_item.dart';
 import '../../../providers/purchase_provider.dart';
@@ -176,23 +176,25 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
   }
 
   Widget _buildPresetButton(String label, String key) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final active = _isPresetActive(key);
     return ElevatedButton(
       onPressed: () => _applyPreset(key),
       style: ElevatedButton.styleFrom(
-        backgroundColor: active ? AppTheme.primaryColor : Colors.white,
-        foregroundColor: active ? Colors.white : Colors.black87,
+        backgroundColor: active ? tokens.primaryAccent : tokens.cardBackground,
+        foregroundColor: active ? tokens.cardBackground : colors.onSurface,
         elevation: active ? 2 : 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         side: BorderSide(
             color: active
                 ? Colors.transparent
-                : Colors.grey.withValues(alpha: 0.12)),
+                : tokens.border),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
       child: Text(label,
           style: TextStyle(
-              fontSize: 13, color: active ? Colors.white : Colors.black87)),
+              fontSize: 13, color: active ? tokens.cardBackground : colors.onSurface)),
     );
   }
 
@@ -261,6 +263,9 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     final totalAmount = _calculateTotalAmount();
     final totalQuantity = _calculateTotalQuantity();
     final totalRecords = _getFilteredRecords().length;
@@ -282,19 +287,19 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
+                  gradient: tokens.primaryHeaderGradient,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.bar_chart_rounded,
-                    color: Colors.white, size: 24),
+                child: Icon(Icons.bar_chart_rounded,
+                    color: tokens.cardBackground, size: 24),
               ),
               const SizedBox(width: 12),
               const Text('采购图表统计',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
             ],
           ),
-          backgroundColor: Colors.white,
-          foregroundColor: AppTheme.primaryText,
+          backgroundColor: tokens.cardBackground,
+          foregroundColor: colors.onSurface,
           elevation: 0,
           actions: [
             Padding(
@@ -327,11 +332,11 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
               child: SizedBox(
                 height: 36,
                 child: Material(
-                  color: Colors.white,
+                  color: tokens.cardBackground,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                     side:
-                        BorderSide(color: Colors.grey.withValues(alpha: 0.12)),
+                        BorderSide(color: tokens.border),
                   ),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(8),
@@ -341,16 +346,16 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.calendar_today,
-                              size: 16, color: Colors.black54),
+                          Icon(Icons.calendar_today,
+                              size: 16, color: tokens.textMuted),
                           const SizedBox(width: 6),
                           ConstrainedBox(
                             constraints: const BoxConstraints(
                                 minWidth: 140, maxWidth: 180),
                             child: Text(
                               '${DateFormat('yyyy-MM-dd').format(_startDate)} - ${DateFormat('yyyy-MM-dd').format(_endDate)}',
-                              style: const TextStyle(
-                                  color: Colors.black87, fontSize: 11),
+                              style: TextStyle(
+                                  color: colors.onSurface, fontSize: 11),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -380,22 +385,20 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                         padding: const EdgeInsets.all(12),
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                          color: tokens.infoContainer,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                              color:
-                                  AppTheme.primaryColor.withValues(alpha: 0.3)),
+                          border: Border.all(color: tokens.info),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.info_outline,
-                                color: AppTheme.primaryColor, size: 20),
+                            Icon(Icons.info_outline,
+                                color: tokens.info, size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 '当前显示搜索结果的统计数据：${widget.searchQuery}',
-                                style: const TextStyle(
-                                    color: AppTheme.primaryColor,
+                                style: TextStyle(
+                                    color: tokens.info,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500),
                               ),
@@ -452,37 +455,39 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
 
   Widget _buildSummaryCards(int totalRecords, double totalAmount,
       int totalQuantity, int uniqueMaterials) {
+    final tokens = context.tokens;
     return Row(
       children: [
         Expanded(
             child: _buildSummaryCard('总记录数', totalRecords.toString(),
-                Icons.receipt_long, Colors.blue)),
+                Icons.receipt_long, tokens.chartPalette[0])),
         const SizedBox(width: 16),
         Expanded(
             child: _buildSummaryCard(
                 '总采购额',
                 '¥${totalAmount.toStringAsFixed(2)}',
                 Icons.monetization_on,
-                Colors.green)),
+                tokens.chartPalette[1])),
         const SizedBox(width: 16),
         Expanded(
             child: _buildSummaryCard('总采购量', totalQuantity.toString(),
-                Icons.inventory_2, Colors.orange)),
+                Icons.inventory_2, tokens.chartPalette[3])),
         const SizedBox(width: 16),
         Expanded(
             child: _buildSummaryCard('材料种类', uniqueMaterials.toString(),
-                Icons.category, Colors.purple)),
+                Icons.category, tokens.chartPalette[4 % tokens.chartPalette.length])),
       ],
     );
   }
 
   Widget _buildSummaryCard(
       String title, String value, IconData icon, Color color) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(tokens.borderRadius),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,25 +511,21 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
   }
 
   Widget _buildChartCard(String title, Widget chart) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: tokens.cardBackground,
+        borderRadius: BorderRadius.circular(tokens.borderRadius),
+        boxShadow: tokens.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
               style:
-                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.onSurface)),
           const SizedBox(height: 16),
           Expanded(child: chart),
         ],
@@ -534,6 +535,8 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
 
   Widget _buildMonthlyAmountChart(
       List<String> sortedMonths, Map<String, double> monthlyAmountData) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     if (sortedMonths.isEmpty) {
       return const Center(child: Text('暂无数据'));
     }
@@ -564,12 +567,12 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
               interval: interval,
               getTitlesWidget: (value, meta) {
                 if (value == 0) {
-                  return const Text('¥0',
-                      style: TextStyle(fontSize: 10, color: Colors.black54));
+                  return Text('¥0',
+                      style: TextStyle(fontSize: 10, color: tokens.textMuted));
                 }
                 return Text('¥${value.toInt()}',
                     style:
-                        const TextStyle(fontSize: 10, color: Colors.black54));
+                        TextStyle(fontSize: 10, color: tokens.textMuted));
               },
             );
 
@@ -591,7 +594,7 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                     return const Text('');
                   }
                   return Text(month.substring(5),
-                      style: const TextStyle(fontSize: 10));
+                      style: TextStyle(fontSize: 10, color: tokens.textMuted));
                 }
                 return const Text('');
               },
@@ -602,7 +605,7 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
               lineTouchData: LineTouchData(
                 enabled: true,
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (spot) => Colors.white,
+                  getTooltipColor: (spot) => tokens.cardBackground,
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {
                       final index = spot.x.toInt();
@@ -611,8 +614,8 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                         final amount = monthlyAmountData[month] ?? 0;
                         return LineTooltipItem(
                           '$month\n¥${amount.toStringAsFixed(2)}',
-                          const TextStyle(
-                              color: Colors.black87,
+                          TextStyle(
+                              color: colors.onSurface,
                               fontWeight: FontWeight.bold),
                         );
                       }
@@ -628,7 +631,7 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                 drawVerticalLine: false,
                 horizontalInterval: interval, // 显式设置水平网格间隔
                 getDrawingHorizontalLine: (value) =>
-                    FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                    FlLine(color: tokens.divider, strokeWidth: 1),
               ),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
@@ -650,7 +653,7 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
               ),
               borderData: FlBorderData(
                   show: true,
-                  border: Border.all(color: Colors.grey.shade300, width: 1)),
+                  border: Border.all(color: tokens.border, width: 1)),
               minX: 0,
               maxX: sortedMonths.length - 1,
               minY: 0,
@@ -662,7 +665,7 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                     return FlSpot(entry.key.toDouble(), amount);
                   }).toList(),
                   isCurved: true,
-                  color: AppTheme.primaryColor,
+                  color: tokens.primaryAccent,
                   barWidth: 3,
                   isStrokeCapRound: true,
                   dotData: FlDotData(
@@ -670,9 +673,9 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                     getDotPainter: (spot, percent, barData, index) =>
                         FlDotCirclePainter(
                       radius: 3,
-                      color: AppTheme.primaryColor,
+                      color: tokens.primaryAccent,
                       strokeWidth: 2,
-                      strokeColor: Colors.white,
+                      strokeColor: tokens.cardBackground,
                     ),
                   ),
                   belowBarData: BarAreaData(
@@ -681,8 +684,8 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        AppTheme.primaryColor.withValues(alpha: 0.3),
-                        AppTheme.primaryColor.withValues(alpha: 0.1),
+                        tokens.primaryAccent.withValues(alpha: 0.3),
+                        tokens.primaryAccent.withValues(alpha: 0.1),
                       ],
                     ),
                   ),
@@ -747,16 +750,21 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
 
   Widget _buildTopMaterialsCard(
       List<MapEntry<String, num>> topMaterials, String title, String prefix) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final double totalValue =
         topMaterials.fold(0.0, (sum, item) => sum + item.value);
 
     // 根据标题判断是金额排行还是数量排行，使用不同的颜色
     final bool isAmountRanking = title.contains('金额');
-    final Color primaryColor = isAmountRanking ? Colors.green : Colors.orange;
+    final Color primaryColor = isAmountRanking ? tokens.chartPalette[1] : tokens.chartPalette[3];
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.cardBackground,
+        borderRadius: BorderRadius.circular(tokens.borderRadius),
+        boxShadow: tokens.cardShadow,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -776,8 +784,8 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
             const Divider(height: 24),
             Expanded(
               child: topMaterials.isEmpty
-                  ? const Center(
-                      child: Text('暂无数据', style: TextStyle(color: Colors.grey)))
+                  ? Center(
+                      child: Text('暂无数据', style: TextStyle(color: tokens.textMuted)))
                   : ListView(
                       children: topMaterials.map((material) {
                         final percentage = totalValue == 0
@@ -807,9 +815,10 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                                   Expanded(
                                     child: Text(
                                       material.key,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                           fontSize: 13,
-                                          fontWeight: FontWeight.w500),
+                                          fontWeight: FontWeight.w500,
+                                          color: colors.onSurface),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -825,15 +834,15 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                                   const SizedBox(width: 8),
                                   Text(
                                     '${percentage.toStringAsFixed(1)}%',
-                                    style: const TextStyle(
-                                        fontSize: 11, color: Colors.grey),
+                                    style: TextStyle(
+                                        fontSize: 11, color: tokens.textMuted),
                                   ),
                                 ],
                               ),
                               const SizedBox(height: 4),
                               LinearProgressIndicator(
                                 value: percentage / 100,
-                                backgroundColor: Colors.grey.shade200,
+                                backgroundColor: tokens.divider,
                                 valueColor:
                                     AlwaysStoppedAnimation<Color>(primaryColor),
                               ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'patient_action_button.dart';
 
 class PatientActionButtons extends StatelessWidget {
@@ -25,12 +25,13 @@ class PatientActionButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         PatientActionButton(
           icon: Icons.visibility_outlined,
-          color: AppTheme.primaryColor,
+          color: tokens.primaryAccent,
           tooltip: '查看',
           onPressed: onView,
         ),
@@ -38,13 +39,13 @@ class PatientActionButtons extends StatelessWidget {
         canEdit
             ? PatientActionButton(
                 icon: Icons.edit_outlined,
-                color: AppTheme.accentColor,
+                color: tokens.secondaryAccent,
                 tooltip: '编辑',
                 onPressed: onEdit,
               )
             : PatientActionButton(
                 icon: Icons.lock,
-                color: Colors.grey,
+                color: tokens.iconMuted,
                 tooltip: '权限不足',
                 onPressed: onEditPermissionDenied,
               ),
@@ -52,13 +53,13 @@ class PatientActionButtons extends StatelessWidget {
         canDelete
             ? PatientActionButton(
                 icon: Icons.delete_outlined,
-                color: AppTheme.errorColor,
+                color: tokens.error,
                 tooltip: '删除',
                 onPressed: onDelete,
               )
             : PatientActionButton(
                 icon: Icons.lock,
-                color: Colors.grey,
+                color: tokens.iconMuted,
                 tooltip: '权限不足',
                 onPressed: onDeletePermissionDenied,
               ),

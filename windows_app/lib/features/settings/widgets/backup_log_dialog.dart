@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../theme/app_theme.dart';
+import '../../../theme/theme_context_extensions.dart';
 import '../../../models/backup_log.dart';
 import '../../../widgets/success_toast.dart';
 
@@ -55,8 +55,8 @@ class BackupLogDialog extends StatelessWidget {
                   Icon(
                     log.success ? Icons.check_circle : Icons.error,
                     color: log.success
-                        ? AppTheme.successColor
-                        : AppTheme.errorColor,
+                        ? context.tokens.success
+                        : context.tokens.error,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -74,7 +74,7 @@ class BackupLogDialog extends StatelessWidget {
                         else
                           Text(
                             '错误信息: ${log.errorMessage ?? "未知错误"}',
-                            style: const TextStyle(color: AppTheme.errorColor),
+                            style: TextStyle(color: context.tokens.error),
                           ),
                       ],
                     ),
@@ -88,7 +88,7 @@ class BackupLogDialog extends StatelessWidget {
       actions: [
         TextButton(
           style: TextButton.styleFrom(
-            foregroundColor: AppTheme.errorColor,
+            foregroundColor: context.tokens.error,
           ),
           onPressed: () async {
             // 显示确认对话框
@@ -104,7 +104,7 @@ class BackupLogDialog extends StatelessWidget {
                       ),
                       TextButton(
                         style: TextButton.styleFrom(
-                          foregroundColor: AppTheme.errorColor,
+                          foregroundColor: context.tokens.error,
                         ),
                         onPressed: () => Navigator.pop(context, true),
                         child: const Text('确定清空'),

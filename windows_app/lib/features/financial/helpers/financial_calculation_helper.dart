@@ -1,6 +1,7 @@
 import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../../../models/patient.dart';
+import '../../../theme/medical_semantic_colors.dart';
 import 'package:flutter/material.dart';
 
 /// 财务计算辅助类
@@ -38,13 +39,6 @@ class FinancialCalculationHelper {
 
   /// 根据患者性别获取头像背景色
   static Color getAvatarBackgroundColor(Patient patient) {
-    if (patient.gender == '女' || patient.gender.toLowerCase() == 'female') {
-      return Colors.pink.shade400; // 女性为粉红色
-    } else if (patient.gender == '男' ||
-        patient.gender.toLowerCase() == 'male') {
-      return Colors.blue.shade300; // 男性为浅蓝色
-    } else {
-      return Colors.grey.shade400; // 其他情况为灰色
-    }
+    return MedicalSemanticColors.gender(patient.gender);
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/patient.dart';
 import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
@@ -28,15 +29,17 @@ class FinancialItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200, width: 1),
+        border: Border.all(color: tokens.divider, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: tokens.shadow.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -57,7 +60,7 @@ class FinancialItemCard extends StatelessWidget {
                   width: 90,
                   child: FinancialDataCell(
                     value: '${patient.medicalRecordNumber ?? '未设置'}',
-                    color: Colors.orange.shade700,
+                    color: tokens.warning,
                     isBold: true,
                     fontSize: 13,
                     textAlign: TextAlign.center,
@@ -70,7 +73,7 @@ class FinancialItemCard extends StatelessWidget {
                   flex: 2,
                   child: FinancialDataCell(
                     value: patient.name,
-                    color: Colors.black87,
+                    color: colors.onSurface,
                     isBold: true,
                     fontSize: 14,
                     textAlign: TextAlign.center,
@@ -84,7 +87,7 @@ class FinancialItemCard extends StatelessWidget {
                   child: FinancialDateCell(
                     date: item.chargeDate,
                     icon: Icons.event,
-                    color: Colors.teal.shade600,
+                    color: tokens.secondaryAccent,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -95,7 +98,7 @@ class FinancialItemCard extends StatelessWidget {
                   child: FinancialDateCell(
                     date: record.updatedAt,
                     icon: Icons.update,
-                    color: Colors.indigo.shade600,
+                    color: tokens.primaryAccent,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -107,22 +110,24 @@ class FinancialItemCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.green[50],
+                      color: tokens.successContainer,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.green.shade200, width: 1),
+                      border: Border.all(
+                          color: tokens.success.withValues(alpha: 0.3),
+                          width: 1),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.medical_services,
-                            size: 14, color: Colors.green[700]),
+                            size: 14, color: tokens.success),
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
                             item.itemName,
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.green[900],
+                              color: tokens.success,
                               fontWeight: FontWeight.w500,
                             ),
                             textAlign: TextAlign.center,
@@ -139,7 +144,7 @@ class FinancialItemCard extends StatelessWidget {
                 // 收费方式列
                 SizedBox(
                   width: 110,
-                  child: _buildPaymentMethodCell(),
+                  child: _buildPaymentMethodCell(tokens),
                 ),
                 const SizedBox(width: 12),
 
@@ -149,8 +154,8 @@ class FinancialItemCard extends StatelessWidget {
                   child: FinancialAmountCell(
                     amount: item.itemPrice * item.quantity,
                     icon: Icons.request_quote,
-                    color: Colors.blue.shade700,
-                    bgColor: Colors.blue.shade50,
+                    color: tokens.primaryAccent,
+                    bgColor: tokens.primaryAccent.withValues(alpha: 0.1),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -161,8 +166,8 @@ class FinancialItemCard extends StatelessWidget {
                   child: FinancialAmountCell(
                     amount: item.totalPrice,
                     icon: Icons.check_circle,
-                    color: Colors.green.shade700,
-                    bgColor: Colors.green.shade50,
+                    color: tokens.success,
+                    bgColor: tokens.successContainer,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -173,8 +178,8 @@ class FinancialItemCard extends StatelessWidget {
                   child: FinancialAmountCell(
                     amount: item.processingFee,
                     icon: Icons.build,
-                    color: Colors.orange.shade700,
-                    bgColor: Colors.orange.shade50,
+                    color: tokens.warning,
+                    bgColor: tokens.warningContainer,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -188,7 +193,7 @@ class FinancialItemCard extends StatelessWidget {
                       // 编辑按钮
                       FinancialActionButton(
                         icon: Icons.edit_rounded,
-                        color: Colors.blue.shade600,
+                        color: tokens.primaryAccent,
                         tooltip: '编辑',
                         onPressed: onEdit,
                       ),
@@ -196,7 +201,7 @@ class FinancialItemCard extends StatelessWidget {
                       // 删除按钮
                       FinancialActionButton(
                         icon: Icons.delete_rounded,
-                        color: Colors.red.shade600,
+                        color: tokens.error,
                         tooltip: '删除',
                         onPressed: onDelete,
                       ),
@@ -211,7 +216,7 @@ class FinancialItemCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentMethodCell() {
+  Widget _buildPaymentMethodCell(AppThemeTokens tokens) {
     final iconPath =
         FinancialPaymentMethodHelper.iconAssetPathOrNull(item.paymentMethod);
 
@@ -222,9 +227,9 @@ class FinancialItemCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.purple[50],
+        color: tokens.mutedBackground,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.purple.shade200, width: 1),
+        border: Border.all(color: tokens.border, width: 1),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,

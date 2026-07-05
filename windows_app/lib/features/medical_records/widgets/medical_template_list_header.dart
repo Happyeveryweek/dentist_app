@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../helpers/medical_template_category_style_helper.dart';
 
 /// 病历模板列表工具栏
@@ -19,6 +20,7 @@ class MedicalTemplateListHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       padding: const EdgeInsets.all(12),
@@ -107,12 +109,11 @@ class MedicalTemplateListHeader extends StatelessWidget {
             ),
             child: ElevatedButton.icon(
               onPressed: onAdd,
-              icon:
-                  const Icon(Icons.add_rounded, color: Colors.white, size: 20),
-              label: const Text(
+              icon: Icon(Icons.add_rounded, color: tokens.cardBackground, size: 20),
+              label: Text(
                 '添加类型',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: tokens.cardBackground,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),

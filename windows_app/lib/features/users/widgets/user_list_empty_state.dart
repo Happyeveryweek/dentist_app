@@ -20,7 +20,7 @@ class UserListEmptyState extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: context.tokens.shadow.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -46,7 +46,7 @@ class UserListEmptyState extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               '点击下方按钮添加第一个用户',
-              style: TextStyle(color: Colors.grey.shade500),
+              style: TextStyle(color: context.tokens.textMuted),
             ),
             const SizedBox(height: 24),
             DentalGradientButton(

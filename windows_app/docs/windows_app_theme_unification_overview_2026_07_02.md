@@ -107,10 +107,12 @@ Windows 端主题治理后，当前产品只暴露标准主题：
 
 - 2026-07-02：阶段 1 已完成。已新增 `AppThemeTokens` 与 `theme_context_extensions.dart`，`AppTheme` 已改为通过标准 token 构建 `ThemeData`，`MaterialApp.builder` 的柔和灰滤镜链路已移除，设置页不再暴露柔和灰入口，历史 `extendedThemeMode == grey` 会在加载时迁回标准主题并仅保存标准值。
 - 2026-07-02：`flutter analyze` 已通过，`AppThemeVisualFilter` 文件已删除，柔和灰运行链路已退出。
-- 2026-07-03：阶段 6 第一批已启动。`AppTheme.purple*` 历史常量、用户/患者/采购导出弹窗中的紫色主题判断、数据源页成功提示里的紫色分支，以及几处仅作兼容占位的 `isPurpleTheme` 参数已清理；阶段 6 继续聚焦剩余旧颜色入口分类收口。
-- 2026-07-04：阶段 6 已完成。运行链路中的 `AppTheme.*` 旧主题颜色入口已清零，柔和灰仅剩历史迁移日志与说明文案，`flutter analyze` 全量通过。
-- 2026-07-04：新增阶段 7 定义。后续主题治理不再以“清掉旧 `AppTheme.*` 即可”作为完成标准，而是要求系统涉及的所有颜色来源最终并入统一主题系统，直至 `DentalColors` 退出业务页面主题入口。
-- 2026-07-04：阶段 7 已完成预约详情、患者详情/表单、材料/采购表单小组件、病历模板/病历表单深层组件，以及设置结构检测/财务新增与编辑弹窗、设置页数据源区块、采购项目列表、治疗项目区块、财务表头、材料图片详情/预览链路、登录页、筛选患者页、牙位表单、应用信息页、设置页剩余提示/错误语义色入口，以及患者财务/采购统计图中的普通主题色迁移，并再次通过针对性 `flutter analyze`。当前 `lib/screens` 与 `lib/features` 中剩余 `DentalColors` 命中已只保留在状态色/性别色等允许例外清单，直接 `Colors.xxx` / `Color(0x...)` 命中也已从 `1767` 处降到 `956` 处，但阶段 7 仍处于进行中，颜色入口尚未完全统一。
+- 2026-07-03：阶段 6 第一批已启动。数据源页成功提示里的紫色分支，以及几处仅作兼容占位的 `isPurpleTheme` 参数已清理。
+- 2026-07-04：阶段 5 已完成并通过针对性静态检查；阶段 5 范围内旧 `DentalColors`、`AppTheme.primaryGradient` / `AppTheme.primaryColor`、固定白底和普通主题硬编码边框已清零。
+- 2026-07-04：复核发现阶段 6 尚未闭环。运行代码中仍存在 `isPurpleTheme` / `AppTheme.purple*` 紫色分支和大量普通 `AppTheme.*` 页面级入口。
+- 2026-07-04：阶段 6 已完成。`AppTheme.purple*` 历史常量、`isPurpleTheme` 死分支和普通 `AppTheme.*` 页面级入口已全部清理；settings/patients/users/appointments/purchases 等 35+ 个文件已统一接入 `context.tokens` / `context.colors`。全量 `flutter analyze` 0 error、0 warning，仅剩 14 个 info 级别 `prefer_const` 提示（均为预先存在）。运行链路中仅保留 `AppTheme.standardTheme()`、`AppTheme.smallBorderRadius` 和 `AppTheme.dangerGradient`。
+- 2026-07-04：阶段 7 仍为“未开始”。`DentalColors` 在 `lib/screens` / `lib/features` 多处业务页面中仍承担普通主题职责，直接 `Colors.xxx` / `Color(0x...)` 入口也仍大量存在；阶段 7 需在阶段 6 闭环后启动，目标仍是让系统涉及的所有颜色来源最终并入统一主题系统。
+- 2026-07-05：阶段 7 已启动当前批次。`dental_treatment.dart`、`appointment_form_dialog.dart`、`material_detail_manager.dart` 的头部渐变、卡片/页面背景、边框、阴影、按钮、图标/文字等普通主题色已接入 `context.tokens` / `context.colors`；语义状态色（成功绿、警告橙、错误红）与 `Colors.transparent` 保留；直接颜色命中从 1247 降到 1196，针对性 `flutter analyze` 0 issue。
 - 后续执行以 [迁移进度](windows_app_theme_migration_progress_2026_07_02.md) 为实时进度源，本总览只保留关键里程碑摘要。
 
 ## 最终验收
@@ -128,9 +130,11 @@ Windows 端主题治理后，当前产品只暴露标准主题：
 
 ## 当前状态
 
-当前正式主题统一治理的阶段 1 至阶段 6 已全部完成，旧主题系统相关运行链路已收口；当前阶段 7 已推进多批迁移，但尚未闭环。
+当前正式主题统一治理的阶段 1 至阶段 6 已完成，阶段 7 已启动并处理当前批次。
 
-阶段 7 的目标不是再清理一轮零散颜色，而是把剩余所有未并入统一主题系统的颜色来源彻底收口。当前仍未满足“最终验收”的原因是：`DentalColors` 虽已退出病历模板/病历表单等深层医疗记录组件的普通主题职责，但 `lib/screens` 与 `lib/features` 里还保留了大量 `Colors.xxx` / `Color(0x...)` 直接入口（2026-07-04 本轮复核为 `956` 处），因此还不能声明“改一套主题 token 即可全局统一变更”已经成立。
+阶段 6 已清理旧主题系统遗留入口：`AppTheme.purple*` 历史常量、`isPurpleTheme` 死分支和普通 `AppTheme.*` 页面级入口已全部清理，运行链路中仅保留 `AppTheme.standardTheme()`（标准主题构建入口）、`AppTheme.smallBorderRadius`（布局常量）和 `AppTheme.dangerGradient`（语义渐变）。
+
+阶段 7 的目标是把剩余所有未并入统一主题系统的颜色来源彻底收口。当前批次已将 `dental_treatment.dart`、`appointment_form_dialog.dart`、`material_detail_manager.dart` 的普通主题色入口接入 `context.tokens` / `context.colors`，直接颜色命中从 1247 降至 1196；剩余 `DentalColors` 与普通 `Colors.xxx` / `Color(0x...)` 命中仍按语义例外/普通主题分批处理。
 
 阶段 7 主要覆盖：
 

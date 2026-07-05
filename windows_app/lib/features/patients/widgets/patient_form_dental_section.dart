@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/dental_chart.dart';
-import '../../../theme/app_theme.dart';
 
 class PatientFormDentalSection extends StatelessWidget {
   final List<DentalChartRow> rows;
@@ -26,9 +26,9 @@ class PatientFormDentalSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: context.tokens.mutedBackground,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
       ),
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -37,20 +37,20 @@ class PatientFormDentalSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
                   Icon(
                     Icons.medical_services,
-                    color: AppTheme.primaryColor,
+                    color: context.tokens.primaryAccent,
                     size: 20,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     '牙齿状况',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.primaryColor,
+                      color: context.tokens.primaryAccent,
                     ),
                   ),
                 ],
@@ -59,8 +59,8 @@ class PatientFormDentalSection extends StatelessWidget {
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('添加记录', style: TextStyle(fontSize: 14)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
+                  backgroundColor: context.tokens.primaryAccent,
+                  foregroundColor: context.colors.onPrimary,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 ),
@@ -121,17 +121,17 @@ class PatientFormDentalChartRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: canEdit
-              ? Colors.green.withValues(alpha: 0.3)
-              : Colors.grey.withValues(alpha: 0.3),
+              ? context.tokens.success.withValues(alpha: 0.3)
+              : context.tokens.border.withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: context.tokens.shadow,
             blurRadius: 3,
             offset: const Offset(0, 1),
           ),
@@ -146,8 +146,8 @@ class PatientFormDentalChartRow extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: canEdit
-                    ? Colors.green.withValues(alpha: 0.1)
-                    : Colors.grey.withValues(alpha: 0.1),
+                    ? context.tokens.successContainer
+                    : context.tokens.mutedBackground,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Row(
@@ -155,7 +155,7 @@ class PatientFormDentalChartRow extends StatelessWidget {
                   Icon(
                     canEdit ? Icons.edit : Icons.visibility,
                     size: 12,
-                    color: canEdit ? Colors.green : Colors.grey,
+                    color: canEdit ? context.tokens.success : context.tokens.iconMuted,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -163,8 +163,8 @@ class PatientFormDentalChartRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10,
                       color: canEdit
-                          ? Colors.green.shade700
-                          : Colors.grey.shade600,
+                          ? context.tokens.success
+                          : context.colors.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -174,7 +174,7 @@ class PatientFormDentalChartRow extends StatelessWidget {
                       '只读',
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.grey.shade600,
+                        color: context.colors.onSurfaceVariant,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -195,18 +195,18 @@ class PatientFormDentalChartRow extends StatelessWidget {
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: canEdit
-                            ? Colors.grey.shade300
-                            : Colors.grey.shade200,
+                            ? context.tokens.divider
+                            : context.tokens.border,
                       ),
                       borderRadius: BorderRadius.circular(4),
-                      color: canEdit ? Colors.white : Colors.grey.shade50,
+                      color: canEdit ? context.tokens.cardBackground : context.tokens.mutedBackground,
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.calendar_today,
                           size: 14,
-                          color: canEdit ? AppTheme.primaryColor : Colors.grey,
+                          color: canEdit ? context.tokens.primaryAccent : context.tokens.iconMuted,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -214,7 +214,7 @@ class PatientFormDentalChartRow extends StatelessWidget {
                             DateFormat('yyyy-MM-dd').format(row.date),
                             style: TextStyle(
                               fontSize: 12,
-                              color: canEdit ? Colors.black87 : Colors.grey,
+                              color: canEdit ? context.colors.onSurface : context.tokens.iconMuted,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -257,9 +257,9 @@ class PatientFormDentalChartRow extends StatelessWidget {
               ),
               if (rowCount > 1 && canDelete)
                 IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.delete_outline,
-                    color: Colors.red,
+                    color: context.tokens.error,
                     size: 18,
                   ),
                   tooltip: '删除此记录',
@@ -277,9 +277,9 @@ class PatientFormDentalChartRow extends StatelessWidget {
                     minWidth: 30,
                     minHeight: 30,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.lock_outline,
-                    color: Colors.grey,
+                    color: context.tokens.iconMuted,
                     size: 18,
                   ),
                 ),
@@ -317,14 +317,14 @@ class PatientFormSimpleCrossChart extends StatelessWidget {
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 250),
                   height: 1.5,
-                  color: Colors.blue.shade300,
+                  color: context.tokens.primaryAccent.withValues(alpha: 0.5),
                 ),
               ),
               Center(
                 child: Container(
                   width: 1.5,
                   height: 50,
-                  color: Colors.blue.shade300,
+                  color: context.tokens.primaryAccent.withValues(alpha: 0.5),
                 ),
               ),
               Column(
@@ -427,31 +427,31 @@ class PatientFormSimpleCrossChart extends StatelessWidget {
                 border: UnderlineInputBorder(
                   borderSide: BorderSide(
                     color:
-                        enabled ? Colors.blue.shade300 : Colors.grey.shade300,
+                        enabled ? context.tokens.primaryAccent.withValues(alpha: 0.5) : context.tokens.divider,
                     width: 1.5,
                   ),
                 ),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(
                     color:
-                        enabled ? Colors.blue.shade300 : Colors.grey.shade300,
+                        enabled ? context.tokens.primaryAccent.withValues(alpha: 0.5) : context.tokens.divider,
                     width: 1.5,
                   ),
                 ),
                 focusedBorder: UnderlineInputBorder(
                   borderSide:
-                      BorderSide(color: Colors.blue.shade300, width: 1.5),
+                      BorderSide(color: context.tokens.primaryAccent.withValues(alpha: 0.5), width: 1.5),
                 ),
                 disabledBorder: UnderlineInputBorder(
                   borderSide:
-                      BorderSide(color: Colors.grey.shade300, width: 1.5),
+                      BorderSide(color: context.tokens.divider, width: 1.5),
                 ),
                 fillColor: Colors.transparent,
                 filled: false,
               ),
               style: TextStyle(
                 fontSize: 12,
-                color: enabled ? Colors.black87 : Colors.grey,
+                color: enabled ? context.colors.onSurface : context.tokens.iconMuted,
               ),
               textAlign: TextAlign.left,
               onChanged: (value) => chart.note = value,
@@ -499,9 +499,9 @@ class _QuadrantTextField extends StatelessWidget {
       textAlign: textAlign,
       style: TextStyle(
         fontSize: 12,
-        color: enabled ? Colors.black87 : Colors.grey,
+        color: enabled ? context.colors.onSurface : context.tokens.iconMuted,
       ),
-      cursorColor: Colors.blue.shade300,
+      cursorColor: context.tokens.primaryAccent.withValues(alpha: 0.5),
       maxLines: 1,
       onChanged: onChanged,
     );

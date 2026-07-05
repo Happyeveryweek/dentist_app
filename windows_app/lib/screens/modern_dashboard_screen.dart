@@ -23,7 +23,7 @@ import '../screens/patient_detail_screen.dart';
 import '../utils/permission_utils.dart';
 import '../widgets/success_toast.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/medical_semantic_colors.dart';
 
 class ModernDashboardScreen extends StatefulWidget {
   const ModernDashboardScreen({Key? key}) : super(key: key);
@@ -164,7 +164,9 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('加载数据失败: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('加载数据失败: $e'),
+              backgroundColor: context.tokens.error),
         );
       }
     } finally {
@@ -188,11 +190,11 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.tokens.cardBackground,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: context.tokens.shadow,
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -295,10 +297,10 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                     height: 64,
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: context.colors.onPrimary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.3),
+                        color: context.colors.onPrimary.withValues(alpha: 0.3),
                         width: 2,
                       ),
                     ),
@@ -316,13 +318,13 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
                                   decoration: BoxDecoration(
-                                    color:
-                                        Colors.white.withValues(alpha: 0.1),
+                                    color: context.colors.onPrimary
+                                        .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(14),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     DentalIcons.userDoctor,
-                                    color: Colors.white,
+                                    color: context.colors.onPrimary,
                                     size: 32,
                                   ),
                                 );
@@ -333,12 +335,12 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                       }
                       return Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: context.colors.onPrimary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(14),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           DentalIcons.userDoctor,
-                          color: Colors.white,
+                          color: context.colors.onPrimary,
                           size: 32,
                         ),
                       );
@@ -351,10 +353,10 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                       children: [
                         Text(
                           '你好，$_currentUserName',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: context.colors.onPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -362,15 +364,15 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                           '欢迎回来工作，祝您今天心情愉快！',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: context.colors.onPrimary.withValues(alpha: 0.9),
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.refresh_rounded,
-                        color: Colors.white, size: 24),
+                    icon: Icon(Icons.refresh_rounded,
+                        color: context.colors.onPrimary, size: 24),
                     onPressed: _loadData,
                     tooltip: '刷新数据',
                   ),
@@ -442,7 +444,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                     title: '已完成',
                     value: _completedAppointments.toString(),
                     icon: DentalIcons.completed,
-                    color: DentalColors.success,
+                    color: context.tokens.success,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -451,7 +453,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                     title: '即将到来',
                     value: _upcomingAppointments.toString(),
                     icon: DentalIcons.pending,
-                    color: DentalColors.info,
+                    color: context.tokens.info,
                   ),
                 ),
               ],
@@ -505,7 +507,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                   title,
                   style: TextStyle(
                     fontSize: 13,
-                    color: Colors.grey[600],
+                    color: context.tokens.textMuted,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -516,7 +518,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
             Icon(
               Icons.arrow_forward_ios_rounded,
               size: 14,
-              color: Colors.grey[400],
+              color: context.tokens.textMuted,
             ),
         ],
       ),
@@ -533,11 +535,11 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
             opacity: _fadeAnimation.value,
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: context.tokens.shadow,
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -581,17 +583,17 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                               _buildTodaySummaryChip(
                                 label: '已预约',
                                 value: dataTodayScheduledAppointments,
-                                color: DentalColors.info,
+                                color: context.tokens.info,
                               ),
                               _buildTodaySummaryChip(
                                 label: '已完成',
                                 value: dataTodayCompletedAppointments,
-                                color: DentalColors.success,
+                                color: context.tokens.success,
                               ),
                               _buildTodaySummaryChip(
                                 label: '未完成',
                                 value: dataTodayUnfinishedAppointments,
-                                color: DentalColors.warning,
+                                color: context.tokens.warning,
                               ),
                               _buildTodaySummaryChip(
                                 label: '合计',
@@ -604,7 +606,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                       ],
                     ),
                   ),
-                  Divider(height: 1, color: Colors.grey[200]),
+                  Divider(height: 1, color: context.tokens.divider),
                   Expanded(
                     child: SingleChildScrollView(
                       child: _todayAppointments.isEmpty
@@ -616,13 +618,13 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                                     Container(
                                       padding: const EdgeInsets.all(20),
                                       decoration: BoxDecoration(
-                                        color: Colors.grey[100],
+                                        color: context.tokens.pageBackground,
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         DentalIcons.calendarCheck,
                                         size: 48,
-                                        color: Colors.grey[400],
+                                        color: context.tokens.textMuted,
                                       ),
                                     ),
                                     const SizedBox(height: 20),
@@ -631,7 +633,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.grey[700],
+                                        color: context.colors.onSurfaceVariant,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -639,7 +641,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                                       '享受轻松的一天吧',
                                       style: TextStyle(
                                         fontSize: 14,
-                                        color: Colors.grey[500],
+                                        color: context.tokens.textMuted,
                                       ),
                                     ),
                                   ],
@@ -716,14 +718,14 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
   Widget _buildTodayAppointmentCard(Appointment appointment) {
     final time = DateFormat('HH:mm').format(appointment.appointmentDate);
     final statusColor =
-        DashboardStatusHelper.getStatusColor(appointment.status);
+        DashboardStatusHelper.getStatusColor(context, appointment.status);
     final gender = appointment.patient?.gender ?? '';
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: context.tokens.pageBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.divider),
       ),
       child: Material(
         color: Colors.transparent,
@@ -794,8 +796,8 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                             DentalIcons.getGenderIcon(gender),
                             size: 16,
                             color: gender == '女'
-                                ? DentalColors.femalePink
-                                : DentalColors.maleBlue,
+                                ? MedicalSemanticColors.femaleGender
+                                : MedicalSemanticColors.maleGender,
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -812,7 +814,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                         DashboardTreatmentFormatter.formatTreatmentType(
                             appointment.treatmentType),
                         style: TextStyle(
-                          color: Colors.grey[600],
+                          color: context.tokens.textMuted,
                           fontSize: 13,
                         ),
                         maxLines: 1,
@@ -855,11 +857,11 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
             opacity: _fadeAnimation.value,
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: context.tokens.shadow,
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -898,7 +900,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                         PermissionWrapper(
                           requiredModule: 'patients',
                           fallback: Icon(Icons.lock,
-                              size: 18, color: Colors.grey[400]),
+                              size: 18, color: context.tokens.textMuted),
                           child: TextButton.icon(
                             onPressed: () {
                               final appState =
@@ -916,7 +918,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                       ],
                     ),
                   ),
-                  Divider(height: 1, color: Colors.grey[200]),
+                  Divider(height: 1, color: context.tokens.divider),
                   Expanded(
                     child: SingleChildScrollView(
                       child: _recentPatients.isEmpty
@@ -928,13 +930,13 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                                     Container(
                                       padding: const EdgeInsets.all(20),
                                       decoration: BoxDecoration(
-                                        color: Colors.grey[100],
+                                        color: context.tokens.pageBackground,
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
                                         DentalIcons.hospitalUser,
                                         size: 48,
-                                        color: Colors.grey[400],
+                                        color: context.tokens.textMuted,
                                       ),
                                     ),
                                     const SizedBox(height: 20),
@@ -943,7 +945,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.grey[700],
+                                        color: context.colors.onSurfaceVariant,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -951,7 +953,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                                       '开始添加您的第一位患者',
                                       style: TextStyle(
                                         fontSize: 14,
-                                        color: Colors.grey[500],
+                                        color: context.tokens.textMuted,
                                       ),
                                     ),
                                   ],
@@ -964,7 +966,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                               padding: const EdgeInsets.all(16),
                               itemCount: _recentPatients.length,
                               separatorBuilder: (context, index) => Divider(
-                                color: Colors.grey[200],
+                                color: context.tokens.divider,
                                 height: 24,
                               ),
                               itemBuilder: (context, index) {
@@ -984,8 +986,9 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
   }
 
   Widget _buildPatientListTile(Patient patient) {
-    final genderColor =
-        patient.gender == '女' ? DentalColors.femalePink : DentalColors.maleBlue;
+    final genderColor = patient.gender == '女'
+        ? MedicalSemanticColors.femaleGender
+        : MedicalSemanticColors.maleGender;
 
     // 获取显示的电话号码
     String displayPhone = '未设置';
@@ -1061,13 +1064,13 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                         Icon(
                           Icons.badge,
                           size: 12,
-                          color: Colors.blue[600],
+                          color: context.tokens.primaryAccent,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           '${patient.medicalRecordNumber}',
                           style: TextStyle(
-                            color: Colors.blue[600],
+                            color: context.tokens.primaryAccent,
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                           ),
@@ -1079,14 +1082,14 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                       Icon(
                         Icons.phone,
                         size: 12,
-                        color: Colors.green[600],
+                        color: context.tokens.success,
                       ),
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
                           displayPhone,
                           style: TextStyle(
-                            color: Colors.green[600],
+                            color: context.tokens.success,
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                           ),
@@ -1110,14 +1113,14 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                             Icon(
                               Icons.location_on,
                               size: 12,
-                              color: Colors.orange[600],
+                              color: context.tokens.warning,
                             ),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 address,
                                 style: TextStyle(
-                                  color: Colors.orange[600],
+                                  color: context.tokens.warning,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -1140,14 +1143,14 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                 Text(
                   DateFormat('MM/dd').format(patient.updatedAt),
                   style: TextStyle(
-                    color: Colors.grey[500],
+                    color: context.tokens.textMuted,
                     fontSize: 12,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: Colors.grey[400],
+                  color: context.tokens.textMuted,
                   size: 20,
                 ),
               ],

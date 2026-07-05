@@ -12,6 +12,7 @@ class MedicalTemplateInitializeConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
@@ -21,16 +22,16 @@ class MedicalTemplateInitializeConfirmDialog extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              context.tokens.cardBackground,
-              Colors.orange.shade50,
-            ],
-          ),
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                tokens.cardBackground,
+                tokens.warningContainer,
+              ],
+            ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: tokens.shadow.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
               spreadRadius: 0,
@@ -45,7 +46,7 @@ class MedicalTemplateInitializeConfirmDialog extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.orange.shade400, Colors.orange.shade600],
+                  colors: [tokens.warning, tokens.warningAccent],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -91,15 +92,15 @@ class MedicalTemplateInitializeConfirmDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
+                      color: tokens.warningContainer,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.orange.shade200),
+                      border: Border.all(color: tokens.warning.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.info_outline_rounded,
-                          color: Colors.orange.shade600,
+                          color: tokens.warning,
                           size: 32,
                         ),
                         const SizedBox(width: 16),
@@ -114,7 +115,7 @@ class MedicalTemplateInitializeConfirmDialog extends StatelessWidget {
                             '如果您需要重置病历模板数据，请执行此操作。',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.orange.shade800,
+                              color: tokens.warning,
                               height: 1.5,
                             ),
                           ),
@@ -130,7 +131,7 @@ class MedicalTemplateInitializeConfirmDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: tokens.mutedBackground,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
@@ -164,8 +165,8 @@ class MedicalTemplateInitializeConfirmDialog extends StatelessWidget {
                       onConfirm();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange.shade600,
-                      foregroundColor: context.tokens.cardBackground,
+                      backgroundColor: tokens.warning,
+                      foregroundColor: tokens.cardBackground,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 32, vertical: 12),
                       shape: RoundedRectangleBorder(

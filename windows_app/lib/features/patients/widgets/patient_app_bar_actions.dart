@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
-import '../../../widgets/dental_icons.dart';
-
 class PatientAppBarActions extends StatelessWidget {
   final VoidCallback onExport;
   final VoidCallback onAddPatient;
@@ -24,16 +22,16 @@ class PatientAppBarActions extends StatelessWidget {
       children: [
         _PatientAppBarActionButton(
           margin: const EdgeInsets.only(right: 8),
-          backgroundColor: DentalColors.success.withValues(alpha: 0.1),
-          borderColor: DentalColors.success.withValues(alpha: 0.3),
+          backgroundColor: context.tokens.successContainer,
+          borderColor: context.tokens.success.withValues(alpha: 0.3),
           icon: Icons.file_download_rounded,
-          iconColor: DentalColors.success,
+          iconColor: context.tokens.success,
           tooltip: '导出患者数据',
           onPressed: onExport,
         ),
         _PatientAppBarActionButton(
           margin: const EdgeInsets.only(right: 8),
-          gradient: DentalColors.primaryGradient,
+          gradient: context.tokens.primaryHeaderGradient,
           icon: Icons.add_rounded,
           iconColor: context.tokens.cardBackground,
           tooltip: '添加患者',
@@ -41,19 +39,19 @@ class PatientAppBarActions extends StatelessWidget {
         ),
         _PatientAppBarActionButton(
           margin: const EdgeInsets.only(right: 8),
-          backgroundColor: Colors.purple.withValues(alpha: 0.1),
-          borderColor: Colors.purple.withValues(alpha: 0.3),
+          backgroundColor: context.tokens.chartPalette[2].withValues(alpha: 0.1),
+          borderColor: context.tokens.chartPalette[2].withValues(alpha: 0.3),
           icon: Icons.bar_chart_rounded,
-          iconColor: Colors.purple,
+          iconColor: context.tokens.chartPalette[2],
           tooltip: '患者统计图表',
           onPressed: onShowStatistics,
         ),
         _PatientAppBarActionButton(
           margin: const EdgeInsets.only(right: 16),
-          backgroundColor: DentalColors.info.withValues(alpha: 0.1),
-          borderColor: DentalColors.info.withValues(alpha: 0.3),
+          backgroundColor: context.tokens.infoContainer,
+          borderColor: context.tokens.info.withValues(alpha: 0.3),
           icon: Icons.refresh_rounded,
-          iconColor: DentalColors.info,
+          iconColor: context.tokens.info,
           tooltip: '刷新数据',
           onPressed: () {
             onRefresh();

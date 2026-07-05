@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/dental_icons.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 过敏史选择组件
 class AllergySelectionWidget extends StatelessWidget {
@@ -32,23 +32,26 @@ class AllergySelectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
             Icon(
               Icons.warning_rounded,
               size: 18,
-              color: DentalColors.error,
+              color: tokens.error,
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               '过敏史',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: DentalColors.onSurface,
+                color: colors.onSurface,
               ),
             ),
           ],
@@ -58,10 +61,10 @@ class AllergySelectionWidget extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DentalColors.error.withValues(alpha: 0.05),
+            color: tokens.errorContainer.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DentalColors.error.withValues(alpha: 0.3),
+              color: tokens.error.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -95,17 +98,17 @@ class AllergySelectionWidget extends StatelessWidget {
                                 }
                               : null,
                           backgroundColor: hasEditPermission
-                              ? DentalColors.surface
-                              : Colors.grey.shade200,
+                              ? tokens.cardBackground
+                              : tokens.border,
                           selectedColor:
-                              DentalColors.error.withValues(alpha: 0.2),
-                          checkmarkColor: DentalColors.error,
+                              tokens.error.withValues(alpha: 0.2),
+                          checkmarkColor: tokens.error,
                           labelStyle: TextStyle(
                             color: hasEditPermission
                                 ? (isSelected
-                                    ? DentalColors.error
-                                    : DentalColors.onSurface)
-                                : Colors.grey,
+                                    ? tokens.error
+                                    : colors.onSurface)
+                                : tokens.textMuted,
                             fontWeight: isSelected
                                 ? FontWeight.w600
                                 : FontWeight.normal,
@@ -165,15 +168,18 @@ class AllergySubTypeSelectionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: DentalColors.error.withValues(alpha: 0.1),
+        color: tokens.errorContainer,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: DentalColors.error.withValues(alpha: 0.3),
+          color: tokens.error.withValues(alpha: 0.3),
         ),
       ),
       child: Wrap(
@@ -186,10 +192,10 @@ class AllergySubTypeSelectionWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               '$allergyType 具体项目:',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: DentalColors.error,
+                color: tokens.error,
               ),
             ),
           ),
@@ -212,14 +218,14 @@ class AllergySubTypeSelectionWidget extends StatelessWidget {
                     }
                   : null,
               backgroundColor: hasEditPermission
-                  ? DentalColors.surface
-                  : Colors.grey.shade200,
-              selectedColor: DentalColors.error.withValues(alpha: 0.3),
-              checkmarkColor: DentalColors.error,
+                  ? tokens.cardBackground
+                  : tokens.border,
+              selectedColor: tokens.error.withValues(alpha: 0.3),
+              checkmarkColor: tokens.error,
               labelStyle: TextStyle(
                 color: hasEditPermission
-                    ? (isSelected ? DentalColors.error : DentalColors.onSurface)
-                    : Colors.grey,
+                    ? (isSelected ? tokens.error : colors.onSurface)
+                    : tokens.textMuted,
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),

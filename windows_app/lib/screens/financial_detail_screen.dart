@@ -193,24 +193,22 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     // 检查是否在弹窗中显示
     final isInDialog = ModalRoute.of(context)?.settings.name == null;
 
     if (isInDialog) {
       // 弹窗模式：不显示AppBar，直接显示内容
       return Scaffold(
-        backgroundColor: context.tokens.cardBackground,
+        backgroundColor: tokens.cardBackground,
         body: Column(
           children: [
             // 自定义标题栏
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue.shade600, Colors.indigo.shade600],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                gradient: tokens.primaryHeaderGradient,
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
@@ -220,18 +218,18 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(_hasDataChanged),
-                    icon: Icon(Icons.arrow_back, color: context.tokens.cardBackground),
+                    icon: Icon(Icons.arrow_back, color: tokens.cardBackground),
                     tooltip: '返回',
                   ),
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: context.tokens.cardBackground.withValues(alpha: 0.2),
+                      color: tokens.cardBackground.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
                       Icons.account_balance_wallet,
-                      color: context.tokens.cardBackground,
+                      color: tokens.cardBackground,
                       size: 20,
                     ),
                   ),
@@ -240,7 +238,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
                     child: Text(
                       '${widget.patient.name} - 财务详情',
                       style: TextStyle(
-                        color: context.tokens.cardBackground,
+                        color: tokens.cardBackground,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -248,12 +246,12 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
                   ),
                   IconButton(
                     onPressed: _openPatientDetail,
-                    icon: Icon(Icons.person_search, color: context.tokens.cardBackground),
+                    icon: Icon(Icons.person_search, color: tokens.cardBackground),
                     tooltip: '查看患者详情',
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(_hasDataChanged),
-                    icon: Icon(Icons.close, color: context.tokens.cardBackground),
+                    icon: Icon(Icons.close, color: tokens.cardBackground),
                     tooltip: '关闭',
                   ),
                 ],
@@ -274,8 +272,8 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             tooltip: '返回',
           ),
           title: Text('${widget.patient.name} - 财务详情'),
-          backgroundColor: context.tokens.cardBackground,
-          foregroundColor: Colors.black87,
+          backgroundColor: tokens.cardBackground,
+          foregroundColor: colors.onSurface,
           elevation: 0,
           actions: [
             IconButton(
@@ -291,6 +289,9 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   }
 
   Widget _buildBody() {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -300,7 +301,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            Icon(Icons.error_outline, size: 64, color: tokens.error),
             const SizedBox(height: 16),
             Text('加载失败', style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
@@ -321,14 +322,14 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.account_balance_wallet_outlined,
-                size: 64, color: Colors.grey[400]),
+                size: 64, color: tokens.iconMuted),
             const SizedBox(height: 16),
             Text(
               '暂无收费记录',
               style: Theme.of(context)
                   .textTheme
                   .titleMedium
-                  ?.copyWith(color: Colors.grey[600]),
+                  ?.copyWith(color: colors.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             Text(
@@ -336,7 +337,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
               style: Theme.of(context)
                   .textTheme
                   .bodyMedium
-                  ?.copyWith(color: Colors.grey[500]),
+                  ?.copyWith(color: tokens.textMuted),
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
@@ -344,8 +345,8 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
               icon: const Icon(Icons.add),
               label: const Text('添加记录'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                foregroundColor: context.tokens.cardBackground,
+                backgroundColor: tokens.primaryAccent,
+                foregroundColor: tokens.cardBackground,
               ),
             ),
           ],
@@ -589,9 +590,9 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
           } else {
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('删除失败'),
-                backgroundColor: Colors.red,
+              SnackBar(
+                content: const Text('删除失败'),
+                backgroundColor: context.tokens.error,
               ),
             );
           }
@@ -600,7 +601,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('删除失败: $e'),
-              backgroundColor: Colors.red,
+              backgroundColor: context.tokens.error,
             ),
           );
         }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_theme.dart';
+import '../../../theme/theme_context_extensions.dart';
 
 /// 数据源配置页面标题组件
 /// 包含页面标题和数据源状态显示
@@ -19,13 +19,15 @@ class DataSourcePageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.primaryColor,
-            AppTheme.primaryColor.withValues(alpha: 0.8),
+            tokens.primaryAccent,
+            tokens.primaryAccent.withValues(alpha: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -33,7 +35,7 @@ class DataSourcePageHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+            color: tokens.primaryAccent.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -44,12 +46,12 @@ class DataSourcePageHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: tokens.cardBackground.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.storage_rounded,
-              color: Colors.white,
+              color: tokens.cardBackground,
               size: 32,
             ),
           ),
@@ -58,10 +60,10 @@ class DataSourcePageHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   '数据源配置中心',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: tokens.cardBackground,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
@@ -70,7 +72,7 @@ class DataSourcePageHeader extends StatelessWidget {
                 Text(
                   '配置SQLite本地数据库或MySQL远程数据库连接',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: tokens.cardBackground.withValues(alpha: 0.9),
                     fontSize: 16,
                   ),
                 ),
@@ -80,14 +82,14 @@ class DataSourcePageHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: tokens.cardBackground.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.3),
+                color: tokens.cardBackground.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
-            child: _buildDataSourceStatusDisplay(),
+            child: _buildDataSourceStatusDisplay(context),
           ),
         ],
       ),
@@ -95,7 +97,9 @@ class DataSourcePageHeader extends StatelessWidget {
   }
 
   /// 构建数据源状态显示
-  Widget _buildDataSourceStatusDisplay() {
+  Widget _buildDataSourceStatusDisplay(BuildContext context) {
+    final tokens = context.tokens;
+
     if (dataSourceMode == 'global') {
       // 全局配置模式
       return Row(
@@ -105,7 +109,7 @@ class DataSourcePageHeader extends StatelessWidget {
             selectedDataSource == 'sqlite'
                 ? Icons.storage_rounded
                 : Icons.cloud_done_rounded,
-            color: Colors.white,
+            color: tokens.cardBackground,
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -113,25 +117,25 @@ class DataSourcePageHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 '全局配置',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: tokens.cardBackground,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
               ),
               Text(
                 selectedDataSource == 'sqlite' ? 'SQLite' : 'MySQL',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: tokens.cardBackground,
                   fontSize: 10,
                 ),
               ),
               Text(
                 '所有模块使用相同数据源',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: tokens.cardBackground.withValues(alpha: 0.8),
                   fontSize: 8,
                 ),
               ),
@@ -160,9 +164,9 @@ class DataSourcePageHeader extends StatelessWidget {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.grid_view_rounded,
-            color: Colors.white,
+            color: tokens.cardBackground,
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -170,10 +174,10 @@ class DataSourcePageHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
+              Text(
                 '模块化配置',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: tokens.cardBackground,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -181,8 +185,8 @@ class DataSourcePageHeader extends StatelessWidget {
               if (sqliteModules > 0)
                 Text(
                   'SQLite: ${sqliteModuleNames.join(', ')}',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: tokens.cardBackground,
                     fontSize: 9,
                   ),
                   overflow: TextOverflow.ellipsis,
@@ -190,8 +194,8 @@ class DataSourcePageHeader extends StatelessWidget {
               if (mysqlModules > 0)
                 Text(
                   'MySQL: ${mysqlModuleNames.join(', ')}',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: tokens.cardBackground,
                     fontSize: 9,
                   ),
                   overflow: TextOverflow.ellipsis,

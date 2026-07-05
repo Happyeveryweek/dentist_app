@@ -33,19 +33,19 @@ class AvatarUploadSection extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: context.tokens.border),
         color: context.tokens.cardBackground,
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.account_circle,
-                  color: AppTheme.primaryColor, size: 20),
-              SizedBox(width: 12),
-              Text(
+                  color: context.tokens.primaryAccent, size: 20),
+              const SizedBox(width: 12),
+              const Text(
                 '头像设置',
                 style: TextStyle(
                   fontSize: 16,
@@ -64,7 +64,7 @@ class AvatarUploadSection extends StatelessWidget {
                 height: 120,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.primaryColor, width: 2),
+                  border: Border.all(color: context.tokens.primaryAccent, width: 2),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(10),

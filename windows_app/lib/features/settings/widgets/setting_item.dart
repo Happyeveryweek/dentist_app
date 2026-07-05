@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_theme.dart';
+import '../../../theme/theme_context_extensions.dart';
 
 class SettingItem extends StatelessWidget {
   final IconData icon;
@@ -17,16 +17,18 @@ class SettingItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final subtitleText = subtitle;
     final trailingWidget = trailing;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: tokens.shadow,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -37,10 +39,10 @@ class SettingItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              color: tokens.primaryAccent.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: AppTheme.primaryColor, size: 20),
+            child: Icon(icon, color: tokens.primaryAccent, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -59,7 +61,7 @@ class SettingItem extends StatelessWidget {
                   Text(
                     subtitleText,
                     style: TextStyle(
-                      color: Colors.grey.shade600,
+                      color: colors.onSurfaceVariant,
                       fontSize: 13,
                     ),
                   ),

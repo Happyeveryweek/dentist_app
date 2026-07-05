@@ -8,7 +8,7 @@ import '../../../models/patient.dart';
 import '../../../models/dental_chart.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/user_provider.dart';
-import '../../../widgets/dental_icons.dart';
+
 import '../../../widgets/modern_date_picker.dart';
 import '../models/patient_form_state.dart';
 import 'patient_form_components.dart';
@@ -766,17 +766,17 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
         width: MediaQuery.of(context).size.width * 0.8,
         height: MediaQuery.of(context).size.height * 0.95,
         decoration: BoxDecoration(
-          gradient: DentalColors.backgroundGradient,
+          gradient: context.tokens.primaryHeaderGradient,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: DentalColors.shadowMedium,
+              color: context.tokens.primaryAccent.withValues(alpha: 0.2),
               blurRadius: 20,
               offset: const Offset(0, 10),
               spreadRadius: 0,
             ),
             BoxShadow(
-              color: DentalColors.shadowLight,
+              color: context.tokens.primaryAccent.withValues(alpha: 0.1),
               blurRadius: 40,
               offset: const Offset(0, 20),
               spreadRadius: 0,
@@ -788,7 +788,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
             color: context.tokens.cardBackground.withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: DentalColors.primary.withValues(alpha: 0.1),
+              color: context.tokens.primaryAccent.withValues(alpha: 0.1),
               width: 1,
             ),
           ),

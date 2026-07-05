@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_theme.dart';
+import '../../../theme/theme_context_extensions.dart';
 import '../../../widgets/dental_icons.dart';
 
 class UserListErrorState extends StatelessWidget {
@@ -14,15 +14,17 @@ class UserListErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Center(
       child: Container(
         padding: const EdgeInsets.all(32),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: tokens.cardBackground,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: tokens.shadow.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -31,16 +33,16 @@ class UserListErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
-              color: AppTheme.errorColor,
+              color: context.tokens.error,
               size: 64,
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               '加载失败',
               style: TextStyle(
-                color: AppTheme.errorColor,
+                color: context.tokens.error,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -48,7 +50,7 @@ class UserListErrorState extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               errorMessage,
-              style: TextStyle(color: Colors.grey.shade600),
+              style: TextStyle(color: colors.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),

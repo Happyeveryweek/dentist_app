@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class PatientDetailSectionHeader extends StatelessWidget {
   final String title;
@@ -54,6 +55,7 @@ class PatientDetailItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
@@ -80,7 +82,7 @@ class PatientDetailItem extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: colors.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -117,6 +119,7 @@ class PatientCompactPersonalInfoItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -151,7 +154,7 @@ class PatientCompactPersonalInfoItem extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: colors.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),

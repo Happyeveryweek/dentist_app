@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 备注信息区域
 ///
@@ -16,43 +17,43 @@ class NotesSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: context.tokens.mutedBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(context),
           const SizedBox(height: 16),
-          _buildNotesField(),
+          _buildNotesField(context),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return const Row(
+  Widget _buildHeader(BuildContext context) {
+    return Row(
       children: [
         Icon(
           Icons.note,
-          color: Color(0xFF9C27B0),
+          color: context.tokens.primaryAccent,
           size: 18,
         ),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         Text(
           '备注信息',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF9C27B0),
+            color: context.tokens.primaryAccent,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildNotesField() {
+  Widget _buildNotesField(BuildContext context) {
     return TextFormField(
       controller: notesController,
       decoration: InputDecoration(
@@ -62,7 +63,7 @@ class NotesSection extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: context.tokens.cardBackground,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../models/patient.dart';
 import '../models/appointment.dart';
 import '../models/financial_record.dart';
@@ -204,15 +205,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           PatientDetailOverviewCard(patient: patient),
 
           // 用分区标签分割内容
-          const PatientDetailSectionHeader(
-              title: '个人信息', icon: Icons.person, color: Color(0xFF2ecc71)),
+          PatientDetailSectionHeader(
+              title: '个人信息',
+              icon: Icons.person,
+              color: context.tokens.success),
           PatientPersonalInfoCard(patient: patient),
 
           // 牙齿状况和治疗分区
-          const PatientDetailSectionHeader(
+          PatientDetailSectionHeader(
               title: '诊疗信息',
               icon: Icons.medical_information,
-              color: Color(0xFFe74c3c)),
+              color: context.tokens.error),
           PatientClinicalInfoCard(
             dentalCondition: _buildDentalCondition(patient),
             treatmentItems: treatmentItems,
@@ -1324,16 +1327,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 throw Exception('保存病历失败');
               }
             } catch (e) {
-              if (!context.mounted) return;
-              // 显示错误信息
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('保存病历失败: $e'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-              // 不关闭对话框，让用户可以重试
-            }
+        if (!context.mounted) return;
+        // 显示错误信息
+        final tokens = context.tokens;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('保存病历失败: $e'),
+            backgroundColor: tokens.error,
+          ),
+        );
+        // 不关闭对话框，让用户可以重试
+      }
           },
         ),
       );
@@ -1385,10 +1389,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
     // 检查编辑权限
     if (!_canEditMedicalRecord(record)) {
+      final tokens = context.tokens;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('权限不足：只能编辑自己创建的病历记录'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('权限不足：只能编辑自己创建的病历记录'),
+          backgroundColor: tokens.error,
         ),
       );
       return;
@@ -1416,16 +1421,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 throw Exception('更新病历失败');
               }
             } catch (e) {
-              if (!context.mounted) return;
-              // 显示错误信息
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('更新病历失败: $e'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-              // 不关闭对话框，让用户可以重试
-            }
+        if (!context.mounted) return;
+        // 显示错误信息
+        final tokens = context.tokens;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('更新病历失败: $e'),
+            backgroundColor: tokens.error,
+          ),
+        );
+        // 不关闭对话框，让用户可以重试
+      }
           },
         ),
       );
@@ -1453,10 +1459,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
     // 检查删除权限
     if (!_canDeleteMedicalRecord(record)) {
+      final tokens = context.tokens;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('权限不足：只能删除自己创建的病历记录'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('权限不足：只能删除自己创建的病历记录'),
+          backgroundColor: tokens.error,
         ),
       );
       return;

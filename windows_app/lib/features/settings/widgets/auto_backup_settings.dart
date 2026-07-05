@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../../theme/app_theme.dart';
+import '../../../theme/theme_context_extensions.dart';
 import '../../../providers/settings_provider.dart';
 
 class AutoBackupSettings extends StatelessWidget {
@@ -20,11 +20,11 @@ class AutoBackupSettings extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(Icons.schedule,
-                  color: AppTheme.primaryColor, size: 20),
+              child: Icon(Icons.schedule,
+                  color: context.tokens.primaryAccent, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -44,7 +44,7 @@ class AutoBackupSettings extends StatelessWidget {
                         ? '每${settingsProvider.backupInterval}天自动备份一次'
                         : '自动备份已关闭',
                     style: TextStyle(
-                      color: Colors.grey.shade600,
+                      color: context.colors.onSurfaceVariant,
                       fontSize: 13,
                     ),
                   ),
@@ -53,7 +53,7 @@ class AutoBackupSettings extends StatelessWidget {
             ),
             Switch(
               value: settingsProvider.autoBackup,
-              activeThumbColor: AppTheme.primaryColor,
+              activeThumbColor: context.tokens.primaryAccent,
               onChanged: (value) async {
                 await settingsProvider.setAutoBackup(value);
               },
@@ -67,14 +67,14 @@ class AutoBackupSettings extends StatelessWidget {
             padding: const EdgeInsets.only(left: 36, top: 4, bottom: 8),
             child: Row(
               children: [
-                const Icon(Icons.history,
-                    size: 16, color: AppTheme.secondaryText),
+                Icon(Icons.history,
+                    size: 16, color: context.tokens.textMuted),
                 const SizedBox(width: 8),
                 Text(
                   '上次备份: ${DateFormat('yyyy-MM-dd HH:mm').format(lastBackupDate)}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: AppTheme.secondaryText,
+                    color: context.tokens.textMuted,
                   ),
                 ),
               ],

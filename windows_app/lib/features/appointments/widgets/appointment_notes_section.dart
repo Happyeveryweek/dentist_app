@@ -14,27 +14,27 @@ class AppointmentNotesSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: context.tokens.mutedBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: context.tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.note,
-                color: Color(0xFF9C27B0),
+                color: context.tokens.primaryAccent,
                 size: 18,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 '备注信息',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF9C27B0),
+                  color: context.tokens.primaryAccent,
                 ),
               ),
             ],

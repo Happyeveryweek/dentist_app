@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../theme/theme_context_extensions.dart';
 import '../../../widgets/mysql_connection_warning.dart';
 import 'patient_empty_state.dart';
 import 'patient_filter_bar.dart';
@@ -134,7 +135,7 @@ class PatientScreenBody extends StatelessWidget {
                 Positioned.fill(
                   child: IgnorePointer(
                     child: Container(
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: context.colors.surface.withValues(alpha: 0.45),
                       alignment: Alignment.center,
                       child: const SizedBox(
                         width: 34,

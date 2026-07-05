@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/patient.dart';
 import '../../../models/patient_medical_record.dart';
 import '../../../models/medical_record_template.dart';
@@ -9,7 +10,6 @@ import '../../../providers/medical_record_provider.dart';
 import '../../../providers/user_provider.dart';
 import '../../../services/medical_template_service.dart';
 import '../../../utils/dental_condition_integration.dart';
-import '../../../widgets/dental_icons.dart';
 import '../../../widgets/success_toast.dart';
 import './medical_record_form_input_field.dart';
 import './medical_record_form_date_field.dart';
@@ -534,17 +534,18 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
         height: MediaQuery.of(context).size.height * 0.9,
         decoration: BoxDecoration(
-          color: DentalColors.surface,
+          color: tokens.cardBackground,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: tokens.shadow.withValues(alpha: 0.1),
               blurRadius: 20,
               spreadRadius: 5,
             ),
@@ -754,9 +755,9 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        gradient: DentalColors.primaryGradient,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        gradient: context.tokens.primaryHeaderGradient,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -766,12 +767,12 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: context.tokens.cardBackground.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.medical_services_rounded,
-              color: Colors.white,
+              color: context.colors.onPrimary,
               size: 24,
             ),
           ),
@@ -782,8 +783,8 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
               children: [
                 Text(
                   widget.medicalRecord == null ? '新建病历' : '编辑病历',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.colors.onPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -791,7 +792,7 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
                 Text(
                   '患者: ${widget.patient.name}',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: context.colors.onPrimary.withValues(alpha: 0.9),
                     fontSize: 14,
                   ),
                 ),
@@ -800,7 +801,7 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
                   Text(
                     _getCreatorInfo(),
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
+                      color: context.colors.onPrimary.withValues(alpha: 0.8),
                       fontSize: 12,
                     ),
                   ),
@@ -810,9 +811,9 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
           ),
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(
+            icon: Icon(
               Icons.close_rounded,
-              color: Colors.white,
+              color: context.colors.onPrimary,
               size: 24,
             ),
           ),
@@ -824,11 +825,11 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
   /// 构建标签栏
   Widget _buildTabBar() {
     return Container(
-      decoration: const BoxDecoration(
-        color: DentalColors.background,
+      decoration: BoxDecoration(
+        color: context.tokens.pageBackground,
         border: Border(
           bottom: BorderSide(
-            color: DentalColors.divider,
+            color: context.tokens.divider,
             width: 1,
           ),
         ),
@@ -836,9 +837,9 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
       child: TabBar(
         controller: _tabController,
         isScrollable: true,
-        labelColor: DentalColors.primary,
-        unselectedLabelColor: DentalColors.onSurfaceVariant,
-        indicatorColor: DentalColors.primary,
+        labelColor: context.tokens.primaryAccent,
+        unselectedLabelColor: context.colors.onSurfaceVariant,
+        indicatorColor: context.tokens.primaryAccent,
         indicatorWeight: 3,
         labelStyle: const TextStyle(
           fontWeight: FontWeight.w600,
@@ -890,15 +891,16 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.1),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+        color: context.tokens.warningContainer,
+        border: Border.all(
+            color: context.tokens.warning.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.warning_rounded,
-            color: Colors.orange,
+            color: context.tokens.warning,
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -906,7 +908,7 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
             child: Text(
               '您只能查看此病历记录，无法编辑。只有创建医生和管理员可以编辑病历。',
               style: TextStyle(
-                color: Colors.orange.shade700,
+                color: context.tokens.warning,
                 fontSize: 13,
               ),
             ),
@@ -920,11 +922,11 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
   Widget _buildActionButtons() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: DentalColors.surface,
+      decoration: BoxDecoration(
+        color: context.tokens.cardBackground,
         border: Border(
           top: BorderSide(
-            color: DentalColors.divider,
+            color: context.tokens.divider,
             width: 1,
           ),
         ),
@@ -941,13 +943,13 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
                   onPressed: () {
                     _tabController.animateTo(_tabController.index - 1);
                   },
-                  icon: const Icon(Icons.arrow_back_rounded,
-                      size: 20, color: DentalColors.primary),
-                  label: const Text('上一步',
-                      style: TextStyle(color: DentalColors.primary)),
+                  icon: Icon(Icons.arrow_back_rounded,
+                      size: 20, color: context.tokens.primaryAccent),
+                  label: Text('上一步',
+                      style: TextStyle(color: context.tokens.primaryAccent)),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
-                        color: DentalColors.primary.withValues(alpha: 0.5)),
+                        color: context.tokens.primaryAccent.withValues(alpha: 0.5)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -970,13 +972,13 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
                         ? null
                         : _handleNextOrSave),
                 icon: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                              AlwaysStoppedAnimation<Color>(context.colors.onPrimary),
                         ),
                       )
                     : Icon(
@@ -994,11 +996,11 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
                 style: ElevatedButton.styleFrom(
                   backgroundColor:
                       _tabController.index == 4 && !_hasEditPermission()
-                          ? Colors.grey
-                          : DentalColors.primary,
-                  foregroundColor: Colors.white,
+                          ? context.tokens.disabledBackground
+                          : context.tokens.primaryAccent,
+                  foregroundColor: context.colors.onPrimary,
                   elevation: 2,
-                  shadowColor: DentalColors.primary.withValues(alpha: 0.3),
+                  shadowColor: context.tokens.primaryAccent.withValues(alpha: 0.3),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1016,40 +1018,40 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
             Icon(
               Icons.grid_view_rounded,
               size: 18,
-              color: DentalColors.secondary,
+              color: context.tokens.secondaryAccent,
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               '关联牙齿状况',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: DentalColors.onSurface,
+                color: context.colors.onSurface,
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        const Text(
+        Text(
           '选择与此病历相关的牙齿状况记录日期',
           style: TextStyle(
             fontSize: 14,
-            color: DentalColors.onSurfaceVariant,
+            color: context.colors.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DentalColors.secondary.withValues(alpha: 0.05),
+            color: context.tokens.secondaryAccent.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DentalColors.secondary.withValues(alpha: 0.3),
+              color: context.tokens.secondaryAccent.withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -1092,22 +1094,22 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: DentalColors.warning.withValues(alpha: 0.1),
+                    color: context.tokens.warningContainer,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Icon(
                         Icons.info_outline_rounded,
-                        color: DentalColors.warning,
+                        color: context.tokens.warning,
                         size: 16,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           '该患者暂无牙齿状况记录',
                           style: TextStyle(
-                            color: DentalColors.warning,
+                            color: context.tokens.warning,
                             fontSize: 14,
                           ),
                         ),
@@ -1141,7 +1143,7 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
               value: value,
               onChanged:
                   isEnabled ? (checked) => onChanged(checked ?? false) : null,
-              activeColor: DentalColors.secondary,
+              activeColor: context.tokens.secondaryAccent,
             ),
             Expanded(
               child: Text(
@@ -1149,8 +1151,8 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
                 style: TextStyle(
                   fontSize: 14,
                   color: isEnabled
-                      ? DentalColors.onSurface
-                      : DentalColors.onSurfaceVariant,
+                      ? context.colors.onSurface
+                      : context.colors.onSurfaceVariant,
                 ),
               ),
             ),
@@ -1269,25 +1271,25 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: DentalColors.info.withValues(alpha: 0.1),
+                color: context.tokens.infoContainer,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: DentalColors.info.withValues(alpha: 0.3),
+                  color: context.tokens.info.withValues(alpha: 0.3),
                 ),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(
                     Icons.lightbulb_outline_rounded,
-                    color: DentalColors.info,
+                    color: context.tokens.info,
                     size: 20,
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       '主诉应简明扼要，现病史需详细描述症状的时间、性质、程度等',
                       style: TextStyle(
-                        color: DentalColors.info,
+                        color: context.tokens.info,
                         fontSize: 14,
                       ),
                     ),
@@ -1428,25 +1430,25 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: DentalColors.warning.withValues(alpha: 0.1),
+              color: context.tokens.warningContainer,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.warning.withValues(alpha: 0.3),
+                color: context.tokens.warning.withValues(alpha: 0.3),
               ),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(
                   Icons.warning_amber_rounded,
-                  color: DentalColors.warning,
+                  color: context.tokens.warning,
                   size: 20,
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     '请仔细询问患者的疾病史和过敏史，这对制定治疗方案非常重要',
                     style: TextStyle(
-                      color: DentalColors.warning,
+                      color: context.tokens.warning,
                       fontSize: 14,
                     ),
                   ),
@@ -1527,25 +1529,25 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: DentalColors.info.withValues(alpha: 0.1),
+              color: context.tokens.infoContainer,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.info.withValues(alpha: 0.3),
+                color: context.tokens.info.withValues(alpha: 0.3),
               ),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(
                   Icons.info_outline_rounded,
-                  color: DentalColors.info,
+                  color: context.tokens.info,
                   size: 20,
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     '请根据实际检查情况选择相应的牙科疾病，并详细记录检查发现',
                     style: TextStyle(
-                      color: DentalColors.info,
+                      color: context.tokens.info,
                       fontSize: 14,
                     ),
                   ),
@@ -1632,25 +1634,25 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: DentalColors.success.withValues(alpha: 0.1),
+              color: context.tokens.successContainer,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.success.withValues(alpha: 0.3),
+                color: context.tokens.success.withValues(alpha: 0.3),
               ),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(
                   Icons.check_circle_outline_rounded,
-                  color: DentalColors.success,
+                  color: context.tokens.success,
                   size: 20,
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     '诊断应准确明确，治疗方案应具体可行，便于后续治疗执行',
                     style: TextStyle(
-                      color: DentalColors.success,
+                      color: context.tokens.success,
                       fontSize: 14,
                     ),
                   ),
@@ -1744,28 +1746,28 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  DentalColors.primary.withValues(alpha: 0.1),
-                  DentalColors.secondary.withValues(alpha: 0.1),
+                  context.tokens.primaryAccent.withValues(alpha: 0.1),
+                  context.tokens.secondaryAccent.withValues(alpha: 0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.primary.withValues(alpha: 0.3),
+                color: context.tokens.primaryAccent.withValues(alpha: 0.3),
               ),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(
                   Icons.save_rounded,
-                  color: DentalColors.primary,
+                  color: context.tokens.primaryAccent,
                   size: 20,
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     '请检查所有信息是否准确完整，确认无误后点击保存病历',
                     style: TextStyle(
-                      color: DentalColors.primary,
+                      color: context.tokens.primaryAccent,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),

@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../theme/app_theme.dart';
-import '../../../widgets/dental_icons.dart';
 
 class HoverablePatientCard extends StatefulWidget {
-  final bool isPurpleTheme;
   final VoidCallback onTap;
   final Widget child;
 
   const HoverablePatientCard({
     Key? key,
-    required this.isPurpleTheme,
     required this.onTap,
     required this.child,
   }) : super(key: key);
@@ -37,35 +35,23 @@ class _HoverablePatientCardState extends State<HoverablePatientCard> {
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: _isHovered
-              ? DentalColors.primary.withValues(alpha: 0.1)
-              : (widget.isPurpleTheme
-                  ? AppTheme.purpleCardBackground
-                  : AppTheme.cardBackground),
+              ? context.tokens.primaryAccent.withValues(alpha: 0.1)
+              : context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(AppTheme.smallBorderRadius),
           boxShadow: _isHovered
               ? [
                   BoxShadow(
-                    color: DentalColors.primary.withValues(alpha: 0.4),
+                    color: context.tokens.primaryAccent.withValues(alpha: 0.4),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                     spreadRadius: 2,
                   ),
                 ]
-              : widget.isPurpleTheme
-                  ? [
-                      BoxShadow(
-                        color: AppTheme.purpleColor.withValues(alpha: 0.1),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : AppTheme.cardShadow,
+              : context.tokens.cardShadow,
           border: Border.all(
             color: _isHovered
-                ? DentalColors.primary
-                : (widget.isPurpleTheme
-                    ? AppTheme.purpleLightColor.withValues(alpha: 0.3)
-                    : Colors.transparent),
+                ? context.tokens.primaryAccent
+                : Colors.transparent,
             width: _isHovered ? 3 : 1,
           ),
         ),

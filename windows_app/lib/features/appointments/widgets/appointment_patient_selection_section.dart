@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/patient.dart';
-import '../../../theme/app_theme.dart';
 
 class AppointmentPatientSelectionSection extends StatelessWidget {
   final Patient? selectedPatient;
@@ -20,30 +19,31 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final patient = selectedPatient;
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: tokens.mutedBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.tokens.border),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.person,
-                color: Color(0xFF667eea),
+                color: tokens.primaryAccent,
                 size: 18,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 '患者信息',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF667eea),
+                  color: tokens.primaryAccent,
                 ),
               ),
             ],
@@ -53,21 +53,21 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF667eea).withValues(alpha: 0.1),
+                color: tokens.primaryAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: const Color(0xFF667eea).withValues(alpha: 0.3)),
+                    color: tokens.primaryAccent.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.person, color: Color(0xFF667eea)),
+                  Icon(Icons.person, color: tokens.primaryAccent),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       '患者: ${patient?.name ?? '未选择'}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF667eea),
+                        color: tokens.primaryAccent,
                         fontSize: 16,
                       ),
                     ),
@@ -86,21 +86,21 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
                 child: Ink(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: context.tokens.cardBackground,
+                    color: tokens.cardBackground,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: tokens.border),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.person,
-                          color: AppTheme.primaryColor, size: 18),
+                      Icon(Icons.person,
+                          color: tokens.primaryAccent, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: patient == null
                             ? Text(
                                 '请选择患者',
                                 style: TextStyle(
-                                  color: context.tokens.iconMuted,
+                                  color: tokens.iconMuted,
                                   fontSize: 14,
                                 ),
                               )
@@ -119,16 +119,16 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
                                     '最近就诊: ${patient.updatedAt.year.toString().padLeft(4, '0')}-${patient.updatedAt.month.toString().padLeft(2, '0')}-${patient.updatedAt.day.toString().padLeft(2, '0')}',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: context.tokens.iconMuted,
+                                      color: tokens.iconMuted,
                                     ),
                                   ),
                                 ],
                               ),
                       ),
                       const SizedBox(width: 12),
-                      const Icon(
+                      Icon(
                         Icons.search,
-                        color: AppTheme.primaryColor,
+                        color: tokens.primaryAccent,
                         size: 22,
                       ),
                     ],

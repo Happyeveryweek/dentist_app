@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../theme/theme_context_extensions.dart';
-import '../../../widgets/dental_icons.dart';
 
 class PatientScreenScaffold extends StatelessWidget {
   final Widget title;

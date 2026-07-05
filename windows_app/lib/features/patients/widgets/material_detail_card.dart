@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/patient_material_with_images.dart';
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../widgets/success_toast.dart';
 
 /// 材料详情卡片组件
@@ -29,17 +29,17 @@ class MaterialDetailCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: context.tokens.shadow.withValues(alpha: 0.1),
             blurRadius: 8,
             spreadRadius: 1,
             offset: const Offset(0, 2),
           ),
         ],
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -49,9 +49,9 @@ class MaterialDetailCard extends StatelessWidget {
             // 材料标题和操作按钮
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.description,
-                  color: AppTheme.primaryColor,
+                  color: context.tokens.primaryAccent,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -61,10 +61,10 @@ class MaterialDetailCard extends StatelessWidget {
                     children: [
                       Text(
                         material.material.description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                          color: context.colors.onSurface,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -72,7 +72,7 @@ class MaterialDetailCard extends StatelessWidget {
                         '创建时间: ${DateFormat('yyyy-MM-dd HH:mm').format(material.material.createdAt)}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade600,
+                          color: context.colors.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -95,13 +95,13 @@ class MaterialDetailCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700,
+                  color: context.colors.onSurface,
                 ),
               ),
               const SizedBox(height: 8),
               _buildImageGrid(context),
             ] else ...[
-              _buildEmptyImagesWidget(),
+              _buildEmptyImagesWidget(context),
             ],
           ],
         ),
@@ -113,17 +113,17 @@ class MaterialDetailCard extends StatelessWidget {
     return canEdit
         ? Container(
             decoration: BoxDecoration(
-              color: AppTheme.warningColor.withValues(alpha: 0.1),
+              color: context.tokens.warning.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: AppTheme.warningColor.withValues(alpha: 0.3),
+                color: context.tokens.warning.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
               onPressed: onEdit,
-              icon: const Icon(
+              icon: Icon(
                 Icons.edit,
-                color: AppTheme.warningColor,
+                color: context.tokens.warning,
                 size: 18,
               ),
               tooltip: '编辑材料',
@@ -133,7 +133,7 @@ class MaterialDetailCard extends StatelessWidget {
           )
         : Container(
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: context.tokens.divider,
               borderRadius: BorderRadius.circular(8),
             ),
             child: IconButton(
@@ -143,7 +143,7 @@ class MaterialDetailCard extends StatelessWidget {
               ),
               icon: Icon(
                 Icons.lock,
-                color: Colors.grey[600],
+                color: context.colors.onSurfaceVariant,
                 size: 18,
               ),
               tooltip: '权限不足',
@@ -157,17 +157,17 @@ class MaterialDetailCard extends StatelessWidget {
     return canDelete
         ? Container(
             decoration: BoxDecoration(
-              color: AppTheme.errorColor.withValues(alpha: 0.1),
+              color: context.tokens.error.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: AppTheme.errorColor.withValues(alpha: 0.3),
+                color: context.tokens.error.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
               onPressed: onDelete,
-              icon: const Icon(
+              icon: Icon(
                 Icons.delete,
-                color: AppTheme.errorColor,
+                color: context.tokens.error,
                 size: 18,
               ),
               tooltip: '删除材料',
@@ -177,7 +177,7 @@ class MaterialDetailCard extends StatelessWidget {
           )
         : Container(
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: context.tokens.divider,
               borderRadius: BorderRadius.circular(8),
             ),
             child: IconButton(
@@ -187,7 +187,7 @@ class MaterialDetailCard extends StatelessWidget {
               ),
               icon: Icon(
                 Icons.lock,
-                color: Colors.grey[600],
+                color: context.colors.onSurfaceVariant,
                 size: 18,
               ),
               tooltip: '权限不足',
@@ -215,10 +215,10 @@ class MaterialDetailCard extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Colors.grey.shade300, width: 1),
+              border: Border.all(color: context.tokens.divider, width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: context.tokens.shadow.withValues(alpha: 0.1),
                   blurRadius: 2,
                   spreadRadius: 0,
                   offset: const Offset(0, 1),
@@ -235,7 +235,7 @@ class MaterialDetailCard extends StatelessWidget {
                     top: 2,
                     right: 2,
                     bottom: 2,
-                    child: _buildThumbnail(image),
+                    child: _buildThumbnail(context, image),
                   ),
                   // 图片名称显示
                   Positioned(
@@ -246,7 +246,7 @@ class MaterialDetailCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 2, vertical: 1),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.7),
+                        color: context.tokens.overlayScrim,
                         borderRadius: const BorderRadius.only(
                           bottomLeft: Radius.circular(6),
                           bottomRight: Radius.circular(6),
@@ -254,8 +254,8 @@ class MaterialDetailCard extends StatelessWidget {
                       ),
                       child: Text(
                         image.originalName ?? '图片${index + 1}',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: context.colors.onPrimary,
                           fontSize: 6,
                           fontWeight: FontWeight.w500,
                         ),
@@ -274,7 +274,7 @@ class MaterialDetailCard extends StatelessWidget {
     );
   }
 
-  Widget _buildThumbnail(dynamic image) {
+  Widget _buildThumbnail(BuildContext context, dynamic image) {
     final thumbnailData = image.thumbnailData;
     // 优先显示缩略图，如果没有缩略图才显示原图
     if (image.hasValidThumbnail &&
@@ -285,25 +285,25 @@ class MaterialDetailCard extends StatelessWidget {
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           // 缩略图显示失败，回退到原图
-          return _buildFallbackImage(image);
+          return _buildFallbackImage(context, image);
         },
       );
     } else {
-      return _buildFallbackImage(image);
+      return _buildFallbackImage(context, image);
     }
   }
 
-  Widget _buildFallbackImage(dynamic image) {
+  Widget _buildFallbackImage(BuildContext context, dynamic image) {
     if (image.imageData.isNotEmpty) {
       return Image.memory(
         image.imageData,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return Container(
-            color: Colors.grey.shade100,
+            color: context.tokens.inputBackground,
             child: Icon(
               Icons.broken_image,
-              color: Colors.grey.shade400,
+              color: context.tokens.iconMuted,
               size: 16,
             ),
           );
@@ -311,29 +311,29 @@ class MaterialDetailCard extends StatelessWidget {
       );
     } else {
       return Container(
-        color: Colors.grey.shade100,
+        color: context.tokens.inputBackground,
         child: Icon(
           Icons.broken_image,
-          color: Colors.grey.shade400,
+          color: context.tokens.iconMuted,
           size: 16,
         ),
       );
     }
   }
 
-  Widget _buildEmptyImagesWidget() {
+  Widget _buildEmptyImagesWidget(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: context.tokens.mutedBackground,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Row(
         children: [
           Icon(
             Icons.image_not_supported,
-            color: Colors.grey.shade400,
+            color: context.tokens.iconMuted,
             size: 20,
           ),
           const SizedBox(width: 8),
@@ -341,7 +341,7 @@ class MaterialDetailCard extends StatelessWidget {
             '暂无相关图片',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade500,
+              color: context.tokens.textMuted,
             ),
           ),
         ],

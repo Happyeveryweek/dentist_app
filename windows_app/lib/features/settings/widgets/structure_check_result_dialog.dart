@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../utils/datetime_formatter.dart';
 import 'database_check_widgets.dart';
@@ -16,7 +17,9 @@ class StructureCheckResultDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = _buildDisplayState();
+    final tokens = context.tokens;
+    final colors = context.colors;
+    final state = _buildDisplayState(tokens);
 
     return AlertDialog(
       title: Row(
@@ -37,12 +40,12 @@ class StructureCheckResultDialog extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 检测状态卡片
-              _buildStatusCard(state),
+              _buildStatusCard(tokens, colors, state),
 
               const SizedBox(height: 20),
 
               // 检测统计
-              _buildStatisticsSection(),
+              _buildStatisticsSection(tokens),
 
               const SizedBox(height: 20),
 
@@ -66,7 +69,7 @@ class StructureCheckResultDialog extends StatelessWidget {
     );
   }
 
-  _StructureCheckDisplayState _buildDisplayState() {
+  _StructureCheckDisplayState _buildDisplayState(AppThemeTokens tokens) {
     final errors =
         (result['errors'] as List?)?.cast<String>() ?? const <String>[];
     final missingTables = (result['missingTables'] as int?) ?? 0;
@@ -77,8 +80,9 @@ class StructureCheckResultDialog extends StatelessWidget {
     final hasWarnings = !hasStructuralIssues && errors.isNotEmpty;
 
     if (!hasStructuralIssues && !hasWarnings) {
-      return const _StructureCheckDisplayState(
-        color: Colors.green,
+      return _StructureCheckDisplayState(
+        color: tokens.success,
+        containerColor: tokens.successContainer,
         icon: Icons.check_circle,
         title: '数据库结构完整',
         hasStructuralIssues: false,
@@ -87,8 +91,9 @@ class StructureCheckResultDialog extends StatelessWidget {
     }
 
     if (hasWarnings) {
-      return const _StructureCheckDisplayState(
-        color: Colors.orange,
+      return _StructureCheckDisplayState(
+        color: tokens.warning,
+        containerColor: tokens.warningContainer,
         icon: Icons.info,
         title: '检测完成，存在警告',
         hasStructuralIssues: false,
@@ -97,7 +102,9 @@ class StructureCheckResultDialog extends StatelessWidget {
     }
 
     return _StructureCheckDisplayState(
-      color: errors.isNotEmpty ? Colors.red : Colors.orange,
+      color: errors.isNotEmpty ? tokens.error : tokens.warning,
+      containerColor:
+          errors.isNotEmpty ? tokens.errorContainer : tokens.warningContainer,
       icon: errors.isNotEmpty ? Icons.error : Icons.info,
       title: errors.isNotEmpty ? '检测发现问题' : '检测到结构变更',
       hasStructuralIssues: true,
@@ -105,15 +112,19 @@ class StructureCheckResultDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusCard(_StructureCheckDisplayState state) {
+  Widget _buildStatusCard(
+    AppThemeTokens tokens,
+    ColorScheme colors,
+    _StructureCheckDisplayState state,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: state.color.shade50,
+        color: state.containerColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: state.color.shade200,
+          color: state.color.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -122,7 +133,7 @@ class StructureCheckResultDialog extends StatelessWidget {
           Icon(
             state.icon,
             size: 56,
-            color: state.color.shade600,
+            color: state.color,
           ),
           const SizedBox(height: 16),
           Text(
@@ -130,7 +141,7 @@ class StructureCheckResultDialog extends StatelessWidget {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: state.color.shade800,
+              color: state.color,
             ),
           ),
           const SizedBox(height: 8),
@@ -138,7 +149,7 @@ class StructureCheckResultDialog extends StatelessWidget {
             '${(result['dataSourceType']?.toString() ?? '').toUpperCase()} 数据库',
             style: TextStyle(
               fontSize: 16,
-              color: state.color.shade700,
+              color: state.color,
             ),
           ),
           const SizedBox(height: 4),
@@ -146,7 +157,7 @@ class StructureCheckResultDialog extends StatelessWidget {
             '检测时间: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTimeFormatter.fromDbString(result['detectionTime']))}',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade700,
+              color: colors.onSurface,
             ),
           ),
         ],
@@ -154,7 +165,7 @@ class StructureCheckResultDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildStatisticsSection() {
+  Widget _buildStatisticsSection(AppThemeTokens tokens) {
     final actionableChanges =
         DatabaseCheckWidgets.getActionableStructureChangeCount(result);
 
@@ -162,9 +173,9 @@ class StructureCheckResultDialog extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
+        color: tokens.infoContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade200),
+        border: Border.all(color: tokens.info),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,14 +183,14 @@ class StructureCheckResultDialog extends StatelessWidget {
           Row(
             children: [
               Icon(Icons.analytics_outlined,
-                  size: 24, color: Colors.blue.shade700),
+                  size: 24, color: tokens.primaryAccent),
               const SizedBox(width: 12),
               Text(
                 '检测统计',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: Colors.blue.shade800,
+                  color: tokens.primaryAccent,
                 ),
               ),
             ],
@@ -192,7 +203,7 @@ class StructureCheckResultDialog extends StatelessWidget {
                   '系统表',
                   '${result['requiredTables']}',
                   Icons.table_chart,
-                  Colors.blue,
+                  tokens.primaryAccent,
                   '个必需表',
                 ),
               ),
@@ -202,7 +213,7 @@ class StructureCheckResultDialog extends StatelessWidget {
                   '缺失表',
                   '${result['missingTables']}',
                   Icons.table_rows_outlined,
-                  Colors.orange,
+                  tokens.warning,
                   '个缺失',
                 ),
               ),
@@ -212,7 +223,7 @@ class StructureCheckResultDialog extends StatelessWidget {
                   '结构变化',
                   '$actionableChanges',
                   Icons.update,
-                  Colors.green,
+                  tokens.success,
                   '项更新',
                 ),
               ),
@@ -233,7 +244,8 @@ class StructureCheckResultDialog extends StatelessWidget {
 }
 
 class _StructureCheckDisplayState {
-  final MaterialColor color;
+  final Color color;
+  final Color containerColor;
   final IconData icon;
   final String title;
   final bool hasStructuralIssues;
@@ -241,6 +253,7 @@ class _StructureCheckDisplayState {
 
   const _StructureCheckDisplayState({
     required this.color,
+    required this.containerColor,
     required this.icon,
     required this.title,
     required this.hasStructuralIssues,

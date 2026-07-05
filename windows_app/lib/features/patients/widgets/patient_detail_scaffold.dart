@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
-import '../../../widgets/dental_icons.dart';
 import '../../../widgets/loading_indicator.dart';
 
 class PatientDetailScaffold extends StatelessWidget {
@@ -35,7 +34,7 @@ class PatientDetailScaffold extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: DentalColors.primaryGradient,
+                gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -55,22 +54,22 @@ class PatientDetailScaffold extends StatelessWidget {
           ],
         ),
         backgroundColor: context.tokens.cardBackground,
-        foregroundColor: DentalColors.onSurface,
+        foregroundColor: context.colors.onSurface,
         elevation: 0,
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: DentalColors.primary.withValues(alpha: 0.1),
+              color: context.tokens.primaryAccent.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.primary.withValues(alpha: 0.3),
+                color: context.tokens.primaryAccent.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.edit_rounded,
-                color: DentalColors.primary,
+                color: context.tokens.primaryAccent,
               ),
               tooltip: '编辑患者',
               onPressed: onEditPatient,

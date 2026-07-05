@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
-import '../../../theme/app_theme.dart';
-
 class PatientDentalConditionEmptyState extends StatelessWidget {
   const PatientDentalConditionEmptyState({Key? key}) : super(key: key);
 
@@ -29,27 +27,29 @@ class PatientDentalConditionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(8.0, 8.0, 0, 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(right: 8.0),
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
             child: Row(
               children: [
                 Icon(
                   Icons.medical_services,
-                  color: AppTheme.primaryColor,
+                  color: colors.primary,
                   size: 20,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
                   '牙齿状况',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryColor,
+                    color: colors.primary,
                   ),
                 ),
               ],
@@ -121,16 +121,19 @@ class PatientDentalChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: context.tokens.cardBackground,
+          color: tokens.cardBackground,
           borderRadius: BorderRadius.circular(8),
           boxShadow: [
             BoxShadow(
-              color: context.tokens.shadow,
+              color: tokens.shadow,
               blurRadius: 3,
               offset: const Offset(0, 1),
             ),
@@ -144,7 +147,7 @@ class PatientDentalChartCard extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 6),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.1),
+                  color: tokens.infoContainer,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Row(
@@ -153,14 +156,14 @@ class PatientDentalChartCard extends StatelessWidget {
                     Icon(
                       Icons.person,
                       size: 10,
-                      color: context.tokens.primaryAccent,
+                      color: colors.primary,
                     ),
                     const SizedBox(width: 3),
                     Text(
                       '创建医生: $createdByDoctor',
                       style: TextStyle(
                         fontSize: 9,
-                        color: Colors.blue.shade700,
+                        color: tokens.info,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -177,15 +180,15 @@ class PatientDentalChartCard extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(color: tokens.border),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.calendar_today,
                           size: 12,
-                          color: AppTheme.primaryColor,
+                          color: colors.primary,
                         ),
                         const SizedBox(width: 3),
                         Expanded(
@@ -254,6 +257,8 @@ class _ReadOnlyCrossChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return SizedBox(
       width: 250,
       child: Column(
@@ -268,14 +273,14 @@ class _ReadOnlyCrossChart extends StatelessWidget {
                   child: Container(
                     width: 250,
                     height: 1.5,
-                    color: Colors.blue.shade300,
+                    color: tokens.border,
                   ),
                 ),
                 Center(
                   child: Container(
                     width: 1.5,
                     height: 42,
-                    color: Colors.blue.shade300,
+                    color: tokens.border,
                   ),
                 ),
                 Column(
@@ -365,7 +370,7 @@ class _ReadOnlyCrossChart extends StatelessWidget {
                   child: Container(
                     height: 1.5,
                     width: 250,
-                    color: Colors.blue.shade300,
+                    color: tokens.border,
                   ),
                 ),
               ],

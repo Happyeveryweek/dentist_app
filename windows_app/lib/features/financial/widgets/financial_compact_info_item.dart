@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 紧凑信息项组件
 /// 用于显示图标、标签和值的紧凑布局
@@ -24,7 +25,7 @@ class FinancialCompactInfoItem extends StatelessWidget {
         Icon(
           icon,
           size: 16,
-          color: Colors.grey[600],
+          color: context.tokens.textMuted,
         ),
         const SizedBox(width: 4),
         Expanded(
@@ -34,7 +35,7 @@ class FinancialCompactInfoItem extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
+                      color: context.tokens.textMuted,
                       fontSize: 13,
                     ),
               ),

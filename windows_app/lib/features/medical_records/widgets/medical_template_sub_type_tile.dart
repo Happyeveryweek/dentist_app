@@ -20,13 +20,15 @@ class MedicalTemplateSubTypeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: tokens.mutedBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: context.tokens.border,
+          color: tokens.border,
         ),
       ),
       child: Padding(
@@ -59,10 +61,10 @@ class MedicalTemplateSubTypeTile extends StatelessWidget {
                 children: [
                   Text(
                     subType.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: Colors.black87,
+                      color: colors.onSurface,
                     ),
                   ),
                   if (subType.description.isNotEmpty) ...[
@@ -72,7 +74,7 @@ class MedicalTemplateSubTypeTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: context.tokens.iconMuted,
+                        color: tokens.iconMuted,
                         fontSize: 12,
                       ),
                     ),
@@ -88,13 +90,13 @@ class MedicalTemplateSubTypeTile extends StatelessWidget {
                 // 编辑按钮
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
+                    color: tokens.primaryAccent.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: IconButton(
                     onPressed: onEdit,
                     icon: const Icon(Icons.edit_outlined, size: 16),
-                    color: Colors.blue,
+                    color: tokens.primaryAccent,
                     tooltip: '编辑',
                     padding: const EdgeInsets.all(6),
                     constraints:
@@ -105,13 +107,13 @@ class MedicalTemplateSubTypeTile extends StatelessWidget {
                 // 删除按钮
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
+                    color: tokens.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: IconButton(
                     onPressed: onDelete,
                     icon: const Icon(Icons.delete_outline, size: 16),
-                    color: Colors.red,
+                    color: tokens.error,
                     tooltip: '删除',
                     padding: const EdgeInsets.all(6),
                     constraints:

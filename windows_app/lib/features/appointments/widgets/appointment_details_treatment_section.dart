@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/appointment.dart';
-import '../../../widgets/dental_icons.dart';
 
 class AppointmentDetailsTreatmentSection extends StatelessWidget {
   final Appointment appointment;
@@ -13,14 +13,16 @@ class AppointmentDetailsTreatmentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final treatmentContent = _buildTreatmentContent();
     return Container(
       margin: const EdgeInsets.only(bottom: 12.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: DentalColors.divider.withValues(alpha: 0.5),
+          color: tokens.divider.withValues(alpha: 0.5),
           width: 1,
         ),
       ),
@@ -29,20 +31,20 @@ class AppointmentDetailsTreatmentSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(
                   Icons.medical_services_rounded,
                   size: 18,
-                  color: Colors.green,
+                  color: tokens.success,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
                   '治疗项目',
                   style: TextStyle(
                     fontSize: 16.0,
                     fontWeight: FontWeight.w600,
-                    color: DentalColors.onSurface,
+                    color: colors.onSurface,
                   ),
                 ),
               ],

@@ -104,7 +104,7 @@ class PatientPagination extends StatelessWidget {
                             ]
                           : [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
+                                color: tokens.shadow,
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               ),
@@ -115,7 +115,7 @@ class PatientPagination extends StatelessWidget {
                       style: TextStyle(
                         color:
                             isCurrentPage
-                                ? Colors.white
+                                ? tokens.cardBackground
                                 : context.colors.onSurface,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
@@ -208,7 +208,7 @@ class _PaginationButton extends StatelessWidget {
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: context.tokens.shadow,
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -217,7 +217,7 @@ class _PaginationButton extends StatelessWidget {
           child: Icon(
             icon,
             color: isActive
-                ? Colors.white
+                ? context.tokens.cardBackground
                 : context.tokens.primaryAccent.withValues(alpha: 0.7),
             size: 22,
           ),
@@ -259,10 +259,11 @@ class _HomePageButton extends StatelessWidget {
         child: InkWell(
           onTap: onPressed,
           borderRadius: BorderRadius.circular(12),
-          child: const SizedBox(
+          child: SizedBox(
             width: 42,
             height: 42,
-            child: Icon(Icons.home, color: Colors.white, size: 20),
+            child: Icon(Icons.home,
+                color: context.tokens.cardBackground, size: 20),
           ),
         ),
       ),
@@ -289,7 +290,7 @@ class _PageInfo extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: context.tokens.shadow.withValues(alpha: 0.03),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -370,14 +371,14 @@ class _PageJumper extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             height: 42,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
+            decoration: BoxDecoration(
+              color: context.tokens.inputBackground,
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(11),
                 bottomLeft: Radius.circular(11),
               ),
             ),
-            child: Text(
+            child: const Text(
               '转到',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
@@ -385,7 +386,7 @@ class _PageJumper extends StatelessWidget {
           Container(
             width: 72,
             height: 42,
-            color: Colors.white,
+            color: context.tokens.inputBackground,
             child: TextField(
               controller: jumpController,
               keyboardType: TextInputType.number,
@@ -430,10 +431,10 @@ class _PageJumper extends StatelessWidget {
                     ],
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   '确定',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: context.tokens.cardBackground,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -447,21 +448,22 @@ class _PageJumper extends StatelessWidget {
   }
 
   void _showInvalidPageMessage(BuildContext context, String message) {
+    final tokens = context.tokens;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.warning_amber_outlined,
-              color: Colors.white,
+              color: tokens.cardBackground,
               size: 20,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: tokens.cardBackground,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -469,7 +471,7 @@ class _PageJumper extends StatelessWidget {
             ),
           ],
         ),
-        backgroundColor: context.tokens.warningAccent,
+        backgroundColor: tokens.warningAccent,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

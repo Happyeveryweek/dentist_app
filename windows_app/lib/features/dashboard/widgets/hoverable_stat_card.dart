@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 // 可悬浮的统计卡片组件
 class HoverableStatCard extends StatefulWidget {
@@ -20,6 +21,7 @@ class HoverableStatCardState extends State<HoverableStatCard> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return MouseRegion(
       cursor: widget.onTap != null
           ? SystemMouseCursors.click
@@ -36,12 +38,12 @@ class HoverableStatCardState extends State<HoverableStatCard> {
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             color: _isHovered && widget.onTap != null
-                ? const Color(0xFFE3F2FD) // 淡蓝色
-                : Colors.white,
+                ? tokens.primaryAccent.withValues(alpha: 0.1)
+                : tokens.cardBackground,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: tokens.shadow,
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),

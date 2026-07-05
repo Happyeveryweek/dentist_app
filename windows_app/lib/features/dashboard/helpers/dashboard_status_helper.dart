@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dentist_app_windows/widgets/dental_icons.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 仪表盘状态颜色辅助类
 /// 职责：预约状态颜色映射
@@ -33,18 +33,18 @@ class DashboardStatusHelper {
       !isScheduled(status) && !isCompleted(status);
 
   /// 根据预约状态获取对应的颜色
-  static Color getStatusColor(String status) {
+  static Color getStatusColor(BuildContext context, String status) {
     switch (normalizeStatus(status)) {
       case '已完成':
-        return DentalColors.success;
+        return context.tokens.success;
       case '已预约':
-        return DentalColors.info;
+        return context.tokens.info;
       case '已取消':
-        return DentalColors.error;
+        return context.tokens.error;
       case '未到诊':
-        return DentalColors.warning;
+        return context.tokens.warning;
       default:
-        return DentalColors.onSurfaceVariant;
+        return context.colors.onSurfaceVariant;
     }
   }
 }

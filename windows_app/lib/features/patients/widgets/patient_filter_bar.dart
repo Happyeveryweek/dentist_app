@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
-import '../../../theme/app_theme.dart';
-
 class PatientFilterBar extends StatelessWidget {
   final String searchQuery;
   final String sortField;
@@ -26,29 +24,12 @@ class PatientFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPurpleTheme =
-        false;
-
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isPurpleTheme ? AppTheme.purpleCardBackground : Colors.white,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(8),
-        border: isPurpleTheme
-            ? Border.all(
-                color: AppTheme.purpleLightColor.withValues(alpha: 0.3),
-                width: 1,
-              )
-            : null,
-        boxShadow: isPurpleTheme
-            ? [
-                BoxShadow(
-                  color: AppTheme.purpleColor.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ]
-            : null,
       ),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
@@ -73,9 +54,7 @@ class PatientFilterBar extends StatelessWidget {
                       : '时间筛选${searchQuery.isNotEmpty ? " (搜索结果)" : ""}',
                 ),
                 style: TextButton.styleFrom(
-                  foregroundColor: isPurpleTheme
-                      ? AppTheme.purpleColor
-                      : context.tokens.primaryAccent,
+                  foregroundColor: context.tokens.primaryAccent,
                 ),
               ),
             ],
@@ -108,23 +87,26 @@ class PatientDateFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: context.tokens.cardBackground,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade300, width: 1),
+        border: Border.all(color: tokens.divider, width: 1),
       ),
       child: Row(
         children: [
-          const Icon(Icons.filter_alt, size: 16, color: Colors.black54),
+          Icon(Icons.filter_alt,
+              size: 16, color: tokens.shadow.withValues(alpha: 0.54)),
           const SizedBox(width: 6),
           Text(
             searchQuery.isEmpty ? '筛选类型' : '结果筛选',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: Colors.black87,
+              color: colors.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -149,17 +131,17 @@ class PatientDateFilterChip extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: context.tokens.cardBackground,
+                color: tokens.cardBackground,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: tokens.divider),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.calendar_today,
                     size: 16,
-                    color: Colors.black54,
+                    color: tokens.shadow.withValues(alpha: 0.54),
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -171,9 +153,9 @@ class PatientDateFilterChip extends StatelessWidget {
                       }
                       return '选择日期范围';
                     }(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Colors.black87,
+                      color: colors.onSurface,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -184,8 +166,7 @@ class PatientDateFilterChip extends StatelessWidget {
           if (startDate != null) ...[
             const SizedBox(width: 8),
             IconButton(
-              icon:
-                  const Icon(Icons.clear, size: 18, color: AppTheme.errorColor),
+              icon: Icon(Icons.clear, size: 18, color: tokens.error),
               onPressed: onClearFilters,
               tooltip: '清除筛选',
               padding: const EdgeInsets.all(8),
@@ -215,7 +196,7 @@ class _SortOptions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Text('排序方式：', style: TextStyle(color: AppTheme.secondaryText)),
+        Text('排序方式：', style: TextStyle(color: context.tokens.textMuted)),
         const SizedBox(width: 8),
         _SortButton(
           label: '更新时间',
@@ -269,7 +250,7 @@ class _SortOptions extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.people, size: 16, color: AppTheme.primaryColor),
+              Icon(Icons.people, size: 16, color: context.tokens.primaryAccent),
               const SizedBox(width: 8),
               Text(
                 '总患者数: $totalPatients',
@@ -304,6 +285,8 @@ class _SortButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final bool isActive = sortField == field;
 
     return InkWell(
@@ -313,11 +296,11 @@ class _SortButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: isActive
-              ? context.tokens.primaryAccent.withValues(alpha: 0.1)
-              : context.tokens.cardBackground,
+              ? tokens.primaryAccent.withValues(alpha: 0.1)
+              : tokens.cardBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isActive ? context.tokens.primaryAccent : Colors.grey.shade300,
+            color: isActive ? tokens.primaryAccent : tokens.divider,
           ),
         ),
         child: Row(
@@ -327,8 +310,7 @@ class _SortButton extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 13,
-                color:
-                    isActive ? context.tokens.primaryAccent : context.colors.onSurfaceVariant,
+                color: isActive ? tokens.primaryAccent : colors.onSurfaceVariant,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
@@ -337,7 +319,7 @@ class _SortButton extends StatelessWidget {
               Icon(
                 sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
                 size: 16,
-                color: context.tokens.primaryAccent,
+                color: tokens.primaryAccent,
               ),
             ],
           ],
@@ -362,6 +344,8 @@ class _FilterTypeChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final bool active = activeValue == value;
 
     return InkWell(
@@ -370,10 +354,10 @@ class _FilterTypeChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: active ? context.tokens.primaryAccent : Colors.white,
+          color: active ? tokens.primaryAccent : tokens.cardBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: active ? context.tokens.primaryAccent : Colors.grey.shade300,
+            color: active ? tokens.primaryAccent : tokens.divider,
             width: 1,
           ),
         ),
@@ -383,7 +367,7 @@ class _FilterTypeChip extends StatelessWidget {
             Icon(
               value == 'first_visit_date' ? Icons.event_note : Icons.update,
               size: 14,
-              color: active ? Colors.white : context.tokens.primaryAccent,
+              color: active ? colors.onPrimary : tokens.primaryAccent,
             ),
             const SizedBox(width: 6),
             Text(
@@ -391,7 +375,7 @@ class _FilterTypeChip extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: active ? Colors.white : context.tokens.primaryAccent,
+                color: active ? colors.onPrimary : tokens.primaryAccent,
               ),
             ),
           ],

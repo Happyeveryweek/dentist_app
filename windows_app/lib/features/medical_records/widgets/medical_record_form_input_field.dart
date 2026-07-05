@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/dental_icons.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 病历表单输入字段组件
 class MedicalRecordFormInputField extends StatelessWidget {
@@ -32,15 +32,15 @@ class MedicalRecordFormInputField extends StatelessWidget {
             Icon(
               icon,
               size: 18,
-              color: DentalColors.primary,
+              color: context.tokens.primaryAccent,
             ),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: DentalColors.onSurface,
+                color: context.colors.onSurface,
               ),
             ),
           ],
@@ -55,37 +55,37 @@ class MedicalRecordFormInputField extends StatelessWidget {
             hintText: hint,
             filled: true,
             fillColor: enabled
-                ? DentalColors.background
-                : DentalColors.background.withValues(alpha: 0.5),
+                ? context.tokens.pageBackground
+                : context.tokens.pageBackground.withValues(alpha: 0.5),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: DentalColors.divider,
+              borderSide: BorderSide(
+                color: context.tokens.divider,
                 width: 1,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: DentalColors.primary,
+              borderSide: BorderSide(
+                color: context.tokens.primaryAccent,
                 width: 2,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: DentalColors.error,
+              borderSide: BorderSide(
+                color: context.tokens.error,
                 width: 1,
               ),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: DentalColors.error,
+              borderSide: BorderSide(
+                color: context.tokens.error,
                 width: 2,
               ),
             ),
@@ -94,9 +94,9 @@ class MedicalRecordFormInputField extends StatelessWidget {
               vertical: 12,
             ),
           ),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            color: DentalColors.onSurface,
+            color: context.colors.onSurface,
           ),
         ),
       ],

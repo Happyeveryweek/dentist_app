@@ -43,79 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   // 导航项 - 使用牙科专业图标
-  final List<NavigationItem> _allNavItems = [
-    const NavigationItem(
-      icon: DentalIcons.chartPie,
-      selectedIcon: DentalIcons.chartPie,
-      label: '仪表盘',
-      color: DentalColors.primary,
-      moduleId: 'dashboard',
-    ),
-    const NavigationItem(
-      icon: DentalIcons.hospitalUser,
-      selectedIcon: DentalIcons.hospitalUser,
-      label: '患者管理',
-      color: DentalColors.secondary,
-      moduleId: 'patients',
-      requiredRole: 'admin',
-    ),
-    const NavigationItem(
-      icon: DentalIcons.calendarCheck,
-      selectedIcon: DentalIcons.calendarCheck,
-      label: '预约管理',
-      color: DentalColors.info,
-      moduleId: 'appointments',
-      requiredRole: 'admin',
-    ),
-    const NavigationItem(
-      icon: Icons.account_balance_wallet,
-      selectedIcon: Icons.account_balance_wallet,
-      label: '财务管理',
-      color: DentalColors.success,
-      moduleId: 'financial',
-      requiredRole: 'admin',
-    ),
-    const NavigationItem(
-      icon: Icons.inventory_2,
-      selectedIcon: Icons.inventory_2,
-      label: '材料管理',
-      color: DentalColors.warning,
-      moduleId: 'materials',
-      requiredRole: 'admin',
-    ),
-    const NavigationItem(
-      icon: Icons.shopping_cart,
-      selectedIcon: Icons.shopping_cart,
-      label: '采购管理',
-      color: DentalColors.info,
-      moduleId: 'purchase',
-      requiredRole: 'admin',
-    ),
-    const NavigationItem(
-      icon: Icons.medical_information,
-      selectedIcon: Icons.medical_information,
-      label: '病历管理',
-      color: DentalColors.secondary,
-      moduleId: 'medical_records',
-      requiredRole: 'admin',
-    ),
-    const NavigationItem(
-      icon: Icons.people,
-      selectedIcon: Icons.people,
-      label: '用户管理',
-      color: DentalColors.primary,
-      moduleId: 'users',
-      requiredRole: 'admin',
-    ),
-    const NavigationItem(
-      icon: Icons.settings,
-      selectedIcon: Icons.settings,
-      label: '系统设置',
-      color: DentalColors.onSurfaceVariant,
-      moduleId: 'settings',
-      requiredRole: 'admin',
-    ),
-  ];
+  List<NavigationItem> _allNavItems = [];
 
   List<NavigationItem> _visibleNavItems = [];
   List<Widget> _visiblePages = [];
@@ -123,8 +51,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _checkUserRole();
-
     // 监听UserProvider的变化以实现权限变更时的菜单动态更新
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -132,9 +58,87 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _rebuildNavigationItems() {
+    final tokens = context.tokens;
+    _allNavItems = [
+      NavigationItem(
+        icon: DentalIcons.chartPie,
+        selectedIcon: DentalIcons.chartPie,
+        label: '仪表盘',
+        color: tokens.primaryAccent,
+        moduleId: 'dashboard',
+      ),
+      NavigationItem(
+        icon: DentalIcons.hospitalUser,
+        selectedIcon: DentalIcons.hospitalUser,
+        label: '患者管理',
+        color: tokens.secondaryAccent,
+        moduleId: 'patients',
+        requiredRole: 'admin',
+      ),
+      NavigationItem(
+        icon: DentalIcons.calendarCheck,
+        selectedIcon: DentalIcons.calendarCheck,
+        label: '预约管理',
+        color: tokens.info,
+        moduleId: 'appointments',
+        requiredRole: 'admin',
+      ),
+      NavigationItem(
+        icon: Icons.account_balance_wallet,
+        selectedIcon: Icons.account_balance_wallet,
+        label: '财务管理',
+        color: tokens.success,
+        moduleId: 'financial',
+        requiredRole: 'admin',
+      ),
+      NavigationItem(
+        icon: Icons.inventory_2,
+        selectedIcon: Icons.inventory_2,
+        label: '材料管理',
+        color: tokens.warning,
+        moduleId: 'materials',
+        requiredRole: 'admin',
+      ),
+      NavigationItem(
+        icon: Icons.shopping_cart,
+        selectedIcon: Icons.shopping_cart,
+        label: '采购管理',
+        color: tokens.info,
+        moduleId: 'purchase',
+        requiredRole: 'admin',
+      ),
+      NavigationItem(
+        icon: Icons.medical_information,
+        selectedIcon: Icons.medical_information,
+        label: '病历管理',
+        color: tokens.secondaryAccent,
+        moduleId: 'medical_records',
+        requiredRole: 'admin',
+      ),
+      NavigationItem(
+        icon: Icons.people,
+        selectedIcon: Icons.people,
+        label: '用户管理',
+        color: tokens.primaryAccent,
+        moduleId: 'users',
+        requiredRole: 'admin',
+      ),
+      NavigationItem(
+        icon: Icons.settings,
+        selectedIcon: Icons.settings,
+        label: '系统设置',
+        color: context.colors.onSurfaceVariant,
+        moduleId: 'settings',
+        requiredRole: 'admin',
+      ),
+    ];
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _rebuildNavigationItems();
     _checkUserRole();
   }
 

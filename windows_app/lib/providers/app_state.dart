@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/theme_context_extensions.dart';
 import '../utils/log_manager.dart';
 
 class AppState extends ChangeNotifier {
@@ -19,13 +20,15 @@ class AppState extends ChangeNotifier {
   void showMessage(String message, {bool isError = false}) {
     final context = navigatorKey.currentContext;
     if (context != null) {
+      final tokens = context.tokens;
+      final colors = context.colors;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
               Icon(
                 isError ? Icons.error_outline : Icons.check_circle_outline,
-                color: Colors.white,
+                color: colors.onPrimary,
                 size: 20,
               ),
               const SizedBox(width: 12),
@@ -33,7 +36,7 @@ class AppState extends ChangeNotifier {
                 child: Text(
                   message,
                   style: TextStyle(
-                    color: Colors.white,
+                    color: colors.onPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -41,8 +44,7 @@ class AppState extends ChangeNotifier {
               ),
             ],
           ),
-          backgroundColor:
-              isError ? Colors.red.shade500 : Colors.green.shade600,
+          backgroundColor: isError ? tokens.error : tokens.success,
           duration: Duration(seconds: isError ? 4 : 2),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(

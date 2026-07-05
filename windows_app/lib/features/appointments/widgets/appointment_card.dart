@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/appointment.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../widgets/success_toast.dart';
@@ -137,7 +138,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
       height: 15,
       padding: const EdgeInsets.only(left: 5, right: 2),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.28),
+        color: context.tokens.cardBackground.withValues(alpha: 0.28),
         borderRadius: BorderRadius.circular(7),
         border: Border.all(
           color: statusColor.withValues(alpha: 0.28),
@@ -145,7 +146,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: context.tokens.shadow.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -157,7 +158,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
           isDense: true,
           itemHeight: 48,
           borderRadius: BorderRadius.circular(14),
-          dropdownColor: Colors.white.withValues(alpha: 0.72),
+          dropdownColor: context.tokens.cardBackground.withValues(alpha: 0.72),
           focusColor: Colors.transparent,
           icon: Icon(
             Icons.keyboard_arrow_down_rounded,
@@ -216,11 +217,13 @@ class _AppointmentCardState extends State<AppointmentCard> {
     final appointmentCost = widget.appointment.cost;
     final onEdit = widget.onEdit;
     final onDelete = widget.onDelete;
+    final tokens = context.tokens;
+    final colors = context.colors;
 
     return DentalCard(
       margin: EdgeInsets.zero,
       padding: EdgeInsets.zero,
-      color: _isHovered ? const Color(0xFFEAF4FF) : Colors.white,
+      color: _isHovered ? tokens.hoverBackground : tokens.cardBackground,
       child: MouseRegion(
         cursor: SystemMouseCursors.click,
         onEnter: (_) {
@@ -260,10 +263,10 @@ class _AppointmentCardState extends State<AppointmentCard> {
                         children: [
                           Text(
                             widget.appointment.patient?.name ?? "未知患者",
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
-                              color: DentalColors.onSurface,
+                              color: colors.onSurface,
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -279,22 +282,22 @@ class _AppointmentCardState extends State<AppointmentCard> {
                               vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: DentalColors.info.withValues(alpha: 0.1),
+                              color: context.tokens.infoContainer,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.access_time_rounded,
                                   size: 10,
-                                  color: DentalColors.info,
+                                  color: context.tokens.info,
                                 ),
                                 const SizedBox(width: 2),
                                 Text(
                                   '$appointmentDateStr $appointmentTimeStr',
-                                  style: const TextStyle(
-                                    color: DentalColors.info,
+                                  style: TextStyle(
+                                    color: context.tokens.info,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -309,16 +312,16 @@ class _AppointmentCardState extends State<AppointmentCard> {
                                 Icon(
                                   DentalIcons.tooth,
                                   size: 11,
-                                  color: DentalColors.primary
+                                  color: context.tokens.primaryAccent
                                       .withValues(alpha: 0.7),
                                 ),
                                 const SizedBox(width: 3),
                                 Expanded(
                                   child: Text(
                                     treatmentDisplay,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
-                                      color: DentalColors.onSurfaceVariant,
+                                      color: colors.onSurfaceVariant,
                                       fontWeight: FontWeight.w500,
                                     ),
                                     maxLines: 1,
@@ -336,24 +339,23 @@ class _AppointmentCardState extends State<AppointmentCard> {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color:
-                                    DentalColors.success.withValues(alpha: 0.1),
+                                color: context.tokens.successContainer,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                     Icons.payments_rounded,
                                     size: 10,
-                                    color: DentalColors.success,
+                                    color: context.tokens.success,
                                   ),
                                   const SizedBox(width: 2),
                                   Text(
                                     '¥${appointmentCost.toStringAsFixed(0)}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 10,
-                                      color: DentalColors.success,
+                                      color: context.tokens.success,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -372,7 +374,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
                   children: [
                     _buildCompactActionButton(
                       icon: Icons.visibility_rounded,
-                      color: DentalColors.info,
+                      color: context.tokens.info,
                       tooltip: '查看',
                       onPressed: widget.onView ?? () {},
                     ),
@@ -380,13 +382,13 @@ class _AppointmentCardState extends State<AppointmentCard> {
                     onEdit != null
                         ? _buildCompactActionButton(
                             icon: Icons.edit_rounded,
-                            color: DentalColors.warning,
+                            color: context.tokens.warning,
                             tooltip: '编辑',
                             onPressed: onEdit,
                           )
                         : _buildCompactActionButton(
                             icon: Icons.lock,
-                            color: Colors.grey,
+                            color: context.tokens.iconMuted,
                             tooltip: '权限不足',
                             onPressed: () => AppToastManager.showError(
                               context,
@@ -397,13 +399,13 @@ class _AppointmentCardState extends State<AppointmentCard> {
                     onDelete != null
                         ? _buildCompactActionButton(
                             icon: Icons.delete_rounded,
-                            color: DentalColors.error,
+                            color: context.tokens.error,
                             tooltip: '删除',
                             onPressed: onDelete,
                           )
                         : _buildCompactActionButton(
                             icon: Icons.lock,
-                            color: Colors.grey,
+                            color: context.tokens.iconMuted,
                             tooltip: '权限不足',
                             onPressed: () => AppToastManager.showError(
                               context,

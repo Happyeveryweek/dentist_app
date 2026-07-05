@@ -141,9 +141,9 @@ class FinancialPagination extends StatelessWidget {
                   height: 36,
                   alignment: Alignment.center,
                   padding: const EdgeInsets.symmetric(horizontal: 10),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: tokens.cardBackground,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(10),
                       bottomLeft: Radius.circular(10),
                     ),
@@ -193,15 +193,15 @@ class FinancialPagination extends StatelessWidget {
                       alignment: Alignment.center,
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.only(
+                        borderRadius: const BorderRadius.only(
                           topRight: Radius.circular(10),
                           bottomRight: Radius.circular(10),
                         ),
                         gradient: tokens.primaryHeaderGradient,
                       ),
-                      child: const Text('确定',
+                      child: Text('确定',
                           style: TextStyle(
-                              color: Colors.white,
+                              color: colors.onPrimary,
                               fontWeight: FontWeight.w600)),
                     ),
                   ),
@@ -258,7 +258,7 @@ class FinancialPagination extends StatelessWidget {
                 child: Text(
                   '$pageNumber',
                   style: TextStyle(
-                    color: isActive ? Colors.white : colors.onSurfaceVariant,
+                    color: isActive ? colors.onPrimary : colors.onSurfaceVariant,
                     fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),

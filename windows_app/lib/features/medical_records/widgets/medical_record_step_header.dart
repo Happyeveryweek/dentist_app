@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/dental_icons.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 病历表单步骤头部组件
 class MedicalRecordStepHeader extends StatelessWidget {
@@ -21,12 +21,12 @@ class MedicalRecordStepHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            gradient: DentalColors.primaryGradient,
+            gradient: context.tokens.primaryHeaderGradient,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             icon,
-            color: Colors.white,
+            color: context.colors.onPrimary,
             size: 24,
           ),
         ),
@@ -37,18 +37,18 @@ class MedicalRecordStepHeader extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: DentalColors.onSurface,
+                  color: context.colors.onSurface,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: DentalColors.onSurfaceVariant,
+                  color: context.colors.onSurfaceVariant,
                 ),
               ),
             ],

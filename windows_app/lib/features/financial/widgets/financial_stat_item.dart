@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/theme_context_extensions.dart';
 
 /// 财务统计项组件
 /// 用于显示单个统计项（图标、标签、值）
@@ -27,7 +28,7 @@ class FinancialStatItem extends StatelessWidget {
           style: Theme.of(context)
               .textTheme
               .bodySmall
-              ?.copyWith(color: Colors.grey[600]),
+              ?.copyWith(color: context.colors.onSurfaceVariant),
         ),
         const SizedBox(height: 4),
         Text(

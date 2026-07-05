@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class PatientFloatingAddButton extends StatelessWidget {
   final VoidCallback onPressed;
@@ -21,14 +21,14 @@ class PatientFloatingAddButton extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTheme.primaryColor,
-              AppTheme.primaryColor.withValues(alpha: 0.8),
+              context.tokens.primaryAccent,
+              context.tokens.primaryAccent.withValues(alpha: 0.8),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryColor.withValues(alpha: 0.4),
+              color: context.tokens.primaryAccent.withValues(alpha: 0.4),
               blurRadius: 16,
               offset: const Offset(0, 8),
             ),
@@ -39,7 +39,7 @@ class PatientFloatingAddButton extends StatelessWidget {
           backgroundColor: Colors.transparent,
           heroTag: 'patients_add_button',
           elevation: 0,
-          child: const Icon(Icons.add, size: 28, color: Colors.white),
+          child: Icon(Icons.add, size: 28, color: context.colors.onPrimary),
         ),
       ),
     );

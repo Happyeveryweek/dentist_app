@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import 'package:dentist_app_windows/theme/medical_semantic_colors.dart';
 import '../../../models/patient.dart';
 
 /// 财务详情页患者基本信息区域组件
@@ -19,11 +20,11 @@ class FinancialPatientInfoSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isFemale =
         (patient.gender == '女') || (patient.gender.toLowerCase() == 'female');
-    final Color? infoBgColor = isFemale ? Colors.pink[50] : Colors.blue[50];
-    final Color infoBorderColor =
-        isFemale ? Colors.pink.shade200 : Colors.blue.shade200;
-    final Color avatarBgColor =
-        isFemale ? Colors.pink.shade400 : Colors.blue.shade300;
+    final Color baseColor =
+        isFemale ? MedicalSemanticColors.femaleGender : MedicalSemanticColors.maleGender;
+    final Color infoBgColor = baseColor.withValues(alpha: 0.14);
+    final Color infoBorderColor = baseColor.withValues(alpha: 0.5);
+    final Color avatarBgColor = baseColor;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -66,7 +67,7 @@ class FinancialPatientInfoSection extends StatelessWidget {
                 Text(
                   '备注信息: $notes',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[700],
+                        color: context.colors.onSurfaceVariant,
                       ),
                 ),
               ],

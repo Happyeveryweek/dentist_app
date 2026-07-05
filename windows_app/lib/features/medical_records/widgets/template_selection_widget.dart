@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../../../widgets/dental_icons.dart';
 import '../../../models/medical_template.dart';
 import '../../../services/medical_template_service.dart';
 
@@ -62,9 +61,9 @@ class TemplateSelectionWidget extends StatelessWidget {
             children: [
               Text(
                 hint,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: DentalColors.onSurfaceVariant,
+                  color: context.colors.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 12),
@@ -181,7 +180,7 @@ class TreatmentTemplateWidget extends StatelessWidget {
           return TemplateSelectionWidget(
             title: '常用治疗方案模板',
             icon: Icons.library_books_rounded,
-            color: DentalColors.secondary,
+            color: context.tokens.secondaryAccent,
             hint: '点击下方模板快速填入治疗方案',
             templates: defaultTemplates,
             selectedTemplates: selectedTreatmentTemplates,
@@ -194,7 +193,7 @@ class TreatmentTemplateWidget extends StatelessWidget {
         return TemplateSelectionWidget(
           title: '常用治疗方案模板',
           icon: Icons.library_books_rounded,
-          color: DentalColors.secondary,
+          color: context.tokens.secondaryAccent,
           hint: '点击下方模板快速填入治疗方案',
           templates: treatmentTemplates
               .map((t) => {'title': t.title, 'content': t.content})
@@ -257,7 +256,7 @@ class NotesTemplateWidget extends StatelessWidget {
           return TemplateSelectionWidget(
             title: '常用医嘱模板',
             icon: Icons.note_add_rounded,
-            color: DentalColors.info,
+            color: context.tokens.info,
             hint: '点击下方模板快速填入注意事项',
             templates: defaultTemplates,
             selectedTemplates: selectedNotesTemplates,
@@ -270,7 +269,7 @@ class NotesTemplateWidget extends StatelessWidget {
         return TemplateSelectionWidget(
           title: '常用医嘱模板',
           icon: Icons.note_add_rounded,
-          color: DentalColors.info,
+          color: context.tokens.info,
           hint: '点击下方模板快速填入注意事项',
           templates: notesTemplates
               .map((t) => {'title': t.title, 'content': t.content})

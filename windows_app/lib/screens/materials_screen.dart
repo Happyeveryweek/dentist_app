@@ -237,7 +237,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('初始化失败: ${result.error}'),
-              backgroundColor: Colors.red,
+              backgroundColor: context.tokens.error,
               duration: const Duration(seconds: 3),
             ),
           );
@@ -251,7 +251,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('初始化失败: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.tokens.error,
             duration: const Duration(seconds: 3),
           ),
         );
@@ -349,9 +349,9 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
         } else {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('删除失败'),
-              backgroundColor: Colors.red,
+            SnackBar(
+              content: const Text('删除失败'),
+              backgroundColor: context.tokens.error,
             ),
           );
         }
@@ -360,7 +360,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('删除失败: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.tokens.error,
           ),
         );
       }
@@ -371,6 +371,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -378,12 +380,12 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: context.tokens.primaryHeaderGradient,
+                gradient: tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 DentalIcons.pills,
-                color: Colors.white,
+                color: tokens.cardBackground,
                 size: 24,
               ),
             ),
@@ -405,11 +407,11 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              gradient: context.tokens.primaryHeaderGradient,
+              gradient: tokens.primaryHeaderGradient,
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              icon: Icon(Icons.refresh_rounded, color: tokens.cardBackground),
               onPressed: () async {
                 await _loadData(showLoading: false, forceRefresh: true);
                 if (!context.mounted) return;
@@ -425,8 +427,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  context.tokens.warning.withValues(alpha: 0.85),
-                  context.tokens.warning,
+                  tokens.warning.withValues(alpha: 0.85),
+                  tokens.warning,
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -434,8 +436,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.settings_backup_restore_rounded,
-                  color: Colors.white),
+              icon: Icon(Icons.settings_backup_restore_rounded,
+                  color: tokens.cardBackground),
               onPressed: () => _showInitializeDialog(),
               tooltip: '初始化默认材料',
             ),
@@ -444,11 +446,11 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              gradient: context.tokens.primaryHeaderGradient,
+              gradient: tokens.primaryHeaderGradient,
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.add_rounded, color: Colors.white),
+              icon: Icon(Icons.add_rounded, color: tokens.cardBackground),
               onPressed: () => _showMaterialDialog(),
               tooltip: '添加材料',
             ),
@@ -711,9 +713,9 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
               color: context.tokens.primaryAccent,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(
+            child: Icon(
               DentalIcons.pills,
-              color: Colors.white,
+              color: context.tokens.cardBackground,
               size: 20,
             ),
           ),
@@ -945,15 +947,15 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.category_rounded,
-                        size: 18, color: Colors.white),
+                    Icon(Icons.category_rounded,
+                        size: 18, color: context.tokens.cardBackground),
                     const SizedBox(width: 10),
-                    const Text(
+                    Text(
                       '材料类型',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: context.tokens.cardBackground,
                       ),
                     ),
                     const Spacer(),
@@ -961,14 +963,14 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: context.tokens.cardBackground.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         '${items.length}项',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white,
+                          color: context.tokens.cardBackground,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1011,8 +1013,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                           ),
                         ),
                         child: isSelected
-                            ? const Icon(Icons.check,
-                                size: 12, color: Colors.white)
+                            ? Icon(Icons.check,
+                                size: 12, color: context.tokens.cardBackground)
                             : null,
                       ),
                       const SizedBox(width: 12),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/patient.dart';
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 患者选择区域
 ///
@@ -22,49 +22,55 @@ class PatientSelectionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: tokens.mutedBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(tokens),
           const SizedBox(height: 12),
           if (preselectedPatient == null)
-            _buildPatientSelector()
+            _buildPatientSelector(context, tokens, colors)
           else
-            _buildPreselectedPatient(),
+            _buildPreselectedPatient(tokens),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return const Row(
+  Widget _buildHeader(AppThemeTokens tokens) {
+    return Row(
       children: [
         Icon(
           Icons.person,
-          color: Color(0xFF667eea),
+          color: tokens.primaryAccent,
           size: 18,
         ),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         Text(
           '患者信息',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF667eea),
+            color: tokens.primaryAccent,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildPatientSelector() {
+  Widget _buildPatientSelector(
+    BuildContext context,
+    AppThemeTokens tokens,
+    ColorScheme colors,
+  ) {
     final patient = selectedPatient;
     if (isLoadingPatients) {
       return const Center(child: CircularProgressIndicator());
@@ -76,21 +82,20 @@ class PatientSelectionSection extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: tokens.cardBackground,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: tokens.divider),
             ),
             child: Row(
               children: [
-                const Icon(Icons.person,
-                    color: AppTheme.primaryColor, size: 18),
+                Icon(Icons.person, color: tokens.primaryAccent, size: 18),
                 const SizedBox(width: 8),
                 Expanded(
                   child: patient == null
                       ? Text(
                           '患者姓名',
                           style: TextStyle(
-                            color: Colors.grey.shade600,
+                            color: colors.onSurfaceVariant,
                             fontSize: 14,
                           ),
                         )
@@ -109,7 +114,7 @@ class PatientSelectionSection extends StatelessWidget {
                               '最近就诊: ${DateFormat('yyyy-MM-dd').format(patient.updatedAt)}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey.shade600,
+                                color: colors.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -125,8 +130,8 @@ class PatientSelectionSection extends StatelessWidget {
           icon: const Icon(Icons.search, size: 18),
           label: const Text('选择'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.primaryColor,
-            foregroundColor: Colors.white,
+            backgroundColor: tokens.primaryAccent,
+            foregroundColor: colors.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -137,25 +142,25 @@ class PatientSelectionSection extends StatelessWidget {
     );
   }
 
-  Widget _buildPreselectedPatient() {
+  Widget _buildPreselectedPatient(AppThemeTokens tokens) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF667eea).withValues(alpha: 0.1),
+        color: tokens.primaryAccent.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border:
-            Border.all(color: const Color(0xFF667eea).withValues(alpha: 0.3)),
+            Border.all(color: tokens.primaryAccent.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.person, color: Color(0xFF667eea)),
+          Icon(Icons.person, color: tokens.primaryAccent),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               '患者: ${selectedPatient?.name ?? '未选择'}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF667eea),
+                color: tokens.primaryAccent,
                 fontSize: 16,
               ),
             ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/dental_icons.dart';
+import '../../../theme/theme_context_extensions.dart';
 
 class MaterialDropdownContainer extends StatelessWidget {
   final String value;
@@ -21,24 +21,26 @@ class MaterialDropdownContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final tokens = context.tokens;
+        final colors = context.colors;
         final resolvedWidth = width ??
             (constraints.hasBoundedWidth && constraints.maxWidth.isFinite
                 ? constraints.maxWidth
                 : 260.0);
         final displayText = value.trim().isEmpty ? (hintText ?? '请选择') : value;
         final displayColor =
-            value.trim().isEmpty ? Colors.grey.shade500 : Colors.black87;
+            value.trim().isEmpty ? tokens.textMuted : colors.onSurface;
 
         return SizedBox(
           width: resolvedWidth,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: tokens.cardBackground,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: tokens.divider),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
+                  color: tokens.shadow.withValues(alpha: 0.02),
                   blurRadius: 4,
                   offset: const Offset(0, 1),
                 ),
@@ -64,25 +66,25 @@ class MaterialDropdownContainer extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          DentalColors.primary.withValues(alpha: 0.1),
-                          DentalColors.primary.withValues(alpha: 0.05)
+                          tokens.primaryAccent.withValues(alpha: 0.1),
+                          tokens.primaryAccent.withValues(alpha: 0.05)
                         ],
                         begin: Alignment.centerLeft,
                         end: Alignment.centerRight,
                       ),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(Icons.list_rounded,
-                            size: 16, color: DentalColors.primary),
-                        SizedBox(width: 8),
+                            size: 16, color: tokens.primaryAccent),
+                        const SizedBox(width: 8),
                         Text(
                           '选择选项',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: DentalColors.primary,
+                            color: tokens.primaryAccent,
                           ),
                         ),
                       ],
@@ -102,7 +104,7 @@ class MaterialDropdownContainer extends StatelessWidget {
                           horizontal: 8, vertical: 6),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? DentalColors.primary.withValues(alpha: 0.08)
+                            ? tokens.primaryAccent.withValues(alpha: 0.08)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -115,17 +117,17 @@ class MaterialDropdownContainer extends StatelessWidget {
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: isSelected
-                                    ? DentalColors.primary
-                                    : Colors.grey.shade400,
+                                    ? tokens.primaryAccent
+                                    : tokens.iconMuted,
                                 width: 2,
                               ),
                               color: isSelected
-                                  ? DentalColors.primary
+                                  ? tokens.primaryAccent
                                   : Colors.transparent,
                             ),
                             child: isSelected
-                                ? const Icon(Icons.check,
-                                    size: 10, color: Colors.white)
+                                ? Icon(Icons.check,
+                                    size: 10, color: tokens.cardBackground)
                                 : null,
                           ),
                           const SizedBox(width: 8),
@@ -138,8 +140,8 @@ class MaterialDropdownContainer extends StatelessWidget {
                                     ? FontWeight.w600
                                     : FontWeight.normal,
                                 color: isSelected
-                                    ? DentalColors.primary
-                                    : Colors.black87,
+                                    ? tokens.primaryAccent
+                                    : colors.onSurface,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -171,8 +173,8 @@ class MaterialDropdownContainer extends StatelessWidget {
                       Icons.keyboard_arrow_down_rounded,
                       size: 20,
                       color: value.trim().isEmpty
-                          ? Colors.grey.shade500
-                          : DentalColors.primary,
+                          ? tokens.textMuted
+                          : tokens.primaryAccent,
                     ),
                   ],
                 ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+
 /// 治疗项目区域
 ///
 /// 显示治疗项目输入框、添加按钮、已选治疗项目列表
@@ -23,73 +25,78 @@ class TreatmentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: tokens.mutedBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(context),
           const SizedBox(height: 16),
-          _buildInputRow(),
+          _buildInputRow(context),
           if (selectedTreatments.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _buildSelectedTreatments(),
+            _buildSelectedTreatments(context),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     return Row(
       children: [
-        const Icon(
+        Icon(
           Icons.healing,
-          color: Color(0xFFFF9800),
+          color: tokens.warning,
           size: 18,
         ),
         const SizedBox(width: 8),
-        const Text(
+        Text(
           '治疗项目',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Color(0xFFFF9800),
+            color: tokens.warning,
           ),
         ),
         const Spacer(),
         Container(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               colors: [
-                Color(0xFFFF9800),
-                Color(0xFFFFB74D),
+                tokens.warning,
+                tokens.warningAccent,
               ],
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF9800).withValues(alpha: 0.3),
+                color: tokens.warning.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
           child: TextButton.icon(
-            icon: const Icon(
+            icon: Icon(
               Icons.arrow_drop_down,
-              color: Colors.white,
+              color: colors.onPrimary,
               size: 18,
             ),
-            label: const Text(
+            label: Text(
               '选择',
               style: TextStyle(
-                color: Colors.white,
+                color: colors.onPrimary,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
               ),
@@ -110,7 +117,10 @@ class TreatmentSection extends StatelessWidget {
     );
   }
 
-  Widget _buildInputRow() {
+  Widget _buildInputRow(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     return Row(
       children: [
         Expanded(
@@ -118,21 +128,21 @@ class TreatmentSection extends StatelessWidget {
             controller: treatmentTypeController,
             decoration: InputDecoration(
               hintText: '输入治疗项目',
-              hintStyle: TextStyle(color: Colors.grey.shade600),
+              hintStyle: TextStyle(color: tokens.textMuted),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: BorderSide(color: tokens.divider),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
+                borderSide: BorderSide(color: tokens.divider),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFFFF9800)),
+                borderSide: BorderSide(color: tokens.warning),
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: tokens.cardBackground,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             ),
@@ -145,16 +155,16 @@ class TreatmentSection extends StatelessWidget {
         const SizedBox(width: 12),
         Container(
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               colors: [
-                Color(0xFFFF9800),
-                Color(0xFFFFB74D),
+                tokens.warning,
+                tokens.warningAccent,
               ],
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF9800).withValues(alpha: 0.3),
+                color: tokens.warning.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
               ),
@@ -166,7 +176,7 @@ class TreatmentSection extends StatelessWidget {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
-              foregroundColor: Colors.white,
+              foregroundColor: colors.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -187,32 +197,34 @@ class TreatmentSection extends StatelessWidget {
     );
   }
 
-  Widget _buildSelectedTreatments() {
+  Widget _buildSelectedTreatments(BuildContext context) {
+    final tokens = context.tokens;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border:
-            Border.all(color: const Color(0xFFFF9800).withValues(alpha: 0.2)),
+            Border.all(color: tokens.warning.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.check_circle,
-                color: Color(0xFFFF9800),
+                color: tokens.warning,
                 size: 14,
               ),
-              SizedBox(width: 6),
+              const SizedBox(width: 6),
               Text(
                 '已选治疗项目:',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFFFF9800),
+                  color: tokens.warning,
                 ),
               ),
             ],
@@ -222,7 +234,7 @@ class TreatmentSection extends StatelessWidget {
             spacing: 6,
             runSpacing: 6,
             children: selectedTreatments
-                .map((treatment) => _buildTreatmentChip(treatment))
+                .map((treatment) => _buildTreatmentChip(context, treatment))
                 .toList(),
           ),
         ],
@@ -230,18 +242,20 @@ class TreatmentSection extends StatelessWidget {
     );
   }
 
-  Widget _buildTreatmentChip(String treatment) {
+  Widget _buildTreatmentChip(BuildContext context, String treatment) {
+    final tokens = context.tokens;
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFFFF9800).withValues(alpha: 0.1),
-            const Color(0xFFFFB74D).withValues(alpha: 0.05),
+            tokens.warning.withValues(alpha: 0.1),
+            tokens.warningAccent.withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFFF9800).withValues(alpha: 0.3),
+          color: tokens.warning.withValues(alpha: 0.3),
         ),
       ),
       child: Material(
@@ -259,17 +273,17 @@ class TreatmentSection extends StatelessWidget {
               children: [
                 Text(
                   treatment,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
-                    color: Color(0xFFFF9800),
+                    color: tokens.warning,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(
+                Icon(
                   Icons.close,
                   size: 12,
-                  color: Color(0xFFFF9800),
+                  color: tokens.warning,
                 ),
               ],
             ),

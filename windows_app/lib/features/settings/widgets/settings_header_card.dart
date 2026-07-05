@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_theme.dart';
+import '../../../theme/theme_context_extensions.dart';
 
 class SettingsHeaderCard extends StatelessWidget {
   const SettingsHeaderCard({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
+        gradient: tokens.primaryHeaderGradient,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+            color: tokens.primaryAccent.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -21,19 +23,19 @@ class SettingsHeaderCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.settings,
-            color: Colors.white,
+            color: colors.onPrimary,
             size: 24,
           ),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 '系统配置中心',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: colors.onPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -41,7 +43,7 @@ class SettingsHeaderCard extends StatelessWidget {
               Text(
                 '个性化设置与系统管理',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: colors.onPrimary.withValues(alpha: 0.9),
                   fontSize: 13,
                 ),
               ),

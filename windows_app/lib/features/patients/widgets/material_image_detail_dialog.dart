@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import '../../../models/material_image.dart';
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 图片详情弹窗组件
 ///
@@ -26,11 +26,11 @@ class MaterialImageDetailDialog extends StatelessWidget {
           maxHeight: 1200,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.25),
+              color: context.tokens.shadow.withValues(alpha: 0.25),
               blurRadius: 15,
               spreadRadius: 2,
               offset: const Offset(0, 8),
@@ -44,7 +44,7 @@ class MaterialImageDetailDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.7),
+                color: context.tokens.primaryAccent.withValues(alpha: 0.7),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(12),
                   topRight: Radius.circular(12),
@@ -52,17 +52,17 @@ class MaterialImageDetailDialog extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.photo,
-                    color: Colors.white,
+                    color: context.colors.onPrimary,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       image.originalName ?? '图片详情',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.colors.onPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -71,7 +71,7 @@ class MaterialImageDetailDialog extends StatelessWidget {
                   ),
                   IconButton(
                     icon:
-                        const Icon(Icons.close, color: Colors.white, size: 20),
+                        Icon(Icons.close, color: context.colors.onPrimary, size: 20),
                     onPressed: () => Navigator.of(context).pop(),
                     tooltip: '关闭',
                     padding: EdgeInsets.zero,
@@ -87,7 +87,7 @@ class MaterialImageDetailDialog extends StatelessWidget {
               child: InteractiveViewer(
                 minScale: 0.5,
                 maxScale: 4.0,
-                child: _buildDetailImage(),
+                child: _buildDetailImage(context),
               ),
             ),
 
@@ -95,7 +95,7 @@ class MaterialImageDetailDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: context.tokens.inputBackground,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(12),
                   bottomRight: Radius.circular(12),
@@ -108,7 +108,7 @@ class MaterialImageDetailDialog extends StatelessWidget {
                     children: [
                       Icon(
                         Icons.info_outline,
-                        color: Colors.grey.shade600,
+                        color: context.colors.onSurfaceVariant,
                         size: 16,
                       ),
                       const SizedBox(width: 6),
@@ -116,7 +116,7 @@ class MaterialImageDetailDialog extends StatelessWidget {
                         '文件大小: ${(image.fileSize / 1024).toStringAsFixed(1)} KB',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.grey.shade700,
+                          color: context.colors.onSurface,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -126,8 +126,7 @@ class MaterialImageDetailDialog extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .primaryColor
+                      color: context.tokens.primaryAccent
                           .withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -135,7 +134,7 @@ class MaterialImageDetailDialog extends StatelessWidget {
                       image.id != null ? 'ID: ${image.id}' : '新图片',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Theme.of(context).primaryColor,
+                        color: context.tokens.primaryAccent,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -149,14 +148,14 @@ class MaterialImageDetailDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailImage() {
+  Widget _buildDetailImage(BuildContext context) {
     final localFile = file;
     if (localFile != null) {
       return Image.file(
         localFile,
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
-          return _buildErrorContainer('图片加载失败');
+          return _buildErrorContainer(context, '图片加载失败');
         },
       );
     }
@@ -166,7 +165,7 @@ class MaterialImageDetailDialog extends StatelessWidget {
         image.imageData,
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
-          return _buildErrorContainer('图片加载失败');
+          return _buildErrorContainer(context, '图片加载失败');
         },
       );
     } else {
@@ -177,33 +176,33 @@ class MaterialImageDetailDialog extends StatelessWidget {
           thumbnailData,
           fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) {
-            return _buildErrorContainer('图片数据不可用');
+            return _buildErrorContainer(context, '图片数据不可用');
           },
         );
       } else {
-        return _buildErrorContainer('图片数据不可用');
+        return _buildErrorContainer(context, '图片数据不可用');
       }
     }
   }
 
-  Widget _buildErrorContainer(String message) {
+  Widget _buildErrorContainer(BuildContext context, String message) {
     return Container(
       width: 400,
       height: 300,
-      color: Colors.grey.shade100,
+      color: context.tokens.inputBackground,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.broken_image,
-            color: Colors.grey.shade400,
+            color: context.tokens.iconMuted,
             size: 64,
           ),
           const SizedBox(height: 16),
           Text(
             message,
             style: TextStyle(
-              color: Colors.grey.shade600,
+              color: context.colors.onSurfaceVariant,
               fontSize: 16,
             ),
           ),
@@ -234,11 +233,11 @@ class MaterialFileImageDetailDialog extends StatelessWidget {
           maxHeight: 1200,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: context.tokens.shadow.withValues(alpha: 0.3),
               blurRadius: 20,
               spreadRadius: 5,
               offset: const Offset(0, 10),
@@ -252,7 +251,7 @@ class MaterialFileImageDetailDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 3),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.7),
+                color: context.tokens.primaryAccent.withValues(alpha: 0.7),
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
@@ -260,17 +259,17 @@ class MaterialFileImageDetailDialog extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.photo_library,
-                    color: Colors.white,
+                    color: context.colors.onPrimary,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       file.path.split('/').last,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: context.colors.onPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
@@ -278,7 +277,7 @@ class MaterialFileImageDetailDialog extends StatelessWidget {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: Icon(Icons.close, color: context.colors.onPrimary),
                     onPressed: () => Navigator.of(context).pop(),
                     tooltip: '关闭',
                   ),
@@ -298,20 +297,20 @@ class MaterialFileImageDetailDialog extends StatelessWidget {
                     return Container(
                       width: 400,
                       height: 300,
-                      color: Colors.grey.shade100,
+                      color: context.tokens.inputBackground,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             Icons.broken_image,
-                            color: Colors.grey.shade400,
+                            color: context.tokens.iconMuted,
                             size: 64,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             '图片加载失败',
                             style: TextStyle(
-                              color: Colors.grey.shade600,
+                              color: context.colors.onSurfaceVariant,
                               fontSize: 16,
                             ),
                           ),
@@ -327,7 +326,7 @@ class MaterialFileImageDetailDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: context.tokens.mutedBackground,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(16),
                   bottomRight: Radius.circular(16),
@@ -337,7 +336,7 @@ class MaterialFileImageDetailDialog extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.folder_open,
-                    color: Colors.grey.shade600,
+                    color: context.colors.onSurfaceVariant,
                     size: 16,
                   ),
                   const SizedBox(width: 8),
@@ -346,7 +345,7 @@ class MaterialFileImageDetailDialog extends StatelessWidget {
                       '文件路径: ${file.path}',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade700,
+                        color: context.colors.onSurface,
                         fontWeight: FontWeight.w500,
                       ),
                       overflow: TextOverflow.ellipsis,

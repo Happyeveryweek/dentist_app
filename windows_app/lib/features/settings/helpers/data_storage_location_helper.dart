@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../utils/app_paths.dart';
 
@@ -47,7 +48,7 @@ class DataStorageLocationHelper {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('数据库文件不存在: ${settingsProvider.customSqliteDbPath}'),
-              backgroundColor: Colors.orange,
+              backgroundColor: context.tokens.warning,
             ),
           );
           return;
@@ -56,9 +57,9 @@ class DataStorageLocationHelper {
         // MySQL是远程数据库，无法直接打开，显示提示
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('MySQL是远程数据库，无法直接打开文件位置'),
-            backgroundColor: Colors.orange,
+          SnackBar(
+            content: const Text('MySQL是远程数据库，无法直接打开文件位置'),
+            backgroundColor: context.tokens.warning,
           ),
         );
         return;

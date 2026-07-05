@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/purchase_record.dart';
 import '../../../models/purchase_item.dart';
+import '../../../theme/theme_context_extensions.dart';
 import '../../../widgets/dental_icons.dart';
 
 /// 采购记录详情对话框
@@ -30,7 +31,7 @@ class PurchaseDetailDialog extends StatelessWidget {
       ),
       title: Row(
         children: [
-          Icon(DentalIcons.shoppingCart, color: Theme.of(context).primaryColor),
+          Icon(DentalIcons.shoppingCart, color: context.colors.primary),
           const SizedBox(width: 8),
           const Expanded(
             child: Text('采购记录详情'),
@@ -41,7 +42,10 @@ class PurchaseDetailDialog extends StatelessWidget {
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.green.shade400, Colors.green.shade600],
+                  colors: [
+                    context.tokens.success,
+                    context.tokens.secondaryAccent,
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -49,8 +53,8 @@ class PurchaseDetailDialog extends StatelessWidget {
               ),
               child: IconButton(
                 onPressed: () => exportCallback(record, purchaseItems),
-                icon: const Icon(Icons.download_rounded,
-                    color: Colors.white, size: 20),
+                icon: Icon(Icons.download_rounded,
+                    color: context.colors.onPrimary, size: 20),
                 tooltip: '导出为图片',
                 padding: const EdgeInsets.all(8),
                 constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -73,18 +77,18 @@ class PurchaseDetailDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
+                color: context.tokens.infoContainer,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
+                border: Border.all(color: context.tokens.info),
               ),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 25,
-                    backgroundColor: Theme.of(context).primaryColor,
-                    child: const Icon(
+                    backgroundColor: context.colors.primary,
+                    child: Icon(
                       DentalIcons.shoppingCart,
-                      color: Colors.white,
+                      color: context.colors.onPrimary,
                       size: 25,
                     ),
                   ),
@@ -121,34 +125,37 @@ class PurchaseDetailDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.green[50],
+                color: context.tokens.successContainer,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.green.shade200),
+                border: Border.all(color: context.tokens.success),
               ),
               child: Row(
                 children: [
                   Expanded(
                     child: _buildStatItem(
+                      context: context,
                       icon: Icons.inventory,
                       label: '总采购数量',
                       value: '${record.totalQuantity}',
-                      color: Colors.green.shade700,
+                      color: context.tokens.success,
                     ),
                   ),
                   Expanded(
                     child: _buildStatItem(
+                      context: context,
                       icon: Icons.attach_money,
                       label: '总采购金额',
                       value: '¥${record.totalAmount.toStringAsFixed(2)}',
-                      color: Colors.blue.shade700,
+                      color: context.tokens.info,
                     ),
                   ),
                   Expanded(
                     child: _buildStatItem(
+                      context: context,
                       icon: Icons.shopping_cart,
                       label: '采购项目数',
                       value: '${purchaseItems.length}',
-                      color: Colors.orange.shade700,
+                      color: context.tokens.warning,
                     ),
                   ),
                 ],
@@ -160,7 +167,7 @@ class PurchaseDetailDialog extends StatelessWidget {
             // 采购项目列表标题
             Row(
               children: [
-                Icon(Icons.list_alt, color: Colors.grey[600], size: 20),
+                Icon(Icons.list_alt, color: context.tokens.iconMuted, size: 20),
                 const SizedBox(width: 6),
                 Text(
                   '采购项目明细 (${purchaseItems.length}项)',
@@ -175,8 +182,8 @@ class PurchaseDetailDialog extends StatelessWidget {
                     icon: const Icon(Icons.edit, size: 18),
                     label: const Text('编辑记录'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      foregroundColor: Colors.white,
+                      backgroundColor: context.colors.primary,
+                      foregroundColor: context.colors.onPrimary,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                     ),
@@ -196,7 +203,7 @@ class PurchaseDetailDialog extends StatelessWidget {
                           Icon(
                             Icons.inventory_2_outlined,
                             size: 64,
-                            color: Colors.grey[400],
+                            color: context.tokens.iconMuted,
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -205,7 +212,7 @@ class PurchaseDetailDialog extends StatelessWidget {
                                 .textTheme
                                 .titleMedium
                                 ?.copyWith(
-                                  color: Colors.grey[600],
+                                  color: context.colors.onSurfaceVariant,
                                 ),
                           ),
                           const SizedBox(height: 8),
@@ -215,7 +222,7 @@ class PurchaseDetailDialog extends StatelessWidget {
                                 .textTheme
                                 .bodyMedium
                                 ?.copyWith(
-                                  color: Colors.grey[500],
+                                  color: context.tokens.textMuted,
                                 ),
                           ),
                         ],
@@ -228,7 +235,7 @@ class PurchaseDetailDialog extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 12),
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
+                            color: context.tokens.mutedBackground,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -239,7 +246,7 @@ class PurchaseDetailDialog extends StatelessWidget {
                                   '材料名称',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.grey[700],
+                                    color: context.colors.onSurfaceVariant,
                                     fontSize: 14,
                                   ),
                                 ),
@@ -250,7 +257,7 @@ class PurchaseDetailDialog extends StatelessWidget {
                                   '数量',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.grey[700],
+                                    color: context.colors.onSurfaceVariant,
                                     fontSize: 14,
                                   ),
                                   textAlign: TextAlign.center,
@@ -262,7 +269,7 @@ class PurchaseDetailDialog extends StatelessWidget {
                                   '单价',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.grey[700],
+                                    color: context.colors.onSurfaceVariant,
                                     fontSize: 14,
                                   ),
                                   textAlign: TextAlign.center,
@@ -274,7 +281,7 @@ class PurchaseDetailDialog extends StatelessWidget {
                                   '单位',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.grey[700],
+                                    color: context.colors.onSurfaceVariant,
                                     fontSize: 14,
                                   ),
                                   textAlign: TextAlign.center,
@@ -286,7 +293,7 @@ class PurchaseDetailDialog extends StatelessWidget {
                                   '总价',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.grey[700],
+                                    color: context.colors.onSurfaceVariant,
                                     fontSize: 14,
                                   ),
                                   textAlign: TextAlign.center,
@@ -303,7 +310,7 @@ class PurchaseDetailDialog extends StatelessWidget {
                             itemCount: purchaseItems.length,
                             itemBuilder: (context, index) {
                               final item = purchaseItems[index];
-                              return _buildDetailItemCard(item);
+                              return _buildDetailItemCard(context, item);
                             },
                           ),
                         ),
@@ -326,6 +333,7 @@ class PurchaseDetailDialog extends StatelessWidget {
   }
 
   Widget _buildStatItem({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required String value,
@@ -342,7 +350,7 @@ class PurchaseDetailDialog extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: context.tokens.textMuted,
               ),
             ),
             Text(
@@ -359,14 +367,14 @@ class PurchaseDetailDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailItemCard(PurchaseItem item) {
+  Widget _buildDetailItemCard(BuildContext context, PurchaseItem item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Row(
         children: [
@@ -411,7 +419,7 @@ class PurchaseDetailDialog extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue[700],
+                color: context.tokens.info,
               ),
               textAlign: TextAlign.center,
             ),

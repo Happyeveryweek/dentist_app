@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/medical_record_template.dart';
 import '../../../providers/medical_record_provider.dart';
-import '../../../widgets/dental_icons.dart';
 import '../../../widgets/success_toast.dart';
 import '../../../utils/log_manager.dart';
+import '../../../theme/medical_semantic_colors.dart';
 
 /// 疾病类型编辑对话框
 /// 用于添加和编辑病历模板中的疾病类型
@@ -89,6 +90,7 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -97,11 +99,11 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
           maxHeight: MediaQuery.of(context).size.height * 0.85,
         ),
         decoration: BoxDecoration(
-          color: DentalColors.surface,
+          color: tokens.cardBackground,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: tokens.shadow.withValues(alpha: 0.1),
               blurRadius: 20,
               spreadRadius: 5,
             ),
@@ -122,9 +124,9 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        gradient: DentalColors.primaryGradient,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        gradient: context.tokens.primaryHeaderGradient,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -134,12 +136,12 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: context.tokens.cardBackground.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               widget.template == null ? Icons.add_rounded : Icons.edit_rounded,
-              color: Colors.white,
+              color: context.colors.onPrimary,
               size: 24,
             ),
           ),
@@ -150,8 +152,8 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
               children: [
                 Text(
                   widget.template == null ? '添加疾病类型' : '编辑疾病类型',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.colors.onPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -159,7 +161,7 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
                 Text(
                   _getCategoryDisplayName(_selectedCategory ?? ''),
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: context.colors.onPrimary.withValues(alpha: 0.9),
                     fontSize: 14,
                   ),
                 ),
@@ -168,9 +170,9 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
           ),
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(
+            icon: Icon(
               Icons.close_rounded,
-              color: Colors.white,
+              color: context.colors.onPrimary,
               size: 24,
             ),
           ),
@@ -235,17 +237,17 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: DentalColors.info.withValues(alpha: 0.1),
+                    color: context.tokens.infoContainer,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: DentalColors.info.withValues(alpha: 0.3),
+                      color: context.tokens.info.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.lightbulb_outline_rounded,
-                        color: DentalColors.info,
+                        color: context.tokens.info,
                         size: 20,
                       ),
                       const SizedBox(width: 12),
@@ -254,8 +256,8 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
                           _isMainType
                               ? '主类型用于分类管理，可以包含多个子类型'
                               : '子类型属于某个主类型，用于更详细的分类',
-                          style: const TextStyle(
-                            color: DentalColors.info,
+                          style: TextStyle(
+                            color: context.tokens.info,
                             fontSize: 14,
                           ),
                         ),
@@ -275,20 +277,20 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
             Icon(
               Icons.category_rounded,
               size: 18,
-              color: DentalColors.primary,
+              color: context.tokens.primaryAccent,
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               '类别',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: DentalColors.onSurface,
+                color: context.colors.onSurface,
               ),
             ),
           ],
@@ -297,10 +299,10 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
-            color: DentalColors.background,
+            color: context.tokens.pageBackground,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DentalColors.divider,
+              color: context.tokens.divider,
               width: 1,
             ),
           ),
@@ -314,8 +316,11 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
                   value: MedicalRecordTemplateCategory.dentalDisease,
                   child: Row(
                     children: [
-                      Icon(Icons.medical_services,
-                          size: 16, color: Colors.blue),
+                      Icon(
+                        Icons.medical_services,
+                        size: 16,
+                        color: MedicalSemanticColors.dentalDisease,
+                      ),
                       SizedBox(width: 8),
                       Text('牙科疾病'),
                     ],
@@ -325,8 +330,11 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
                   value: MedicalRecordTemplateCategory.systemicDisease,
                   child: Row(
                     children: [
-                      Icon(Icons.health_and_safety,
-                          size: 16, color: Colors.green),
+                      Icon(
+                        Icons.health_and_safety,
+                        size: 16,
+                        color: MedicalSemanticColors.systemicDisease,
+                      ),
                       SizedBox(width: 8),
                       Text('全身疾病'),
                     ],
@@ -336,7 +344,11 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
                   value: MedicalRecordTemplateCategory.allergy,
                   child: Row(
                     children: [
-                      Icon(Icons.warning_amber, size: 16, color: Colors.orange),
+                      Icon(
+                        Icons.warning_amber,
+                        size: 16,
+                        color: MedicalSemanticColors.allergy,
+                      ),
                       SizedBox(width: 8),
                       Text('过敏类型'),
                     ],
@@ -355,11 +367,11 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
                       }
                     }
                   : null,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
-                color: DentalColors.onSurface,
+                color: context.colors.onSurface,
               ),
-              dropdownColor: DentalColors.surface,
+              dropdownColor: context.tokens.cardBackground,
             ),
           ),
         ),
@@ -371,20 +383,20 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
             Icon(
               Icons.account_tree_rounded,
               size: 18,
-              color: DentalColors.primary,
+              color: context.tokens.primaryAccent,
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               '类型',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: DentalColors.onSurface,
+                color: context.colors.onSurface,
               ),
             ),
           ],
@@ -410,7 +422,7 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
                   subtitle: const Text('顶级分类'),
                   value: true,
                   enabled: widget.template == null,
-                  activeColor: DentalColors.primary,
+                  activeColor: context.tokens.primaryAccent,
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -420,7 +432,7 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
                   subtitle: const Text('从属分类'),
                   value: false,
                   enabled: widget.template == null,
-                  activeColor: DentalColors.primary,
+                  activeColor: context.tokens.primaryAccent,
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -435,20 +447,20 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
             Icon(
               Icons.folder_rounded,
               size: 18,
-              color: DentalColors.secondary,
+              color: context.tokens.secondaryAccent,
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               '父类型',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: DentalColors.onSurface,
+                color: context.colors.onSurface,
               ),
             ),
           ],
@@ -457,10 +469,10 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
-            color: DentalColors.background,
+            color: context.tokens.pageBackground,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DentalColors.divider,
+              color: context.tokens.divider,
               width: 1,
             ),
           ),
@@ -469,8 +481,8 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
               value: _selectedParentName,
               isExpanded: true,
               hint: const Text('请选择父类型'),
-              icon: const Icon(Icons.arrow_drop_down_rounded,
-                  color: DentalColors.secondary),
+              icon: Icon(Icons.arrow_drop_down_rounded,
+                  color: context.tokens.secondaryAccent),
               elevation: 4,
               borderRadius: BorderRadius.circular(12),
               menuMaxHeight: 300, // Limit dropdown height
@@ -491,11 +503,11 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
                   _selectedParentName = value;
                 });
               },
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
-                color: DentalColors.onSurface,
+                color: context.colors.onSurface,
               ),
-              dropdownColor: Colors.white,
+              dropdownColor: context.tokens.cardBackground,
             ),
           ),
         ),
@@ -504,22 +516,22 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: DentalColors.warning.withValues(alpha: 0.1),
+              color: context.tokens.warningContainer,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Icon(
                   Icons.info_outline_rounded,
-                  color: DentalColors.warning,
+                  color: context.tokens.warning,
                   size: 16,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     '该类别下暂无主类型，请先创建主类型',
                     style: TextStyle(
-                      color: DentalColors.warning,
+                      color: context.tokens.warning,
                       fontSize: 14,
                     ),
                   ),
@@ -548,15 +560,15 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
             Icon(
               icon,
               size: 18,
-              color: DentalColors.primary,
+              color: context.tokens.primaryAccent,
             ),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: DentalColors.onSurface,
+                color: context.colors.onSurface,
               ),
             ),
           ],
@@ -569,36 +581,36 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
           decoration: InputDecoration(
             hintText: hint,
             filled: true,
-            fillColor: DentalColors.background,
+            fillColor: context.tokens.pageBackground,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: DentalColors.divider,
+              borderSide: BorderSide(
+                color: context.tokens.divider,
                 width: 1,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: DentalColors.primary,
+              borderSide: BorderSide(
+                color: context.tokens.primaryAccent,
                 width: 2,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: DentalColors.error,
+              borderSide: BorderSide(
+                color: context.tokens.error,
                 width: 1,
               ),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: DentalColors.error,
+              borderSide: BorderSide(
+                color: context.tokens.error,
                 width: 2,
               ),
             ),
@@ -607,9 +619,9 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
               vertical: 12,
             ),
           ),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            color: DentalColors.onSurface,
+            color: context.colors.onSurface,
           ),
         ),
       ],
@@ -619,15 +631,15 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
   Widget _buildActionButtons() {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: DentalColors.surface,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: context.tokens.cardBackground,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
         border: Border(
           top: BorderSide(
-            color: DentalColors.divider,
+            color: context.tokens.divider,
             width: 1,
           ),
         ),
@@ -643,8 +655,8 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
                 onPressed:
                     _isLoading ? null : () => Navigator.of(context).pop(),
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: Colors.grey.shade300),
-                  foregroundColor: Colors.grey.shade700,
+                  side: BorderSide(color: context.tokens.divider),
+                  foregroundColor: context.colors.onSurface,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -668,22 +680,22 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _saveTemplate,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: DentalColors.primary,
-                  foregroundColor: Colors.white,
+                  backgroundColor: context.tokens.primaryAccent,
+                  foregroundColor: context.colors.onPrimary,
                   elevation: 2,
-                  shadowColor: DentalColors.primary.withValues(alpha: 0.3),
+                  shadowColor: context.tokens.primaryAccent.withValues(alpha: 0.3),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: _isLoading
-                    ? const SizedBox(
+                    ? SizedBox(
                         width: 24,
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                              AlwaysStoppedAnimation<Color>(context.colors.onPrimary),
                         ),
                       )
                     : Text(

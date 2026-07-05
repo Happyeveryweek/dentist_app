@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../../../models/patient.dart';
@@ -20,6 +21,7 @@ class FinancialStatisticsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     // 计算统计数据
     final totalRecords = financialRecords.length;
     final totalReceivable =
@@ -115,7 +117,7 @@ class FinancialStatisticsDialog extends StatelessWidget {
             Row(
               children: [
                 Icon(Icons.bar_chart,
-                    color: Theme.of(context).primaryColor, size: 24),
+                    color: tokens.primaryAccent, size: 24),
                 const SizedBox(width: 12),
                 Text(
                   '收费图表统计',
@@ -147,25 +149,17 @@ class FinancialStatisticsDialog extends StatelessWidget {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Theme.of(context)
-                                .primaryColor
-                                .withValues(alpha: 0.05),
-                            Theme.of(context)
-                                .primaryColor
-                                .withValues(alpha: 0.03),
+                            tokens.primaryAccent.withValues(alpha: 0.05),
+                            tokens.primaryAccent.withValues(alpha: 0.03),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Theme.of(context)
-                              .primaryColor
-                              .withValues(alpha: 0.2),
+                          color: tokens.primaryAccent.withValues(alpha: 0.2),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context)
-                                .primaryColor
-                                .withValues(alpha: 0.08),
+                            color: tokens.primaryAccent.withValues(alpha: 0.08),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -175,22 +169,25 @@ class FinancialStatisticsDialog extends StatelessWidget {
                         children: [
                           Expanded(
                             child: _buildStatCard(
+                              context,
                               '总记录数',
                               '$totalRecords',
                               Icons.receipt_long_rounded,
-                              Colors.blue.shade700,
+                              tokens.primaryAccent,
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: _buildStatCard(
+                              context,
                               '总应收费',
                               '¥${totalReceivable.toStringAsFixed(0)}',
                               Icons.account_balance_wallet_rounded,
-                              Colors.green.shade700,
+                              tokens.success,
                               details: paymentMethodOrder
                                   .map(
                                     (method) => _buildCardDetailLine(
+                                      context,
                                       method,
                                       paymentMethodStats[method] ?? 0.0,
                                     ),
@@ -201,30 +198,33 @@ class FinancialStatisticsDialog extends StatelessWidget {
                           const SizedBox(width: 16),
                           Expanded(
                             child: _buildStatCard(
+                              context,
                               '总已收费',
                               '¥${totalReceived.toStringAsFixed(0)}',
                               Icons.check_circle_rounded,
-                              Colors.blue.shade600,
+                              tokens.primaryAccent,
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: _buildStatCard(
+                              context,
                               '总欠费',
                               '¥${totalDue.toStringAsFixed(0)}',
                               Icons.pending_rounded,
                               totalDue > 0
-                                  ? Colors.red.shade600
-                                  : Colors.grey.shade600,
+                                  ? tokens.error
+                                  : tokens.textMuted,
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: _buildStatCard(
+                              context,
                               '总加工费',
                               '¥${totalProcessingFee.toStringAsFixed(0)}',
                               Icons.build_rounded,
-                              Colors.orange.shade600,
+                              tokens.warning,
                             ),
                           ),
                         ],
@@ -237,12 +237,12 @@ class FinancialStatisticsDialog extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: tokens.cardBackground,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: tokens.divider),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withValues(alpha: 0.1),
+                            color: tokens.shadow.withValues(alpha: 0.1),
                             spreadRadius: 1,
                             blurRadius: 3,
                             offset: const Offset(0, 1),
@@ -288,8 +288,7 @@ class FinancialStatisticsDialog extends StatelessWidget {
                                               width: 30,
                                               height: height,
                                               decoration: BoxDecoration(
-                                                color: Theme.of(context)
-                                                    .primaryColor,
+                                                color: tokens.primaryAccent,
                                                 borderRadius:
                                                     BorderRadius.circular(4),
                                               ),
@@ -328,12 +327,12 @@ class FinancialStatisticsDialog extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: tokens.cardBackground,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: tokens.divider),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withValues(alpha: 0.1),
+                            color: tokens.shadow.withValues(alpha: 0.1),
                             spreadRadius: 1,
                             blurRadius: 3,
                             offset: const Offset(0, 1),
@@ -379,10 +378,10 @@ class FinancialStatisticsDialog extends StatelessWidget {
                                       flex: 3,
                                       child: LinearProgressIndicator(
                                         value: percentage / 100,
-                                        backgroundColor: Colors.grey[300],
+                                        backgroundColor: tokens.divider,
                                         valueColor:
                                             AlwaysStoppedAnimation<Color>(
-                                          Theme.of(context).primaryColor,
+                                          tokens.primaryAccent,
                                         ),
                                       ),
                                     ),
@@ -408,7 +407,7 @@ class FinancialStatisticsDialog extends StatelessWidget {
                                             .textTheme
                                             .bodySmall
                                             ?.copyWith(
-                                              color: Colors.grey[600],
+                                              color: tokens.textMuted,
                                             ),
                                         textAlign: TextAlign.right,
                                       ),
@@ -427,12 +426,12 @@ class FinancialStatisticsDialog extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: tokens.cardBackground,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: tokens.divider),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withValues(alpha: 0.1),
+                            color: tokens.shadow.withValues(alpha: 0.1),
                             spreadRadius: 1,
                             blurRadius: 3,
                             offset: const Offset(0, 1),
@@ -478,10 +477,10 @@ class FinancialStatisticsDialog extends StatelessWidget {
                                       flex: 3,
                                       child: LinearProgressIndicator(
                                         value: percentage / 100,
-                                        backgroundColor: Colors.grey[300],
+                                        backgroundColor: tokens.divider,
                                         valueColor:
                                             AlwaysStoppedAnimation<Color>(
-                                          Colors.green.shade600,
+                                          tokens.success,
                                         ),
                                       ),
                                     ),
@@ -507,7 +506,7 @@ class FinancialStatisticsDialog extends StatelessWidget {
                                             .textTheme
                                             .bodySmall
                                             ?.copyWith(
-                                              color: Colors.grey[600],
+                                              color: tokens.textMuted,
                                             ),
                                         textAlign: TextAlign.right,
                                       ),
@@ -544,16 +543,18 @@ class FinancialStatisticsDialog extends StatelessWidget {
 
   // 构建统计卡片
   Widget _buildStatCard(
+    BuildContext context,
     String title,
     String value,
     IconData icon,
     Color color, {
     List<Widget>? details,
   }) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: color.withValues(alpha: 0.2),
@@ -584,7 +585,7 @@ class FinancialStatisticsDialog extends StatelessWidget {
           Text(
             title,
             style: TextStyle(
-              color: Colors.grey[600],
+              color: tokens.textMuted,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -612,13 +613,14 @@ class FinancialStatisticsDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildCardDetailLine(String label, double value) {
+  Widget _buildCardDetailLine(BuildContext context, String label, double value) {
+    final tokens = context.tokens;
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Text(
         '$label ¥${value.toStringAsFixed(0)}',
         style: TextStyle(
-          color: Colors.grey[600],
+          color: tokens.textMuted,
           fontSize: 11,
           height: 1.2,
         ),

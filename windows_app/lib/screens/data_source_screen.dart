@@ -424,9 +424,9 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('连接失败，请检查连接参数'),
-            backgroundColor: Color(0xFFFF375F),
+          SnackBar(
+            content: const Text('连接失败，请检查连接参数'),
+            backgroundColor: context.tokens.error,
           ),
         );
       }

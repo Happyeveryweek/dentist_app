@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import '../../../models/patient_material.dart';
 import '../../../models/material_image.dart';
 import '../../../providers/patient_provider.dart';
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'dart:math' as math;
 import 'package:path/path.dart' as path;
 import 'material_image_detail_dialog.dart';
@@ -907,10 +907,11 @@ class MaterialInputWidgetState extends State<MaterialInputWidget> {
 
   void _showErrorSnackBar(String message) {
     if (mounted) {
+      final tokens = context.tokens;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor: Colors.red,
+          backgroundColor: tokens.error,
         ),
       );
     }
@@ -1068,6 +1069,8 @@ class MaterialInputWidgetState extends State<MaterialInputWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     // 检查状态一致性
     if (_descriptionControllers.length != _selectedImages.length ||
         _descriptionControllers.length != _existingImages.length) {
@@ -1080,15 +1083,15 @@ class MaterialInputWidgetState extends State<MaterialInputWidget> {
         // 患者材料标题和操作按钮
         Row(
           children: [
-            const Icon(Icons.inventory_2,
-                color: AppTheme.primaryColor, size: 20),
+            Icon(Icons.inventory_2,
+                color: context.tokens.primaryAccent, size: 20),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               '患者材料',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.primaryColor,
+                color: context.tokens.primaryAccent,
               ),
             ),
             const Spacer(),
@@ -1098,8 +1101,8 @@ class MaterialInputWidgetState extends State<MaterialInputWidget> {
               icon: const Icon(Icons.bug_report, size: 16),
               label: const Text('调试', style: TextStyle(fontSize: 12)),
               style: TextButton.styleFrom(
-                backgroundColor: Colors.orange.withValues(alpha: 0.1),
-                foregroundColor: Colors.orange.shade700,
+                backgroundColor: tokens.warning.withValues(alpha: 0.1),
+                foregroundColor: tokens.warning,
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -1113,8 +1116,8 @@ class MaterialInputWidgetState extends State<MaterialInputWidget> {
               icon: const Icon(Icons.add, size: 18),
               label: const Text('添加材料', style: TextStyle(fontSize: 14)),
               style: TextButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-                foregroundColor: AppTheme.primaryColor,
+                backgroundColor: context.tokens.primaryAccent.withValues(alpha: 0.1),
+                foregroundColor: context.tokens.primaryAccent,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 shape: RoundedRectangleBorder(
@@ -1134,13 +1137,13 @@ class MaterialInputWidgetState extends State<MaterialInputWidget> {
                   Icon(
                     Icons.inventory_2_outlined,
                     size: 64,
-                    color: Colors.grey[400],
+                    color: tokens.iconMuted,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     '暂无材料信息',
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: colors.onSurfaceVariant,
                       fontSize: 16,
                     ),
                   ),
@@ -1148,7 +1151,7 @@ class MaterialInputWidgetState extends State<MaterialInputWidget> {
                   Text(
                     '点击上方"添加材料"按钮开始添加',
                     style: TextStyle(
-                      color: Colors.grey[500],
+                      color: tokens.textMuted,
                       fontSize: 14,
                     ),
                   ),

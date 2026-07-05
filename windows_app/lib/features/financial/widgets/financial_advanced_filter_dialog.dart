@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/dental_icons.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../helpers/amount_input_formatter.dart';
 
 /// 财务高级筛选对话框
@@ -53,6 +53,8 @@ class _FinancialAdvancedFilterDialogState
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: Container(
@@ -64,7 +66,7 @@ class _FinancialAdvancedFilterDialogState
           children: [
             Row(
               children: [
-                const Icon(Icons.tune, size: 18, color: Colors.black54),
+                Icon(Icons.tune, size: 18, color: colors.onSurface),
                 const SizedBox(width: 8),
                 const Text('高级筛选',
                     style:
@@ -72,8 +74,7 @@ class _FinancialAdvancedFilterDialogState
                 const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon:
-                      const Icon(Icons.close, size: 20, color: Colors.black54),
+                  icon: Icon(Icons.close, size: 20, color: colors.onSurface),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                 ),
@@ -195,7 +196,7 @@ class _FinancialAdvancedFilterDialogState
                     });
                   },
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: DentalColors.primary),
+                      backgroundColor: tokens.primaryAccent),
                   child: const Text('应用筛选'),
                 )
               ],

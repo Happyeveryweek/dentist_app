@@ -6,7 +6,6 @@ import 'dart:ui' as ui;
 import '../../../models/material.dart' as material_models;
 import '../../../providers/material_provider.dart';
 import '../../../providers/purchase_provider.dart';
-import '../../../theme/app_theme.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../utils/log_manager.dart';
 
@@ -35,6 +34,8 @@ class MaterialSelectionDialog {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
+          final tokens = context.tokens;
+          final colors = context.colors;
           void listener() {
             setDialogState(() {});
           }
@@ -57,11 +58,11 @@ class MaterialSelectionDialog {
                 width: 500,
                 height: 600,
                 decoration: BoxDecoration(
-                  color: context.tokens.cardBackground.withValues(alpha: 0.9),
+                  color: tokens.cardBackground.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
+                      color: tokens.shadow.withValues(alpha: 0.1),
                       blurRadius: 30,
                       spreadRadius: 5,
                     ),
@@ -76,10 +77,8 @@ class MaterialSelectionDialog {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            Theme.of(context).primaryColor,
-                            Theme.of(context)
-                                .primaryColor
-                                .withValues(alpha: 0.7),
+                            tokens.primaryAccent,
+                            tokens.primaryAccent.withValues(alpha: 0.7),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -95,14 +94,14 @@ class MaterialSelectionDialog {
                           Text(
                             '选择材料',
                             style: TextStyle(
-                              color: context.tokens.cardBackground,
+                              color: tokens.cardBackground,
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           IconButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            icon: Icon(Icons.close, color: context.tokens.cardBackground),
+                            icon: Icon(Icons.close, color: tokens.cardBackground),
                           ),
                         ],
                       ),
@@ -116,11 +115,11 @@ class MaterialSelectionDialog {
                         decoration: InputDecoration(
                           hintText: '搜索材料 (名称/编码)',
                           prefixIcon:
-                              const Icon(Icons.search, color: Colors.grey),
+                              Icon(Icons.search, color: tokens.iconMuted),
                           suffixIcon: materialSearchController.text.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.clear,
-                                      color: Colors.grey),
+                                  icon: Icon(Icons.clear,
+                                      color: tokens.iconMuted),
                                   onPressed: () {
                                     materialSearchController.clear();
                                   },
@@ -131,7 +130,7 @@ class MaterialSelectionDialog {
                             borderSide: BorderSide.none,
                           ),
                           filled: true,
-                          fillColor: context.tokens.cardBackground,
+                          fillColor: tokens.cardBackground,
                           contentPadding:
                               const EdgeInsets.symmetric(vertical: 10),
                         ),
@@ -148,7 +147,7 @@ class MaterialSelectionDialog {
                           return Card(
                             margin: const EdgeInsets.only(bottom: 10),
                             elevation: 2,
-                            shadowColor: Colors.black.withValues(alpha: 0.1),
+                            shadowColor: tokens.shadow.withValues(alpha: 0.1),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -163,9 +162,9 @@ class MaterialSelectionDialog {
                                 child: Row(
                                   children: [
                                     CircleAvatar(
-                                      backgroundColor: AppTheme.primaryColor,
-                                      foregroundColor: context.tokens.cardBackground,
-                                      child: Icon(DentalIcons.pills, size: 20),
+                                      backgroundColor: tokens.primaryAccent,
+                                      foregroundColor: tokens.cardBackground,
+                                      child: const Icon(DentalIcons.pills, size: 20),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -187,8 +186,8 @@ class MaterialSelectionDialog {
                                     const SizedBox(width: 12),
                                     Text(
                                       '¥${material.defaultPrice.toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        color: Colors.green,
+                                      style: TextStyle(
+                                        color: tokens.success,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -210,12 +209,12 @@ class MaterialSelectionDialog {
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(),
                             style: TextButton.styleFrom(
-                              foregroundColor: Colors.grey[600],
+                              foregroundColor: colors.onSurfaceVariant,
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 10),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                side: BorderSide(color: Colors.grey.shade300),
+                                side: BorderSide(color: tokens.divider),
                               ),
                             ),
                             child: const Text('取消'),

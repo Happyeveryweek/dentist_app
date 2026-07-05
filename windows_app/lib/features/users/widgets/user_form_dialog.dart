@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 
 import '../../../models/user.dart';
-import '../../../theme/app_theme.dart';
+import '../../../theme/theme_context_extensions.dart';
 import '../../../providers/user_provider.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../widgets/success_toast.dart';
@@ -212,21 +212,9 @@ class _UserFormDialogState extends State<UserFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final isPurpleTheme =
-        false;
+    final accentColor = context.tokens.primaryAccent;
 
-    final accentColor = isPurpleTheme
-        ? AppTheme.purpleColor
-        : isDarkMode
-            ? AppTheme.primaryColor
-            : AppTheme.primaryColor;
-
-    final textColor = isPurpleTheme
-        ? AppTheme.purplePrimaryText
-        : isDarkMode
-            ? AppTheme.darkPrimaryText
-            : null;
+    const Color? textColor = null;
 
     return AlertDialog(
       title: Row(
@@ -239,7 +227,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
           const SizedBox(width: 12),
           Text(
             _titleText,
-            style: TextStyle(
+            style: const TextStyle(
               color: textColor,
               fontSize: 20,
               fontWeight: FontWeight.bold,

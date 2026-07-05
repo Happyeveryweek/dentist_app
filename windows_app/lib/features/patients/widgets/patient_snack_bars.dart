@@ -60,13 +60,14 @@ class PatientSnackBars {
     required String message,
     bool isError = false,
   }) {
+    final tokens = context.tokens;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             Icon(
               isError ? Icons.error_outline : Icons.info_outline,
-              color: context.tokens.cardBackground,
+              color: tokens.cardBackground,
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -74,7 +75,7 @@ class PatientSnackBars {
               child: Text(
                 message,
                 style: TextStyle(
-                  color: context.tokens.cardBackground,
+                  color: tokens.cardBackground,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -82,7 +83,7 @@ class PatientSnackBars {
             ),
           ],
         ),
-        backgroundColor: isError ? Colors.red.shade500 : Colors.blue.shade600,
+        backgroundColor: isError ? tokens.error : tokens.primaryAccent,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

@@ -17,7 +17,7 @@ class ResetDataItem extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: context.tokens.mutedBackground,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: context.tokens.border),
       ),
@@ -26,7 +26,7 @@ class ResetDataItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.red.shade100,
+              color: context.tokens.errorContainer,
               borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(

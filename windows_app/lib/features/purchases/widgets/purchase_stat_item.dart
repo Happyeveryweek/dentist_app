@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/theme_context_extensions.dart';
 
 /// 采购统计项组件
 /// 用于显示单个统计项（图标、标签、值）
@@ -25,7 +26,7 @@ class PurchaseStatItem extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
+                color: context.colors.onSurfaceVariant,
                 fontSize: 12,
               ),
         ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../theme/app_theme.dart';
 
 import '../models/appointment.dart';
 
@@ -155,7 +154,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     color: context.tokens.cardBackground,
                     size: 20,
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       '预约已更新',
@@ -168,7 +167,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                   ),
                 ],
               ),
-              backgroundColor: Colors.green.shade600,
+              backgroundColor: context.tokens.success,
               duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -320,18 +319,18 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           Container(
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
-              color: DentalColors.info.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: DentalColors.info.withValues(alpha: 0.3),
+                color: context.tokens.infoContainer,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: context.tokens.info.withValues(alpha: 0.3),
+                ),
               ),
-            ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.refresh_rounded,
-                color: DentalColors.info,
-              ),
-              onPressed: () async {
+              child: IconButton(
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  color: context.tokens.info,
+                ),
+                onPressed: () async {
                 await _requireStateService.loadAppointments(forceRefresh: true);
                 if (!context.mounted) return;
                 AppToastManager.showSuccess(context, message: '刷新数据成功');

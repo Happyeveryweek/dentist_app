@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
-import '../../../widgets/dental_icons.dart';
 import '../../../widgets/unified_search_field.dart';
 
 class AppointmentFilterBar extends StatelessWidget {
@@ -52,10 +51,10 @@ class AppointmentFilterBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+        border: Border.all(color: context.tokens.shadow),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: context.tokens.shadow,
             blurRadius: 12,
             offset: const Offset(0, 2),
           ),
@@ -82,7 +81,7 @@ class AppointmentFilterBar extends StatelessWidget {
                 color: context.tokens.cardBackground,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: Colors.grey.withValues(alpha: 0.12)),
+                  side: BorderSide(color: context.tokens.border),
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
@@ -92,10 +91,10 @@ class AppointmentFilterBar extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.calendar_today,
                           size: 20,
-                          color: DentalColors.info,
+                          color: context.tokens.info,
                         ),
                         const SizedBox(width: 8),
                         ConstrainedBox(
@@ -105,8 +104,8 @@ class AppointmentFilterBar extends StatelessWidget {
                           ),
                           child: Text(
                             _buildDateText(),
-                            style: const TextStyle(
-                              color: Colors.black87,
+                            style: TextStyle(
+                              color: context.colors.onSurface,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
@@ -119,7 +118,7 @@ class AppointmentFilterBar extends StatelessWidget {
                             icon: Icon(
                               Icons.clear,
                               size: 20,
-                              color: Colors.grey[600],
+                              color: context.colors.onSurfaceVariant,
                             ),
                             onPressed: onToggleFiltering,
                             tooltip: '清空日期筛选',

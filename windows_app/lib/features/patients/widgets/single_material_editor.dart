@@ -4,10 +4,10 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/patient_material.dart';
 import '../../../models/material_image.dart';
 import '../../../providers/patient_provider.dart';
-import '../../../widgets/dental_icons.dart';
 import '../../../utils/image_compressor.dart';
 import '../../../widgets/success_toast.dart';
 import '../../../utils/log_manager.dart';
@@ -110,7 +110,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('选择图片失败: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.tokens.error,
           ),
         );
       }
@@ -139,9 +139,9 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
 
     if (_images.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('请至少添加一张图片'),
-          backgroundColor: Colors.orange,
+        SnackBar(
+          content: const Text('请至少添加一张图片'),
+          backgroundColor: context.tokens.warning,
         ),
       );
       return;
@@ -259,7 +259,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('保存失败: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.tokens.error,
           ),
         );
       }
@@ -274,17 +274,20 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
         width: MediaQuery.of(context).size.width * 0.8,
         height: MediaQuery.of(context).size.height * 0.8,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: tokens.cardBackground,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: tokens.shadow.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -295,9 +298,9 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
             // 标题栏
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                gradient: DentalColors.primaryGradient,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                gradient: tokens.primaryHeaderGradient,
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
@@ -307,14 +310,14 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: colors.onPrimary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
                       widget.material != null
                           ? Icons.edit
                           : Icons.add_photo_alternate,
-                      color: Colors.white,
+                      color: colors.onPrimary,
                       size: 20,
                     ),
                   ),
@@ -322,16 +325,16 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                   Expanded(
                     child: Text(
                       widget.material != null ? '编辑患者材料' : '添加患者材料',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: colors.onPrimary,
                       ),
                     ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: Icon(Icons.close, color: colors.onPrimary),
                   ),
                 ],
               ),
@@ -347,12 +350,12 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 材料描述输入
-                      const Text(
+                      Text(
                         '材料描述',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: DentalColors.onSurface,
+                          color: colors.onSurface,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -365,11 +368,11 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                                color: DentalColors.primary, width: 2),
+                            borderSide: BorderSide(
+                                color: tokens.primaryAccent, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey.shade50,
+                          fillColor: tokens.mutedBackground,
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -386,12 +389,12 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             '图片管理',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: DentalColors.onSurface,
+                              color: colors.onSurface,
                             ),
                           ),
                           ElevatedButton.icon(
@@ -407,8 +410,8 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                                     size: 18),
                             label: Text(_isLoading ? '处理中...' : '添加图片'),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: DentalColors.primary,
-                              foregroundColor: Colors.white,
+                              backgroundColor: tokens.primaryAccent,
+                              foregroundColor: colors.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -433,7 +436,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
+                color: tokens.mutedBackground,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
@@ -455,8 +458,8 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                   ElevatedButton(
                     onPressed: _isSaving ? null : _saveMaterial,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: DentalColors.primary,
-                      foregroundColor: Colors.white,
+                      backgroundColor: tokens.primaryAccent,
+                      foregroundColor: colors.onPrimary,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
@@ -464,7 +467,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                       ),
                     ),
                     child: _isSaving
-                        ? const Row(
+                        ? Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               SizedBox(
@@ -472,11 +475,11 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                                 height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: colors.onPrimary,
                                 ),
                               ),
-                              SizedBox(width: 8),
-                              Text('保存中...'),
+                              const SizedBox(width: 8),
+                              const Text('保存中...'),
                             ],
                           )
                         : Text(widget.material != null ? '更新' : '保存'),
@@ -494,10 +497,10 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
     if (_images.isEmpty) {
       return Container(
         decoration: BoxDecoration(
-          color: Colors.grey.shade100,
+          color: context.tokens.mutedBackground,
           borderRadius: BorderRadius.circular(12),
           border:
-              Border.all(color: Colors.grey.shade300, style: BorderStyle.solid),
+              Border.all(color: context.tokens.divider, style: BorderStyle.solid),
         ),
         child: Center(
           child: Column(
@@ -506,14 +509,14 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
               Icon(
                 Icons.photo_library_outlined,
                 size: 64,
-                color: Colors.grey.shade400,
+                color: context.tokens.iconMuted,
               ),
               const SizedBox(height: 16),
               Text(
                 '暂无图片',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey.shade600,
+                  color: context.colors.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 8),
@@ -521,7 +524,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                 '点击上方"添加图片"按钮选择图片',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey.shade500,
+                  color: context.tokens.textMuted,
                 ),
               ),
             ],
@@ -549,10 +552,10 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(6), // 从8减少到6
-        border: Border.all(color: Colors.grey.shade300, width: 1),
+        border: Border.all(color: context.tokens.divider, width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: context.tokens.shadow.withValues(alpha: 0.1),
             blurRadius: 2, // 从4减少到2
             offset: const Offset(0, 1), // 从(0,2)减少到(0,1)
           ),
@@ -584,12 +587,12 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                   width: 16, // 从24减少到16
                   height: 16, // 从24减少到16
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.8),
+                    color: context.tokens.error.withValues(alpha: 0.8),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.close,
-                    color: Colors.white,
+                    color: context.colors.onPrimary,
                     size: 10, // 从16减少到10
                   ),
                 ),
@@ -604,7 +607,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.7),
+                  color: context.tokens.overlayScrim,
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(6),
                     bottomRight: Radius.circular(6),
@@ -612,8 +615,8 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                 ),
                 child: Text(
                   _getImageDisplayName(image, index),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.colors.onPrimary,
                     fontSize: 8,
                     fontWeight: FontWeight.w500,
                   ),
@@ -645,10 +648,10 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
             return Container(
-              color: Colors.grey.shade200,
+              color: context.tokens.border,
               child: Icon(
                 Icons.broken_image,
-                color: Colors.grey.shade400,
+                color: context.tokens.iconMuted,
                 size: 32,
               ),
             );
@@ -664,10 +667,10 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return Container(
-            color: Colors.grey.shade200,
+            color: context.tokens.border,
             child: Icon(
               Icons.broken_image,
-              color: Colors.grey.shade400,
+              color: context.tokens.iconMuted,
               size: 32,
             ),
           );
@@ -682,10 +685,10 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return Container(
-            color: Colors.grey.shade200,
+            color: context.tokens.border,
             child: Icon(
               Icons.broken_image,
-              color: Colors.grey.shade400,
+              color: context.tokens.iconMuted,
               size: 32,
             ),
           );
@@ -695,10 +698,10 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
 
     // 默认占位符
     return Container(
-      color: Colors.grey.shade200,
+      color: context.tokens.border,
       child: Icon(
         Icons.image,
-        color: Colors.grey.shade400,
+        color: context.tokens.iconMuted,
         size: 32,
       ),
     );
@@ -753,11 +756,11 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
             maxHeight: 1200,
           ),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.tokens.cardBackground,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
+                color: context.tokens.shadow.withValues(alpha: 0.25),
                 blurRadius: 15,
                 spreadRadius: 2,
                 offset: const Offset(0, 8),
@@ -772,11 +775,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blue.shade600, Colors.blue.shade700],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: context.tokens.primaryHeaderGradient,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
@@ -784,17 +783,17 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.photo,
-                      color: Colors.white,
+                      color: context.colors.onPrimary,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _getImageDisplayName(fullImage, index),
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: context.colors.onPrimary,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -802,8 +801,8 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close,
-                          color: Colors.white, size: 20),
+                      icon: Icon(Icons.close,
+                          color: context.colors.onPrimary, size: 20),
                       onPressed: () => Navigator.of(context).pop(),
                       tooltip: '关闭',
                       padding: EdgeInsets.zero,
@@ -828,7 +827,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: context.tokens.mutedBackground,
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(12),
                     bottomRight: Radius.circular(12),
@@ -841,7 +840,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                       children: [
                         Icon(
                           Icons.info_outline,
-                          color: Colors.grey.shade600,
+                          color: context.colors.onSurfaceVariant,
                           size: 16,
                         ),
                         const SizedBox(width: 6),
@@ -849,7 +848,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                           '文件大小: ${(fullImage.fileSize / 1024).toStringAsFixed(1)} KB',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.grey.shade700,
+                            color: context.colors.onSurfaceVariant,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -859,8 +858,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .primaryColor
+                        color: context.tokens.primaryAccent
                             .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -868,7 +866,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
                         fullImage.imageType.toUpperCase(),
                         style: TextStyle(
                           fontSize: 11,
-                          color: Theme.of(context).primaryColor,
+                          color: context.tokens.primaryAccent,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -938,14 +936,14 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
         children: [
           Icon(
             Icons.broken_image,
-            color: Colors.grey[400],
+            color: context.tokens.iconMuted,
             size: 64,
           ),
           const SizedBox(height: 16),
           Text(
             '图片加载失败',
             style: TextStyle(
-              color: Colors.grey[400],
+              color: context.tokens.textMuted,
               fontSize: 16,
             ),
           ),

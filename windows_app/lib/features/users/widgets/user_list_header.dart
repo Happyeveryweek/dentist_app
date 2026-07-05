@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../../../theme/app_theme.dart';
 
 class UserListHeader extends StatelessWidget {
   final int userCount;
@@ -17,11 +16,11 @@ class UserListHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
+        gradient: context.tokens.primaryHeaderGradient,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+            color: context.tokens.primaryAccent.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),

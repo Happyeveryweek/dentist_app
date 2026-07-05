@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/medical_template.dart';
 import '../../../services/medical_template_service.dart';
-import '../../../widgets/dental_icons.dart';
 import '../../../widgets/success_toast.dart';
 
 /// 医疗模板编辑对话框
@@ -54,16 +54,17 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
         width: 600,
         decoration: BoxDecoration(
-          color: DentalColors.surface,
+          color: tokens.cardBackground,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: tokens.shadow.withValues(alpha: 0.1),
               blurRadius: 20,
               spreadRadius: 5,
             ),
@@ -84,9 +85,9 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        gradient: DentalColors.primaryGradient,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        gradient: context.tokens.primaryHeaderGradient,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -96,12 +97,12 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: context.colors.onPrimary.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               widget.template == null ? Icons.add_rounded : Icons.edit_rounded,
-              color: Colors.white,
+              color: context.colors.onPrimary,
               size: 24,
             ),
           ),
@@ -112,8 +113,8 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
               children: [
                 Text(
                   widget.template == null ? '添加模板' : '编辑模板',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: context.colors.onPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -121,7 +122,7 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
                 Text(
                   MedicalTemplateType.getTypeName(widget.templateType),
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: context.colors.onPrimary.withValues(alpha: 0.9),
                     fontSize: 14,
                   ),
                 ),
@@ -130,9 +131,9 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
           ),
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(
+            icon: Icon(
               Icons.close_rounded,
-              color: Colors.white,
+              color: context.colors.onPrimary,
               size: 24,
             ),
           ),
@@ -190,17 +191,17 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: DentalColors.info.withValues(alpha: 0.1),
+                color: context.tokens.infoContainer,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: DentalColors.info.withValues(alpha: 0.3),
+                  color: context.tokens.info.withValues(alpha: 0.3),
                 ),
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.lightbulb_outline_rounded,
-                    color: DentalColors.info,
+                    color: context.tokens.info,
                     size: 20,
                   ),
                   const SizedBox(width: 12),
@@ -209,8 +210,8 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
                       widget.templateType == MedicalTemplateType.treatment
                           ? '治疗方案模板用于快速填入治疗计划，建议按步骤编写'
                           : '医嘱模板用于快速填入注意事项，建议分条列出要点',
-                      style: const TextStyle(
-                        color: DentalColors.info,
+                      style: TextStyle(
+                        color: context.tokens.info,
                         fontSize: 14,
                       ),
                     ),
@@ -240,15 +241,15 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
             Icon(
               icon,
               size: 18,
-              color: DentalColors.primary,
+              color: context.tokens.primaryAccent,
             ),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: DentalColors.onSurface,
+                color: context.colors.onSurface,
               ),
             ),
           ],
@@ -261,36 +262,36 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
           decoration: InputDecoration(
             hintText: hint,
             filled: true,
-            fillColor: DentalColors.background,
+            fillColor: context.tokens.pageBackground,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: DentalColors.divider,
+              borderSide: BorderSide(
+                color: context.tokens.divider,
                 width: 1,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: DentalColors.primary,
+              borderSide: BorderSide(
+                color: context.tokens.primaryAccent,
                 width: 2,
               ),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: DentalColors.error,
+              borderSide: BorderSide(
+                color: context.tokens.error,
                 width: 1,
               ),
             ),
             focusedErrorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: DentalColors.error,
+              borderSide: BorderSide(
+                color: context.tokens.error,
                 width: 2,
               ),
             ),
@@ -299,9 +300,9 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
               vertical: 12,
             ),
           ),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            color: DentalColors.onSurface,
+            color: context.colors.onSurface,
           ),
         ),
       ],
@@ -311,15 +312,15 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
   Widget _buildActionButtons() {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: DentalColors.surface,
+      decoration: BoxDecoration(
+        color: context.tokens.cardBackground,
         border: Border(
           top: BorderSide(
-            color: DentalColors.divider,
+            color: context.tokens.divider,
             width: 1,
           ),
         ),
-        borderRadius: BorderRadius.only(
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
@@ -331,8 +332,8 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
               onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12),
-                side: const BorderSide(color: DentalColors.primary),
-                foregroundColor: DentalColors.primary,
+                side: BorderSide(color: context.tokens.primaryAccent),
+                foregroundColor: context.tokens.primaryAccent,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -352,8 +353,8 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _saveTemplate,
               style: ElevatedButton.styleFrom(
-                backgroundColor: DentalColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: context.tokens.primaryAccent,
+                foregroundColor: context.colors.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 elevation: 2,
                 shape: RoundedRectangleBorder(
@@ -361,12 +362,13 @@ class _MedicalTemplateEditDialogState extends State<MedicalTemplateEditDialog> {
                 ),
               ),
               child: _isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            context.colors.onPrimary),
                       ),
                     )
                   : Text(

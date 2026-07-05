@@ -21,6 +21,8 @@ class PaginationWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final effectiveTotalPages = totalPages > 0 ? totalPages : 1;
     final String infoText =
         '每页 $recordsPerPage 条 · 共 $totalRecords 条 / $effectiveTotalPages 页';
@@ -28,10 +30,10 @@ class PaginationWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: context.tokens.cardBackground,
+        color: tokens.cardBackground,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: tokens.shadow.withValues(alpha: 0.04),
               blurRadius: 12,
               offset: const Offset(0, -2))
         ],
@@ -72,21 +74,19 @@ class PaginationWidget extends StatelessWidget {
                   height: 36,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color:
-                        active ? Theme.of(context).primaryColor : context.tokens.cardBackground,
+                    color: active ? tokens.primaryAccent : tokens.cardBackground,
                     borderRadius: BorderRadius.circular(10),
-                    border:
-                        Border.all(color: Colors.grey.withValues(alpha: 0.25)),
+                    border: Border.all(color: tokens.border),
                     boxShadow: [
                       BoxShadow(
-                          color: context.tokens.shadow,
+                          color: tokens.shadow,
                           blurRadius: 6,
                           offset: const Offset(0, 2))
                     ],
                   ),
                   child: Text('$pageNum',
                       style: TextStyle(
-                          color: active ? Colors.white : Colors.black87,
+                          color: active ? colors.onPrimary : colors.onSurface,
                           fontWeight: FontWeight.w600)),
                 ),
               ),
@@ -104,18 +104,19 @@ class PaginationWidget extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: context.tokens.cardBackground,
+              color: tokens.cardBackground,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+              border: Border.all(color: tokens.border),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
+                    color: tokens.shadow.withValues(alpha: 0.03),
                     blurRadius: 6,
                     offset: const Offset(0, 2))
               ],
             ),
             child: Row(children: [
-              const Icon(Icons.info_outline, size: 16, color: Colors.black54),
+              Icon(Icons.info_outline,
+                  size: 16, color: tokens.shadow.withValues(alpha: 0.54)),
               const SizedBox(width: 6),
               Text(infoText,
                   style: const TextStyle(
@@ -142,6 +143,8 @@ class _PageIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return InkWell(
       onTap: enabled ? onTap : null,
       borderRadius: BorderRadius.circular(10),
@@ -151,11 +154,12 @@ class _PageIconButton extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.25)),
-          color: enabled ? Colors.white : Colors.grey.shade100,
+          border: Border.all(color: tokens.border),
+          color: enabled ? tokens.cardBackground : tokens.inputBackground,
         ),
-        child:
-            Icon(icon, size: 20, color: enabled ? Colors.black87 : Colors.grey),
+        child: Icon(icon,
+            size: 20,
+            color: enabled ? colors.onSurface : tokens.textMuted),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 财务记录列表标题组件
 /// 用于显示记录列表的标题和添加按钮
@@ -20,7 +21,7 @@ class FinancialRecordsListHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(Icons.list_alt, color: Colors.grey[600]),
+        Icon(Icons.list_alt, color: context.tokens.textMuted),
         const SizedBox(width: 8),
         Text(
           '收费记录历史 ($recordCount条)',
@@ -49,7 +50,7 @@ class FinancialRecordsListHeader extends StatelessWidget {
           label: const Text('添加记录'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).primaryColor,
-            foregroundColor: Colors.white,
+            foregroundColor: context.colors.onPrimary,
           ),
         ),
       ],

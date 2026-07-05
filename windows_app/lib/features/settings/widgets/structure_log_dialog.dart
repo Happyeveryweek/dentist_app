@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../providers/database_provider.dart';
+import '../../../theme/theme_context_extensions.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../widgets/success_toast.dart';
 import '../widgets/database_check_widgets.dart';
@@ -126,6 +127,7 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
 
       if (confirmed == true) {
         if (!mounted) return;
+        final tokens = context.tokens;
         final settingsProvider =
             Provider.of<SettingsProvider>(context, listen: false);
         final dbProvider =
@@ -149,21 +151,25 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
         } else {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('清空日志失败'), backgroundColor: Colors.red),
+            SnackBar(
+                content: const Text('清空日志失败'),
+                backgroundColor: tokens.error),
           );
         }
       }
     } catch (e) {
       if (!mounted) return;
+      final tokens = context.tokens;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('清空失败: $e'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('清空失败: $e'), backgroundColor: tokens.error),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return AlertDialog(
       title: const Text('数据库结构检测日志'),
       content: SizedBox(
@@ -197,16 +203,16 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
             // 日志列表
             Expanded(
               child: widget.logs.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.info_outline,
-                              size: 48, color: Colors.blue),
-                          SizedBox(height: 16),
-                          Text('暂无检测日志'),
-                          SizedBox(height: 8),
-                          Text('执行数据库结构检测后将在此显示记录'),
+                              size: 48, color: tokens.info),
+                          const SizedBox(width: 16),
+                          const Text('暂无检测日志'),
+                          const SizedBox(height: 8),
+                          const Text('执行数据库结构检测后将在此显示记录'),
                         ],
                       ),
                     )

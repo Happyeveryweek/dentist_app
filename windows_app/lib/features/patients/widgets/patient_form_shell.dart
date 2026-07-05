@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../widgets/dental_icons.dart';
+import '../../../theme/theme_context_extensions.dart';
 
 class PatientFormHeader extends StatelessWidget {
   final bool isEditingExistingPatient;
@@ -18,10 +18,13 @@ class PatientFormHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     return Container(
-      decoration: const BoxDecoration(
-        gradient: DentalColors.primaryGradient,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        gradient: tokens.primaryHeaderGradient,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -35,14 +38,14 @@ class PatientFormHeader extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: colors.onPrimary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   isEditingExistingPatient
                       ? Icons.edit
                       : (isNewPatient ? Icons.person_add : Icons.edit),
-                  color: Colors.white,
+                  color: colors.onPrimary,
                   size: 18,
                 ),
               ),
@@ -51,15 +54,15 @@ class PatientFormHeader extends StatelessWidget {
                 isEditingExistingPatient
                     ? '编辑患者 ($editingPatientName)'
                     : (isNewPatient ? '添加患者' : '编辑患者'),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: colors.onPrimary,
                   shadows: [
                     Shadow(
-                      offset: Offset(0, 1),
+                      offset: const Offset(0, 1),
                       blurRadius: 2,
-                      color: Colors.black26,
+                      color: colors.shadow.withValues(alpha: 0.26),
                     ),
                   ],
                 ),
@@ -68,11 +71,11 @@ class PatientFormHeader extends StatelessWidget {
           ),
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: colors.onPrimary.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 18),
+              icon: Icon(Icons.close, color: colors.onPrimary, size: 18),
               onPressed: onClose,
               splashRadius: 16,
               tooltip: '关闭',
@@ -91,22 +94,24 @@ class PatientFormPermissionNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.1),
+        color: tokens.warningContainer,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.orange.withValues(alpha: 0.3),
+          color: tokens.warning.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.info_outline,
-            color: Colors.orange,
+            color: tokens.warning,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -114,7 +119,7 @@ class PatientFormPermissionNotice extends StatelessWidget {
             child: Text(
               '您正在编辑其他医生的患者，只能修改牙齿状况部分，其他信息为只读状态',
               style: TextStyle(
-                color: Colors.orange.shade700,
+                color: tokens.warning,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -142,17 +147,20 @@ class PatientFormActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: DentalColors.cardGradient,
+        gradient: tokens.subtleHeaderGradient,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
         ),
         border: Border(
           top: BorderSide(
-            color: DentalColors.divider.withValues(alpha: 0.3),
+            color: tokens.divider.withValues(alpha: 0.3),
             width: 1,
           ),
         ),
@@ -164,7 +172,7 @@ class PatientFormActions extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.divider.withValues(alpha: 0.5),
+                color: tokens.divider.withValues(alpha: 0.5),
                 width: 1,
               ),
             ),
@@ -175,7 +183,7 @@ class PatientFormActions extends StatelessWidget {
                   horizontal: 24,
                   vertical: 12,
                 ),
-                foregroundColor: DentalColors.onSurfaceVariant,
+                foregroundColor: colors.onSurfaceVariant,
               ),
               child: const Text(
                 '取消',
@@ -186,11 +194,11 @@ class PatientFormActions extends StatelessWidget {
           const SizedBox(width: 16),
           Container(
             decoration: BoxDecoration(
-              gradient: DentalColors.primaryGradient,
+              gradient: tokens.primaryHeaderGradient,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: DentalColors.primary.withValues(alpha: 0.3),
+                  color: tokens.primaryAccent.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -213,30 +221,30 @@ class PatientFormActions extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (isLoading) ...[
-                    const SizedBox(
+                    SizedBox(
                       width: 16,
                       height: 16,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: colors.onPrimary,
                         strokeWidth: 2,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       isEditMode ? '更新中...' : '保存中...',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: colors.onPrimary,
                       ),
                     ),
                   ] else ...[
                     Text(
                       isEditMode ? '更新' : '保存',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                        color: colors.onPrimary,
                       ),
                     ),
                   ],

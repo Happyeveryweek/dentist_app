@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import '../../../models/material_image.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 材料图片预览组件
 ///
@@ -27,7 +28,7 @@ class MaterialImagePreview extends StatelessWidget {
             onTap: onTap,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(6),
-              child: _buildOptimizedImage(),
+              child: _buildOptimizedImage(context),
             ),
           ),
           Positioned(
@@ -37,13 +38,13 @@ class MaterialImagePreview extends StatelessWidget {
               onTap: onDelete,
               child: Container(
                 padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  color: Colors.red,
+                decoration: BoxDecoration(
+                  color: context.tokens.error,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close,
-                  color: Colors.white,
+                  color: context.colors.onError,
                   size: 12,
                 ),
               ),
@@ -54,7 +55,7 @@ class MaterialImagePreview extends StatelessWidget {
     );
   }
 
-  Widget _buildOptimizedImage() {
+  Widget _buildOptimizedImage(BuildContext context) {
     final originalName = image.originalName;
     // 检查是否是新添加的图片（通过ID和originalName判断）
     if (image.id == null &&
@@ -69,7 +70,7 @@ class MaterialImagePreview extends StatelessWidget {
         width: 60,
         height: 60,
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: context.tokens.inputBackground,
           borderRadius: BorderRadius.circular(6),
         ),
         child: Stack(
@@ -86,12 +87,12 @@ class MaterialImagePreview extends StatelessWidget {
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: context.tokens.divider,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.error_outline,
-                      color: Colors.red,
+                      color: context.tokens.error,
                       size: 32,
                     ),
                   );
@@ -105,13 +106,13 @@ class MaterialImagePreview extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.8),
+                  color: context.tokens.success.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
+                child: Text(
                   '新',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: context.colors.onPrimary,
                     fontSize: 8,
                     fontWeight: FontWeight.w500,
                   ),
@@ -133,7 +134,7 @@ class MaterialImagePreview extends StatelessWidget {
         width: 60,
         height: 60,
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: context.tokens.inputBackground,
           borderRadius: BorderRadius.circular(6),
         ),
         child: Stack(
@@ -155,12 +156,12 @@ class MaterialImagePreview extends StatelessWidget {
                     errorBuilder: (context, fallbackError, stackTrace) {
                       return Container(
                         decoration: BoxDecoration(
-                          color: Colors.grey[300],
+                          color: context.tokens.divider,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.error_outline,
-                          color: Colors.red,
+                          color: context.tokens.error,
                           size: 32,
                         ),
                       );
@@ -176,13 +177,13 @@ class MaterialImagePreview extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.8),
+                  color: context.tokens.primaryAccent.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
+                child: Text(
                   '缩',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: context.colors.onPrimary,
                     fontSize: 8,
                     fontWeight: FontWeight.w500,
                   ),
@@ -198,7 +199,7 @@ class MaterialImagePreview extends StatelessWidget {
         width: 60,
         height: 60,
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: context.tokens.inputBackground,
           borderRadius: BorderRadius.circular(6),
         ),
         child: Stack(
@@ -215,12 +216,12 @@ class MaterialImagePreview extends StatelessWidget {
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: context.tokens.divider,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.error_outline,
-                      color: Colors.red,
+                      color: context.tokens.error,
                       size: 32,
                     ),
                   );
@@ -234,13 +235,13 @@ class MaterialImagePreview extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withValues(alpha: 0.8),
+                  color: context.tokens.warning.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
+                child: Text(
                   '原',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: context.colors.onPrimary,
                     fontSize: 8,
                     fontWeight: FontWeight.w500,
                   ),
@@ -283,7 +284,7 @@ class MaterialFileImagePreview extends StatelessWidget {
                 width: 60,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: context.tokens.inputBackground,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Stack(
@@ -307,13 +308,13 @@ class MaterialFileImagePreview extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.black54,
+                          color: context.tokens.shadow.withValues(alpha: 0.54),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Text(
+                        child: Text(
                           '缩',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: context.colors.onPrimary,
                             fontSize: 8,
                             fontWeight: FontWeight.w500,
                           ),
@@ -332,13 +333,13 @@ class MaterialFileImagePreview extends StatelessWidget {
               onTap: onDelete,
               child: Container(
                 padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  color: Colors.red,
+                decoration: BoxDecoration(
+                  color: context.tokens.error,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.close,
-                  color: Colors.white,
+                  color: context.colors.onError,
                   size: 12,
                 ),
               ),

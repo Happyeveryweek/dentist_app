@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class MaterialDetailRow extends StatelessWidget {
   final IconData icon;
@@ -25,7 +26,7 @@ class MaterialDetailRow extends StatelessWidget {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Colors.grey.shade700,
+            color: context.colors.onSurfaceVariant,
           ),
         ),
         Expanded(

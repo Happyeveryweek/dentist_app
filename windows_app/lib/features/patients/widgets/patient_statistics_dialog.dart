@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/patient.dart';
 import 'interactable_pie_chart.dart';
-import '../../../widgets/dental_icons.dart';
 import '../../../widgets/reusable_date_range_picker.dart';
 import '../../../screens/filtered_patients_screen.dart';
 
@@ -362,28 +362,33 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
   }
 
   Widget _buildPresetButton(String label, String key) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final active = _isPresetActive(key);
     return ElevatedButton(
       onPressed: () => _applyPreset(key),
       style: ElevatedButton.styleFrom(
-        backgroundColor: active ? DentalColors.primary : Colors.white,
-        foregroundColor: active ? Colors.white : Colors.black87,
+        backgroundColor: active ? tokens.primaryAccent : tokens.cardBackground,
+        foregroundColor: active ? tokens.cardBackground : colors.onSurface,
         elevation: active ? 3 : 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         side: BorderSide(
             color: active
                 ? Colors.transparent
-                : Colors.grey.withValues(alpha: 0.12)),
+                : tokens.border),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
       child: Text(label,
           style: TextStyle(
-              fontSize: 13, color: active ? Colors.white : Colors.black87)),
+              fontSize: 13, color: active ? tokens.cardBackground : colors.onSurface)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     final totalPatients = _calculateTotalPatients();
     final malePatients = _calculateMalePatients();
     final femalePatients = _calculateFemalePatients();
@@ -405,12 +410,12 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: DentalColors.primaryGradient,
+                gradient: tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.bar_chart_rounded,
-                color: Colors.white,
+                color: tokens.cardBackground,
                 size: 24,
               ),
             ),
@@ -424,8 +429,8 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
             ),
           ],
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: DentalColors.onSurface,
+        backgroundColor: tokens.cardBackground,
+        foregroundColor: colors.onSurface,
         elevation: 0,
         actions: [
           Padding(
@@ -458,10 +463,10 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
             child: SizedBox(
               height: 36,
               child: Material(
-                color: Colors.white,
+                color: tokens.cardBackground,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.grey.withValues(alpha: 0.12)),
+                  side: BorderSide(color: tokens.border),
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(8),
@@ -473,16 +478,16 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.calendar_today,
-                            size: 16, color: Colors.black54),
+                        Icon(Icons.calendar_today,
+                            size: 16, color: tokens.textMuted),
                         const SizedBox(width: 6),
                         ConstrainedBox(
                           constraints: const BoxConstraints(
                               minWidth: 140, maxWidth: 180),
                           child: Text(
                             '${DateFormat('yyyy-MM-dd').format(_startDate)} - ${DateFormat('yyyy-MM-dd').format(_endDate)}',
-                            style: const TextStyle(
-                                color: Colors.black87, fontSize: 11),
+                            style: TextStyle(
+                                color: colors.onSurface, fontSize: 11),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -510,21 +515,20 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: DentalColors.info.withValues(alpha: 0.1),
+                  color: tokens.infoContainer,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                      color: DentalColors.info.withValues(alpha: 0.3)),
+                  border: Border.all(color: tokens.info),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline,
-                        color: DentalColors.info, size: 20),
+                    Icon(Icons.info_outline,
+                        color: tokens.info, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         '当前显示搜索结果的统计数据：$searchQuery${widget.dateFilterType != null ? " (按${widget.dateFilterType == 'first_visit_date' ? '首诊时间' : '最后就诊时间'}筛选)" : ""}',
-                        style: const TextStyle(
-                            color: DentalColors.info,
+                        style: TextStyle(
+                            color: tokens.info,
                             fontSize: 13,
                             fontWeight: FontWeight.w500),
                       ),
@@ -601,29 +605,31 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
 
   Widget _buildSummaryCards(int totalPatients, int malePatients,
       int femalePatients, double averageAge) {
+    final tokens = context.tokens;
     return Row(
       children: [
         Expanded(
             child: _buildStatCard(
-                '总患者数', totalPatients.toString(), Icons.people, Colors.purple)),
+                '总患者数', totalPatients.toString(), Icons.people, tokens.chartPalette[0])),
         const SizedBox(width: 16),
         Expanded(
             child: _buildStatCard(
-                '男性患者', malePatients.toString(), Icons.male, Colors.blue)),
+                '男性患者', malePatients.toString(), Icons.male, tokens.chartPalette[1])),
         const SizedBox(width: 16),
         Expanded(
             child: _buildStatCard(
-                '女性患者', femalePatients.toString(), Icons.female, Colors.pink)),
+                '女性患者', femalePatients.toString(), Icons.female, tokens.chartPalette[2])),
         const SizedBox(width: 16),
         Expanded(
             child: _buildStatCard('平均年龄', '${averageAge.toStringAsFixed(1)}岁',
-                Icons.cake, DentalColors.warning)),
+                Icons.cake, tokens.warning)),
       ],
     );
   }
 
   Widget _buildStatCard(
       String title, String value, IconData icon, Color cardColor) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -643,13 +649,13 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
         children: [
           Row(
             children: [
-              Icon(icon, color: Colors.white, size: 24),
+              Icon(icon, color: tokens.cardBackground, size: 24),
               const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white,
+                  color: tokens.cardBackground,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -658,10 +664,10 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: tokens.cardBackground,
             ),
           ),
         ],
@@ -670,9 +676,14 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
   }
 
   Widget _buildChartCard(String title, Widget chart) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    final tokens = context.tokens;
+    final colors = context.colors;
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.cardBackground,
+        borderRadius: BorderRadius.circular(tokens.borderRadius),
+        boxShadow: tokens.cardShadow,
+      ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
         child: Column(
@@ -680,7 +691,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: colors.onSurface),
             ),
             const SizedBox(height: 16),
             Expanded(child: chart),
@@ -692,6 +703,8 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
 
   Widget _buildMonthlyNewPatientsChart(
       List<String> sortedMonths, Map<String, int> monthlyData) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     if (sortedMonths.isEmpty) {
       return const Center(child: Text('暂无数据'));
     }
@@ -717,12 +730,12 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
               interval: interval,
               getTitlesWidget: (value, meta) {
                 if (value == 0) {
-                  return const Text('0',
-                      style: TextStyle(fontSize: 10, color: Colors.black54));
+                  return Text('0',
+                      style: TextStyle(fontSize: 10, color: tokens.textMuted));
                 }
                 return Text('${value.toInt()}',
                     style:
-                        const TextStyle(fontSize: 10, color: Colors.black54));
+                        TextStyle(fontSize: 10, color: tokens.textMuted));
               },
             );
 
@@ -748,7 +761,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
               lineTouchData: LineTouchData(
                 enabled: true,
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (spot) => Colors.white,
+                  getTooltipColor: (spot) => tokens.cardBackground,
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {
                       final index = spot.x.toInt();
@@ -757,8 +770,8 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                         final count = monthlyData[month] ?? 0;
                         return LineTooltipItem(
                           '$month\n$count人',
-                          const TextStyle(
-                              color: Colors.black87,
+                          TextStyle(
+                              color: colors.onSurface,
                               fontWeight: FontWeight.bold),
                         );
                       }
@@ -774,7 +787,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                 drawVerticalLine: false,
                 horizontalInterval: interval,
                 getDrawingHorizontalLine: (value) =>
-                    FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                    FlLine(color: tokens.divider, strokeWidth: 1),
               ),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
@@ -796,7 +809,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
               ),
               borderData: FlBorderData(
                   show: true,
-                  border: Border.all(color: Colors.grey.shade300, width: 1)),
+                  border: Border.all(color: tokens.border, width: 1)),
               minX: 0,
               maxX: (sortedMonths.length - 1).toDouble(),
               minY: 0,
@@ -808,7 +821,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                     return FlSpot(entry.key.toDouble(), count.toDouble());
                   }).toList(),
                   isCurved: true,
-                  color: DentalColors.primary,
+                  color: tokens.primaryAccent,
                   barWidth: 3,
                   isStrokeCapRound: true,
                   dotData: FlDotData(
@@ -816,9 +829,9 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                     getDotPainter: (spot, percent, barData, index) =>
                         FlDotCirclePainter(
                       radius: 3,
-                      color: DentalColors.primary,
+                      color: tokens.primaryAccent,
                       strokeWidth: 2,
-                      strokeColor: Colors.white,
+                      strokeColor: tokens.cardBackground,
                     ),
                   ),
                   belowBarData: BarAreaData(
@@ -827,8 +840,8 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        DentalColors.primary.withValues(alpha: 0.3),
-                        DentalColors.primary.withValues(alpha: 0.1),
+                        tokens.primaryAccent.withValues(alpha: 0.3),
+                        tokens.primaryAccent.withValues(alpha: 0.1),
                       ],
                     ),
                   ),
@@ -890,6 +903,8 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
 
   Widget _buildMonthlyVisitPatientsChart(
       List<String> sortedMonths, Map<String, int> monthlyData) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     if (sortedMonths.isEmpty) {
       return const Center(child: Text('暂无数据'));
     }
@@ -915,12 +930,12 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
               interval: interval,
               getTitlesWidget: (value, meta) {
                 if (value == 0) {
-                  return const Text('0',
-                      style: TextStyle(fontSize: 10, color: Colors.black54));
+                  return Text('0',
+                      style: TextStyle(fontSize: 10, color: tokens.textMuted));
                 }
                 return Text('${value.toInt()}',
                     style:
-                        const TextStyle(fontSize: 10, color: Colors.black54));
+                        TextStyle(fontSize: 10, color: tokens.textMuted));
               },
             );
 
@@ -946,7 +961,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
               lineTouchData: LineTouchData(
                 enabled: true,
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (spot) => Colors.white,
+                  getTooltipColor: (spot) => tokens.cardBackground,
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {
                       final index = spot.x.toInt();
@@ -955,8 +970,8 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                         final count = monthlyData[month] ?? 0;
                         return LineTooltipItem(
                           '$month\n$count人',
-                          const TextStyle(
-                              color: Colors.black87,
+                          TextStyle(
+                              color: colors.onSurface,
                               fontWeight: FontWeight.bold),
                         );
                       }
@@ -972,7 +987,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                 drawVerticalLine: false,
                 horizontalInterval: interval,
                 getDrawingHorizontalLine: (value) =>
-                    FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                    FlLine(color: tokens.divider, strokeWidth: 1),
               ),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
@@ -994,7 +1009,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
               ),
               borderData: FlBorderData(
                   show: true,
-                  border: Border.all(color: Colors.grey.shade300, width: 1)),
+                  border: Border.all(color: tokens.border, width: 1)),
               minX: 0,
               maxX: (sortedMonths.length - 1).toDouble(),
               minY: 0,
@@ -1006,7 +1021,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                     return FlSpot(entry.key.toDouble(), count.toDouble());
                   }).toList(),
                   isCurved: true,
-                  color: Colors.green,
+                  color: tokens.chartPalette[1],
                   barWidth: 3,
                   isStrokeCapRound: true,
                   dotData: FlDotData(
@@ -1014,9 +1029,9 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                     getDotPainter: (spot, percent, barData, index) =>
                         FlDotCirclePainter(
                       radius: 3,
-                      color: Colors.green,
+                      color: tokens.chartPalette[1],
                       strokeWidth: 2,
-                      strokeColor: Colors.white,
+                      strokeColor: tokens.cardBackground,
                     ),
                   ),
                   belowBarData: BarAreaData(
@@ -1025,8 +1040,8 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.green.withValues(alpha: 0.3),
-                        Colors.green.withValues(alpha: 0.1),
+                        tokens.chartPalette[1].withValues(alpha: 0.3),
+                        tokens.chartPalette[1].withValues(alpha: 0.1),
                       ],
                     ),
                   ),
@@ -1087,9 +1102,14 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
   }
 
   Widget _buildPieChartCard(String title, Map<String, int> data) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    final tokens = context.tokens;
+    final colors = context.colors;
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.cardBackground,
+        borderRadius: BorderRadius.circular(tokens.borderRadius),
+        boxShadow: tokens.cardShadow,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1097,7 +1117,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: colors.onSurface),
             ),
             const SizedBox(height: 16),
             Expanded(

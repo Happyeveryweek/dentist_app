@@ -5,10 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../models/patient.dart';
-import '../../../theme/app_theme.dart';
-import '../../../widgets/dental_icons.dart';
 import 'patient_action_buttons.dart';
 import '../../../utils/log_manager.dart';
+import '../../../theme/medical_semantic_colors.dart';
 
 class PatientListItem extends StatelessWidget {
   final Patient patient;
@@ -34,50 +33,40 @@ class PatientListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPurpleTheme =
-        false;
+    final tokens = context.tokens;
     final patientName = patient.name;
     final patientGender = patient.gender;
     final avatarBgColor = patientGender == '女'
-        ? const Color(0xFFF48FB1).withValues(alpha: 0.2)
-        : Colors.blue.withValues(alpha: 0.1);
-    final avatarTextColor =
-        patientGender == '女' ? const Color(0xFFEC407A) : Colors.blue;
+        ? MedicalSemanticColors.femaleGender.withValues(alpha: 0.2)
+        : MedicalSemanticColors.maleGender.withValues(alpha: 0.1);
+    final avatarTextColor = patientGender == '女'
+        ? MedicalSemanticColors.femaleGender
+        : MedicalSemanticColors.maleGender;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Material(
-        elevation: isPurpleTheme ? 0 : 1,
+        elevation: 1,
         borderRadius: BorderRadius.circular(12),
-        shadowColor:
-            isPurpleTheme ? AppTheme.purpleColor.withValues(alpha: 0.1) : null,
-        color: isPurpleTheme ? AppTheme.purpleCardBackground : Colors.white,
+        color: tokens.cardBackground,
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: isPurpleTheme
-                ? Border.all(
-                    color: AppTheme.purpleLightColor.withValues(alpha: 0.3),
-                    width: 1,
-                  )
-                : null,
-            gradient: isPurpleTheme
-                ? null
-                : LinearGradient(
-                    colors: [
-                      context.tokens.cardBackground.withValues(alpha: 0.0),
-                      Colors.grey.shade50.withValues(alpha: 0.3),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+            gradient: LinearGradient(
+              colors: [
+                tokens.cardBackground.withValues(alpha: 0.0),
+                tokens.mutedBackground.withValues(alpha: 0.3),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
           child: InkWell(
             onTap: onView,
             borderRadius: BorderRadius.circular(12),
             mouseCursor: SystemMouseCursors.click,
-            hoverColor: DentalColors.primary.withValues(alpha: 0.1),
-            splashColor: DentalColors.primary.withValues(alpha: 0.2),
+            hoverColor: tokens.primaryAccent.withValues(alpha: 0.1),
+            splashColor: tokens.primaryAccent.withValues(alpha: 0.2),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: Row(
@@ -238,6 +227,7 @@ class _PatientDetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final address = patient.address;
     return Row(
       children: [
@@ -245,7 +235,7 @@ class _PatientDetailRow extends StatelessWidget {
           _InfoChip(
             icon: Icons.badge,
             value: '${patient.medicalRecordNumber}',
-            color: context.tokens.primaryAccent,
+            color: tokens.primaryAccent,
           ),
           const SizedBox(width: 6),
         ],
@@ -254,8 +244,8 @@ class _PatientDetailRow extends StatelessWidget {
           child: _InfoChip(
             icon: Icons.phone,
             value: _getDisplayPhone(patient.phone),
-            color: Colors.green,
-            textColor: context.tokens.success,
+            color: tokens.success,
+            textColor: tokens.success,
             flexibleValue: true,
           ),
         ),
@@ -263,7 +253,7 @@ class _PatientDetailRow extends StatelessWidget {
         _InfoChip(
           icon: Icons.event,
           value: DateFormat('yyyy-MM-dd').format(patient.firstVisitDate),
-          color: context.tokens.info,
+          color: tokens.info,
         ),
         if (address != null && address.isNotEmpty) ...[
           const SizedBox(width: 6),
@@ -272,8 +262,8 @@ class _PatientDetailRow extends StatelessWidget {
             child: _InfoChip(
               icon: Icons.location_on,
               value: address,
-              color: Colors.orange,
-              textColor: Colors.orange.shade700,
+              color: tokens.warning,
+              textColor: tokens.warning,
               flexibleValue: true,
             ),
           ),

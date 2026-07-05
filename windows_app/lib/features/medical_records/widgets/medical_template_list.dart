@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/medical_template.dart';
 import 'medical_template_card.dart';
 
@@ -24,8 +25,10 @@ class MedicalTemplateList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final isTreatment = templateType == 'treatment';
-    final themeColor = isTreatment ? Colors.blue : Colors.green;
+    final themeColor = isTreatment ? tokens.primaryAccent : tokens.success;
 
     return Column(
       children: [
@@ -72,7 +75,7 @@ class MedicalTemplateList extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: _getColorDark(themeColor),
+                        color: themeColor,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -80,7 +83,7 @@ class MedicalTemplateList extends StatelessWidget {
                       '共 ${templates.length} 个模板',
                       style: TextStyle(
                         fontSize: 14,
-                        color: _getColorMedium(themeColor),
+                        color: themeColor.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -90,7 +93,7 @@ class MedicalTemplateList extends StatelessWidget {
               Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [themeColor, _getColorMedium(themeColor)],
+                    colors: [themeColor, themeColor.withValues(alpha: 0.7)],
                   ),
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
@@ -103,11 +106,11 @@ class MedicalTemplateList extends StatelessWidget {
                 ),
                 child: ElevatedButton.icon(
                   onPressed: onAdd,
-                  icon: const Icon(Icons.add_rounded, color: Colors.white),
-                  label: const Text(
+                  icon: Icon(Icons.add_rounded, color: colors.onPrimary),
+                  label: Text(
                     '添加模板',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: colors.onPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -143,19 +146,4 @@ class MedicalTemplateList extends StatelessWidget {
     );
   }
 
-  /// 获取颜色的深色变体
-  Color _getColorDark(Color color) {
-    if (color == Colors.blue) return Colors.blue.shade700;
-    if (color == Colors.green) return Colors.green.shade700;
-    if (color == Colors.orange) return Colors.orange.shade700;
-    return Colors.grey.shade700;
-  }
-
-  /// 获取颜色的中等变体
-  Color _getColorMedium(Color color) {
-    if (color == Colors.blue) return Colors.blue.shade600;
-    if (color == Colors.green) return Colors.green.shade600;
-    if (color == Colors.orange) return Colors.orange.shade600;
-    return Colors.grey.shade600;
-  }
 }

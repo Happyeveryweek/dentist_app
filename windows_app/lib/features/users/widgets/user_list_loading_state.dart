@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_theme.dart';
+import '../../../theme/theme_context_extensions.dart';
 
 class UserListLoadingState extends StatelessWidget {
   const UserListLoadingState({Key? key}) : super(key: key);
@@ -13,28 +13,28 @@ class UserListLoadingState extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.tokens.cardBackground,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: context.tokens.shadow.withValues(alpha: 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
               ],
             ),
-            child: const Column(
+            child: Column(
               children: [
                 CircularProgressIndicator(
                   valueColor:
-                      AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                      AlwaysStoppedAnimation<Color>(context.tokens.primaryAccent),
                   strokeWidth: 3,
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Text(
                   '加载中...',
                   style: TextStyle(
-                    color: AppTheme.primaryColor,
+                    color: context.tokens.primaryAccent,
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                   ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../theme/app_theme.dart';
+import '../../../theme/theme_context_extensions.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../widgets/dental_icons.dart';
 import 'setting_item.dart';
@@ -41,12 +41,12 @@ class BackupActionButtons extends StatelessWidget {
                 ? Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const CircularProgressIndicator(
+                    child: CircularProgressIndicator(
                       valueColor:
-                          AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                          AlwaysStoppedAnimation<Color>(context.tokens.primaryAccent),
                       strokeWidth: 2,
                     ),
                   )
@@ -72,12 +72,12 @@ class BackupActionButtons extends StatelessWidget {
                 ? Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const CircularProgressIndicator(
+                    child: CircularProgressIndicator(
                       valueColor:
-                          AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                          AlwaysStoppedAnimation<Color>(context.tokens.primaryAccent),
                       strokeWidth: 2,
                     ),
                   )

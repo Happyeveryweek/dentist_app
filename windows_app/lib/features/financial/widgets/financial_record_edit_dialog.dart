@@ -9,6 +9,8 @@ import '../../../providers/financial_provider.dart';
 import '../../../widgets/modern_date_picker.dart';
 import '../../../widgets/success_toast.dart'
     show DeleteConfirmDialogManager, InlineSuccessMessage, AppToastManager;
+import '../../../theme/theme_context_extensions.dart';
+import '../../../theme/medical_semantic_colors.dart';
 import '../helpers/amount_input_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import 'financial_detail_table_layout.dart';
@@ -93,6 +95,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     return AlertDialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
@@ -100,11 +105,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
       title: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue.shade600, Colors.indigo.shade600],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          gradient: tokens.primaryHeaderGradient,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),
@@ -115,21 +116,21 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: colors.onPrimary.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.edit,
-                color: Colors.white,
+                color: colors.onPrimary,
                 size: 20,
               ),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Text(
                 '编辑财务记录',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: colors.onPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -148,15 +149,15 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildPatientInfoSection(),
+            _buildPatientInfoSection(tokens, colors),
             const SizedBox(height: 16),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    _buildFinancialItemsSection(),
+                    _buildFinancialItemsSection(tokens, colors),
                     const SizedBox(height: 16),
-                    _buildNotesSection(),
+                    _buildNotesSection(tokens, colors),
                   ],
                 ),
               ),
@@ -164,19 +165,20 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           ],
         ),
       ),
-      actions: _buildActions(),
+      actions: _buildActions(tokens, colors),
     );
   }
 
   // 构建患者信息区域
-  Widget _buildPatientInfoSection() {
+  Widget _buildPatientInfoSection(AppThemeTokens tokens, ColorScheme colors) {
     final bool isFemale = (widget.patient.gender == '女') ||
         (widget.patient.gender.toLowerCase() == 'female');
-    final Color? infoBgColor = isFemale ? Colors.pink[50] : Colors.blue[50];
-    final Color infoBorderColor =
-        isFemale ? Colors.pink.shade200 : Colors.blue.shade200;
-    final Color avatarBgColor =
-        isFemale ? Colors.pink.shade400 : Colors.blue.shade300;
+    final Color baseColor = isFemale
+        ? MedicalSemanticColors.femaleGender
+        : MedicalSemanticColors.maleGender;
+    final Color infoBgColor = baseColor.withValues(alpha: 0.14);
+    final Color infoBorderColor = baseColor;
+    final Color avatarBgColor = baseColor;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -199,8 +201,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             backgroundColor: avatarBgColor,
             child: Text(
               widget.patient.name.substring(0, 1),
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: colors.onPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -232,10 +234,10 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                 const SizedBox(height: 8),
                 Text(
                   widget.patient.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: colors.onSurface,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -247,7 +249,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                         label: '病历号',
                         value: widget.patient.medicalRecordNumber?.toString() ??
                             '未设置',
-                        color: Colors.orange.shade600,
+                        color: tokens.warning,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -257,7 +259,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                         label: '首诊日期',
                         value: DateFormat('MM-dd')
                             .format(widget.patient.firstVisitDate),
-                        color: Colors.purple.shade600,
+                        color: tokens.primaryAccent,
                       ),
                     ),
                   ],
@@ -316,13 +318,13 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
   }
 
   // 构建收费信息列表区域
-  Widget _buildFinancialItemsSection() {
+  Widget _buildFinancialItemsSection(AppThemeTokens tokens, ColorScheme colors) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange[50],
+        color: tokens.warningContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.shade200, width: 1.5),
+        border: Border.all(color: tokens.warning, width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,12 +334,12 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.orange[100],
+                  color: tokens.warningContainer,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   Icons.receipt_long,
-                  color: Colors.orange[700],
+                  color: tokens.warning,
                   size: 18,
                 ),
               ),
@@ -345,7 +347,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
               Text(
                 '收费信息 (${_financialItems.length}条)',
                 style: TextStyle(
-                  color: Colors.orange[700],
+                  color: tokens.warning,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -356,8 +358,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                 icon: const Icon(Icons.add, size: 16),
                 label: const Text('添加收费项'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange[600],
-                  foregroundColor: Colors.white,
+                  backgroundColor: tokens.warning,
+                  foregroundColor: colors.onPrimary,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   textStyle: const TextStyle(fontSize: 12),
@@ -372,19 +374,19 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
+                color: tokens.cardBackground,
+                borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
+                border: Border.all(color: tokens.border),
               ),
               child: Center(
                 child: Column(
                   children: [
                     Icon(Icons.receipt_long_outlined,
-                        size: 48, color: Colors.grey[400]),
+                        size: 48, color: tokens.iconMuted),
                     const SizedBox(height: 8),
                     Text(
                       '暂无收费记录',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                      style: TextStyle(color: tokens.textMuted, fontSize: 16),
                     ),
                   ],
                 ),
@@ -393,9 +395,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           else
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
+                color: tokens.cardBackground,
+                borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
+                border: Border.all(color: tokens.border),
               ),
               child: Column(
                 children: [
@@ -403,11 +405,12 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                   SizedBox(
                     height: FinancialDetailTableLayout.rowHeight,
                     child: FinancialDetailTableLayout.buildHeader(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(8),
-                        topRight: Radius.circular(8),
-                      ),
+                    context,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      topRight: Radius.circular(8),
                     ),
+                  ),
                   ),
                   // 新增行（放在最上面）
                   if (_editingItemId == -1)
@@ -416,13 +419,13 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                       child: Container(
                         padding: const EdgeInsets.fromLTRB(0, 6, 0, 6),
                         decoration: BoxDecoration(
-                          color: Colors.green[50],
+                          color: tokens.successContainer,
                           border: Border(
                             bottom: BorderSide(
-                                color: Colors.grey.shade200, width: 0.5),
+                                color: tokens.divider, width: 0.5),
                           ),
                         ),
-                        child: _buildEditingItemRow(null),
+                        child: _buildEditingItemRow(null, tokens, colors),
                       ),
                     ),
                   // 数据行
@@ -436,18 +439,18 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                         padding: const EdgeInsets.fromLTRB(0, 6, 0, 6),
                         decoration: BoxDecoration(
                           color: isEditing
-                              ? Colors.blue[50]
+                              ? tokens.infoContainer
                               : (index % 2 == 0
-                                  ? Colors.white
-                                  : Colors.grey[50]),
+                                  ? tokens.cardBackground
+                                  : tokens.mutedBackground),
                           border: Border(
                             bottom: BorderSide(
-                                color: Colors.grey.shade200, width: 0.5),
+                                color: tokens.divider, width: 0.5),
                           ),
                         ),
                         child: isEditing
-                            ? _buildEditingItemRow(item)
-                            : _buildDisplayItemRow(item),
+                            ? _buildEditingItemRow(item, tokens, colors)
+                            : _buildDisplayItemRow(item, tokens, colors),
                       ),
                     );
                   }),
@@ -460,16 +463,16 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
   }
 
   // 构建备注编辑区域
-  Widget _buildNotesSection() {
+  Widget _buildNotesSection(AppThemeTokens tokens, ColorScheme colors) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green[50],
+        color: tokens.successContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green.shade200, width: 1.5),
+        border: Border.all(color: tokens.success, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.green.shade200.withValues(alpha: 0.1),
+            color: tokens.success.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -483,12 +486,12 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.green[100],
+                  color: tokens.successContainer,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   Icons.edit_note,
-                  color: Colors.green[700],
+                  color: tokens.success,
                   size: 18,
                 ),
               ),
@@ -496,7 +499,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
               Text(
                 '备注信息',
                 style: TextStyle(
-                  color: Colors.green[700],
+                  color: tokens.success,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -508,12 +511,12 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           // 备注输入框
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.green.shade300, width: 1.5),
+              color: tokens.cardBackground,
+              borderRadius: BorderRadius.circular(tokens.borderRadius),
+              border: Border.all(color: tokens.success, width: 1.5),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.green.shade300.withValues(alpha: 0.1),
+                  color: tokens.success.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -529,26 +532,26 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                   margin: const EdgeInsets.all(8),
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade600.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    color: tokens.successContainer,
+                    borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
                   ),
                   child:
-                      Icon(Icons.note_add, color: Colors.green[600], size: 18),
+                      Icon(Icons.note_add, color: tokens.success, size: 18),
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(tokens.borderRadius),
                   borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.green.shade600, width: 2),
+                  borderRadius: BorderRadius.circular(tokens.borderRadius),
+                  borderSide: BorderSide(color: tokens.success, width: 2),
                 ),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: tokens.cardBackground,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 labelStyle: TextStyle(
-                    color: Colors.green[600], fontWeight: FontWeight.w500),
+                    color: tokens.success, fontWeight: FontWeight.w500),
               ),
             ),
           ),
@@ -558,7 +561,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
   }
 
   // 构建操作按钮
-  List<Widget> _buildActions() {
+  List<Widget> _buildActions(AppThemeTokens tokens, ColorScheme colors) {
     final successMessage = _successMessage;
     return [
       // 成功消息显示区域（在按钮上方）
@@ -583,9 +586,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             // 取消按钮
             Container(
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: tokens.mutedBackground,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: tokens.border),
               ),
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
@@ -599,12 +602,12 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.close, color: Colors.grey[600], size: 18),
+                    Icon(Icons.close, color: tokens.textMuted, size: 18),
                     const SizedBox(width: 8),
                     Text(
                       '取消',
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: tokens.textMuted,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
@@ -617,25 +620,15 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             // 保存按钮
             Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue.shade500, Colors.indigo.shade500],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                gradient: tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.blue.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+                boxShadow: tokens.elevatedShadow,
               ),
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _saveNotes,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
-                  foregroundColor: Colors.white,
+                  foregroundColor: colors.onPrimary,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -648,36 +641,36 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (_isLoading) ...[
-                      const SizedBox(
+                      SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: colors.onPrimary,
                           strokeWidth: 2,
                         ),
                       ),
                       const SizedBox(width: 10),
-                      const Text(
+                      Text(
                         '保存中...',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: colors.onPrimary,
                         ),
                       ),
                     ] else ...[
-                      const Icon(
+                      Icon(
                         Icons.save,
-                        color: Colors.white,
+                        color: colors.onPrimary,
                         size: 18,
                       ),
                       const SizedBox(width: 10),
-                      const Text(
+                      Text(
                         '保存',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                          color: colors.onPrimary,
                         ),
                       ),
                     ],
@@ -891,7 +884,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
   }
 
   // 构建显示模式的收费项行
-  Widget _buildDisplayItemRow(FinancialItem item) {
+  Widget _buildDisplayItemRow(
+      FinancialItem item, AppThemeTokens tokens, ColorScheme colors) {
     return FinancialDetailTableLayout.buildRow(
       children: [
         Text(
@@ -936,7 +930,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           '¥${(item.itemPrice * item.quantity).toStringAsFixed(0)}',
           style: TextStyle(
             fontSize: 13,
-            color: Colors.blue[700],
+            color: tokens.primaryAccent,
             fontWeight: FontWeight.w500,
           ),
           maxLines: 1,
@@ -947,7 +941,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           '¥${item.totalPrice.toStringAsFixed(0)}',
           style: TextStyle(
             fontSize: 13,
-            color: Colors.green[700],
+            color: tokens.success,
             fontWeight: FontWeight.w500,
           ),
           maxLines: 1,
@@ -958,7 +952,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           '¥${item.processingFee.toStringAsFixed(0)}',
           style: TextStyle(
             fontSize: 13,
-            color: Colors.orange[700],
+            color: tokens.warning,
             fontWeight: FontWeight.w500,
           ),
           maxLines: 1,
@@ -970,14 +964,14 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           children: [
             IconButton(
               onPressed: () => _startEditingItem(item),
-              icon: Icon(Icons.edit, color: Colors.blue[600], size: 16),
+              icon: Icon(Icons.edit, color: tokens.primaryAccent, size: 16),
               tooltip: '编辑',
               padding: const EdgeInsets.all(3),
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
             ),
             IconButton(
               onPressed: () => _deleteFinancialItem(item),
-              icon: Icon(Icons.delete, color: Colors.red[600], size: 16),
+              icon: Icon(Icons.delete, color: tokens.error, size: 16),
               tooltip: '删除',
               padding: const EdgeInsets.all(3),
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
@@ -989,7 +983,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
   }
 
   // 构建编辑模式的收费项行
-  Widget _buildEditingItemRow(FinancialItem? item) {
+  Widget _buildEditingItemRow(
+      FinancialItem? item, AppThemeTokens tokens, ColorScheme colors) {
     return FinancialDetailTableLayout.buildRow(
       children: [
         InkWell(
@@ -1015,13 +1010,13 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             height: 32,
             padding: const EdgeInsets.symmetric(horizontal: 6),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: tokens.cardBackground,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Colors.blue.shade300),
+              border: Border.all(color: tokens.info),
             ),
             child: Row(
               children: [
-                Icon(Icons.calendar_today, size: 12, color: Colors.blue[600]),
+                Icon(Icons.calendar_today, size: 12, color: tokens.info),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -1038,9 +1033,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           height: 32,
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: tokens.cardBackground,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: tokens.border),
           ),
           child: TextField(
             controller: _editItemNameController,
@@ -1069,9 +1064,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           height: 32,
           padding: const EdgeInsets.symmetric(horizontal: 4),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: tokens.cardBackground,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: tokens.border),
           ),
           child: DropdownButtonFormField<String>(
             key: ValueKey<String?>(
@@ -1080,7 +1075,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                 FinancialPaymentMethodHelper.uiValue(_editPaymentMethod),
             hint: Text(
               '未选',
-              style: TextStyle(color: Colors.grey[500], fontSize: 11),
+              style: TextStyle(color: tokens.textMuted, fontSize: 11),
             ),
             decoration: const InputDecoration(
               border: InputBorder.none,
@@ -1090,11 +1085,11 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
               contentPadding: EdgeInsets.symmetric(horizontal: 2),
             ),
             icon:
-                Icon(Icons.arrow_drop_down, color: Colors.grey[600], size: 16),
+                Icon(Icons.arrow_drop_down, color: tokens.iconMuted, size: 16),
             isExpanded: true,
             menuMaxHeight: 220,
             borderRadius: BorderRadius.circular(6),
-            dropdownColor: Colors.white,
+            dropdownColor: tokens.cardBackground,
             items: FinancialPaymentMethodHelper.dropdownMethods
                 .map(
                   (method) => DropdownMenuItem<String>(
@@ -1108,7 +1103,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                             Icon(
                               Icons.do_not_disturb_alt,
                               size: 14,
-                              color: Colors.grey[500],
+                              color: tokens.textMuted,
                             )
                           else
                             SizedBox(
@@ -1152,9 +1147,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           height: 32,
           padding: const EdgeInsets.symmetric(horizontal: 6),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: tokens.cardBackground,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: tokens.border),
           ),
           child: TextField(
             controller: _editItemPriceController,
@@ -1184,9 +1179,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           height: 32,
           padding: const EdgeInsets.symmetric(horizontal: 6),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: tokens.cardBackground,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: tokens.border),
           ),
           child: TextField(
             controller: _editTotalPriceController,
@@ -1216,9 +1211,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           height: 32,
           padding: const EdgeInsets.symmetric(horizontal: 6),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: tokens.cardBackground,
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: tokens.border),
           ),
           child: TextField(
             controller: _editProcessingFeeController,
@@ -1249,14 +1244,14 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           children: [
             IconButton(
               onPressed: _saveEditingItem,
-              icon: Icon(Icons.check, color: Colors.green[600], size: 16),
+              icon: Icon(Icons.check, color: tokens.success, size: 16),
               tooltip: '保存',
               padding: const EdgeInsets.all(2),
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
             ),
             IconButton(
               onPressed: _cancelEditing,
-              icon: Icon(Icons.close, color: Colors.grey[600], size: 16),
+              icon: Icon(Icons.close, color: tokens.iconMuted, size: 16),
               tooltip: '取消',
               padding: const EdgeInsets.all(2),
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),

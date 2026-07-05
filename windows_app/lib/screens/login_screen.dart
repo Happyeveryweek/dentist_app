@@ -368,6 +368,7 @@ class _LoginScreenState extends State<LoginScreen>
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final isSmallScreen = size.height < 700;
+    final colors = context.colors;
 
     return Scaffold(
       body: Stack(
@@ -477,10 +478,10 @@ class _LoginScreenState extends State<LoginScreen>
                                           borderRadius:
                                               BorderRadius.circular(8),
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.add,
                                           size: 10,
-                                          color: Colors.white,
+                                          color: colors.onSecondary,
                                         ),
                                       ),
                                     ),
@@ -760,7 +761,7 @@ class _LoginScreenState extends State<LoginScreen>
                                         onPressed: _isLoading ? null : _login,
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.transparent,
-                                          foregroundColor: Colors.white,
+                                          foregroundColor: colors.onPrimary,
                                           shadowColor: Colors.transparent,
                                           padding: const EdgeInsets.symmetric(
                                             vertical: 18.0,
@@ -772,12 +773,12 @@ class _LoginScreenState extends State<LoginScreen>
                                           elevation: 0,
                                         ),
                                         child: _isLoading
-                                            ? const SizedBox(
+                                            ? SizedBox(
                                                 width: 26,
                                                 height: 26,
                                                 child:
                                                     CircularProgressIndicator(
-                                                  color: Colors.white,
+                                                  color: colors.onPrimary,
                                                   strokeWidth: 3,
                                                 ),
                                               )

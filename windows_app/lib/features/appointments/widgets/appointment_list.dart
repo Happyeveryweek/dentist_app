@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/appointment.dart';
+import '../../../theme/theme_context_extensions.dart';
 import 'appointment_card.dart';
 
 class AppointmentList extends StatelessWidget {
@@ -33,7 +34,7 @@ class AppointmentList extends StatelessWidget {
           child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.event_note, size: 64, color: Colors.grey[300]),
+          Icon(Icons.event_note, size: 64, color: context.tokens.iconMuted),
           const SizedBox(height: 12),
           const Text('暂无预约记录',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),

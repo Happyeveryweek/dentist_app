@@ -25,26 +25,28 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue[50],
+        color: tokens.infoContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade200),
+        border: Border.all(color: tokens.info),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.info_outline, color: Colors.blue[600], size: 20),
+              Icon(Icons.info_outline, color: tokens.primaryAccent, size: 20),
               const SizedBox(width: 8),
               Text(
                 '基本信息',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue[700],
+                  color: tokens.primaryAccent,
                 ),
               ),
             ],
@@ -65,9 +67,9 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         prefixIcon:
-                            Icon(Icons.calendar_today, color: Colors.blue[600]),
+                            Icon(Icons.calendar_today, color: tokens.primaryAccent),
                         filled: true,
-                        fillColor: context.tokens.cardBackground,
+                        fillColor: tokens.cardBackground,
                       ),
                       readOnly: true,
                       onTap: () async {
@@ -104,9 +106,9 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       prefixIcon:
-                          Icon(Icons.business, color: Colors.green[600]),
+                          Icon(Icons.business, color: tokens.success),
                       filled: true,
-                      fillColor: context.tokens.cardBackground,
+                      fillColor: tokens.cardBackground,
                     ),
                   ),
                 ),
@@ -126,9 +128,9 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      prefixIcon: Icon(Icons.person, color: Colors.purple[600]),
+                      prefixIcon: Icon(Icons.person, color: tokens.primaryAccent),
                       filled: true,
-                      fillColor: context.tokens.cardBackground,
+                      fillColor: tokens.cardBackground,
                     ),
                     maxLines: 1,
                   ),
@@ -145,9 +147,9 @@ class PurchaseFormBasicInfoSection extends StatelessWidget {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      prefixIcon: Icon(Icons.note, color: Colors.orange[600]),
+                      prefixIcon: Icon(Icons.note, color: tokens.warning),
                       filled: true,
-                      fillColor: context.tokens.cardBackground,
+                      fillColor: tokens.cardBackground,
                     ),
                     maxLines: 1,
                   ),

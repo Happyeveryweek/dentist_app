@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class PatientEmptyState extends StatelessWidget {
   final bool hasSearchQuery;
@@ -18,17 +18,17 @@ class PatientEmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(
+          Icon(
             Icons.person_off_outlined,
             size: 64,
-            color: AppTheme.lightText,
+            color: context.tokens.textMuted,
           ),
           const SizedBox(height: 16),
           Text(
             hasSearchQuery ? '未找到匹配的搜索结果' : '暂无患者记录',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
-              color: AppTheme.secondaryText,
+              color: context.tokens.textMuted,
             ),
           ),
           const SizedBox(height: 24),
@@ -38,14 +38,14 @@ class PatientEmptyState extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.primaryColor,
-                  AppTheme.primaryColor.withValues(alpha: 0.8),
+                  context.tokens.primaryAccent,
+                  context.tokens.primaryAccent.withValues(alpha: 0.8),
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                  color: context.tokens.primaryAccent.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 6),
                 ),
@@ -63,7 +63,7 @@ class PatientEmptyState extends StatelessWidget {
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
+                foregroundColor: context.colors.onPrimary,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 16,

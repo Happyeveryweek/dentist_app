@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../../../widgets/dental_icons.dart';
+import '../../../../theme/theme_context_extensions.dart';
 
 class PatientFormTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -37,6 +37,8 @@ class PatientFormTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return TextFormField(
       controller: controller,
       enabled: enabled,
@@ -53,50 +55,50 @@ class PatientFormTextField extends StatelessWidget {
         hintText: hintText,
         prefixIcon: Icon(
           icon,
-          color: enabled ? DentalColors.primary : Colors.grey,
+          color: enabled ? tokens.primaryAccent : tokens.iconMuted,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-              BorderSide(color: DentalColors.divider.withValues(alpha: 0.5)),
+              BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-              BorderSide(color: DentalColors.divider.withValues(alpha: 0.5)),
+              BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+          borderSide: BorderSide(color: tokens.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: DentalColors.primary, width: 2),
+          borderSide: BorderSide(color: tokens.primaryAccent, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: DentalColors.error),
+          borderSide: BorderSide(color: tokens.error),
         ),
         filled: true,
         fillColor: enabled
-            ? Colors.white.withValues(alpha: 0.8)
-            : Colors.grey.withValues(alpha: 0.1),
+            ? tokens.cardBackground.withValues(alpha: 0.8)
+            : tokens.disabledBackground,
         contentPadding: maxLines > 1
             ? const EdgeInsets.symmetric(horizontal: 16, vertical: 16)
             : const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         labelStyle: TextStyle(
-          color: enabled ? DentalColors.onSurfaceVariant : Colors.grey,
+          color: enabled ? colors.onSurfaceVariant : tokens.disabledText,
           fontWeight: FontWeight.w500,
         ),
         hintStyle: TextStyle(
           color: enabled
-              ? DentalColors.onSurfaceVariant.withValues(alpha: 0.6)
-              : Colors.grey.withValues(alpha: 0.6),
+              ? colors.onSurfaceVariant.withValues(alpha: 0.6)
+              : tokens.disabledText.withValues(alpha: 0.6),
         ),
         alignLabelWithHint: true,
       ),
       style: TextStyle(
-        color: enabled ? DentalColors.onSurface : Colors.grey,
+        color: enabled ? colors.onSurface : tokens.disabledText,
         fontSize: 14,
         fontWeight: FontWeight.w500,
         height: 1.2,
@@ -125,52 +127,54 @@ class PatientFormDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return DropdownButtonFormField<String>(
       initialValue: value,
       decoration: InputDecoration(
         labelText: labelText,
         prefixIcon: Icon(
           icon,
-          color: enabled ? DentalColors.primary : Colors.grey,
+          color: enabled ? tokens.primaryAccent : tokens.iconMuted,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-              BorderSide(color: DentalColors.divider.withValues(alpha: 0.5)),
+              BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-              BorderSide(color: DentalColors.divider.withValues(alpha: 0.5)),
+              BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+          borderSide: BorderSide(color: tokens.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: DentalColors.primary, width: 2),
+          borderSide: BorderSide(color: tokens.primaryAccent, width: 2),
         ),
         filled: true,
         fillColor: enabled
-            ? Colors.white.withValues(alpha: 0.8)
-            : Colors.grey.withValues(alpha: 0.1),
+            ? tokens.cardBackground.withValues(alpha: 0.8)
+            : tokens.disabledBackground,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         labelStyle: TextStyle(
-          color: enabled ? DentalColors.onSurfaceVariant : Colors.grey,
+          color: enabled ? colors.onSurfaceVariant : tokens.disabledText,
           fontWeight: FontWeight.w500,
         ),
       ),
       items: enabled ? items : null,
       onChanged: enabled ? onChanged : null,
-      style: const TextStyle(
-        color: DentalColors.onSurface,
+      style: TextStyle(
+        color: colors.onSurface,
         fontSize: 14,
         fontWeight: FontWeight.w500,
       ),
-      dropdownColor: Colors.white,
-      icon: const Icon(Icons.arrow_drop_down, color: DentalColors.primary),
+      dropdownColor: tokens.cardBackground,
+      icon: Icon(Icons.arrow_drop_down, color: tokens.primaryAccent),
     );
   }
 }
@@ -191,6 +195,8 @@ class PatientFormDateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return InkWell(
       onTap: enabled ? onTap : null,
       borderRadius: BorderRadius.circular(12),
@@ -199,38 +205,38 @@ class PatientFormDateField extends StatelessWidget {
           labelText: labelText,
           prefixIcon: Icon(
             Icons.calendar_today,
-            color: enabled ? DentalColors.primary : Colors.grey,
+            color: enabled ? tokens.primaryAccent : tokens.iconMuted,
             size: 20,
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide:
-                BorderSide(color: DentalColors.divider.withValues(alpha: 0.5)),
+                BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide:
-                BorderSide(color: DentalColors.divider.withValues(alpha: 0.5)),
+                BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
           ),
           disabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+            borderSide: BorderSide(color: tokens.border),
           ),
           filled: true,
           fillColor: enabled
-              ? Colors.white.withValues(alpha: 0.8)
-              : Colors.grey.withValues(alpha: 0.1),
+              ? tokens.cardBackground.withValues(alpha: 0.8)
+              : tokens.disabledBackground,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           labelStyle: TextStyle(
-            color: enabled ? DentalColors.onSurfaceVariant : Colors.grey,
+            color: enabled ? colors.onSurfaceVariant : tokens.disabledText,
             fontWeight: FontWeight.w500,
           ),
         ),
         child: Text(
           DateFormat('yyyy-MM-dd').format(date),
           style: TextStyle(
-            color: enabled ? DentalColors.onSurface : Colors.grey,
+            color: enabled ? colors.onSurface : tokens.disabledText,
             fontSize: 14,
             fontWeight: FontWeight.w500,
           ),
@@ -252,6 +258,7 @@ class ExistingPatientInfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -261,10 +268,10 @@ class ExistingPatientInfoRow extends StatelessWidget {
             width: 50,
             child: Text(
               '$label:',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
-                color: Colors.black87,
+                color: colors.onSurface,
               ),
             ),
           ),

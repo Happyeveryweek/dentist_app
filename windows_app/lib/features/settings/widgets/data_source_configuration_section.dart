@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_theme.dart';
+import '../../../theme/theme_context_extensions.dart';
 import 'data_source_form_widgets.dart';
 
 /// 数据源配置区域组件
@@ -56,15 +56,15 @@ class DataSourceConfigurationSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(
-            '数据源配置', Icons.settings_rounded, AppTheme.primaryColor),
+            '数据源配置', Icons.settings_rounded, context.tokens.primaryAccent),
         Container(
           margin: const EdgeInsets.only(bottom: 24),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.tokens.cardBackground,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
+                color: context.tokens.shadow.withValues(alpha: 0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -75,9 +75,9 @@ class DataSourceConfigurationSection extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSqliteConfiguration(),
+                _buildSqliteConfiguration(context),
                 const Divider(height: 32, thickness: 1),
-                _buildMySQLConfiguration(),
+                _buildMySQLConfiguration(context),
               ],
             ),
           ),
@@ -123,7 +123,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
     );
   }
 
-  Widget _buildSqliteConfiguration() {
+  Widget _buildSqliteConfiguration(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -132,12 +132,12 @@ class DataSourceConfigurationSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1),
+                color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 Icons.storage_rounded,
-                color: Colors.blue.shade700,
+                color: context.tokens.primaryAccent,
                 size: 20,
               ),
             ),
@@ -156,8 +156,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 icon: const Icon(Icons.edit_rounded),
                 label: const Text('编辑'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
+                  backgroundColor: context.tokens.primaryAccent,
+                  foregroundColor: context.tokens.cardBackground,
                   elevation: 2,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -172,7 +172,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 icon: const Icon(Icons.close_rounded),
                 label: const Text('取消'),
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey.shade600,
+                  foregroundColor: context.colors.onSurfaceVariant,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
@@ -183,8 +183,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 icon: const Icon(Icons.save_rounded),
                 label: const Text('保存'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
+                  backgroundColor: context.tokens.primaryAccent,
+                  foregroundColor: context.tokens.cardBackground,
                   elevation: 2,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -200,10 +200,10 @@ class DataSourceConfigurationSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.blue.withValues(alpha: 0.05),
+            color: context.tokens.primaryAccent.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.blue.withValues(alpha: 0.2),
+              color: context.tokens.primaryAccent.withValues(alpha: 0.2),
               width: 1,
             ),
           ),
@@ -222,8 +222,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                               sqliteDbPath.isEmpty ? '使用默认数据库文件' : '已选择数据库文件',
                               style: TextStyle(
                                 color: sqliteDbPath.isEmpty
-                                    ? Colors.grey.shade600
-                                    : AppTheme.successColor,
+                                    ? context.colors.onSurfaceVariant
+                                    : context.tokens.success,
                                 fontWeight: FontWeight.w500,
                                 fontSize: 14,
                               ),
@@ -234,28 +234,26 @@ class DataSourceConfigurationSection extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.successColor
-                                      .withValues(alpha: 0.1),
+                                  color: context.tokens.successContainer,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: AppTheme.successColor
-                                        .withValues(alpha: 0.3),
+                                    color: context.tokens.success.withValues(alpha: 0.3),
                                     width: 1,
                                   ),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
                                       Icons.check_circle_rounded,
                                       size: 14,
-                                      color: AppTheme.successColor,
+                                      color: context.tokens.success,
                                     ),
-                                    SizedBox(width: 4),
+                                    const SizedBox(width: 4),
                                     Text(
                                       '已配置',
                                       style: TextStyle(
-                                        color: AppTheme.successColor,
+                                        color: context.tokens.success,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -272,12 +270,10 @@ class DataSourceConfigurationSection extends StatelessWidget {
                               horizontal: 12, vertical: 8),
                           decoration: sqliteDbPath.isNotEmpty
                               ? BoxDecoration(
-                                  color: AppTheme.successColor
-                                      .withValues(alpha: 0.05),
+                                  color: context.tokens.success.withValues(alpha: 0.05),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: AppTheme.successColor
-                                        .withValues(alpha: 0.2),
+                                    color: context.tokens.success.withValues(alpha: 0.2),
                                     width: 1,
                                   ),
                                 )
@@ -288,8 +284,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                                 : sqliteDbPath,
                             style: TextStyle(
                               color: sqliteDbPath.isEmpty
-                                  ? Colors.grey.shade500
-                                  : AppTheme.successColor,
+                                  ? context.tokens.textMuted
+                                  : context.tokens.success,
                               fontSize: 12,
                               fontWeight: sqliteDbPath.isNotEmpty
                                   ? FontWeight.w500
@@ -308,8 +304,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                       icon: const Icon(Icons.folder_open_rounded),
                       label: const Text('选择文件'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
+                        backgroundColor: context.tokens.primaryAccent,
+                        foregroundColor: context.tokens.cardBackground,
                         elevation: 2,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 12),
@@ -326,14 +322,14 @@ class DataSourceConfigurationSection extends StatelessWidget {
                   Icon(
                     Icons.lightbulb_outline_rounded,
                     size: 16,
-                    color: Colors.amber.shade600,
+                    color: context.tokens.warning,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     '如不选择，将使用默认位置的数据库文件',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.amber.shade700,
+                      color: context.tokens.warning,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -346,7 +342,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
     );
   }
 
-  Widget _buildMySQLConfiguration() {
+  Widget _buildMySQLConfiguration(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -355,12 +351,12 @@ class DataSourceConfigurationSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
+                color: context.tokens.success.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 Icons.cloud_done_rounded,
-                color: Colors.green.shade700,
+                color: context.tokens.success,
                 size: 20,
               ),
             ),
@@ -379,8 +375,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 icon: const Icon(Icons.edit_rounded),
                 label: const Text('编辑'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
+                  backgroundColor: context.tokens.primaryAccent,
+                  foregroundColor: context.tokens.cardBackground,
                   elevation: 2,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -395,7 +391,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 icon: const Icon(Icons.close_rounded),
                 label: const Text('取消'),
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey.shade600,
+                  foregroundColor: context.colors.onSurfaceVariant,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
@@ -406,8 +402,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 icon: const Icon(Icons.save_rounded),
                 label: const Text('保存'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
+                  backgroundColor: context.tokens.primaryAccent,
+                  foregroundColor: context.tokens.cardBackground,
                   elevation: 2,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -421,22 +417,22 @@ class DataSourceConfigurationSection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         if (!isEditing) ...[
-          _buildMySQLReadOnlyMode(),
+          _buildMySQLReadOnlyMode(context),
         ] else ...[
-          _buildMySQLEditMode(),
+          _buildMySQLEditMode(context),
         ],
       ],
     );
   }
 
-  Widget _buildMySQLReadOnlyMode() {
+  Widget _buildMySQLReadOnlyMode(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.withValues(alpha: 0.05),
+        color: context.tokens.success.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.green.withValues(alpha: 0.2),
+          color: context.tokens.success.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -450,7 +446,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                   title: '主机地址',
                   value:
                       hostController.text.isEmpty ? '未设置' : hostController.text,
-                  iconColor: Colors.blue,
+                  iconColor: context.tokens.primaryAccent,
                 ),
               ),
               const SizedBox(width: 8),
@@ -460,7 +456,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                   title: '端口',
                   value:
                       portController.text.isEmpty ? '未设置' : portController.text,
-                  iconColor: Colors.teal,
+                  iconColor: context.tokens.info,
                 ),
               ),
               const SizedBox(width: 8),
@@ -471,7 +467,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                   value: databaseController.text.isEmpty
                       ? '未设置'
                       : databaseController.text,
-                  iconColor: Colors.purple,
+                  iconColor: context.tokens.secondaryAccent,
                 ),
               ),
               const SizedBox(width: 8),
@@ -482,7 +478,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                   value: usernameController.text.isEmpty
                       ? '未设置'
                       : usernameController.text,
-                  iconColor: Colors.orange,
+                  iconColor: context.tokens.warning,
                 ),
               ),
               const SizedBox(width: 8),
@@ -491,7 +487,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                   icon: Icons.lock_rounded,
                   title: '密码',
                   value: passwordController.text.isEmpty ? '未设置' : '••••••',
-                  iconColor: Colors.red,
+                  iconColor: context.tokens.error,
                 ),
               ),
             ],
@@ -500,9 +496,9 @@ class DataSourceConfigurationSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: context.tokens.inputBackground,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: context.tokens.divider),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -510,14 +506,14 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 Icon(
                   Icons.info_outline_rounded,
                   size: 16,
-                  color: Colors.grey.shade600,
+                  color: context.colors.onSurfaceVariant,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   '点击上方的"编辑"按钮可以修改MySQL连接配置',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade600,
+                    color: context.colors.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -528,14 +524,14 @@ class DataSourceConfigurationSection extends StatelessWidget {
     );
   }
 
-  Widget _buildMySQLEditMode() {
+  Widget _buildMySQLEditMode(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.withValues(alpha: 0.05),
+        color: context.tokens.success.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.green.withValues(alpha: 0.2),
+          color: context.tokens.success.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -551,7 +547,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                     labelText: '主机地址',
                     hintText: 'localhost 或 IP地址',
                     icon: Icons.computer_rounded,
-                    iconColor: Colors.blue,
+                    iconColor: context.tokens.primaryAccent,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return '请输入主机地址';
@@ -567,7 +563,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                     labelText: '端口',
                     hintText: '3306',
                     icon: Icons.settings_ethernet_rounded,
-                    iconColor: Colors.teal,
+                    iconColor: context.tokens.info,
                     keyboardType: TextInputType.number,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -587,7 +583,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                     labelText: '数据库名称',
                     hintText: '输入数据库名称',
                     icon: Icons.account_tree_rounded,
-                    iconColor: Colors.purple,
+                    iconColor: context.tokens.secondaryAccent,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return '请输入数据库名称';
@@ -603,7 +599,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                     labelText: '用户名',
                     hintText: '输入数据库用户名',
                     icon: Icons.person_rounded,
-                    iconColor: Colors.orange,
+                    iconColor: context.tokens.warning,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return '请输入用户名';
@@ -619,7 +615,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                     labelText: '密码',
                     hintText: '输入数据库密码',
                     icon: Icons.lock_rounded,
-                    iconColor: Colors.red,
+                    iconColor: context.tokens.error,
                     obscureText: true,
                   ),
                 ),
@@ -629,10 +625,10 @@ class DataSourceConfigurationSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.05),
+                color: context.tokens.primaryAccent.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.blue.withValues(alpha: 0.2),
+                  color: context.tokens.primaryAccent.withValues(alpha: 0.2),
                   width: 1,
                 ),
               ),
@@ -640,7 +636,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.info_outline_rounded,
-                    color: Colors.blue.shade700,
+                    color: context.tokens.primaryAccent,
                     size: 20,
                   ),
                   const SizedBox(width: 12),
@@ -648,7 +644,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                     child: Text(
                       '请先测试连接确保配置正确，然后再保存设置',
                       style: TextStyle(
-                        color: Colors.blue.shade700,
+                        color: context.tokens.primaryAccent,
                         fontSize: 14,
                       ),
                     ),
@@ -662,24 +658,24 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
+                  color: context.tokens.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                   border:
-                      Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                      Border.all(color: context.tokens.success.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.check_circle_rounded,
-                      color: Colors.green,
+                      color: context.tokens.success,
                       size: 16,
                     ),
                     const SizedBox(width: 8),
                     Text(
                       '连接测试成功',
                       style: TextStyle(
-                        color: Colors.green.shade700,
+                        color: context.tokens.success,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -702,8 +698,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                       : const Icon(Icons.link_rounded),
                   label: const Text('测试连接'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
+                    backgroundColor: context.tokens.primaryAccent,
+                    foregroundColor: context.tokens.cardBackground,
                     elevation: 2,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 24, vertical: 12),

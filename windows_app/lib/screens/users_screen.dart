@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../theme/app_theme.dart';
 
 import '../models/user.dart';
 import '../providers/user_provider.dart';
-import '../widgets/dental_icons.dart';
 import '../widgets/success_toast.dart';
 import '../widgets/mysql_connection_warning.dart';
 import '../features/users/widgets/user_card.dart';
@@ -144,7 +142,7 @@ class _UsersScreenState extends State<UsersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: context.colors.surface,
       appBar: AppBar(
         title: Row(
           children: [
@@ -177,16 +175,16 @@ class _UsersScreenState extends State<UsersScreen> {
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: DentalColors.info.withValues(alpha: 0.1),
+              color: context.tokens.infoContainer,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.info.withValues(alpha: 0.3),
+                color: context.tokens.info.withValues(alpha: 0.3),
               ),
             ),
             child: IconButton(
-              icon: const Icon(
+              icon: Icon(
                 Icons.refresh_rounded,
-                color: DentalColors.info,
+                color: context.tokens.info,
               ),
               onPressed: () async {
                 // 强制刷新数据

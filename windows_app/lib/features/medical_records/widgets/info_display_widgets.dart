@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../widgets/dental_icons.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/patient.dart';
 
 /// 患者信息展示组件
@@ -20,29 +20,29 @@ class PatientInfoDisplayWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: DentalColors.primary.withValues(alpha: 0.05),
+        color: context.tokens.primaryAccent.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: DentalColors.primary.withValues(alpha: 0.2),
+          color: context.tokens.primaryAccent.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.person_rounded,
                 size: 18,
-                color: DentalColors.primary,
+                color: context.tokens.primaryAccent,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 '患者信息',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: DentalColors.onSurface,
+                  color: context.colors.onSurface,
                 ),
               ),
             ],
@@ -131,20 +131,20 @@ class MedicalRecordInfoDisplayWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
             Icon(
               Icons.medical_services_rounded,
               size: 18,
-              color: DentalColors.secondary,
+              color: context.tokens.secondaryAccent,
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               '病历信息',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: DentalColors.onSurface,
+                color: context.colors.onSurface,
               ),
             ),
           ],
@@ -228,20 +228,20 @@ class RecordSummaryDisplayWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
+        Row(
           children: [
             Icon(
               Icons.summarize_rounded,
               size: 16,
-              color: DentalColors.primary,
+              color: context.tokens.primaryAccent,
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
               '病历摘要',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: DentalColors.primary,
+                color: context.tokens.primaryAccent,
               ),
             ),
           ],
@@ -250,10 +250,10 @@ class RecordSummaryDisplayWidget extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DentalColors.primary.withValues(alpha: 0.05),
+            color: context.tokens.primaryAccent.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DentalColors.primary.withValues(alpha: 0.2),
+              color: context.tokens.primaryAccent.withValues(alpha: 0.2),
             ),
           ),
           child: Column(

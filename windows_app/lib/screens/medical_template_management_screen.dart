@@ -7,7 +7,6 @@ import '../features/medical_records/widgets/medical_template_empty_state.dart';
 import '../features/medical_records/widgets/medical_template_list.dart';
 import '../features/medical_records/widgets/medical_template_initialize_dialog.dart';
 import '../widgets/success_toast.dart';
-import '../theme/app_theme.dart';
 
 /// 医疗模板管理页面
 /// 管理治疗方案模板和医嘱模板
@@ -88,6 +87,8 @@ class _MedicalTemplateManagementScreenState
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -95,7 +96,7 @@ class _MedicalTemplateManagementScreenState
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
+                gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -115,13 +116,13 @@ class _MedicalTemplateManagementScreenState
           ],
         ),
         backgroundColor: context.tokens.cardBackground,
-        foregroundColor: Colors.black87,
+        foregroundColor: colors.onSurface,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(
             height: 1,
-            color: Colors.grey.withValues(alpha: 0.15),
+            color: tokens.shadow.withValues(alpha: 0.15),
           ),
         ),
         actions: [
@@ -129,7 +130,7 @@ class _MedicalTemplateManagementScreenState
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
+              gradient: context.tokens.primaryHeaderGradient,
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -144,7 +145,7 @@ class _MedicalTemplateManagementScreenState
             margin: const EdgeInsets.only(right: 16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.orange.shade400, Colors.orange.shade600],
+                colors: [tokens.warning, tokens.warningAccent],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -163,7 +164,7 @@ class _MedicalTemplateManagementScreenState
         children: [
           // 标签页头部
           Container(
-            color: const Color(0xFFF5F5F5),
+            color: tokens.pageBackground,
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: TabBar(
               controller: _tabController,
@@ -182,7 +183,7 @@ class _MedicalTemplateManagementScreenState
                   .toList(),
               indicatorColor: Theme.of(context).primaryColor,
               labelColor: Theme.of(context).primaryColor,
-              unselectedLabelColor: Colors.grey[600],
+              unselectedLabelColor: colors.onSurfaceVariant,
               indicatorWeight: 3,
               labelStyle: const TextStyle(
                 fontSize: 15,
@@ -224,14 +225,14 @@ class _MedicalTemplateManagementScreenState
           Icon(
             Icons.error_outline,
             size: 64,
-            color: Colors.red[300],
+            color: context.tokens.error.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
           Text(
             _errorMessage ?? '',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.red[700],
+              color: context.tokens.error,
             ),
             textAlign: TextAlign.center,
           ),
@@ -260,7 +261,7 @@ class _MedicalTemplateManagementScreenState
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error, size: 48, color: Colors.red[300]),
+                Icon(Icons.error, size: 48, color: context.tokens.error.withValues(alpha: 0.5)),
                 const SizedBox(height: 16),
                 Text('加载失败: ${snapshot.error}'),
                 const SizedBox(height: 16),
@@ -413,7 +414,7 @@ class _MedicalTemplateManagementScreenState
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: context.tokens.error),
             child: const Text('删除'),
           ),
         ],

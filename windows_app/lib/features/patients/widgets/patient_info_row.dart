@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../../../widgets/dental_icons.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class PatientInfoRow extends StatelessWidget {
   final IconData icon;
@@ -40,18 +39,18 @@ class PatientInfoRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: DentalColors.onSurfaceVariant,
+                    color: context.colors.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: DentalColors.onSurface,
+                    color: context.colors.onSurface,
                     fontWeight: FontWeight.w600,
                   ),
                   maxLines: maxLines,

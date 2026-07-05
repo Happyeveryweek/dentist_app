@@ -4,6 +4,7 @@ import '../../../models/purchase_record.dart';
 import '../../../providers/purchase_provider.dart';
 import 'purchase_stat_card.dart';
 import '../../../utils/log_manager.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 采购统计图表组件
 /// 包含总体统计、月度采购金额趋势、采购材料统计排行
@@ -66,6 +67,9 @@ class PurchaseStatisticsChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     // 按月份统计采购金额和数量
     final Map<String, double> monthlyData = {};
     final Map<String, int> monthlyCount = {};
@@ -113,9 +117,9 @@ class PurchaseStatisticsChart extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.blue.shade200),
+              color: tokens.infoContainer,
+              borderRadius: BorderRadius.circular(tokens.borderRadius),
+              border: Border.all(color: tokens.info),
             ),
             child: Row(
               children: [
@@ -124,7 +128,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                     icon: Icons.attach_money,
                     label: '总采购金额',
                     value: '¥${totalAmount.toStringAsFixed(2)}',
-                    color: Colors.blue.shade700,
+                    color: tokens.primaryAccent,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -133,7 +137,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                     icon: Icons.inventory,
                     label: '总采购数量',
                     value: totalQuantity.toString(),
-                    color: Colors.green.shade700,
+                    color: tokens.chartPalette[0 % tokens.chartPalette.length],
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -142,7 +146,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                     icon: Icons.shopping_cart,
                     label: '采购记录数',
                     value: totalRecords.toString(),
-                    color: Colors.orange.shade700,
+                    color: tokens.chartPalette[1 % tokens.chartPalette.length],
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -164,7 +168,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                             icon: Icons.inventory,
                             label: '材料种类数',
                             value: value,
-                            color: Colors.purple.shade700,
+                            color: tokens.chartPalette[2 % tokens.chartPalette.length],
                           );
                         },
                       );
@@ -182,12 +186,12 @@ class PurchaseStatisticsChart extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
+              color: tokens.cardBackground,
+              borderRadius: BorderRadius.circular(tokens.borderRadius),
+              border: Border.all(color: tokens.border),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withValues(alpha: 0.1),
+                  color: tokens.shadow,
                   spreadRadius: 1,
                   blurRadius: 3,
                   offset: const Offset(0, 1),
@@ -199,12 +203,13 @@ class PurchaseStatisticsChart extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.trending_up, color: Colors.blue[600], size: 20),
+                    Icon(Icons.trending_up, color: tokens.primaryAccent, size: 20),
                     const SizedBox(width: 8),
                     Text(
                       '月度采购金额趋势',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
+                            color: colors.onSurface,
                           ),
                     ),
                   ],
@@ -229,7 +234,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                               width: 30,
                               height: height,
                               decoration: BoxDecoration(
-                                color: Theme.of(context).primaryColor,
+                                color: tokens.primaryAccent,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
@@ -266,12 +271,12 @@ class PurchaseStatisticsChart extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
+              color: tokens.cardBackground,
+              borderRadius: BorderRadius.circular(tokens.borderRadius),
+              border: Border.all(color: tokens.border),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withValues(alpha: 0.1),
+                  color: tokens.shadow,
                   spreadRadius: 1,
                   blurRadius: 3,
                   offset: const Offset(0, 1),
@@ -283,19 +288,20 @@ class PurchaseStatisticsChart extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.inventory, color: Colors.purple[600], size: 20),
+                    Icon(Icons.inventory, color: tokens.primaryAccent, size: 20),
                     const SizedBox(width: 8),
                     Text(
                       '采购材料统计排行 (前10名)',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
+                            color: colors.onSurface,
                           ),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       '(按金额排序)',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
+                            color: tokens.textMuted,
                           ),
                     ),
                   ],
@@ -312,9 +318,9 @@ class PurchaseStatisticsChart extends StatelessWidget {
                     if (snapshot.hasError ||
                         materialRankingData == null ||
                         materialRankingData.isEmpty) {
-                      return const Center(
+                      return Center(
                         child: Text('暂无材料数据',
-                            style: TextStyle(color: Colors.grey)),
+                            style: TextStyle(color: tokens.textMuted)),
                       );
                     }
 
@@ -329,7 +335,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                               vertical: 8, horizontal: 16),
                           decoration: BoxDecoration(
-                            color: Colors.grey[50],
+                            color: tokens.tableHeaderBackground,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -343,7 +349,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                                       .bodySmall
                                       ?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.grey[700],
+                                        color: tokens.textMuted,
                                       ),
                                 ),
                               ),
@@ -356,7 +362,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                                       .bodySmall
                                       ?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.grey[700],
+                                        color: tokens.textMuted,
                                       ),
                                   textAlign: TextAlign.center,
                                 ),
@@ -371,7 +377,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                                       .bodySmall
                                       ?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.grey[700],
+                                        color: tokens.textMuted,
                                       ),
                                   textAlign: TextAlign.right,
                                 ),
@@ -386,7 +392,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                                       .bodySmall
                                       ?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.grey[700],
+                                        color: tokens.textMuted,
                                       ),
                                   textAlign: TextAlign.right,
                                 ),
@@ -401,7 +407,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                                       .bodySmall
                                       ?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.grey[700],
+                                        color: tokens.textMuted,
                                       ),
                                   textAlign: TextAlign.right,
                                 ),
@@ -442,7 +448,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                                     child: Container(
                                       height: 24,
                                       decoration: BoxDecoration(
-                                        color: Colors.grey[200],
+                                        color: tokens.border,
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: FractionallySizedBox(
@@ -452,7 +458,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                                             : 0.0,
                                         child: Container(
                                           decoration: BoxDecoration(
-                                            color: Colors.purple[600],
+                                            color: tokens.primaryAccent,
                                             borderRadius:
                                                 BorderRadius.circular(12),
                                           ),
@@ -471,7 +477,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                                           .bodyMedium
                                           ?.copyWith(
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.purple[700],
+                                            color: tokens.primaryAccent,
                                           ),
                                       textAlign: TextAlign.right,
                                     ),
@@ -486,7 +492,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                                           .textTheme
                                           .bodySmall
                                           ?.copyWith(
-                                            color: Colors.blue[700],
+                                            color: tokens.info,
                                           ),
                                       textAlign: TextAlign.right,
                                     ),
@@ -501,7 +507,7 @@ class PurchaseStatisticsChart extends StatelessWidget {
                                           .textTheme
                                           .bodySmall
                                           ?.copyWith(
-                                            color: Colors.grey[600],
+                                            color: tokens.textMuted,
                                           ),
                                       textAlign: TextAlign.right,
                                     ),

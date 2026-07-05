@@ -38,10 +38,10 @@ class PatientSearchBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+          border: Border.all(color: context.tokens.shadow),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: context.tokens.shadow,
               blurRadius: 12,
               offset: const Offset(0, 2),
             ),
@@ -69,15 +69,14 @@ class PatientSearchBar extends StatelessWidget {
                   color: context.tokens.cardBackground,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side:
-                        BorderSide(color: Colors.black.withValues(alpha: 0.06)),
+                    side: BorderSide(color: context.tokens.shadow),
                   ),
                   child: IconButton(
                     icon: Icon(
                       Icons.tune,
                       color: showAdvancedSearch
-                          ? DentalColors.warning
-                          : DentalColors.info,
+                          ? context.tokens.warning
+                          : context.tokens.info,
                     ),
                     tooltip: showAdvancedSearch ? '收起筛选' : '高级筛选',
                     onPressed: onAdvancedSearchToggled,
@@ -88,13 +87,12 @@ class PatientSearchBar extends StatelessWidget {
                   color: context.tokens.cardBackground,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side:
-                        BorderSide(color: Colors.black.withValues(alpha: 0.06)),
+                    side: BorderSide(color: context.tokens.shadow),
                   ),
                   child: IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.person_add_alt_1_rounded,
-                      color: Colors.green,
+                      color: context.tokens.success,
                     ),
                     tooltip: '添加患者',
                     onPressed: onAddPatient,

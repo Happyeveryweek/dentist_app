@@ -19,6 +19,7 @@ class PurchaseFormActionsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Wrap(
       alignment: WrapAlignment.end,
       spacing: 16,
@@ -29,20 +30,20 @@ class PurchaseFormActionsSection extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.grey.shade100,
-                context.tokens.border,
+                tokens.inputBackground,
+                tokens.border,
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.grey.withValues(alpha: 0.25),
+              color: tokens.border.withValues(alpha: 0.25),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
+                color: tokens.shadow.withValues(alpha: 0.06),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -62,13 +63,13 @@ class PurchaseFormActionsSection extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.grey.withValues(alpha: 0.15),
+                        color: tokens.mutedBackground,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Icon(
                         Icons.close_rounded,
                         size: 16,
-                        color: context.tokens.iconMuted,
+                        color: tokens.iconMuted,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -77,7 +78,7 @@ class PurchaseFormActionsSection extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
-                        color: context.tokens.iconMuted,
+                        color: tokens.iconMuted,
                         letterSpacing: 0.3,
                       ),
                     ),
@@ -92,8 +93,8 @@ class PurchaseFormActionsSection extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.teal.shade400,
-                Colors.teal.shade600,
+                tokens.primaryAccent,
+                tokens.primaryAccent,
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -101,7 +102,7 @@ class PurchaseFormActionsSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.teal.withValues(alpha: 0.3),
+                color: tokens.primaryAccent.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -123,7 +124,7 @@ class PurchaseFormActionsSection extends StatelessWidget {
                         width: 16,
                         height: 16,
                         child: CircularProgressIndicator(
-                          color: context.tokens.cardBackground,
+                          color: tokens.cardBackground,
                           strokeWidth: 2,
                         ),
                       ),
@@ -133,7 +134,7 @@ class PurchaseFormActionsSection extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: context.tokens.cardBackground,
+                          color: tokens.cardBackground,
                         ),
                       ),
                     ] else ...[
@@ -148,7 +149,7 @@ class PurchaseFormActionsSection extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: context.tokens.cardBackground,
+                          color: tokens.cardBackground,
                         ),
                       ),
                     ],

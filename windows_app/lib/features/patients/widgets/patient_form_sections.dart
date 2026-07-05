@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../widgets/dental_icons.dart';
+import '../../../theme/theme_context_extensions.dart';
+import '../../../theme/medical_semantic_colors.dart';
 import 'patient_form_fields.dart';
 
 class PatientFormBasicSection extends StatelessWidget {
@@ -35,13 +36,14 @@ class PatientFormBasicSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: DentalColors.cardGradient,
+        gradient: tokens.subtleHeaderGradient,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: DentalColors.primary.withValues(alpha: 0.1),
+          color: tokens.primaryAccent.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -162,13 +164,14 @@ class PatientFormContactSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: DentalColors.cardGradient,
+        gradient: tokens.subtleHeaderGradient,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: DentalColors.info.withValues(alpha: 0.1),
+          color: tokens.info.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -196,8 +199,8 @@ class PatientFormContactSection extends StatelessWidget {
                   margin: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     color: hasBackupPhone
-                        ? DentalColors.error.withValues(alpha: 0.1)
-                        : DentalColors.info.withValues(alpha: 0.1),
+                        ? tokens.error.withValues(alpha: 0.1)
+                        : tokens.info.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
@@ -205,9 +208,9 @@ class PatientFormContactSection extends StatelessWidget {
                       hasBackupPhone ? Icons.remove_circle : Icons.add_circle,
                       color: canEditBasicInfo
                           ? (hasBackupPhone
-                              ? DentalColors.error
-                              : DentalColors.info)
-                          : Colors.grey,
+                              ? tokens.error
+                              : tokens.info)
+                          : tokens.disabledText,
                     ),
                     tooltip: hasBackupPhone ? '移除备用电话' : '添加备用电话',
                     onPressed: canEditBasicInfo ? onToggleBackupPhone : null,
@@ -291,13 +294,14 @@ class PatientFormTreatmentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: DentalColors.cardGradient,
+        gradient: tokens.subtleHeaderGradient,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: DentalColors.success.withValues(alpha: 0.1),
+          color: tokens.success.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -323,13 +327,14 @@ class PatientFormDentalConditionSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: DentalColors.cardGradient,
+        gradient: tokens.subtleHeaderGradient,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: DentalColors.dentalTeal.withValues(alpha: 0.1),
+          color: MedicalSemanticColors.dentalRecordTeal.withValues(alpha: 0.1),
           width: 1,
         ),
       ),

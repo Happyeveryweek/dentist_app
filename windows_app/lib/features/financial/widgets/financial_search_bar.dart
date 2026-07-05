@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../../../widgets/dental_icons.dart';
 import '../../../widgets/unified_search_field.dart';
 
 /// 财务管理搜索栏组件（搜索框 + 排序 + 日期范围 + 高级筛选）
@@ -50,10 +49,11 @@ class FinancialSearchBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+          border: Border.all(
+              color: context.tokens.shadow.withValues(alpha: 0.06)),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
+                color: context.tokens.shadow.withValues(alpha: 0.04),
                 blurRadius: 12,
                 offset: const Offset(0, 2)),
           ],
@@ -76,7 +76,7 @@ class FinancialSearchBar extends StatelessWidget {
             const SizedBox(width: 12),
             // 排序切换
             PopupMenuButton<String>(
-              icon: const Icon(Icons.sort_rounded, color: Colors.black87),
+              icon: Icon(Icons.sort_rounded, color: context.colors.onSurface),
               onSelected: onSortChanged,
               itemBuilder: (BuildContext context) =>
                   _buildSortMenuItems(context),
@@ -91,8 +91,8 @@ class FinancialSearchBar extends StatelessWidget {
                   color: context.tokens.cardBackground,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                    side:
-                        BorderSide(color: Colors.grey.withValues(alpha: 0.12)),
+                    side: BorderSide(
+                        color: context.tokens.border.withValues(alpha: 0.12)),
                   ),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
@@ -102,8 +102,8 @@ class FinancialSearchBar extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.calendar_today,
-                              size: 16, color: Colors.black54),
+                          Icon(Icons.calendar_today,
+                              size: 16, color: context.tokens.textMuted),
                           const SizedBox(width: 6),
                           ConstrainedBox(
                             constraints: const BoxConstraints(
@@ -112,8 +112,8 @@ class FinancialSearchBar extends StatelessWidget {
                               (startDate == null && endDate == null)
                                   ? '全部时间'
                                   : '${DateFormat('yyyy-MM-dd').format(startDate ?? DateTime.now())} - ${DateFormat('yyyy-MM-dd').format(endDate ?? DateTime.now())}',
-                              style: const TextStyle(
-                                  color: Colors.black87,
+                              style: TextStyle(
+                                  color: context.colors.onSurface,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500),
                               overflow: TextOverflow.ellipsis,
@@ -124,8 +124,8 @@ class FinancialSearchBar extends StatelessWidget {
                             InkWell(
                               onTap: onDateRangeCleared,
                               borderRadius: BorderRadius.circular(12),
-                              child: const Icon(Icons.close_rounded,
-                                  size: 16, color: Colors.black45),
+                              child: Icon(Icons.close_rounded,
+                                  size: 16, color: context.tokens.textMuted),
                             ),
                           ],
                         ],
@@ -145,15 +145,15 @@ class FinancialSearchBar extends StatelessWidget {
                   color: context.tokens.cardBackground,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side:
-                        BorderSide(color: Colors.grey.withValues(alpha: 0.12)),
+                    side: BorderSide(
+                        color: context.tokens.border.withValues(alpha: 0.12)),
                   ),
                   elevation: 0.5,
                   child: IconButton(
                     icon: Icon(Icons.tune,
                         color: hasAdvancedFilter
-                            ? DentalColors.primary
-                            : Colors.grey[700]),
+                            ? context.tokens.primaryAccent
+                            : context.colors.onSurfaceVariant),
                     tooltip: '高级筛选',
                     onPressed: onAdvancedFilterTap,
                   ),

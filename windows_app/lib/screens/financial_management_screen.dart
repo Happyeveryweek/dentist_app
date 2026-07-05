@@ -704,6 +704,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -714,9 +715,9 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
                 gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.account_balance_wallet,
-                color: Colors.white,
+                color: colors.onPrimary,
                 size: 24,
               ),
             ),
@@ -818,7 +819,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.add_rounded, color: Colors.white),
+              icon: Icon(Icons.add_rounded, color: colors.onPrimary),
               onPressed: () async {
                 final changed = await _showFinancialRecordDialog();
                 if (changed && mounted) {
@@ -855,7 +856,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              icon: Icon(Icons.refresh_rounded, color: colors.onPrimary),
               onPressed: () async {
                 final financialProvider =
                     Provider.of<FinancialProvider>(context, listen: false);

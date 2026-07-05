@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/financial_item.dart';
 import '../../../models/financial_record.dart';
 import '../../../models/patient.dart';
+import '../../../theme/medical_semantic_colors.dart';
 import '../../../features/financial/helpers/financial_payment_method_helper.dart';
 
 class PatientFinancialPermissionDeniedState extends StatelessWidget {
@@ -19,13 +21,13 @@ class PatientFinancialPermissionDeniedState extends StatelessWidget {
             width: 120,
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.1),
+              color: context.tokens.warningContainer,
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.lock_outline,
               size: 64,
-              color: Colors.orange.withValues(alpha: 0.6),
+              color: context.tokens.warning.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 24),
@@ -34,7 +36,7 @@ class PatientFinancialPermissionDeniedState extends StatelessWidget {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: context.colors.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 8),
@@ -44,7 +46,7 @@ class PatientFinancialPermissionDeniedState extends StatelessWidget {
               '您只能查看自己医生的患者的财务记录',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[500],
+                color: context.tokens.textMuted,
               ),
               textAlign: TextAlign.center,
             ),
@@ -69,7 +71,7 @@ class PatientFinancialRecordsEmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.receipt_long, size: 64, color: Colors.grey[400]),
+          Icon(Icons.receipt_long, size: 64, color: context.tokens.iconMuted),
           const SizedBox(height: 16),
           Text(
             '暂无收费记录',
@@ -216,7 +218,7 @@ class PatientFinancialRecordCard extends StatelessWidget {
                       icon: Icons.calculate,
                       label: '应收费',
                       value: '¥${patientTotalReceivable.toStringAsFixed(2)}',
-                      valueColor: Colors.purple[700],
+                      valueColor: context.tokens.primaryAccent,
                     ),
                   ),
                   Expanded(
@@ -224,7 +226,7 @@ class PatientFinancialRecordCard extends StatelessWidget {
                       icon: Icons.payment,
                       label: '当前应收费',
                       value: '¥${totalReceivable.toStringAsFixed(2)}',
-                      valueColor: Colors.blue[700],
+                      valueColor: context.tokens.primaryAccent,
                     ),
                   ),
                   Expanded(
@@ -232,7 +234,7 @@ class PatientFinancialRecordCard extends StatelessWidget {
                       icon: Icons.check_circle,
                       label: '已收费',
                       value: '¥${totalCollected.toStringAsFixed(2)}',
-                      valueColor: Colors.green[700],
+                      valueColor: context.tokens.success,
                     ),
                   ),
                   Expanded(
@@ -241,8 +243,8 @@ class PatientFinancialRecordCard extends StatelessWidget {
                       label: '欠费',
                       value: '¥${outstandingAmount.toStringAsFixed(2)}',
                       valueColor: outstandingAmount > 0
-                          ? Colors.red
-                          : Colors.green[700],
+                          ? context.tokens.error
+                          : context.tokens.success,
                     ),
                   ),
                 ],
@@ -283,8 +285,10 @@ class _FinancialRecordHeader extends StatelessWidget {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color:
-                (isFemale ? Colors.pink : Colors.blue).withValues(alpha: 0.1),
+            color: (isFemale
+                    ? MedicalSemanticColors.femaleGender
+                    : MedicalSemanticColors.maleGender)
+                .withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -293,7 +297,9 @@ class _FinancialRecordHeader extends StatelessWidget {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
-                color: isFemale ? Colors.pink : Colors.blue,
+                color: isFemale
+                    ? MedicalSemanticColors.femaleGender
+                    : MedicalSemanticColors.maleGender,
               ),
             ),
           ),
@@ -313,7 +319,7 @@ class _FinancialRecordHeader extends StatelessWidget {
               Text(
                 '创建时间: ${DateFormat('yyyy-MM-dd HH:mm').format(record.createdAt)}',
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color: context.colors.onSurfaceVariant,
                   fontSize: 12,
                 ),
               ),
@@ -343,7 +349,7 @@ class _FinancialItemsPreview extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -351,12 +357,12 @@ class _FinancialItemsPreview extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.list, size: 16, color: Colors.blue.shade600),
+                      Icon(Icons.list, size: 16, color: context.tokens.primaryAccent),
                       const SizedBox(width: 4),
                       Text(
                         '收费记录',
                         style: TextStyle(
-                          color: Colors.blue.shade700,
+                          color: context.tokens.primaryAccent,
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -376,7 +382,7 @@ class _FinancialItemsPreview extends StatelessWidget {
                         '+${items.length - 5} 更多记录',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: context.colors.onSurfaceVariant,
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -388,7 +394,7 @@ class _FinancialItemsPreview extends StatelessWidget {
                         '暂无收费记录',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: context.colors.onSurfaceVariant,
                         ),
                       ),
                     ),
@@ -436,7 +442,7 @@ class _FinancialItemPreviewRow extends StatelessWidget {
               '¥${item.itemPrice.toStringAsFixed(2)}',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.blue.shade700,
+                color: context.tokens.primaryAccent,
                 fontWeight: FontWeight.w600,
               ),
               maxLines: 1,
@@ -449,7 +455,7 @@ class _FinancialItemPreviewRow extends StatelessWidget {
               '¥${item.totalPrice.toStringAsFixed(2)}',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.green.shade700,
+                color: context.tokens.success,
                 fontWeight: FontWeight.w600,
               ),
               maxLines: 1,
@@ -462,7 +468,7 @@ class _FinancialItemPreviewRow extends StatelessWidget {
               DateFormat('MM-dd').format(item.chargeDate),
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.grey.shade600,
+                color: context.colors.onSurfaceVariant,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -507,7 +513,7 @@ class _FinancialItemPreviewHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final headerStyle = TextStyle(
       fontSize: 11,
-      color: Colors.grey.shade600,
+      color: context.colors.onSurfaceVariant,
       fontWeight: FontWeight.w600,
     );
 
@@ -556,7 +562,7 @@ class _CompactFinancialInfoItem extends StatelessWidget {
         Icon(
           icon,
           size: 16,
-          color: Colors.grey[600],
+          color: context.colors.onSurfaceVariant,
         ),
         const SizedBox(width: 4),
         Expanded(
@@ -566,7 +572,7 @@ class _CompactFinancialInfoItem extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
+                      color: context.colors.onSurfaceVariant,
                       fontSize: 12,
                     ),
               ),
@@ -612,7 +618,7 @@ class _FinancialRecordActions extends StatelessWidget {
             label: const Text('查看'),
             onPressed: onView,
             style: TextButton.styleFrom(
-              foregroundColor: Colors.blue,
+              foregroundColor: context.tokens.primaryAccent,
             ),
           ),
           const SizedBox(width: 8),
@@ -621,7 +627,7 @@ class _FinancialRecordActions extends StatelessWidget {
             label: const Text('编辑'),
             onPressed: onEdit,
             style: TextButton.styleFrom(
-              foregroundColor: Colors.orange,
+              foregroundColor: context.tokens.warning,
             ),
           ),
           const SizedBox(width: 8),
@@ -630,7 +636,7 @@ class _FinancialRecordActions extends StatelessWidget {
             label: const Text('删除'),
             onPressed: onDelete,
             style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
+              foregroundColor: context.tokens.error,
             ),
           ),
         ] else ...[
@@ -639,7 +645,7 @@ class _FinancialRecordActions extends StatelessWidget {
             label: const Text('权限不足'),
             onPressed: onPermissionDenied,
             style: TextButton.styleFrom(
-              foregroundColor: Colors.grey,
+              foregroundColor: context.tokens.iconMuted,
             ),
           ),
         ],

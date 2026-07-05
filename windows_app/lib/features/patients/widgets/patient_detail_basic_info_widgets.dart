@@ -26,7 +26,7 @@ class PatientPersonalInfoCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: context.tokens.shadow.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -42,7 +42,7 @@ class PatientPersonalInfoCard extends StatelessWidget {
                 icon: Icons.badge,
                 label: '病历号',
                 value: patient.medicalRecordNumber?.toString() ?? '无',
-                color: const Color(0xFF2ecc71),
+                color: context.tokens.success,
               ),
             ),
             const SizedBox(width: 16),
@@ -52,7 +52,7 @@ class PatientPersonalInfoCard extends StatelessWidget {
                 icon: Icons.medical_services,
                 label: '主治医生',
                 value: patient.doctor ?? '无',
-                color: const Color(0xFF2ecc71),
+                color: context.tokens.success,
               ),
             ),
             const SizedBox(width: 16),
@@ -66,7 +66,7 @@ class PatientPersonalInfoCard extends StatelessWidget {
                         ? '${patient.mainPhone} (+${patient.phoneList.length - 1})'
                         : patient.mainPhone)
                     : '无',
-                color: const Color(0xFF2ecc71),
+                color: context.tokens.success,
               ),
             ),
             if (patientAddress != null && patientAddress.isNotEmpty) ...[
@@ -77,7 +77,7 @@ class PatientPersonalInfoCard extends StatelessWidget {
                   icon: Icons.home,
                   label: '住址',
                   value: patientAddress,
-                  color: const Color(0xFF2ecc71),
+                  color: context.tokens.success,
                 ),
               ),
             ],

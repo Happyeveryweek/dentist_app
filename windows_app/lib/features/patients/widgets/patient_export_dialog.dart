@@ -8,8 +8,6 @@ import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../providers/patient_provider.dart';
 import '../../../models/patient.dart';
-import '../../../theme/app_theme.dart';
-import '../../../widgets/dental_icons.dart';
 import '../../../utils/log_manager.dart';
 
 class PatientExportDialog extends StatefulWidget {
@@ -47,16 +45,11 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final isPurpleTheme =
-        false;
-    final textColor =
-        isPurpleTheme ? AppTheme.purplePrimaryText : context.colors.onSurface;
-    final secondaryTextColor = isPurpleTheme
-        ? AppTheme.purpleSecondaryText
-        : (isDarkMode ? Colors.grey[400] : Colors.black54);
-    final accentColor =
-        isPurpleTheme ? AppTheme.purpleColor : Theme.of(context).primaryColor;
+    final tokens = context.tokens;
+    final colors = context.colors;
+    final textColor = colors.onSurface;
+    final secondaryTextColor = tokens.textMuted;
+    final accentColor = tokens.primaryAccent;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -100,7 +93,7 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
               ],
             ),
             const SizedBox(height: 4),
-            Divider(color: Colors.black.withValues(alpha: 0.06)),
+            Divider(color: tokens.shadow.withValues(alpha: 0.06)),
             const SizedBox(height: 8),
             Text('选择导出选项',
                 style: TextStyle(
@@ -113,7 +106,7 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
                   color: context.tokens.cardBackground,
                   borderRadius: BorderRadius.circular(12),
                   border:
-                      Border.all(color: Colors.black.withValues(alpha: 0.06))),
+                      Border.all(color: tokens.shadow.withValues(alpha: 0.06))),
               child: Column(children: [
                 SwitchListTile.adaptive(
                   title: const Text('导出所有患者数据'),
@@ -127,7 +120,7 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
                   activeThumbColor: accentColor,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
-                Divider(height: 1, color: Colors.black.withValues(alpha: 0.06)),
+                Divider(height: 1, color: tokens.shadow.withValues(alpha: 0.06)),
                 SwitchListTile.adaptive(
                   title: const Text('包含牙齿状况图表'),
                   subtitle: Text('以文本格式附加牙齿状况信息',
@@ -146,12 +139,12 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
             if (_isExporting || _statusMessage.isNotEmpty) ...[
               Row(children: [
                 Icon(_hasError ? Icons.error_outline : Icons.info_outline,
-                    size: 18, color: _hasError ? Colors.red : accentColor),
+                    size: 18, color: _hasError ? tokens.error : accentColor),
                 const SizedBox(width: 8),
                 Expanded(
                     child: Text(_statusMessage,
                         style: TextStyle(
-                            color: _hasError ? Colors.red : textColor))),
+                            color: _hasError ? tokens.error : textColor))),
               ]),
               if (_exportSuccess && _exportPath.isNotEmpty)
                 Padding(

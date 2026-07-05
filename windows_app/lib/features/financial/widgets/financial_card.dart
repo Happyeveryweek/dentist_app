@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/patient.dart';
 import '../../../models/financial_record.dart';
 import '../../../widgets/dental_icons.dart';
@@ -41,6 +42,7 @@ class FinancialCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final updateDate = lastFinancialUpdateDate;
     return HoverableFinancialListCard(
       onTap: onTap,
@@ -78,7 +80,7 @@ class FinancialCard extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withValues(alpha: 0.1),
+                        color: tokens.primaryAccent.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Row(
@@ -87,7 +89,7 @@ class FinancialCard extends StatelessWidget {
                           Icon(
                             Icons.badge,
                             size: 11,
-                            color: Colors.blue[700],
+                            color: tokens.primaryAccent,
                           ),
                           const SizedBox(width: 3),
                           Text(
@@ -95,7 +97,7 @@ class FinancialCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: Colors.blue[700],
+                              color: tokens.primaryAccent,
                             ),
                           ),
                         ],
@@ -116,7 +118,7 @@ class FinancialCard extends StatelessWidget {
                         icon: Icons.calendar_today,
                         label: DateFormat('yy-MM-dd')
                             .format(patient.firstVisitDate),
-                        color: Colors.purple,
+                        color: tokens.secondaryAccent,
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -129,7 +131,7 @@ class FinancialCard extends StatelessWidget {
                           icon: Icons.update,
                           label: DateFormat('yy-MM-dd')
                               .format(updateDate),
-                          color: Colors.orange,
+                          color: tokens.warning,
                         ),
                       ),
                     const SizedBox(width: 4),
@@ -141,7 +143,7 @@ class FinancialCard extends StatelessWidget {
                         icon: Icons.account_balance_wallet,
                         label:
                             '¥${(totalCost % 1 == 0 ? totalCost.toInt().toString() : totalCost.toStringAsFixed(0))}',
-                        color: Colors.blue,
+                        color: tokens.primaryAccent,
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -153,7 +155,7 @@ class FinancialCard extends StatelessWidget {
                         icon: Icons.check_circle,
                         label:
                             '¥${(received % 1 == 0 ? received.toInt().toString() : received.toStringAsFixed(0))}',
-                        color: Colors.green,
+                        color: tokens.success,
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -165,7 +167,7 @@ class FinancialCard extends StatelessWidget {
                         icon: Icons.build,
                         label:
                             '¥${(fee % 1 == 0 ? fee.toInt().toString() : fee.toStringAsFixed(0))}',
-                        color: Colors.orange,
+                        color: tokens.warning,
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -177,7 +179,7 @@ class FinancialCard extends StatelessWidget {
                         icon: Icons.pending,
                         label:
                             '¥${(debt % 1 == 0 ? debt.toInt().toString() : debt.toStringAsFixed(0))}',
-                        color: debt > 0 ? Colors.red : Colors.grey,
+                        color: debt > 0 ? tokens.error : tokens.textMuted,
                       ),
                     ),
                   ],
@@ -195,7 +197,7 @@ class FinancialCard extends StatelessWidget {
               // 查看按钮
               FinancialCompactActionButton(
                 icon: Icons.visibility,
-                color: Colors.blue,
+                color: tokens.primaryAccent,
                 tooltip: '查看',
                 onPressed: onTap,
               ),
@@ -205,7 +207,7 @@ class FinancialCard extends StatelessWidget {
               // 编辑按钮
               FinancialCompactActionButton(
                 icon: Icons.edit,
-                color: Colors.orange,
+                color: tokens.warning,
                 tooltip: '编辑',
                 onPressed: onEdit,
               ),
@@ -215,7 +217,7 @@ class FinancialCard extends StatelessWidget {
               // 删除按钮
               FinancialCompactActionButton(
                 icon: Icons.delete,
-                color: Colors.red,
+                color: tokens.error,
                 tooltip: '删除',
                 onPressed: onDelete,
               ),

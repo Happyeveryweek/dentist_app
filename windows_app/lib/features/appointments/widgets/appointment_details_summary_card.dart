@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/appointment.dart';
-import '../../../widgets/dental_icons.dart';
 
 class AppointmentDetailsSummaryCard extends StatelessWidget {
   final Appointment appointment;
@@ -23,26 +22,26 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             context.tokens.cardBackground,
-            DentalColors.background.withValues(alpha: 0.5),
+            context.tokens.pageBackground.withValues(alpha: 0.5),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: DentalColors.primary.withValues(alpha: 0.1),
+            color: context.tokens.primaryAccent.withValues(alpha: 0.1),
             blurRadius: 20,
             spreadRadius: 2,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: context.tokens.shadow.withValues(alpha: 0.5),
             blurRadius: 8,
             spreadRadius: 1,
             offset: const Offset(0, 3),
           ),
         ],
         border: Border.all(
-          color: DentalColors.primary.withValues(alpha: 0.1),
+          color: context.tokens.primaryAccent.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -57,18 +56,18 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        DentalColors.primary,
-                        DentalColors.secondary,
+                        context.tokens.primaryAccent,
+                        context.tokens.secondaryAccent,
                       ],
                     ),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: DentalColors.primary.withValues(alpha: 0.3),
+                        color: context.tokens.primaryAccent.withValues(alpha: 0.3),
                         blurRadius: 12,
                         spreadRadius: 2,
                         offset: const Offset(0, 4),
@@ -95,9 +94,9 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         '时间: ${DateFormat('HH:mm').format(appointment.appointmentDate)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
-                          color: DentalColors.onSurfaceVariant,
+                          color: context.colors.onSurfaceVariant,
                         ),
                       ),
                     ],

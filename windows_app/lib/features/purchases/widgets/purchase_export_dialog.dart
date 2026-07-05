@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../../../theme/app_theme.dart';
 
 class PurchaseExportDialog extends StatefulWidget {
   const PurchaseExportDialog({
@@ -27,12 +26,10 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isPurpleTheme =
-        false;
-
-    final textColor = isPurpleTheme ? AppTheme.purplePrimaryText : null;
-    final accentColor =
-        isPurpleTheme ? AppTheme.purpleColor : Theme.of(context).primaryColor;
+    final tokens = context.tokens;
+    final colors = context.colors;
+    final textColor = colors.onSurface;
+    final accentColor = tokens.primaryAccent;
 
     return AlertDialog(
       title: Row(
@@ -66,7 +63,7 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
               title: '采购记录',
               subtitle: '包含采购记录的基本信息（采购日期、供应商、备注等）',
               icon: Icons.shopping_cart,
-              iconColor: Colors.blue,
+              iconColor: tokens.primaryAccent,
               value: _includePurchaseRecord,
               onChanged: (value) {
                 setState(() {
@@ -82,7 +79,7 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
               title: '采购汇总',
               subtitle: '包含采购统计信息（总数量、总金额、项目数等）',
               icon: Icons.analytics,
-              iconColor: Colors.green,
+              iconColor: tokens.success,
               value: _includePurchaseSummary,
               onChanged: (value) {
                 setState(() {
@@ -98,7 +95,7 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
               title: '采购项目明细',
               subtitle: '包含详细的采购项目列表（材料名称、数量、单价、总价等）',
               icon: Icons.list_alt,
-              iconColor: Colors.orange,
+              iconColor: tokens.warning,
               value: _includePurchaseDetails,
               onChanged: (value) {
                 setState(() {
@@ -113,21 +110,21 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: tokens.infoContainer,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade200),
+                border: Border.all(color: tokens.info.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
                   Icon(Icons.info_outline,
-                      color: context.tokens.primaryAccent, size: 20),
+                      color: tokens.info, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       '至少需要选择一个区域进行导出。建议至少包含"采购项目明细"以获得完整的采购信息。',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.blue.shade700,
+                        color: tokens.info,
                       ),
                     ),
                   ),
@@ -174,11 +171,11 @@ class _PurchaseExportDialogState extends State<PurchaseExportDialog> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: value ? iconColor.withValues(alpha: 0.1) : Colors.grey.shade50,
+        color: value ? iconColor.withValues(alpha: 0.1) : context.tokens.mutedBackground,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color:
-              value ? iconColor.withValues(alpha: 0.3) : Colors.grey.shade300,
+              value ? iconColor.withValues(alpha: 0.3) : context.tokens.divider,
           width: value ? 2 : 1,
         ),
       ),

@@ -55,7 +55,7 @@ class ErrorScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 64, color: context.tokens.error),
             const SizedBox(height: 16),
             const Text('出错了！', style: TextStyle(fontSize: 24)),
             const SizedBox(height: 8),
@@ -207,14 +207,14 @@ class ErrorApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        backgroundColor: Colors.red.shade50,
+        backgroundColor: context.tokens.errorContainer,
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                Icon(Icons.error_outline, color: context.tokens.error, size: 64),
                 const SizedBox(height: 20),
                 const Text('应用启动失败',
                     style:
@@ -225,7 +225,7 @@ class ErrorApp extends StatelessWidget {
                     child: SelectableText(
                       error,
                       style:
-                          const TextStyle(fontSize: 14, color: Colors.black87),
+                          TextStyle(fontSize: 14, color: context.colors.onSurface),
                     ),
                   ),
                 ),
@@ -247,7 +247,7 @@ class AlreadyRunningApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        backgroundColor: Colors.orange.shade50,
+        backgroundColor: context.tokens.warningContainer,
         body: Center(
           child: Container(
             padding: const EdgeInsets.all(40),
@@ -257,7 +257,7 @@ class AlreadyRunningApp extends StatelessWidget {
               children: [
                 Icon(
                   Icons.info_outline,
-                  color: Colors.orange.shade700,
+                  color: context.tokens.warning,
                   size: 80,
                 ),
                 const SizedBox(height: 30),
@@ -266,7 +266,7 @@ class AlreadyRunningApp extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.orange.shade900,
+                    color: context.tokens.warning,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -275,7 +275,7 @@ class AlreadyRunningApp extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.orange.shade800,
+                    color: context.tokens.warning,
                     height: 1.5,
                   ),
                 ),
@@ -283,21 +283,21 @@ class AlreadyRunningApp extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.tokens.cardBackground,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.orange.shade300),
+                    border: Border.all(color: context.tokens.warning.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.lightbulb_outline,
-                          color: Colors.orange.shade700),
+                          color: context.tokens.warning),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           '此窗口将在 3 秒后自动关闭',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.orange.shade700,
+                            color: context.tokens.warning,
                           ),
                         ),
                       ),
@@ -834,14 +834,14 @@ class _AppWithProvidersState extends State<AppWithProviders> {
       LogManager.e('Main', 'AppWithProviders build错误', error: e);
       return MaterialApp(
         home: Scaffold(
-          backgroundColor: Colors.red.shade50,
+          backgroundColor: context.tokens.errorContainer,
           body: Center(
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                  Icon(Icons.error_outline, color: context.tokens.error, size: 64),
                   const SizedBox(height: 20),
                   const Text('应用界面加载失败',
                       style:
@@ -851,8 +851,8 @@ class _AppWithProvidersState extends State<AppWithProviders> {
                     child: SingleChildScrollView(
                       child: SelectableText(
                         '$e',
-                        style: const TextStyle(
-                            fontSize: 14, color: Colors.black87),
+                        style: TextStyle(
+                            fontSize: 14, color: context.colors.onSurface),
                       ),
                     ),
                   ),

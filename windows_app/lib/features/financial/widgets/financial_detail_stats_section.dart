@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'financial_stat_item.dart';
 
 /// 财务详情页统计区域组件
@@ -20,9 +21,9 @@ class FinancialDetailStatsSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green[50],
+        color: context.tokens.successContainer,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.green.shade200),
+        border: Border.all(color: context.tokens.success),
       ),
       child: Row(
         children: [
@@ -32,7 +33,7 @@ class FinancialDetailStatsSection extends StatelessWidget {
               label: '应收费',
               value:
                   '¥${(totalReceivable % 1 == 0 ? totalReceivable.toInt().toString() : totalReceivable.toStringAsFixed(2))}',
-              color: Colors.blue.shade700,
+              color: context.tokens.primaryAccent,
             ),
           ),
           Expanded(
@@ -41,7 +42,7 @@ class FinancialDetailStatsSection extends StatelessWidget {
               label: '已收费',
               value:
                   '¥${(totalPaid % 1 == 0 ? totalPaid.toInt().toString() : totalPaid.toStringAsFixed(2))}',
-              color: Colors.green.shade700,
+              color: context.tokens.success,
             ),
           ),
           Expanded(
@@ -50,8 +51,9 @@ class FinancialDetailStatsSection extends StatelessWidget {
               label: '欠费金额',
               value:
                   '¥${(totalOutstanding % 1 == 0 ? totalOutstanding.toInt().toString() : totalOutstanding.toStringAsFixed(2))}',
-              color:
-                  totalOutstanding > 0 ? Colors.red.shade700 : Colors.grey.shade700,
+              color: totalOutstanding > 0
+                  ? context.tokens.error
+                  : context.colors.onSurfaceVariant,
             ),
           ),
         ],

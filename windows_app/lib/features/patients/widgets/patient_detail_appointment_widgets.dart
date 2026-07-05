@@ -15,17 +15,19 @@ class PatientAppointmentsEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.calendar_today, size: 64, color: Colors.grey[300]),
+          Icon(Icons.calendar_today, size: 64, color: tokens.divider),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             '暂无预约记录',
             style: TextStyle(
               fontSize: 18,
-              color: Colors.grey,
+              color: tokens.textMuted,
             ),
           ),
           const SizedBox(height: 24),
@@ -69,7 +71,9 @@ class PatientAppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _getStatusColor(appointment.status);
+    final tokens = context.tokens;
+    final colors = context.colors;
+    final statusColor = _getStatusColor(context, appointment.status);
     final treatmentType = appointment.treatmentType;
     final notes = appointment.notes;
 
@@ -146,9 +150,9 @@ class PatientAppointmentCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
+                              color: tokens.infoContainer,
                               borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: Colors.blue.shade200),
+                              border: Border.all(color: tokens.info),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,13 +162,13 @@ class PatientAppointmentCard extends StatelessWidget {
                                     Icon(
                                       DentalIcons.tooth,
                                       size: 16,
-                                      color: context.tokens.primaryAccent,
+                                      color: tokens.primaryAccent,
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       '牙位信息',
                                       style: TextStyle(
-                                        color: Colors.blue.shade700,
+                                        color: tokens.primaryAccent,
                                         fontWeight: FontWeight.w600,
                                         fontSize: 12,
                                       ),
@@ -175,7 +179,7 @@ class PatientAppointmentCard extends StatelessWidget {
                                 Text(
                                   treatmentTypeText,
                                   style: TextStyle(
-                                    color: Colors.grey[800],
+                                    color: colors.onSurface,
                                     fontWeight: FontWeight.w500,
                                     fontSize: 13,
                                   ),
@@ -189,7 +193,7 @@ class PatientAppointmentCard extends StatelessWidget {
                         if (notes != null && notes.isNotEmpty)
                           Text(
                             '备注: $notes',
-                            style: TextStyle(color: Colors.grey[600]),
+                            style: TextStyle(color: colors.onSurfaceVariant),
                           ),
                       ],
                     ),
@@ -208,7 +212,7 @@ class PatientAppointmentCard extends StatelessWidget {
                   label: const Text('查看'),
                   onPressed: onView,
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.blue,
+                    foregroundColor: tokens.primaryAccent,
                   ),
                 ),
                 canEdit
@@ -217,7 +221,7 @@ class PatientAppointmentCard extends StatelessWidget {
                         label: const Text('编辑'),
                         onPressed: onEdit,
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.orange,
+                          foregroundColor: tokens.warning,
                         ),
                       )
                     : TextButton.icon(
@@ -225,7 +229,7 @@ class PatientAppointmentCard extends StatelessWidget {
                         label: const Text('权限不足'),
                         onPressed: onEditDenied,
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.grey,
+                          foregroundColor: tokens.textMuted,
                         ),
                       ),
                 canDelete
@@ -234,7 +238,7 @@ class PatientAppointmentCard extends StatelessWidget {
                         label: const Text('删除'),
                         onPressed: onDelete,
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.red,
+                          foregroundColor: tokens.error,
                         ),
                       )
                     : TextButton.icon(
@@ -242,7 +246,7 @@ class PatientAppointmentCard extends StatelessWidget {
                         label: const Text('权限不足'),
                         onPressed: onDeleteDenied,
                         style: TextButton.styleFrom(
-                          foregroundColor: Colors.grey,
+                          foregroundColor: tokens.textMuted,
                         ),
                       ),
               ],
@@ -253,16 +257,17 @@ class PatientAppointmentCard extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor(String status) {
+  Color _getStatusColor(BuildContext context, String status) {
+    final tokens = context.tokens;
     switch (status) {
       case '已完成':
-        return Colors.green;
+        return tokens.success;
       case '已取消':
-        return Colors.red;
+        return tokens.error;
       case '待确认':
-        return Colors.orange;
+        return tokens.warning;
       default:
-        return Colors.blue;
+        return tokens.info;
     }
   }
 }

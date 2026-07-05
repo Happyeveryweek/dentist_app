@@ -38,6 +38,8 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final categoryColor = MedicalTemplateCategoryStyleHelper.getCategoryColor(
       widget.category,
     );
@@ -45,11 +47,11 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: context.tokens.cardBackground,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: context.tokens.shadow,
+            color: tokens.shadow,
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -80,7 +82,7 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                       child: Text(
                         widget.mainType.name.substring(0, 1),
                         style: TextStyle(
-                          color: context.tokens.cardBackground,
+                          color: tokens.cardBackground,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -94,10 +96,10 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                       children: [
                         Text(
                           widget.mainType.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
-                            color: Colors.black87,
+                            color: colors.onSurface,
                           ),
                         ),
                         if (widget.mainType.description.isNotEmpty) ...[
@@ -107,7 +109,7 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: context.tokens.iconMuted,
+                              color: tokens.iconMuted,
                               fontSize: 12,
                             ),
                           ),
@@ -151,7 +153,7 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                   IconButton(
                     onPressed: widget.onEdit,
                     icon: const Icon(Icons.edit_outlined, size: 16),
-                    color: Colors.blue,
+                    color: tokens.primaryAccent,
                     tooltip: '编辑',
                     padding: const EdgeInsets.all(4),
                     constraints:
@@ -160,7 +162,7 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                   IconButton(
                     onPressed: widget.onDelete,
                     icon: const Icon(Icons.delete_outline, size: 16),
-                    color: Colors.red,
+                    color: tokens.error,
                     tooltip: '删除',
                     padding: const EdgeInsets.all(4),
                     constraints:
@@ -172,7 +174,7 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                     child: Icon(
                       Icons.keyboard_arrow_down,
                       size: 20,
-                      color: context.tokens.iconMuted,
+                      color: tokens.iconMuted,
                     ),
                   ),
                 ],
@@ -189,7 +191,7 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                   gradient: LinearGradient(
                     colors: [
                       Colors.transparent,
-                      Colors.grey.shade300,
+                      tokens.divider,
                       Colors.transparent,
                     ],
                   ),
@@ -214,10 +216,10 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.05),
+                    color: tokens.primaryAccent.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.blue.withValues(alpha: 0.2),
+                      color: tokens.primaryAccent.withValues(alpha: 0.2),
                       style: BorderStyle.solid,
                     ),
                   ),
@@ -226,12 +228,12 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withValues(alpha: 0.1),
+                          color: tokens.primaryAccent.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.add,
-                          color: Colors.blue,
+                          color: tokens.primaryAccent,
                           size: 16,
                         ),
                       ),
@@ -239,7 +241,7 @@ class _MedicalTemplateTypeCardState extends State<MedicalTemplateTypeCard> {
                       Text(
                         '添加子类型',
                         style: TextStyle(
-                          color: Colors.blue.shade700,
+                          color: tokens.primaryAccent,
                           fontWeight: FontWeight.w500,
                           fontSize: 14,
                         ),

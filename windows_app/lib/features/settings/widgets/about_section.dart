@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../widgets/dental_icons.dart';
 import '../widgets/settings_section_header.dart';
@@ -27,19 +27,19 @@ class AboutSection extends StatelessWidget {
     final settingsProvider = Provider.of<SettingsProvider>(context);
     return Column(
       children: [
-        const SettingsSectionHeader(
+        SettingsSectionHeader(
           title: '关于',
           icon: Icons.info_outline,
-          color: AppTheme.accentColor,
+          color: context.tokens.secondaryAccent,
         ),
         Container(
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.tokens.cardBackground,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
+                color: context.tokens.shadow.withValues(alpha: 0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),

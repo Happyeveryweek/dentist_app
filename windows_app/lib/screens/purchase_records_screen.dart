@@ -231,9 +231,9 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
         } else {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('删除失败'),
-              backgroundColor: Colors.red,
+            SnackBar(
+              content: const Text('删除失败'),
+              backgroundColor: context.tokens.error,
             ),
           );
         }
@@ -242,7 +242,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('删除失败: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: context.tokens.error,
           ),
         );
       }
@@ -262,9 +262,9 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
               color: context.tokens.primaryAccent,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(
+            child: Icon(
               DentalIcons.shoppingCart,
-              color: Colors.white,
+              color: context.colors.onPrimary,
               size: 20,
             ),
           ),
@@ -536,6 +536,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -546,9 +547,9 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                 gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 DentalIcons.shoppingCart,
-                color: Colors.white,
+                color: colors.onPrimary,
                 size: 24,
               ),
             ),
@@ -574,7 +575,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              icon: Icon(Icons.refresh_rounded, color: colors.onPrimary),
               onPressed: () async {
                 await _loadData(showLoading: false);
                 if (!context.mounted) return;
@@ -592,7 +593,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.add_rounded, color: Colors.white),
+              icon: Icon(Icons.add_rounded, color: colors.onPrimary),
               onPressed: () => showPurchaseFormDialog(
                 context: context,
                 onSaved: () => _loadData(showLoading: false),
@@ -687,7 +688,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                     icon: Icons.inventory_rounded,
                     label: '总采购数量',
                     value: _totalQuantity.toString(),
-                    color: DentalColors.success,
+                    color: context.tokens.success,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -696,7 +697,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                     icon: Icons.attach_money_rounded,
                     label: '总采购金额',
                     value: '¥${_totalAmount.toStringAsFixed(2)}',
-                    color: DentalColors.warning,
+                    color: context.tokens.warning,
                   ),
                 ),
               ],

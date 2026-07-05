@@ -21,7 +21,7 @@
 - 明确遮罩色，但优先使用 `context.tokens.overlayScrim`。
 - 深色背景上的反色文字或图标，但优先使用 `colorScheme.onPrimary`、`colorScheme.onError`。
 - 图片预览、头像裁剪、用户上传内容等非主题视觉。
-- 牙齿、牙龈、医学状态等经过确认的医学识别色。
+- 经过确认的医学/患者识别色，统一使用 `MedicalSemanticColors`；禁止在业务页面新写 `Colors.blue` / `Colors.green` / `Colors.orange` / `Colors.grey` / `Color(0xFF009688)` 或引用 `DentalColors.femalePink` / `maleBlue`。
 
 禁止页面直接写的颜色：
 
@@ -198,6 +198,17 @@ class AppTheme {
 - `color`、`backgroundColor`、`borderColor`、`gradient` 等参数只允许作为明确业务语义例外。
 - 如果调用方传入的是固定品牌色、白色、灰底、蓝绿渐变，应迁移到 token。
 - 改造组件时必须同步检查调用点。
+
+## 阶段 7 允许例外清单
+
+以下颜色来源不强制迁移到 `context.tokens` / `context.colors`，但新增代码应优先使用对应 token：
+
+- `Colors.transparent`：明确用于透明背景、裁切、隐藏占位等场景。
+- `DentalColors.femalePink` / `DentalColors.maleBlue`：患者性别识别色，属于业务语义色。
+- 牙齿、牙龈、牙位、疾病类型、过敏等医学识别色：属于业务语义，允许保留固定色值。
+- 图表系列色：必须使用 `context.tokens.chartPalette`，不允许在业务页面散落固定色板。
+- 图片 / 头像 / 上传素材 / 媒体预览遮罩：优先使用 `context.tokens.overlayScrim`；若必须使用固定黑色遮罩，需在本清单登记原因。
+- PDF/导出/打印等需要固定色值的输出场景：允许保留固定色值，但应尽量与主题 token 对齐。
 
 ## windows_app/AGENTS.md 规则
 

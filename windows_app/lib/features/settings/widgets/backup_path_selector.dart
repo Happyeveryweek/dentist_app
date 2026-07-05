@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../theme/theme_context_extensions.dart';
 import '../../../widgets/dental_icons.dart';
 
 class BackupPathSelector extends StatelessWidget {
@@ -15,14 +16,15 @@ class BackupPathSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: tokens.shadow,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -49,7 +51,7 @@ class BackupPathSelector extends StatelessWidget {
                     hintText: '请选择备份目录',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: tokens.divider),
                     ),
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

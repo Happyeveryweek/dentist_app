@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'dart:io';
 
-import '../../../theme/app_theme.dart';
 import '../../../providers/database_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../widgets/success_toast.dart';
@@ -130,21 +129,24 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
       // 确认是否恢复
       final confirmRestore = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('恢复备份'),
-          content: Text('确定要从备份文件 $filePath 恢复数据库吗？这将覆盖当前数据。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('取消'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('恢复'),
-            ),
-          ],
-        ),
+        builder: (context) {
+          final tokens = context.tokens;
+          return AlertDialog(
+            title: const Text('恢复备份'),
+            content: Text('确定要从备份文件 $filePath 恢复数据库吗？这将覆盖当前数据。'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('取消'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: ElevatedButton.styleFrom(backgroundColor: tokens.error),
+                child: const Text('恢复'),
+              ),
+            ],
+          );
+        },
       );
 
       if (confirmRestore == true) {
@@ -164,7 +166,7 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
         } catch (e) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('恢复失败: $e'), backgroundColor: Colors.red),
+            SnackBar(content: Text('恢复失败: $e'), backgroundColor: context.tokens.error),
           );
         } finally {
           setState(() {
@@ -181,6 +183,7 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -192,15 +195,15 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
                 Icon(
                   Icons.backup,
-                  color: AppTheme.primaryColor,
+                  color: tokens.primaryAccent,
                   size: 28,
                 ),
-                SizedBox(width: 12),
-                Text(
+                const SizedBox(width: 12),
+                const Text(
                   '数据库备份与还原',
                   style: TextStyle(
                     fontSize: 20,
@@ -214,17 +217,17 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
+                  color: tokens.errorContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline, color: Colors.red),
+                    Icon(Icons.error_outline, color: tokens.error),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _errorMessage,
-                        style: const TextStyle(color: Colors.red),
+                        style: TextStyle(color: tokens.error),
                       ),
                     ),
                   ],
@@ -241,14 +244,14 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      border: Border.all(color: AppTheme.dividerColor),
+                      border: Border.all(color: tokens.divider),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       _backupPath.isEmpty ? '未选择备份目录' : _backupPath,
                       style: TextStyle(
                         color: _backupPath.isEmpty
-                            ? Colors.grey
+                            ? tokens.textMuted
                             : Theme.of(context).textTheme.bodyMedium?.color,
                       ),
                       overflow: TextOverflow.ellipsis,
@@ -296,8 +299,8 @@ class _DataSyncDialogState extends State<DataSyncDialog> {
                       : const Icon(Icons.restore),
                   label: const Text('还原'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    foregroundColor: context.tokens.cardBackground,
+                    backgroundColor: tokens.error,
+                    foregroundColor: tokens.cardBackground,
                   ),
                 ),
               ],

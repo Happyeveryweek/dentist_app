@@ -181,7 +181,7 @@ class PermissionPanel extends StatelessWidget {
                       onChanged: (value) =>
                           onPermissionChanged(module, value ?? false),
                       activeColor: info['color'] as Color,
-                      checkColor: Colors.white,
+                      checkColor: context.colors.onPrimary,
                     ),
                     Icon(
                       info['icon'] as IconData,

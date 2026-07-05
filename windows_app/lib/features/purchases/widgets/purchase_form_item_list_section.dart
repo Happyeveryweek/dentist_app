@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 采购记录表单的采购项目列表区域
 /// 包含：项目列表、添加项目按钮、项目编辑（材料名称、数量、单位、单价、总价）
@@ -40,28 +41,28 @@ class PurchaseFormItemListSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.green[50],
+            color: context.tokens.successContainer,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.green.shade200),
+            border: Border.all(color: context.tokens.success.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
-              Icon(Icons.shopping_cart, color: Colors.green[600], size: 20),
+              Icon(Icons.shopping_cart, color: context.tokens.success, size: 20),
               const SizedBox(width: 8),
               Text(
                 '采购项目',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green[700],
+                  color: context.tokens.success,
                 ),
               ),
               const Spacer(),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade100,
+                  color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
+                  border: Border.all(color: context.tokens.primaryAccent.withValues(alpha: 0.3)),
                 ),
                 child: Material(
                   color: Colors.transparent,
@@ -75,14 +76,14 @@ class PurchaseFormItemListSection extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(Icons.add,
-                              color: Colors.blue.shade600, size: 16),
+                              color: context.tokens.primaryAccent, size: 16),
                           const SizedBox(width: 6),
                           Text(
                             '添加项目',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.blue.shade600,
+                              color: context.tokens.primaryAccent,
                             ),
                           ),
                         ],
@@ -99,9 +100,9 @@ class PurchaseFormItemListSection extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              color: context.tokens.mutedBackground,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey.shade200),
+              border: Border.all(color: context.tokens.border),
             ),
             child: Row(
               children: [
@@ -111,7 +112,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                     '材料名称',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: context.colors.onSurface,
                       fontSize: 14,
                     ),
                   ),
@@ -123,7 +124,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                     '选择',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: context.colors.onSurface,
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,
@@ -136,7 +137,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                     '数量',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: context.colors.onSurface,
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,
@@ -149,7 +150,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                     '单位',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: context.colors.onSurface,
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,
@@ -162,7 +163,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                     '单价',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: context.colors.onSurface,
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,
@@ -175,7 +176,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                     '总价',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: context.colors.onSurface,
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,
@@ -188,7 +189,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                     '操作',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade700,
+                      color: context.colors.onSurface,
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,
@@ -211,13 +212,13 @@ class PurchaseFormItemListSection extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
+                            color: context.tokens.inputBackground,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Icon(
                             Icons.inventory_2_outlined,
                             size: 48,
-                            color: Colors.grey.shade400,
+                            color: context.tokens.iconMuted,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -226,7 +227,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey.shade600,
+                            color: context.colors.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -234,7 +235,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                           '点击"添加项目"开始添加采购项目',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey.shade500,
+                            color: context.tokens.textMuted,
                           ),
                         ),
                       ],
@@ -250,9 +251,9 @@ class PurchaseFormItemListSection extends StatelessWidget {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.tokens.cardBackground,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade200),
+                        border: Border.all(color: context.tokens.border),
                       ),
                       child: Row(
                         children: [
@@ -261,7 +262,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                             child: Container(
                               height: 40,
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
+                                color: context.tokens.inputBackground,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: TextField(
@@ -290,11 +291,11 @@ class PurchaseFormItemListSection extends StatelessWidget {
                                   width: 32,
                                   height: 32,
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.shade100,
+                                    color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Icon(Icons.search,
-                                      size: 16, color: Colors.blue.shade600),
+                                      size: 16, color: context.tokens.primaryAccent),
                                 ),
                               ),
                             ),
@@ -305,7 +306,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                             child: Container(
                               height: 40,
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
+                                color: context.tokens.inputBackground,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: TextField(
@@ -334,7 +335,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                             child: Container(
                               height: 40,
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
+                                color: context.tokens.inputBackground,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: TextField(
@@ -360,7 +361,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                             child: Container(
                               height: 40,
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
+                                color: context.tokens.inputBackground,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: TextField(
@@ -392,7 +393,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                             child: Container(
                               height: 40,
                               decoration: BoxDecoration(
-                                color: Colors.green.shade50,
+                                color: context.tokens.successContainer,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Align(
@@ -402,7 +403,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                                   child: Text(
                                     '¥${item['totalPrice'].toStringAsFixed(2)}',
                                     style: TextStyle(
-                                      color: Colors.green.shade700,
+                                      color: context.tokens.success,
                                       fontWeight: FontWeight.w600,
                                       fontSize: 14,
                                     ),
@@ -418,11 +419,11 @@ class PurchaseFormItemListSection extends StatelessWidget {
                               width: 32,
                               height: 32,
                               decoration: BoxDecoration(
-                                color: Colors.red.shade100,
+                                color: context.tokens.errorContainer,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Icon(Icons.delete_outline,
-                                  size: 16, color: Colors.red.shade600),
+                                  size: 16, color: context.tokens.error),
                             ),
                           ),
                         ],

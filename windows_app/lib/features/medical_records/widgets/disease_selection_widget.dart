@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/dental_icons.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 疾病选择组件
 class DiseaseSelectionWidget extends StatelessWidget {
@@ -42,15 +42,15 @@ class DiseaseSelectionWidget extends StatelessWidget {
             Icon(
               icon,
               size: 18,
-              color: DentalColors.primary,
+              color: context.tokens.primaryAccent,
             ),
             const SizedBox(width: 8),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: DentalColors.onSurface,
+                color: context.colors.onSurface,
               ),
             ),
           ],
@@ -61,10 +61,10 @@ class DiseaseSelectionWidget extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DentalColors.background,
+            color: context.tokens.pageBackground,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: DentalColors.divider,
+              color: context.tokens.divider,
               width: 1,
             ),
           ),
@@ -97,16 +97,16 @@ class DiseaseSelectionWidget extends StatelessWidget {
                           }
                         : null,
                     backgroundColor: hasEditPermission
-                        ? DentalColors.surface
-                        : Colors.grey.shade200,
-                    selectedColor: DentalColors.primary.withValues(alpha: 0.2),
-                    checkmarkColor: DentalColors.primary,
+                        ? context.tokens.cardBackground
+                        : context.tokens.border,
+                    selectedColor: context.tokens.primaryAccent.withValues(alpha: 0.2),
+                    checkmarkColor: context.tokens.primaryAccent,
                     labelStyle: TextStyle(
                       color: hasEditPermission
                           ? (isSelected
-                              ? DentalColors.primary
-                              : DentalColors.onSurface)
-                          : Colors.grey,
+                              ? context.tokens.primaryAccent
+                              : context.colors.onSurface)
+                          : context.tokens.textMuted,
                       fontWeight:
                           isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
@@ -168,10 +168,10 @@ class DiseaseSubTypeSelectionWidget extends StatelessWidget {
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: DentalColors.primary.withValues(alpha: 0.05),
+        color: context.tokens.primaryAccent.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: DentalColors.primary.withValues(alpha: 0.2),
+          color: context.tokens.primaryAccent.withValues(alpha: 0.2),
         ),
       ),
       child: Wrap(
@@ -184,10 +184,10 @@ class DiseaseSubTypeSelectionWidget extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Text(
               '$diseaseType 详细类型:',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: DentalColors.primary,
+                color: context.tokens.primaryAccent,
               ),
             ),
           ),
@@ -210,13 +210,13 @@ class DiseaseSubTypeSelectionWidget extends StatelessWidget {
                     }
                   : null,
               backgroundColor: hasEditPermission
-                  ? DentalColors.surface
-                  : Colors.grey.shade200,
-              selectedColor: DentalColors.primary.withValues(alpha: 0.3),
-              checkmarkColor: DentalColors.primary,
+                  ? context.tokens.cardBackground
+                  : context.tokens.border,
+              selectedColor: context.tokens.primaryAccent.withValues(alpha: 0.3),
+              checkmarkColor: context.tokens.primaryAccent,
               labelStyle: TextStyle(
                 color:
-                    isSelected ? DentalColors.primary : DentalColors.onSurface,
+                    isSelected ? context.tokens.primaryAccent : context.colors.onSurface,
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),

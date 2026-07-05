@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:collection';
+import '../../../theme/theme_context_extensions.dart';
 import 'dart:convert';
 import '../../../models/appointment.dart';
 import '../../../models/patient.dart';
@@ -313,7 +314,7 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
       }
       setState(() => _isLoadingPatients = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('加载患者数据失败: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text('加载患者数据失败: $e'), backgroundColor: context.tokens.error),
       );
     }
   }
@@ -369,24 +370,17 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
         width: MediaQuery.of(context).size.width * 0.4, // 从0.3增加到0.4，增加三分之一
         height: MediaQuery.of(context).size.height * 0.95,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF667eea),
-              Color(0xFF764ba2),
-            ],
-          ),
+          gradient: context.tokens.primaryHeaderGradient,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF667eea).withValues(alpha: 0.2),
+              color: context.tokens.primaryAccent.withValues(alpha: 0.2),
               blurRadius: 20,
               offset: const Offset(0, 10),
               spreadRadius: 0,
             ),
             BoxShadow(
-              color: const Color(0xFF667eea).withValues(alpha: 0.1),
+              color: context.tokens.primaryAccent.withValues(alpha: 0.1),
               blurRadius: 40,
               offset: const Offset(0, 20),
               spreadRadius: 0,
@@ -395,10 +389,10 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.95),
+            color: context.tokens.cardBackground.withValues(alpha: 0.95),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFF667eea).withValues(alpha: 0.1),
+              color: context.tokens.primaryAccent.withValues(alpha: 0.1),
               width: 1,
             ),
           ),
@@ -408,16 +402,9 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
             children: [
               // 标题行 - 带渐变背景
               Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF667eea),
-                      Color(0xFF764ba2),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.only(
+                decoration: BoxDecoration(
+                  gradient: context.tokens.primaryHeaderGradient,
+                  borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(20),
                     topRight: Radius.circular(20),
                   ),
@@ -432,29 +419,29 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: context.colors.onPrimary.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
                             widget.appointment != null
                                 ? Icons.edit
                                 : Icons.add_circle_outline,
-                            color: Colors.white,
+                            color: context.colors.onPrimary,
                             size: 18,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Text(
                           widget.appointment != null ? '编辑预约' : '添加预约',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: context.colors.onPrimary,
                             shadows: [
                               Shadow(
-                                offset: Offset(0, 1),
+                                offset: const Offset(0, 1),
                                 blurRadius: 2,
-                                color: Colors.black26,
+                                color: context.colors.onSurface.withValues(alpha: 0.26),
                               ),
                             ],
                           ),
@@ -463,12 +450,12 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: context.colors.onPrimary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.close,
-                            color: Colors.white, size: 18),
+                        icon: Icon(Icons.close,
+                            color: context.colors.onPrimary, size: 18),
                         onPressed: () => Navigator.of(context).pop(),
                         splashRadius: 16,
                         tooltip: '关闭',
@@ -568,7 +555,7 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: context.tokens.pageBackground,
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(20),
                     bottomRight: Radius.circular(20),
@@ -589,7 +576,7 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
                       child: Text(
                         '取消',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: context.tokens.textMuted,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -635,8 +622,8 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
                         return;
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF667eea),
-                        foregroundColor: Colors.white,
+                        backgroundColor: context.tokens.primaryAccent,
+                        foregroundColor: context.colors.onPrimary,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(

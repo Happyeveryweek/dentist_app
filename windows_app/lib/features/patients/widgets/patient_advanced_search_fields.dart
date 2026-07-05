@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class PatientAdvancedSearchFields extends StatelessWidget {
   final TextEditingController nameController;
@@ -22,24 +22,20 @@ class PatientAdvancedSearchFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPurpleTheme =
-        false;
+    final tokens = context.tokens;
 
     return Container(
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isPurpleTheme ? AppTheme.purpleCardBackground : Colors.white,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: (isPurpleTheme
-                  ? AppTheme.purpleLightColor
-                  : AppTheme.primaryColor)
-              .withValues(alpha: 0.08),
+          color: tokens.primaryAccent.withValues(alpha: 0.08),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: tokens.shadow.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -99,9 +95,8 @@ class PatientAdvancedSearchFields extends StatelessWidget {
             icon: const Icon(Icons.search, size: 18),
             label: const Text('搜索'),
             style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  isPurpleTheme ? AppTheme.purpleColor : AppTheme.primaryColor,
-              foregroundColor: Colors.white,
+              backgroundColor: tokens.primaryAccent,
+              foregroundColor: tokens.cardBackground,
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -133,19 +128,18 @@ class _CompactSearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPurpleTheme =
-        false;
+    final tokens = context.tokens;
+    final colors = context.colors;
 
     return Container(
       height: 48,
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.06),
+        color: tokens.primaryAccent.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(12),
-        border:
-            Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.12)),
+        border: Border.all(color: tokens.primaryAccent.withValues(alpha: 0.12)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: tokens.shadow,
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -158,16 +152,13 @@ class _CompactSearchField extends StatelessWidget {
             margin: const EdgeInsets.only(left: 12),
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color:
-                  (isPurpleTheme ? AppTheme.purpleColor : AppTheme.primaryColor)
-                      .withValues(alpha: 0.1),
+              color: tokens.primaryAccent.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(
               icon,
               size: 18,
-              color:
-                  isPurpleTheme ? AppTheme.purpleColor : AppTheme.primaryColor,
+              color: tokens.primaryAccent,
             ),
           ),
           Expanded(
@@ -179,17 +170,11 @@ class _CompactSearchField extends StatelessWidget {
                 labelStyle: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: (isPurpleTheme
-                          ? AppTheme.purpleColor
-                          : AppTheme.primaryColor)
-                      .withValues(alpha: 0.7),
+                  color: tokens.primaryAccent.withValues(alpha: 0.7),
                 ),
                 hintStyle: TextStyle(
                   fontSize: 13,
-                  color: (isPurpleTheme
-                          ? AppTheme.purpleSecondaryText
-                          : AppTheme.secondaryText)
-                      .withValues(alpha: 0.6),
+                  color: tokens.textMuted.withValues(alpha: 0.6),
                 ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
@@ -204,9 +189,7 @@ class _CompactSearchField extends StatelessWidget {
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: isPurpleTheme
-                    ? AppTheme.purplePrimaryText
-                    : AppTheme.primaryText,
+                color: colors.onSurface,
               ),
             ),
           ),

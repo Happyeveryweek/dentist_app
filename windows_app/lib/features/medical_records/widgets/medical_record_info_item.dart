@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/dental_icons.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 病历信息项组件
 class MedicalRecordInfoItem extends StatelessWidget {
@@ -19,19 +19,19 @@ class MedicalRecordInfoItem extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: DentalColors.onSurfaceVariant,
+            color: context.colors.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: DentalColors.onSurface,
+            color: context.colors.onSurface,
           ),
         ),
       ],

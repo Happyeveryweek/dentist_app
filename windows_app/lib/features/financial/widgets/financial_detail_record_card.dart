@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../helpers/financial_payment_method_helper.dart';
@@ -31,26 +32,29 @@ class FinancialDetailRecordCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final detailItem = item;
     final hasItem = isDetail && detailItem != null;
     return SizedBox(
       height: FinancialDetailTableLayout.rowHeight,
       child: Container(
         decoration: BoxDecoration(
-          color: isHighlighted ? Colors.blue[50] : Colors.white,
+          color: isHighlighted
+              ? tokens.primaryAccent.withValues(alpha: 0.1)
+              : tokens.cardBackground,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.grey.shade200, width: 1),
+          border: Border.all(color: tokens.divider, width: 1),
           boxShadow: isHighlighted
               ? [
                   BoxShadow(
-                    color: Colors.blue.shade200.withValues(alpha: 0.3),
+                    color: tokens.primaryAccent.withValues(alpha: 0.3),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   )
                 ]
               : [
                   BoxShadow(
-                    color: Colors.grey.shade300.withValues(alpha: 0.1),
+                    color: tokens.shadow.withValues(alpha: 0.1),
                     blurRadius: 2,
                     offset: const Offset(0, 1),
                   )
@@ -115,7 +119,7 @@ class FinancialDetailRecordCard extends StatelessWidget {
                   ? '¥${((detailItem.itemPrice * detailItem.quantity) % 1 == 0 ? (detailItem.itemPrice * detailItem.quantity).toInt().toString() : (detailItem.itemPrice * detailItem.quantity).toStringAsFixed(2))}'
                   : '¥0',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.blue[700],
+                    color: tokens.primaryAccent,
                     fontWeight: FontWeight.w500,
                   ),
               maxLines: 1,
@@ -128,7 +132,7 @@ class FinancialDetailRecordCard extends StatelessWidget {
                   ? '¥${(detailItem.totalPrice % 1 == 0 ? detailItem.totalPrice.toInt().toString() : detailItem.totalPrice.toStringAsFixed(2))}'
                   : '¥0',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.green[700],
+                    color: tokens.success,
                     fontWeight: FontWeight.w500,
                   ),
               maxLines: 1,
@@ -143,7 +147,7 @@ class FinancialDetailRecordCard extends StatelessWidget {
                       ? '¥${(detailItem.processingFee % 1 == 0 ? detailItem.processingFee.toInt().toString() : detailItem.processingFee.toStringAsFixed(2))}'
                       : '¥0',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.orange[700],
+                    color: tokens.warning,
                     fontWeight: FontWeight.w500,
                   ),
               maxLines: 1,
@@ -161,12 +165,12 @@ class FinancialDetailRecordCard extends StatelessWidget {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.blue.shade600),
+                              AlwaysStoppedAnimation<Color>(tokens.primaryAccent),
                         ),
                       )
                     : IconButton(
                         onPressed: onEdit,
-                        icon: Icon(Icons.edit, color: Colors.blue[600]),
+                        icon: Icon(Icons.edit, color: tokens.primaryAccent),
                         tooltip: '编辑',
                         padding: const EdgeInsets.all(4),
                         constraints: const BoxConstraints(
@@ -178,7 +182,7 @@ class FinancialDetailRecordCard extends StatelessWidget {
                   onPressed: isEditing ? null : onDelete,
                   icon: Icon(
                     Icons.delete,
-                    color: isEditing ? Colors.grey[400] : Colors.red[600],
+                    color: isEditing ? tokens.textMuted : tokens.error,
                   ),
                   tooltip: isEditing ? '正在编辑中...' : '删除',
                   padding: const EdgeInsets.all(4),

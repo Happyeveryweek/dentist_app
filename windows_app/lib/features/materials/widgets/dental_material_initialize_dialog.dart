@@ -6,6 +6,7 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
@@ -18,13 +19,13 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              context.tokens.cardBackground,
-              Colors.orange.shade50,
+              tokens.cardBackground,
+              tokens.warningContainer,
             ],
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: tokens.shadow.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
               spreadRadius: 0,
@@ -39,7 +40,7 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.orange.shade400, Colors.orange.shade600],
+                  colors: [tokens.warning, tokens.warning.withValues(alpha: 0.8)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -53,12 +54,12 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: context.tokens.cardBackground.withValues(alpha: 0.2),
+                      color: tokens.cardBackground.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       Icons.settings_backup_restore_rounded,
-                      color: context.tokens.cardBackground,
+                      color: tokens.cardBackground,
                       size: 24,
                     ),
                   ),
@@ -67,7 +68,7 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
                     child: Text(
                       '初始化默认材料',
                       style: TextStyle(
-                        color: context.tokens.cardBackground,
+                        color: tokens.cardBackground,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -85,15 +86,15 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
+                      color: tokens.warningContainer,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.orange.shade200),
+                      border: Border.all(color: tokens.warning.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.info_outline_rounded,
-                          color: Colors.orange.shade600,
+                          color: tokens.warning,
                           size: 32,
                         ),
                         const SizedBox(width: 16),
@@ -102,7 +103,7 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
                             '这将初始化系统默认的牙科材料清单，包括常用药品、器械等。此操作不可撤销。',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.orange.shade800,
+                              color: tokens.warning,
                               height: 1.5,
                             ),
                           ),
@@ -122,8 +123,8 @@ class DentalMaterialInitializeDialog extends StatelessWidget {
                       ElevatedButton(
                         onPressed: () => Navigator.of(context).pop(true),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange.shade500,
-                          foregroundColor: context.tokens.cardBackground,
+                          backgroundColor: tokens.warning,
+                          foregroundColor: tokens.cardBackground,
                         ),
                         child: const Text('确认初始化'),
                       ),

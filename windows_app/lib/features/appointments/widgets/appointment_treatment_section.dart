@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class TreatmentSectionWidget extends StatefulWidget {
   final List<String> selectedTreatments;
@@ -59,30 +60,32 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: tokens.mutedBackground,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.healing,
-                color: Color(0xFFFF9800),
+                color: tokens.warning,
                 size: 18,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 '治疗项目',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFFFF9800),
+                  color: tokens.warning,
                 ),
               ),
             ],
@@ -96,21 +99,21 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
                   controller: _localController,
                   decoration: InputDecoration(
                     hintText: '输入治疗项目',
-                    hintStyle: TextStyle(color: Colors.grey.shade600),
+                    hintStyle: TextStyle(color: tokens.textMuted),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: tokens.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: tokens.border),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFFF9800)),
+                      borderSide: BorderSide(color: tokens.warning),
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: tokens.cardBackground,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 16),
                   ),
@@ -123,23 +126,23 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
                 child: DropdownButtonFormField<String>(
                   initialValue: _selectedSuggestion,
                   borderRadius: BorderRadius.circular(12),
-                  dropdownColor: Colors.white,
+                  dropdownColor: tokens.cardBackground,
                   focusColor: Colors.transparent,
                   decoration: InputDecoration(
                     labelText: '选择已有项目',
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: tokens.cardBackground,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: tokens.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+                      borderSide: BorderSide(color: tokens.border),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFFF9800)),
+                      borderSide: BorderSide(color: tokens.warning),
                     ),
                   ),
                   hint: const Text('暂无'),
@@ -175,7 +178,7 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
               '输入后按回车，或直接保存时自动带入',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.shade600,
+                color: tokens.textMuted,
               ),
             ),
           ],
@@ -185,10 +188,10 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
               margin: const EdgeInsets.only(top: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: tokens.cardBackground,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFFFF9800).withValues(alpha: 0.2),
+                  color: tokens.warning.withValues(alpha: 0.2),
                 ),
               ),
               child: Wrap(
@@ -199,23 +202,22 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
                       (treatment) => InputChip(
                         label: Text(
                           treatment,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: Color(0xFFFF9800),
+                            color: tokens.warning,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         onDeleted: () => _removeTreatment(treatment),
-                        deleteIcon: const Icon(
+                        deleteIcon: Icon(
                           Icons.close,
                           size: 14,
-                          color: Color(0xFFFF9800),
+                          color: tokens.warning,
                         ),
                         backgroundColor:
-                            const Color(0xFFFF9800).withValues(alpha: 0.08),
+                            tokens.warning.withValues(alpha: 0.08),
                         side: BorderSide(
-                          color:
-                              const Color(0xFFFF9800).withValues(alpha: 0.25),
+                          color: tokens.warning.withValues(alpha: 0.25),
                         ),
                       ),
                     )

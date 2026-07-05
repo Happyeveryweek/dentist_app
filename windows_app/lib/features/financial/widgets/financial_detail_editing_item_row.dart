@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../helpers/amount_input_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import 'financial_detail_table_layout.dart';
@@ -35,16 +36,17 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return SizedBox(
       height: FinancialDetailTableLayout.rowHeight,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.blue[50],
+          color: tokens.primaryAccent.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.blue.shade100, width: 1),
+          border: Border.all(color: tokens.primaryAccent.withValues(alpha: 0.2), width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.shade200.withValues(alpha: 0.2),
+              color: tokens.primaryAccent.withValues(alpha: 0.2),
               blurRadius: 4,
               offset: const Offset(0, 1),
             ),
@@ -65,14 +67,14 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
                 height: 32,
                 padding: const EdgeInsets.symmetric(horizontal: 6),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: tokens.cardBackground,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.blue.shade300),
+                  border: Border.all(color: tokens.primaryAccent),
                 ),
                 child: Row(
                   children: [
                     Icon(Icons.calendar_today,
-                        size: 12, color: Colors.blue[600]),
+                        size: 12, color: tokens.primaryAccent),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
@@ -89,9 +91,9 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               height: 32,
               padding: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: tokens.cardBackground,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: tokens.divider),
               ),
               child: TextField(
                 controller: itemNameController,
@@ -119,9 +121,9 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               height: 32,
               padding: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: tokens.cardBackground,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: tokens.divider),
               ),
               child: DropdownButtonFormField<String>(
                 key: ValueKey<String?>(
@@ -130,7 +132,7 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
                     FinancialPaymentMethodHelper.uiValue(paymentMethod),
                 hint: Text(
                   '未选择',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                  style: TextStyle(color: tokens.textMuted, fontSize: 11),
                 ),
                 decoration: const InputDecoration(
                   border: InputBorder.none,
@@ -140,11 +142,11 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
                   contentPadding: EdgeInsets.symmetric(horizontal: 2),
                 ),
                 icon: Icon(Icons.arrow_drop_down,
-                    color: Colors.grey[600], size: 16),
+                    color: tokens.textMuted, size: 16),
                 isExpanded: true,
                 menuMaxHeight: 220,
                 borderRadius: BorderRadius.circular(6),
-                dropdownColor: Colors.white,
+                dropdownColor: tokens.cardBackground,
                 items: FinancialPaymentMethodHelper.dropdownMethods
                     .map(
                       (method) => DropdownMenuItem<String>(
@@ -159,7 +161,7 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
                                 Icon(
                                   Icons.do_not_disturb_alt,
                                   size: 14,
-                                  color: Colors.grey[500],
+                                  color: tokens.textMuted,
                                 )
                               else
                                 SizedBox(
@@ -199,9 +201,9 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               height: 32,
               padding: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: tokens.cardBackground,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: tokens.divider),
               ),
               child: TextField(
                 controller: itemPriceController,
@@ -231,9 +233,9 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               height: 32,
               padding: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: tokens.cardBackground,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: tokens.divider),
               ),
               child: TextField(
                 controller: totalPriceController,
@@ -263,9 +265,9 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               height: 32,
               padding: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: tokens.cardBackground,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(color: tokens.divider),
               ),
               child: TextField(
                 controller: processingFeeController,
@@ -296,7 +298,7 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
               children: [
                 IconButton(
                   onPressed: onSave,
-                  icon: Icon(Icons.check, color: Colors.green[600], size: 16),
+                  icon: Icon(Icons.check, color: tokens.success, size: 16),
                   tooltip: '保存',
                   padding: const EdgeInsets.all(4),
                   constraints:
@@ -304,7 +306,7 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
                 ),
                 IconButton(
                   onPressed: onCancel,
-                  icon: Icon(Icons.close, color: Colors.grey[600], size: 16),
+                  icon: Icon(Icons.close, color: tokens.textMuted, size: 16),
                   tooltip: '取消',
                   padding: const EdgeInsets.all(4),
                   constraints:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 病历模板初始化进度对话框
 class MedicalTemplateInitializeProgressDialog extends StatelessWidget {
@@ -6,6 +7,9 @@ class MedicalTemplateInitializeProgressDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
@@ -21,13 +25,12 @@ class MedicalTemplateInitializeProgressDialog extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
+                color: tokens.warningContainer,
                 borderRadius: BorderRadius.circular(40),
               ),
               child: CircularProgressIndicator(
                 strokeWidth: 4,
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(Colors.orange.shade600),
+                valueColor: AlwaysStoppedAnimation<Color>(tokens.warning),
               ),
             ),
             const SizedBox(height: 24),
@@ -38,7 +41,7 @@ class MedicalTemplateInitializeProgressDialog extends StatelessWidget {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.orange.shade800,
+                color: tokens.warning,
               ),
               textAlign: TextAlign.center,
             ),
@@ -49,7 +52,7 @@ class MedicalTemplateInitializeProgressDialog extends StatelessWidget {
               '请稍候，系统正在创建数据库表并初始化预设的疾病类型数据。\n此过程可能需要几秒钟时间。',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey.shade600,
+                color: colors.onSurfaceVariant,
                 height: 1.4,
               ),
               textAlign: TextAlign.center,

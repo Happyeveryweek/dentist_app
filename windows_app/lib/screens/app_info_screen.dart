@@ -328,7 +328,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                 onPressed: allToolsAvailable ? _testMySQLTools : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.tokens.primaryAccent,
-                  foregroundColor: Colors.white,
+                  foregroundColor: context.colors.onPrimary,
                 ),
                 child: const Text('连通性测试'),
               ),

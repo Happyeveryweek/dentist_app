@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../models/patient.dart';
-import '../../../widgets/dental_icons.dart';
 
 class PatientDetailOverviewCard extends StatelessWidget {
   final Patient patient;
@@ -14,6 +14,8 @@ class PatientDetailOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final identificationNumber = patient.identificationNumber;
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -22,27 +24,27 @@ class PatientDetailOverviewCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white,
-            DentalColors.background.withValues(alpha: 0.5),
+            tokens.cardBackground,
+            tokens.pageBackground.withValues(alpha: 0.5),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: DentalColors.primary.withValues(alpha: 0.1),
+            color: tokens.primaryAccent.withValues(alpha: 0.1),
             blurRadius: 20,
             spreadRadius: 2,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: tokens.shadow.withValues(alpha: 0.1),
             blurRadius: 8,
             spreadRadius: 1,
             offset: const Offset(0, 3),
           ),
         ],
         border: Border.all(
-          color: DentalColors.primary.withValues(alpha: 0.1),
+          color: tokens.primaryAccent.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -64,7 +66,7 @@ class PatientDetailOverviewCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade800,
+                          color: colors.onSurface,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -78,21 +80,21 @@ class PatientDetailOverviewCard extends StatelessWidget {
                   const SizedBox(height: 8),
                   _OverviewTextRow(
                     icon: Icons.phone_rounded,
-                    iconColor: DentalColors.primary,
+                    iconColor: tokens.primaryAccent,
                     backgroundColor:
-                        DentalColors.primary.withValues(alpha: 0.1),
+                        tokens.primaryAccent.withValues(alpha: 0.1),
                     text: patient.displayPhone(),
-                    textColor: DentalColors.onSurface,
+                    textColor: colors.onSurface,
                   ),
                   const SizedBox(height: 6),
                   if (identificationNumber != null)
                     _OverviewTextRow(
                       icon: Icons.credit_card_rounded,
-                      iconColor: DentalColors.secondary,
+                      iconColor: tokens.secondaryAccent,
                       backgroundColor:
-                          DentalColors.secondary.withValues(alpha: 0.1),
+                          tokens.secondaryAccent.withValues(alpha: 0.1),
                       text: identificationNumber,
-                      textColor: DentalColors.onSurfaceVariant,
+                      textColor: colors.onSurfaceVariant,
                     ),
                 ],
               ),
@@ -113,33 +115,35 @@ class _PatientAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final isFemale = patient.gender == '女';
     return Container(
       width: 72,
       height: 72,
       decoration: BoxDecoration(
         gradient: isFemale
-            ? const LinearGradient(
+            ? LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFFFCE4EC),
-                  Color(0xFFF8BBD9),
+                  tokens.dangerAccent.withValues(alpha: 0.1),
+                  tokens.dangerAccent.withValues(alpha: 0.2),
                 ],
               )
-            : const LinearGradient(
+            : LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFFE3F2FD),
-                  Color(0xFFBBDEFB),
+                  tokens.primaryAccent.withValues(alpha: 0.1),
+                  tokens.primaryAccent.withValues(alpha: 0.2),
                 ],
               ),
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color:
-                (isFemale ? Colors.pink : Colors.blue).withValues(alpha: 0.3),
+            color: isFemale
+                ? tokens.dangerAccent.withValues(alpha: 0.3)
+                : tokens.primaryAccent.withValues(alpha: 0.3),
             blurRadius: 12,
             spreadRadius: 2,
             offset: const Offset(0, 4),
@@ -152,7 +156,9 @@ class _PatientAvatar extends StatelessWidget {
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
-            color: isFemale ? Colors.pink.shade600 : Colors.blue.shade600,
+            color: isFemale
+                ? tokens.dangerAccent
+                : tokens.primaryAccent,
           ),
         ),
       ),
@@ -169,6 +175,7 @@ class _GenderBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final isFemale = gender == '女';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -178,23 +185,26 @@ class _GenderBadge extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: isFemale
               ? [
-                  Colors.pink.shade50,
-                  Colors.pink.shade100,
+                  tokens.dangerAccent.withValues(alpha: 0.1),
+                  tokens.dangerAccent.withValues(alpha: 0.2),
                 ]
               : [
-                  Colors.blue.shade50,
-                  Colors.blue.shade100,
+                  tokens.primaryAccent.withValues(alpha: 0.1),
+                  tokens.primaryAccent.withValues(alpha: 0.2),
                 ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isFemale ? Colors.pink.shade200 : Colors.blue.shade200,
+          color: isFemale
+              ? tokens.dangerAccent.withValues(alpha: 0.3)
+              : tokens.primaryAccent.withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                (isFemale ? Colors.pink : Colors.blue).withValues(alpha: 0.2),
+            color: isFemale
+                ? tokens.dangerAccent.withValues(alpha: 0.2)
+                : tokens.primaryAccent.withValues(alpha: 0.2),
             blurRadius: 8,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -207,7 +217,7 @@ class _GenderBadge extends StatelessWidget {
           Icon(
             isFemale ? Icons.female_rounded : Icons.male_rounded,
             size: 18,
-            color: isFemale ? Colors.pink.shade500 : Colors.blue.shade500,
+            color: isFemale ? tokens.dangerAccent : tokens.primaryAccent,
           ),
           const SizedBox(width: 6),
           Text(
@@ -215,7 +225,7 @@ class _GenderBadge extends StatelessWidget {
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: isFemale ? Colors.pink.shade600 : Colors.blue.shade600,
+              color: isFemale ? tokens.dangerAccent : tokens.primaryAccent,
             ),
           ),
         ],
@@ -233,48 +243,49 @@ class _AgeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            DentalColors.success.withValues(alpha: 0.1),
-            DentalColors.success.withValues(alpha: 0.2),
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              tokens.successContainer,
+              tokens.success.withValues(alpha: 0.2),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: tokens.success.withValues(alpha: 0.3),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: tokens.success.withValues(alpha: 0.15),
+              blurRadius: 8,
+              spreadRadius: 1,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: DentalColors.success.withValues(alpha: 0.3),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: DentalColors.success.withValues(alpha: 0.15),
-            blurRadius: 8,
-            spreadRadius: 1,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.event_available_rounded,
-            size: 16,
-            color: DentalColors.success,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            '$age岁',
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: DentalColors.success,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.event_available_rounded,
+              size: 16,
+              color: tokens.success,
             ),
-          ),
+            const SizedBox(width: 6),
+            Text(
+              '$age岁',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: tokens.success,
+              ),
+            ),
         ],
       ),
     );
@@ -290,6 +301,7 @@ class _FirstVisitBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -297,18 +309,18 @@ class _FirstVisitBadge extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            DentalColors.info.withValues(alpha: 0.1),
-            DentalColors.info.withValues(alpha: 0.2),
+            tokens.infoContainer,
+            tokens.info.withValues(alpha: 0.2),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: DentalColors.info.withValues(alpha: 0.3),
+          color: tokens.info.withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: DentalColors.info.withValues(alpha: 0.15),
+            color: tokens.info.withValues(alpha: 0.15),
             blurRadius: 8,
             spreadRadius: 1,
             offset: const Offset(0, 2),
@@ -318,18 +330,18 @@ class _FirstVisitBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.calendar_today_rounded,
             size: 16,
-            color: DentalColors.info,
+            color: tokens.info,
           ),
           const SizedBox(width: 6),
           Text(
             '首诊: ${DateFormat('yyyy-MM-dd').format(date)}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: DentalColors.info,
+              color: tokens.info,
             ),
           ),
         ],

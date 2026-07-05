@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'dart:typed_data';
 import '../../../providers/user_provider.dart';
-import '../../../widgets/dental_icons.dart';
 import '../../../widgets/success_toast.dart';
 
 class NavigationItem {
@@ -51,7 +50,7 @@ class UserInfoSection extends StatelessWidget {
                     height: 44,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: DentalColors.primary, width: 2),
+                      border: Border.all(color: context.tokens.primaryAccent, width: 2),
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(6),
@@ -98,12 +97,12 @@ class UserInfoSection extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: DentalColors.primary.withValues(alpha: 0.1),
+                      color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.person_rounded,
-                      color: DentalColors.primary,
+                      color: context.tokens.primaryAccent,
                       size: 24,
                     ),
                   ),

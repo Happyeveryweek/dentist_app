@@ -40,14 +40,14 @@ class MaterialPaginationButton extends StatelessWidget {
                 ? Icon(
                     icon,
                     size: 18,
-                    color: isActive ? Colors.white : colors.onSurfaceVariant,
+                    color: isActive ? colors.onPrimary : colors.onSurfaceVariant,
                   )
                 : Text(
                     pageNumber.toString(),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isActive ? Colors.white : colors.onSurfaceVariant,
+                      color: isActive ? colors.onPrimary : colors.onSurfaceVariant,
                     ),
                   ),
           ),

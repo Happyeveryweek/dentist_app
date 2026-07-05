@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../widgets/dental_icons.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../widgets/modern_date_picker.dart';
 
 /// 病历表单日期字段组件
@@ -25,18 +25,18 @@ class MedicalRecordFormDateField extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(
+            Icon(
               Icons.calendar_today_rounded,
               size: 18,
-              color: DentalColors.primary,
+              color: context.tokens.primaryAccent,
             ),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: DentalColors.onSurface,
+                color: context.colors.onSurface,
               ),
             ),
           ],
@@ -64,10 +64,10 @@ class MedicalRecordFormDateField extends StatelessWidget {
               vertical: 12,
             ),
             decoration: BoxDecoration(
-              color: DentalColors.background,
+              color: context.tokens.pageBackground,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: DentalColors.divider,
+                color: context.tokens.divider,
                 width: 1,
               ),
             ),
@@ -76,15 +76,15 @@ class MedicalRecordFormDateField extends StatelessWidget {
                 Expanded(
                   child: Text(
                     DateFormat('yyyy年MM月dd日').format(value),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
-                      color: DentalColors.onSurface,
+                      color: context.colors.onSurface,
                     ),
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.arrow_drop_down_rounded,
-                  color: DentalColors.onSurfaceVariant,
+                  color: context.colors.onSurfaceVariant,
                 ),
               ],
             ),

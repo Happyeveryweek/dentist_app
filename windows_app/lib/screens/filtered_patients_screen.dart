@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import 'package:dentist_app_windows/theme/medical_semantic_colors.dart';
 import '../models/patient.dart';
 import './patient_detail_screen.dart';
 
@@ -42,6 +43,8 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final totalPages = (widget.patients.length / _patientsPerPage).ceil();
     final displayTotalPages = totalPages > 0 ? totalPages : 1;
     final currentPagePatients = _getCurrentPagePatients();
@@ -62,14 +65,14 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
               widget.filterDescription,
               style: TextStyle(
                 fontSize: 12,
-                color: context.colors.onSurfaceVariant,
+                color: colors.onSurfaceVariant,
                 fontWeight: FontWeight.normal,
               ),
             ),
           ],
         ),
-        backgroundColor: context.tokens.cardBackground,
-        foregroundColor: context.colors.onSurface,
+        backgroundColor: tokens.cardBackground,
+        foregroundColor: colors.onSurface,
         elevation: 0,
       ),
       body: widget.patients.isEmpty
@@ -80,14 +83,14 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                   Icon(
                     Icons.person_off_outlined,
                     size: 64,
-                    color: context.tokens.textMuted,
+                    color: tokens.textMuted,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     '暂无患者数据',
                     style: TextStyle(
                       fontSize: 18,
-                      color: context.colors.onSurfaceVariant,
+                      color: colors.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -112,22 +115,25 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
   }
 
   Widget _buildPatientCard(BuildContext context, Patient patient) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final patientName = patient.name;
     final patientGender = patient.gender;
 
     // 根据性别决定头像背景和图标颜色
     final Color avatarBgColor = patientGender == '女'
-        ? const Color(0xFFF48FB1).withValues(alpha: 0.2)
-        : context.tokens.infoContainer;
-    final Color avatarTextColor =
-        patientGender == '女' ? const Color(0xFFEC407A) : context.tokens.info;
+        ? MedicalSemanticColors.femaleGender.withValues(alpha: 0.2)
+        : MedicalSemanticColors.maleGender.withValues(alpha: 0.2);
+    final Color avatarTextColor = patientGender == '女'
+        ? MedicalSemanticColors.femaleGender
+        : MedicalSemanticColors.maleGender;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
         child: Material(
           elevation: 1,
           borderRadius: BorderRadius.circular(12),
-          color: context.tokens.cardBackground,
+          color: tokens.cardBackground,
         child: InkWell(
           onTap: () {
             Navigator.of(context).push(
@@ -240,21 +246,21 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                           Icon(
                             Icons.phone,
                             size: 14,
-                            color: context.colors.onSurfaceVariant,
+                            color: colors.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             patient.phone ?? '未设置',
                             style: TextStyle(
                               fontSize: 13,
-                              color: context.colors.onSurfaceVariant,
+                              color: colors.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(width: 16),
                           Icon(
                             Icons.event,
                             size: 14,
-                            color: context.colors.onSurfaceVariant,
+                            color: colors.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -262,7 +268,7 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                                 .format(patient.firstVisitDate),
                             style: TextStyle(
                               fontSize: 13,
-                              color: context.colors.onSurfaceVariant,
+                              color: colors.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -283,7 +289,7 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                                 Icon(
                                   Icons.location_on,
                                   size: 14,
-                                  color: context.colors.onSurfaceVariant,
+                                  color: colors.onSurfaceVariant,
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -291,7 +297,7 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                                     patientAddress,
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: context.colors.onSurfaceVariant,
+                                      color: colors.onSurfaceVariant,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -312,7 +318,7 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                 Icon(
                   Icons.arrow_forward_ios,
                   size: 16,
-                  color: context.tokens.textMuted,
+                  color: tokens.textMuted,
                 ),
               ],
             ),
@@ -323,21 +329,24 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
   }
 
   Widget _buildPagination(int totalPages) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final String resultText =
         '每页 $_patientsPerPage 条 · 共 ${widget.patients.length} 条 / $totalPages 页';
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
       decoration: BoxDecoration(
-        gradient: context.tokens.subtleHeaderGradient,
+        gradient: tokens.subtleHeaderGradient,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: context.tokens.elevatedShadow,
+        boxShadow: tokens.elevatedShadow,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // 左箭头
           _buildPaginationButton(
+            context: context,
             icon: Icons.keyboard_arrow_left,
             onPressed: _currentPage > 1
                 ? () {
@@ -395,23 +404,23 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  context.tokens.primaryAccent,
-                                  context.tokens.primaryAccent.withValues(alpha: 0.8),
+                                  tokens.primaryAccent,
+                                  tokens.primaryAccent.withValues(alpha: 0.8),
                                 ],
                               )
                             : null,
-                        color: isCurrentPage ? null : context.tokens.cardBackground,
+                        color: isCurrentPage ? null : tokens.cardBackground,
                         borderRadius: BorderRadius.circular(12),
                         border: isCurrentPage
                             ? null
                             : Border.all(
-                                color: context.tokens.border,
+                                color: tokens.border,
                                 width: 1.5,
                               ),
                         boxShadow: isCurrentPage
                             ? [
                                 BoxShadow(
-                                  color: context.tokens.primaryAccent
+                                  color: tokens.primaryAccent
                                       .withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 4),
@@ -419,7 +428,7 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                               ]
                             : [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
+                                  color: tokens.shadow,
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 ),
@@ -429,8 +438,8 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                         '$pageNumber',
                         style: TextStyle(
                           color: isCurrentPage
-                              ? Colors.white
-                              : context.colors.onSurface,
+                              ? tokens.cardBackground
+                              : colors.onSurface,
                           fontWeight: FontWeight.w700,
                           fontSize: 16,
                         ),
@@ -446,6 +455,7 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
 
           // 右箭头
           _buildPaginationButton(
+            context: context,
             icon: Icons.keyboard_arrow_right,
             onPressed: _currentPage < totalPages
                 ? () {
@@ -466,14 +476,14 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  context.tokens.primaryAccent.withValues(alpha: 0.8),
-                  context.tokens.primaryAccent.withValues(alpha: 0.6),
+                  tokens.primaryAccent.withValues(alpha: 0.8),
+                  tokens.primaryAccent.withValues(alpha: 0.6),
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: context.tokens.primaryAccent.withValues(alpha: 0.2),
+                  color: tokens.primaryAccent.withValues(alpha: 0.2),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
@@ -493,9 +503,9 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                   width: 42,
                   height: 42,
                   alignment: Alignment.center,
-                  child: const Icon(
+                  child: Icon(
                     Icons.home,
-                    color: Colors.white,
+                    color: tokens.cardBackground,
                     size: 20,
                   ),
                 ),
@@ -508,15 +518,15 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
             margin: const EdgeInsets.only(left: 32),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              gradient: context.tokens.subtleHeaderGradient,
+              gradient: tokens.subtleHeaderGradient,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: context.tokens.border,
+                color: tokens.border,
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.03),
+                  color: tokens.shadow.withValues(alpha: 0.03),
                   blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
@@ -529,18 +539,18 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                   height: 8,
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color: context.tokens.primaryAccent.withValues(alpha: 0.9),
+                    color: tokens.primaryAccent.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
                 Icon(Icons.info_outline,
                     size: 16,
-                    color: context.tokens.primaryAccent.withValues(alpha: 0.9)),
+                    color: tokens.primaryAccent.withValues(alpha: 0.9)),
                 const SizedBox(width: 6),
                 Text(
                   resultText,
                   style: TextStyle(
-                    color: context.colors.onSurface,
+                    color: colors.onSurface,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -554,10 +564,13 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
   }
 
   Widget _buildPaginationButton({
+    required BuildContext context,
     required IconData icon,
     required Function()? onPressed,
     required bool isActive,
   }) {
+    final tokens = context.tokens;
+
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(12),
@@ -575,30 +588,30 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      context.tokens.primaryAccent,
-                      context.tokens.primaryAccent.withValues(alpha: 0.8),
+                      tokens.primaryAccent,
+                      tokens.primaryAccent.withValues(alpha: 0.8),
                     ],
                   )
                 : null,
-            color: isActive ? null : context.tokens.cardBackground,
+            color: isActive ? null : tokens.cardBackground,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isActive
-                  ? context.tokens.primaryAccent.withValues(alpha: 0.3)
-                  : context.tokens.border,
+                  ? tokens.primaryAccent.withValues(alpha: 0.3)
+                  : tokens.border,
               width: 1.5,
             ),
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: context.tokens.primaryAccent.withValues(alpha: 0.3),
+                      color: tokens.primaryAccent.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: tokens.shadow,
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -606,7 +619,7 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
           ),
           child: Icon(
             icon,
-            color: isActive ? Colors.white : context.tokens.textMuted,
+            color: isActive ? tokens.cardBackground : tokens.textMuted,
             size: 24,
           ),
         ),

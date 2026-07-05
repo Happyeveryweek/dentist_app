@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 // 十字画笔
 class CrossPainter extends CustomPainter {
+  final Color lineColor;
+
+  const CrossPainter({required this.lineColor});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.blue
+      ..color = lineColor
       ..strokeWidth = 1.5;
 
     // 绘制水平线 - 占据整个宽度
@@ -66,11 +70,11 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
         width: 360,
         height: 460,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: context.tokens.shadow.withValues(alpha: 0.1),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -84,8 +88,8 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.primaryColor,
-                    AppTheme.primaryColor.withValues(alpha: 0.8),
+                    context.tokens.primaryAccent,
+                    context.tokens.primaryAccent.withValues(alpha: 0.8),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -100,21 +104,21 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: context.colors.onPrimary.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.access_time_rounded,
-                      color: Colors.white,
+                      color: context.colors.onPrimary,
                       size: 18,
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       '选择时间',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: context.colors.onPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -122,9 +126,9 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.close_rounded,
-                      color: Colors.white,
+                      color: context.colors.onPrimary,
                       size: 18,
                     ),
                   ),
@@ -147,16 +151,16 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                       });
                     },
                     label: '时',
-                    color: Colors.blue,
+                    color: context.tokens.primaryAccent,
                   ),
                   Container(
                     margin: const EdgeInsets.symmetric(horizontal: 8),
-                    child: const Text(
+                    child: Text(
                       ':',
                       style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
-                          color: Colors.grey),
+                          color: context.tokens.iconMuted),
                     ),
                   ),
                   _buildTimeSelector(
@@ -168,7 +172,7 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                       });
                     },
                     label: '分',
-                    color: Colors.green,
+                    color: context.tokens.success,
                   ),
                 ],
               ),
@@ -179,19 +183,19 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('快捷选择',
+                  Text('快捷选择',
                       style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: Colors.grey)),
+                          color: context.tokens.iconMuted)),
                   const SizedBox(height: 4),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SizedBox(
+                      SizedBox(
                         width: 36,
                         child: Text('上午',
-                            style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            style: TextStyle(fontSize: 12, color: context.tokens.iconMuted)),
                       ),
                       Expanded(
                         child: Wrap(
@@ -213,10 +217,10 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const SizedBox(
+                      SizedBox(
                         width: 36,
                         child: Text('下午',
-                            style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            style: TextStyle(fontSize: 12, color: context.tokens.iconMuted)),
                       ),
                       Expanded(
                         child: Wrap(
@@ -252,11 +256,11 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         '取消',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey,
+                          color: context.tokens.iconMuted,
                         ),
                       ),
                     ),
@@ -271,8 +275,8 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
+                        backgroundColor: context.tokens.primaryAccent,
+                        foregroundColor: context.colors.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 10),
                         elevation: 2,
                         shape: RoundedRectangleBorder(
@@ -336,7 +340,7 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: hovering && !isSelected
-                              ? Colors.grey.shade100
+                              ? context.tokens.inputBackground
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(6),
                         ),
@@ -350,8 +354,8 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                             color: isSelected
                                 ? color
                                 : (hovering
-                                    ? AppTheme.primaryColor
-                                    : Colors.grey.shade600),
+                                    ? context.tokens.primaryAccent
+                                    : context.colors.onSurfaceVariant),
                           ),
                         ),
                       ),
@@ -397,15 +401,15 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppTheme.primaryColor
-                    : (hovering ? Colors.grey.shade200 : Colors.grey.shade100),
+                    ? context.tokens.primaryAccent
+                    : (hovering ? context.tokens.mutedBackground : context.tokens.inputBackground),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isSelected
-                      ? AppTheme.primaryColor
+                      ? context.tokens.primaryAccent
                       : (hovering
-                          ? AppTheme.primaryColor
-                          : Colors.grey.shade300),
+                          ? context.tokens.primaryAccent
+                          : context.tokens.divider),
                 ),
               ),
               child: Text(
@@ -414,10 +418,10 @@ class ModernTimePickerDialogState extends State<ModernTimePickerDialog> {
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: isSelected
-                      ? Colors.white
+                      ? context.colors.onPrimary
                       : (hovering
-                          ? AppTheme.primaryColor
-                          : Colors.grey.shade800),
+                          ? context.tokens.primaryAccent
+                          : context.colors.onSurface),
                 ),
               ),
             ),

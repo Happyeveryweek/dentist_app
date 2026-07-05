@@ -4,7 +4,7 @@ import '../../../models/patient.dart';
 import '../../../models/material_image.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/user_provider.dart';
-import '../../../theme/app_theme.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../widgets/success_toast.dart';
 import 'single_material_editor.dart';
 import 'material_detail_card.dart';
@@ -223,8 +223,8 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+              backgroundColor: context.tokens.error,
+              foregroundColor: context.colors.onPrimary,
             ),
             child: const Text('删除'),
           ),
@@ -278,21 +278,21 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.white,
-                Colors.grey.shade50,
+                context.tokens.cardBackground,
+                context.tokens.pageBackground,
               ],
             ),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withValues(alpha: 0.1),
+                color: context.tokens.shadow,
                 blurRadius: 20,
                 spreadRadius: 2,
                 offset: const Offset(0, 8),
               ),
             ],
             border: Border.all(
-              color: Colors.grey.withValues(alpha: 0.1),
+              color: context.tokens.border,
               width: 1,
             ),
           ),
@@ -305,15 +305,15 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppTheme.primaryColor,
-                      AppTheme.primaryColor.withValues(alpha: 0.8),
+                      context.tokens.primaryAccent,
+                      context.tokens.primaryAccent.withValues(alpha: 0.8),
                     ],
                   ),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.photo_library,
-                  color: Colors.white,
+                  color: context.colors.onPrimary,
                   size: 24,
                 ),
               ),
@@ -322,12 +322,12 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       '患者材料',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryText,
+                        color: context.colors.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -335,9 +335,9 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                       children: [
                         Text(
                           '共 ${_materials.length} 项材料',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
-                            color: AppTheme.secondaryText,
+                            color: context.tokens.textMuted,
                           ),
                         ),
                         if (!_canEditPatientMaterials()) ...[
@@ -346,10 +346,10 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.orange.withValues(alpha: 0.1),
+                              color: context.tokens.warningContainer,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: Colors.orange.withValues(alpha: 0.3),
+                                color: context.tokens.warning,
                               ),
                             ),
                             child: Row(
@@ -358,14 +358,14 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                                 Icon(
                                   Icons.visibility,
                                   size: 14,
-                                  color: Colors.orange.shade700,
+                                  color: context.tokens.warning,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '只读模式',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.orange.shade700,
+                                    color: context.tokens.warning,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -382,17 +382,17 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
               // 刷新按钮
               Container(
                 decoration: BoxDecoration(
-                  color: AppTheme.infoColor.withValues(alpha: 0.1),
+                  color: context.tokens.info.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.infoColor.withValues(alpha: 0.3),
+                    color: context.tokens.info.withValues(alpha: 0.3),
                   ),
                 ),
                 child: IconButton(
                   onPressed: () => _loadMaterials(showSuccessMessage: true),
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.refresh,
-                    color: AppTheme.infoColor,
+                    color: context.tokens.info,
                   ),
                   tooltip: '刷新数据',
                 ),
@@ -404,14 +404,14 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            AppTheme.primaryColor,
-                            AppTheme.primaryColor.withValues(alpha: 0.8),
+                            context.tokens.primaryAccent,
+                            context.tokens.primaryAccent.withValues(alpha: 0.8),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                            color: context.tokens.primaryAccent.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 4),
                           ),
@@ -419,11 +419,11 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                       ),
                       child: ElevatedButton.icon(
                         onPressed: _addMaterial,
-                        icon: const Icon(Icons.add, color: Colors.white),
-                        label: const Text(
+                        icon: Icon(Icons.add, color: context.colors.onPrimary),
+                        label: Text(
                           '添加材料',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: context.colors.onPrimary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -440,7 +440,7 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                     )
                   : Container(
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: context.tokens.disabledBackground,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: ElevatedButton.icon(
@@ -448,11 +448,11 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                           context,
                           message: '您只能为自己医生的患者添加材料',
                         ),
-                        icon: const Icon(Icons.lock, color: Colors.grey),
-                        label: const Text(
+                        icon: Icon(Icons.lock, color: context.tokens.disabledText),
+                        label: Text(
                           '权限不足',
                           style: TextStyle(
-                            color: Colors.grey,
+                            color: context.tokens.disabledText,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -543,11 +543,11 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
             maxHeight: 1200,
           ),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.tokens.cardBackground,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
+                color: context.colors.onSurface.withValues(alpha: 0.25),
                 blurRadius: 15,
                 spreadRadius: 2,
                 offset: const Offset(0, 8),
@@ -562,11 +562,7 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.blue.shade600, Colors.blue.shade700],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: context.tokens.primaryHeaderGradient,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(12),
                     topRight: Radius.circular(12),
@@ -574,17 +570,17 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.photo,
-                      color: Colors.white,
+                      color: context.colors.onPrimary,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         fullImage.originalName ?? '图片详情',
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: context.colors.onPrimary,
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
@@ -592,8 +588,8 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close,
-                          color: Colors.white, size: 20),
+                      icon: Icon(Icons.close,
+                          color: context.colors.onPrimary, size: 20),
                       onPressed: () => Navigator.of(context).pop(),
                       tooltip: '关闭',
                       padding: EdgeInsets.zero,
@@ -619,20 +615,20 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                             return Container(
                               width: 400,
                               height: 300,
-                              color: Colors.grey.shade100,
+                              color: context.tokens.pageBackground,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
                                     Icons.broken_image,
-                                    color: Colors.grey.shade400,
+                                    color: context.tokens.iconMuted,
                                     size: 64,
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
                                     '图片加载失败',
                                     style: TextStyle(
-                                      color: Colors.grey.shade600,
+                                      color: context.tokens.textMuted,
                                       fontSize: 16,
                                     ),
                                   ),
@@ -644,20 +640,20 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                       : Container(
                           width: 400,
                           height: 300,
-                          color: Colors.grey.shade100,
+                          color: context.tokens.pageBackground,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
                                 Icons.image_not_supported,
-                                color: Colors.grey.shade400,
+                                color: context.tokens.iconMuted,
                                 size: 64,
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 '图片数据不可用',
                                 style: TextStyle(
-                                  color: Colors.grey.shade600,
+                                  color: context.tokens.textMuted,
                                   fontSize: 16,
                                 ),
                               ),
@@ -672,7 +668,7 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: context.tokens.pageBackground,
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(12),
                     bottomRight: Radius.circular(12),
@@ -685,7 +681,7 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                       children: [
                         Icon(
                           Icons.info_outline,
-                          color: Colors.grey.shade600,
+                          color: context.tokens.iconMuted,
                           size: 16,
                         ),
                         const SizedBox(width: 6),
@@ -693,7 +689,7 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                           '文件大小: ${(fullImage.fileSize / 1024).toStringAsFixed(1)} KB',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.grey.shade700,
+                            color: context.tokens.textMuted,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -703,14 +699,14 @@ class _MaterialDetailManagerState extends State<MaterialDetailManager> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                        color: context.tokens.primaryAccent.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         fullImage.imageType.toUpperCase(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: AppTheme.primaryColor,
+                          color: context.tokens.primaryAccent,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

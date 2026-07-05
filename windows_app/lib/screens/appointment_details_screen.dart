@@ -8,7 +8,6 @@ import '../models/patient.dart';
 import '../providers/appointment_provider.dart';
 import '../providers/patient_provider.dart';
 import '../features/dashboard/helpers/dashboard_status_helper.dart';
-import '../widgets/dental_icons.dart';
 import '../features/appointments/widgets/appointment_details_summary_card.dart';
 import '../features/appointments/widgets/appointment_details_treatment_section.dart';
 import '../features/appointments/widgets/appointment_details_teeth_section.dart';
@@ -19,7 +18,6 @@ import '../widgets/success_toast.dart';
 import './patient_detail_screen.dart';
 import '../utils/log_manager.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import '../theme/app_theme.dart';
 
 // 牙位映射表 - 从医生视角看患者牙齿
 final Map<String, String> positionMap = {
@@ -97,7 +95,9 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('加载预约数据失败: $e'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text('加载预约数据失败: $e'),
+            backgroundColor: context.tokens.error),
       );
       Navigator.of(context).pop();
     }
@@ -167,7 +167,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
         _applyAppointmentLocally(updatedAppointment);
       });
 
-      final statusColor = DashboardStatusHelper.getStatusColor(newStatus);
+      final statusColor = DashboardStatusHelper.getStatusColor(context, newStatus);
       AppToastManager.showSuccess(
         context,
         message: '预约状态已更新为: $newStatus',
@@ -236,9 +236,9 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                 gradient: context.tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.event_note_rounded,
-                color: Colors.white,
+                color: context.tokens.cardBackground,
                 size: 24,
               ),
             ),
@@ -257,7 +257,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
             }),
           ],
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: context.tokens.cardBackground,
         foregroundColor: context.colors.onSurface,
         elevation: 0,
         actions: [
@@ -265,16 +265,16 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
             Container(
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: DentalColors.warning.withValues(alpha: 0.1),
+                color: context.tokens.warningContainer,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: DentalColors.warning.withValues(alpha: 0.3),
+                  color: context.tokens.warning.withValues(alpha: 0.3),
                 ),
               ),
               child: IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.edit_rounded,
-                  color: DentalColors.warning,
+                  color: context.tokens.warning,
                 ),
                 tooltip: '编辑预约',
                 onPressed: _showEditAppointmentDialog,
@@ -283,19 +283,19 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: DentalColors.info.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: DentalColors.info.withValues(alpha: 0.3),
+                color: context.tokens.infoContainer,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: context.tokens.info.withValues(alpha: 0.3),
+                ),
               ),
-            ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.refresh_rounded,
-                color: DentalColors.info,
-              ),
-              tooltip: '刷新',
-              onPressed: _loadAppointmentData,
+              child: IconButton(
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  color: context.tokens.info,
+                ),
+                tooltip: '刷新',
+                onPressed: _loadAppointmentData,
             ),
           ),
         ],
@@ -331,7 +331,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
             padding: const EdgeInsets.symmetric(
                 horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.tokens.cardBackground,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                   color:
@@ -342,8 +342,8 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.update_rounded,
-                        size: 16, color: Colors.orange),
+                    Icon(Icons.update_rounded,
+                        size: 16, color: context.tokens.warning),
                     const SizedBox(width: 6),
                     Text(
                       '更新预约状态',
@@ -360,10 +360,10 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _buildStatusButton(appointment, '已预约', Colors.blue),
-                    _buildStatusButton(appointment, '已完成', Colors.green),
-                    _buildStatusButton(appointment, '已取消', Colors.red),
-                    _buildStatusButton(appointment, '未到诊', Colors.orange),
+                    _buildStatusButton(appointment, '已预约', context.tokens.primaryAccent),
+                    _buildStatusButton(appointment, '已完成', context.tokens.success),
+                    _buildStatusButton(appointment, '已取消', context.tokens.error),
+                    _buildStatusButton(appointment, '未到诊', context.tokens.warning),
                   ],
                 ),
               ],
@@ -395,6 +395,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
 
   Widget _buildStatusButton(Appointment appointment, String status, Color color) {
     final isCurrentStatus = appointment.status == status;
+    final tokens = context.tokens;
 
     // 获取状态对应的转换后状态文本
     String statusText;
@@ -423,7 +424,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: isCurrentStatus ? color : Colors.white,
+            color: isCurrentStatus ? color : tokens.cardBackground,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: color.withValues(alpha: isCurrentStatus ? 1.0 : 0.6),
@@ -433,7 +434,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
           child: Text(
             statusText,
             style: TextStyle(
-              color: isCurrentStatus ? Colors.white : color,
+              color: isCurrentStatus ? tokens.cardBackground : color,
               fontWeight: FontWeight.w600,
               fontSize: 14,
             ),

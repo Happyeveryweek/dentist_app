@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class FinancialDetailTableColumn {
   const FinancialDetailTableColumn({
@@ -33,15 +34,18 @@ class FinancialDetailTableLayout {
     ),
   ];
 
-  static Widget buildHeader({
+  static Widget buildHeader(
+    BuildContext context, {
     BorderRadius? borderRadius,
     BoxBorder? border,
     EdgeInsetsGeometry padding = const EdgeInsets.fromLTRB(0, 8, 0, 8),
   }) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: tokens.inputBackground,
         borderRadius: borderRadius,
         border: border,
       ),
@@ -52,7 +56,7 @@ class FinancialDetailTableLayout {
                 column.label,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
+                  color: colors.onSurface,
                   fontSize: 13,
                 ),
                 maxLines: 1,

@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class CrossPainter extends CustomPainter {
+  final Color lineColor;
+
+  const CrossPainter({required this.lineColor});
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.blue
+      ..color = lineColor
       ..strokeWidth = 1.5;
 
     // 绘制水平线 - 明显长于竖线（占据整个宽度）
@@ -42,6 +47,8 @@ class TeethCrossWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return SizedBox(
       height: 120, // 恢复原始尺寸
       width: 180,
@@ -56,13 +63,13 @@ class TeethCrossWidget extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          _buildCross(),
+          _buildCross(tokens),
         ],
       ),
     );
   }
 
-  Widget _buildCross() {
+  Widget _buildCross(AppThemeTokens tokens) {
     // 使用固定尺寸而非LayoutBuilder，避免潜在的布局计算问题（恢复原值）
     const double width = 170.0;
     const double height = 90.0;
@@ -75,7 +82,7 @@ class TeethCrossWidget extends StatelessWidget {
         // 自定义画笔绘制十字
         CustomPaint(
           size: const Size(width, height),
-          painter: CrossPainter(),
+          painter: CrossPainter(lineColor: tokens.border),
         ),
 
         // 上左象限

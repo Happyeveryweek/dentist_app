@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'dart:ui' as ui; // 导入 dart:ui
 import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../../../models/patient.dart';
-import '../../../widgets/dental_icons.dart';
 import '../../../widgets/reusable_date_range_picker.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import '../services/financial_statistics_service.dart';
@@ -428,28 +428,33 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
   }
 
   Widget _buildPresetButton(String label, String key) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final active = _isPresetActive(key);
     return ElevatedButton(
       onPressed: () => _applyPreset(key),
       style: ElevatedButton.styleFrom(
-        backgroundColor: active ? DentalColors.primary : Colors.white,
-        foregroundColor: active ? Colors.white : Colors.black87,
+        backgroundColor: active ? tokens.primaryAccent : tokens.cardBackground,
+        foregroundColor: active ? tokens.cardBackground : colors.onSurface,
         elevation: active ? 3 : 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         side: BorderSide(
             color: active
                 ? Colors.transparent
-                : Colors.grey.withValues(alpha: 0.12)),
+                : tokens.textMuted.withValues(alpha: 0.12)),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
       child: Text(label,
           style: TextStyle(
-              fontSize: 13, color: active ? Colors.white : Colors.black87)),
+              fontSize: 13, color: active ? tokens.cardBackground : colors.onSurface)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = context.colors;
+
     final totalPatients = _calculateTotalPatients();
     final totalItems = _calculateTotalItems();
     final totalReceived = _calculateTotalReceived();
@@ -473,12 +478,12 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                gradient: DentalColors.primaryGradient,
+                gradient: tokens.primaryHeaderGradient,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.bar_chart_rounded,
-                color: Colors.white,
+                color: tokens.cardBackground,
                 size: 24,
               ),
             ),
@@ -492,8 +497,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
             ),
           ],
         ),
-        backgroundColor: Colors.white,
-        foregroundColor: DentalColors.onSurface,
+        backgroundColor: tokens.cardBackground,
+        foregroundColor: colors.onSurface,
         elevation: 0,
         actions: [
           Padding(
@@ -526,10 +531,10 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
             child: SizedBox(
               height: 36,
               child: Material(
-                color: Colors.white,
+                color: tokens.cardBackground,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.grey.withValues(alpha: 0.12)),
+                  side: BorderSide(color: tokens.textMuted.withValues(alpha: 0.12)),
                 ),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(8),
@@ -541,16 +546,16 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.calendar_today,
-                            size: 16, color: Colors.black54),
+                        Icon(Icons.calendar_today,
+                            size: 16, color: tokens.textMuted),
                         const SizedBox(width: 6),
                         ConstrainedBox(
                           constraints: const BoxConstraints(
                               minWidth: 140, maxWidth: 180),
                           child: Text(
                             '${DateFormat('yyyy-MM-dd').format(_startDate)} - ${DateFormat('yyyy-MM-dd').format(_endDate)}',
-                            style: const TextStyle(
-                                color: Colors.black87, fontSize: 11),
+                            style: TextStyle(
+                                color: colors.onSurface, fontSize: 11),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -601,15 +606,14 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: DentalColors.info.withValues(alpha: 0.1),
+                  color: tokens.infoContainer,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                      color: DentalColors.info.withValues(alpha: 0.3)),
+                  border: Border.all(color: tokens.info),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline,
-                        color: DentalColors.info, size: 20),
+                    Icon(Icons.info_outline,
+                        color: tokens.info, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -620,8 +624,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                               chargeItemQuery.isNotEmpty)
                             '收费项目"$chargeItemQuery"',
                         ].join('、')}',
-                        style: const TextStyle(
-                            color: DentalColors.info,
+                        style: TextStyle(
+                            color: tokens.info,
                             fontSize: 13,
                             fontWeight: FontWeight.w500),
                       ),
@@ -705,6 +709,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
 
   Widget _buildMonthlyRevenueChart(
       List<String> sortedMonths, Map<String, double> monthlyData) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     if (sortedMonths.isEmpty) {
       return const Center(child: Text('暂无数据'));
     }
@@ -733,12 +739,12 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
               interval: interval,
               getTitlesWidget: (value, meta) {
                 if (value == 0) {
-                  return const Text('¥0',
-                      style: TextStyle(fontSize: 10, color: Colors.black54));
+                  return Text('¥0',
+                      style: TextStyle(fontSize: 10, color: tokens.textMuted));
                 }
                 return Text('¥${value.toInt()}',
                     style:
-                        const TextStyle(fontSize: 10, color: Colors.black54));
+                        TextStyle(fontSize: 10, color: tokens.textMuted));
               },
             );
 
@@ -773,7 +779,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
               lineTouchData: LineTouchData(
                 enabled: true,
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (spot) => Colors.white,
+                  getTooltipColor: (spot) => tokens.cardBackground,
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {
                       final index = spot.x.toInt();
@@ -782,8 +788,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                         final amount = monthlyData[month] ?? 0;
                         return LineTooltipItem(
                           '$month\n¥${amount.toStringAsFixed(0)}',
-                          const TextStyle(
-                              color: Colors.black87,
+                          TextStyle(
+                              color: colors.onSurface,
                               fontWeight: FontWeight.bold),
                         );
                       }
@@ -799,7 +805,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 drawVerticalLine: false,
                 horizontalInterval: interval, // 显式设置水平网格间隔
                 getDrawingHorizontalLine: (value) =>
-                    FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                    FlLine(color: tokens.divider, strokeWidth: 1),
               ),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
@@ -821,7 +827,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
               ),
               borderData: FlBorderData(
                   show: true,
-                  border: Border.all(color: Colors.grey.shade300, width: 1)),
+                  border: Border.all(color: tokens.border, width: 1)),
               minX: 0,
               maxX: sortedMonths.length - 1,
               minY: 0,
@@ -833,7 +839,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                     return FlSpot(entry.key.toDouble(), amount);
                   }).toList(),
                   isCurved: true,
-                  color: Colors.blue,
+                  color: tokens.primaryAccent,
                   barWidth: 3,
                   isStrokeCapRound: true,
                   dotData: FlDotData(
@@ -841,9 +847,9 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                     getDotPainter: (spot, percent, barData, index) =>
                         FlDotCirclePainter(
                       radius: 3,
-                      color: Colors.blue,
+                      color: tokens.primaryAccent,
                       strokeWidth: 2,
-                      strokeColor: Colors.white,
+                      strokeColor: tokens.cardBackground,
                     ),
                   ),
                   belowBarData: BarAreaData(
@@ -852,8 +858,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.blue.withValues(alpha: 0.3),
-                        Colors.blue.withValues(alpha: 0.1),
+                        tokens.primaryAccent.withValues(alpha: 0.3),
+                        tokens.primaryAccent.withValues(alpha: 0.1),
                       ],
                     ),
                   ),
@@ -917,6 +923,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
 
   Widget _buildMonthlyProcessingChart(
       List<String> sortedMonths, Map<String, double> monthlyData) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     if (sortedMonths.isEmpty) {
       return const Center(child: Text('暂无数据'));
     }
@@ -944,12 +952,12 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
               interval: interval,
               getTitlesWidget: (value, meta) {
                 if (value == 0) {
-                  return const Text('¥0',
-                      style: TextStyle(fontSize: 10, color: Colors.black54));
+                  return Text('¥0',
+                      style: TextStyle(fontSize: 10, color: tokens.textMuted));
                 }
                 return Text('¥${value.toInt()}',
                     style:
-                        const TextStyle(fontSize: 10, color: Colors.black54));
+                        TextStyle(fontSize: 10, color: tokens.textMuted));
               },
             );
 
@@ -984,7 +992,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
               lineTouchData: LineTouchData(
                 enabled: true,
                 touchTooltipData: LineTouchTooltipData(
-                  getTooltipColor: (spot) => Colors.white,
+                  getTooltipColor: (spot) => tokens.cardBackground,
                   getTooltipItems: (touchedSpots) {
                     return touchedSpots.map((spot) {
                       final index = spot.x.toInt();
@@ -993,8 +1001,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                         final amount = monthlyData[month] ?? 0;
                         return LineTooltipItem(
                           '$month\n¥${amount.toStringAsFixed(0)}',
-                          const TextStyle(
-                              color: Colors.black87,
+                          TextStyle(
+                              color: colors.onSurface,
                               fontWeight: FontWeight.bold),
                         );
                       }
@@ -1010,7 +1018,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 drawVerticalLine: false,
                 horizontalInterval: interval, // 显式设置水平网格间隔
                 getDrawingHorizontalLine: (value) =>
-                    FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                    FlLine(color: tokens.divider, strokeWidth: 1),
               ),
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(
@@ -1032,7 +1040,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
               ),
               borderData: FlBorderData(
                   show: true,
-                  border: Border.all(color: Colors.grey.shade300, width: 1)),
+                  border: Border.all(color: tokens.border, width: 1)),
               minX: 0,
               maxX: sortedMonths.length - 1,
               minY: 0,
@@ -1044,7 +1052,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                     return FlSpot(entry.key.toDouble(), amount);
                   }).toList(),
                   isCurved: true,
-                  color: Colors.green,
+                  color: tokens.chartPalette[1],
                   barWidth: 3,
                   isStrokeCapRound: true,
                   dotData: FlDotData(
@@ -1052,9 +1060,9 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                     getDotPainter: (spot, percent, barData, index) =>
                         FlDotCirclePainter(
                       radius: 3,
-                      color: Colors.green,
+                      color: tokens.chartPalette[1],
                       strokeWidth: 2,
-                      strokeColor: Colors.white,
+                      strokeColor: tokens.cardBackground,
                     ),
                   ),
                   belowBarData: BarAreaData(
@@ -1063,8 +1071,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.green.withValues(alpha: 0.3),
-                        Colors.green.withValues(alpha: 0.1),
+                        tokens.chartPalette[1].withValues(alpha: 0.3),
+                        tokens.chartPalette[1].withValues(alpha: 0.1),
                       ],
                     ),
                   ),
@@ -1134,6 +1142,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
     double totalProcessingFee,
     Map<String, double> paymentMethodTotals,
   ) {
+    final tokens = context.tokens;
     const summaryCardHeight = 120.0;
 
     return Row(
@@ -1142,7 +1151,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
           child: SizedBox(
             height: summaryCardHeight,
             child: _buildStatCard('总患者数', totalPatients.toString(),
-                Icons.people, DentalColors.primary),
+                Icons.people, tokens.primaryAccent),
           ),
         ),
         const SizedBox(width: 16),
@@ -1150,7 +1159,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
           child: SizedBox(
             height: summaryCardHeight,
             child: _buildStatCard('总记录数', totalItems.toString(),
-                Icons.insert_drive_file, DentalColors.success),
+                Icons.insert_drive_file, tokens.success),
           ),
         ),
         const SizedBox(width: 16),
@@ -1163,7 +1172,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                   ? '¥${totalReceived.toStringAsFixed(0)}'
                   : '****',
               Icons.check_circle_outline,
-              DentalColors.warning,
+              tokens.warning,
             ),
           ),
         ),
@@ -1177,7 +1186,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                   ? '¥${totalDebt.toStringAsFixed(0)}'
                   : '****',
               Icons.error_outline,
-              DentalColors.error,
+              tokens.error,
             ),
           ),
         ),
@@ -1191,7 +1200,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                   ? '¥${totalProcessingFee.toStringAsFixed(0)}'
                   : '****',
               Icons.build,
-              DentalColors.info,
+              tokens.info,
             ),
           ),
         ),
@@ -1212,32 +1221,26 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
     IconData icon,
     Color cardColor,
   ) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: cardColor.withValues(alpha: 0.3),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(tokens.borderRadius),
+        boxShadow: tokens.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: Colors.white, size: 24),
+              Icon(icon, color: tokens.cardBackground, size: 24),
               const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white,
+                  color: tokens.cardBackground,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -1246,10 +1249,10 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: tokens.cardBackground,
             ),
           ),
         ],
@@ -1258,24 +1261,18 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
   }
 
   Widget _buildPaymentMethodCard(Map<String, double> paymentMethodTotals) {
+    final tokens = context.tokens;
     const cardHeight = 120.0;
-    const purpleCardColor = Color(0xFF7B61FF);
+    final paymentCardColor = tokens.chartPalette[4 % tokens.chartPalette.length];
 
     return SizedBox(
       height: cardHeight,
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
         decoration: BoxDecoration(
-          color: purpleCardColor,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: purpleCardColor.withValues(alpha: 0.3),
-              spreadRadius: 2,
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          color: paymentCardColor,
+          borderRadius: BorderRadius.circular(tokens.borderRadius),
+          boxShadow: tokens.cardShadow,
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -1283,15 +1280,15 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.payment_rounded, color: Colors.white, size: 18),
-                    SizedBox(width: 5),
+                    Icon(Icons.payment_rounded, color: tokens.cardBackground, size: 18),
+                    const SizedBox(width: 5),
                     Text(
                       '收费方式',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white,
+                        color: tokens.cardBackground,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1335,6 +1332,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
     required String methodKey,
     required double amount,
   }) {
+    final tokens = context.tokens;
     if (amount <= 0) {
       return const SizedBox(height: 26);
     }
@@ -1345,7 +1343,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
       constraints: const BoxConstraints(minHeight: 26),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
+        color: tokens.cardBackground.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -1363,10 +1361,10 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
             _showFinancialAmounts ? '¥${amount.toStringAsFixed(0)}' : '****',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: tokens.cardBackground,
               height: 1.0,
             ),
           ),
@@ -1401,9 +1399,14 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
   }
 
   Widget _buildChartCard(String title, Widget chart) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    final tokens = context.tokens;
+    final colors = context.colors;
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.cardBackground,
+        borderRadius: BorderRadius.circular(tokens.borderRadius),
+        boxShadow: tokens.cardShadow,
+      ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
         child: Column(
@@ -1411,7 +1414,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: colors.onSurface),
             ),
             const SizedBox(height: 16),
             Expanded(child: chart),
@@ -1422,6 +1425,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
   }
 
   Widget _buildTopPatientsCard(List<MapEntry<String, double>> topPatients) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     final grandTotal =
         topPatients.fold(0.0, (double sum, item) => sum + item.value);
     return _buildListCard(
@@ -1439,11 +1444,11 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                   CircleAvatar(
                     radius: 12,
                     backgroundColor:
-                        DentalColors.primary.withValues(alpha: 0.1),
+                        tokens.primaryAccent.withValues(alpha: 0.1),
                     child: Text(
                       entry.key.substring(0, 1),
-                      style: const TextStyle(
-                          color: DentalColors.primary,
+                      style: TextStyle(
+                          color: tokens.primaryAccent,
                           fontWeight: FontWeight.bold,
                           fontSize: 11),
                     ),
@@ -1452,8 +1457,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                   Expanded(
                     child: Text(
                       entry.key,
-                      style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w500, color: colors.onSurface),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1461,24 +1466,24 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                   const SizedBox(width: 8),
                   Text(
                     '¥${entry.value.toStringAsFixed(0)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: DentalColors.primary,
-                      fontFeatures: [ui.FontFeature.tabularFigures()],
+                      color: tokens.primaryAccent,
+                      fontFeatures: const [ui.FontFeature.tabularFigures()],
                     ),
                   ),
                   const SizedBox(width: 8),
                   Text('${percentage.toStringAsFixed(1)}%',
-                      style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                      style: TextStyle(fontSize: 11, color: tokens.textMuted)),
                 ],
               ),
               const SizedBox(height: 4),
               LinearProgressIndicator(
                 value: percentage / 100,
-                backgroundColor: Colors.grey.shade200,
+                backgroundColor: tokens.divider,
                 valueColor:
-                    const AlwaysStoppedAnimation<Color>(DentalColors.primary),
+                    AlwaysStoppedAnimation<Color>(tokens.primaryAccent),
               ),
             ],
           ),
@@ -1488,6 +1493,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
   }
 
   Widget _buildTopDebtorsCard(List<MapEntry<String, double>> topDebtors) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return _buildListCard(
       '患者欠费排行 (前30名)',
       Icons.money_off_csred_outlined,
@@ -1498,16 +1505,16 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
             children: [
               CircleAvatar(
                 radius: 12,
-                backgroundColor: DentalColors.error.withValues(alpha: 0.1),
-                child: const Icon(Icons.person,
-                    color: DentalColors.error, size: 14),
+                backgroundColor: tokens.error.withValues(alpha: 0.1),
+                child: Icon(Icons.person,
+                    color: tokens.error, size: 14),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   entry.key,
-                  style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w500, color: colors.onSurface),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1520,11 +1527,11 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                   child: Text(
                     '¥${entry.value.toStringAsFixed(0)}',
                     textAlign: TextAlign.right,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: DentalColors.error,
-                      fontFeatures: [ui.FontFeature.tabularFigures()],
+                      color: tokens.error,
+                      fontFeatures: const [ui.FontFeature.tabularFigures()],
                     ),
                   ),
                 ),
@@ -1537,9 +1544,14 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
   }
 
   Widget _buildListCard(String title, IconData icon, List<Widget> children) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    final tokens = context.tokens;
+    final colors = context.colors;
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.cardBackground,
+        borderRadius: BorderRadius.circular(tokens.borderRadius),
+        boxShadow: tokens.cardShadow,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1547,24 +1559,24 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
           children: [
             Row(
               children: [
-                Icon(icon, color: DentalColors.onSurface, size: 20),
+                Icon(icon, color: colors.onSurface, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600, color: colors.onSurface),
                   ),
                 ),
               ],
             ),
             const Divider(height: 24),
             if (children.isEmpty)
-              const Expanded(
+              Expanded(
                 child: Center(
-                  child: Text('暂无数据', style: TextStyle(color: Colors.grey)),
+                  child: Text('暂无数据', style: TextStyle(color: tokens.textMuted)),
                 ),
               )
             else
