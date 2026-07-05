@@ -293,12 +293,6 @@ class _PatientsScreenState extends State<PatientsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 计算总页数
-    final pagination = PatientListStateService.computePagination(
-      totalPatients: _totalPatients,
-      patientsPerPage: _patientsPerPage,
-    );
-
     return PatientScreenScaffold(
       title: const PatientAppBarTitle(),
       actions: PatientAppBarActions(
@@ -373,7 +367,6 @@ class _PatientsScreenState extends State<PatientsScreen> {
         isLoading: _isLoading,
         hasPatients: _patients.isNotEmpty,
         patientsList: _buildPatientsList(),
-        totalPages: pagination.displayTotalPages,
         currentPage: _currentPage,
         patientsPerPage: _patientsPerPage,
         onPageChanged: (page) {

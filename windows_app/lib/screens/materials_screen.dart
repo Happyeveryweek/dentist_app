@@ -9,7 +9,7 @@ import '../widgets/success_toast.dart';
 import '../features/materials/widgets/material_hoverable_cards.dart';
 import '../widgets/mysql_connection_warning.dart';
 import '../features/materials/widgets/material_stat_card.dart';
-import '../features/materials/widgets/material_pagination.dart';
+import '../widgets/pagination_control.dart';
 import '../features/materials/widgets/compact_material_action_button.dart';
 import '../features/materials/widgets/dental_material_initialize_dialog.dart';
 import '../features/materials/widgets/material_detail_dialog.dart';
@@ -37,7 +37,6 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   String _selectedType = '全部'; // 新增：选中的材料类型
   bool _isTypeHover = false; // 类型筛选悬停态
   late TextEditingController _searchController;
-  late TextEditingController _pageJumpController;
 
   // 分页相关变量
   int _currentPage = 1;
@@ -70,7 +69,6 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    _pageJumpController = TextEditingController();
 
     // 初始化筛选分页服务
     _filterPaginationService = MaterialFilterPaginationService(
@@ -101,7 +99,6 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   @override
   void dispose() {
     _searchController.dispose();
-    _pageJumpController.dispose();
     super.dispose();
   }
 
@@ -285,18 +282,6 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   void _goToPage(int page) {
     _applyFilterResult(
         _filterPaginationService.goToPage(_currentFilterResult(), page));
-  }
-
-  // 跳转到上一页
-  void _goToPreviousPage() {
-    _applyFilterResult(
-        _filterPaginationService.goToPreviousPage(_currentFilterResult()));
-  }
-
-  // 跳转到下一页
-  void _goToNextPage() {
-    _applyFilterResult(
-        _filterPaginationService.goToNextPage(_currentFilterResult()));
   }
 
   Future<void> _showMaterialDetail(
@@ -883,15 +868,11 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   }
 
   Widget _buildPagination() {
-    return MaterialPagination(
+    return PaginationControl(
       currentPage: _currentPage,
-      totalPages: _totalPages,
-      totalMaterials: _totalMaterials,
-      materialsPerPage: _materialsPerPage,
-      onPreviousPage: _currentPage > 1 ? _goToPreviousPage : () {},
-      onNextPage: _currentPage < _totalPages ? _goToNextPage : () {},
-      onPageSelected: (page) => _goToPage(page),
-      onGoToFirstPage: () => _goToPage(1),
+      pageSize: _materialsPerPage,
+      totalRecords: _totalMaterials,
+      onPageChanged: _goToPage,
     );
   }
 

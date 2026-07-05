@@ -1263,7 +1263,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
   Widget _buildPaymentMethodCard(Map<String, double> paymentMethodTotals) {
     final tokens = context.tokens;
     const cardHeight = 120.0;
-    final paymentCardColor = tokens.chartPalette[4 % tokens.chartPalette.length];
+    final paymentCardColor = tokens.secondaryAccent;
 
     return SizedBox(
       height: cardHeight,

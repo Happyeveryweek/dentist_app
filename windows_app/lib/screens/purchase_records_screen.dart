@@ -15,7 +15,7 @@ import '../features/purchases/widgets/purchase_detail_dialog.dart';
 import '../features/purchases/widgets/purchase_form_dialog.dart'
     show showPurchaseFormDialog;
 import '../features/purchases/widgets/stat_card.dart';
-import '../features/purchases/widgets/pagination_widget.dart';
+import '../widgets/pagination_control.dart';
 import '../services/purchase_export_service.dart';
 import '../utils/log_manager.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
@@ -39,7 +39,6 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
   int _currentPage = 1;
   final int _recordsPerPage = 10;
   int _totalRecords = 0;
-  int _totalPages = 0;
 
   // 统计信息
   int _totalQuantity = 0;
@@ -121,7 +120,6 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
       setState(() {
         _purchaseRecords = records;
         _totalRecords = total;
-        _totalPages = computedTotalPages;
         _isLoading = false;
       });
     } catch (e) {
@@ -812,10 +810,9 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                                   },
                                 ),
                               ),
-                              PaginationWidget(
+                              PaginationControl(
                                 currentPage: _currentPage,
-                                totalPages: _totalPages,
-                                recordsPerPage: _recordsPerPage,
+                                pageSize: _recordsPerPage,
                                 totalRecords: _totalRecords,
                                 onPageChanged: (page) {
                                   setState(() {

@@ -12,7 +12,6 @@ export 'patient_floating_add_button.dart';
 export 'patient_info_row.dart';
 export 'patient_list_item.dart';
 export 'patient_list_view.dart';
-export 'patient_pagination.dart';
 export 'patient_screen_body.dart';
 export 'patient_screen_scaffold.dart';
 export 'patient_search_bar.dart';

@@ -241,7 +241,8 @@ class LogManager {
 
         // 计算行数（简单估算）
         if (stat.size > 0) {
-          final content = await file.readAsString();
+          final bytes = await file.readAsBytes();
+          final content = utf8.decode(bytes, allowMalformed: true);
           totalLines += content.split('\n').length;
         }
       }
@@ -305,7 +306,8 @@ class LogManager {
         buffer.writeln('-' * 40);
 
         try {
-          final content = await file.readAsString();
+          final bytes = await file.readAsBytes();
+          final content = utf8.decode(bytes, allowMalformed: true);
           buffer.writeln(content);
         } catch (e) {
           buffer.writeln('读取文件失败: $e');

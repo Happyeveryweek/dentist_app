@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/theme_context_extensions.dart';
 import '../../../widgets/mysql_connection_warning.dart';
+import '../../../widgets/pagination_control.dart';
 import 'patient_empty_state.dart';
 import 'patient_filter_bar.dart';
-import 'patient_pagination.dart';
 import 'patient_search_bar.dart';
 
 class PatientScreenBody extends StatelessWidget {
@@ -32,7 +32,6 @@ class PatientScreenBody extends StatelessWidget {
   final bool isLoading;
   final bool hasPatients;
   final Widget patientsList;
-  final int totalPages;
   final int currentPage;
   final int patientsPerPage;
   final ValueChanged<int> onPageChanged;
@@ -63,7 +62,6 @@ class PatientScreenBody extends StatelessWidget {
     required this.isLoading,
     required this.hasPatients,
     required this.patientsList,
-    required this.totalPages,
     required this.currentPage,
     required this.patientsPerPage,
     required this.onPageChanged,
@@ -120,13 +118,10 @@ class PatientScreenBody extends StatelessWidget {
                 Column(
                   children: [
                     Expanded(child: patientsList),
-                    PatientPagination(
-                      totalPages: totalPages,
+                    PaginationControl(
                       currentPage: currentPage,
-                      patientsPerPage: patientsPerPage,
-                      totalPatients: totalPatients,
-                      searchQuery: searchQuery,
-                      hasDateFilter: startDate != null,
+                      pageSize: patientsPerPage,
+                      totalRecords: totalPatients,
                       onPageChanged: onPageChanged,
                     ),
                   ],

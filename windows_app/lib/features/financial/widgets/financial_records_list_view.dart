@@ -3,7 +3,7 @@ import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../../../models/patient.dart';
 import '../widgets/financial_table_header.dart';
-import './financial_pagination.dart';
+import '../../../widgets/pagination_control.dart';
 
 /// 财务记录列表视图
 ///
@@ -14,12 +14,8 @@ class FinancialRecordsListView extends StatelessWidget {
   final ScrollController horizontalScrollController;
   final int totalRecords;
   final int currentPage;
-  final int totalPages;
-  final int recordsPerPage;
-  final TextEditingController pageJumpController;
-  final Function(int) onGoToPage;
-  final VoidCallback onGoToPreviousPage;
-  final VoidCallback onGoToNextPage;
+  final int pageSize;
+  final ValueChanged<int> onPageChanged;
   final List<Map<String, dynamic>> Function() getPagedData;
   final Future<Patient?> Function(int) getPatientByIdAsync;
   final double Function(int) getPatientTotalReceivable;
@@ -36,12 +32,8 @@ class FinancialRecordsListView extends StatelessWidget {
     required this.horizontalScrollController,
     required this.totalRecords,
     required this.currentPage,
-    required this.totalPages,
-    required this.recordsPerPage,
-    required this.pageJumpController,
-    required this.onGoToPage,
-    required this.onGoToPreviousPage,
-    required this.onGoToNextPage,
+    required this.pageSize,
+    required this.onPageChanged,
     required this.getPagedData,
     required this.getPatientByIdAsync,
     required this.getPatientTotalReceivable,
@@ -259,15 +251,11 @@ class FinancialRecordsListView extends StatelessWidget {
 
         // 分页控件（只要有数据就显示）
         if (totalRecords > 0)
-          FinancialPagination(
+          PaginationControl(
             currentPage: currentPage,
-            totalPages: totalPages,
+            pageSize: pageSize,
             totalRecords: totalRecords,
-            recordsPerPage: recordsPerPage,
-            pageJumpController: pageJumpController,
-            onGoToPage: onGoToPage,
-            onGoToPreviousPage: onGoToPreviousPage,
-            onGoToNextPage: onGoToNextPage,
+            onPageChanged: onPageChanged,
           ),
       ],
     );

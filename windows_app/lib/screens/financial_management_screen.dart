@@ -49,7 +49,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   bool _isLoading = true;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-  final TextEditingController _pageJumpController = TextEditingController();
 
   // Route B 支持：按患者聚合后的日期覆盖（由后端聚合直接提供）
   final Map<int, DateTime> _patientLatestChargeDateMap = {}; // key: patientId
@@ -121,7 +120,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   @override
   void dispose() {
     _searchController.dispose();
-    _pageJumpController.dispose();
     _horizontalScrollController.dispose();
     super.dispose();
   }
@@ -378,22 +376,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       });
       _loadData(); // 重新从后端加载数据
     } else {}
-  }
-
-  // 跳转到上一页
-  void _goToPreviousPage() {
-    if (_currentPage > 1) {
-      _goToPage(_currentPage - 1);
-    }
-  }
-
-  // 跳转到下一页
-  void _goToNextPage() {
-    if (_currentPage < _totalPages) {
-      _goToPage(_currentPage + 1);
-    } else {
-      LogManager.e('FinancialManagementScreen', '⚠️ 已经是最后一页，无法继续下一页');
-    }
   }
 
   // 加载数据
@@ -1266,12 +1248,8 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       horizontalScrollController: _horizontalScrollController,
       totalRecords: _totalRecords,
       currentPage: _currentPage,
-      totalPages: _totalPages,
-      recordsPerPage: _recordsPerPage,
-      pageJumpController: _pageJumpController,
-      onGoToPage: _goToPage,
-      onGoToPreviousPage: _goToPreviousPage,
-      onGoToNextPage: _goToNextPage,
+      pageSize: _recordsPerPage,
+      onPageChanged: _goToPage,
       getPagedData: _getPagedData,
       getPatientByIdAsync: _getPatientByIdAsync,
       getPatientTotalReceivable: _getPatientTotalReceivable,
