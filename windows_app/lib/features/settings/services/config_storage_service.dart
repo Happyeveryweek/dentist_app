@@ -84,6 +84,7 @@ class ConfigStorageService {
     final prefs = await SharedPreferences.getInstance();
 
     return {
+      'windowsThemeVariant': prefs.getString('windowsThemeVariant') ?? 'medicalBlue',
       'extendedThemeMode': prefs.getInt('extendedThemeMode') ?? 0,
       'themeMode': prefs.getInt('themeMode') ?? 0,
       'fontSize': prefs.getDouble('fontSize') ?? 1.0,
@@ -115,6 +116,14 @@ class ConfigStorageService {
   /// 保存设置到SharedPreferences
   Future<void> saveSettings(Map<String, dynamic> settings) async {
     final prefs = await SharedPreferences.getInstance();
+
+    // 保存 Windows 主题变体（稳定字符串，不保存枚举 index）
+    if (settings.containsKey('windowsThemeVariant')) {
+      await prefs.setString(
+        'windowsThemeVariant',
+        settings['windowsThemeVariant'].toString(),
+      );
+    }
 
     // 保存扩展主题设置
     if (settings.containsKey('extendedThemeMode')) {

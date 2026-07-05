@@ -805,11 +805,12 @@ class _AppWithProvidersState extends State<AppWithProviders> {
   Widget build(BuildContext context) {
     try {
       final appState = Provider.of<AppState>(context);
+      final settings = Provider.of<SettingsProvider>(context);
 
       return MaterialApp(
         title: '牙科诊所管理系统',
         navigatorKey: appState.navigatorKey,
-        theme: AppTheme.standardTheme(),
+        theme: AppTheme.resolve(settings.windowsThemeVariant),
         builder: (context, child) {
           final content = child;
           if (content == null) return const SizedBox.shrink();
@@ -969,6 +970,6 @@ class _MainScreenState extends State<MainScreen> {
 
 // 获取当前主题的ThemeData
 ThemeData getThemeData(BuildContext context) {
-  // 统一返回标准主题
-  return AppTheme.standardTheme();
+  final settings = Provider.of<SettingsProvider>(context, listen: false);
+  return AppTheme.resolve(settings.windowsThemeVariant);
 }

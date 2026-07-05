@@ -10,6 +10,7 @@ import 'package:dentist_app_windows/features/settings/services/database_structur
 import 'package:dentist_app_windows/features/settings/services/mysql_connection_service.dart';
 import 'package:dentist_app_windows/models/database_structure_log.dart';
 import 'package:dentist_app_windows/utils/datetime_formatter.dart';
+import 'package:dentist_app_windows/theme/app_theme.dart';
 import '../utils/log_manager.dart';
 
 // 扩展主题模式枚举（历史兼容，当前只保留标准主题）
@@ -29,7 +30,11 @@ class SettingsProvider extends ChangeNotifier {
 
   // ==================== 状态字段 ====================
 
-  // 扩展主题设置
+  // Windows 主题变体
+  WindowsThemeVariant _windowsThemeVariant = WindowsThemeVariant.medicalBlue;
+  WindowsThemeVariant get windowsThemeVariant => _windowsThemeVariant;
+
+  // 扩展主题设置（历史兼容，当前只保留标准主题）
   ExtendedThemeMode _extendedThemeMode = ExtendedThemeMode.light;
   ExtendedThemeMode get extendedThemeMode => _extendedThemeMode;
 
@@ -116,6 +121,9 @@ class SettingsProvider extends ChangeNotifier {
 
   void _applyLoadedSettings(Map<String, dynamic> settings) {
     // 主题设置：历史配置迁移，任何旧值统一映射到标准主题
+    _windowsThemeVariant = WindowsThemeVariantParsing.fromStorageValue(
+      settings['windowsThemeVariant']?.toString(),
+    );
     _extendedThemeMode = ExtendedThemeMode.light;
 
     final themeModeIndex = settings['themeMode'] ?? 0;
@@ -187,6 +195,7 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> _saveSettings() async {
     final settings = <String, dynamic>{
+      'windowsThemeVariant': _windowsThemeVariant.storageValue,
       'extendedThemeMode': _extendedThemeMode.index,
       'themeMode': _themeMode.index,
       'fontSize': _fontSize,
@@ -220,6 +229,7 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setExtendedThemeMode(ExtendedThemeMode mode) async {
     _extendedThemeMode = mode;
     _themeMode = ThemeMode.light;
+    _windowsThemeVariant = WindowsThemeVariant.medicalBlue;
     await _saveSettings();
     notifyListeners();
   }
@@ -227,6 +237,15 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
     _extendedThemeMode = ExtendedThemeMode.light;
+    _windowsThemeVariant = WindowsThemeVariant.medicalBlue;
+    await _saveSettings();
+    notifyListeners();
+  }
+
+  Future<void> setWindowsThemeVariant(WindowsThemeVariant variant) async {
+    _windowsThemeVariant = variant;
+    _extendedThemeMode = ExtendedThemeMode.light;
+    _themeMode = ThemeMode.light;
     await _saveSettings();
     notifyListeners();
   }

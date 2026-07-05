@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../theme/app_theme.dart';
 import '../../../theme/theme_context_extensions.dart';
 import '../../../providers/settings_provider.dart';
 
-/// 主题卡片组件（历史兼容）
+/// 主题卡片组件
 ///
-/// 当前只保留标准主题，此组件仅用于显示当前主题状态。
-/// 未来新增主题时，在此处恢复主题选择功能即可。
+/// 用于展示一套 Windows 主题变体，点击后切换主题。
+/// 卡片只负责选择 [WindowsThemeVariant]，不传递具体颜色到业务页面。
 class ThemeCard extends StatelessWidget {
-  final ExtendedThemeMode mode;
+  final WindowsThemeVariant variant;
   final String title;
+  final String subtitle;
   final IconData icon;
+  final List<Color> swatches;
   final bool isSelected;
 
   const ThemeCard({
     Key? key,
-    required this.mode,
+    required this.variant,
     required this.title,
+    required this.subtitle,
     required this.icon,
+    required this.swatches,
     required this.isSelected,
   }) : super(key: key);
 
@@ -30,58 +35,77 @@ class ThemeCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        settingsProvider.setExtendedThemeMode(mode);
+        settingsProvider.setWindowsThemeVariant(variant);
       },
       child: Container(
-        width: 120,
-        height: 100,
+        width: 140,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: tokens.cardBackground,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? tokens.primaryAccent : Colors.transparent,
-            width: 3,
+            color: isSelected ? tokens.primaryAccent : tokens.border,
+            width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected ? tokens.elevatedShadow : tokens.cardShadow,
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              size: 32,
-              color: isSelected ? tokens.primaryAccent : tokens.iconMuted,
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 24,
+                  color: isSelected ? tokens.primaryAccent : tokens.iconMuted,
+                ),
+                const Spacer(),
+                if (isSelected)
+                  Icon(
+                    Icons.check_circle,
+                    size: 18,
+                    color: tokens.primaryAccent,
+                  ),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
               title,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: context.colors.onSurface,
               ),
-              textAlign: TextAlign.center,
             ),
-            if (isSelected)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: tokens.primaryAccent.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '当前',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: tokens.primaryAccent,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 11,
+                color: tokens.textMuted,
               ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: swatches
+                  .map(
+                    (color) => Container(
+                      width: 18,
+                      height: 18,
+                      margin: const EdgeInsets.only(right: 6),
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: tokens.divider,
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
           ],
         ),
       ),

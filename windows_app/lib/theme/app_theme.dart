@@ -2,6 +2,71 @@ import 'package:flutter/material.dart';
 
 import 'app_theme_tokens.dart';
 
+/// Windows 端主题变体枚举
+enum WindowsThemeVariant {
+  medicalBlue,
+  slateBlue,
+  purplePinkGray,
+  freshGreen,
+  peachPink,
+}
+
+/// Windows 主题变体解析扩展
+extension WindowsThemeVariantParsing on WindowsThemeVariant {
+  String get storageValue {
+    switch (this) {
+      case WindowsThemeVariant.medicalBlue:
+        return 'medicalBlue';
+      case WindowsThemeVariant.slateBlue:
+        return 'slateBlue';
+      case WindowsThemeVariant.purplePinkGray:
+        return 'purplePinkGray';
+      case WindowsThemeVariant.freshGreen:
+        return 'freshGreen';
+      case WindowsThemeVariant.peachPink:
+        return 'peachPink';
+    }
+  }
+
+  AppThemeTokens get tokens {
+    switch (this) {
+      case WindowsThemeVariant.medicalBlue:
+        return AppThemeTokens.medicalBlue();
+      case WindowsThemeVariant.slateBlue:
+        return AppThemeTokens.slateBlue();
+      case WindowsThemeVariant.purplePinkGray:
+        return AppThemeTokens.purplePinkGray();
+      case WindowsThemeVariant.freshGreen:
+        return AppThemeTokens.freshGreen();
+      case WindowsThemeVariant.peachPink:
+        return AppThemeTokens.peachPink();
+    }
+  }
+
+  static WindowsThemeVariant fromStorageValue(String? value) {
+    switch (value) {
+      case 'medicalBlue':
+      case 'standard':
+      case 'light':
+      case 'grey':
+      case 'gray':
+      case null:
+      case '':
+        return WindowsThemeVariant.medicalBlue;
+      case 'slateBlue':
+        return WindowsThemeVariant.slateBlue;
+      case 'purplePinkGray':
+        return WindowsThemeVariant.purplePinkGray;
+      case 'freshGreen':
+        return WindowsThemeVariant.freshGreen;
+      case 'peachPink':
+        return WindowsThemeVariant.peachPink;
+      default:
+        return WindowsThemeVariant.medicalBlue;
+    }
+  }
+}
+
 // 全局样式变量 - 现代牙科诊疗系统设计
 class AppTheme {
   // 主要配色 - 医疗专业配色
@@ -338,5 +403,10 @@ class AppTheme {
   }
 
   /// 标准主题入口
-  static ThemeData standardTheme() => _buildTheme(AppThemeTokens.standard());
+  static ThemeData standardTheme() => resolve(WindowsThemeVariant.medicalBlue);
+
+  /// 根据 Windows 主题变体解析主题
+  static ThemeData resolve(WindowsThemeVariant variant) {
+    return _buildTheme(variant.tokens);
+  }
 }

@@ -87,49 +87,53 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   final double smallBorderRadius;
   final double cardElevation;
 
-  factory AppThemeTokens.standard() {
+  factory AppThemeTokens.standard() => AppThemeTokens.medicalBlue();
+
+  factory AppThemeTokens.medicalBlue() {
     const primary = Color(0xFF2E7DB8);
-    const secondary = Color(0xFF4CAF50);
-    const warning = Color(0xFFFF9F0A);
-    const danger = Color(0xFFFF375F);
+    const secondary = Color(0xFF5BA8D6);
+    const success = Color(0xFF36B37E);
+    const warning = Color(0xFFF5A623);
+    const error = Color(0xFFE85D75);
+    const info = Color(0xFF5B8DEF);
 
     return AppThemeTokens(
-      pageBackground: const Color(0xFFF5F5F7),
-      shellBackground: Colors.white,
-      panelBackground: Colors.white,
-      cardBackground: Colors.white,
+      pageBackground: const Color(0xFFF4F7FA),
+      shellBackground: const Color(0xFFF8FAFC),
+      panelBackground: const Color(0xFFFEFEFE),
+      cardBackground: const Color(0xFFFEFEFE),
       elevatedCardBackground: const Color(0xFFFFFFFF),
-      mutedBackground: const Color(0xFFF0F4F8),
-      inputBackground: const Color(0xFFF5F7FA),
-      border: const Color(0xFFE3E8EE),
-      divider: const Color(0xFFEEEEEE),
-      shadow: Colors.black.withValues(alpha: 0.05),
+      mutedBackground: const Color(0xFFEEF4F8),
+      inputBackground: const Color(0xFFF6F9FC),
+      border: const Color(0xFFE1EAF5),
+      divider: const Color(0xFFEEF3F8),
+      shadow: primary.withValues(alpha: 0.08),
       focusRing: primary.withValues(alpha: 0.20),
       primaryAccent: primary,
       secondaryAccent: secondary,
-      dangerAccent: danger,
+      dangerAccent: error,
       warningAccent: warning,
       iconMuted: const Color(0xFF667085),
-      textMuted: const Color(0xFF8892A3),
-      success: const Color(0xFF30D158),
+      textMuted: const Color(0xFF7A8796),
+      success: success,
       warning: warning,
-      error: danger,
-      info: const Color(0xFFFFA726),
-      successContainer: const Color(0xFFE8F5E8),
-      warningContainer: const Color(0xFFFFF3E0),
-      errorContainer: const Color(0xFFFFEBEE),
-      infoContainer: const Color(0xFFE3F2FD),
-      hoverBackground: primary.withValues(alpha: 0.08),
-      selectedBackground: primary.withValues(alpha: 0.12),
+      error: error,
+      info: info,
+      successContainer: const Color(0xFFEAF7F1),
+      warningContainer: const Color(0xFFFFF4E0),
+      errorContainer: const Color(0xFFFDECEF),
+      infoContainer: const Color(0xFFEAF2FF),
+      hoverBackground: const Color(0xFFEAF4FB),
+      selectedBackground: const Color(0xFFDCECF8),
       disabledBackground: const Color(0xFFE8ECF1),
       disabledText: const Color(0xFF98A2B3),
-      tableHeaderBackground: const Color(0xFFF8FAFC),
-      listItemHoverBackground: const Color(0xFFF3F7FB),
-      overlayScrim: Colors.black.withValues(alpha: 0.35),
+      tableHeaderBackground: const Color(0xFFF0F5FA),
+      listItemHoverBackground: const Color(0xFFF7FBFF),
+      overlayScrim: const Color(0x59000000),
       primaryHeaderGradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFF2E7DB8), Color(0xFF4CAF50)],
+        colors: [Color(0xFF2E7DB8), Color(0xFF5BA8D6)],
       ),
       subtleHeaderGradient: LinearGradient(
         begin: Alignment.topLeft,
@@ -141,23 +145,347 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       ),
       chartPalette: const [
         Color(0xFF2E7DB8),
-        Color(0xFF4CAF50),
-        Color(0xFF00BCD4),
-        Color(0xFFFFA726),
-        Color(0xFFFF5722),
+        Color(0xFF5BA8D6),
+        Color(0xFF7DA7C7),
+        Color(0xFFF5A623),
+        Color(0xFFE85D75),
       ],
       cardShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.05),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
+          color: primary.withValues(alpha: 0.08),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
         ),
       ],
       elevatedShadow: [
         BoxShadow(
-          color: Colors.black.withValues(alpha: 0.08),
-          blurRadius: 20,
+          color: primary.withValues(alpha: 0.10),
+          blurRadius: 28,
+          offset: const Offset(0, 12),
+        ),
+      ],
+      borderRadius: 12,
+      smallBorderRadius: 8,
+      cardElevation: 0,
+    );
+  }
+
+  factory AppThemeTokens.slateBlue() {
+    const primary = Color(0xFF4F7CAC);
+    const secondary = Color(0xFF6A9A8B);
+    const success = Color(0xFF36B37E);
+    const warning = Color(0xFFF5A623);
+    const error = Color(0xFFE85D75);
+    const info = Color(0xFF5B8DEF);
+
+    return AppThemeTokens(
+      pageBackground: const Color(0xFFF3F5F7),
+      shellBackground: const Color(0xFFF6F8FA),
+      panelBackground: const Color(0xFFFEFEFE),
+      cardBackground: const Color(0xFFFEFEFE),
+      elevatedCardBackground: const Color(0xFFFFFFFF),
+      mutedBackground: const Color(0xFFEEF2F6),
+      inputBackground: const Color(0xFFF8FAFC),
+      border: const Color(0xFFDFE7EF),
+      divider: const Color(0xFFE9EEF3),
+      shadow: const Color(0xFF263238).withValues(alpha: 0.07),
+      focusRing: primary.withValues(alpha: 0.20),
+      primaryAccent: primary,
+      secondaryAccent: secondary,
+      dangerAccent: error,
+      warningAccent: warning,
+      iconMuted: const Color(0xFF657484),
+      textMuted: const Color(0xFF6B7A88),
+      success: success,
+      warning: warning,
+      error: error,
+      info: info,
+      successContainer: const Color(0xFFEAF7F1),
+      warningContainer: const Color(0xFFFFF4E0),
+      errorContainer: const Color(0xFFFDECEF),
+      infoContainer: const Color(0xFFEAF2FF),
+      hoverBackground: const Color(0xFFEEF5FB),
+      selectedBackground: const Color(0xFFE1EEF8),
+      disabledBackground: const Color(0xFFE6EAEE),
+      disabledText: const Color(0xFF9AA6B2),
+      tableHeaderBackground: const Color(0xFFEEF2F6),
+      listItemHoverBackground: const Color(0xFFF7FAFC),
+      overlayScrim: const Color(0x59000000),
+      primaryHeaderGradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF4F7CAC), Color(0xFF7DA7C7)],
+      ),
+      subtleHeaderGradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          primary.withValues(alpha: 0.08),
+          secondary.withValues(alpha: 0.04),
+        ],
+      ),
+      chartPalette: const [
+        Color(0xFF4F7CAC),
+        Color(0xFF6A9A8B),
+        Color(0xFF7DA7C7),
+        Color(0xFFF5A623),
+        Color(0xFFE85D75),
+      ],
+      cardShadow: [
+        BoxShadow(
+          color: const Color(0xFF263238).withValues(alpha: 0.07),
+          blurRadius: 22,
           offset: const Offset(0, 8),
+        ),
+      ],
+      elevatedShadow: [
+        BoxShadow(
+          color: const Color(0xFF263238).withValues(alpha: 0.10),
+          blurRadius: 28,
+          offset: const Offset(0, 12),
+        ),
+      ],
+      borderRadius: 12,
+      smallBorderRadius: 8,
+      cardElevation: 0,
+    );
+  }
+
+  factory AppThemeTokens.purplePinkGray() {
+    const primary = Color(0xFF9A78A8);
+    const secondary = Color(0xFFC99AAD);
+    const success = Color(0xFF36B37E);
+    const warning = Color(0xFFF5A623);
+    const error = Color(0xFFE85D75);
+    const info = Color(0xFF5B8DEF);
+
+    return AppThemeTokens(
+      pageBackground: const Color(0xFFF8F5F9),
+      shellBackground: const Color(0xFFFBF9FC),
+      panelBackground: const Color(0xFFFEFDFE),
+      cardBackground: const Color(0xFFFEFDFE),
+      elevatedCardBackground: const Color(0xFFFFFFFF),
+      mutedBackground: const Color(0xFFF6F0F6),
+      inputBackground: const Color(0xFFFBF9FC),
+      border: const Color(0xFFE9DFEA),
+      divider: const Color(0xFFF0E8F1),
+      shadow: const Color(0xFF332B38).withValues(alpha: 0.08),
+      focusRing: primary.withValues(alpha: 0.20),
+      primaryAccent: primary,
+      secondaryAccent: secondary,
+      dangerAccent: error,
+      warningAccent: warning,
+      iconMuted: const Color(0xFF7D7185),
+      textMuted: const Color(0xFF7D7185),
+      success: success,
+      warning: warning,
+      error: error,
+      info: info,
+      successContainer: const Color(0xFFEAF7F1),
+      warningContainer: const Color(0xFFFFF4E0),
+      errorContainer: const Color(0xFFFDECEF),
+      infoContainer: const Color(0xFFEAF2FF),
+      hoverBackground: const Color(0xFFF5EEF7),
+      selectedBackground: const Color(0xFFEFE3F3),
+      disabledBackground: const Color(0xFFEDE7EE),
+      disabledText: const Color(0xFFA69BAA),
+      tableHeaderBackground: const Color(0xFFF3EDF4),
+      listItemHoverBackground: const Color(0xFFFCF8FC),
+      overlayScrim: const Color(0x59000000),
+      primaryHeaderGradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF8F76A3), Color(0xFFB48AA8), Color(0xFFC9B6CF)],
+      ),
+      subtleHeaderGradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          primary.withValues(alpha: 0.08),
+          secondary.withValues(alpha: 0.04),
+        ],
+      ),
+      chartPalette: const [
+        Color(0xFF9A78A8),
+        Color(0xFFC99AAD),
+        Color(0xFF7DA7C7),
+        Color(0xFFF5A623),
+        Color(0xFFE85D75),
+      ],
+      cardShadow: [
+        BoxShadow(
+          color: const Color(0xFF332B38).withValues(alpha: 0.08),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
+        ),
+      ],
+      elevatedShadow: [
+        BoxShadow(
+          color: const Color(0xFF332B38).withValues(alpha: 0.10),
+          blurRadius: 28,
+          offset: const Offset(0, 12),
+        ),
+      ],
+      borderRadius: 12,
+      smallBorderRadius: 8,
+      cardElevation: 0,
+    );
+  }
+
+  factory AppThemeTokens.freshGreen() {
+    const primary = Color(0xFF2F8F72);
+    const secondary = Color(0xFF2E7DB8);
+    const success = Color(0xFF36B37E);
+    const warning = Color(0xFFF5A623);
+    const error = Color(0xFFE85D75);
+    const info = Color(0xFF5B8DEF);
+
+    return AppThemeTokens(
+      pageBackground: const Color(0xFFF5F8F6),
+      shellBackground: const Color(0xFFFAFBFA),
+      panelBackground: const Color(0xFFFEFEFD),
+      cardBackground: const Color(0xFFFEFEFD),
+      elevatedCardBackground: const Color(0xFFFFFFFF),
+      mutedBackground: const Color(0xFFEEF6F2),
+      inputBackground: const Color(0xFFF8FAF8),
+      border: const Color(0xFFDDECE4),
+      divider: const Color(0xFFEAF1ED),
+      shadow: primary.withValues(alpha: 0.08),
+      focusRing: primary.withValues(alpha: 0.20),
+      primaryAccent: primary,
+      secondaryAccent: secondary,
+      dangerAccent: error,
+      warningAccent: warning,
+      iconMuted: const Color(0xFF6D7F73),
+      textMuted: const Color(0xFF6D7F73),
+      success: success,
+      warning: warning,
+      error: error,
+      info: info,
+      successContainer: const Color(0xFFEAF7F1),
+      warningContainer: const Color(0xFFFFF4E0),
+      errorContainer: const Color(0xFFFDECEF),
+      infoContainer: const Color(0xFFEAF2FF),
+      hoverBackground: const Color(0xFFE7F4EF),
+      selectedBackground: const Color(0xFFD9EEE6),
+      disabledBackground: const Color(0xFFE5ECE8),
+      disabledText: const Color(0xFF9EABA3),
+      tableHeaderBackground: const Color(0xFFEFF6F2),
+      listItemHoverBackground: const Color(0xFFF7FBF8),
+      overlayScrim: const Color(0x59000000),
+      primaryHeaderGradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF2E7DB8), Color(0xFF2F8F72)],
+      ),
+      subtleHeaderGradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          primary.withValues(alpha: 0.08),
+          secondary.withValues(alpha: 0.04),
+        ],
+      ),
+      chartPalette: const [
+        Color(0xFF2F8F72),
+        Color(0xFF2E7DB8),
+        Color(0xFF76A66F),
+        Color(0xFFF5A623),
+        Color(0xFFE85D75),
+      ],
+      cardShadow: [
+        BoxShadow(
+          color: primary.withValues(alpha: 0.08),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
+        ),
+      ],
+      elevatedShadow: [
+        BoxShadow(
+          color: primary.withValues(alpha: 0.10),
+          blurRadius: 28,
+          offset: const Offset(0, 12),
+        ),
+      ],
+      borderRadius: 12,
+      smallBorderRadius: 8,
+      cardElevation: 0,
+    );
+  }
+
+  factory AppThemeTokens.peachPink() {
+    const primary = Color(0xFFC97888);
+    const secondary = Color(0xFF8FA7A0);
+    const success = Color(0xFF36B37E);
+    const warning = Color(0xFFF5A623);
+    const error = Color(0xFFE85D75);
+    const info = Color(0xFF5B8DEF);
+
+    return AppThemeTokens(
+      pageBackground: const Color(0xFFF9F6F4),
+      shellBackground: const Color(0xFFFCFAF9),
+      panelBackground: const Color(0xFFFEFDFC),
+      cardBackground: const Color(0xFFFEFDFC),
+      elevatedCardBackground: const Color(0xFFFFFFFF),
+      mutedBackground: const Color(0xFFF6EFEC),
+      inputBackground: const Color(0xFFFCFAF8),
+      border: const Color(0xFFEADDE0),
+      divider: const Color(0xFFF0E6E8),
+      shadow: const Color(0xFF3A2F33).withValues(alpha: 0.07),
+      focusRing: primary.withValues(alpha: 0.20),
+      primaryAccent: primary,
+      secondaryAccent: secondary,
+      dangerAccent: error,
+      warningAccent: warning,
+      iconMuted: const Color(0xFF7D6F73),
+      textMuted: const Color(0xFF7D6F73),
+      success: success,
+      warning: warning,
+      error: error,
+      info: info,
+      successContainer: const Color(0xFFEAF7F1),
+      warningContainer: const Color(0xFFFFF4E0),
+      errorContainer: const Color(0xFFFDECEF),
+      infoContainer: const Color(0xFFEAF2FF),
+      hoverBackground: const Color(0xFFFBECEF),
+      selectedBackground: const Color(0xFFF7DDE3),
+      disabledBackground: const Color(0xFFEEE7E5),
+      disabledText: const Color(0xFFA99EA1),
+      tableHeaderBackground: const Color(0xFFF6EEF0),
+      listItemHoverBackground: const Color(0xFFFFF8F9),
+      overlayScrim: const Color(0x59000000),
+      primaryHeaderGradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFFC97888), Color(0xFFDDA0AA), Color(0xFFE8C4C0)],
+      ),
+      subtleHeaderGradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          primary.withValues(alpha: 0.08),
+          secondary.withValues(alpha: 0.04),
+        ],
+      ),
+      chartPalette: const [
+        Color(0xFFC97888),
+        Color(0xFF8FA7A0),
+        Color(0xFF7DA7C7),
+        Color(0xFFF5A623),
+        Color(0xFFE85D75),
+      ],
+      cardShadow: [
+        BoxShadow(
+          color: const Color(0xFF3A2F33).withValues(alpha: 0.07),
+          blurRadius: 24,
+          offset: const Offset(0, 8),
+        ),
+      ],
+      elevatedShadow: [
+        BoxShadow(
+          color: const Color(0xFF3A2F33).withValues(alpha: 0.10),
+          blurRadius: 28,
+          offset: const Offset(0, 12),
         ),
       ],
       borderRadius: 12,
