@@ -16,6 +16,7 @@ import '../utils/permission_utils.dart';
 import '../features/appointments/widgets/appointment_filter_bar.dart';
 import '../features/appointments/widgets/appointment_list.dart';
 import '../features/appointments/services/appointment_state_service.dart';
+import '../widgets/pagination_control.dart';
 
 // 牙位映射表 - 从医生视角看患者牙齿
 final Map<String, String> positionMap = {
@@ -396,12 +397,15 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
             child: AnimatedBuilder(
               animation: _requireStateService,
               builder: (context, _) {
-                return AppointmentList(
-                  appointments: _requireStateService.filteredAppointments,
-                  isLoading: _requireStateService.isLoading,
-                  onRefresh: () =>
-                      _requireStateService.loadAppointments(forceRefresh: true),
-                  onView: (ap) {
+                return Column(
+                  children: [
+                    Expanded(
+                      child: AppointmentList(
+                        appointments: _requireStateService.paginatedAppointments,
+                        isLoading: _requireStateService.isLoading,
+                        onRefresh: () => _requireStateService
+                            .loadAppointments(forceRefresh: true),
+                        onView: (ap) {
                     final appointmentId = ap.id;
                     if (appointmentId != null) {
                       Navigator.push(
@@ -433,10 +437,19 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
                     }
                   },
                   onStatusChanged: _changeAppointmentStatus,
-                );
-              },
-            ),
-          ),
+                ),
+              ),
+              PaginationControl(
+                currentPage: _requireStateService.currentPage,
+                pageSize: _requireStateService.pageSize,
+                totalRecords: _requireStateService.filteredAppointments.length,
+                onPageChanged: _requireStateService.setPage,
+              ),
+            ],
+          );
+        },
+      ),
+    ),
         ],
       ),
       floatingActionButton: FloatingActionButton(

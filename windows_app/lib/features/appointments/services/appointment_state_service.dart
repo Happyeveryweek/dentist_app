@@ -17,6 +17,40 @@ class AppointmentStateService extends ChangeNotifier {
   bool isFiltering = true;
   bool isDateRangeFiltering = false;
   String searchQuery = '';
+  int currentPage = 1;
+  final int pageSize = 10;
+
+  List<Appointment> get paginatedAppointments {
+    final totalPages =
+        (filteredAppointments.length / pageSize).ceil();
+    final effectivePage = currentPage.clamp(1, totalPages > 0 ? totalPages : 1);
+    final startIndex = (effectivePage - 1) * pageSize;
+    final endIndex = startIndex + pageSize;
+    if (startIndex >= filteredAppointments.length) return [];
+    return filteredAppointments.sublist(
+      startIndex,
+      endIndex > filteredAppointments.length
+          ? filteredAppointments.length
+          : endIndex,
+    );
+  }
+
+  void setPage(int page) {
+    final totalPages =
+        (filteredAppointments.length / pageSize).ceil();
+    final effectiveTotalPages = totalPages > 0 ? totalPages : 1;
+    final target = page.clamp(1, effectiveTotalPages);
+    if (target != currentPage) {
+      currentPage = target;
+      notifyListeners();
+    }
+  }
+
+  void _resetPage() {
+    if (currentPage != 1) {
+      currentPage = 1;
+    }
+  }
 
   void _sortAppointmentsInPlace() {
     appointments.sort((a, b) {
@@ -42,6 +76,7 @@ class AppointmentStateService extends ChangeNotifier {
     appointments = List.from(loadedAppointments);
     _sortAppointmentsInPlace();
     _syncFilteredAppointments();
+    _resetPage();
   }
 
   void replaceAppointment(Appointment updatedAppointment) {
@@ -124,6 +159,7 @@ class AppointmentStateService extends ChangeNotifier {
     }
 
     filteredAppointments = base;
+    _resetPage();
     notifyListeners();
   }
 
