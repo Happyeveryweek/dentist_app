@@ -30,11 +30,13 @@ class DatabaseProvider extends ChangeNotifier {
   MysqlConnectionService get _mysqlService =>
       _mysqlServiceInstance ??= MysqlConnectionService();
   DatabaseBackupService? _backupServiceInstance;
-  DatabaseBackupService get _backupService => _backupServiceInstance ??= DatabaseBackupService(
+  DatabaseBackupService get _backupService =>
+      _backupServiceInstance ??= DatabaseBackupService(
         dataSourceType: _dataSourceType,
       );
   DatabaseSchemaService? _schemaServiceInstance;
-  DatabaseSchemaService get _schemaService => _schemaServiceInstance ??= DatabaseSchemaService(
+  DatabaseSchemaService get _schemaService =>
+      _schemaServiceInstance ??= DatabaseSchemaService(
         dataSourceType: _dataSourceType,
       );
 
@@ -376,7 +378,25 @@ class DatabaseProvider extends ChangeNotifier {
     LogManager.w('DatabaseProvider', '开始从备份文件恢复数据库: $filePath');
     _syncMysqlConnectionFromService();
     _updateServiceConnections();
-    await _backupService.restoreDatabase(filePath);
+
+    if (_dataSourceType == 'sqlite') {
+      final extension = path.extension(filePath).toLowerCase();
+      final isSqliteSnapshot = extension == '.db' ||
+          extension == '.sqlite' ||
+          extension == '.sqlite3';
+
+      if (isSqliteSnapshot) {
+        await _closeSqliteConnectionOnly();
+        _updateServiceConnections();
+        await _backupService.restoreSQLiteDatabase(filePath);
+        _database = await _sqliteService.initSQLiteDatabase();
+        _updateServiceConnections();
+      } else {
+        await _backupService.restoreDatabase(filePath);
+      }
+    } else {
+      await _backupService.restoreDatabase(filePath);
+    }
 
     // 标记数据需要刷新
     _markAllDataForRefresh();
@@ -574,14 +594,14 @@ class DatabaseProvider extends ChangeNotifier {
   // 注意：此方法执行实际的数据库还原操作，设置管理由SettingsProvider负责
 
   // restoreFromMySQLDump 已移至 DatabaseBackupService
-  Future<void> restoreFromMySQLDump(
+  Future<MySQLRestoreResult> restoreFromMySQLDump(
     String dumpFilePath, {
     Map<String, dynamic>? mysqlSettings,
     Function(String)? onLogOperation,
   }) async {
     _syncMysqlConnectionFromService();
     _updateServiceConnections();
-    await _backupService.restoreFromMySQLDump(dumpFilePath,
+    return await _backupService.restoreFromMySQLDump(dumpFilePath,
         onLogOperation: onLogOperation);
   }
 
@@ -651,6 +671,15 @@ class DatabaseProvider extends ChangeNotifier {
       LogManager.e('DatabaseProvider', '关闭数据库连接时出错', error: e);
       // 继续执行，不阻止程序运行
     }
+  }
+
+  Future<void> _closeSqliteConnectionOnly() async {
+    final db = _database;
+    if (db == null) return;
+
+    LogManager.w('DatabaseProvider', '为 SQLite 恢复关闭当前数据库连接');
+    await db.close();
+    _database = null;
   }
 }
 

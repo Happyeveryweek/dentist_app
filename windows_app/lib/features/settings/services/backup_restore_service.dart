@@ -240,6 +240,7 @@ class BackupRestoreService {
   /// 返回恢复结果
   Future<RestoreResult> performRestore(String filePath) async {
     final isMySQL = _settingsProvider.dataSourceType == 'mysql';
+    String? preBackup;
 
     try {
       if (isMySQL) {
@@ -257,15 +258,34 @@ class BackupRestoreService {
         }
 
         // 创建还原前备份
-        final preBackup = await _settingsProvider.createPreRestoreBackup();
+        preBackup = await _settingsProvider.createPreRestoreBackup(
+          executeBackup: ({
+            String? backupPath,
+            String? backupDataSource,
+          }) =>
+              _dbProvider.backupDatabase(
+            backupPath: backupPath,
+            backupDataSource: backupDataSource,
+          ),
+          backupDataSource: 'mysql',
+        );
+        if (preBackup == null || preBackup.isEmpty) {
+          throw Exception('创建还原前备份失败，已终止恢复以避免不可回滚');
+        }
 
         // 执行还原
-        await _dbProvider.restoreFromMySQLDump(
+        final restoreResult = await _dbProvider.restoreFromMySQLDump(
           filePath,
           mysqlSettings: mysqlSettings,
           onLogOperation: (message) =>
               LogManager.i('BackupRestoreService', 'MySQL还原: $message'),
         );
+
+        if (!restoreResult.isSuccess) {
+          throw Exception(
+            'MySQL还原未完成：共 ${restoreResult.totalStatements} 条，成功 ${restoreResult.successCount} 条，失败 ${restoreResult.failedCount} 条',
+          );
+        }
 
         // 还原后清理
         await _settingsProvider.cleanupAfterRestore(
@@ -291,6 +311,20 @@ class BackupRestoreService {
         errorMessage: null,
       );
     } catch (e) {
+      if (isMySQL) {
+        await _settingsProvider.cleanupAfterRestore(
+          success: false,
+          restorePath: filePath,
+          preRestoreBackupPath: preBackup,
+        );
+        await _settingsProvider.logRestoreOperation(
+          operation: 'MySQL还原失败',
+          filePath: filePath,
+          success: false,
+          errorMessage: e.toString(),
+          preRestoreBackupPath: preBackup,
+        );
+      }
       return RestoreResult(
         success: false,
         errorMessage: e.toString(),

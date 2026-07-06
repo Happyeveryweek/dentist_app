@@ -39,6 +39,12 @@
   - WSL 单元测试：`cmd.exe /c flutter test`
 - 运行或构建应用只在用户明确要求时执行。
 
+## 格式化要求
+
+- Dart 代码修改后，默认只格式化本次改动过的文件，不执行全仓 `dart format .`。
+- 建议使用定向命令，如 `dart format path/to/file.dart`。
+- 除非用户明确要求或任务目标就是全仓整理格式，否则不要扩大格式化范围，避免引入无关 diff。
+
 ## Bug 修复规则
 
 - 处理 Bug 默认采用两阶段流程：先复现和定位，再修复。
@@ -58,6 +64,7 @@
 
 - 代码修改后至少在对应子项目目录运行 Flutter 静态检查；Windows shell 使用 `flutter analyze`，WSL 使用 `cmd.exe /c flutter analyze`。
 - 涉及测试逻辑或新增/修复可测试行为时，再运行 Flutter 测试；Windows shell 使用 `flutter test`，WSL 使用 `cmd.exe /c flutter test`。
+- 默认执行顺序为：先对改动过的 Dart 文件运行 `dart format`，再运行 `flutter analyze`；只有在改动涉及可测试逻辑、Bug 修复或已有测试覆盖点时再运行 `flutter test`。
 - 如果本地环境无法运行验证，说明失败原因和用户可执行的命令。
 - 完成开发、修复、文档补齐或重要调研后，同步更新根目录 `ROADMAP.md`。
 

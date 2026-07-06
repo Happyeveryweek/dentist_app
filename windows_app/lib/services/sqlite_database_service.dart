@@ -58,10 +58,8 @@ class SqliteDatabaseService {
           dbPath = path.join(documentsDirectory.path, dbName);
           LogManager.w('SqliteDatabaseService', '使用文档目录: $dbPath');
         } catch (e2) {
-          LogManager.e('SqliteDatabaseService', '获取文档目录失败2，使用当前目录', error: e);
-          // 如果获取文档目录失败，使用当前目录
-          dbPath = path.join(Directory.current.path, dbName);
-          LogManager.w('SqliteDatabaseService', '使用当前目录作为数据库路径: $dbPath');
+          LogManager.e('SqliteDatabaseService', '获取文档目录失败，终止数据库初始化', error: e2);
+          throw Exception('无法获取可写数据库目录，请检查应用数据目录和文档目录权限');
         }
       }
     }

@@ -514,8 +514,17 @@ class SettingsProvider extends ChangeNotifier {
       _backupManagementService.validateRestorePath(restorePath);
   Future<List<FileSystemEntity>> getAvailableRestoreFiles() =>
       _backupManagementService.getAvailableRestoreFiles();
-  Future<String?> createPreRestoreBackup() =>
-      _backupManagementService.createPreRestoreBackup();
+  Future<String?> createPreRestoreBackup({
+    required Future<String> Function({
+      String? backupPath,
+      String? backupDataSource,
+    }) executeBackup,
+    String? backupDataSource,
+  }) =>
+      _backupManagementService.createPreRestoreBackup(
+        executeBackup: executeBackup,
+        backupDataSource: backupDataSource ?? dataSourceType,
+      );
   Future<void> cleanupAfterRestore(
           {required bool success,
           String? restorePath,

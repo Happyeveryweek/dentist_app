@@ -1,24 +1,81 @@
-import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:typed_data';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../theme/theme_context_extensions.dart';
 import '../models/purchase_record.dart';
 import '../models/purchase_item.dart';
+import '../widgets/success_toast.dart';
+import '../features/purchases/widgets/purchase_export_dialog.dart';
 import '../utils/log_manager.dart';
 
 /// 采购记录导出服务
-/// 负责将采购记录导出为图片并保存到文件系统
 class PurchaseExportService {
+  static Future<void> showExportDialog(
+    BuildContext context,
+    PurchaseRecord record,
+    List<PurchaseItem> purchaseItems,
+  ) async {
+    final result = await showDialog<Map<String, bool>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const PurchaseExportDialog(),
+    );
+
+    if (result != null) {
+      if (!context.mounted) return;
+      await exportPurchaseRecordAsImage(
+        context,
+        record,
+        purchaseItems,
+        result,
+      );
+    }
+  }
+
+  static Future<void> exportPurchaseRecordAsImage(
+    BuildContext context,
+    PurchaseRecord record,
+    List<PurchaseItem> purchaseItems,
+    Map<String, bool> exportOptions,
+  ) async {
+    try {
+      final exportService = PurchaseExportService();
+      final imageData = await exportService.generatePurchaseRecordImage(
+        record,
+        purchaseItems,
+        exportOptions,
+        tokens: context.tokens,
+        colors: context.colors,
+      );
+
+      final result = await exportService.saveImageToDownloads(imageData);
+
+      if (result != null) {
+        if (!context.mounted) return;
+        AppToastManager.showSuccess(context, message: '导出成功！图片已保存到下载目录');
+      } else {
+        if (!context.mounted) return;
+        AppToastManager.showError(context, message: '图片保存失败');
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      AppToastManager.showError(context, message: '导出失败: $e');
+    }
+  }
+
   /// 生成采购记录图片
   /// 返回图片数据的字节数组
   Future<Uint8List> generatePurchaseRecordImage(
     PurchaseRecord record,
     List<PurchaseItem> purchaseItems,
-    Map<String, bool> exportOptions,
-  ) async {
+    Map<String, bool> exportOptions, {
+    required AppThemeTokens tokens,
+    required ColorScheme colors,
+  }) async {
     final recorder = ui.PictureRecorder();
     final canvas = ui.Canvas(recorder);
     final paint = ui.Paint();
@@ -51,19 +108,19 @@ class PurchaseExportService {
     final height = estimatedHeight;
     double currentY = 60 * scaleFactor;
 
-    // 白色背景
-    paint.color = const Color(0xFFFFFFFF);
+    // 卡片背景
+    paint.color = tokens.cardBackground;
     canvas.drawRect(Rect.fromLTWH(0, 0, width, height), paint);
 
-    // 标题 - 进一步增大和加粗字体
-    paint.color = const Color(0xFF000000);
-    const titleStyle = TextStyle(
+    // 标题
+    paint.color = colors.onSurface;
+    final titleStyle = TextStyle(
       fontSize: 48 * scaleFactor, // 增大到144px
       fontWeight: FontWeight.w900, // 使用最粗字体
-      color: Color(0xFF000000),
+      color: colors.onSurface,
     );
     final titlePainter = TextPainter(
-      text: const TextSpan(text: '采购记录详情', style: titleStyle),
+      text: TextSpan(text: '采购记录详情', style: titleStyle),
       textDirection: ui.TextDirection.ltr,
     );
     titlePainter.layout();
@@ -73,10 +130,10 @@ class PurchaseExportService {
 
     // 采购记录基本信息
     if (exportOptions['purchaseRecord'] == true) {
-      const basicInfoStyle = TextStyle(
+      final basicInfoStyle = TextStyle(
           fontSize: 32 * scaleFactor,
           fontWeight: FontWeight.w800,
-          color: Color(0xFF000000));
+          color: colors.onSurface);
 
       // 构建基本信息文本，包含医生字段
       String basicInfoText = '采购记录 #${record.id}\n'
@@ -112,12 +169,12 @@ class PurchaseExportService {
     // 采购项目明细
     if (exportOptions['purchaseDetails'] == true) {
       // 表格标题
-      const tableTitleStyle = TextStyle(
+      final tableTitleStyle = TextStyle(
           fontSize: 36 * scaleFactor,
           fontWeight: FontWeight.w900,
-          color: Color(0xFF1976D2));
+          color: tokens.primaryAccent);
       final tableTitlePainter = TextPainter(
-        text: const TextSpan(text: '采购项目明细', style: tableTitleStyle),
+        text: TextSpan(text: '采购项目明细', style: tableTitleStyle),
         textDirection: ui.TextDirection.ltr,
       );
       tableTitlePainter.layout();
@@ -125,10 +182,10 @@ class PurchaseExportService {
       currentY += 80 * scaleFactor;
 
       // 表格头部 - 进一步增大和加粗字体
-      const headerStyle = TextStyle(
+      final headerStyle = TextStyle(
           fontSize: 26 * scaleFactor,
           fontWeight: FontWeight.w900,
-          color: Color(0xFF000000));
+          color: colors.onSurface);
       final headers = ['材料名称', '数量', '单位', '单价', '总价'];
       final columnWidths = [
         450.0 * scaleFactor,
@@ -140,8 +197,7 @@ class PurchaseExportService {
       double currentX = 75 * scaleFactor;
 
       // 绘制表头背景
-      final headerBgPaint = ui.Paint()
-        ..color = const Color(0xFFE0E0E0); // 加深表头灰色
+      final headerBgPaint = ui.Paint()..color = tokens.tableHeaderBackground;
       canvas.drawRect(
         Rect.fromLTWH(75 * scaleFactor, currentY - 8 * scaleFactor,
             width - 150 * scaleFactor, 50 * scaleFactor),
@@ -171,7 +227,7 @@ class PurchaseExportService {
       }
 
       // 绘制表头分隔线
-      paint.color = const Color(0xFFE0E0E0);
+      paint.color = tokens.divider;
       canvas.drawLine(
         Offset(75 * scaleFactor, currentY + 42 * scaleFactor),
         Offset(width - 75 * scaleFactor, currentY + 42 * scaleFactor),
@@ -181,10 +237,10 @@ class PurchaseExportService {
       currentY += 60 * scaleFactor;
 
       // 表格内容 - 进一步增大和加粗字体
-      const contentStyle = TextStyle(
+      final contentStyle = TextStyle(
           fontSize: 24 * scaleFactor,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF000000));
+          color: colors.onSurface);
 
       for (var entry in purchaseItems.asMap().entries) {
         final int index = entry.key;
@@ -192,7 +248,7 @@ class PurchaseExportService {
 
         // 交替行背景色 (偶数行加背景色)
         if (index % 2 == 1) {
-          paint.color = const Color(0xFFF5F5F5);
+          paint.color = tokens.inputBackground;
           canvas.drawRect(
               Rect.fromLTWH(75 * scaleFactor, currentY - 8 * scaleFactor,
                   width - 150 * scaleFactor, 70 * scaleFactor),
@@ -266,7 +322,7 @@ class PurchaseExportService {
         currentY += 70 * scaleFactor; // 增加行高避免重叠
 
         // 添加分隔线
-        paint.color = const Color(0xFFE0E0E0);
+        paint.color = tokens.divider;
         canvas.drawLine(
           Offset(75 * scaleFactor, currentY - 10 * scaleFactor),
           Offset(width - 75 * scaleFactor, currentY - 10 * scaleFactor),
@@ -280,12 +336,12 @@ class PurchaseExportService {
 
       final totalRect = Rect.fromLTWH(75 * scaleFactor, currentY,
           width - 150 * scaleFactor, totalRowHeight);
-      paint.color = const Color(0xFFE8F5E9);
+      paint.color = tokens.successContainer;
       canvas.drawRect(totalRect, paint);
 
       // "总计" 标签
       final totalLabelPainter = TextPainter(
-        text: const TextSpan(text: '总计', style: headerStyle),
+        text: TextSpan(text: '总计', style: headerStyle),
         textDirection: ui.TextDirection.ltr,
       );
       totalLabelPainter.layout();
@@ -294,10 +350,10 @@ class PurchaseExportService {
 
       // 汇总统计信息（紧跟在总计文字下方，同一背景框内）
       if (showSummary) {
-        const statStyle = TextStyle(
+        final statStyle = TextStyle(
             fontSize: 24 * scaleFactor,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF555555));
+            color: colors.onSurfaceVariant);
         final statPainter = TextPainter(
           text: TextSpan(
             text:
@@ -322,10 +378,10 @@ class PurchaseExportService {
     }
 
     // 底部信息
-    const footerStyle = TextStyle(
+    final footerStyle = TextStyle(
         fontSize: 20 * scaleFactor,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF757575));
+        color: colors.onSurfaceVariant);
     final footerPainter = TextPainter(
       text: TextSpan(
         text:
@@ -343,7 +399,7 @@ class PurchaseExportService {
     final image = await picture.toImage(width.toInt(), height.toInt());
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     if (byteData == null) {
-      throw Exception('导出图片失败：无法生成 PNG 字节数据');
+      throw Exception('生成图片数据失败');
     }
     final bytes = byteData.buffer.asUint8List();
 

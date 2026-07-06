@@ -372,13 +372,17 @@ class BackupManagementService {
       }
 
       // 检查文件是否可读
+      RandomAccessFile? handle;
       try {
-        await file.open(mode: FileMode.read);
+        handle = await file.open(mode: FileMode.read);
+        await handle.read(1);
 
         return true;
       } catch (e) {
         LogManager.e('BackupManagementService', '还原文件读取权限验证失败', error: e);
         return false;
+      } finally {
+        await handle?.close();
       }
     } catch (e) {
       LogManager.e('BackupManagementService', '验证还原路径时出错', error: e);
@@ -438,7 +442,13 @@ class BackupManagementService {
   }
 
   /// 还原前备份策略
-  Future<String?> createPreRestoreBackup() async {
+  Future<String?> createPreRestoreBackup({
+    required Future<String> Function({
+      String? backupPath,
+      String? backupDataSource,
+    }) executeBackup,
+    required String backupDataSource,
+  }) async {
     LogManager.i('BackupManagementService', '开始创建还原前备份');
     try {
       if (_backupPath.isEmpty) {
@@ -446,20 +456,17 @@ class BackupManagementService {
         return null;
       }
 
-      // 创建还原前备份
-      final timestamp = DateTimeFormatter.nowDbString()
-          .replaceAll(':', '-')
-          .replaceAll(' ', '_');
-      final backupFileName = 'pre_restore_backup_$timestamp.db';
-      final backupPath = path.join(_backupPath, backupFileName);
-
       // 确保备份目录存在
       final backupDir = Directory(_backupPath);
       if (!await backupDir.exists()) {
         await backupDir.create(recursive: true);
       }
 
-      LogManager.i('BackupManagementService', '已创建还原前备份: $backupPath');
+      final backupPath = await executeBackup(
+        backupPath: _backupPath,
+        backupDataSource: backupDataSource,
+      );
+      LogManager.i('BackupManagementService', '已创建真实的还原前备份: $backupPath');
       return backupPath;
     } catch (e) {
       LogManager.e('BackupManagementService', '创建还原前备份失败', error: e);

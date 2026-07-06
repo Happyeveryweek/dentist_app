@@ -310,7 +310,8 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: context.tokens.warning.withValues(alpha: 0.1),
+                            color:
+                                context.tokens.warning.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
@@ -342,14 +343,16 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: context.tokens.primaryAccent.withValues(alpha: 0.1),
+                            color: context.tokens.primaryAccent
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.person,
-                                  size: 11, color: context.tokens.primaryAccent),
+                                  size: 11,
+                                  color: context.tokens.primaryAccent),
                               const SizedBox(width: 3),
                               Flexible(
                                 child: Text(
@@ -888,7 +891,12 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
       final exportService = PurchaseExportService();
       // 创建图片数据
       final imageData = await exportService.generatePurchaseRecordImage(
-          record, purchaseItems, exportOptions);
+        record,
+        purchaseItems,
+        exportOptions,
+        tokens: context.tokens,
+        colors: context.colors,
+      );
 
       // 直接保存到下载目录
       final result = await exportService.saveImageToDownloads(imageData);
@@ -945,8 +953,9 @@ class _HoverablePurchaseRecordCardState
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color:
-                _isHovered ? tokens.listItemHoverBackground : tokens.cardBackground,
+            color: _isHovered
+                ? tokens.listItemHoverBackground
+                : tokens.cardBackground,
             borderRadius: BorderRadius.circular(12),
             boxShadow: tokens.cardShadow,
           ),

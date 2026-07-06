@@ -21,6 +21,8 @@ class DatabaseBackupService {
     required this.dataSourceType,
   });
 
+  bool get _isSqliteDataSource => dataSourceType == 'sqlite';
+
   /// 统一备份接口
   Future<String> backupDatabase({
     String? backupPath,
@@ -141,8 +143,13 @@ class DatabaseBackupService {
       final backupFilePath =
           path.join(userBackupPath, 'sqlite_backup_$timestamp.db');
 
-      // 关闭数据库连接，确保没有写入操作
-      await db.close();
+      // 尽量先把 WAL 内容落盘，避免复制出不完整快照。
+      try {
+        await db.execute('PRAGMA wal_checkpoint(FULL)');
+      } catch (e) {
+        LogManager.e('DatabaseBackupService', 'SQLite checkpoint 执行失败，继续复制文件',
+            error: e);
+      }
 
       // 复制数据库文件
       await File(resolvedDbPath).copy(backupFilePath);
@@ -263,6 +270,10 @@ class DatabaseBackupService {
   /// SQLite 数据库恢复方法 - 使用文件复制
   Future<void> restoreSQLiteDatabase(String backupFilePath) async {
     try {
+      if (!_isSqliteDataSource) {
+        throw Exception('当前数据源不是 SQLite，不能执行 SQLite 文件恢复');
+      }
+
       final backupFile = File(backupFilePath);
       if (!await backupFile.exists()) {
         throw Exception('备份文件不存在: $backupFilePath');
@@ -275,6 +286,11 @@ class DatabaseBackupService {
       } catch (e) {
         final dbDir = await getDatabasesPath();
         dbPath = path.join(dbDir, 'dentist_clinic.db');
+      }
+
+      final targetFile = File(dbPath);
+      if (await targetFile.exists()) {
+        await targetFile.delete();
       }
 
       // 复制备份文件到数据库位置
@@ -374,7 +390,7 @@ class DatabaseBackupService {
   }
 
   /// 从 MySQL dump 恢复
-  Future<void> restoreFromMySQLDump(
+  Future<MySQLRestoreResult> restoreFromMySQLDump(
     String dumpFilePath, {
     Function(String)? onLogOperation,
   }) async {
@@ -414,6 +430,7 @@ class DatabaseBackupService {
 
       int successCount = 0;
       int failCount = 0;
+      final failedStatements = <String>[];
 
       // 禁用外键约束检查
       try {
@@ -439,6 +456,13 @@ class DatabaseBackupService {
           }
         } catch (e) {
           failCount++;
+          if (failedStatements.length < 5) {
+            failedStatements.add(
+              statement.length > 200
+                  ? '${statement.substring(0, 200)}...'
+                  : statement,
+            );
+          }
           LogManager.e('DatabaseBackupService', '执行 SQL 语句失败', error: e);
           LogManager.w('DatabaseBackupService',
               '问题语句: ${statement.length > 100 ? "${statement.substring(0, 100)}..." : statement}');
@@ -456,14 +480,28 @@ class DatabaseBackupService {
       LogManager.e('DatabaseBackupService',
           '成功执行: $successCount 条语句，失败: $failCount 条语句');
 
-      if (successCount == 0 && failCount > 0) {
-        throw Exception('所有 SQL 语句执行失败，可能存在格式或编码问题');
-      }
+      final result = MySQLRestoreResult(
+        totalStatements: successCount + failCount,
+        successCount: successCount,
+        failedCount: failCount,
+        failedStatements: failedStatements,
+      );
 
       if (onLogOperation != null) {
-        final success = successCount > 0;
-        onLogOperation('MySQL 还原完成: ${success ? '成功' : '部分失败'}');
+        onLogOperation(
+          'MySQL 还原完成: ${result.isSuccess ? '成功' : '失败'}，成功 $successCount 条，失败 $failCount 条',
+        );
       }
+
+      if (!result.isSuccess) {
+        final sample =
+            failedStatements.isEmpty ? '' : '，示例语句: ${failedStatements.first}';
+        throw Exception(
+          'MySQL 还原未完成：共 ${result.totalStatements} 条，成功 $successCount 条，失败 $failCount 条$sample',
+        );
+      }
+
+      return result;
     } catch (e) {
       LogManager.e('DatabaseBackupService', '执行 MySQL 还原时出错', error: e);
       rethrow;
@@ -562,4 +600,20 @@ class DatabaseBackupService {
 
     return statements;
   }
+}
+
+class MySQLRestoreResult {
+  final int totalStatements;
+  final int successCount;
+  final int failedCount;
+  final List<String> failedStatements;
+
+  const MySQLRestoreResult({
+    required this.totalStatements,
+    required this.successCount,
+    required this.failedCount,
+    required this.failedStatements,
+  });
+
+  bool get isSuccess => failedCount == 0 && successCount > 0;
 }
