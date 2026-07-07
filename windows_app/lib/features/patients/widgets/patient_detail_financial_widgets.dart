@@ -190,14 +190,24 @@ class PatientFinancialRecordCard extends StatelessWidget {
 
     final outstandingAmount = totalReceivable - totalCollected;
 
-    return Card(
+    final tokens = context.tokens;
+
+    return Container(
       margin: const EdgeInsets.only(bottom: 12.0),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+      decoration: BoxDecoration(
+        color: tokens.cardBackground,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: tokens.divider, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: tokens.shadow.withValues(alpha: 0.1),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         onTap: onView,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -218,7 +228,7 @@ class PatientFinancialRecordCard extends StatelessWidget {
                       icon: Icons.calculate,
                       label: '应收费',
                       value: '¥${patientTotalReceivable.toStringAsFixed(2)}',
-                      valueColor: context.tokens.primaryAccent,
+                      valueColor: tokens.primaryAccent,
                     ),
                   ),
                   Expanded(
@@ -226,7 +236,7 @@ class PatientFinancialRecordCard extends StatelessWidget {
                       icon: Icons.payment,
                       label: '当前应收费',
                       value: '¥${totalReceivable.toStringAsFixed(2)}',
-                      valueColor: context.tokens.primaryAccent,
+                      valueColor: tokens.primaryAccent,
                     ),
                   ),
                   Expanded(
@@ -234,7 +244,7 @@ class PatientFinancialRecordCard extends StatelessWidget {
                       icon: Icons.check_circle,
                       label: '已收费',
                       value: '¥${totalCollected.toStringAsFixed(2)}',
-                      valueColor: context.tokens.success,
+                      valueColor: tokens.success,
                     ),
                   ),
                   Expanded(
@@ -242,9 +252,8 @@ class PatientFinancialRecordCard extends StatelessWidget {
                       icon: Icons.warning,
                       label: '欠费',
                       value: '¥${outstandingAmount.toStringAsFixed(2)}',
-                      valueColor: outstandingAmount > 0
-                          ? context.tokens.error
-                          : context.tokens.success,
+                      valueColor:
+                          outstandingAmount > 0 ? tokens.error : tokens.success,
                     ),
                   ),
                 ],
@@ -357,7 +366,8 @@ class _FinancialItemsPreview extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.list, size: 16, color: context.tokens.primaryAccent),
+                      Icon(Icons.list,
+                          size: 16, color: context.tokens.primaryAccent),
                       const SizedBox(width: 4),
                       Text(
                         '收费记录',
