@@ -257,115 +257,179 @@ class PatientCoreService {
 
   // =================== 后台同步私有逻辑 ===================
 
+  /// 手动同步单个患者到 MySQL，等待完成并返回是否成功
+  Future<bool> syncPatientToMySQL(int patientId) async {
+    if (getEffectiveDataSourceType() != 'sqlite') return false;
+    final dataSource = getCurrentDataSource();
+    if (dataSource == null) return false;
+
+    try {
+      final patient = await dataSource.getPatientById(patientId);
+      if (patient == null) return false;
+
+      final patientMap = patient.toMap();
+      patientMap['name_pinyin'] = PinyinUtil.toPinyin(patient.name);
+      patientMap['name_initials'] = PinyinUtil.getInitials(patient.name);
+      final address = patient.address;
+      if (address != null) {
+        patientMap['address_pinyin'] = PinyinUtil.toPinyin(address);
+      }
+
+      return await _doSyncPatientToMySQL(patientMap, patientId);
+    } catch (e) {
+      LogManager.e('PatientCoreService', '手动同步患者失败', error: e);
+      return false;
+    }
+  }
+
+  /// 对比 SQLite 与 MySQL 中同一患者数据是否一致
+  /// 返回 true=一致 / false=不一致 / null=无法比较（连接不可用或非 SQLite 主库）
+  Future<bool?> comparePatientSyncStatus(int patientId) async {
+    if (getEffectiveDataSourceType() != 'sqlite') return null;
+
+    try {
+      final dataSource = getCurrentDataSource();
+      if (dataSource == null) return null;
+
+      final sqlitePatient = await dataSource.getPatientById(patientId);
+      if (sqlitePatient == null) return null;
+
+      final conn = getSyncMysqlConnection();
+      if (conn == null) return null;
+
+      final results = await conn.query(
+        'SELECT * FROM patients WHERE id = ? LIMIT 1',
+        [patientId],
+      );
+      if (results.isEmpty) return false;
+
+      final sqliteMap = sqlitePatient.toMap();
+      final changes = _buildFieldChanges(
+        oldValues: results.first.fields,
+        newValues: sqliteMap,
+        fields: _patientSyncFields,
+      );
+      return changes.isEmpty;
+    } catch (e) {
+      LogManager.e('PatientCoreService', '对比患者同步状态失败', error: e);
+      return null;
+    }
+  }
+
   void _trySyncPatientToMySQL(Map<String, dynamic> patientMap, int sqliteId) {
-    Future.microtask(() async {
-      try {
-        final conn = getSyncMysqlConnection();
-        final summary =
-            'name=${patientMap['name']}, mrn=${patientMap['medical_record_number'] ?? ''}';
-        if (conn == null) {
-          await _logPatientSyncOperation(
-            module: 'patient',
-            action: 'upsert',
-            table: 'patients',
-            status: 'skipped',
-            recordId: sqliteId,
-            summary: summary,
-            error: 'mysql_connection_unavailable',
-          );
-          return;
-        }
+    Future.microtask(() => _doSyncPatientToMySQL(patientMap, sqliteId));
+  }
 
-        Results existById = await conn.query(
-          'SELECT * FROM patients WHERE id = ? LIMIT 1',
-          [sqliteId],
+  Future<bool> _doSyncPatientToMySQL(
+      Map<String, dynamic> patientMap, int sqliteId) async {
+    try {
+      final conn = getSyncMysqlConnection();
+      final summary =
+          'name=${patientMap['name']}, mrn=${patientMap['medical_record_number'] ?? ''}';
+      if (conn == null) {
+        await _logPatientSyncOperation(
+          module: 'patient',
+          action: 'upsert',
+          table: 'patients',
+          status: 'skipped',
+          recordId: sqliteId,
+          summary: summary,
+          error: 'mysql_connection_unavailable',
         );
-        final isUpdate = existById.isNotEmpty;
-        final fieldChanges = isUpdate
-            ? _buildFieldChanges(
-                oldValues: existById.first.fields,
-                newValues: patientMap,
-                fields: _patientSyncFields,
-              )
-            : _buildCreateChanges(patientMap, _patientSyncFields);
+        return false;
+      }
 
-        if (isUpdate) {
-          await conn.query('''
+      Results existById = await conn.query(
+        'SELECT * FROM patients WHERE id = ? LIMIT 1',
+        [sqliteId],
+      );
+      final isUpdate = existById.isNotEmpty;
+      final fieldChanges = isUpdate
+          ? _buildFieldChanges(
+              oldValues: existById.first.fields,
+              newValues: patientMap,
+              fields: _patientSyncFields,
+            )
+          : _buildCreateChanges(patientMap, _patientSyncFields);
+
+      if (isUpdate) {
+        await conn.query('''
             UPDATE patients SET
               name = ?, name_pinyin = ?, name_initials = ?, age = ?, gender = ?, phone = ?,
               medical_record_number = ?, address = ?, address_pinyin = ?, identification_number = ?,
               doctor = ?, dental_condition = ?, treatment_items = ?, first_visit_date = ?, total_cost = ?, created_at = ?, updated_at = ?
             WHERE id = ?
           ''', [
-            patientMap['name'],
-            patientMap['name_pinyin'],
-            patientMap['name_initials'],
-            patientMap['age'],
-            patientMap['gender'],
-            patientMap['phone'],
-            patientMap['medical_record_number'],
-            patientMap['address'],
-            patientMap['address_pinyin'],
-            patientMap['identification_number'],
-            patientMap['doctor'],
-            patientMap['dental_condition'],
-            patientMap['treatment_items'],
-            patientMap['first_visit_date'],
-            patientMap['total_cost'],
-            patientMap['created_at'],
-            patientMap['updated_at'],
-            sqliteId,
-          ]);
-        } else {
-          await conn.query('''
+          patientMap['name'],
+          patientMap['name_pinyin'],
+          patientMap['name_initials'],
+          patientMap['age'],
+          patientMap['gender'],
+          patientMap['phone'],
+          patientMap['medical_record_number'],
+          patientMap['address'],
+          patientMap['address_pinyin'],
+          patientMap['identification_number'],
+          patientMap['doctor'],
+          patientMap['dental_condition'],
+          patientMap['treatment_items'],
+          patientMap['first_visit_date'],
+          patientMap['total_cost'],
+          patientMap['created_at'],
+          patientMap['updated_at'],
+          sqliteId,
+        ]);
+      } else {
+        await conn.query('''
             INSERT INTO patients
             (id, name, name_pinyin, name_initials, age, gender, phone, medical_record_number, address, address_pinyin, identification_number, doctor, dental_condition, treatment_items, first_visit_date, total_cost, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ''', [
-            sqliteId,
-            patientMap['name'],
-            patientMap['name_pinyin'],
-            patientMap['name_initials'],
-            patientMap['age'],
-            patientMap['gender'],
-            patientMap['phone'],
-            patientMap['medical_record_number'],
-            patientMap['address'],
-            patientMap['address_pinyin'],
-            patientMap['identification_number'],
-            patientMap['doctor'],
-            patientMap['dental_condition'],
-            patientMap['treatment_items'],
-            patientMap['first_visit_date'],
-            patientMap['total_cost'],
-            patientMap['created_at'],
-            patientMap['updated_at'],
-          ]);
-        }
-        await _logPatientSyncOperation(
-          module: 'patient',
-          action: isUpdate ? 'update' : 'create',
-          table: 'patients',
-          status: 'success',
-          recordId: sqliteId,
-          summary: summary,
-          fieldChanges: fieldChanges,
-        );
-      } catch (e) {
-        await _logPatientSyncOperation(
-          module: 'patient',
-          action: 'upsert',
-          table: 'patients',
-          status: 'failed',
-          recordId: sqliteId,
-          summary:
-              'name=${patientMap['name']}, mrn=${patientMap['medical_record_number'] ?? ''}',
-          error: e.toString(),
-        );
-        LogManager.e('PatientCoreService', 'PatientCoreService: MySQL同步失败',
-            error: e);
+          sqliteId,
+          patientMap['name'],
+          patientMap['name_pinyin'],
+          patientMap['name_initials'],
+          patientMap['age'],
+          patientMap['gender'],
+          patientMap['phone'],
+          patientMap['medical_record_number'],
+          patientMap['address'],
+          patientMap['address_pinyin'],
+          patientMap['identification_number'],
+          patientMap['doctor'],
+          patientMap['dental_condition'],
+          patientMap['treatment_items'],
+          patientMap['first_visit_date'],
+          patientMap['total_cost'],
+          patientMap['created_at'],
+          patientMap['updated_at'],
+        ]);
       }
-    });
+      await _logPatientSyncOperation(
+        module: 'patient',
+        action: isUpdate ? 'update' : 'create',
+        table: 'patients',
+        status: 'success',
+        recordId: sqliteId,
+        summary: summary,
+        fieldChanges: fieldChanges,
+      );
+      return true;
+    } catch (e) {
+      await _logPatientSyncOperation(
+        module: 'patient',
+        action: 'upsert',
+        table: 'patients',
+        status: 'failed',
+        recordId: sqliteId,
+        summary:
+            'name=${patientMap['name']}, mrn=${patientMap['medical_record_number'] ?? ''}',
+        error: e.toString(),
+      );
+      LogManager.e('PatientCoreService', 'PatientCoreService: MySQL同步失败',
+          error: e);
+      return false;
+    }
   }
 
   void _trySyncDeletePatientToMySQL(int patientId,

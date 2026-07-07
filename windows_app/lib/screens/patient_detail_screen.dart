@@ -55,6 +55,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   // 标记数据是否已更改，用于通知父页面是否需要刷新
   bool _dataChanged = false;
   bool _dataLoaded = false;
+  // 患者数据同步状态
+  PatientSyncStatus _syncStatus = PatientSyncStatus.checking;
+  bool _isSyncing = false;
   // 牙齿状况区域的滚动控制器，必须共享给 Scrollbar 和 SingleChildScrollView
   final ScrollController _dentalScrollController = ScrollController();
 
@@ -105,6 +108,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           _medicalRecords = data.medicalRecords;
           _isLoading = false;
         });
+        // 加载完成后检查同步状态
+        _checkSyncStatus();
       }
     } catch (e) {
       LogManager.e('PatientDetailScreen', '加载患者数据错误', error: e);
@@ -167,6 +172,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
           Navigator.of(context).pop(_dataChanged);
         },
         onEditPatient: _isLoading ? null : _editPatient,
+        syncStatus: _syncStatus,
+        isSyncing: _isSyncing,
+        onSync: _isLoading ? null : _syncPatient,
         tabViews: _isLoading
             ? const []
             : [
@@ -206,9 +214,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
           // 用分区标签分割内容
           PatientDetailSectionHeader(
-              title: '个人信息',
-              icon: Icons.person,
-              color: context.tokens.success),
+              title: '个人信息', icon: Icons.person, color: context.tokens.success),
           PatientPersonalInfoCard(patient: patient),
 
           // 牙齿状况和治疗分区
@@ -816,6 +822,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         // 使用公用成功提示组件
         AppToastManager.showSuccess(context, message: '患者信息已更新');
       }
+
+      // 保存后同步到 MySQL 并刷新同步状态
+      await _syncAndCheckStatus();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -823,6 +832,121 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         );
       }
     }
+  }
+
+  /// 检查患者数据在 SQLite 与 MySQL 之间的同步状态
+  Future<void> _checkSyncStatus() async {
+    final patient = _patient;
+    if (patient == null) return;
+    final patientId = patient.id;
+    if (patientId == null) return;
+
+    if (mounted) {
+      setState(() {
+        _syncStatus = PatientSyncStatus.checking;
+      });
+    }
+
+    try {
+      final patientProvider =
+          Provider.of<PatientProvider>(context, listen: false);
+      final result =
+          await patientProvider.comparePatientSyncStatus(patientId);
+
+      if (!mounted) return;
+      setState(() {
+        switch (result) {
+          case true:
+            _syncStatus = PatientSyncStatus.synced;
+            break;
+          case false:
+            _syncStatus = PatientSyncStatus.notSynced;
+            break;
+          case null:
+            _syncStatus = PatientSyncStatus.unavailable;
+            break;
+        }
+      });
+    } catch (e) {
+      LogManager.e('PatientDetailScreen', '检查同步状态失败', error: e);
+      if (mounted) {
+        setState(() {
+          _syncStatus = PatientSyncStatus.unavailable;
+        });
+      }
+    }
+  }
+
+  /// 手动同步当前患者到 MySQL
+  Future<void> _syncPatient() async {
+    final patient = _patient;
+    if (patient == null) return;
+    final patientId = patient.id;
+    if (patientId == null) return;
+
+    if (mounted) {
+      setState(() {
+        _isSyncing = true;
+      });
+    }
+
+    try {
+      final patientProvider =
+          Provider.of<PatientProvider>(context, listen: false);
+      final success =
+          await patientProvider.syncSinglePatientToMySQL(patientId);
+
+      if (!mounted) return;
+
+      if (success) {
+        AppToastManager.showSuccess(context, message: '患者数据已同步到 MySQL');
+      } else {
+        AppToastManager.showError(context, message: '同步失败，请检查 MySQL 连接');
+      }
+
+      await _checkSyncStatus();
+    } catch (e) {
+      LogManager.e('PatientDetailScreen', '手动同步患者失败', error: e);
+      if (mounted) {
+        AppToastManager.showError(context, message: '同步失败: $e');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
+    }
+  }
+
+  /// 保存后同步到 MySQL 并刷新同步状态
+  Future<void> _syncAndCheckStatus() async {
+    final patient = _patient;
+    if (patient == null) return;
+    final patientId = patient.id;
+    if (patientId == null) return;
+
+    if (mounted) {
+      setState(() {
+        _isSyncing = true;
+      });
+    }
+
+    try {
+      final patientProvider =
+          Provider.of<PatientProvider>(context, listen: false);
+      await patientProvider.syncSinglePatientToMySQL(patientId);
+    } catch (e) {
+      LogManager.e('PatientDetailScreen', '保存后同步失败', error: e);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSyncing = false;
+        });
+      }
+    }
+
+    await _checkSyncStatus();
   }
 
   void _addAppointment() async {
@@ -938,8 +1062,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         final appointmentId = appointment.id;
         if (appointmentId == null) {
           if (!mounted) return;
-          AppToastManager.showError(context,
-              message: '无法删除无 ID 的预约');
+          AppToastManager.showError(context, message: '无法删除无 ID 的预约');
           return;
         }
         if (!mounted) return;
@@ -1327,17 +1450,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 throw Exception('保存病历失败');
               }
             } catch (e) {
-        if (!context.mounted) return;
-        // 显示错误信息
-        final tokens = context.tokens;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('保存病历失败: $e'),
-            backgroundColor: tokens.error,
-          ),
-        );
-        // 不关闭对话框，让用户可以重试
-      }
+              if (!context.mounted) return;
+              // 显示错误信息
+              final tokens = context.tokens;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('保存病历失败: $e'),
+                  backgroundColor: tokens.error,
+                ),
+              );
+              // 不关闭对话框，让用户可以重试
+            }
           },
         ),
       );
@@ -1421,17 +1544,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 throw Exception('更新病历失败');
               }
             } catch (e) {
-        if (!context.mounted) return;
-        // 显示错误信息
-        final tokens = context.tokens;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('更新病历失败: $e'),
-            backgroundColor: tokens.error,
-          ),
-        );
-        // 不关闭对话框，让用户可以重试
-      }
+              if (!context.mounted) return;
+              // 显示错误信息
+              final tokens = context.tokens;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('更新病历失败: $e'),
+                  backgroundColor: tokens.error,
+                ),
+              );
+              // 不关闭对话框，让用户可以重试
+            }
           },
         ),
       );

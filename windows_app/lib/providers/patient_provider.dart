@@ -398,6 +398,17 @@ class PatientProvider extends ChangeNotifier {
     return ds?.getPatientById(id);
   }
 
+  /// 对比 SQLite 与 MySQL 中同一患者数据是否一致
+  /// 返回 true=一致 / false=不一致 / null=无法比较
+  Future<bool?> comparePatientSyncStatus(int patientId) {
+    return _coreService.comparePatientSyncStatus(patientId);
+  }
+
+  /// 手动同步单个患者到 MySQL，等待完成并返回是否成功
+  Future<bool> syncSinglePatientToMySQL(int patientId) {
+    return _coreService.syncPatientToMySQL(patientId);
+  }
+
   Future<List<Patient>> searchPatientsInDataSource(
     String query, {
     String? effectiveDataSourceType,

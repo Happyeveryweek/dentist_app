@@ -3,6 +3,21 @@ import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../widgets/loading_indicator.dart';
 
+/// 患者数据同步状态
+enum PatientSyncStatus {
+  /// 检查中
+  checking,
+
+  /// SQLite 与 MySQL 数据一致
+  synced,
+
+  /// SQLite 与 MySQL 数据不一致
+  notSynced,
+
+  /// 无法比较（非 SQLite 主库或 MySQL 不可用）
+  unavailable,
+}
+
 class PatientDetailScaffold extends StatelessWidget {
   final String patientName;
   final bool isLoading;
@@ -10,6 +25,15 @@ class PatientDetailScaffold extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback? onEditPatient;
   final List<Widget> tabViews;
+
+  /// 患者数据同步状态
+  final PatientSyncStatus syncStatus;
+
+  /// 是否正在执行同步
+  final bool isSyncing;
+
+  /// 点击同步按钮回调
+  final VoidCallback? onSync;
 
   const PatientDetailScaffold({
     Key? key,
@@ -19,6 +43,9 @@ class PatientDetailScaffold extends StatelessWidget {
     required this.onBack,
     required this.onEditPatient,
     required this.tabViews,
+    this.syncStatus = PatientSyncStatus.checking,
+    this.isSyncing = false,
+    this.onSync,
   }) : super(key: key);
 
   @override
@@ -57,6 +84,7 @@ class PatientDetailScaffold extends StatelessWidget {
         foregroundColor: context.colors.onSurface,
         elevation: 0,
         actions: [
+          _buildSyncButton(context),
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
@@ -96,5 +124,72 @@ class PatientDetailScaffold extends StatelessWidget {
               children: tabViews,
             ),
     );
+  }
+
+  Widget _buildSyncButton(BuildContext context) {
+    final color = _syncStatusColor(context);
+    final icon = _syncStatusIcon;
+    final tooltip = _syncStatusTooltip;
+
+    return Container(
+      margin: const EdgeInsets.only(right: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: IconButton(
+        icon: isSyncing
+            ? SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(color),
+                ),
+              )
+            : Icon(icon, color: color),
+        tooltip: tooltip,
+        onPressed: onSync,
+      ),
+    );
+  }
+
+  Color _syncStatusColor(BuildContext context) {
+    switch (syncStatus) {
+      case PatientSyncStatus.synced:
+        return context.tokens.success;
+      case PatientSyncStatus.notSynced:
+        return context.tokens.error;
+      case PatientSyncStatus.checking:
+      case PatientSyncStatus.unavailable:
+        return context.colors.outline;
+    }
+  }
+
+  IconData get _syncStatusIcon {
+    switch (syncStatus) {
+      case PatientSyncStatus.synced:
+        return Icons.cloud_done_rounded;
+      case PatientSyncStatus.notSynced:
+        return Icons.cloud_off_rounded;
+      case PatientSyncStatus.checking:
+        return Icons.sync_rounded;
+      case PatientSyncStatus.unavailable:
+        return Icons.cloud_off_rounded;
+    }
+  }
+
+  String get _syncStatusTooltip {
+    switch (syncStatus) {
+      case PatientSyncStatus.synced:
+        return '数据已同步';
+      case PatientSyncStatus.notSynced:
+        return '数据未同步，点击同步';
+      case PatientSyncStatus.checking:
+        return '正在检查同步状态';
+      case PatientSyncStatus.unavailable:
+        return '同步不可用（仅 SQLite 主库支持）';
+    }
   }
 }
