@@ -22,26 +22,28 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             context.tokens.cardBackground,
-            context.tokens.pageBackground.withValues(alpha: 0.5),
+            context.tokens.primaryAccent.withValues(alpha: 0.025),
+            context.tokens.secondaryAccent.withValues(alpha: 0.015),
           ],
+          stops: const [0.0, 0.58, 1.0],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: context.tokens.primaryAccent.withValues(alpha: 0.1),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 8),
+            color: context.tokens.primaryAccent.withValues(alpha: 0.035),
+            blurRadius: 12,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: context.tokens.shadow.withValues(alpha: 0.5),
-            blurRadius: 8,
-            spreadRadius: 1,
-            offset: const Offset(0, 3),
+            color: context.tokens.shadow.withValues(alpha: 0.16),
+            blurRadius: 4,
+            spreadRadius: 0,
+            offset: const Offset(0, 1),
           ),
         ],
         border: Border.all(
-          color: context.tokens.primaryAccent.withValues(alpha: 0.1),
+          color: context.tokens.primaryAccent.withValues(alpha: 0.05),
           width: 1,
         ),
       ),
@@ -67,7 +69,8 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: context.tokens.primaryAccent.withValues(alpha: 0.3),
+                        color:
+                            context.tokens.primaryAccent.withValues(alpha: 0.3),
                         blurRadius: 12,
                         spreadRadius: 2,
                         offset: const Offset(0, 4),

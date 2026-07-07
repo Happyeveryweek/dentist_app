@@ -155,7 +155,9 @@ class PatientFormDentalChartRow extends StatelessWidget {
                   Icon(
                     canEdit ? Icons.edit : Icons.visibility,
                     size: 12,
-                    color: canEdit ? context.tokens.success : context.tokens.iconMuted,
+                    color: canEdit
+                        ? context.tokens.success
+                        : context.tokens.iconMuted,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -199,14 +201,18 @@ class PatientFormDentalChartRow extends StatelessWidget {
                             : context.tokens.border,
                       ),
                       borderRadius: BorderRadius.circular(4),
-                      color: canEdit ? context.tokens.cardBackground : context.tokens.mutedBackground,
+                      color: canEdit
+                          ? context.tokens.cardBackground
+                          : context.tokens.mutedBackground,
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.calendar_today,
                           size: 14,
-                          color: canEdit ? context.tokens.primaryAccent : context.tokens.iconMuted,
+                          color: canEdit
+                              ? context.tokens.primaryAccent
+                              : context.tokens.iconMuted,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -214,7 +220,9 @@ class PatientFormDentalChartRow extends StatelessWidget {
                             DateFormat('yyyy-MM-dd').format(row.date),
                             style: TextStyle(
                               fontSize: 12,
-                              color: canEdit ? context.colors.onSurface : context.tokens.iconMuted,
+                              color: canEdit
+                                  ? context.colors.onSurface
+                                  : context.tokens.iconMuted,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -305,6 +313,13 @@ class PatientFormSimpleCrossChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final crossLineColor = enabled
+        ? context.tokens.primaryAccent.withValues(alpha: 0.72)
+        : context.tokens.iconMuted.withValues(alpha: 0.55);
+    final noteLineColor = enabled
+        ? context.tokens.primaryAccent.withValues(alpha: 0.72)
+        : context.tokens.iconMuted.withValues(alpha: 0.55);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -316,15 +331,21 @@ class PatientFormSimpleCrossChart extends StatelessWidget {
               Center(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 250),
-                  height: 1.5,
-                  color: context.tokens.primaryAccent.withValues(alpha: 0.5),
+                  height: 2.2,
+                  decoration: BoxDecoration(
+                    color: crossLineColor,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
               ),
               Center(
                 child: Container(
-                  width: 1.5,
+                  width: 2.2,
                   height: 50,
-                  color: context.tokens.primaryAccent.withValues(alpha: 0.5),
+                  decoration: BoxDecoration(
+                    color: crossLineColor,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                 ),
               ),
               Column(
@@ -426,32 +447,36 @@ class PatientFormSimpleCrossChart extends StatelessWidget {
                 isDense: true,
                 border: UnderlineInputBorder(
                   borderSide: BorderSide(
-                    color:
-                        enabled ? context.tokens.primaryAccent.withValues(alpha: 0.5) : context.tokens.divider,
-                    width: 1.5,
+                    color: noteLineColor,
+                    width: 2.2,
                   ),
                 ),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(
-                    color:
-                        enabled ? context.tokens.primaryAccent.withValues(alpha: 0.5) : context.tokens.divider,
-                    width: 1.5,
+                    color: noteLineColor,
+                    width: 2.2,
                   ),
                 ),
                 focusedBorder: UnderlineInputBorder(
-                  borderSide:
-                      BorderSide(color: context.tokens.primaryAccent.withValues(alpha: 0.5), width: 1.5),
+                  borderSide: BorderSide(
+                    color: noteLineColor,
+                    width: 2.2,
+                  ),
                 ),
                 disabledBorder: UnderlineInputBorder(
-                  borderSide:
-                      BorderSide(color: context.tokens.divider, width: 1.5),
+                  borderSide: BorderSide(
+                    color: noteLineColor,
+                    width: 2.2,
+                  ),
                 ),
                 fillColor: Colors.transparent,
                 filled: false,
               ),
               style: TextStyle(
                 fontSize: 12,
-                color: enabled ? context.colors.onSurface : context.tokens.iconMuted,
+                color: enabled
+                    ? context.colors.onSurface
+                    : context.tokens.iconMuted,
               ),
               textAlign: TextAlign.left,
               onChanged: (value) => chart.note = value,

@@ -12,6 +12,8 @@
 - `android_app` 采购“添加采购项目”弹窗已改为键盘弹起时高度自适应、表单内容可滚动、底部按钮固定，已消除底部 `RenderFlex overflow` 风险。当前已通过针对性静态检查，待采购录入弹窗手动回归确认。
 
 ## 已完成
+- `windows_app` 预约详情页头部摘要卡片背景已进一步压浅：不再使用偏深背景，也不再直接复用偏可见的浅渐变 token，改为接近白色的定制轻渐变，并同步压轻阴影和边框，只保留一点点层次避免头部发沉；已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
+- `windows_app` 牙齿状况线条显示已完成修复并验证：添加/编辑患者、添加/编辑预约、查看患者、查看预约中的牙位十字线均已改为更深更粗显示；备注横线仅保留在患者添加/编辑和患者查看页，不扩展到预约查看页，提升浅色主题下的可读性；已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
 - `windows_app` 患者详情页同步状态按钮与公共患者选择弹窗已完成修复并验证：同步按钮在“检查中/不可用”状态下禁用，避免在非 SQLite 主库场景误导用户触发失败提示；公共患者选择弹窗已补回电话和病历号显示，降低财务/预约场景同名患者误选风险。已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
 - `windows_app` 患者 SQLite → MySQL 同步规则已修正为以 SQLite `id` 为主键来源：MySQL 命中同 `id` 时直接更新，未命中时插入同 `id`；患者详情页进入财务数据源补齐患者也使用同一 id-upsert 规则。已新增本地 `patient_sync_logs.json` 结构化日志和设置页“患者同步日志”查看入口，日志已按患者基本信息/患者材料/材料图片/预约记录/财务记录/财务明细/病历记录分类展示同步新建、同步更新、同步删除，并记录字段从旧值到新值的变更明细；财务详情页新增 MySQL 患者缺失/SQLite 与 MySQL 信息不一致的明确拦截提示；仓库新增 `.gitattributes` 固定文本文件 LF 行尾；全量 `flutter analyze` `No issues found!`。
 - 根目录已新增 [crlf_to_lf_execution_2026_07_07.md](D:/Data/android_project/dentist_app/docs/crlf_to_lf_execution_2026_07_07.md)，用于后续按批次将仓库文本文件从 CRLF 统一修复为 LF，文档包含可直接执行的 PowerShell 命令、分批提交顺序和验证步骤。
@@ -25,6 +27,8 @@
 - 无
 
 ## 最近验证
+- 2026-07-07：`windows_app` 预约详情页头部摘要卡片背景已进一步压浅，并运行 `flutter analyze`，`No issues found!`；本轮仅调整预约详情页顶部摘要卡片的背景渐变、阴影和边框层次，不改动状态徽标、时间文案和业务逻辑。
+- 2026-07-07：`windows_app` 牙齿状况线条显示已统一加深加粗，并运行 `flutter analyze`，`No issues found!`；本轮覆盖添加/编辑患者、添加/编辑预约、查看患者、查看预约中的牙位十字线，以及患者表单/患者查看中的备注横线显示，不改动牙齿状况数据结构和业务逻辑。
 - 2026-07-07：`windows_app` 重复打开应用的单实例拦截提示已改为明确页面提示，不再灰屏后立即退出；当前会显示“应用已经打开”说明、5 秒倒计时和手动退出按钮，并运行 `flutter analyze`，`No issues found!`。
 - 2026-07-07：`windows_app` 编辑财务记录专用弹窗 `financial_record_edit_dialog.dart` 已补回右上角关闭按钮，并运行 `flutter analyze`，`No issues found!`；本轮修复的是财务管理列表“编辑财务记录”链路，不涉及新增财务记录弹窗主体逻辑。
 - 2026-07-07：`windows_app` 财务管理添加/编辑财务记录弹窗已补回右上角关闭按钮，并运行 `flutter analyze`，`No issues found!`；本轮仅修复标题栏关闭入口缺失，不改动财务表单业务逻辑。

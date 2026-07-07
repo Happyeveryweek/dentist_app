@@ -10,7 +10,8 @@ class CrossPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = lineColor
-      ..strokeWidth = 1.5;
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round;
 
     // 绘制水平线 - 明显长于竖线（占据整个宽度）
     canvas.drawLine(
@@ -47,12 +48,11 @@ class TeethCrossWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
     final colors = context.colors;
-    final crossLineColor = tokens.textMuted.withValues(alpha: 0.45);
+    final crossLineColor = context.tokens.primaryAccent.withValues(alpha: 0.72);
 
     return SizedBox(
-      height: 120, // 恢复原始尺寸
+      height: 120,
       width: 180,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -84,15 +84,12 @@ class TeethCrossWidget extends StatelessWidget {
     return Stack(
       alignment: Alignment.center,
       children: [
-        // 自定义画笔绘制十字
         CustomPaint(
           size: const Size(width, height),
           painter: CrossPainter(lineColor: crossLineColor),
         ),
-
-        // 上左象限
         Positioned(
-          top: centerY - 20, // 更加靠近横线
+          top: centerY - 20,
           left: 10,
           width: centerX - 12,
           height: 18,
@@ -106,10 +103,8 @@ class TeethCrossWidget extends StatelessWidget {
             ),
           ),
         ),
-
-        // 上右象限
         Positioned(
-          top: centerY - 20, // 更加靠近横线
+          top: centerY - 20,
           right: 10,
           width: centerX - 12,
           height: 18,
@@ -123,10 +118,8 @@ class TeethCrossWidget extends StatelessWidget {
             ),
           ),
         ),
-
-        // 下左象限
         Positioned(
-          top: centerY + 3, // 更加靠近横线
+          top: centerY + 3,
           left: 10,
           width: centerX - 12,
           height: 18,
@@ -140,10 +133,8 @@ class TeethCrossWidget extends StatelessWidget {
             ),
           ),
         ),
-
-        // 下右象限
         Positioned(
-          top: centerY + 3, // 更加靠近横线
+          top: centerY + 3,
           right: 10,
           width: centerX - 12,
           height: 18,

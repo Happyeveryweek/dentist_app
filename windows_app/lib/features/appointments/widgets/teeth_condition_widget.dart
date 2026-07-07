@@ -111,7 +111,7 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
 
   Widget _buildCross(int crossIndex) {
     final tokens = context.tokens;
-    final crossLineColor = tokens.textMuted.withValues(alpha: 0.45);
+    final crossLineColor = tokens.primaryAccent.withValues(alpha: 0.72);
     const double width = 120.0;
     const double height = 65.0;
     const double centerX = width / 2;
@@ -250,7 +250,8 @@ class CrossPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = lineColor
-      ..strokeWidth = 1.5;
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round;
 
     canvas.drawLine(
       Offset(0, size.height / 2),

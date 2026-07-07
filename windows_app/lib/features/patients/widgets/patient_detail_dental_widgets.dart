@@ -257,7 +257,7 @@ class _ReadOnlyCrossChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
+    final lineColor = context.tokens.primaryAccent.withValues(alpha: 0.72);
 
     return SizedBox(
       width: 250,
@@ -272,15 +272,21 @@ class _ReadOnlyCrossChart extends StatelessWidget {
                 Center(
                   child: Container(
                     width: 250,
-                    height: 1.5,
-                    color: tokens.border,
+                    height: 2.2,
+                    decoration: BoxDecoration(
+                      color: lineColor,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
                   ),
                 ),
                 Center(
                   child: Container(
-                    width: 1.5,
+                    width: 2.2,
                     height: 42,
-                    color: tokens.border,
+                    decoration: BoxDecoration(
+                      color: lineColor,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
                   ),
                 ),
                 Column(
@@ -368,9 +374,12 @@ class _ReadOnlyCrossChart extends StatelessWidget {
                   ),
                 Center(
                   child: Container(
-                    height: 1.5,
+                    height: 2.2,
                     width: 250,
-                    color: tokens.border,
+                    decoration: BoxDecoration(
+                      color: lineColor,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
                   ),
                 ),
               ],
