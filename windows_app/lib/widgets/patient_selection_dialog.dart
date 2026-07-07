@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../models/patient.dart';
-import '../../../theme/theme_context_extensions.dart';
+import '../models/patient.dart';
+import '../theme/theme_context_extensions.dart';
 
-// 患者选择对话框
+/// 公共患者选择对话框
+///
+/// 财务、预约等模块共用，通过 `showDialog<Patient>` 返回选中的患者。
+/// 支持按姓名、拼音、首字母、病历号、电话搜索。
 class PatientSelectionDialog extends StatefulWidget {
   final List<Patient> patients;
 
@@ -30,10 +33,11 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
       if (query.isEmpty) {
         _filteredPatients = List.from(widget.patients);
       } else {
+        final lowerQuery = query.toLowerCase();
+        final queryNoSpace = lowerQuery.replaceAll(' ', '');
         _filteredPatients = widget.patients.where((patient) {
           // 姓名搜索
-          final nameMatch =
-              patient.name.toLowerCase().contains(query.toLowerCase());
+          final nameMatch = patient.name.toLowerCase().contains(lowerQuery);
 
           // 病历号搜索
           final medicalRecordMatch =
@@ -43,19 +47,22 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
           final namePinyinMatch = patient.namePinyin
                   ?.toLowerCase()
                   .replaceAll(' ', '')
-                  .contains(query.toLowerCase().replaceAll(' ', '')) ??
+                  .contains(queryNoSpace) ??
               false;
 
           // 姓名拼音首字母搜索
-          final nameInitialsMatch = patient.nameInitials
-                  ?.toLowerCase()
-                  .contains(query.toLowerCase()) ??
-              false;
+          final nameInitialsMatch =
+              patient.nameInitials?.toLowerCase().contains(lowerQuery) ?? false;
+
+          // 电话搜索
+          final phoneMatch =
+              patient.mainPhone.toLowerCase().contains(lowerQuery);
 
           return nameMatch ||
               medicalRecordMatch ||
               namePinyinMatch ||
-              nameInitialsMatch;
+              nameInitialsMatch ||
+              phoneMatch;
         }).toList();
       }
     });
@@ -65,10 +72,6 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final colors = context.colors;
-
-    // 根据患者信息的更新时间排序，最新的排到最前面
-    List<Patient> sortedPatients = List.from(widget.patients);
-    sortedPatients.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
     return Dialog(
       shape: RoundedRectangleBorder(
@@ -177,17 +180,19 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                       TextField(
                         autofocus: true,
                         decoration: InputDecoration(
-                          hintText: '搜索患者 (姓名/拼音/首字母/病历号)',
+                          hintText: '搜索患者 (姓名/拼音/首字母/病历号/电话)',
                           prefixIcon:
                               Icon(Icons.search, color: tokens.iconMuted),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(tokens.borderRadius),
+                            borderRadius:
+                                BorderRadius.circular(tokens.borderRadius),
                             borderSide: BorderSide(color: tokens.border),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(tokens.borderRadius),
-                            borderSide:
-                                BorderSide(color: tokens.primaryAccent, width: 2),
+                            borderRadius:
+                                BorderRadius.circular(tokens.borderRadius),
+                            borderSide: BorderSide(
+                                color: tokens.primaryAccent, width: 2),
                           ),
                           filled: true,
                           fillColor: tokens.inputBackground,
@@ -263,8 +268,7 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                 decoration: BoxDecoration(
                                   color: tokens.cardBackground,
                                   borderRadius: BorderRadius.circular(16),
-                                  border:
-                                      Border.all(color: tokens.border),
+                                  border: Border.all(color: tokens.border),
                                   boxShadow: tokens.cardShadow,
                                 ),
                                 child: ClipRRect(
@@ -299,7 +303,8 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                                     style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.w600,
-                                                      color: tokens.primaryAccent,
+                                                      color:
+                                                          tokens.primaryAccent,
                                                       fontSize: 14,
                                                     ),
                                                   ),
@@ -321,7 +326,8 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                                     style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.w600,
-                                                      color: tokens.primaryAccent,
+                                                      color:
+                                                          tokens.primaryAccent,
                                                       fontSize: 14,
                                                     ),
                                                   ),
@@ -383,7 +389,8 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                                               Icon(
                                                                 Icons.person,
                                                                 size: 16,
-                                                                color: tokens.primaryAccent,
+                                                                color: tokens
+                                                                    .primaryAccent,
                                                               ),
                                                               const SizedBox(
                                                                   width: 8),

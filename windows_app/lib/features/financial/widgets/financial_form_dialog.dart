@@ -14,7 +14,7 @@ import '../../../widgets/success_toast.dart'
 import '../../../theme/theme_context_extensions.dart';
 import '../helpers/amount_input_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
-import './patient_selection_dialog.dart';
+import '../../../widgets/patient_selection_dialog.dart';
 import '../../../utils/log_manager.dart';
 
 class FinancialFormDialog extends StatefulWidget {
@@ -306,7 +306,8 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                         color: disablePatientSelection
                             ? tokens.disabledBackground
                             : tokens.cardBackground,
-                        borderRadius: BorderRadius.circular(tokens.borderRadius),
+                        borderRadius:
+                            BorderRadius.circular(tokens.borderRadius),
                       ),
                       child: Row(
                         children: [
@@ -315,7 +316,8 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
                               color: tokens.infoContainer,
-                              borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
+                              borderRadius: BorderRadius.circular(
+                                  tokens.smallBorderRadius),
                             ),
                             child: Icon(Icons.person,
                                 color: tokens.info, size: 18),
@@ -410,9 +412,9 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                       child: _buildInfoChip(
                         icon: Icons.badge,
                         label: '病历号',
-                        value: selectedPatient.medicalRecordNumber
-                                ?.toString() ??
-                            '未设置',
+                        value:
+                            selectedPatient.medicalRecordNumber?.toString() ??
+                                '未设置',
                         color: tokens.primaryAccent,
                       ),
                     ),
@@ -531,20 +533,19 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       color: tokens.warningContainer,
-                      borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
+                      borderRadius:
+                          BorderRadius.circular(tokens.smallBorderRadius),
                     ),
                     child: Icon(Icons.calendar_month,
                         color: tokens.warning, size: 18),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(tokens.borderRadius),
-                    borderSide:
-                        BorderSide(color: tokens.warning, width: 1),
+                    borderSide: BorderSide(color: tokens.warning, width: 1),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(tokens.borderRadius),
-                    borderSide:
-                        BorderSide(color: tokens.warning, width: 1),
+                    borderSide: BorderSide(color: tokens.warning, width: 1),
                   ),
                   filled: true,
                   fillColor: tokens.cardBackground,
@@ -585,7 +586,8 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: tokens.warningContainer,
-                    borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
+                    borderRadius:
+                        BorderRadius.circular(tokens.smallBorderRadius),
                   ),
                   child: Icon(Icons.medical_services,
                       color: tokens.warning, size: 18),
@@ -673,20 +675,21 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           color: tokens.infoContainer,
-                          borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
+                          borderRadius:
+                              BorderRadius.circular(tokens.smallBorderRadius),
                         ),
                         child: Icon(Icons.description,
                             color: tokens.info, size: 18),
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(tokens.borderRadius),
-                        borderSide:
-                            BorderSide(color: tokens.border, width: 1),
+                        borderRadius:
+                            BorderRadius.circular(tokens.borderRadius),
+                        borderSide: BorderSide(color: tokens.border, width: 1),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(tokens.borderRadius),
-                        borderSide:
-                            BorderSide(color: tokens.info, width: 1),
+                        borderRadius:
+                            BorderRadius.circular(tokens.borderRadius),
+                        borderSide: BorderSide(color: tokens.info, width: 1),
                       ),
                       filled: true,
                       fillColor: tokens.cardBackground,
@@ -733,20 +736,21 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           color: tokens.infoContainer,
-                          borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
+                          borderRadius:
+                              BorderRadius.circular(tokens.smallBorderRadius),
                         ),
                         child: Icon(Icons.check_circle,
                             color: tokens.success, size: 18),
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(tokens.borderRadius),
-                        borderSide:
-                            BorderSide(color: tokens.border, width: 1),
+                        borderRadius:
+                            BorderRadius.circular(tokens.borderRadius),
+                        borderSide: BorderSide(color: tokens.border, width: 1),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(tokens.borderRadius),
-                        borderSide:
-                            BorderSide(color: tokens.info, width: 1),
+                        borderRadius:
+                            BorderRadius.circular(tokens.borderRadius),
+                        borderSide: BorderSide(color: tokens.info, width: 1),
                       ),
                       filled: true,
                       fillColor: tokens.cardBackground,
@@ -798,20 +802,20 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           color: tokens.infoContainer,
-                          borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
+                          borderRadius:
+                              BorderRadius.circular(tokens.smallBorderRadius),
                         ),
-                        child: Icon(Icons.build,
-                            color: tokens.info, size: 18),
+                        child: Icon(Icons.build, color: tokens.info, size: 18),
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(tokens.borderRadius),
-                        borderSide:
-                            BorderSide(color: tokens.border, width: 1),
+                        borderRadius:
+                            BorderRadius.circular(tokens.borderRadius),
+                        borderSide: BorderSide(color: tokens.border, width: 1),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(tokens.borderRadius),
-                        borderSide:
-                            BorderSide(color: tokens.info, width: 1),
+                        borderRadius:
+                            BorderRadius.circular(tokens.borderRadius),
+                        borderSide: BorderSide(color: tokens.info, width: 1),
                       ),
                       filled: true,
                       fillColor: tokens.cardBackground,
@@ -863,20 +867,21 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           color: tokens.infoContainer,
-                          borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
+                          borderRadius:
+                              BorderRadius.circular(tokens.smallBorderRadius),
                         ),
-                        child: Icon(Icons.payment,
-                            color: tokens.info, size: 18),
+                        child:
+                            Icon(Icons.payment, color: tokens.info, size: 18),
                       ),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(tokens.borderRadius),
-                        borderSide:
-                            BorderSide(color: tokens.border, width: 1),
+                        borderRadius:
+                            BorderRadius.circular(tokens.borderRadius),
+                        borderSide: BorderSide(color: tokens.border, width: 1),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(tokens.borderRadius),
-                        borderSide:
-                            BorderSide(color: tokens.info, width: 1),
+                        borderRadius:
+                            BorderRadius.circular(tokens.borderRadius),
+                        borderSide: BorderSide(color: tokens.info, width: 1),
                       ),
                       filled: true,
                       fillColor: tokens.cardBackground,
@@ -1001,7 +1006,8 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: tokens.successContainer,
-                    borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
+                    borderRadius:
+                        BorderRadius.circular(tokens.smallBorderRadius),
                   ),
                   child: Icon(Icons.note, color: tokens.success, size: 18),
                 ),
@@ -1260,36 +1266,35 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
         );
 
         // 更新主财务记录
-          final success =
-              await financialProvider.updateFinancialRecord(newRecord);
-          if (success) {
-            // 更新或创建财务明细项
-            try {
-              final recordId = existingRecord.id;
-              if (recordId == null) {
-                throw Exception('编辑的财务记录ID为空');
+        final success =
+            await financialProvider.updateFinancialRecord(newRecord);
+        if (success) {
+          // 更新或创建财务明细项
+          try {
+            final recordId = existingRecord.id;
+            if (recordId == null) {
+              throw Exception('编辑的财务记录ID为空');
+            }
+            final existingItems =
+                await financialProvider.getFinancialItemsByRecordId(recordId);
+
+            if (existingItems.isNotEmpty) {
+              // 如果已有明细项，更新第一个明细项
+              FinancialItem? itemToUpdate;
+              if (editingItem != null) {
+                final editingItemId = editingItem.id;
+                itemToUpdate = existingItems.firstWhere(
+                  (existingItem) =>
+                      editingItemId != null && existingItem.id == editingItemId,
+                  orElse: () => existingItems.first,
+                );
+              } else {
+                itemToUpdate = existingItems.first;
               }
-              final existingItems = await financialProvider
-                  .getFinancialItemsByRecordId(recordId);
 
-              if (existingItems.isNotEmpty) {
-                // 如果已有明细项，更新第一个明细项
-                FinancialItem? itemToUpdate;
-                if (editingItem != null) {
-                  final editingItemId = editingItem.id;
-                  itemToUpdate = existingItems.firstWhere(
-                    (existingItem) =>
-                        editingItemId != null &&
-                        existingItem.id == editingItemId,
-                    orElse: () => existingItems.first,
-                  );
-                } else {
-                  itemToUpdate = existingItems.first;
-                }
-
-                final updatedItem = FinancialItem(
-                  id: itemToUpdate.id,
-                  financialRecordId: recordId,
+              final updatedItem = FinancialItem(
+                id: itemToUpdate.id,
+                financialRecordId: recordId,
                 itemName: _treatmentItemsController.text.trim(),
                 paymentMethod: FinancialPaymentMethodHelper.toStorageValue(
                   _paymentMethod,
@@ -1362,8 +1367,8 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
         // 新增模式：检查该用户是否已有财务记录
         // 首先尝试根据患者ID获取所有财务记录
 
-        final existingRecords = await financialProvider
-            .getFinancialRecordsByPatientId(patientId);
+        final existingRecords =
+            await financialProvider.getFinancialRecordsByPatientId(patientId);
 
         // 如果找到现有记录，使用第一个记录（最早的记录）
         if (existingRecords.isNotEmpty) {

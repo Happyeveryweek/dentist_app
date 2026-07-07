@@ -15,7 +15,7 @@ import './appointment_patient_selection_section.dart';
 import './appointment_date_time_section.dart';
 import './appointment_cost_status_section.dart';
 import './appointment_notes_section.dart';
-import './appointment_patient_search_dialog.dart';
+import '../../../widgets/patient_selection_dialog.dart';
 import '../../../utils/log_manager.dart';
 
 class AppointmentFormDialog extends StatefulWidget {
@@ -175,7 +175,8 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
     return _normalizeTreatmentItems(trimmed.split(RegExp(r'[、,，\n]')));
   }
 
-  List<String> _extractTreatmentItemsFromDecodedData(Map<String, dynamic> data) {
+  List<String> _extractTreatmentItemsFromDecodedData(
+      Map<String, dynamic> data) {
     if (data['treatments'] is List) {
       return _normalizeTreatmentItems(
         List<String>.from(
@@ -275,7 +276,8 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
       Patient? resolvedSelectedPatient;
       final preselectedPatient = widget.preselectedPatient;
       if (preselectedPatient != null) {
-        resolvedSelectedPatient = await patientProvider.resolvePatientForDataSource(
+        resolvedSelectedPatient =
+            await patientProvider.resolvePatientForDataSource(
           preselectedPatient,
           targetDataSourceType: patientsDataSourceType,
         );
@@ -314,7 +316,9 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
       }
       setState(() => _isLoadingPatients = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('加载患者数据失败: $e'), backgroundColor: context.tokens.error),
+        SnackBar(
+            content: Text('加载患者数据失败: $e'),
+            backgroundColor: context.tokens.error),
       );
     }
   }
@@ -419,7 +423,8 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
                         Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
-                            color: context.colors.onPrimary.withValues(alpha: 0.2),
+                            color:
+                                context.colors.onPrimary.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -441,7 +446,8 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
                               Shadow(
                                 offset: const Offset(0, 1),
                                 blurRadius: 2,
-                                color: context.colors.onSurface.withValues(alpha: 0.26),
+                                color: context.colors.onSurface
+                                    .withValues(alpha: 0.26),
                               ),
                             ],
                           ),
@@ -649,22 +655,31 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
     );
   }
 
-  void _showPatientSearchDialog(BuildContext context) {
-    showDialog(
+  void _showPatientSearchDialog(BuildContext context) async {
+    if (_isLoadingPatients) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('正在加载患者数据，请稍候')),
+      );
+      return;
+    }
+
+    if (_patients.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('暂无患者数据')),
+      );
+      return;
+    }
+
+    final Patient? selected = await showDialog<Patient>(
       context: context,
-      builder: (BuildContext context) {
-        return AppointmentPatientSearchDialog(
-          patients: _patients,
-          selectedPatient: _selectedPatient,
-          isLoading: _isLoadingPatients,
-          onPatientSelected: (patient) {
-            setState(() {
-              _selectedPatient = patient;
-              _patientSearchController.text = patient.name;
-            });
-          },
-        );
-      },
+      builder: (context) => PatientSelectionDialog(patients: _patients),
     );
+
+    if (selected != null && mounted) {
+      setState(() {
+        _selectedPatient = selected;
+        _patientSearchController.text = selected.name;
+      });
+    }
   }
 }
