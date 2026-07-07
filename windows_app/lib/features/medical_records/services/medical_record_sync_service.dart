@@ -1,4 +1,5 @@
 import 'package:mysql1/mysql1.dart';
+import '../../../models/patient_sync_log.dart';
 import '../../../utils/log_manager.dart';
 
 /// 病历同步服务
@@ -33,6 +34,13 @@ class MedicalRecordSyncService {
             summary: summary,
             error: 'mysql_connection_unavailable',
           );
+          await _addPatientSyncLog(
+            action: 'upsert',
+            status: 'skipped',
+            patientId: _intValue(recordMap['patient_id']),
+            recordId: recordId,
+            error: 'mysql_connection_unavailable',
+          );
           LogManager.w(
               'MedicalRecordSyncService', 'MySQL连接不可用，跳过病历记录同步(id=$recordId)');
           return;
@@ -40,7 +48,7 @@ class MedicalRecordSyncService {
 
         try {
           final existResult = await conn.query(
-            'SELECT id FROM patient_medical_records WHERE id = ? LIMIT 1',
+            'SELECT * FROM patient_medical_records WHERE id = ? LIMIT 1',
             [recordId],
           );
 
@@ -50,6 +58,11 @@ class MedicalRecordSyncService {
           final values = fields.map((key) => normalizedRecordMap[key]).toList();
 
           if (existResult.isNotEmpty) {
+            final fieldChanges = _buildFieldChanges(
+              oldValues: existResult.first.fields,
+              newValues: normalizedRecordMap,
+              fields: _medicalRecordSyncFields,
+            );
             final setClause = fields.map((field) => '$field = ?').join(', ');
             final result = await conn.query(
               'UPDATE patient_medical_records SET $setClause WHERE id = ?',
@@ -63,9 +76,18 @@ class MedicalRecordSyncService {
               recordId: recordId,
               summary: summary,
             );
+            await _addPatientSyncLog(
+              action: 'update',
+              status: 'success',
+              patientId: _intValue(recordMap['patient_id']),
+              recordId: recordId,
+              fieldChanges: fieldChanges,
+            );
             LogManager.i('MedicalRecordSyncService',
                 '成功更新MySQL病历记录(id=$recordId)，影响行数: ${result.affectedRows}');
           } else {
+            final fieldChanges = _buildCreateChanges(
+                normalizedRecordMap, _medicalRecordSyncFields);
             final insertFields = ['id', ...fields];
             final placeholders =
                 List.filled(insertFields.length, '?').join(', ');
@@ -81,6 +103,13 @@ class MedicalRecordSyncService {
               recordId: recordId,
               summary: summary,
             );
+            await _addPatientSyncLog(
+              action: 'create',
+              status: 'success',
+              patientId: _intValue(recordMap['patient_id']),
+              recordId: recordId,
+              fieldChanges: fieldChanges,
+            );
             LogManager.i('MedicalRecordSyncService',
                 '成功将病历记录(id=$recordId)同步到MySQL，插入ID: ${result.insertId}');
           }
@@ -94,6 +123,13 @@ class MedicalRecordSyncService {
             summary: summary,
             error: e.toString(),
           );
+          await _addPatientSyncLog(
+            action: 'upsert',
+            status: 'failed',
+            patientId: _intValue(recordMap['patient_id']),
+            recordId: recordId,
+            error: e.toString(),
+          );
           LogManager.e('MedicalRecordSyncService', '同步病历记录到MySQL时出错', error: e);
         }
       } catch (e) {
@@ -105,6 +141,13 @@ class MedicalRecordSyncService {
           recordId: recordId,
           summary:
               'patient_id=${recordMap['patient_id'] ?? ''}, record_number=${recordMap['record_number'] ?? ''}',
+          error: e.toString(),
+        );
+        await _addPatientSyncLog(
+          action: 'upsert',
+          status: 'failed',
+          patientId: _intValue(recordMap['patient_id']),
+          recordId: recordId,
           error: e.toString(),
         );
         LogManager.e('MedicalRecordSyncService', '病历记录同步到MySQL发生不可预期错误',
@@ -127,11 +170,24 @@ class MedicalRecordSyncService {
             recordId: recordId,
             error: 'mysql_connection_unavailable',
           );
+          await _addPatientSyncLog(
+            action: 'delete',
+            status: 'skipped',
+            recordId: recordId,
+            error: 'mysql_connection_unavailable',
+          );
           LogManager.w('MedicalRecordSyncService',
               'MySQL连接不可用，跳过病历记录删除同步(id=$recordId)');
           return;
         }
 
+        final existing = await conn.query(
+          'SELECT patient_id FROM patient_medical_records WHERE id = ? LIMIT 1',
+          [recordId],
+        );
+        final patientId = existing.isNotEmpty
+            ? _intValue(existing.first['patient_id'])
+            : null;
         final result = await conn.query(
           'DELETE FROM patient_medical_records WHERE id = ?',
           [recordId],
@@ -143,6 +199,12 @@ class MedicalRecordSyncService {
           status: 'success',
           recordId: recordId,
         );
+        await _addPatientSyncLog(
+          action: 'delete',
+          status: 'success',
+          patientId: patientId,
+          recordId: recordId,
+        );
         LogManager.i('MedicalRecordSyncService',
             '成功从MySQL删除病历记录(id=$recordId)，影响行数: ${result.affectedRows}');
       } catch (e) {
@@ -150,6 +212,12 @@ class MedicalRecordSyncService {
           module: 'medical_record',
           action: 'delete',
           table: 'patient_medical_records',
+          status: 'failed',
+          recordId: recordId,
+          error: e.toString(),
+        );
+        await _addPatientSyncLog(
+          action: 'delete',
           status: 'failed',
           recordId: recordId,
           error: e.toString(),
@@ -248,4 +316,96 @@ class MedicalRecordSyncService {
       }
     });
   }
+
+  Future<void> _addPatientSyncLog({
+    required String action,
+    required String status,
+    int? patientId,
+    int? recordId,
+    List<PatientSyncFieldChange> fieldChanges = const [],
+    String? error,
+  }) {
+    return PatientSyncLog.addLog(
+      PatientSyncLog(
+        syncTime: DateTime.now(),
+        entityType: 'medical_record',
+        entityName: '病历记录',
+        action: action,
+        status: status,
+        patientId: patientId,
+        recordId: recordId,
+        fieldChanges: fieldChanges,
+        errorMessage: error,
+      ),
+    );
+  }
+
+  List<PatientSyncFieldChange> _buildCreateChanges(
+    Map<String, dynamic> values,
+    Map<String, String> fields,
+  ) {
+    return fields.entries
+        .where((entry) => _normalizeSyncValue(values[entry.key]).isNotEmpty)
+        .map(
+          (entry) => PatientSyncFieldChange(
+            field: entry.key,
+            label: entry.value,
+            oldValue: null,
+            newValue: _displaySyncValue(values[entry.key]),
+          ),
+        )
+        .toList();
+  }
+
+  List<PatientSyncFieldChange> _buildFieldChanges({
+    required Map<String, dynamic> oldValues,
+    required Map<String, dynamic> newValues,
+    required Map<String, String> fields,
+  }) {
+    final changes = <PatientSyncFieldChange>[];
+    for (final entry in fields.entries) {
+      final oldValue = _normalizeSyncValue(oldValues[entry.key]);
+      final newValue = _normalizeSyncValue(newValues[entry.key]);
+      if (oldValue == newValue) continue;
+      changes.add(
+        PatientSyncFieldChange(
+          field: entry.key,
+          label: entry.value,
+          oldValue: _displaySyncValue(oldValues[entry.key]),
+          newValue: _displaySyncValue(newValues[entry.key]),
+        ),
+      );
+    }
+    return changes;
+  }
+
+  String _normalizeSyncValue(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
+  String? _displaySyncValue(dynamic value) {
+    final normalized = _normalizeSyncValue(value);
+    return normalized.isEmpty ? null : normalized;
+  }
+
+  int? _intValue(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is BigInt) return value.toInt();
+    return int.tryParse(value.toString());
+  }
+
+  static const Map<String, String> _medicalRecordSyncFields = {
+    'patient_id': '患者ID',
+    'record_number': '病历编号',
+    'record_date': '病历日期',
+    'doctor_name': '医生',
+    'chief_complaint': '主诉',
+    'present_illness': '现病史',
+    'diagnosis': '诊断',
+    'treatment_plan': '治疗计划',
+    'treatment': '治疗过程',
+    'notes': '备注',
+  };
 }

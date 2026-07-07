@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
 import '../../../models/patient.dart';
+import '../../../models/patient_sync_log.dart';
 import '../../../utils/datetime_formatter.dart';
 import '../../../utils/log_manager.dart';
 import '../../../utils/pinyin_util.dart';
@@ -68,7 +69,9 @@ class PatientCoreService {
     final patientId = patient.id;
     final success = await dataSource.updatePatient(Patient.fromMap(patientMap));
 
-    if (success && patientId != null && getEffectiveDataSourceType() == 'sqlite') {
+    if (success &&
+        patientId != null &&
+        getEffectiveDataSourceType() == 'sqlite') {
       _trySyncPatientToMySQL(patientMap, patientId);
     }
     return success;
@@ -261,7 +264,7 @@ class PatientCoreService {
         final summary =
             'name=${patientMap['name']}, mrn=${patientMap['medical_record_number'] ?? ''}';
         if (conn == null) {
-          await LogManager.logSyncOperation(
+          await _logPatientSyncOperation(
             module: 'patient',
             action: 'upsert',
             table: 'patients',
@@ -273,25 +276,18 @@ class PatientCoreService {
           return;
         }
 
-        final name = patientMap['name'];
-        final mrn = patientMap['medical_record_number'];
-
         Results existById = await conn.query(
-            'SELECT id, name FROM patients WHERE id = ? LIMIT 1', [sqliteId]);
-        bool isUpdate = false;
-        int targetId = sqliteId;
-
-        if (existById.isNotEmpty && existById.first['name'] == name) {
-          isUpdate = true;
-        } else if (mrn != null) {
-          Results existByMrn = await conn.query(
-              'SELECT id FROM patients WHERE medical_record_number = ? AND name = ? LIMIT 1',
-              [mrn, name]);
-          if (existByMrn.isNotEmpty) {
-            isUpdate = true;
-            targetId = existByMrn.first['id'];
-          }
-        }
+          'SELECT * FROM patients WHERE id = ? LIMIT 1',
+          [sqliteId],
+        );
+        final isUpdate = existById.isNotEmpty;
+        final fieldChanges = isUpdate
+            ? _buildFieldChanges(
+                oldValues: existById.first.fields,
+                newValues: patientMap,
+                fields: _patientSyncFields,
+              )
+            : _buildCreateChanges(patientMap, _patientSyncFields);
 
         if (isUpdate) {
           await conn.query('''
@@ -318,7 +314,7 @@ class PatientCoreService {
             patientMap['total_cost'],
             patientMap['created_at'],
             patientMap['updated_at'],
-            targetId,
+            sqliteId,
           ]);
         } else {
           await conn.query('''
@@ -346,16 +342,17 @@ class PatientCoreService {
             patientMap['updated_at'],
           ]);
         }
-        await LogManager.logSyncOperation(
+        await _logPatientSyncOperation(
           module: 'patient',
           action: isUpdate ? 'update' : 'create',
           table: 'patients',
           status: 'success',
           recordId: sqliteId,
           summary: summary,
+          fieldChanges: fieldChanges,
         );
       } catch (e) {
-        await LogManager.logSyncOperation(
+        await _logPatientSyncOperation(
           module: 'patient',
           action: 'upsert',
           table: 'patients',
@@ -379,7 +376,7 @@ class PatientCoreService {
         final summary =
             'name=${patientName ?? ''}, mrn=${medicalRecordNumber ?? ''}';
         if (conn == null) {
-          await LogManager.logSyncOperation(
+          await _logPatientSyncOperation(
             module: 'patient',
             action: 'delete',
             table: 'patients',
@@ -394,7 +391,7 @@ class PatientCoreService {
         final check = await conn.query(
             'SELECT id, name FROM patients WHERE id = ? LIMIT 1', [patientId]);
         if (check.isEmpty) {
-          await LogManager.logSyncOperation(
+          await _logPatientSyncOperation(
             module: 'patient',
             action: 'delete',
             table: 'patients',
@@ -406,7 +403,7 @@ class PatientCoreService {
           return;
         }
         if (patientName != null && check.first['name'] != patientName) {
-          await LogManager.logSyncOperation(
+          await _logPatientSyncOperation(
             module: 'patient',
             action: 'delete',
             table: 'patients',
@@ -442,7 +439,7 @@ class PatientCoreService {
         await conn.query('DELETE FROM patients WHERE id = ?', [patientId]);
 
         await conn.query('SET FOREIGN_KEY_CHECKS = 1');
-        await LogManager.logSyncOperation(
+        await _logPatientSyncOperation(
           module: 'patient',
           action: 'delete',
           table: 'patients',
@@ -451,7 +448,7 @@ class PatientCoreService {
           summary: summary,
         );
       } catch (e) {
-        await LogManager.logSyncOperation(
+        await _logPatientSyncOperation(
           module: 'patient',
           action: 'delete',
           table: 'patients',
@@ -466,4 +463,117 @@ class PatientCoreService {
       }
     });
   }
+
+  Future<void> _logPatientSyncOperation({
+    required String module,
+    required String action,
+    required String table,
+    required String status,
+    String entityType = 'patient',
+    String entityName = '患者基本信息',
+    int? recordId,
+    int? patientId,
+    String? summary,
+    List<PatientSyncFieldChange> fieldChanges = const [],
+    String? error,
+  }) async {
+    await LogManager.logSyncOperation(
+      module: module,
+      action: action,
+      table: table,
+      status: status,
+      recordId: recordId,
+      summary: summary,
+      error: error,
+    );
+
+    await PatientSyncLog.addLog(
+      PatientSyncLog(
+        syncTime: DateTime.now(),
+        entityType: entityType,
+        entityName: entityName,
+        action: action,
+        status: status,
+        patientId: patientId ?? recordId,
+        recordId: recordId,
+        patientName: _extractSummaryValue(summary, 'name'),
+        medicalRecordNumber: _extractSummaryValue(summary, 'mrn'),
+        fieldChanges: fieldChanges,
+        errorMessage: error,
+      ),
+    );
+  }
+
+  List<PatientSyncFieldChange> _buildCreateChanges(
+    Map<String, dynamic> values,
+    Map<String, String> fields,
+  ) {
+    return fields.entries
+        .where((entry) => _normalizeSyncValue(values[entry.key]).isNotEmpty)
+        .map(
+          (entry) => PatientSyncFieldChange(
+            field: entry.key,
+            label: entry.value,
+            oldValue: null,
+            newValue: _displaySyncValue(values[entry.key]),
+          ),
+        )
+        .toList();
+  }
+
+  List<PatientSyncFieldChange> _buildFieldChanges({
+    required Map<String, dynamic> oldValues,
+    required Map<String, dynamic> newValues,
+    required Map<String, String> fields,
+  }) {
+    final changes = <PatientSyncFieldChange>[];
+    for (final entry in fields.entries) {
+      final oldValue = _normalizeSyncValue(oldValues[entry.key]);
+      final newValue = _normalizeSyncValue(newValues[entry.key]);
+      if (oldValue == newValue) continue;
+      changes.add(
+        PatientSyncFieldChange(
+          field: entry.key,
+          label: entry.value,
+          oldValue: _displaySyncValue(oldValues[entry.key]),
+          newValue: _displaySyncValue(newValues[entry.key]),
+        ),
+      );
+    }
+    return changes;
+  }
+
+  String _normalizeSyncValue(dynamic value) {
+    if (value == null) return '';
+    if (value is DateTime) return DateTimeFormatter.toDbString(value);
+    return value.toString().trim();
+  }
+
+  String? _displaySyncValue(dynamic value) {
+    final normalized = _normalizeSyncValue(value);
+    return normalized.isEmpty ? null : normalized;
+  }
+
+  String? _extractSummaryValue(String? summary, String key) {
+    if (summary == null || summary.isEmpty) return null;
+    final pattern = RegExp('(?:^|, )$key=([^,]*)');
+    final match = pattern.firstMatch(summary);
+    final value = match?.group(1)?.trim();
+    return value == null || value.isEmpty ? null : value;
+  }
+
+  static const Map<String, String> _patientSyncFields = {
+    'name': '姓名',
+    'age': '年龄',
+    'gender': '性别',
+    'phone': '电话',
+    'medical_record_number': '病历号',
+    'address': '地址',
+    'identification_number': '身份证号',
+    'doctor': '医生',
+    'dental_condition': '牙齿状况',
+    'treatment_items': '治疗项目',
+    'first_visit_date': '初诊日期',
+    'total_cost': '总费用',
+  };
 }

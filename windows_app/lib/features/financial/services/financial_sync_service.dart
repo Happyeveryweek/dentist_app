@@ -1,4 +1,5 @@
 import 'package:mysql1/mysql1.dart';
+import '../../../models/patient_sync_log.dart';
 import '../../../utils/log_manager.dart';
 
 /// 财务同步服务
@@ -22,6 +23,15 @@ class FinancialSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
+          await _addPatientSyncLog(
+            entityType: 'financial_record',
+            entityName: '财务记录',
+            action: 'upsert',
+            status: 'skipped',
+            patientId: _intValue(recordMap['patient_id']),
+            recordId: recordId,
+            error: 'mysql_connection_unavailable',
+          );
           LogManager.w(
               'FinancialSyncService', 'MySQL连接不可用，跳过财务记录同步(id=$recordId)');
           return;
@@ -29,11 +39,16 @@ class FinancialSyncService {
 
         try {
           final existResult = await conn.query(
-            'SELECT id FROM financial_records WHERE id = ? LIMIT 1',
+            'SELECT * FROM financial_records WHERE id = ? LIMIT 1',
             [recordId],
           );
 
           if (existResult.isNotEmpty) {
+            final fieldChanges = _buildFieldChanges(
+              oldValues: existResult.first.fields,
+              newValues: recordMap,
+              fields: _financialRecordSyncFields,
+            );
             final result = await conn.query('''
               UPDATE financial_records SET
                 patient_id = ?, total_quantity = ?, notes = ?,
@@ -47,9 +62,20 @@ class FinancialSyncService {
               recordMap['updated_at'],
               recordId,
             ]);
+            await _addPatientSyncLog(
+              entityType: 'financial_record',
+              entityName: '财务记录',
+              action: 'update',
+              status: 'success',
+              patientId: _intValue(recordMap['patient_id']),
+              recordId: recordId,
+              fieldChanges: fieldChanges,
+            );
             LogManager.i('FinancialSyncService',
                 '成功更新MySQL财务记录(id=$recordId)，影响行数: ${result.affectedRows}');
           } else {
+            final fieldChanges =
+                _buildCreateChanges(recordMap, _financialRecordSyncFields);
             final result = await conn.query('''
               INSERT INTO financial_records
               (id, patient_id, total_quantity, notes, created_at, updated_at)
@@ -62,13 +88,40 @@ class FinancialSyncService {
               recordMap['created_at'],
               recordMap['updated_at'],
             ]);
+            await _addPatientSyncLog(
+              entityType: 'financial_record',
+              entityName: '财务记录',
+              action: 'create',
+              status: 'success',
+              patientId: _intValue(recordMap['patient_id']),
+              recordId: recordId,
+              fieldChanges: fieldChanges,
+            );
             LogManager.i('FinancialSyncService',
                 '成功将财务记录(id=$recordId)同步到MySQL，插入ID: ${result.insertId}');
           }
         } catch (e) {
+          await _addPatientSyncLog(
+            entityType: 'financial_record',
+            entityName: '财务记录',
+            action: 'upsert',
+            status: 'failed',
+            patientId: _intValue(recordMap['patient_id']),
+            recordId: recordId,
+            error: e.toString(),
+          );
           LogManager.e('FinancialSyncService', '同步财务记录到MySQL时出错', error: e);
         }
       } catch (e) {
+        await _addPatientSyncLog(
+          entityType: 'financial_record',
+          entityName: '财务记录',
+          action: 'upsert',
+          status: 'failed',
+          patientId: _intValue(recordMap['patient_id']),
+          recordId: recordId,
+          error: e.toString(),
+        );
         LogManager.e('FinancialSyncService', '财务记录同步到MySQL发生不可预期错误', error: e);
       }
     });
@@ -80,12 +133,24 @@ class FinancialSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
+          await _addPatientSyncLog(
+            entityType: 'financial_record',
+            entityName: '财务记录',
+            action: 'delete',
+            status: 'skipped',
+            recordId: recordId,
+            error: 'mysql_connection_unavailable',
+          );
           LogManager.w(
               'FinancialSyncService', 'MySQL连接不可用，跳过财务记录删除同步(id=$recordId)');
           return;
         }
 
         try {
+          final patientId = await _getPatientIdByFinancialRecordId(
+            conn,
+            recordId,
+          );
           // 先删除关联的财务项目
           final itemsResult = await conn.query(
             'DELETE FROM financial_items WHERE financial_record_id = ?',
@@ -99,9 +164,25 @@ class FinancialSyncService {
             'DELETE FROM financial_records WHERE id = ?',
             [recordId],
           );
+          await _addPatientSyncLog(
+            entityType: 'financial_record',
+            entityName: '财务记录',
+            action: 'delete',
+            status: 'success',
+            patientId: patientId,
+            recordId: recordId,
+          );
           LogManager.i('FinancialSyncService',
               '成功从MySQL删除财务记录(id=$recordId)，影响行数: ${recordResult.affectedRows}');
         } catch (e) {
+          await _addPatientSyncLog(
+            entityType: 'financial_record',
+            entityName: '财务记录',
+            action: 'delete',
+            status: 'failed',
+            recordId: recordId,
+            error: e.toString(),
+          );
           LogManager.e('FinancialSyncService', '从MySQL删除财务记录(id=$recordId)时出错',
               error: e);
         }
@@ -119,17 +200,42 @@ class FinancialSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
+          await _addPatientSyncLog(
+            entityType: 'financial_item',
+            entityName: '财务明细',
+            action: 'upsert',
+            status: 'skipped',
+            recordId: itemId,
+            error: 'mysql_connection_unavailable',
+          );
           LogManager.w(
               'FinancialSyncService', 'MySQL连接不可用，跳过财务项目同步(id=$itemId)');
           return;
         }
 
         final existResult = await conn.query(
-          'SELECT id FROM financial_items WHERE id = ? LIMIT 1',
+          '''
+          SELECT fi.*, fr.patient_id
+          FROM financial_items fi
+          LEFT JOIN financial_records fr ON fr.id = fi.financial_record_id
+          WHERE fi.id = ?
+          LIMIT 1
+          ''',
           [itemId],
         );
+        final patientId = existResult.isNotEmpty
+            ? _intValue(existResult.first['patient_id'])
+            : await _getPatientIdByFinancialRecordId(
+                conn,
+                _intValue(itemMap['financial_record_id']),
+              );
 
         if (existResult.isNotEmpty) {
+          final fieldChanges = _buildFieldChanges(
+            oldValues: existResult.first.fields,
+            newValues: itemMap,
+            fields: _financialItemSyncFields,
+          );
           final result = await conn.query('''
               UPDATE financial_items SET
               financial_record_id = ?, item_name = ?, item_price = ?,
@@ -149,9 +255,20 @@ class FinancialSyncService {
             itemMap['payment_method'],
             itemId,
           ]);
+          await _addPatientSyncLog(
+            entityType: 'financial_item',
+            entityName: '财务明细',
+            action: 'update',
+            status: 'success',
+            patientId: patientId,
+            recordId: itemId,
+            fieldChanges: fieldChanges,
+          );
           LogManager.i('FinancialSyncService',
               '成功更新MySQL财务项目(id=$itemId)，影响行数: ${result.affectedRows}');
         } else {
+          final fieldChanges =
+              _buildCreateChanges(itemMap, _financialItemSyncFields);
           final result = await conn.query('''
             INSERT INTO financial_items
             (id, financial_record_id, item_name, item_price, processing_fee, quantity, total_price, charge_date, created_at, updated_at, payment_method)
@@ -169,10 +286,27 @@ class FinancialSyncService {
             itemMap['updated_at'],
             itemMap['payment_method'],
           ]);
+          await _addPatientSyncLog(
+            entityType: 'financial_item',
+            entityName: '财务明细',
+            action: 'create',
+            status: 'success',
+            patientId: patientId,
+            recordId: itemId,
+            fieldChanges: fieldChanges,
+          );
           LogManager.i('FinancialSyncService',
               '成功将财务项目(id=$itemId)同步到MySQL，插入ID: ${result.insertId}');
         }
       } catch (e) {
+        await _addPatientSyncLog(
+          entityType: 'financial_item',
+          entityName: '财务明细',
+          action: 'upsert',
+          status: 'failed',
+          recordId: itemId,
+          error: e.toString(),
+        );
         LogManager.e('FinancialSyncService', '财务项目同步到MySQL发生不可预期错误', error: e);
       }
     });
@@ -184,21 +318,169 @@ class FinancialSyncService {
       try {
         final conn = getSyncMysqlConnection();
         if (conn == null) {
+          await _addPatientSyncLog(
+            entityType: 'financial_item',
+            entityName: '财务明细',
+            action: 'delete',
+            status: 'skipped',
+            recordId: itemId,
+            error: 'mysql_connection_unavailable',
+          );
           LogManager.w(
               'FinancialSyncService', 'MySQL连接不可用，跳过财务项目删除同步(id=$itemId)');
           return;
         }
 
+        final existing = await conn.query(
+          '''
+          SELECT fr.patient_id
+          FROM financial_items fi
+          LEFT JOIN financial_records fr ON fr.id = fi.financial_record_id
+          WHERE fi.id = ?
+          LIMIT 1
+          ''',
+          [itemId],
+        );
+        final patientId = existing.isNotEmpty
+            ? _intValue(existing.first['patient_id'])
+            : null;
         final result = await conn.query(
           'DELETE FROM financial_items WHERE id = ?',
           [itemId],
         );
+        await _addPatientSyncLog(
+          entityType: 'financial_item',
+          entityName: '财务明细',
+          action: 'delete',
+          status: 'success',
+          patientId: patientId,
+          recordId: itemId,
+        );
         LogManager.i('FinancialSyncService',
             '成功从MySQL删除财务项目(id=$itemId)，影响行数: ${result.affectedRows}');
       } catch (e) {
+        await _addPatientSyncLog(
+          entityType: 'financial_item',
+          entityName: '财务明细',
+          action: 'delete',
+          status: 'failed',
+          recordId: itemId,
+          error: e.toString(),
+        );
         LogManager.e('FinancialSyncService', '财务项目删除同步到MySQL发生不可预期错误',
             error: e);
       }
     });
   }
+
+  Future<void> _addPatientSyncLog({
+    required String entityType,
+    required String entityName,
+    required String action,
+    required String status,
+    int? patientId,
+    int? recordId,
+    List<PatientSyncFieldChange> fieldChanges = const [],
+    String? error,
+  }) {
+    return PatientSyncLog.addLog(
+      PatientSyncLog(
+        syncTime: DateTime.now(),
+        entityType: entityType,
+        entityName: entityName,
+        action: action,
+        status: status,
+        patientId: patientId,
+        recordId: recordId,
+        fieldChanges: fieldChanges,
+        errorMessage: error,
+      ),
+    );
+  }
+
+  Future<int?> _getPatientIdByFinancialRecordId(
+    MySqlConnection conn,
+    int? financialRecordId,
+  ) async {
+    if (financialRecordId == null) return null;
+    final result = await conn.query(
+      'SELECT patient_id FROM financial_records WHERE id = ? LIMIT 1',
+      [financialRecordId],
+    );
+    if (result.isEmpty) return null;
+    return _intValue(result.first['patient_id']);
+  }
+
+  List<PatientSyncFieldChange> _buildCreateChanges(
+    Map<String, dynamic> values,
+    Map<String, String> fields,
+  ) {
+    return fields.entries
+        .where((entry) => _normalizeSyncValue(values[entry.key]).isNotEmpty)
+        .map(
+          (entry) => PatientSyncFieldChange(
+            field: entry.key,
+            label: entry.value,
+            oldValue: null,
+            newValue: _displaySyncValue(values[entry.key]),
+          ),
+        )
+        .toList();
+  }
+
+  List<PatientSyncFieldChange> _buildFieldChanges({
+    required Map<String, dynamic> oldValues,
+    required Map<String, dynamic> newValues,
+    required Map<String, String> fields,
+  }) {
+    final changes = <PatientSyncFieldChange>[];
+    for (final entry in fields.entries) {
+      final oldValue = _normalizeSyncValue(oldValues[entry.key]);
+      final newValue = _normalizeSyncValue(newValues[entry.key]);
+      if (oldValue == newValue) continue;
+      changes.add(
+        PatientSyncFieldChange(
+          field: entry.key,
+          label: entry.value,
+          oldValue: _displaySyncValue(oldValues[entry.key]),
+          newValue: _displaySyncValue(newValues[entry.key]),
+        ),
+      );
+    }
+    return changes;
+  }
+
+  String _normalizeSyncValue(dynamic value) {
+    if (value == null) return '';
+    return value.toString().trim();
+  }
+
+  String? _displaySyncValue(dynamic value) {
+    final normalized = _normalizeSyncValue(value);
+    return normalized.isEmpty ? null : normalized;
+  }
+
+  int? _intValue(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is BigInt) return value.toInt();
+    return int.tryParse(value.toString());
+  }
+
+  static const Map<String, String> _financialRecordSyncFields = {
+    'patient_id': '患者ID',
+    'total_quantity': '收费项数量',
+    'notes': '备注',
+  };
+
+  static const Map<String, String> _financialItemSyncFields = {
+    'financial_record_id': '财务记录ID',
+    'item_name': '收费项目',
+    'item_price': '应收费',
+    'processing_fee': '加工费',
+    'quantity': '数量',
+    'total_price': '已收费',
+    'charge_date': '收费日期',
+    'payment_method': '收款方式',
+  };
 }

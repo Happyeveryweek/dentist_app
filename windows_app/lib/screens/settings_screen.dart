@@ -27,6 +27,7 @@ import '../features/settings/services/backup_restore_service.dart';
 import '../features/settings/services/database_structure_check_service.dart';
 import '../features/settings/services/app_reset_service.dart';
 import '../features/settings/widgets/backup_log_dialog.dart';
+import '../features/settings/widgets/patient_sync_log_dialog.dart';
 import '../features/settings/widgets/structure_log_dialog.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
@@ -255,7 +256,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(backgroundColor: context.tokens.error),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: context.tokens.error),
               child: const Text('恢复'),
             ),
           ],
@@ -290,7 +292,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         } catch (e) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('恢复失败: $e'), backgroundColor: context.tokens.error),
+            SnackBar(
+                content: Text('恢复失败: $e'),
+                backgroundColor: context.tokens.error),
           );
         } finally {
           setState(() {
@@ -516,7 +520,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ? Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: context.tokens.primaryAccent.withValues(alpha: 0.1),
+                            color: context.tokens.primaryAccent
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: CircularProgressIndicator(
@@ -542,6 +547,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     text: '查看',
                     icon: Icons.visibility,
                     onPressed: _showStructureCheckLogs,
+                    isOutlined: true,
+                  ),
+                ),
+                const Divider(height: 16),
+                SettingItem(
+                  icon: Icons.sync_alt,
+                  title: '患者同步日志',
+                  subtitle: '查看 SQLite 患者同步 MySQL 的结果',
+                  trailing: DentalGradientButton(
+                    text: '查看',
+                    icon: Icons.visibility,
+                    onPressed: _showPatientSyncLogs,
                     isOutlined: true,
                   ),
                 ),
@@ -621,6 +638,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // 显示备份日志对话框
   void _showBackupLogs() async {
     await BackupLogDialog.show(context);
+  }
+
+  void _showPatientSyncLogs() async {
+    await PatientSyncLogDialog.show(context);
   }
 
   // 检测数据库结构
@@ -774,7 +795,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               decoration: BoxDecoration(
                 color: context.tokens.infoContainer,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: context.tokens.info.withValues(alpha: 0.3)),
+                border: Border.all(
+                    color: context.tokens.info.withValues(alpha: 0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -812,7 +834,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               decoration: BoxDecoration(
                 color: context.tokens.warningContainer,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: context.tokens.warning.withValues(alpha: 0.3)),
+                border: Border.all(
+                    color: context.tokens.warning.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [

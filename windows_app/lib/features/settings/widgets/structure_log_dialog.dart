@@ -49,13 +49,20 @@ class StructureLogDialog extends StatefulWidget {
       Navigator.of(context).pop();
     }
 
-    // 显示日志列表
-    if (context.mounted) {
-      showDialog(
-        context: context,
-        builder: (context) => StructureLogDialog(logs: logs),
+    if (!context.mounted) return;
+
+    if (logs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('暂无数据库结构检查日志记录')),
       );
+      return;
     }
+
+    // 显示日志列表
+    showDialog(
+      context: context,
+      builder: (context) => StructureLogDialog(logs: logs),
+    );
   }
 
   final List<dynamic> logs;
@@ -152,8 +159,7 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                content: const Text('清空日志失败'),
-                backgroundColor: tokens.error),
+                content: const Text('清空日志失败'), backgroundColor: tokens.error),
           );
         }
       }
@@ -161,8 +167,7 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
       if (!mounted) return;
       final tokens = context.tokens;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('清空失败: $e'), backgroundColor: tokens.error),
+        SnackBar(content: Text('清空失败: $e'), backgroundColor: tokens.error),
       );
     }
   }

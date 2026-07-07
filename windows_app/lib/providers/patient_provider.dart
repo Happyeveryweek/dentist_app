@@ -33,7 +33,8 @@ class PatientProvider extends ChangeNotifier {
 
   // 患者相关服务（通过 getter 懒加载，闭包依赖 Provider 实时状态）
   PatientMaterialService? _materialServiceInstance;
-  PatientMaterialService get _materialService => _materialServiceInstance ??= PatientMaterialService(
+  PatientMaterialService get _materialService =>
+      _materialServiceInstance ??= PatientMaterialService(
         getCurrentDataSource: () => _currentDataSource,
         syncService: PatientMaterialSyncService(
           getSyncMysqlConnection: () => _syncMysqlConnection,
@@ -42,11 +43,13 @@ class PatientProvider extends ChangeNotifier {
         ),
       );
   PatientSearchService? _searchServiceInstance;
-  PatientSearchService get _searchService => _searchServiceInstance ??= PatientSearchService(
+  PatientSearchService get _searchService =>
+      _searchServiceInstance ??= PatientSearchService(
         getCurrentDataSource: () => _currentDataSource,
       );
   PatientCoreService? _coreServiceInstance;
-  PatientCoreService get _coreService => _coreServiceInstance ??= PatientCoreService(
+  PatientCoreService get _coreService =>
+      _coreServiceInstance ??= PatientCoreService(
         getCurrentDataSource: () => _currentDataSource,
         getSyncMysqlConnection: () => _syncMysqlConnection,
         getMysqlConnection: () => _currentMysqlConnection,
@@ -55,7 +58,8 @@ class PatientProvider extends ChangeNotifier {
             _effectiveDataSourceType ?? _dataSourceType,
       );
   PatientListService? _listServiceInstance;
-  PatientListService get _listService => _listServiceInstance ??= PatientListService(
+  PatientListService get _listService =>
+      _listServiceInstance ??= PatientListService(
         getCurrentDataSource: () => _currentDataSource,
       );
 
@@ -475,6 +479,10 @@ class PatientProvider extends ChangeNotifier {
     Patient sourcePatient, {
     required String targetDataSourceType,
   }) async {
+    if (targetDataSourceType == 'mysql') {
+      return _upsertPatientToMySQL(sourcePatient);
+    }
+
     final existing = await resolvePatientForDataSource(
       sourcePatient,
       targetDataSourceType: targetDataSourceType,
@@ -483,10 +491,10 @@ class PatientProvider extends ChangeNotifier {
       return existing;
     }
 
-    if (targetDataSourceType != 'mysql') {
-      return null;
-    }
+    return null;
+  }
 
+  Future<Patient?> _upsertPatientToMySQL(Patient sourcePatient) async {
     final mysqlConnection = _currentMysqlConnection;
     if (mysqlConnection == null) {
       LogManager.w('PatientProvider', '无法补齐财务侧患者：MySQL连接不可用');
@@ -494,47 +502,28 @@ class PatientProvider extends ChangeNotifier {
     }
 
     final patientMap = sourcePatient.toMap();
+    final sourceId = sourcePatient.id;
+    if (sourceId == null) {
+      LogManager.w('PatientProvider', '无法补齐财务侧患者：SQLite患者ID为空');
+      return null;
+    }
+
     patientMap['name_pinyin'] =
         sourcePatient.namePinyin ?? PinyinUtil.toPinyin(sourcePatient.name);
-    patientMap['name_initials'] =
-        sourcePatient.nameInitials ?? PinyinUtil.getInitials(sourcePatient.name);
+    patientMap['name_initials'] = sourcePatient.nameInitials ??
+        PinyinUtil.getInitials(sourcePatient.name);
     final address = sourcePatient.address;
     if (address != null && address.isNotEmpty) {
       patientMap['address_pinyin'] =
           sourcePatient.addressPinyin ?? PinyinUtil.toPinyin(address);
     }
 
-    final sourceId = sourcePatient.id;
-    final name = patientMap['name'];
-    final mrn = patientMap['medical_record_number'];
-
     try {
-      bool isUpdate = false;
-      int? targetId = sourceId;
-
-      if (sourceId != null) {
-        final existById = await mysqlConnection.query(
-          'SELECT id, name FROM patients WHERE id = ? LIMIT 1',
-          [sourceId],
-        );
-        if (existById.isNotEmpty && existById.first['name'] == name) {
-          isUpdate = true;
-        }
-      }
-
-      if (!isUpdate && mrn != null) {
-        final existByMrn = await mysqlConnection.query(
-          'SELECT id FROM patients WHERE medical_record_number = ? AND name = ? LIMIT 1',
-          [mrn, name],
-        );
-        if (existByMrn.isNotEmpty) {
-          isUpdate = true;
-          final dynamic matchedId = existByMrn.first['id'];
-          targetId = matchedId is int ? matchedId : int.tryParse('$matchedId');
-        }
-      }
-
-      if (isUpdate && targetId != null) {
+      final existById = await mysqlConnection.query(
+        'SELECT id FROM patients WHERE id = ? LIMIT 1',
+        [sourceId],
+      );
+      if (existById.isNotEmpty) {
         await mysqlConnection.query(
           '''
             UPDATE patients SET
@@ -561,47 +550,45 @@ class PatientProvider extends ChangeNotifier {
             patientMap['total_cost'],
             patientMap['created_at'],
             patientMap['updated_at'],
-            targetId,
-          ],
-        );
-      } else {
-        await mysqlConnection.query(
-          '''
-            INSERT INTO patients
-            (id, name, name_pinyin, name_initials, age, gender, phone, medical_record_number, address, address_pinyin, identification_number, doctor, dental_condition, treatment_items, first_visit_date, total_cost, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ''',
-          [
             sourceId,
-            patientMap['name'],
-            patientMap['name_pinyin'],
-            patientMap['name_initials'],
-            patientMap['age'],
-            patientMap['gender'],
-            patientMap['phone'],
-            patientMap['medical_record_number'],
-            patientMap['address'],
-            patientMap['address_pinyin'],
-            patientMap['identification_number'],
-            patientMap['doctor'],
-            patientMap['dental_condition'],
-            patientMap['treatment_items'],
-            patientMap['first_visit_date'],
-            patientMap['total_cost'],
-            patientMap['created_at'],
-            patientMap['updated_at'],
           ],
         );
+        return getPatient(sourceId, effectiveDataSourceType: 'mysql');
       }
+
+      await mysqlConnection.query(
+        '''
+          INSERT INTO patients
+          (id, name, name_pinyin, name_initials, age, gender, phone, medical_record_number, address, address_pinyin, identification_number, doctor, dental_condition, treatment_items, first_visit_date, total_cost, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''',
+        [
+          sourceId,
+          patientMap['name'],
+          patientMap['name_pinyin'],
+          patientMap['name_initials'],
+          patientMap['age'],
+          patientMap['gender'],
+          patientMap['phone'],
+          patientMap['medical_record_number'],
+          patientMap['address'],
+          patientMap['address_pinyin'],
+          patientMap['identification_number'],
+          patientMap['doctor'],
+          patientMap['dental_condition'],
+          patientMap['treatment_items'],
+          patientMap['first_visit_date'],
+          patientMap['total_cost'],
+          patientMap['created_at'],
+          patientMap['updated_at'],
+        ],
+      );
     } catch (e) {
       LogManager.e('PatientProvider', '补齐目标数据源患者失败', error: e);
       return null;
     }
 
-    return resolvePatientForDataSource(
-      sourcePatient,
-      targetDataSourceType: targetDataSourceType,
-    );
+    return getPatient(sourceId, effectiveDataSourceType: 'mysql');
   }
 
   Future<Map<String, dynamic>> getPatientsPage({
@@ -675,7 +662,8 @@ class PatientProvider extends ChangeNotifier {
     final sourceName = source.name.trim();
     final candidateName = candidate.name.trim();
     final sourceIdentity = _normalizeIdentity(source.identificationNumber);
-    final candidateIdentity = _normalizeIdentity(candidate.identificationNumber);
+    final candidateIdentity =
+        _normalizeIdentity(candidate.identificationNumber);
 
     if (sourceMrn != null &&
         candidateMrn != null &&

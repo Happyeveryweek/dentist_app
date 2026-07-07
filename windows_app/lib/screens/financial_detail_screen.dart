@@ -7,6 +7,7 @@ import '../models/financial_record.dart';
 import '../models/financial_item.dart';
 import '../models/patient.dart';
 import '../providers/financial_provider.dart';
+import '../providers/patient_provider.dart';
 import '../providers/user_provider.dart';
 import '../widgets/success_toast.dart';
 import '../widgets/modern_date_picker.dart';
@@ -246,7 +247,8 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
                   ),
                   IconButton(
                     onPressed: _openPatientDetail,
-                    icon: Icon(Icons.person_search, color: tokens.cardBackground),
+                    icon:
+                        Icon(Icons.person_search, color: tokens.cardBackground),
                     tooltip: '查看患者详情',
                   ),
                   IconButton(
@@ -447,11 +449,15 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       return null;
     }
     try {
+      final patientError = await _validateFinancialPatientInMySQL(patientId);
+      if (patientError != null) {
+        throw Exception(patientError);
+      }
       return await _financialDetailService
           .getOrCreateFinancialRecord(patientId);
     } catch (e) {
       LogManager.e('FinancialDetailScreen', '获取或创建财务记录失败', error: e);
-      return null;
+      rethrow;
     }
   }
 
@@ -467,7 +473,17 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
     }
 
     // 获取或创建财务记录
-    FinancialRecord? targetRecord = await _getOrCreateFinancialRecord();
+    FinancialRecord? targetRecord;
+    try {
+      targetRecord = await _getOrCreateFinancialRecord();
+    } catch (e) {
+      if (!mounted) return;
+      AppToastManager.showError(
+        context,
+        message: _formatFinancialPatientError(e),
+      );
+      return;
+    }
 
     if (targetRecord == null) {
       if (!mounted) return;
@@ -649,6 +665,13 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       return;
     }
 
+    final patientError = await _validateFinancialPatientInMySQL(patientId);
+    if (patientError != null) {
+      if (!mounted) return;
+      AppToastManager.showError(context, message: patientError);
+      return;
+    }
+
     try {
       if (_editingItemId == -1) {
         // 新增收费项
@@ -684,8 +707,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             .updateFinancialRecordAfterItemChange(editingRecord);
 
         // 更新患者的财务统计
-        await _financialDetailService
-            .updatePatientFinancialSummary(patientId);
+        await _financialDetailService.updatePatientFinancialSummary(patientId);
 
         // 重新加载数据
         await _loadPatientRecords();
@@ -756,8 +778,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             .updateFinancialRecordAfterItemChange(editingRecord);
 
         // 更新患者的财务统计
-        await _financialDetailService
-            .updatePatientFinancialSummary(patientId);
+        await _financialDetailService.updatePatientFinancialSummary(patientId);
 
         // 重新加载数据
         await _loadPatientRecords();
@@ -772,6 +793,71 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       if (!mounted) return;
       AppToastManager.showError(context, message: '保存失败: $e');
     }
+  }
+
+  Future<String?> _validateFinancialPatientInMySQL(int patientId) async {
+    final financialProvider =
+        Provider.of<FinancialProvider>(context, listen: false);
+    if (financialProvider.dataSourceType != 'mysql') {
+      return null;
+    }
+
+    final patientProvider =
+        Provider.of<PatientProvider>(context, listen: false);
+    final sqlitePatient = await patientProvider.getPatient(
+          patientId,
+          effectiveDataSourceType: 'sqlite',
+        ) ??
+        widget.patient;
+    final mysqlPatient = await patientProvider.getPatient(
+      patientId,
+      effectiveDataSourceType: 'mysql',
+    );
+
+    if (mysqlPatient == null) {
+      return 'MySQL里无此患者信息，无法添加财务信息。请先查看设置页患者同步日志，并重新同步患者。';
+    }
+
+    final mismatchFields =
+        _getPatientMismatchFields(sqlitePatient, mysqlPatient);
+    if (mismatchFields.isNotEmpty) {
+      return 'SQLite和MySQL患者信息不一致，无法添加财务信息。不一致字段：${mismatchFields.join('、')}。请先重新同步患者。';
+    }
+
+    return null;
+  }
+
+  List<String> _getPatientMismatchFields(Patient sqlite, Patient mysql) {
+    final fields = <String>[];
+    if (sqlite.name.trim() != mysql.name.trim()) fields.add('姓名');
+    if (_normalizeValue(sqlite.medicalRecordNumber) !=
+        _normalizeValue(mysql.medicalRecordNumber)) {
+      fields.add('病历号');
+    }
+    if (_normalizeValue(sqlite.identificationNumber) !=
+        _normalizeValue(mysql.identificationNumber)) {
+      fields.add('身份证号');
+    }
+    if (_normalizeValue(sqlite.phone) != _normalizeValue(mysql.phone)) {
+      fields.add('电话');
+    }
+    if (_normalizeValue(sqlite.gender) != _normalizeValue(mysql.gender)) {
+      fields.add('性别');
+    }
+    if (sqlite.age != mysql.age) fields.add('年龄');
+    return fields;
+  }
+
+  String _normalizeValue(Object? value) {
+    return value?.toString().trim() ?? '';
+  }
+
+  String _formatFinancialPatientError(Object error) {
+    final message = error.toString();
+    const exceptionPrefix = 'Exception: ';
+    return message.startsWith(exceptionPrefix)
+        ? message.substring(exceptionPrefix.length)
+        : '无法创建财务记录: $message';
   }
 
   // 计算统计数据
@@ -940,8 +1026,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       }
 
       // 检查当前用户的医生是否与患者的医生匹配
-      return currentUser.doctor != null &&
-          currentUser.doctor == patientDoctor;
+      return currentUser.doctor != null && currentUser.doctor == patientDoctor;
     } catch (e) {
       LogManager.e('FinancialDetailScreen', '检查财务记录查看权限时出错', error: e);
       return false;

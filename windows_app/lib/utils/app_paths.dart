@@ -112,6 +112,11 @@ class AppPaths {
     return path.join(logDirectory, 'sync_logs.txt');
   }
 
+  /// 获取 SQLite 患者同步 MySQL 日志路径
+  static String get patientSyncLogPath {
+    return path.join(logDirectory, 'patient_sync_logs.json');
+  }
+
   /// 获取配置目录
   static String get configDirectory {
     return path.join(dataDirectory, 'config');

@@ -12,6 +12,8 @@
 - `android_app` 采购“添加采购项目”弹窗已改为键盘弹起时高度自适应、表单内容可滚动、底部按钮固定，已消除底部 `RenderFlex overflow` 风险。当前已通过针对性静态检查，待采购录入弹窗手动回归确认。
 
 ## 已完成
+- `windows_app` 患者 SQLite → MySQL 同步规则已修正为以 SQLite `id` 为主键来源：MySQL 命中同 `id` 时直接更新，未命中时插入同 `id`；患者详情页进入财务数据源补齐患者也使用同一 id-upsert 规则。已新增本地 `patient_sync_logs.json` 结构化日志和设置页“患者同步日志”查看入口，日志已按患者基本信息/患者材料/材料图片/预约记录/财务记录/财务明细/病历记录分类展示同步新建、同步更新、同步删除，并记录字段从旧值到新值的变更明细；财务详情页新增 MySQL 患者缺失/SQLite 与 MySQL 信息不一致的明确拦截提示；仓库新增 `.gitattributes` 固定文本文件 LF 行尾；全量 `flutter analyze` `No issues found!`。
+- 根目录已新增 [crlf_to_lf_execution_2026_07_07.md](D:/Data/android_project/dentist_app/docs/crlf_to_lf_execution_2026_07_07.md)，用于后续按批次将仓库文本文件从 CRLF 统一修复为 LF，文档包含可直接执行的 PowerShell 命令、分批提交顺序和验证步骤。
 - `windows_app` 五套主题已按 `windows_app/docs/dental_management_themes.md` 9.7 严格实施协议接入：`AppThemeTokens` 五套 factory、`WindowsThemeVariant` 主题枚举与解析、设置持久化、`AppTheme.resolve(...)` 统一入口和设置页主题选择 UI 已落地；全量 `flutter analyze` `No issues found!`，业务页面无新增主题分支。
 - `windows_app` 主题治理与医学识别色治理已完成归档，统一以 [windows_app_theme_governance_final_summary_2026_07_05.md](D:/Data/android_project/dentist_app/windows_app/docs/windows_app_theme_governance_final_summary_2026_07_05.md) 为最终状态源，不再依赖已删除的阶段性文档。
 - `windows_app` 空安全与 Flutter Analyze 治理已完成：`!` 已清零到仅注释示例保留，日志输出已统一收敛到 `LogManager`，`flutter analyze` 0 issue；归档文档为 `windows_app/docs/windows_app_null_safety_and_analysis_governance_summary.md`。
@@ -22,6 +24,8 @@
 - 无
 
 ## 最近验证
+- 2026-07-07：`windows_app` 患者 SQLite → MySQL 同步修复后运行全量 `flutter analyze`，`No issues found!`；`git diff --check` 通过；本轮覆盖患者同步 id-upsert、患者详情页财务数据源补齐 id-upsert、患者同步 JSON 日志、设置页查看入口、患者材料/材料图片/预约/财务/病历等患者相关同步日志、字段变更明细、财务详情页 MySQL 患者缺失/信息不一致提示和 LF 行尾规则。
+- 2026-07-07：根目录已补充 `docs/crlf_to_lf_execution_2026_07_07.md`，定义 CRLF→LF 的可执行分批修复方案；本次文档补齐未单独运行 Flutter 命令。
 - 2026-07-06：`windows_app` 备份/恢复与采购导出治理后运行全量 `flutter analyze`，`No issues found!`；本轮修复覆盖 MySQL 恢复成功判定、真实预恢复备份、SQLite 恢复前断开连接/恢复后重建、还原文件句柄关闭、SQLite 路径错误兜底移除，以及采购导出服务重复实现收口。
 - 2026-07-06：根目录 `AGENTS.md` 已补充 Dart 定向格式化规则与默认验证顺序：先格式化改动文件，再运行 `flutter analyze`，命中测试条件时再运行 `flutter test`；本次仅更新协作文档，未运行 Flutter 命令。
 - 2026-07-05：`windows_app` 五套主题接入后运行全量 `flutter analyze`，`No issues found!`；并完成搜索复核，主题枚举仅存在于主题入口与设置相关文件，业务页面 `DentalColors` / `AppTheme.primaryColor` / `AppTheme.secondaryColor` / `AppTheme.primaryGradient` 为 0 命中。
