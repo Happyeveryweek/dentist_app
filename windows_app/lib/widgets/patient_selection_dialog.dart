@@ -80,7 +80,7 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
       backgroundColor: Colors.transparent,
       elevation: 0,
       child: Container(
-        width: 400,
+        width: 560,
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.52,
           minHeight: 300,
@@ -289,17 +289,17 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                         child: Row(
                                           children: [
                                             Expanded(
-                                              flex: 3,
+                                              flex: 2,
                                               child: Row(
                                                 children: [
                                                   Icon(
-                                                    Icons.person,
+                                                    Icons.badge_outlined,
                                                     size: 16,
                                                     color: tokens.primaryAccent,
                                                   ),
                                                   const SizedBox(width: 8),
                                                   Text(
-                                                    '姓名',
+                                                    '病历号',
                                                     style: TextStyle(
                                                       fontWeight:
                                                           FontWeight.w600,
@@ -312,7 +312,30 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                               ),
                                             ),
                                             Expanded(
-                                              flex: 3,
+                                              flex: 4,
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.person,
+                                                    size: 16,
+                                                    color: tokens.primaryAccent,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    '姓名 / 电话',
+                                                    style: TextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      color:
+                                                          tokens.primaryAccent,
+                                                      fontSize: 14,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            Expanded(
+                                              flex: 2,
                                               child: Row(
                                                 children: [
                                                   Icon(
@@ -348,6 +371,14 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                             final lastVisitDate =
                                                 DateFormat('yyyy-MM-dd')
                                                     .format(patient.updatedAt);
+                                            final phone =
+                                                patient.mainPhone.isEmpty
+                                                    ? '暂无电话'
+                                                    : patient.mainPhone;
+                                            final medicalRecordNumber = patient
+                                                    .medicalRecordNumber
+                                                    ?.toString() ??
+                                                '未设置';
 
                                             return Container(
                                               margin:
@@ -383,8 +414,26 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                                     child: Row(
                                                       children: [
                                                         Expanded(
-                                                          flex: 3,
+                                                          flex: 2,
+                                                          child: Text(
+                                                            medicalRecordNumber,
+                                                            style: TextStyle(
+                                                              fontSize: 14,
+                                                              color: tokens
+                                                                  .textMuted,
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                        ),
+                                                        Expanded(
+                                                          flex: 4,
                                                           child: Row(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
                                                             children: [
                                                               Icon(
                                                                 Icons.person,
@@ -394,21 +443,54 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                                               ),
                                                               const SizedBox(
                                                                   width: 8),
-                                                              Text(
-                                                                patient.name,
-                                                                style:
-                                                                    const TextStyle(
-                                                                  fontSize: 14,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w500,
+                                                              Expanded(
+                                                                child: Column(
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .start,
+                                                                  children: [
+                                                                    Text(
+                                                                      patient
+                                                                          .name,
+                                                                      style:
+                                                                          const TextStyle(
+                                                                        fontSize:
+                                                                            14,
+                                                                        fontWeight:
+                                                                            FontWeight.w500,
+                                                                      ),
+                                                                      maxLines:
+                                                                          1,
+                                                                      overflow:
+                                                                          TextOverflow
+                                                                              .ellipsis,
+                                                                    ),
+                                                                    const SizedBox(
+                                                                        height:
+                                                                            2),
+                                                                    Text(
+                                                                      phone,
+                                                                      style:
+                                                                          TextStyle(
+                                                                        fontSize:
+                                                                            12,
+                                                                        color: tokens
+                                                                            .textMuted,
+                                                                      ),
+                                                                      maxLines:
+                                                                          1,
+                                                                      overflow:
+                                                                          TextOverflow
+                                                                              .ellipsis,
+                                                                    ),
+                                                                  ],
                                                                 ),
                                                               ),
                                                             ],
                                                           ),
                                                         ),
                                                         Expanded(
-                                                          flex: 3,
+                                                          flex: 2,
                                                           child: Text(
                                                             lastVisitDate,
                                                             style: TextStyle(

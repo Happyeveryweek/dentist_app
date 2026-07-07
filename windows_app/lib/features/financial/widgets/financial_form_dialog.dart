@@ -194,28 +194,49 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
           ),
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: colors.onPrimary.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.account_balance_wallet,
+                      color: colors.onPrimary,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      isEdit ? '编辑财务记录' : '添加财务记录',
+                      style: TextStyle(
+                        color: colors.onPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             Container(
-              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: colors.onPrimary.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                Icons.account_balance_wallet,
-                color: colors.onPrimary,
-                size: 16,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                isEdit ? '编辑财务记录' : '添加财务记录',
-                style: TextStyle(
-                  color: colors.onPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+              child: IconButton(
+                icon: Icon(Icons.close, color: colors.onPrimary, size: 18),
+                onPressed: () => Navigator.of(context).pop(),
+                splashRadius: 16,
+                tooltip: '关闭',
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
             ),
           ],

@@ -84,7 +84,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
     try {
       final financialProvider =
           Provider.of<FinancialProvider>(context, listen: false);
-      final items = await financialProvider.getFinancialItemsByRecordId(recordId);
+      final items =
+          await financialProvider.getFinancialItemsByRecordId(recordId);
       setState(() {
         _financialItems = items;
       });
@@ -112,28 +113,49 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           ),
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: colors.onPrimary.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                Icons.edit,
-                color: colors.onPrimary,
-                size: 20,
+            Expanded(
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: colors.onPrimary.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.edit,
+                      color: colors.onPrimary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '编辑财务记录',
+                      style: TextStyle(
+                        color: colors.onPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                '编辑财务记录',
-                style: TextStyle(
-                  color: colors.onPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+            Container(
+              decoration: BoxDecoration(
+                color: colors.onPrimary.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: IconButton(
+                icon: Icon(Icons.close, color: colors.onPrimary, size: 18),
+                onPressed: () => Navigator.of(context).pop(false),
+                splashRadius: 16,
+                tooltip: '关闭',
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               ),
             ),
           ],
@@ -322,7 +344,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
   }
 
   // 构建收费信息列表区域
-  Widget _buildFinancialItemsSection(AppThemeTokens tokens, ColorScheme colors) {
+  Widget _buildFinancialItemsSection(
+      AppThemeTokens tokens, ColorScheme colors) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -409,12 +432,12 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                   SizedBox(
                     height: FinancialDetailTableLayout.rowHeight,
                     child: FinancialDetailTableLayout.buildHeader(
-                    context,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(8),
-                      topRight: Radius.circular(8),
+                      context,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(8),
+                        topRight: Radius.circular(8),
+                      ),
                     ),
-                  ),
                   ),
                   // 新增行（放在最上面）
                   if (_editingItemId == -1)
@@ -425,8 +448,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                         decoration: BoxDecoration(
                           color: tokens.successContainer,
                           border: Border(
-                            bottom: BorderSide(
-                                color: tokens.divider, width: 0.5),
+                            bottom:
+                                BorderSide(color: tokens.divider, width: 0.5),
                           ),
                         ),
                         child: _buildEditingItemRow(null, tokens, colors),
@@ -448,8 +471,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                                   ? tokens.cardBackground
                                   : tokens.mutedBackground),
                           border: Border(
-                            bottom: BorderSide(
-                                color: tokens.divider, width: 0.5),
+                            bottom:
+                                BorderSide(color: tokens.divider, width: 0.5),
                           ),
                         ),
                         child: isEditing
@@ -537,10 +560,10 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: tokens.successContainer,
-                    borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
+                    borderRadius:
+                        BorderRadius.circular(tokens.smallBorderRadius),
                   ),
-                  child:
-                      Icon(Icons.note_add, color: tokens.success, size: 18),
+                  child: Icon(Icons.note_add, color: tokens.success, size: 18),
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(tokens.borderRadius),
@@ -1277,7 +1300,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           Provider.of<FinancialProvider>(context, listen: false);
 
       // 获取该财务记录的所有收费项，重新计算总数量
-      final items = await financialProvider.getFinancialItemsByRecordId(recordId);
+      final items =
+          await financialProvider.getFinancialItemsByRecordId(recordId);
       final totalQuantity =
           items.fold<int>(0, (sum, item) => sum + item.quantity);
 

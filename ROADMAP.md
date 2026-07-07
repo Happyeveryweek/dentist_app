@@ -12,6 +12,7 @@
 - `android_app` 采购“添加采购项目”弹窗已改为键盘弹起时高度自适应、表单内容可滚动、底部按钮固定，已消除底部 `RenderFlex overflow` 风险。当前已通过针对性静态检查，待采购录入弹窗手动回归确认。
 
 ## 已完成
+- `windows_app` 患者详情页同步状态按钮与公共患者选择弹窗已完成修复并验证：同步按钮在“检查中/不可用”状态下禁用，避免在非 SQLite 主库场景误导用户触发失败提示；公共患者选择弹窗已补回电话和病历号显示，降低财务/预约场景同名患者误选风险。已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
 - `windows_app` 患者 SQLite → MySQL 同步规则已修正为以 SQLite `id` 为主键来源：MySQL 命中同 `id` 时直接更新，未命中时插入同 `id`；患者详情页进入财务数据源补齐患者也使用同一 id-upsert 规则。已新增本地 `patient_sync_logs.json` 结构化日志和设置页“患者同步日志”查看入口，日志已按患者基本信息/患者材料/材料图片/预约记录/财务记录/财务明细/病历记录分类展示同步新建、同步更新、同步删除，并记录字段从旧值到新值的变更明细；财务详情页新增 MySQL 患者缺失/SQLite 与 MySQL 信息不一致的明确拦截提示；仓库新增 `.gitattributes` 固定文本文件 LF 行尾；全量 `flutter analyze` `No issues found!`。
 - 根目录已新增 [crlf_to_lf_execution_2026_07_07.md](D:/Data/android_project/dentist_app/docs/crlf_to_lf_execution_2026_07_07.md)，用于后续按批次将仓库文本文件从 CRLF 统一修复为 LF，文档包含可直接执行的 PowerShell 命令、分批提交顺序和验证步骤。
 - `windows_app` 五套主题已按 `windows_app/docs/dental_management_themes.md` 9.7 严格实施协议接入：`AppThemeTokens` 五套 factory、`WindowsThemeVariant` 主题枚举与解析、设置持久化、`AppTheme.resolve(...)` 统一入口和设置页主题选择 UI 已落地；全量 `flutter analyze` `No issues found!`，业务页面无新增主题分支。
@@ -24,6 +25,11 @@
 - 无
 
 ## 最近验证
+- 2026-07-07：`windows_app` 重复打开应用的单实例拦截提示已改为明确页面提示，不再灰屏后立即退出；当前会显示“应用已经打开”说明、5 秒倒计时和手动退出按钮，并运行 `flutter analyze`，`No issues found!`。
+- 2026-07-07：`windows_app` 编辑财务记录专用弹窗 `financial_record_edit_dialog.dart` 已补回右上角关闭按钮，并运行 `flutter analyze`，`No issues found!`；本轮修复的是财务管理列表“编辑财务记录”链路，不涉及新增财务记录弹窗主体逻辑。
+- 2026-07-07：`windows_app` 财务管理添加/编辑财务记录弹窗已补回右上角关闭按钮，并运行 `flutter analyze`，`No issues found!`；本轮仅修复标题栏关闭入口缺失，不改动财务表单业务逻辑。
+- 2026-07-07：`windows_app` 公共患者选择弹窗列顺序已调整为“病历号 / 姓名电话 / 最近就诊”，并运行 `flutter analyze`，`No issues found!`；本轮仅调整患者辨识信息的展示顺序，降低同名患者选择时的扫描成本。
+- 2026-07-07：`windows_app` 患者详情页同步状态按钮与公共患者选择弹窗修复后运行 `flutter analyze`，`No issues found!`；本轮覆盖同步按钮禁用边界、同步状态文案，以及患者选择弹窗电话/病历号辨识信息恢复。
 - 2026-07-07：`windows_app` 患者 SQLite → MySQL 同步修复后运行全量 `flutter analyze`，`No issues found!`；`git diff --check` 通过；本轮覆盖患者同步 id-upsert、患者详情页财务数据源补齐 id-upsert、患者同步 JSON 日志、设置页查看入口、患者材料/材料图片/预约/财务/病历等患者相关同步日志、字段变更明细、财务详情页 MySQL 患者缺失/信息不一致提示和 LF 行尾规则。
 - 2026-07-07：根目录已补充 `docs/crlf_to_lf_execution_2026_07_07.md`，定义 CRLF→LF 的可执行分批修复方案；本次文档补齐未单独运行 Flutter 命令。
 - 2026-07-06：`windows_app` 备份/恢复与采购导出治理后运行全量 `flutter analyze`，`No issues found!`；本轮修复覆盖 MySQL 恢复成功判定、真实预恢复备份、SQLite 恢复前断开连接/恢复后重建、还原文件句柄关闭、SQLite 路径错误兜底移除，以及采购导出服务重复实现收口。

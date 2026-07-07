@@ -85,11 +85,27 @@ void main() async {
   if (Platform.isWindows) {
     final isUnique = await SingleInstance.checkSingleInstance();
     if (!isUnique) {
-      // 已有实例在运行，显示提示并退出
+      try {
+        await windowManager.ensureInitialized();
+        const duplicateWindowOptions = WindowOptions(
+          title: '牙科诊所管理系统',
+          titleBarStyle: TitleBarStyle.normal,
+          windowButtonVisibility: true,
+        );
+        await windowManager.waitUntilReadyToShow(
+          duplicateWindowOptions,
+          () async {
+            await windowManager.show();
+            await windowManager.focus();
+          },
+        );
+      } catch (_) {
+        // 重复打开提示页属于兜底路径，窗口初始化失败时继续展示提示内容即可。
+      }
+
+      // 已有实例在运行，显示提示页并由页面控制倒计时退出
       runApp(const AlreadyRunningApp());
-      // 等待一段时间让用户看到提示
-      await Future.delayed(const Duration(seconds: 3));
-      exit(0);
+      return;
     }
   }
 
@@ -214,7 +230,8 @@ class ErrorApp extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, color: context.tokens.error, size: 64),
+                Icon(Icons.error_outline,
+                    color: context.tokens.error, size: 64),
                 const SizedBox(height: 20),
                 const Text('应用启动失败',
                     style:
@@ -224,8 +241,8 @@ class ErrorApp extends StatelessWidget {
                   child: SingleChildScrollView(
                     child: SelectableText(
                       error,
-                      style:
-                          TextStyle(fontSize: 14, color: context.colors.onSurface),
+                      style: TextStyle(
+                          fontSize: 14, color: context.colors.onSurface),
                     ),
                   ),
                 ),
@@ -246,66 +263,148 @@ class AlreadyRunningApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        backgroundColor: context.tokens.warningContainer,
-        body: Center(
-          child: Container(
-            padding: const EdgeInsets.all(40),
-            constraints: const BoxConstraints(maxWidth: 500),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: context.tokens.warning,
-                  size: 80,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF8F74A8)),
+        useMaterial3: true,
+      ),
+      home: const AlreadyRunningScreen(),
+    );
+  }
+}
+
+class AlreadyRunningScreen extends StatefulWidget {
+  const AlreadyRunningScreen({Key? key}) : super(key: key);
+
+  @override
+  State<AlreadyRunningScreen> createState() => _AlreadyRunningScreenState();
+}
+
+class _AlreadyRunningScreenState extends State<AlreadyRunningScreen> {
+  static const int _initialSeconds = 5;
+  int _secondsRemaining = _initialSeconds;
+  Timer? _countdownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_secondsRemaining <= 1) {
+        timer.cancel();
+        _exitApp();
+        return;
+      }
+      setState(() {
+        _secondsRemaining -= 1;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _exitApp() async {
+    _countdownTimer?.cancel();
+    try {
+      if (Platform.isWindows) {
+        await windowManager.close();
+      }
+    } catch (_) {
+      // ignore and fall back to process exit
+    }
+    exit(0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4EDF7),
+      body: Center(
+        child: Container(
+          padding: const EdgeInsets.all(40),
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 92,
+                height: 92,
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 30),
-                Text(
-                  '应用已在运行',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: context.tokens.warning,
+                child: Icon(
+                  Icons.info_outline_rounded,
+                  color: colorScheme.error,
+                  size: 54,
+                ),
+              ),
+              const SizedBox(height: 28),
+              Text(
+                '应用已经打开',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                '检测到牙科诊所管理系统已经在运行。\n\n为了避免数据冲突，不允许重复打开多个实例。\n请切换到已打开的窗口继续操作。',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  height: 1.6,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 28),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant,
                   ),
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  '牙科诊所管理系统已经在运行中。\n\n为了避免数据冲突，系统不允许同时运行多个实例。\n\n请在任务栏或任务管理器中找到已运行的窗口。',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: context.tokens.warning,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: context.tokens.cardBackground,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: context.tokens.warning.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.lightbulb_outline,
-                          color: context.tokens.warning),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          '此窗口将在 3 秒后自动关闭',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: context.tokens.warning,
-                          ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '此窗口将在 $_secondsRemaining 秒后自动退出，也可以手动点击下方按钮关闭。',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.5,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 28),
+              FilledButton.icon(
+                onPressed: _exitApp,
+                icon: const Icon(Icons.exit_to_app_rounded),
+                label: const Text('立即退出'),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(160, 48),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -842,7 +941,8 @@ class _AppWithProvidersState extends State<AppWithProviders> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, color: context.tokens.error, size: 64),
+                  Icon(Icons.error_outline,
+                      color: context.tokens.error, size: 64),
                   const SizedBox(height: 20),
                   const Text('应用界面加载失败',
                       style:

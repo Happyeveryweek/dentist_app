@@ -39,26 +39,21 @@ class FinancialDetailRecordCard extends StatelessWidget {
       height: FinancialDetailTableLayout.rowHeight,
       child: Container(
         decoration: BoxDecoration(
-          color: isHighlighted
-              ? tokens.primaryAccent.withValues(alpha: 0.1)
-              : tokens.cardBackground,
+          color: tokens.cardBackground,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: tokens.divider, width: 1),
-          boxShadow: isHighlighted
-              ? [
-                  BoxShadow(
-                    color: tokens.primaryAccent.withValues(alpha: 0.3),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  )
-                ]
-              : [
-                  BoxShadow(
-                    color: tokens.shadow.withValues(alpha: 0.1),
-                    blurRadius: 2,
-                    offset: const Offset(0, 1),
-                  )
-                ],
+          border: Border.all(
+            color: isHighlighted
+                ? tokens.primaryAccent.withValues(alpha: 0.5)
+                : tokens.divider,
+            width: isHighlighted ? 1.5 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: tokens.shadow.withValues(alpha: 0.1),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -78,9 +73,7 @@ class FinancialDetailRecordCard extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             Text(
-              hasItem
-                  ? detailItem.itemName
-                  : (record.notes ?? '收费项目'),
+              hasItem ? detailItem.itemName : (record.notes ?? '收费项目'),
               style: Theme.of(context).textTheme.bodyMedium,
               maxLines: 1,
               softWrap: false,
@@ -164,8 +157,8 @@ class FinancialDetailRecordCard extends StatelessWidget {
                         height: 32,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(tokens.primaryAccent),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              tokens.primaryAccent),
                         ),
                       )
                     : IconButton(

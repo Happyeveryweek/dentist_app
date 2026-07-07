@@ -130,6 +130,10 @@ class PatientDetailScaffold extends StatelessWidget {
     final color = _syncStatusColor(context);
     final icon = _syncStatusIcon;
     final tooltip = _syncStatusTooltip;
+    final canSync = !isSyncing &&
+        onSync != null &&
+        syncStatus != PatientSyncStatus.checking &&
+        syncStatus != PatientSyncStatus.unavailable;
 
     return Container(
       margin: const EdgeInsets.only(right: 4),
@@ -148,9 +152,9 @@ class PatientDetailScaffold extends StatelessWidget {
                   valueColor: AlwaysStoppedAnimation<Color>(color),
                 ),
               )
-            : Icon(icon, color: color),
+            : Icon(icon, color: canSync ? color : color.withValues(alpha: 0.7)),
         tooltip: tooltip,
-        onPressed: onSync,
+        onPressed: canSync ? onSync : null,
       ),
     );
   }
@@ -183,13 +187,13 @@ class PatientDetailScaffold extends StatelessWidget {
   String get _syncStatusTooltip {
     switch (syncStatus) {
       case PatientSyncStatus.synced:
-        return '数据已同步';
+        return '数据已同步，点击可手动重同步';
       case PatientSyncStatus.notSynced:
         return '数据未同步，点击同步';
       case PatientSyncStatus.checking:
-        return '正在检查同步状态';
+        return '正在检查同步状态，暂不可操作';
       case PatientSyncStatus.unavailable:
-        return '同步不可用（仅 SQLite 主库支持）';
+        return '同步不可用：仅 SQLite 主库且 MySQL 同步连接可用时支持';
     }
   }
 }
