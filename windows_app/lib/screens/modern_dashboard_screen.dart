@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 // import 'package:shimmer/shimmer.dart'; // 暂时注释掉
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import '../features/dashboard/widgets/hoverable_stat_card.dart';
 import '../features/dashboard/services/dashboard_treatment_formatter.dart';
@@ -49,6 +51,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
 
   late AnimationController _animationController;
   late AnimationController _pulseController;
+  late AnimationController _welcomeAmbientController;
   late Animation<double> _slideAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _pulseAnimation;
@@ -69,6 +72,11 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat(reverse: true);
+
+    _welcomeAmbientController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 18),
+    )..repeat();
 
     _slideAnimation = Tween<double>(
       begin: 50.0,
@@ -121,6 +129,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
     _appointmentProvider.removeListener(_handleAppointmentProviderChanged);
     _animationController.dispose();
     _pulseController.dispose();
+    _welcomeAmbientController.dispose();
     super.dispose();
   }
 
@@ -266,122 +275,156 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(0, _slideAnimation.value),
-          child: Opacity(
-            opacity: _fadeAnimation.value,
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    context.tokens.primaryAccent,
-                    context.tokens.primaryAccent.withValues(alpha: 0.8),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: context.tokens.primaryAccent.withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isCompact = constraints.maxWidth < 980;
+            final bannerHeight =
+                (constraints.maxWidth / 7.2).clamp(140.0, 214.0).toDouble();
+            final horizontalPadding = isCompact ? 28.0 : 40.0;
+
+            return Transform.translate(
+              offset: Offset(0, _slideAnimation.value),
+              child: Opacity(
+                opacity: _fadeAnimation.value,
+                child: Container(
+                  height: bannerHeight,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: context.tokens.cardShadow,
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: context.colors.onPrimary.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: context.colors.onPrimary.withValues(alpha: 0.3),
-                        width: 2,
-                      ),
-                    ),
-                    child: Builder(builder: (context) {
-                      final avatar = _currentUserAvatar;
-                      if (avatar != null && avatar.isNotEmpty) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: AspectRatio(
-                            aspectRatio: 1.0,
-                            child: Image.memory(
-                              avatar,
-                              fit: BoxFit.cover,
-                              alignment: Alignment.center,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    color: context.colors.onPrimary
-                                        .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: Icon(
-                                    DentalIcons.userDoctor,
-                                    color: context.colors.onPrimary,
-                                    size: 32,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      }
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: context.colors.onPrimary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Icon(
-                          DentalIcons.userDoctor,
-                          color: context.colors.onPrimary,
-                          size: 32,
-                        ),
-                      );
-                    }),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Stack(
+                      fit: StackFit.expand,
                       children: [
-                        Text(
-                          '你好，$_currentUserName',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: context.colors.onPrimary,
+                        Transform.scale(
+                          scale: 1.08,
+                          child: Image.asset(
+                            'assets/images/home_welcome_banner.png',
+                            fit: BoxFit.cover,
+                            alignment: Alignment.center,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '欢迎回来工作，祝您今天心情愉快！',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: context.colors.onPrimary.withValues(alpha: 0.9),
+                        IgnorePointer(
+                          child: AnimatedBuilder(
+                            animation: _welcomeAmbientController,
+                            builder: (context, child) {
+                              return CustomPaint(
+                                painter: _WelcomeBannerAmbientPainter(
+                                  progress: _welcomeAmbientController.value,
+                                  primary: context.tokens.primaryAccent,
+                                  secondary: context.tokens.secondaryAccent,
+                                  panel: context.tokens.cardBackground,
+                                  border: context.tokens.border,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: horizontalPadding,
+                            vertical: isCompact ? 22 : 28,
+                          ),
+                          child: Row(
+                            children: [
+                              _buildWelcomeAvatar(
+                                size: isCompact ? 56 : 64,
+                              ),
+                              SizedBox(width: isCompact ? 16 : 20),
+                              Expanded(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '你好，$_currentUserName',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: isCompact ? 24 : 28,
+                                        fontWeight: FontWeight.bold,
+                                        color: context.tokens.primaryAccent,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      '欢迎回来工作，祝您今天心情愉快！',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: isCompact ? 14 : 15,
+                                        color: context.colors.onSurfaceVariant,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  Icons.refresh_rounded,
+                                  color: context.tokens.primaryAccent,
+                                  size: 24,
+                                ),
+                                onPressed: _loadData,
+                                tooltip: '刷新数据',
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.refresh_rounded,
-                        color: context.colors.onPrimary, size: 24),
-                    onPressed: _loadData,
-                    tooltip: '刷新数据',
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildWelcomeAvatar({required double size}) {
+    final avatar = _currentUserAvatar;
+
+    return Container(
+      width: size,
+      height: size,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: context.tokens.cardBackground.withValues(alpha: 0.52),
+        borderRadius: BorderRadius.circular(size * 0.28),
+        border: Border.all(
+          color: context.tokens.border.withValues(alpha: 0.55),
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.25),
+        child: avatar != null && avatar.isNotEmpty
+            ? Image.memory(
+                avatar,
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+                errorBuilder: (context, error, stackTrace) {
+                  return _buildWelcomeAvatarFallback();
+                },
+              )
+            : _buildWelcomeAvatarFallback(),
+      ),
+    );
+  }
+
+  Widget _buildWelcomeAvatarFallback() {
+    return Container(
+      color: context.tokens.cardBackground.withValues(alpha: 0.42),
+      child: Icon(
+        DentalIcons.userDoctor,
+        color: context.tokens.primaryAccent,
+        size: 32,
+      ),
     );
   }
 
@@ -555,7 +598,8 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: context.tokens.primaryAccent.withValues(alpha: 0.1),
+                            color: context.tokens.primaryAccent
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
@@ -877,8 +921,8 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color:
-                                context.tokens.secondaryAccent.withValues(alpha: 0.1),
+                            color: context.tokens.secondaryAccent
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
@@ -1159,5 +1203,151 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
         ),
       ),
     );
+  }
+}
+
+class _WelcomeBannerAmbientPainter extends CustomPainter {
+  const _WelcomeBannerAmbientPainter({
+    required this.progress,
+    required this.primary,
+    required this.secondary,
+    required this.panel,
+    required this.border,
+  });
+
+  final double progress;
+  final Color primary;
+  final Color secondary;
+  final Color panel;
+  final Color border;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _paintSoftOrbits(canvas, size);
+    _paintFloatingDots(canvas, size);
+    _paintClinicalGlyphs(canvas, size);
+  }
+
+  void _paintSoftOrbits(Canvas canvas, Size size) {
+    final phase = progress * math.pi * 2;
+    final pathPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = panel.withValues(alpha: 0.34);
+    final glowPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4.0
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8)
+      ..color = secondary.withValues(alpha: 0.08);
+
+    for (var i = 0; i < 2; i++) {
+      final path = Path();
+      final baseY = size.height * (0.44 + i * 0.16);
+      final amplitude = size.height * (0.08 + i * 0.02);
+      path.moveTo(size.width * 0.22, baseY);
+      for (var x = size.width * 0.22; x <= size.width * 0.82; x += 18) {
+        final normalized = x / size.width;
+        final y = baseY +
+            math.sin(normalized * math.pi * 3.4 + phase + i) * amplitude;
+        path.lineTo(x, y);
+      }
+      canvas.drawPath(path, glowPaint);
+      canvas.drawPath(path, pathPaint);
+    }
+  }
+
+  void _paintFloatingDots(Canvas canvas, Size size) {
+    final dotPaint = Paint();
+    final glowPaint = Paint()
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+    final points = <Offset>[
+      Offset(size.width * 0.39, size.height * 0.37),
+      Offset(size.width * 0.51, size.height * 0.62),
+      Offset(size.width * 0.63, size.height * 0.31),
+      Offset(size.width * 0.73, size.height * 0.55),
+    ];
+
+    for (var i = 0; i < points.length; i++) {
+      final pulse = (math.sin(progress * math.pi * 2 + i * 1.3) + 1) / 2;
+      final drift = math.sin(progress * math.pi * 2 + i) * size.height * 0.018;
+      final center = points[i].translate(0, drift);
+      final color = i.isEven ? primary : secondary;
+      glowPaint.color = color.withValues(alpha: 0.10 + pulse * 0.06);
+      dotPaint.color = panel.withValues(alpha: 0.58 + pulse * 0.18);
+      canvas.drawCircle(center, 11 + pulse * 5, glowPaint);
+      canvas.drawCircle(center, 3.2 + pulse * 1.5, dotPaint);
+    }
+  }
+
+  void _paintClinicalGlyphs(Canvas canvas, Size size) {
+    final phase = progress * math.pi * 2;
+    _drawIconBubble(
+      canvas,
+      size,
+      icon: Icons.monitor_heart_outlined,
+      center: Offset(
+        size.width * 0.58,
+        size.height * (0.36 + math.sin(phase) * 0.018),
+      ),
+      radius: size.height * 0.18,
+      color: primary,
+    );
+    _drawIconBubble(
+      canvas,
+      size,
+      icon: Icons.health_and_safety_outlined,
+      center: Offset(
+        size.width * 0.70,
+        size.height * (0.58 + math.cos(phase * 0.85) * 0.018),
+      ),
+      radius: size.height * 0.15,
+      color: secondary,
+    );
+  }
+
+  void _drawIconBubble(
+    Canvas canvas,
+    Size size, {
+    required IconData icon,
+    required Offset center,
+    required double radius,
+    required Color color,
+  }) {
+    final bubblePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..color = panel.withValues(alpha: 0.24);
+    final fillPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = panel.withValues(alpha: 0.07);
+
+    canvas.drawCircle(center, radius, fillPaint);
+    canvas.drawCircle(center, radius, bubblePaint);
+
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+          fontSize: radius * 0.9,
+          color: color.withValues(alpha: 0.18),
+        ),
+      ),
+      textDirection: ui.TextDirection.ltr,
+    )..layout();
+    textPainter.paint(
+      canvas,
+      center - Offset(textPainter.width / 2, textPainter.height / 2),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _WelcomeBannerAmbientPainter oldDelegate) {
+    return oldDelegate.progress != progress ||
+        oldDelegate.primary != primary ||
+        oldDelegate.secondary != secondary ||
+        oldDelegate.panel != panel ||
+        oldDelegate.border != border;
   }
 }

@@ -12,6 +12,8 @@
 - `android_app` 采购“添加采购项目”弹窗已改为键盘弹起时高度自适应、表单内容可滚动、底部按钮固定，已消除底部 `RenderFlex overflow` 风险。当前已通过针对性静态检查，待采购录入弹窗手动回归确认。
 
 ## 已完成
+- `windows_app` 仪表盘欢迎长条图和侧边栏顶部 Logo 已按确认的蓝紫玻璃风格替换并二次修正：新增并更新 `assets/images/home_welcome_banner.png` 与 `assets/images/sidebar_tooth_logo.png`，Logo 已换为圆角图标并在 UI 层强制圆角裁切；欢迎卡保留动态用户名、欢迎语、刷新入口和用户头像数据位，并改为按可用宽度自适应高度、背景图轻微放大裁切以减少边缘留白；欢迎图右侧已移除突兀的大牙齿主体，改为更小、更淡的牙科/医疗装饰图形，降低视觉焦点干扰；欢迎区中部已叠加低强度动态流光、光点和医疗符号装饰，补足空白但不遮挡文字与刷新操作；已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
+- `windows_app` 登录页已按确认的临床后台风格重做并二次调整：背景改用 `assets/images/login_clinical_console.png`，登录卡片调整为右侧毛玻璃面板，表单、Logo、状态信息和按钮样式对齐医疗蓝主题，并通过 Flutter 代码增加低强度动态光扫、底部波线和节点呼吸效果；登录卡片已调整为比原版略小并向右固定到背景图右侧诊室区域，紧凑窗口下不再横向拉满变形，并改为按窗口宽高计算比例缩放；已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
 - `windows_app` 预约详情页头部摘要卡片背景已进一步压浅：不再使用偏深背景，也不再直接复用偏可见的浅渐变 token，改为接近白色的定制轻渐变，并同步压轻阴影和边框，只保留一点点层次避免头部发沉；已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
 - `windows_app` 牙齿状况线条显示已完成修复并验证：添加/编辑患者、添加/编辑预约、查看患者、查看预约中的牙位十字线均已改为更深更粗显示；备注横线仅保留在患者添加/编辑和患者查看页，不扩展到预约查看页，提升浅色主题下的可读性；已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
 - `windows_app` 患者详情页同步状态按钮与公共患者选择弹窗已完成修复并验证：同步按钮在“检查中/不可用”状态下禁用，避免在非 SQLite 主库场景误导用户触发失败提示；公共患者选择弹窗已补回电话和病历号显示，降低财务/预约场景同名患者误选风险。已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
@@ -27,6 +29,12 @@
 - 无
 
 ## 最近验证
+- 2026-07-08：`windows_app` 修复仪表盘欢迎区动态层登录后红屏问题：补齐 `_welcomeAmbientController` 初始化与释放，解决 `LateInitializationError`；已运行 `dart format lib\screens\modern_dashboard_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
+- 2026-07-08：`windows_app` 仪表盘欢迎长条图中部已新增非交互动态装饰层，包含慢速流光线、呼吸光点和低透明医疗符号气泡；已运行 `dart format lib\screens\modern_dashboard_screen.dart` 和 `flutter analyze`，结果 `No issues found!`；本轮只调整欢迎区视觉动效，不改动仪表盘数据加载、导航权限、卡片点击和登录逻辑。
+- 2026-07-08：`windows_app` 登录页卡片尺寸已从过小状态调回接近原版但略小，紧凑窗口下不再使用全宽拉伸，改为按可用宽度比例限制并保留最小/最大尺寸；已运行 `dart format lib\screens\login_screen.dart` 和 `flutter analyze`，结果 `No issues found!`；本轮只调整登录页视觉尺寸和响应式布局，不改动登录校验、记住密码、权限加载和跳转逻辑。
+- 2026-07-08：`windows_app` 登录页毛玻璃登录卡片已缩小约五分之一、向右固定到背景图右侧区域，并按窗口宽高计算 `layoutScale` 实现自适应缩放；已运行 `dart format lib\screens\login_screen.dart` 和 `flutter analyze`，结果 `No issues found!`；本轮只调整登录页视觉尺寸、定位和响应式缩放，不改动登录校验、记住密码、权限加载和跳转逻辑。
+- 2026-07-08：`windows_app` 仪表盘欢迎长条图右侧大牙齿已改为小型弱化装饰图形，并运行 `flutter analyze`，结果 `No issues found!`；本轮只覆盖 `assets/images/home_welcome_banner.png`，不改动欢迎区代码、导航权限、仪表盘数据加载和登录逻辑。
+- 2026-07-07：`windows_app` 登录页重做后运行 `dart format lib\screens\login_screen.dart` 和 `flutter analyze`，结果 `No issues found!`；本轮仅调整登录页视觉、背景资源引用和低强度动态背景层，不改动登录校验、记住密码、权限加载和跳转逻辑。
 - 2026-07-07：`windows_app` 预约详情页头部摘要卡片背景已进一步压浅，并运行 `flutter analyze`，`No issues found!`；本轮仅调整预约详情页顶部摘要卡片的背景渐变、阴影和边框层次，不改动状态徽标、时间文案和业务逻辑。
 - 2026-07-07：`windows_app` 牙齿状况线条显示已统一加深加粗，并运行 `flutter analyze`，`No issues found!`；本轮覆盖添加/编辑患者、添加/编辑预约、查看患者、查看预约中的牙位十字线，以及患者表单/患者查看中的备注横线显示，不改动牙齿状况数据结构和业务逻辑。
 - 2026-07-07：`windows_app` 重复打开应用的单实例拦截提示已改为明确页面提示，不再灰屏后立即退出；当前会显示“应用已经打开”说明、5 秒倒计时和手动退出按钮，并运行 `flutter analyze`，`No issues found!`。

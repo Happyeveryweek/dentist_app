@@ -352,50 +352,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       vertical: 32.0, horizontal: 24.0),
                   child: Column(
                     children: [
-                      Container(
-                        height: 72,
-                        width: 72,
-                        decoration: BoxDecoration(
-                          gradient: tokens.primaryHeaderGradient,
-                          borderRadius: BorderRadius.circular(24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: tokens.primaryAccent
-                                  .withValues(alpha: 0.4),
-                              blurRadius: 16,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // 背景装饰圆圈
-                            Positioned(
-                              top: -10,
-                              right: -10,
-                              child: Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: context.colors.onPrimary.withValues(alpha: 0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                            ),
-                            Icon(
-                              DentalIcons.tooth,
-                              color: context.colors.onPrimary,
-                              size: 36,
-                              shadows: [
-                                Shadow(
-                                  color: tokens.shadow,
-                                  offset: const Offset(0, 2),
-                                  blurRadius: 4,
-                                ),
-                              ],
-                            ),
-                          ],
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(28),
+                        child: SizedBox(
+                          height: 92,
+                          width: 92,
+                          child: Image.asset(
+                            'assets/images/sidebar_tooth_logo.png',
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -584,8 +549,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: 12,
                               height: 12,
                               decoration: BoxDecoration(
-                                color: tokens.primaryAccent
-                                    .withValues(alpha: 0.3),
+                                color:
+                                    tokens.primaryAccent.withValues(alpha: 0.3),
                                 shape: BoxShape.circle,
                               ),
                             ),
