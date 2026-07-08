@@ -12,6 +12,7 @@
 - `android_app` 采购“添加采购项目”弹窗已改为键盘弹起时高度自适应、表单内容可滚动、底部按钮固定，已消除底部 `RenderFlex overflow` 风险。当前已通过针对性静态检查，待采购录入弹窗手动回归确认。
 
 ## 已完成
+- 根目录已新增仓库级 `.githooks/pre-commit` 行尾守卫，并约定新克隆仓库或新建 worktree 后先执行 `git config --local core.hooksPath .githooks`：提交前自动检查暂存文本文件，若工作区出现 `CRLF` 或混合行尾则直接阻止提交；根目录 `AGENTS.md` 已同步补充启用命令与“提交前先用 `git ls-files --eol -- <file>` 检查并先修正为 `LF`”规则。
 - `windows_app` 仪表盘欢迎长条图和侧边栏顶部 Logo 已按确认的蓝紫玻璃风格替换并二次修正：新增并更新 `assets/images/home_welcome_banner.png` 与 `assets/images/sidebar_tooth_logo.png`，Logo 已换为圆角图标并在 UI 层强制圆角裁切；欢迎卡保留动态用户名、欢迎语、刷新入口和用户头像数据位，并改为按可用宽度自适应高度、背景图轻微放大裁切以减少边缘留白；欢迎图右侧已移除突兀的大牙齿主体，改为更小、更淡的牙科/医疗装饰图形，降低视觉焦点干扰；欢迎区中部已叠加低强度动态流光、光点和医疗符号装饰，补足空白但不遮挡文字与刷新操作；已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
 - `windows_app` 登录页已按确认的临床后台风格重做并二次调整：背景改用 `assets/images/login_clinical_console.png`，登录卡片调整为右侧毛玻璃面板，表单、Logo、状态信息和按钮样式对齐医疗蓝主题，并通过 Flutter 代码增加低强度动态光扫、底部波线和节点呼吸效果；登录卡片已调整为比原版略小并向右固定到背景图右侧诊室区域，紧凑窗口下不再横向拉满变形，并改为按窗口宽高计算比例缩放；已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
 - `windows_app` 预约详情页头部摘要卡片背景已进一步压浅：不再使用偏深背景，也不再直接复用偏可见的浅渐变 token，改为接近白色的定制轻渐变，并同步压轻阴影和边框，只保留一点点层次避免头部发沉；已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
@@ -29,6 +30,7 @@
 - 无
 
 ## 最近验证
+- 2026-07-08：根目录已新增 `.githooks/pre-commit` 并配置为仓库本地 `core.hooksPath`；使用临时 `CRLF` 文本文件做真实拦截测试时，hook 已按预期阻止 `git commit`，同时在清洁工作区下返回通过；本轮验证只覆盖提交前行尾守卫，不改动业务代码逻辑。
 - 2026-07-08：`windows_app` 修复仪表盘欢迎区动态层登录后红屏问题：补齐 `_welcomeAmbientController` 初始化与释放，解决 `LateInitializationError`；已运行 `dart format lib\screens\modern_dashboard_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
 - 2026-07-08：`windows_app` 仪表盘欢迎长条图中部已新增非交互动态装饰层，包含慢速流光线、呼吸光点和低透明医疗符号气泡；已运行 `dart format lib\screens\modern_dashboard_screen.dart` 和 `flutter analyze`，结果 `No issues found!`；本轮只调整欢迎区视觉动效，不改动仪表盘数据加载、导航权限、卡片点击和登录逻辑。
 - 2026-07-08：`windows_app` 登录页卡片尺寸已从过小状态调回接近原版但略小，紧凑窗口下不再使用全宽拉伸，改为按可用宽度比例限制并保留最小/最大尺寸；已运行 `dart format lib\screens\login_screen.dart` 和 `flutter analyze`，结果 `No issues found!`；本轮只调整登录页视觉尺寸和响应式布局，不改动登录校验、记住密码、权限加载和跳转逻辑。

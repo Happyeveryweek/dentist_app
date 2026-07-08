@@ -30,6 +30,7 @@
 
 - 当前 Flutter 环境在 Windows 下；直接在 Windows shell 中执行 Flutter 命令时使用 `flutter ...`，只有从 WSL 执行时才统一使用 `cmd.exe /c flutter ...`。
 - 当前仓库涉及 Flutter/Android 工具链命令时，默认按全局沙箱规则执行；在本机 Windows 环境下通常需要显式走非沙箱审批。
+- 新克隆仓库或新建 worktree 后，先在仓库根目录执行 `git config --local core.hooksPath .githooks`，启用仓库内的提交前行尾检查 hook。
 - 修改 Windows 端时在 `windows_app/` 目录执行命令；修改 Android 端时在 `android_app/` 目录执行命令。
 - 常用验证命令：
   - Windows shell 获取依赖：`flutter pub get`
@@ -66,6 +67,6 @@
 - 代码修改后至少在对应子项目目录运行 Flutter 静态检查；Windows shell 使用 `flutter analyze`，WSL 使用 `cmd.exe /c flutter analyze`。
 - 涉及测试逻辑或新增/修复可测试行为时，再运行 Flutter 测试；Windows shell 使用 `flutter test`，WSL 使用 `cmd.exe /c flutter test`。
 - 默认执行顺序为：先对改动过的 Dart 文件运行 `dart format`，再运行 `flutter analyze`；只有在改动涉及可测试逻辑、Bug 修复或已有测试覆盖点时再运行 `flutter test`。
+- 修改或新增文本文件后，提交前先检查本次改动文件的行尾；若 `git ls-files --eol -- <file>` 出现 `w/crlf` 或 `w/mixed`，必须先转回 `LF` 再提交。
 - 如果本地环境无法运行验证，说明失败原因和用户可执行的命令。
 - 完成开发、修复、文档补齐或重要调研后，同步更新根目录 `ROADMAP.md`。
-

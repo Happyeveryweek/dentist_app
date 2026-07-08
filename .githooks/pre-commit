@@ -1,0 +1,45 @@
+#!/bin/sh
+
+staged_file_list="$(mktemp)"
+failure_file_list="$(mktemp)"
+
+cleanup() {
+  rm -f "$staged_file_list" "$failure_file_list"
+}
+
+trap cleanup EXIT
+
+git diff --cached --name-only --diff-filter=ACMR > "$staged_file_list"
+
+if [ ! -s "$staged_file_list" ]; then
+  exit 0
+fi
+
+while IFS= read -r path; do
+  [ -z "$path" ] && continue
+
+  eol_info="$(git ls-files --eol -- "$path")"
+
+  case "$eol_info" in
+    *"w/crlf"*|*"w/mixed"*)
+      printf '%s\n' "$path" >> "$failure_file_list"
+      ;;
+  esac
+done < "$staged_file_list"
+
+if [ ! -s "$failure_file_list" ]; then
+  exit 0
+fi
+
+echo "pre-commit: 检测到暂存文件工作区行尾不是 LF，已阻止提交。" >&2
+echo "请先在编辑器中将以下文件转换为 LF 并保存后重新 git add：" >&2
+
+while IFS= read -r path; do
+  [ -z "$path" ] && continue
+  echo "  - $path" >&2
+done < "$failure_file_list"
+
+echo "可用命令复查：" >&2
+echo "  git ls-files --eol -- <file>" >&2
+
+exit 1
