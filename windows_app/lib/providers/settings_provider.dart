@@ -173,6 +173,10 @@ class SettingsProvider extends ChangeNotifier {
       username: settings['mysqlUsername']?.toString() ?? '',
       password: settings['mysqlPassword']?.toString() ?? '',
     );
+    final backupDataSource = settings['backupDataSource']?.toString();
+    _dataSourceManagementService.setBackupDataSource(
+      backupDataSource == 'mysql' ? 'mysql' : 'sqlite',
+    );
 
     final moduleDataSources =
         _loadModuleDataSources(settings['moduleDataSources']);

@@ -35,13 +35,21 @@ class BackupDataSourceSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(
-            context, '备份数据源设置', Icons.backup_rounded, context.tokens.secondaryAccent),
+        _buildSectionHeader(context, '备份数据源设置', Icons.backup_rounded,
+            context.tokens.secondaryAccent),
         Container(
           margin: const EdgeInsets.only(bottom: 24),
           decoration: BoxDecoration(
-            color: context.tokens.cardBackground,
+            color: isBackupDataSourceEditing
+                ? context.tokens.secondaryAccent.withValues(alpha: 0.06)
+                : context.tokens.cardBackground,
             borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isBackupDataSourceEditing
+                  ? context.tokens.secondaryAccent.withValues(alpha: 0.65)
+                  : Colors.transparent,
+              width: isBackupDataSourceEditing ? 2 : 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: context.tokens.shadow.withValues(alpha: 0.08),
@@ -59,7 +67,8 @@ class BackupDataSourceSection extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon, Color color) {
+  Widget _buildSectionHeader(
+      BuildContext context, String title, IconData icon, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -122,6 +131,13 @@ class BackupDataSourceSection extends StatelessWidget {
                 fontSize: 16,
               ),
             ),
+            if (isBackupDataSourceEditing) ...[
+              const SizedBox(width: 12),
+              DataSourceFormWidgets.buildEditingBadge(
+                context,
+                color: context.tokens.secondaryAccent,
+              ),
+            ],
             const Spacer(),
             if (!isBackupDataSourceEditing) ...[
               ElevatedButton.icon(
@@ -177,7 +193,8 @@ class BackupDataSourceSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: context.tokens.primaryAccent.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: context.tokens.primaryAccent.withValues(alpha: 0.2)),
+            border: Border.all(
+                color: context.tokens.primaryAccent.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -301,8 +318,9 @@ class BackupDataSourceSection extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color:
-              isSelected ? color.withValues(alpha: 0.1) : context.tokens.mutedBackground,
+          color: isSelected
+              ? color.withValues(alpha: 0.1)
+              : context.tokens.mutedBackground,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected ? color : context.tokens.divider,
@@ -500,7 +518,8 @@ class BackupDataSourceSection extends StatelessWidget {
               decoration: BoxDecoration(
                 color: context.tokens.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: context.tokens.warning.withValues(alpha: 0.3)),
+                border: Border.all(
+                    color: context.tokens.warning.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [

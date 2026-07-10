@@ -1,8 +1,11 @@
 import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
+import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart'
+    show databaseFactoryFfi, sqfliteFfiInit;
 import 'package:mysql1/mysql1.dart';
 import '../utils/datetime_formatter.dart';
 import '../utils/app_paths.dart';
@@ -11,6 +14,9 @@ import '../utils/log_manager.dart';
 /// 数据库备份恢复服务
 /// 职责：SQLite 和 MySQL 的备份恢复、SQL 语句处理
 class DatabaseBackupService {
+  static const int _backupManifestVersion = 1;
+  static const String _backupManifestSuffix = '.manifest.json';
+
   final Database? sqliteDatabase;
   final MySqlConnection? mysqlConnection;
   final String dataSourceType;
@@ -143,16 +149,9 @@ class DatabaseBackupService {
       final backupFilePath =
           path.join(userBackupPath, 'sqlite_backup_$timestamp.db');
 
-      // 尽量先把 WAL 内容落盘，避免复制出不完整快照。
-      try {
-        await db.execute('PRAGMA wal_checkpoint(FULL)');
-      } catch (e) {
-        LogManager.e('DatabaseBackupService', 'SQLite checkpoint 执行失败，继续复制文件',
-            error: e);
-      }
-
-      // 复制数据库文件
-      await File(resolvedDbPath).copy(backupFilePath);
+      final escapedBackupPath = backupFilePath.replaceAll("'", "''");
+      await db.execute("VACUUM INTO '$escapedBackupPath'");
+      await _validateSQLiteDatabaseFile(backupFilePath);
 
       LogManager.w(
           'DatabaseBackupService', 'SQLite 数据库文件已备份到: $backupFilePath');
@@ -210,6 +209,12 @@ class DatabaseBackupService {
       '-u$username',
       '-p$password',
       '--default-character-set=utf8mb4',
+      '--single-transaction',
+      '--quick',
+      '--routines',
+      '--events',
+      '--triggers',
+      '--hex-blob',
       database,
       '--result-file=$finalBackupPath'
     ];
@@ -234,10 +239,220 @@ class DatabaseBackupService {
         throw Exception('备份失败: ${result.stderr}');
       }
 
+      await _validateMySQLBackup(
+        backupFilePath: finalBackupPath,
+        database: database,
+      );
+
       return finalBackupPath;
     } catch (e) {
       LogManager.e('DatabaseBackupService', '执行备份命令时出错', error: e);
       throw Exception('备份失败: $e');
+    }
+  }
+
+  Future<void> _validateMySQLBackup({
+    required String backupFilePath,
+    required String database,
+  }) async {
+    final connection = mysqlConnection;
+    if (connection == null) {
+      throw Exception('MySQL 连接未建立，无法校验备份文件');
+    }
+
+    final backupFile = File(backupFilePath);
+    if (!await backupFile.exists()) {
+      throw Exception('mysqldump 未生成备份文件');
+    }
+
+    final fileLength = await backupFile.length();
+    if (fileLength <= 0) {
+      throw Exception('mysqldump 生成了空备份文件');
+    }
+
+    // SQL 中可能包含 BLOB 的原始字节；完整性校验只解析 ASCII SQL 结构，
+    // 使用单字节解码可避免二进制内容导致 UTF-8 解码误报失败。
+    final sqlContent = latin1.decode(await backupFile.readAsBytes());
+    if (!RegExp(r'^-- Dump completed on ', multiLine: true)
+        .hasMatch(sqlContent)) {
+      throw Exception('备份文件缺少 mysqldump 完成标记，可能未完整写入');
+    }
+
+    final sourceObjects = await connection.query(
+      'SELECT TABLE_NAME AS table_name, TABLE_TYPE AS table_type '
+      'FROM information_schema.TABLES WHERE TABLE_SCHEMA = ?',
+      [database],
+    );
+    final sourceTables = <String>[];
+    final views = <String>[];
+
+    for (final object in sourceObjects) {
+      final objectName = object.fields['table_name']?.toString() ?? '';
+      final objectType = object.fields['table_type']?.toString() ?? '';
+      if (objectName.isEmpty) {
+        continue;
+      }
+
+      if (objectType.toUpperCase() == 'VIEW') {
+        views.add(objectName);
+        continue;
+      }
+
+      sourceTables.add(objectName);
+    }
+
+    final dumpedTables = RegExp(
+      r'^CREATE TABLE `([^`]+)`',
+      caseSensitive: false,
+      multiLine: true,
+    )
+        .allMatches(sqlContent)
+        .map((match) => match.group(1) ?? '')
+        .where((name) => name.isNotEmpty)
+        .toSet();
+    final missingTables = sourceTables
+        .where((tableName) => !dumpedTables.contains(tableName))
+        .toList();
+    if (missingTables.isNotEmpty) {
+      throw Exception('备份文件缺少数据表: ${missingTables.join(', ')}');
+    }
+
+    final missingViews = views
+        .where((viewName) => !RegExp(
+              'VIEW `${RegExp.escape(viewName)}`',
+              caseSensitive: false,
+            ).hasMatch(sqlContent))
+        .toList();
+    if (missingViews.isNotEmpty) {
+      throw Exception('备份文件缺少视图定义: ${missingViews.join(', ')}');
+    }
+
+    final digest = await sha256.bind(backupFile.openRead()).first;
+    final backupRowCounts = _countMySQLDumpRows(sqlContent);
+    final sortedTableNames = sourceTables..sort();
+    views.sort();
+    final manifest = <String, dynamic>{
+      'formatVersion': _backupManifestVersion,
+      'database': database,
+      'backupFile': path.basename(backupFilePath),
+      'createdAt': DateTime.now().toIso8601String(),
+      'sizeBytes': fileLength,
+      'sha256': digest.toString(),
+      'tableCount': sortedTableNames.length,
+      'tables': [
+        for (final tableName in sortedTableNames)
+          {
+            'name': tableName,
+            'backupRowCount': backupRowCounts[tableName] ?? 0,
+          },
+      ],
+      'viewCount': views.length,
+      'views': views,
+    };
+    final manifestFile = File('$backupFilePath$_backupManifestSuffix');
+    await manifestFile.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(manifest),
+      encoding: utf8,
+      flush: true,
+    );
+
+    LogManager.i(
+      'DatabaseBackupService',
+      'MySQL 备份完整性校验通过: ${sortedTableNames.length} 张表，${views.length} 个视图',
+    );
+  }
+
+  Map<String, int> _countMySQLDumpRows(String sqlContent) {
+    final rowCounts = <String, int>{};
+    final insertPattern = RegExp(
+      r'^INSERT INTO `([^`]+)` VALUES',
+      caseSensitive: false,
+      multiLine: true,
+    );
+
+    for (final match in insertPattern.allMatches(sqlContent)) {
+      final tableName = match.group(1) ?? '';
+      if (tableName.isEmpty) {
+        continue;
+      }
+
+      var inString = false;
+      var escaped = false;
+      var depth = 0;
+      var rowCount = 0;
+
+      for (var index = match.end; index < sqlContent.length; index++) {
+        final character = sqlContent[index];
+        if (inString) {
+          if (escaped) {
+            escaped = false;
+          } else if (character == '\\') {
+            escaped = true;
+          } else if (character == "'") {
+            final nextCharacter =
+                index + 1 < sqlContent.length ? sqlContent[index + 1] : '';
+            if (nextCharacter == "'") {
+              index++;
+            } else {
+              inString = false;
+            }
+          }
+          continue;
+        }
+
+        if (character == "'") {
+          inString = true;
+        } else if (character == '(') {
+          if (depth == 0) {
+            rowCount++;
+          }
+          depth++;
+        } else if (character == ')' && depth > 0) {
+          depth--;
+        } else if (character == ';' && depth == 0) {
+          break;
+        }
+      }
+
+      rowCounts.update(
+        tableName,
+        (currentCount) => currentCount + rowCount,
+        ifAbsent: () => rowCount,
+      );
+    }
+
+    return rowCounts;
+  }
+
+  Future<void> _validateSQLiteDatabaseFile(String databaseFilePath) async {
+    final databaseFile = File(databaseFilePath);
+    if (!await databaseFile.exists() || await databaseFile.length() <= 0) {
+      throw Exception('SQLite 备份文件不存在或为空: $databaseFilePath');
+    }
+
+    sqfliteFfiInit();
+    Database? validationDatabase;
+    try {
+      validationDatabase = await databaseFactoryFfi.openDatabase(
+        databaseFilePath,
+        options: OpenDatabaseOptions(
+          readOnly: true,
+          singleInstance: false,
+        ),
+      );
+      final integrityResult =
+          await validationDatabase.rawQuery('PRAGMA integrity_check');
+      final integrityValues = integrityResult.isEmpty
+          ? const <Object?>[]
+          : integrityResult.first.values;
+      final integrityValue = integrityValues.isEmpty
+          ? ''
+          : integrityValues.first?.toString() ?? '';
+      if (integrityValue.toLowerCase() != 'ok') {
+        throw Exception('SQLite 完整性检查失败: $integrityValue');
+      }
+    } finally {
+      await validationDatabase?.close();
     }
   }
 
@@ -268,7 +483,10 @@ class DatabaseBackupService {
   }
 
   /// SQLite 数据库恢复方法 - 使用文件复制
-  Future<void> restoreSQLiteDatabase(String backupFilePath) async {
+  Future<void> restoreSQLiteDatabase(
+    String backupFilePath, {
+    String? targetDatabasePath,
+  }) async {
     try {
       if (!_isSqliteDataSource) {
         throw Exception('当前数据源不是 SQLite，不能执行 SQLite 文件恢复');
@@ -279,22 +497,96 @@ class DatabaseBackupService {
         throw Exception('备份文件不存在: $backupFilePath');
       }
 
+      await _validateSQLiteDatabaseFile(backupFilePath);
+
       // 获取目标数据库文件路径
       String dbPath;
-      try {
-        dbPath = AppPaths.databasePath;
-      } catch (e) {
-        final dbDir = await getDatabasesPath();
-        dbPath = path.join(dbDir, 'dentist_clinic.db');
+      if (targetDatabasePath != null && targetDatabasePath.isNotEmpty) {
+        dbPath = targetDatabasePath;
+      } else if (sqliteDatabase case final database?
+          when database.path.isNotEmpty) {
+        dbPath = database.path;
+      } else {
+        try {
+          dbPath = AppPaths.databasePath;
+        } catch (e) {
+          final dbDir = await getDatabasesPath();
+          dbPath = path.join(dbDir, 'dentist_clinic.db');
+        }
       }
 
       final targetFile = File(dbPath);
-      if (await targetFile.exists()) {
-        await targetFile.delete();
+      final targetDirectory = Directory(path.dirname(dbPath));
+      if (!await targetDirectory.exists()) {
+        await targetDirectory.create(recursive: true);
       }
 
-      // 复制备份文件到数据库位置
-      await backupFile.copy(dbPath);
+      final timestamp = DateTimeFormatter.nowDbString()
+          .replaceAll(':', '-')
+          .replaceAll(' ', '_');
+      final extension = path.extension(dbPath);
+      final baseName = path.basenameWithoutExtension(dbPath);
+      final preRestorePath = path.join(
+        targetDirectory.path,
+        '${baseName}_pre_restore_$timestamp$extension',
+      );
+      final temporaryRestorePath = path.join(
+        targetDirectory.path,
+        '.$baseName.restore_$timestamp.tmp',
+      );
+      final temporaryRestoreFile = File(temporaryRestorePath);
+      final preRestoreFile = File(preRestorePath);
+
+      if (await temporaryRestoreFile.exists() ||
+          await preRestoreFile.exists()) {
+        throw Exception('恢复临时文件或恢复前备份已存在，请稍后重试');
+      }
+
+      await backupFile.copy(temporaryRestorePath);
+      await _validateSQLiteDatabaseFile(temporaryRestorePath);
+
+      var targetMoved = false;
+      final movedSidecars = <String, String>{};
+      try {
+        if (await targetFile.exists()) {
+          await targetFile.rename(preRestorePath);
+          targetMoved = true;
+
+          for (final suffix in const ['-wal', '-shm']) {
+            final sidecarPath = '$dbPath$suffix';
+            final sidecarFile = File(sidecarPath);
+            if (await sidecarFile.exists()) {
+              final retainedPath = '$preRestorePath$suffix';
+              await sidecarFile.rename(retainedPath);
+              movedSidecars[sidecarPath] = retainedPath;
+            }
+          }
+        }
+
+        await temporaryRestoreFile.rename(dbPath);
+        LogManager.i(
+          'DatabaseBackupService',
+          targetMoved
+              ? 'SQLite 数据库已安全恢复，恢复前备份保留在: $preRestorePath'
+              : 'SQLite 数据库已安全恢复到: $dbPath',
+        );
+      } catch (e) {
+        if (targetMoved &&
+            await preRestoreFile.exists() &&
+            !await targetFile.exists()) {
+          await preRestoreFile.rename(dbPath);
+        }
+        for (final entry in movedSidecars.entries) {
+          final retainedFile = File(entry.value);
+          if (await retainedFile.exists() && !await File(entry.key).exists()) {
+            await retainedFile.rename(entry.key);
+          }
+        }
+        if (await temporaryRestoreFile.exists()) {
+          await temporaryRestoreFile.delete();
+        }
+        rethrow;
+      }
     } catch (e) {
       rethrow;
     }

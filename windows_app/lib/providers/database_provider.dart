@@ -386,11 +386,18 @@ class DatabaseProvider extends ChangeNotifier {
           extension == '.sqlite3';
 
       if (isSqliteSnapshot) {
+        final activeDatabasePath = _database?.path;
         await _closeSqliteConnectionOnly();
         _updateServiceConnections();
-        await _backupService.restoreSQLiteDatabase(filePath);
-        _database = await _sqliteService.initSQLiteDatabase();
-        _updateServiceConnections();
+        try {
+          await _backupService.restoreSQLiteDatabase(
+            filePath,
+            targetDatabasePath: activeDatabasePath,
+          );
+        } finally {
+          _database = await _sqliteService.initSQLiteDatabase();
+          _updateServiceConnections();
+        }
       } else {
         await _backupService.restoreDatabase(filePath);
       }

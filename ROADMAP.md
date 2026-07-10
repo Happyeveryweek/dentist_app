@@ -1,6 +1,7 @@
 # ROADMAP
 
 ## 当前阶段
+- `windows_app` 数据源配置编辑态与数据库备份可靠性修复已完成并验证：SQLite/MySQL/备份数据源编辑区增加明确的“编辑中”状态和强调边框；MySQL 备份启用一致快照及完整对象参数，并在每次独立导出后校验完成标记、表/视图清单、文件哈希和备份内行数清单；SQLite 改用 `VACUUM INTO` 生成一致快照并执行完整性检查，自定义路径恢复会先校验临时文件、保留恢复前数据库后再替换真实活动路径。新增 2 个 SQLite 备份/恢复回归测试并通过，`flutter analyze` 结果 `No issues found!`。
 - `windows_app` 备份/恢复链路高风险修复已完成并验证：MySQL 部分失败不再误报成功，还原前备份改为真实执行，SQLite 文件恢复前会先关闭连接并在恢复后重建；采购导出服务已收口为单一核心实现。已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
 - `android_app` 采购详情页导出与材料库初始化修复已完成代码修改，待在 `android_app/` 运行 `flutter analyze` 验证。
 - `windows_app` 预约管理菜单重复点击闪屏修复已完成代码修改，待在 `windows_app/` 运行 `flutter analyze` 验证。
@@ -30,6 +31,9 @@
 - 无
 
 ## 最近验证
+- 2026-07-10：修复 `windows_app` 备份数据源保存后重启回退到 SQLite 的问题：启动加载配置时已恢复 `backupDataSource` 字段，并新增“保存为 MySQL 后重新初始化仍为 MySQL”的持久化回归测试；定向测试通过，全量 `flutter analyze` 结果 `No issues found!`。
+- 2026-07-10：修复 MySQL 备份完整性校验把含 BLOB 原始字节的 SQL 强制按 UTF-8 解码而误报失败的问题；校验改为单字节安全解析，后续 `mysqldump` 增加 `--hex-blob`。现场生成的 `D:\`、`E:\` 两份失败提示对应 SQL 均已确认包含 14 张表、18 组数据语句和正常完成标记；修复后运行全量 `flutter analyze`，结果 `No issues found!`。
+- 2026-07-10：`windows_app` 完成数据源编辑态、MySQL 备份完整性校验及 SQLite 一致快照/真实路径安全恢复修复；运行 `flutter test test\services\database_backup_service_test.dart`，2 个测试全部通过；运行全量 `flutter analyze`，结果 `No issues found!`。
 - 2026-07-08：根目录已新增 `.githooks/pre-commit` 并配置为仓库本地 `core.hooksPath`；使用临时 `CRLF` 文本文件做真实拦截测试时，hook 已按预期阻止 `git commit`，同时在清洁工作区下返回通过；本轮验证只覆盖提交前行尾守卫，不改动业务代码逻辑。
 - 2026-07-08：`windows_app` 修复仪表盘欢迎区动态层登录后红屏问题：补齐 `_welcomeAmbientController` 初始化与释放，解决 `LateInitializationError`；已运行 `dart format lib\screens\modern_dashboard_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
 - 2026-07-08：`windows_app` 仪表盘欢迎长条图中部已新增非交互动态装饰层，包含慢速流光线、呼吸光点和低透明医疗符号气泡；已运行 `dart format lib\screens\modern_dashboard_screen.dart` 和 `flutter analyze`，结果 `No issues found!`；本轮只调整欢迎区视觉动效，不改动仪表盘数据加载、导航权限、卡片点击和登录逻辑。

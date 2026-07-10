@@ -149,6 +149,10 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 fontSize: 16,
               ),
             ),
+            if (isSqliteEditing) ...[
+              const SizedBox(width: 12),
+              DataSourceFormWidgets.buildEditingBadge(context),
+            ],
             const Spacer(),
             if (!isSqliteEditing) ...[
               ElevatedButton.icon(
@@ -200,11 +204,13 @@ class DataSourceConfigurationSection extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: context.tokens.primaryAccent.withValues(alpha: 0.05),
+            color: context.tokens.primaryAccent
+                .withValues(alpha: isSqliteEditing ? 0.1 : 0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: context.tokens.primaryAccent.withValues(alpha: 0.2),
-              width: 1,
+              color: context.tokens.primaryAccent
+                  .withValues(alpha: isSqliteEditing ? 0.65 : 0.2),
+              width: isSqliteEditing ? 2 : 1,
             ),
           ),
           child: Column(
@@ -237,7 +243,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                                   color: context.tokens.successContainer,
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: context.tokens.success.withValues(alpha: 0.3),
+                                    color: context.tokens.success
+                                        .withValues(alpha: 0.3),
                                     width: 1,
                                   ),
                                 ),
@@ -270,10 +277,12 @@ class DataSourceConfigurationSection extends StatelessWidget {
                               horizontal: 12, vertical: 8),
                           decoration: sqliteDbPath.isNotEmpty
                               ? BoxDecoration(
-                                  color: context.tokens.success.withValues(alpha: 0.05),
+                                  color: context.tokens.success
+                                      .withValues(alpha: 0.05),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: context.tokens.success.withValues(alpha: 0.2),
+                                    color: context.tokens.success
+                                        .withValues(alpha: 0.2),
                                     width: 1,
                                   ),
                                 )
@@ -368,6 +377,10 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 fontSize: 16,
               ),
             ),
+            if (isEditing) ...[
+              const SizedBox(width: 12),
+              DataSourceFormWidgets.buildEditingBadge(context),
+            ],
             const Spacer(),
             if (!isEditing) ...[
               ElevatedButton.icon(
@@ -528,11 +541,11 @@ class DataSourceConfigurationSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: context.tokens.success.withValues(alpha: 0.05),
+        color: context.tokens.primaryAccent.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: context.tokens.success.withValues(alpha: 0.2),
-          width: 1,
+          color: context.tokens.primaryAccent.withValues(alpha: 0.65),
+          width: 2,
         ),
       ),
       child: Form(
@@ -660,8 +673,8 @@ class DataSourceConfigurationSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: context.tokens.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
-                  border:
-                      Border.all(color: context.tokens.success.withValues(alpha: 0.3)),
+                  border: Border.all(
+                      color: context.tokens.success.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,

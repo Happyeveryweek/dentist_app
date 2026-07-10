@@ -4,6 +4,33 @@ import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 数据源设置页面中使用的通用 UI 组件
 class DataSourceFormWidgets {
+  static Widget buildEditingBadge(BuildContext context, {Color? color}) {
+    final badgeColor = color ?? context.tokens.primaryAccent;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: badgeColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: badgeColor.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.edit_rounded, size: 14, color: badgeColor),
+          const SizedBox(width: 5),
+          Text(
+            '编辑中',
+            style: TextStyle(
+              color: badgeColor,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 构建增强设置项
   static Widget buildEnhancedSettingItem({
     required IconData icon,

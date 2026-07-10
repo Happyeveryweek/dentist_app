@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../theme/theme_context_extensions.dart';
+import 'data_source_form_widgets.dart';
 
 /// 数据源类型切换区域组件
 /// 包含全局/模块化模式选择和数据源配置
@@ -38,13 +39,21 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(
-            context, '数据源类型切换', Icons.swap_horiz_rounded, context.tokens.secondaryAccent),
+        _buildSectionHeader(context, '数据源类型切换', Icons.swap_horiz_rounded,
+            context.tokens.secondaryAccent),
         Container(
           margin: const EdgeInsets.only(bottom: 24),
           decoration: BoxDecoration(
-            color: context.tokens.cardBackground,
+            color: isDataSourceTypeEditing
+                ? context.tokens.secondaryAccent.withValues(alpha: 0.06)
+                : context.tokens.cardBackground,
             borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDataSourceTypeEditing
+                  ? context.tokens.secondaryAccent.withValues(alpha: 0.65)
+                  : Colors.transparent,
+              width: isDataSourceTypeEditing ? 2 : 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: context.tokens.shadow.withValues(alpha: 0.08),
@@ -75,7 +84,8 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon, Color color) {
+  Widget _buildSectionHeader(
+      BuildContext context, String title, IconData icon, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -122,10 +132,10 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
-              Icons.swap_horiz_rounded,
-              color: context.tokens.secondaryAccent,
-              size: 20,
-            ),
+            Icons.swap_horiz_rounded,
+            color: context.tokens.secondaryAccent,
+            size: 20,
+          ),
         ),
         const SizedBox(width: 12),
         const Text(
@@ -135,6 +145,13 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
             fontSize: 16,
           ),
         ),
+        if (isDataSourceTypeEditing) ...[
+          const SizedBox(width: 12),
+          DataSourceFormWidgets.buildEditingBadge(
+            context,
+            color: context.tokens.secondaryAccent,
+          ),
+        ],
         const Spacer(),
         if (!isDataSourceTypeEditing) ...[
           ElevatedButton.icon(
@@ -194,10 +211,10 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
-              Icons.tune_rounded,
-              color: context.tokens.secondaryAccent,
-              size: 20,
-            ),
+                Icons.tune_rounded,
+                color: context.tokens.secondaryAccent,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
             const Text(
@@ -272,8 +289,9 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color:
-              isSelected ? color.withValues(alpha: 0.1) : context.tokens.mutedBackground,
+          color: isSelected
+              ? color.withValues(alpha: 0.1)
+              : context.tokens.mutedBackground,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : context.tokens.divider,
@@ -421,7 +439,8 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: context.tokens.primaryAccent.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: context.tokens.primaryAccent.withValues(alpha: 0.2)),
+            border: Border.all(
+                color: context.tokens.primaryAccent.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -627,7 +646,8 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: context.tokens.primaryAccent.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: context.tokens.primaryAccent.withValues(alpha: 0.2)),
+            border: Border.all(
+                color: context.tokens.primaryAccent.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -674,7 +694,8 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: context.tokens.success.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: context.tokens.success.withValues(alpha: 0.2)),
+            border: Border.all(
+                color: context.tokens.success.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -701,8 +722,8 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
     );
   }
 
-  Widget _buildModuleDataSourceCard(
-      BuildContext context, String moduleKey, String moduleName, IconData icon, Color color) {
+  Widget _buildModuleDataSourceCard(BuildContext context, String moduleKey,
+      String moduleName, IconData icon, Color color) {
     final currentDataSource = dataSourceMode == 'global'
         ? selectedDataSource
         : (moduleDataSources[moduleKey] ?? 'sqlite');
