@@ -741,9 +741,23 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
     return ListView.builder(
       padding: const EdgeInsets.all(16.0),
-      itemCount: _appointments.length,
+      itemCount: _appointments.length + 1,
       itemBuilder: (context, index) {
-        final appointment = _appointments[index];
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: ElevatedButton.icon(
+                onPressed: _addAppointment,
+                icon: const Icon(Icons.add),
+                label: const Text('添加预约'),
+              ),
+            ),
+          );
+        }
+
+        final appointment = _appointments[index - 1];
         return PatientAppointmentCard(
           appointment: appointment,
           treatmentTypeText:

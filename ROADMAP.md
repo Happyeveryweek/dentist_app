@@ -1,6 +1,7 @@
 # ROADMAP
 
 ## 当前阶段
+- `windows_app` 患者详情页预约记录标签已修复多条预约添加入口：存在预约记录时，列表顶部仍显示“添加预约”按钮，并复用原有保存、重新加载与父页刷新链路；已运行 `dart format lib\\screens\\patient_detail_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
 - `windows_app` 数据源配置编辑态与数据库备份可靠性修复已完成并验证：SQLite/MySQL/备份数据源编辑区增加明确的“编辑中”状态和强调边框；MySQL 备份启用一致快照及完整对象参数，并在每次独立导出后校验完成标记、表/视图清单、文件哈希和备份内行数清单；SQLite 改用 `VACUUM INTO` 生成一致快照并执行完整性检查，自定义路径恢复会先校验临时文件、保留恢复前数据库后再替换真实活动路径。新增 2 个 SQLite 备份/恢复回归测试并通过，`flutter analyze` 结果 `No issues found!`。
 - `windows_app` 备份/恢复链路高风险修复已完成并验证：MySQL 部分失败不再误报成功，还原前备份改为真实执行，SQLite 文件恢复前会先关闭连接并在恢复后重建；采购导出服务已收口为单一核心实现。已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
 - `android_app` 采购详情页导出与材料库初始化修复已完成代码修改，待在 `android_app/` 运行 `flutter analyze` 验证。
