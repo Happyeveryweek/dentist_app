@@ -72,7 +72,7 @@ class PatientCoreService {
     if (success &&
         patientId != null &&
         getEffectiveDataSourceType() == 'sqlite') {
-      _trySyncPatientToMySQL(patientMap, patientId);
+      await _doSyncPatientToMySQL(patientMap, patientId);
     }
     return success;
   }

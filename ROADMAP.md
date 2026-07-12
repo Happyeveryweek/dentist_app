@@ -1,6 +1,10 @@
 # ROADMAP
 
 ## 当前阶段
+- `windows_app` 方法级无用代码与重复逻辑实施计划已完成批次 0：四组候选精确搜索、测试路径映射和全量基线已冻结；`flutter test` 64 个通过，`flutter analyze` 为 `No issues found!`。批次 1～6 仍未开始，尚未删除候选方法或重构重复逻辑。
+- `android_app` 无用文件、无调用方法与重复实现实施计划的批次 0 已完成：重新执行审核报告 7 组搜索并补充 16 个候选文件/类名/现用入口取证，确认 Android 当前仍无 `test/` 目录和可复用测试夹具，未修改 Dart 业务代码；批次 1～7 仍未开始。原始证据仍以 `android_app/docs/android_app_dead_code_duplicate_files_and_methods_audit_2026_07_12.md` 为准。
+- `windows_app` 已完成第二阶段方法级无用代码与重复逻辑静态审核：在当前 353 个可达 Dart 文件、约 95725 行代码中，复核无调用公有方法、Provider/service 兼容委托、一次性迁移入口和跨模块重复实现；详细候选、排除项、六批执行方案、精确搜索命令和验证协议已写入 `windows_app/docs/windows_app_method_level_dead_code_and_duplicate_logic_audit_2026_07_12.md`。本轮只新增审核文档，未删除候选方法或重构业务代码。
+- `windows_app` 患者详情编辑后的 SQLite → MySQL 同步已修复重复日志：患者更新链路改为等待 `PatientCoreService` 内既有同步完成，详情页保存回调只刷新同步状态，不再对同一次保存执行第二次同步；预约状态服务测试夹具已修正，全量 `flutter test` 64 个测试全部通过；无用代码清理的 39 个候选文件删除、静态检查和现有自动化测试已完成，各批手动业务回归尚未全部完成。
 - `windows_app` 已完成无用 Dart 文件与重复实现专项静态审核：以 `lib/main.dart` 为根检查 392 个 Dart 文件的 `import/export/part` 引用图，识别出 34 个无入站文件及 5 个仅被死入口引用的传递文件，共 39 个不可达候选、约 8484 行；已在 `windows_app/docs/windows_app_dead_code_and_duplicate_implementation_audit_2026_07_12.md` 记录逐文件证据、风险分级、五批清理方案和验证协议，并在 `windows_app/docs/windows_app_dead_code_cleanup_plan_2026_07_12.md` 制定可执行清理计划。
 - `windows_app` 无用代码清理第一批已执行：删除预约旧四组件、旧时间格式工具、备份路径旧组件、采购导出兼容壳、采购未接入拆分组件、财务辅助孤立组件、设置页孤立组件和占位文件共 18 个文件；`flutter analyze` `No issues found!`，`git diff --check` 通过；`flutter test` 因网络超时无法下载 sqlite3 原生库失败（环境问题）。
 - `windows_app` 无用代码清理第二批已执行：删除财务旧编辑弹窗 `edit_financial_item_dialog.dart`、旧统计对话框 `financial_statistics_dialog_widget.dart`、旧统计组件 `financial_stats_section.dart` 共 3 个文件；`flutter analyze` `No issues found!`，`git diff --check` 通过。
@@ -46,6 +50,13 @@
 - 无
 
 ## 最近验证
+- 2026-07-12：执行 `windows_app` 方法级无用代码与重复逻辑清理批次 0；完成四组精确 `rg` 复核、批次 1～4 候选测试映射和测试文件存在性检查，确认患者表单校验测试实际路径为 `test/features/patients/services/patient_form_validators_test.dart`，同步相关目录暂无独立 sync 测试文件；全量 `flutter test` 64 个通过，`flutter analyze` `No issues found!`。本批未修改业务代码，批次 1～6 仍待逐批授权。
+- 2026-07-12：完成 `android_app` 无用代码与重复实现实施计划批次 0：重新执行审核报告 7 组 `rg` 搜索和 16 个候选文件/类名/现用入口搜索；确认新版患者数据源、`database_models.dart` 的 `Appointment`、现用 SchemaValidator、财务清理服务和 `MysqlRowProcessor` 的保留边界；确认 `android_app/test/` 与测试夹具仍不存在；未修改 Dart 业务代码，`flutter analyze` 为 `No issues found!`，`flutter test` 无测试目标，`git diff --check` 和行尾检查通过。批次 1～7 尚未开始。
+- 2026-07-12：根据 `windows_app` 方法级无用代码与重复逻辑审核报告新增独立实施计划，明确 0～6 批的候选范围、删除授权边界、取证命令、自动/手动验收和逐批进度表；本轮未修改 Dart 代码，未运行 Flutter 验证。
+- 2026-07-12：完成 `android_app` 无用文件、无调用方法与重复实现专项审核；建立 `main.dart` 引用图确认 288 个 Dart 文件中 16 个不可达、约 2203 行，并复核方法级低引用候选和跨模块重复片段；全量 `flutter analyze` 结果 `No issues found!`。Android 当前没有 `test/**/*.dart` 自动化测试，数据库、迁移、备份和同步类候选已在报告中标为执行前必须补测试或真实回归。
+- 2026-07-12：完成 `windows_app` 第二阶段方法级无用代码与重复逻辑静态审核；当前基线为 353 个 Dart 文件、约 95725 行，确认多批无调用 public API、Settings Provider/service 无消费者委托链，以及五套同步服务字段差异 helper 重复实现；报告已写入 `windows_app/docs/windows_app_method_level_dead_code_and_duplicate_logic_audit_2026_07_12.md`。本轮未修改业务代码，沿用最近全量 `flutter test` 64 个通过和 `flutter analyze` `No issues found!` 的基线。
+- 2026-07-12：修复 `appointment_state_service_test.dart` 的 5 个测试失败：患者搜索和数据变更分组此前未关闭 `AppointmentStateService` 默认日期筛选，固定在 2026-07-05 的测试数据会被当前日期过滤为空；仅调整测试夹具，不修改业务服务。单文件 14 个测试全部通过，全量 `flutter test` 64 个测试全部通过。
+- 2026-07-12：定位并修复 `windows_app` 患者详情编辑后同步日志重复问题；根因是 `PatientCoreService.updatePatient()` 已触发一次后台同步，详情页保存回调又显式同步一次。本轮将患者更新后的同步改为等待完成，详情页保存回调仅检查同步状态；并在清理计划补充完成状态复核。已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`；全量 `flutter test` 64 个测试全部通过；待手动编辑同一患者并确认本次操作只新增一条同步日志。
 - 2026-07-12：执行 `windows_app` 无用代码清理第五批，分 3 个提交删除 10 个不可达文件（医学常量与治疗模型、旧 schema/MySQL 工具、旧数据同步弹窗与材料类型下拉）；删除前符号搜索确认无新增引用，现用路径确认在用；删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过；纯删除批次未执行 `dart format`。
 - 2026-07-12：执行 `windows_app` 无用代码清理第四批，删除 6 个不可达文件（患者材料旧编辑器 5 文件孤岛 + `thumbnail_manager.dart`）；删除前符号搜索确认无新增引用，现用 `material_detail_manager.dart` 新增/编辑仍实例化 `SingleMaterialEditor`；删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过；纯删除批次未执行 `dart format`。
 - 2026-07-12：执行 `windows_app` 无用代码清理第三批，删除 2 个不可达文件（采购旧统计图表 `purchase_statistics_chart.dart` 及其依赖 `purchase_stat_card.dart`）；删除前符号搜索确认仅子图内部引用，现用 `PurchaseStatsDialog` 确认在用；删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过。

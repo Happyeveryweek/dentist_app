@@ -63,16 +63,19 @@ void main() {
 
       expect(service.filteredAppointments.length, 25);
       expect(service.paginatedAppointments.length, 10);
-      final firstPageIds = service.paginatedAppointments.map((a) => a.id).toSet();
+      final firstPageIds =
+          service.paginatedAppointments.map((a) => a.id).toSet();
 
       service.setPage(2);
       expect(service.paginatedAppointments.length, 10);
-      final secondPageIds = service.paginatedAppointments.map((a) => a.id).toSet();
+      final secondPageIds =
+          service.paginatedAppointments.map((a) => a.id).toSet();
       expect(secondPageIds.intersection(firstPageIds), isEmpty);
 
       service.setPage(3);
       expect(service.paginatedAppointments.length, 5);
-      final thirdPageIds = service.paginatedAppointments.map((a) => a.id).toSet();
+      final thirdPageIds =
+          service.paginatedAppointments.map((a) => a.id).toSet();
       expect(thirdPageIds.intersection(firstPageIds), isEmpty);
       expect(thirdPageIds.intersection(secondPageIds), isEmpty);
     });
@@ -133,7 +136,8 @@ void main() {
 
       service.selectDate(today);
       expect(service.filteredAppointments.length, 2);
-      expect(service.filteredAppointments.map((a) => a.id), containsAll([1, 2]));
+      expect(
+          service.filteredAppointments.map((a) => a.id), containsAll([1, 2]));
     });
 
     test('按日期范围筛选预约', () {
@@ -148,7 +152,8 @@ void main() {
 
       service.selectDateRange(d1, d2);
       expect(service.filteredAppointments.length, 2);
-      expect(service.filteredAppointments.map((a) => a.id), containsAll([1, 2]));
+      expect(
+          service.filteredAppointments.map((a) => a.id), containsAll([1, 2]));
     });
 
     test('关闭日期筛选后显示全部预约', () {
@@ -175,6 +180,7 @@ void main() {
       service = AppointmentStateService(
         appointmentProvider: AppointmentProvider(),
       );
+      service.isFiltering = false;
     });
 
     test('按患者姓名搜索预约', () {
@@ -233,6 +239,7 @@ void main() {
       service = AppointmentStateService(
         appointmentProvider: AppointmentProvider(),
       );
+      service.isFiltering = false;
     });
 
     test('更新已存在预约状态', () {

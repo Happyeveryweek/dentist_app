@@ -837,8 +837,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         AppToastManager.showSuccess(context, message: '患者信息已更新');
       }
 
-      // 保存后同步到 MySQL 并刷新同步状态
-      await _syncAndCheckStatus();
+      // PatientCoreService.updatePatient 已完成同步，这里只刷新同步状态，
+      // 避免同一次保存再次同步并写入重复日志。
+      await _checkSyncStatus();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -864,8 +865,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     try {
       final patientProvider =
           Provider.of<PatientProvider>(context, listen: false);
-      final result =
-          await patientProvider.comparePatientSyncStatus(patientId);
+      final result = await patientProvider.comparePatientSyncStatus(patientId);
 
       if (!mounted) return;
       setState(() {
@@ -907,8 +907,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     try {
       final patientProvider =
           Provider.of<PatientProvider>(context, listen: false);
-      final success =
-          await patientProvider.syncSinglePatientToMySQL(patientId);
+      final success = await patientProvider.syncSinglePatientToMySQL(patientId);
 
       if (!mounted) return;
 
@@ -931,36 +930,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         });
       }
     }
-  }
-
-  /// 保存后同步到 MySQL 并刷新同步状态
-  Future<void> _syncAndCheckStatus() async {
-    final patient = _patient;
-    if (patient == null) return;
-    final patientId = patient.id;
-    if (patientId == null) return;
-
-    if (mounted) {
-      setState(() {
-        _isSyncing = true;
-      });
-    }
-
-    try {
-      final patientProvider =
-          Provider.of<PatientProvider>(context, listen: false);
-      await patientProvider.syncSinglePatientToMySQL(patientId);
-    } catch (e) {
-      LogManager.e('PatientDetailScreen', '保存后同步失败', error: e);
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSyncing = false;
-        });
-      }
-    }
-
-    await _checkSyncStatus();
   }
 
   void _addAppointment() async {
