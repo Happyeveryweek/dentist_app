@@ -17,19 +17,38 @@ class TeethConditionWidget extends StatefulWidget {
 
 class _TeethConditionWidgetState extends State<TeethConditionWidget> {
   late List<Map<String, String>> _localTeethData;
+  late final List<Map<String, TextEditingController>> _controllers;
 
   @override
   void initState() {
     super.initState();
     _localTeethData =
         widget.teethData.map((item) => Map<String, String>.from(item)).toList();
+    _controllers = _localTeethData
+        .map(
+          (item) => {
+            'topLeft': TextEditingController(text: item['topLeft']),
+            'topRight': TextEditingController(text: item['topRight']),
+            'bottomLeft': TextEditingController(text: item['bottomLeft']),
+            'bottomRight': TextEditingController(text: item['bottomRight']),
+          },
+        )
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    for (final controllerMap in _controllers) {
+      for (final controller in controllerMap.values) {
+        controller.dispose();
+      }
+    }
+    super.dispose();
   }
 
   void _updateTeethData(int crossIndex, String quadrant, String value) {
-    setState(() {
-      _localTeethData[crossIndex][quadrant] = value;
-      widget.onChanged(_localTeethData);
-    });
+    _localTeethData[crossIndex][quadrant] = value;
+    widget.onChanged(_localTeethData);
   }
 
   @override
@@ -112,164 +131,120 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
   Widget _buildCross(int crossIndex) {
     final tokens = context.tokens;
     final crossLineColor = tokens.primaryAccent.withValues(alpha: 0.72);
-    const double width = 120.0;
-    const double height = 65.0;
-    const double centerX = width / 2;
-    const double centerY = height / 2;
 
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        CustomPaint(
-          size: const Size(width, height),
-          painter: CrossPainter(lineColor: crossLineColor),
-        ),
-        Positioned(
-          top: centerY - 20,
-          left: 10,
-          width: centerX - 12,
-          height: 18,
-          child: TextField(
-            textAlign: TextAlign.right,
-            textAlignVertical: TextAlignVertical.center,
-            cursorHeight: 14,
-            cursorWidth: 1.5,
-            decoration: const InputDecoration(
-              isCollapsed: true,
-              contentPadding: EdgeInsets.only(right: 4),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              filled: true,
-              fillColor: Colors.transparent,
+    return Container(
+      height: 68,
+      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+      child: Stack(
+        children: [
+          Center(
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 250),
+              height: 2.2,
+              decoration: BoxDecoration(
+                color: crossLineColor,
+                borderRadius: BorderRadius.circular(999),
+              ),
             ),
-            style: const TextStyle(fontSize: 12),
-            controller: TextEditingController(
-                text: _localTeethData[crossIndex]['topLeft']),
-            onChanged: (value) =>
-                _updateTeethData(crossIndex, 'topLeft', value),
           ),
-        ),
-        Positioned(
-          top: centerY - 20,
-          right: 10,
-          width: centerX - 12,
-          height: 18,
-          child: TextField(
-            textAlign: TextAlign.left,
-            textAlignVertical: TextAlignVertical.center,
-            cursorHeight: 14,
-            cursorWidth: 1.5,
-            decoration: const InputDecoration(
-              isCollapsed: true,
-              contentPadding: EdgeInsets.only(left: 4),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              filled: true,
-              fillColor: Colors.transparent,
+          Center(
+            child: Container(
+              width: 2.2,
+              height: 50,
+              decoration: BoxDecoration(
+                color: crossLineColor,
+                borderRadius: BorderRadius.circular(999),
+              ),
             ),
-            style: const TextStyle(fontSize: 12),
-            controller: TextEditingController(
-                text: _localTeethData[crossIndex]['topRight']),
-            onChanged: (value) =>
-                _updateTeethData(crossIndex, 'topRight', value),
           ),
-        ),
-        Positioned(
-          top: centerY + 3,
-          left: 10,
-          width: centerX - 12,
-          height: 18,
-          child: TextField(
-            textAlign: TextAlign.right,
-            textAlignVertical: TextAlignVertical.center,
-            cursorHeight: 14,
-            cursorWidth: 1.5,
-            decoration: const InputDecoration(
-              isCollapsed: true,
-              contentPadding: EdgeInsets.only(right: 4),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              filled: true,
-              fillColor: Colors.transparent,
-            ),
-            style: const TextStyle(fontSize: 12),
-            controller: TextEditingController(
-                text: _localTeethData[crossIndex]['bottomLeft']),
-            onChanged: (value) =>
-                _updateTeethData(crossIndex, 'bottomLeft', value),
+          Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 250),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildQuadrantTextField(
+                            crossIndex,
+                            'topLeft',
+                            TextAlign.right,
+                            const EdgeInsets.only(right: 4, top: 18),
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildQuadrantTextField(
+                            crossIndex,
+                            'topRight',
+                            TextAlign.left,
+                            const EdgeInsets.only(left: 4, top: 18),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 250),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildQuadrantTextField(
+                            crossIndex,
+                            'bottomLeft',
+                            TextAlign.right,
+                            const EdgeInsets.only(right: 4, bottom: 18),
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildQuadrantTextField(
+                            crossIndex,
+                            'bottomRight',
+                            TextAlign.left,
+                            const EdgeInsets.only(left: 4, bottom: 18),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ),
-        Positioned(
-          top: centerY + 3,
-          right: 10,
-          width: centerX - 12,
-          height: 18,
-          child: TextField(
-            textAlign: TextAlign.left,
-            textAlignVertical: TextAlignVertical.center,
-            cursorHeight: 14,
-            cursorWidth: 1.5,
-            decoration: const InputDecoration(
-              isCollapsed: true,
-              contentPadding: EdgeInsets.only(left: 4),
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              errorBorder: InputBorder.none,
-              disabledBorder: InputBorder.none,
-              filled: true,
-              fillColor: Colors.transparent,
-            ),
-            style: const TextStyle(fontSize: 12),
-            controller: TextEditingController(
-                text: _localTeethData[crossIndex]['bottomRight']),
-            onChanged: (value) =>
-                _updateTeethData(crossIndex, 'bottomRight', value),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class CrossPainter extends CustomPainter {
-  final Color lineColor;
-
-  const CrossPainter({required this.lineColor});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = lineColor
-      ..strokeWidth = 2.2
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawLine(
-      Offset(0, size.height / 2),
-      Offset(size.width, size.height / 2),
-      paint,
-    );
-
-    double verticalHeight = 40;
-    double startY = size.height / 2 - verticalHeight / 2;
-    double endY = size.height / 2 + verticalHeight / 2;
-
-    canvas.drawLine(
-      Offset(size.width / 2, startY),
-      Offset(size.width / 2, endY),
-      paint,
+        ],
+      ),
     );
   }
 
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
+  Widget _buildQuadrantTextField(
+    int crossIndex,
+    String quadrant,
+    TextAlign textAlign,
+    EdgeInsets contentPadding,
+  ) {
+    return TextField(
+      controller: _controllers[crossIndex][quadrant],
+      decoration: InputDecoration(
+        contentPadding: contentPadding,
+        border: InputBorder.none,
+        enabledBorder: InputBorder.none,
+        focusedBorder: InputBorder.none,
+        errorBorder: InputBorder.none,
+        disabledBorder: InputBorder.none,
+        hintText: '',
+        hintStyle: const TextStyle(fontSize: 0),
+        isDense: true,
+        filled: false,
+      ),
+      textAlign: textAlign,
+      style: TextStyle(fontSize: 12, color: context.colors.onSurface),
+      cursorColor: context.tokens.primaryAccent.withValues(alpha: 0.5),
+      maxLines: 1,
+      onChanged: (value) => _updateTeethData(crossIndex, quadrant, value),
+    );
+  }
 }
