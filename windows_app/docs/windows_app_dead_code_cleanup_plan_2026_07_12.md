@@ -401,7 +401,12 @@ git status --short
   - 实际删除行数：约 612 行
   - 验证结果：`flutter analyze` `No issues found!`；`git diff --check` 通过
   - 待办：手动回归采购统计入口、日期范围、材料排行、空数据和加载失败状态
-- [ ] 第四批
+- [x] 第四批（2026-07-12 完成）
+  - 删除文件数：6（5 个旧子图 + thumbnail_manager.dart）
+  - 实际删除行数：约 2625 行
+  - 验证结果：`flutter analyze` `No issues found!`；`git diff --check` 通过
+  - 说明：计划原要求先补回归测试，用户确认旧代码已静态确认不可达、删除不影响现用 SingleMaterialEditor，授权直接删除；thumbnail_manager.dart 经搜索确认全局无调用，一并删除
+  - 待办：手动回归新增/编辑患者材料、添加图片、预览原图、删除图片、保存失败提示、重新打开持久化
 - [ ] 第五批
 
 ## 12. 后续阶段
