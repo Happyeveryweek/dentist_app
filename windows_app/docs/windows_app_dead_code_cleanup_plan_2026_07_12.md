@@ -391,7 +391,11 @@ git status --short
   - 验证结果：`flutter analyze` `No issues found!`；`git diff --check` 通过；`flutter test` 因网络超时无法下载 sqlite3 原生库失败（环境问题，非代码问题）
   - 路径修正：`financial_pagination_update_helper.dart` 实际路径在 `helpers/` 而非计划原写的 `widgets/`，已修正
   - 待办：手动回归预约新增/编辑、采购记录列表/详情/导出、设置页备份路径、财务列表分页
-- [ ] 第二批
+- [x] 第二批（2026-07-12 完成）
+  - 删除文件数：3
+  - 实际删除行数：约 1618 行
+  - 验证结果：`flutter analyze` `No issues found!`；`git diff --check` 通过
+  - 待办：手动回归新增财务记录、编辑财务记录、编辑收费明细、财务统计日期范围/刷新/金额隐藏
 - [ ] 第三批
 - [ ] 第四批
 - [ ] 第五批

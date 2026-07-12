@@ -3,6 +3,7 @@
 ## 当前阶段
 - `windows_app` 已完成无用 Dart 文件与重复实现专项静态审核：以 `lib/main.dart` 为根检查 392 个 Dart 文件的 `import/export/part` 引用图，识别出 34 个无入站文件及 5 个仅被死入口引用的传递文件，共 39 个不可达候选、约 8484 行；已在 `windows_app/docs/windows_app_dead_code_and_duplicate_implementation_audit_2026_07_12.md` 记录逐文件证据、风险分级、五批清理方案和验证协议，并在 `windows_app/docs/windows_app_dead_code_cleanup_plan_2026_07_12.md` 制定可执行清理计划。
 - `windows_app` 无用代码清理第一批已执行：删除预约旧四组件、旧时间格式工具、备份路径旧组件、采购导出兼容壳、采购未接入拆分组件、财务辅助孤立组件、设置页孤立组件和占位文件共 18 个文件；`flutter analyze` `No issues found!`，`git diff --check` 通过；`flutter test` 因网络超时无法下载 sqlite3 原生库失败（环境问题）。
+- `windows_app` 无用代码清理第二批已执行：删除财务旧编辑弹窗 `edit_financial_item_dialog.dart`、旧统计对话框 `financial_statistics_dialog_widget.dart`、旧统计组件 `financial_stats_section.dart` 共 3 个文件；`flutter analyze` `No issues found!`，`git diff --check` 通过。
 - `windows_app` 患者新增/编辑表单的每条牙齿状况记录已增加独立的可选预约开关；开启后可选择下次预约日期、时间，预约内容既可从历史预约治疗项目去重列表中选择，也可直接手动填写，默认“综合治疗”，并可独立勾选三个牙位十字中需要带入预约记录的内容；预约下拉菜单已增加圆角，预约信息区与十字记录间距已加大；预约编辑器已支持按实际数量渲染 0～3 个带入牙位，不再因单个牙位数据固定访问第二项而报错；提交患者时会使用保存后的患者 ID 自动创建预约，不改动数据库表结构或牙齿状况存储格式；已运行定向 `dart format`、预约治疗项目及牙位序列化/组件回归测试和全量 `flutter analyze`，结果均通过。
 - `android_app` 登录页已压缩登录框高度并整体上移，避免遮挡背景图底部牙齿图标；未改动登录校验、记住密码或背景资源逻辑；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
 - `android_app` 采购统计图表与财务统计图表均已补充明确关闭入口；财务图表点击后立即进入图表页，先展示现有数据并以“已完成 X / 总计 Y 条记录”的文字提示渐进加载，随后每 20 条并发读取明细并刷新图表；同一查询范围的完成快照可直接复用，列表重新加载、搜索或日期范围变化会失效重算；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
@@ -19,7 +20,7 @@
 - `windows_app` 侧边栏/用户管理/病历管理闪烁修复已完成代码修改，待在 `windows_app/` 运行 `flutter analyze` 验证。
 
 ## 进行中
-- `windows_app` 无用代码清理第一批已删除 18 个文件并通过 `flutter analyze`，待手动回归预约新增/编辑、采购记录列表/详情/导出、设置页备份路径、财务列表分页后确认完成；`flutter test` 因网络超时未能运行，待环境恢复后补测。
+- `windows_app` 无用代码清理第一、二批已删除 21 个文件并通过 `flutter analyze`，待手动回归预约新增/编辑、采购记录列表/详情/导出、设置页备份路径、财务列表分页、新增/编辑财务记录、编辑收费明细、财务统计后确认完成；`flutter test` 因网络超时未能运行，待环境恢复后补测。
 - `android_app` 登录页“记住密码”已恢复为安全存储方案，并补成“勾选后实时保存草稿、取消勾选立即清空”；预约新增页“治疗项目”输入区已改为窄屏自适应布局并消除下拉溢出。当前已通过针对性静态检查，待登录页和新建预约页手动回归确认。
 - `android_app` 采购“添加采购项目”弹窗已改为键盘弹起时高度自适应、表单内容可滚动、底部按钮固定，已消除底部 `RenderFlex overflow` 风险。当前已通过针对性静态检查，待采购录入弹窗手动回归确认。
 
@@ -42,6 +43,7 @@
 - 无
 
 ## 最近验证
+- 2026-07-12：执行 `windows_app` 无用代码清理第二批，删除 3 个不可达文件（财务旧编辑弹窗 `edit_financial_item_dialog.dart`、旧统计对话框 `financial_statistics_dialog_widget.dart`、旧统计组件 `financial_stats_section.dart`）；删除前逐个符号搜索确认无新增引用，现用 `FinancialStatsDialog` 和编辑链路确认在用；删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过。
 - 2026-07-12：执行 `windows_app` 无用代码清理第一批，删除 18 个不可达文件（预约旧四组件、旧时间格式工具、备份路径旧组件、采购导出兼容壳、采购未接入拆分组件、财务辅助孤立组件、设置页孤立组件、占位文件）；删除前逐个符号/路径搜索确认无新增引用，删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过；`flutter test` 因网络超时无法下载 sqlite3 原生库失败（环境问题，非代码问题），待环境恢复后补测。
 - 2026-07-12：完成 `windows_app/lib` 无用文件与重复实现专项静态审核；枚举 392 个 Dart 文件并从 `lib/main.dart` 遍历引用图，确认 39 个不可达候选、约 8484 行，详细结果与后续五批清理协议已写入 `windows_app/docs/windows_app_dead_code_and_duplicate_implementation_audit_2026_07_12.md`；本轮仅新增/更新 Markdown 文档，未运行 Flutter 命令。
 - 2026-07-12：修复 `windows_app` 患者牙齿状况带入预约后编辑报 `RangeError` 的问题；预约编辑牙齿组件由固定读取两个十字改为按实际牙位数量渲染，新增单个和三个牙位组件回归测试；运行 `flutter test test\appointment_treatment_utils_test.dart`，3 个测试全部通过，运行全量 `flutter analyze`，结果 `No issues found!`。
