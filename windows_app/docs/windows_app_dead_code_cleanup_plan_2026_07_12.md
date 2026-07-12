@@ -407,7 +407,16 @@ git status --short
   - 验证结果：`flutter analyze` `No issues found!`；`git diff --check` 通过
   - 说明：计划原要求先补回归测试，用户确认旧代码已静态确认不可达、删除不影响现用 SingleMaterialEditor，授权直接删除；thumbnail_manager.dart 经搜索确认全局无调用，一并删除
   - 待办：手动回归新增/编辑患者材料、添加图片、预览原图、删除图片、保存失败提示、重新打开持久化
-- [ ] 第五批
+- [x] 第五批（2026-07-12 完成，拆 3 个提交）
+  - 删除文件数：10
+  - 实际删除行数：约 2224 行（1065 + 629 + 530）
+  - 验证结果：`flutter analyze` `No issues found!`；`git diff --check` 通过
+  - 提交拆分：
+    - 第五批-1：医学常量与治疗模型 4 文件
+    - 第五批-2：旧 schema 工具与 MySQL 工具 4 文件
+    - 第五批-3：旧数据同步弹窗与材料类型下拉 2 文件
+  - 说明：删除前符号搜索均仅命中定义文件/文档；现用病历选择走模板数据组件，材料类型走 `MaterialDropdownField`，设置页同步走患者同步/数据源流程，数据库初始化与结构检测走 `DatabaseProvider`/`DatabaseSchemaService` 等
+  - 待办：手动回归病历模板/疾病过敏选择、预约治疗项目、SQLite/MySQL 初始化与结构检测、备份恢复、设置页同步入口、材料新增/编辑类型选择；`schemas/README.md` 仍保留对已删工具的文档示例，未在本批改动
 
 ## 12. 后续阶段
 

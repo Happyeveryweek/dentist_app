@@ -6,6 +6,7 @@
 - `windows_app` 无用代码清理第二批已执行：删除财务旧编辑弹窗 `edit_financial_item_dialog.dart`、旧统计对话框 `financial_statistics_dialog_widget.dart`、旧统计组件 `financial_stats_section.dart` 共 3 个文件；`flutter analyze` `No issues found!`，`git diff --check` 通过。
 - `windows_app` 无用代码清理第三批已执行：删除采购旧统计图表 `purchase_statistics_chart.dart` 及其依赖 `purchase_stat_card.dart` 共 2 个文件；`flutter analyze` `No issues found!`，`git diff --check` 通过。
 - `windows_app` 无用代码清理第四批已执行：删除患者材料旧编辑器孤岛 5 文件（`material_input_widget.dart`、`material_debug_info_dialog.dart`、`material_image_detail_dialog.dart`、`material_input_card.dart`、`material_image_preview.dart`）及全局无调用的 `thumbnail_manager.dart` 共 6 个文件；现用新增/编辑仍走 `SingleMaterialEditor`；`flutter analyze` `No issues found!`，`git diff --check` 通过。
+- `windows_app` 无用代码清理第五批已执行（拆 3 个提交）：删除医学常量与治疗模型 4 文件、旧 schema/MySQL 工具 4 文件、旧数据同步弹窗与材料类型下拉 2 文件，共 10 个文件；`flutter analyze` `No issues found!`，`git diff --check` 通过。审核报告列出的 39 个不可达候选文件级清理已全部完成。
 - `windows_app` 患者新增/编辑表单的每条牙齿状况记录已增加独立的可选预约开关；开启后可选择下次预约日期、时间，预约内容既可从历史预约治疗项目去重列表中选择，也可直接手动填写，默认“综合治疗”，并可独立勾选三个牙位十字中需要带入预约记录的内容；预约下拉菜单已增加圆角，预约信息区与十字记录间距已加大；预约编辑器已支持按实际数量渲染 0～3 个带入牙位，不再因单个牙位数据固定访问第二项而报错；提交患者时会使用保存后的患者 ID 自动创建预约，不改动数据库表结构或牙齿状况存储格式；已运行定向 `dart format`、预约治疗项目及牙位序列化/组件回归测试和全量 `flutter analyze`，结果均通过。
 - `android_app` 登录页已压缩登录框高度并整体上移，避免遮挡背景图底部牙齿图标；未改动登录校验、记住密码或背景资源逻辑；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
 - `android_app` 采购统计图表与财务统计图表均已补充明确关闭入口；财务图表点击后立即进入图表页，先展示现有数据并以“已完成 X / 总计 Y 条记录”的文字提示渐进加载，随后每 20 条并发读取明细并刷新图表；同一查询范围的完成快照可直接复用，列表重新加载、搜索或日期范围变化会失效重算；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
@@ -22,7 +23,7 @@
 - `windows_app` 侧边栏/用户管理/病历管理闪烁修复已完成代码修改，待在 `windows_app/` 运行 `flutter analyze` 验证。
 
 ## 进行中
-- `windows_app` 无用代码清理第一至四批已删除 29 个文件并通过 `flutter analyze`，待手动回归预约新增/编辑、采购记录列表/详情/导出/统计、设置页备份路径、财务列表分页、新增/编辑财务记录、编辑收费明细、财务统计、患者材料新增/编辑/图片预览删除与重新打开持久化后确认完成；`flutter test` 因网络超时未能运行，待环境恢复后补测。
+- `windows_app` 无用代码清理第一至五批已删除 39 个文件并通过 `flutter analyze`，文件级清理完成；待手动回归预约、采购、设置备份路径、财务、患者材料、病历疾病过敏选择、预约治疗项目、数据库初始化/结构检测/备份恢复、设置页同步入口、材料类型选择后确认运行时无回归；`flutter test` 因网络超时未能运行，待环境恢复后补测。
 - `android_app` 登录页“记住密码”已恢复为安全存储方案，并补成“勾选后实时保存草稿、取消勾选立即清空”；预约新增页“治疗项目”输入区已改为窄屏自适应布局并消除下拉溢出。当前已通过针对性静态检查，待登录页和新建预约页手动回归确认。
 - `android_app` 采购“添加采购项目”弹窗已改为键盘弹起时高度自适应、表单内容可滚动、底部按钮固定，已消除底部 `RenderFlex overflow` 风险。当前已通过针对性静态检查，待采购录入弹窗手动回归确认。
 
@@ -45,6 +46,7 @@
 - 无
 
 ## 最近验证
+- 2026-07-12：执行 `windows_app` 无用代码清理第五批，分 3 个提交删除 10 个不可达文件（医学常量与治疗模型、旧 schema/MySQL 工具、旧数据同步弹窗与材料类型下拉）；删除前符号搜索确认无新增引用，现用路径确认在用；删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过；纯删除批次未执行 `dart format`。
 - 2026-07-12：执行 `windows_app` 无用代码清理第四批，删除 6 个不可达文件（患者材料旧编辑器 5 文件孤岛 + `thumbnail_manager.dart`）；删除前符号搜索确认无新增引用，现用 `material_detail_manager.dart` 新增/编辑仍实例化 `SingleMaterialEditor`；删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过；纯删除批次未执行 `dart format`。
 - 2026-07-12：执行 `windows_app` 无用代码清理第三批，删除 2 个不可达文件（采购旧统计图表 `purchase_statistics_chart.dart` 及其依赖 `purchase_stat_card.dart`）；删除前符号搜索确认仅子图内部引用，现用 `PurchaseStatsDialog` 确认在用；删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过。
 - 2026-07-12：执行 `windows_app` 无用代码清理第二批，删除 3 个不可达文件（财务旧编辑弹窗 `edit_financial_item_dialog.dart`、旧统计对话框 `financial_statistics_dialog_widget.dart`、旧统计组件 `financial_stats_section.dart`）；删除前逐个符号搜索确认无新增引用，现用 `FinancialStatsDialog` 和编辑链路确认在用；删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过。
