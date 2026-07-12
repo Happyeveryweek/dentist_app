@@ -1,6 +1,8 @@
 # ROADMAP
 
 ## 当前阶段
+- `android_app` 仪表盘欢迎卡片已按登录页临床背景图风格重做，保留原有问候、日期、头像和预约数据链路，新增视觉颜色已收口到主题语义色；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
+- `android_app` 登录页背景已替换为临床后台图片 `assets/images/login_clinical_console.png`；已运行 `dart format lib\\screens\\login_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
 - `windows_app` 患者详情页预约记录标签已修复多条预约添加入口：存在预约记录时，列表顶部仍显示“添加预约”按钮，并复用原有保存、重新加载与父页刷新链路；已运行 `dart format lib\\screens\\patient_detail_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
 - `windows_app` 数据源配置编辑态与数据库备份可靠性修复已完成并验证：SQLite/MySQL/备份数据源编辑区增加明确的“编辑中”状态和强调边框；MySQL 备份启用一致快照及完整对象参数，并在每次独立导出后校验完成标记、表/视图清单、文件哈希和备份内行数清单；SQLite 改用 `VACUUM INTO` 生成一致快照并执行完整性检查，自定义路径恢复会先校验临时文件、保留恢复前数据库后再替换真实活动路径。新增 2 个 SQLite 备份/恢复回归测试并通过，`flutter analyze` 结果 `No issues found!`。
 - `windows_app` 备份/恢复链路高风险修复已完成并验证：MySQL 部分失败不再误报成功，还原前备份改为真实执行，SQLite 文件恢复前会先关闭连接并在恢复后重建；采购导出服务已收口为单一核心实现。已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
@@ -32,6 +34,8 @@
 - 无
 
 ## 最近验证
+- 2026-07-12：`android_app` 仪表盘欢迎卡片已使用登录页背景图重做为浅蓝紫临床控制台风格，并将相关颜色收口到 `AppTheme`；已运行 `dart format lib\\theme\\app_theme.dart lib\\features\\dashboard\\widgets\\welcome_section.dart` 和 `flutter analyze`，结果 `No issues found!`。
+- 2026-07-12：`android_app` 登录页背景已替换为 `assets/images/login_clinical_console.png`；已运行 `dart format lib\\screens\\login_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
 - 2026-07-10：修复 `windows_app` 备份数据源保存后重启回退到 SQLite 的问题：启动加载配置时已恢复 `backupDataSource` 字段，并新增“保存为 MySQL 后重新初始化仍为 MySQL”的持久化回归测试；定向测试通过，全量 `flutter analyze` 结果 `No issues found!`。
 - 2026-07-10：修复 MySQL 备份完整性校验把含 BLOB 原始字节的 SQL 强制按 UTF-8 解码而误报失败的问题；校验改为单字节安全解析，后续 `mysqldump` 增加 `--hex-blob`。现场生成的 `D:\`、`E:\` 两份失败提示对应 SQL 均已确认包含 14 张表、18 组数据语句和正常完成标记；修复后运行全量 `flutter analyze`，结果 `No issues found!`。
 - 2026-07-10：`windows_app` 完成数据源编辑态、MySQL 备份完整性校验及 SQLite 一致快照/真实路径安全恢复修复；运行 `flutter test test\services\database_backup_service_test.dart`，2 个测试全部通过；运行全量 `flutter analyze`，结果 `No issues found!`。

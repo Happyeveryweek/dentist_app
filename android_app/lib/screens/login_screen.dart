@@ -135,7 +135,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: const AssetImage('assets/images/login.jpg'),
+                      image: const AssetImage(
+                        'assets/images/login_clinical_console.png',
+                      ),
                       fit: BoxFit.cover,
                       alignment: Alignment.center,
                       colorFilter: ColorFilter.mode(

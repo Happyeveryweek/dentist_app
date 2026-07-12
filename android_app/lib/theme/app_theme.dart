@@ -27,6 +27,16 @@ class AppTheme {
   static const Color errorColor = Color(0xFFEA4335);
   static const Color infoColor = Color(0xFF4285F4);
 
+  // 仪表盘欢迎卡片语义色
+  static const Color dashboardWelcomeBorder = Color(0xFF8FB6F3);
+  static const Color dashboardWelcomeShadow = Color(0xFF526FB5);
+  static const Color dashboardWelcomeSurfaceBlue = Color(0xFFE9F3FF);
+  static const Color dashboardWelcomeSurfacePurple = Color(0xFFEDE5FF);
+  static const Color dashboardWelcomePrimaryText = Color(0xFF183B68);
+  static const Color dashboardWelcomeSecondaryText = Color(0xFF557196);
+  static const Color dashboardWelcomeAccent = Color(0xFF376FC7);
+  static const Color dashboardWelcomeAccentPurple = Color(0xFF766FE6);
+
   // 兼容性别名 - 用于支持旧代码
   static const Color textColor = primaryText;
   static const Color secondaryTextColor = secondaryText;
