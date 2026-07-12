@@ -396,7 +396,11 @@ git status --short
   - 实际删除行数：约 1618 行
   - 验证结果：`flutter analyze` `No issues found!`；`git diff --check` 通过
   - 待办：手动回归新增财务记录、编辑财务记录、编辑收费明细、财务统计日期范围/刷新/金额隐藏
-- [ ] 第三批
+- [x] 第三批（2026-07-12 完成）
+  - 删除文件数：2
+  - 实际删除行数：约 612 行
+  - 验证结果：`flutter analyze` `No issues found!`；`git diff --check` 通过
+  - 待办：手动回归采购统计入口、日期范围、材料排行、空数据和加载失败状态
 - [ ] 第四批
 - [ ] 第五批
 
