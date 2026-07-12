@@ -236,6 +236,13 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
         backgroundColor: Colors.blue[600],
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: '关闭',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(

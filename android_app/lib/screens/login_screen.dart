@@ -124,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
           // 根据屏幕高度调整间距和内容大小
           final screenHeight = constraints.maxHeight;
           final isSmallScreen = screenHeight < 600;
-          final verticalSpacing = isSmallScreen ? 20.0 : 40.0;
+          final verticalSpacing = isSmallScreen ? 16.0 : 28.0;
           final logoSize = isSmallScreen ? 80.0 : 100.0;
           final fontSize = isSmallScreen ? 24.0 : 28.0;
 
@@ -172,29 +172,36 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           SizedBox(height: verticalSpacing),
 
-                          // 登录表单 - 根据屏幕大小调整
-                          LoginForm(
-                            formKey: _formKey,
-                            usernameController: _usernameController,
-                            passwordController: _passwordController,
-                            obscurePassword: _obscurePassword,
-                            rememberPassword: _rememberPassword,
-                            isInitializing: _isInitializing,
-                            isSmallScreen: isSmallScreen,
-                            onObscurePasswordChanged: (value) {
-                              setState(() {
-                                _obscurePassword = value;
-                              });
-                            },
-                            onRememberPasswordChanged:
-                                _handleRememberPasswordChanged,
-                            onLogin: _handleLogin,
+                          Transform.translate(
+                            offset: Offset(0, isSmallScreen ? -8 : -12),
+                            child: Column(
+                              children: [
+                                // 登录表单 - 根据屏幕大小调整
+                                LoginForm(
+                                  formKey: _formKey,
+                                  usernameController: _usernameController,
+                                  passwordController: _passwordController,
+                                  obscurePassword: _obscurePassword,
+                                  rememberPassword: _rememberPassword,
+                                  isInitializing: _isInitializing,
+                                  isSmallScreen: isSmallScreen,
+                                  onObscurePasswordChanged: (value) {
+                                    setState(() {
+                                      _obscurePassword = value;
+                                    });
+                                  },
+                                  onRememberPasswordChanged:
+                                      _handleRememberPasswordChanged,
+                                  onLogin: _handleLogin,
+                                ),
+                                SizedBox(height: verticalSpacing * 0.6),
+                                // 底部装饰元素 - 根据屏幕大小调整
+                                LoginBottomDecorations(
+                                  isSmallScreen: isSmallScreen,
+                                ),
+                              ],
+                            ),
                           ),
-
-                          SizedBox(height: verticalSpacing * 0.6),
-
-                          // 底部装饰元素 - 根据屏幕大小调整
-                          LoginBottomDecorations(isSmallScreen: isSmallScreen),
                         ],
                       ),
                     ),

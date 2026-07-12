@@ -17,12 +17,14 @@ class PurchaseStatisticsDialog extends StatefulWidget {
   final List<PurchaseRecord> purchaseRecords;
   final Map<int, List<PurchaseItem>> recordItemsMap;
   final PurchaseProvider purchaseProvider;
+  final List<int> failedRecordIds;
 
   const PurchaseStatisticsDialog({
     super.key,
     required this.purchaseRecords,
     required this.recordItemsMap,
     required this.purchaseProvider,
+    this.failedRecordIds = const [],
   });
 
   @override
@@ -141,6 +143,13 @@ class _PurchaseStatisticsDialogState extends State<PurchaseStatisticsDialog>
               backgroundColor: Colors.green[600],
               foregroundColor: Colors.white,
               elevation: 0,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  tooltip: '关闭',
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
               shape: const RoundedRectangleBorder(
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(16),
@@ -169,6 +178,19 @@ class _PurchaseStatisticsDialogState extends State<PurchaseStatisticsDialog>
             body: Column(
               children: [
                 // 时间范围选择器
+                if (widget.failedRecordIds.isNotEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    color: Colors.orange.shade50,
+                    child: Text(
+                      '${widget.failedRecordIds.length} 条采购记录的明细加载失败，材料种类与排行可能不完整。',
+                      style: TextStyle(color: Colors.orange.shade900),
+                    ),
+                  ),
                 PurchaseDateRangeSelector(
                   startDate: _startDate,
                   endDate: _endDate,

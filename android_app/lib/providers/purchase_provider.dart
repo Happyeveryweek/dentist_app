@@ -250,7 +250,9 @@ class PurchaseProvider extends ChangeNotifier {
           records = await _currentDataSource.getAllPurchases(
             doctorFilter: doctorFilter,
           );
-          AppLogger.info('✅ 权限过滤查询成功，获取到 ${records.length} 条采购记录（医生：$doctorFilter）');
+          AppLogger.info(
+            '✅ 权限过滤查询成功，获取到 ${records.length} 条采购记录（医生：$doctorFilter）',
+          );
         } else {
           // 使用数据源模式（统一接口）
           records = await _currentDataSource.getAllPurchases();
@@ -264,13 +266,13 @@ class PurchaseProvider extends ChangeNotifier {
       } catch (e) {
         AppLogger.info('❌ 获取采购记录失败: $e');
 
-        // 优雅降级：如果有缓存就返回缓存，否则返回空列表（像财务管理一样）
+        // 缓存已在查询前返回；这里继续吞掉异常会让页面把数据库故障误判为空数据。
         if (_cacheService?.isCacheValid() == true) {
           AppLogger.info('使用缓存的采购记录数据，查询失败: $e');
           return cachedRecords;
         }
 
-        return []; // 返回空列表而不是抛出异常
+        rethrow;
       }
     });
   }
@@ -485,6 +487,7 @@ class PurchaseProvider extends ChangeNotifier {
         final id = await _currentDataSource.createPurchaseItem(item);
 
         if (id > 0) {
+          await _recalculatePurchaseRecordTotals(item.purchaseRecordId);
           markPurchasesNeedRefresh();
         }
 
@@ -509,6 +512,7 @@ class PurchaseProvider extends ChangeNotifier {
         final count = success ? 1 : 0;
 
         if (count > 0) {
+          await _recalculatePurchaseRecordTotals(item.purchaseRecordId);
           markPurchasesNeedRefresh();
         }
 
@@ -521,7 +525,10 @@ class PurchaseProvider extends ChangeNotifier {
   }
 
   // 删除采购项目明细
-  Future<int> deletePurchaseItem(int itemId) async {
+  Future<int> deletePurchaseItem(
+    int itemId, {
+    required int purchaseRecordId,
+  }) async {
     if (!initialized) {
       throw Exception('数据库未初始化');
     }
@@ -533,6 +540,7 @@ class PurchaseProvider extends ChangeNotifier {
         final count = success ? 1 : 0;
 
         if (count > 0) {
+          await _recalculatePurchaseRecordTotals(purchaseRecordId);
           markPurchasesNeedRefresh();
         }
 
@@ -542,6 +550,33 @@ class PurchaseProvider extends ChangeNotifier {
         rethrow;
       }
     });
+  }
+
+  Future<void> _recalculatePurchaseRecordTotals(int? recordId) async {
+    if (recordId == null) {
+      throw Exception('采购记录ID为空，无法更新采购汇总');
+    }
+
+    final record = await _currentDataSource.getPurchaseById(recordId);
+    if (record == null) {
+      throw Exception('采购记录不存在，无法更新采购汇总');
+    }
+    final items = await getPurchaseItemsByRecordId(recordId);
+    final totalQuantity = items.fold<int>(
+      0,
+      (sum, item) => sum + item.quantity,
+    );
+    final totalAmount = items.fold<double>(
+      0.0,
+      (sum, item) => sum + item.totalPrice,
+    );
+    final updated = await _currentDataSource.updatePurchase(
+      record.copyWith(totalQuantity: totalQuantity, totalAmount: totalAmount),
+    );
+    if (!updated) {
+      throw Exception('采购汇总更新失败');
+    }
+    clearCache();
   }
 
   Future<T> _wrapPurchaseItemOperation<T>(

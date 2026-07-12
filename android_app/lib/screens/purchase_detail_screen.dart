@@ -26,10 +26,12 @@ class PurchaseDetailScreen extends StatefulWidget {
 }
 
 class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
+  late PurchaseRecord _purchaseRecord;
   List<PurchaseItem> _purchaseItems = [];
   bool _isLoading = false;
   bool _hasError = false;
   String _errorMessage = '';
+  bool _dataChanged = false;
 
   int get _recordId {
     final id = widget.record.id;
@@ -42,6 +44,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _purchaseRecord = widget.record;
     _loadPurchaseItems();
   }
 
@@ -62,21 +65,27 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
         throw Exception('数据库未初始化，请检查数据库连接');
       }
 
-      AppLogger.info('🔄 开始加载采购项目，记录ID: ${widget.record.id}');
+      AppLogger.info('🔄 开始加载采购项目，记录ID: ${_purchaseRecord.id}');
       final items = await purchaseProvider.getPurchaseItemsByRecordId(
         _recordId,
       );
+      final record = await purchaseProvider.getPurchaseRecordById(_recordId);
 
       // ✅ 按更新时间降序排序，确保最新添加/更新的项目显示在最上面
       items.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
       AppLogger.info('✅ 成功加载 ${items.length} 个采购项目，按更新时间排序');
+      if (!mounted) return;
       setState(() {
         _purchaseItems = items;
+        if (record != null) {
+          _purchaseRecord = record;
+        }
         _isLoading = false;
       });
     } catch (e) {
       AppLogger.info('❌ 加载采购项目失败: $e');
+      if (!mounted) return;
       setState(() {
         _hasError = true;
         _errorMessage = '加载采购项目失败: $e';
@@ -87,61 +96,69 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('采购记录详情 #${widget.record.id}'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.image),
-            onPressed: () => _showExportOptions(context),
-            tooltip: '导出为图片',
-          ),
-          PermissionWrapper(
-            module: 'purchase',
-            action: 'edit',
-            recordDoctor: widget.record.doctor,
-            onPermissionDenied: () {
-              PermissionUtils.showPermissionDeniedMessage(
-                context,
-                customMessage: '您只能编辑自己的采购记录',
-              );
-            },
-            child: IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () => _editPurchaseRecord(context),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.of(context).pop(_dataChanged);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('采购记录详情 #${_purchaseRecord.id}'),
+          backgroundColor: Theme.of(context).primaryColor,
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.image),
+              onPressed: () => _showExportOptions(context),
+              tooltip: '导出为图片',
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () => _deletePurchaseRecord(context),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 基本信息
-            _buildBasicInfoCard(),
-            const SizedBox(height: 16),
-
-            // 采购项目明细
-            _buildItemsCard(),
-            const SizedBox(height: 16),
-
-            // 金额信息
-            _buildAmountCard(),
+            PermissionWrapper(
+              module: 'purchase',
+              action: 'edit',
+              recordDoctor: _purchaseRecord.doctor,
+              onPermissionDenied: () {
+                PermissionUtils.showPermissionDeniedMessage(
+                  context,
+                  customMessage: '您只能编辑自己的采购记录',
+                );
+              },
+              child: IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () => _editPurchaseRecord(context),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () => _deletePurchaseRecord(context),
+            ),
           ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 基本信息
+              _buildBasicInfoCard(),
+              const SizedBox(height: 16),
+
+              // 采购项目明细
+              _buildItemsCard(),
+              const SizedBox(height: 16),
+
+              // 金额信息
+              _buildAmountCard(),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildBasicInfoCard() {
-    return PurchaseBasicInfoCard(record: widget.record);
+    return PurchaseBasicInfoCard(record: _purchaseRecord);
   }
 
   Widget _buildItemsCard() {
@@ -157,7 +174,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
 
   Widget _buildAmountCard() {
     return PurchaseAmountCard(
-      record: widget.record,
+      record: _purchaseRecord,
       itemCount: _purchaseItems.length,
     );
   }
@@ -192,6 +209,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
         if (itemId > 0) {
           // 重新加载采购项目
           await _loadPurchaseItems();
+          _dataChanged = true;
 
           // ✅ 显示成功提示
           if (context.mounted) {
@@ -222,12 +240,13 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
   void _editPurchaseRecord(BuildContext context) async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => PurchaseRecordDialog(record: widget.record),
+      builder: (context) => PurchaseRecordDialog(record: _purchaseRecord),
     );
 
     if (result == true) {
       // 编辑成功，重新加载数据
       await _loadPurchaseItems();
+      _dataChanged = true;
       if (!context.mounted) return;
       // 使用公共组件的绿色背景成功提示
       SuccessToastManager.show(
@@ -242,7 +261,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
     // 使用公共的删除确认框组件
     final confirmed = await ModernDeleteDialogManager.showPurchaseDelete(
       context,
-      purchaseInfo: '采购记录 #${widget.record.id}',
+      purchaseInfo: '采购记录 #${_purchaseRecord.id}',
     );
 
     if (confirmed == true) {
@@ -252,9 +271,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
           context,
           listen: false,
         );
-        final success = await purchaseProvider.deletePurchaseRecord(
-          _recordId,
-        );
+        final success = await purchaseProvider.deletePurchaseRecord(_recordId);
 
         if (success > 0) {
           if (context.mounted) {
@@ -299,7 +316,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
       // 使用导出服务生成图片数据
       final exportService = PurchaseExportService();
       final imageData = await exportService.generatePurchaseRecordImage(
-        widget.record,
+        _purchaseRecord,
         _purchaseItems,
         exportOptions,
       );

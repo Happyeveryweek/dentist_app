@@ -870,7 +870,10 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
             final existingItemId = existingItem.id;
             if (existingItemId != null && !currentItemIds.contains(existingItemId)) {
               AppLogger.info('🗑️ 删除已移除的项目: ${existingItem.materialName}');
-              await purchaseProvider.deletePurchaseItem(existingItemId);
+              await purchaseProvider.deletePurchaseItem(
+                existingItemId,
+                purchaseRecordId: recordId,
+              );
             }
           }
         } else {

@@ -14,7 +14,7 @@ import '../providers/database_provider.dart';
 import '../features/financial/services/financial_calculator.dart';
 import '../features/financial/widgets/financial_sort_dialog.dart'
     as sort_dialog;
-import '../features/financial/widgets/financial_statistics_dialog.dart';
+import '../features/financial/widgets/progressive_statistics_dialog.dart';
 import '../features/financial/widgets/financial_management_screen_body.dart';
 import '../utils/app_logger.dart';
 
@@ -61,6 +61,11 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   int _requestVersion = 0;
   List<FinancialRecord> _statisticsRecords = [];
   Map<int, List<FinancialItem>> _statisticsItemsMap = {};
+  int? _statisticsTotalRecordCount;
+  String? _statisticsErrorMessage;
+  String? _completedStatisticsQueryKey;
+  final ValueNotifier<FinancialStatisticsSnapshot> _statisticsSnapshot =
+      ValueNotifier(const FinancialStatisticsSnapshot.empty());
 
   @override
   void initState() {
@@ -188,6 +193,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   }) async {
     if (!mounted) return;
     final requestVersion = ++_requestVersion;
+    _completedStatisticsQueryKey = null;
 
     try {
       final financialProvider = Provider.of<FinancialProvider>(
@@ -292,11 +298,17 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     final query = _searchQuery.trim();
     final startDate = _startDate;
     final endDate = _endDate;
+    final queryKey = _statisticsQueryKey(query, startDate, endDate);
+    if (_completedStatisticsQueryKey == queryKey && !_isStatsLoading) {
+      return;
+    }
     final initialRecords = List<FinancialRecord>.from(_financialRecords);
     final initialItemsMap = Map<int, List<FinancialItem>>.from(_recordItemsMap);
     if (mounted) {
       setState(() {
         _isStatsLoading = true;
+        _statisticsErrorMessage = null;
+        _statisticsTotalRecordCount = null;
         if (initialRecords.isNotEmpty) {
           _statisticsRecords = initialRecords;
           _statisticsItemsMap = initialItemsMap;
@@ -314,6 +326,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           _statisticsItemsMap = {};
         }
       });
+      _publishStatisticsSnapshot();
     }
 
     try {
@@ -326,12 +339,22 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             endDate: endDate,
           ),
         );
+        if (!mounted || requestVersion != _requestVersion) return;
+        setState(() {
+          _statisticsTotalRecordCount = records.length;
+        });
+        _publishStatisticsSnapshot();
       } else {
         final total = await financialProvider
             .getFinancialRecordCountWithDateFilter(
               startDate: startDate,
               endDate: endDate,
             );
+        if (!mounted || requestVersion != _requestVersion) return;
+        setState(() {
+          _statisticsTotalRecordCount = total;
+        });
+        _publishStatisticsSnapshot();
         for (var page = 1; records.length < total; page++) {
           final pageRecords = await financialProvider
               .getPaginatedFinancialRecordsWithDateFilter(
@@ -345,44 +368,68 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         }
       }
 
+      _statisticsTotalRecordCount = records.length;
+
       final itemsMap = <int, List<FinancialItem>>{};
       if (records.isEmpty) {
         if (!mounted || requestVersion != _requestVersion) return;
         setState(() {
           _statisticsRecords = [];
           _statisticsItemsMap = {};
+          _statisticsTotalRecordCount = 0;
           _globalStats = financialProvider.calculateStatsFromData([], {});
           _isStatsLoading = false;
         });
+        _publishStatisticsSnapshot();
         return;
       }
 
       const statsBatchSize = 20;
-      for (var index = 0; index < records.length; index++) {
-        final record = records[index];
-        final recordId = record.id;
-        if (recordId != null) {
-          itemsMap[recordId] = await financialProvider
-              .getFinancialItemsByRecordId(recordId);
+      for (var start = 0; start < records.length; start += statsBatchSize) {
+        final batch = records.skip(start).take(statsBatchSize).toList();
+        final batchItems = await Future.wait(
+          batch.map((record) async {
+            final recordId = record.id;
+            if (recordId == null) return (recordId, <FinancialItem>[]);
+            try {
+              return (
+                recordId,
+                await financialProvider.getFinancialItemsByRecordId(recordId),
+              );
+            } catch (e) {
+              AppLogger.info('加载财务记录 $recordId 的明细失败: $e');
+              return (recordId, <FinancialItem>[]);
+            }
+          }),
+        );
+        for (final result in batchItems) {
+          final recordId = result.$1;
+          if (recordId != null) itemsMap[recordId] = result.$2;
         }
 
-        final loadedRecordCount = index + 1;
+        final loadedRecordCount = start + batch.length;
         final hasMoreItems = loadedRecordCount < records.length;
-        if (loadedRecordCount % statsBatchSize == 0 || !hasMoreItems) {
-          if (!mounted || requestVersion != _requestVersion) return;
-          setState(() {
-            _statisticsRecords = records;
-            _statisticsItemsMap = Map.from(itemsMap);
-            _globalStats = {
-              ...financialProvider.calculateStatsFromData(records, itemsMap),
-              if (hasMoreItems) ...{
-                '_isPartial': true,
-                '_loadedRecordCount': loadedRecordCount,
-              },
-            };
-            _isStatsLoading = hasMoreItems;
-          });
-        }
+        final visibleRecords = records.take(loadedRecordCount).toList();
+        if (!mounted || requestVersion != _requestVersion) return;
+        setState(() {
+          _statisticsRecords = visibleRecords;
+          _statisticsItemsMap = Map.from(itemsMap);
+          _globalStats = {
+            ...financialProvider.calculateStatsFromData(
+              visibleRecords,
+              itemsMap,
+            ),
+            if (hasMoreItems) ...{
+              '_isPartial': true,
+              '_loadedRecordCount': loadedRecordCount,
+            },
+          };
+          _isStatsLoading = hasMoreItems;
+          if (!hasMoreItems) {
+            _completedStatisticsQueryKey = queryKey;
+          }
+        });
+        _publishStatisticsSnapshot();
       }
     } catch (e) {
       AppLogger.info('加载财务统计数据失败: $e');
@@ -390,8 +437,29 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       setState(() {
         _globalStats = {'_error': '统计数据加载失败，请下拉刷新后重试'};
         _isStatsLoading = false;
+        _statisticsErrorMessage = '统计加载失败，请下拉刷新后重试。';
       });
+      _publishStatisticsSnapshot();
     }
+  }
+
+  void _publishStatisticsSnapshot() {
+    _statisticsSnapshot.value = FinancialStatisticsSnapshot(
+      records: List.from(_statisticsRecords),
+      itemsMap: Map.from(_statisticsItemsMap),
+      isLoading: _isStatsLoading,
+      loadedRecordCount: _statisticsItemsMap.length,
+      totalRecordCount: _statisticsTotalRecordCount,
+      errorMessage: _statisticsErrorMessage,
+    );
+  }
+
+  String _statisticsQueryKey(
+    String query,
+    DateTime? startDate,
+    DateTime? endDate,
+  ) {
+    return '$query|${startDate?.toIso8601String() ?? ''}|${endDate?.toIso8601String() ?? ''}';
   }
 
   @override
@@ -400,6 +468,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     _searchController.dispose();
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
+    _statisticsSnapshot.dispose();
     super.dispose();
   }
 
@@ -756,50 +825,16 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   }
 
   /// 显示当前列表查询范围内的统计图表。
-  void _showStatisticsDialog() async {
+  void _showStatisticsDialog() {
     final financialProvider = Provider.of<FinancialProvider>(
       context,
       listen: false,
     );
 
-    if (_isStatsLoading || _statisticsRecords.isEmpty) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const Center(child: CircularProgressIndicator()),
-      );
-      await _loadStatisticsForCurrentQuery(financialProvider);
-      if (!mounted) return;
-      Navigator.of(context).pop();
-    }
-
-    final statsError = _globalStats['_error'] as String?;
-    if (statsError != null) {
-      SuccessToastManager.showError(context, message: statsError);
-      return;
-    }
-
-    _openStatisticsDialog(
-      financialProvider,
-      _statisticsRecords,
-      itemsMap: _statisticsItemsMap,
-    );
+    _openStatisticsDialog(financialProvider);
   }
 
-  void _openStatisticsDialog(
-    FinancialProvider financialProvider,
-    List<FinancialRecord> records, {
-    required Map<int, List<FinancialItem>> itemsMap,
-  }) {
-    if (records.isEmpty) {
-      SuccessToastManager.showInfo(
-        context,
-        message: '暂无财务数据可统计',
-        duration: const Duration(seconds: 2),
-      );
-      return;
-    }
-
+  void _openStatisticsDialog(FinancialProvider financialProvider) {
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -813,10 +848,9 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             child: SizedBox(
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.height * 0.9,
-              child: FinancialStatisticsDialog(
+              child: ProgressiveStatisticsDialog(
                 financialProvider: financialProvider,
-                financialRecords: records,
-                recordItemsMap: itemsMap,
+                statisticsListenable: _statisticsSnapshot,
                 initialStartDate: _startDate,
                 initialEndDate: _endDate,
               ),

@@ -1,119 +1,120 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../../models/financial_record.dart';
+
 import '../../../models/financial_item.dart';
+import '../../../models/financial_record.dart';
 import '../../../providers/financial_provider.dart';
 import 'financial_statistics_dialog.dart';
 
-/// 渐进式统计图表对话框包装器
-/// 先用初步数据显示图表，后台继续加载全量数据并刷新
-class ProgressiveStatisticsDialog extends StatefulWidget {
+/// 图表加载过程中的可观察数据快照。
+class FinancialStatisticsSnapshot {
+  final List<FinancialRecord> records;
+  final Map<int, List<FinancialItem>> itemsMap;
+  final bool isLoading;
+  final int loadedRecordCount;
+  final int? totalRecordCount;
+  final String? errorMessage;
+
+  const FinancialStatisticsSnapshot({
+    required this.records,
+    required this.itemsMap,
+    required this.isLoading,
+    this.loadedRecordCount = 0,
+    this.totalRecordCount,
+    this.errorMessage,
+  });
+
+  const FinancialStatisticsSnapshot.empty()
+    : records = const [],
+      itemsMap = const {},
+      isLoading = true,
+      loadedRecordCount = 0,
+      totalRecordCount = null,
+      errorMessage = null;
+}
+
+/// 图表立即打开，随后台统计数据批次刷新。
+class ProgressiveStatisticsDialog extends StatelessWidget {
   final FinancialProvider financialProvider;
-  final List<FinancialRecord> initialRecords;
-  final Map<int, List<FinancialItem>> initialItemsMap;
+  final ValueListenable<FinancialStatisticsSnapshot> statisticsListenable;
+  final DateTime? initialStartDate;
+  final DateTime? initialEndDate;
 
   const ProgressiveStatisticsDialog({
     super.key,
     required this.financialProvider,
-    required this.initialRecords,
-    required this.initialItemsMap,
+    required this.statisticsListenable,
+    this.initialStartDate,
+    this.initialEndDate,
   });
 
   @override
-  State<ProgressiveStatisticsDialog> createState() =>
-      ProgressiveStatisticsDialogState();
-}
-
-class ProgressiveStatisticsDialogState
-    extends State<ProgressiveStatisticsDialog> {
-  List<FinancialRecord> _records = [];
-  Map<int, List<FinancialItem>> _itemsMap = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _records = List.from(widget.initialRecords);
-    _itemsMap = Map.from(widget.initialItemsMap);
-    // 监听 provider，后台任务完成时自动更新图表
-    widget.financialProvider.addListener(_onProviderUpdated);
-    // 如果已有完整缓存，立即用
-    _applyFullCacheIfAvailable();
-  }
-
-  @override
-  void dispose() {
-    widget.financialProvider.removeListener(_onProviderUpdated);
-    super.dispose();
-  }
-
-  void _applyFullCacheIfAvailable() {
-    final cachedFullItemsMap = widget.financialProvider.cachedFullItemsMap;
-    if (widget.financialProvider.hasFullItemsCache && cachedFullItemsMap != null) {
-      final allRecords = widget.financialProvider.cachedRecords;
-      if (mounted) {
-        setState(() {
-          _records = allRecords;
-          _itemsMap = cachedFullItemsMap;
-        });
-      }
-    }
-  }
-
-  void _onProviderUpdated() {
-    if (!mounted) return;
-    // provider 后台任务每批完成都会 notifyListeners，这里更新图表
-    final cachedFullItemsMap = widget.financialProvider.cachedFullItemsMap;
-    if (cachedFullItemsMap != null) {
-      final allRecords = widget.financialProvider.cachedRecords;
-      setState(() {
-        _records = allRecords;
-        _itemsMap = cachedFullItemsMap;
-      });
-    }
-  }
-
-  bool get _isLoadingMore => widget.financialProvider.isBackgroundLoadingFull;
-
-  @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        FinancialStatisticsDialog(
-          key: ValueKey(_records.length), // 记录数变化时重建图表
-          financialRecords: _records,
-          recordItemsMap: _itemsMap,
-          financialProvider: widget.financialProvider,
-        ),
-        if (_isLoadingMore)
-          Positioned(
-            top: 8,
-            right: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(12),
+    return ValueListenableBuilder<FinancialStatisticsSnapshot>(
+      valueListenable: statisticsListenable,
+      builder: (context, snapshot, child) {
+        return Stack(
+          children: [
+            FinancialStatisticsDialog(
+              key: ValueKey(
+                '${snapshot.records.length}-${snapshot.itemsMap.length}',
               ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 12,
-                    height: 12,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    '加载中...',
-                    style: TextStyle(color: Colors.white, fontSize: 11),
-                  ),
-                ],
-              ),
+              financialRecords: snapshot.records,
+              recordItemsMap: snapshot.itemsMap,
+              financialProvider: financialProvider,
+              initialStartDate: initialStartDate,
+              initialEndDate: initialEndDate,
             ),
-          ),
-      ],
+            if (snapshot.isLoading || snapshot.errorMessage != null)
+              Positioned(
+                top: 104,
+                left: 0,
+                right: 0,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        snapshot.errorMessage != null
+                            ? Colors.red.shade50
+                            : Colors.blue.shade50,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        snapshot.errorMessage != null
+                            ? Icons.error_outline
+                            : Icons.insights_outlined,
+                        size: 16,
+                        color:
+                            snapshot.errorMessage != null
+                                ? Colors.red.shade700
+                                : Colors.blue.shade700,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          snapshot.errorMessage ??
+                              '统计图表正在渐进加载：已完成 ${snapshot.loadedRecordCount}${snapshot.totalRecordCount == null ? '' : ' / ${snapshot.totalRecordCount}'} 条记录。',
+                          style: TextStyle(
+                            color:
+                                snapshot.errorMessage != null
+                                    ? Colors.red.shade700
+                                    : Colors.blue.shade700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

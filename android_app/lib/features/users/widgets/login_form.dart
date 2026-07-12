@@ -34,8 +34,8 @@ class LoginForm extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formPadding = isSmallScreen ? 16.0 : 24.0;
-    final fieldSpacing = isSmallScreen ? 12.0 : 16.0;
+    final formPadding = isSmallScreen ? 14.0 : 18.0;
+    final fieldSpacing = isSmallScreen ? 10.0 : 12.0;
 
     return Container(
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(24)),

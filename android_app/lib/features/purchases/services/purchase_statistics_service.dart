@@ -55,27 +55,30 @@ class PurchaseStatisticsService {
     int totalQuantity = 0;
     Set<String> materials = {};
 
-    // 遍历所有采购记录
-    for (var record in records) {
+    for (final record in records) {
       totalAmount += record.totalAmount;
+    }
 
-      // 获取每个记录的采购项目来计算实际数量和材料种类
-      final recordId = record.id;
-      if (recordId != null) {
+    final itemResults = await Future.wait(
+      records.map((record) async {
+        final recordId = record.id;
+        if (recordId == null) return (record, <PurchaseItem>[], true);
         try {
-          final items = await getItemsCallback(recordId);
-          for (final item in items) {
-            totalQuantity += item.quantity; // 使用项目的实际数量
-            materials.add(item.materialName); // 收集材料种类
-          }
+          return (record, await getItemsCallback(recordId), false);
         } catch (e) {
           AppLogger.info('获取采购记录 $recordId 的项目失败: $e');
-          // 如果获取项目失败，使用记录的总数量作为备用
-          totalQuantity += record.totalQuantity;
+          return (record, <PurchaseItem>[], true);
         }
-      } else {
-        // 如果记录ID为空，使用记录的总数量
-        totalQuantity += record.totalQuantity;
+      }),
+    );
+    for (final result in itemResults) {
+      if (result.$3) {
+        totalQuantity += result.$1.totalQuantity;
+        continue;
+      }
+      for (final item in result.$2) {
+        totalQuantity += item.quantity;
+        materials.add(item.materialName);
       }
     }
 

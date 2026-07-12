@@ -34,6 +34,8 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   Map<String, dynamic> _statistics = {};
+  String? _loadErrorMessage;
+  int _requestVersion = 0;
   FocusNode? _focusNode;
   Timer? _searchDebounce;
 
@@ -119,6 +121,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
                   _searchController.clear();
                 });
                 _filterRecords();
+                _updateStatistics(_filteredRecords, ++_requestVersion);
               },
             ),
 
@@ -151,6 +154,29 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
 
   /// 构建采购记录列表
   Widget _buildPurchaseRecordsList() {
+    final loadErrorMessage = _loadErrorMessage;
+    if (loadErrorMessage != null) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 12),
+                Text(loadErrorMessage, textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: () => _loadData(forceRefresh: true),
+                  child: const Text('重试'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
     if (_filteredRecords.isEmpty) {
       return const PurchaseRecordsEmptyState();
     }
@@ -175,9 +201,11 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
     bool forceRefresh = false,
   }) async {
     if (!mounted) return;
+    final requestVersion = ++_requestVersion;
 
     setState(() {
       _isLoading = true;
+      _loadErrorMessage = null;
     });
 
     try {
@@ -199,20 +227,22 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
       AppLogger.info('🔄 开始${forceRefresh ? "强制" : ""}刷新采购记录数据...');
 
       // 如果不是强制刷新且有缓存，使用缓存
-      if (!forceRefresh && provider.hasCache) {
+      if (!forceRefresh &&
+          provider.hasValidCache &&
+          !provider.purchasesNeedRefresh) {
         AppLogger.info('✅ 使用缓存的采购数据，跳过重新加载');
         final records = provider.cachedRecords;
         final filteredRecords =
             _searchQuery.isEmpty
                 ? records
                 : await provider.searchPurchaseRecords(_searchQuery);
-        if (mounted) {
+        if (mounted && requestVersion == _requestVersion) {
           setState(() {
             _purchaseRecords = records;
             _filteredRecords = filteredRecords;
             _isLoading = false;
           });
-          _updateStatistics();
+          _updateStatistics(filteredRecords, requestVersion);
         }
         return;
       }
@@ -230,7 +260,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
               ? records
               : await provider.searchPurchaseRecords(_searchQuery);
 
-      if (mounted) {
+      if (mounted && requestVersion == _requestVersion) {
         setState(() {
           _purchaseRecords = records;
           _filteredRecords = filteredRecords;
@@ -238,7 +268,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
         });
 
         // 异步更新统计信息
-        _updateStatistics();
+        _updateStatistics(filteredRecords, requestVersion);
 
         AppLogger.info('✅ 采购记录数据刷新完成: ${records.length} 条记录');
 
@@ -249,9 +279,10 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
       }
     } catch (e) {
       AppLogger.info('❌ 刷新采购记录数据失败: $e');
-      if (mounted) {
+      if (mounted && requestVersion == _requestVersion) {
         setState(() {
           _isLoading = false;
+          _loadErrorMessage = '加载采购记录失败：$e';
         });
 
         SuccessToastManager.showError(context, message: '刷新数据失败: $e');
@@ -264,6 +295,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
     _searchDebounce?.cancel();
     setState(() {
       _searchQuery = value.trim();
+      _loadErrorMessage = null;
     });
     _searchDebounce = Timer(const Duration(milliseconds: 400), () {
       if (!mounted) return;
@@ -300,10 +332,12 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
 
   Future<void> _performSearch() async {
     if (!mounted) return;
+    final requestVersion = ++_requestVersion;
 
     final query = _searchQuery.trim();
     if (query.isEmpty) {
       _filterRecords();
+      _updateStatistics(_filteredRecords, requestVersion);
       return;
     }
 
@@ -315,14 +349,15 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
       final provider = Provider.of<PurchaseProvider>(context, listen: false);
       final records = await provider.searchPurchaseRecords(query);
 
-      if (!mounted) return;
+      if (!mounted || requestVersion != _requestVersion) return;
       setState(() {
         _filteredRecords = records;
         _isLoading = false;
       });
+      _updateStatistics(records, requestVersion);
     } catch (e) {
       AppLogger.info('❌ 搜索采购记录失败: $e');
-      if (!mounted) return;
+      if (!mounted || requestVersion != _requestVersion) return;
       setState(() {
         _isLoading = false;
       });
@@ -331,8 +366,12 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
   }
 
   /// 更新统计信息
-  Future<void> _updateStatistics() async {
-    if (_purchaseRecords.isEmpty) {
+  Future<void> _updateStatistics(
+    List<PurchaseRecord> records,
+    int requestVersion,
+  ) async {
+    if (records.isEmpty) {
+      if (!mounted || requestVersion != _requestVersion) return;
       setState(() {
         _statistics = {
           'totalRecords': 0,
@@ -349,11 +388,11 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
 
       // 使用统计服务计算统计信息
       final statistics = await PurchaseStatisticsService.calculateStatistics(
-        _purchaseRecords,
+        records,
         (recordId) => provider.getPurchaseItemsByRecordId(recordId),
       );
 
-      if (mounted) {
+      if (mounted && requestVersion == _requestVersion) {
         setState(() {
           _statistics = statistics.toMap();
         });
@@ -363,10 +402,10 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
 
       // 如果完全失败，使用基础统计计算
       final statistics = PurchaseStatisticsService.calculateBasicStatistics(
-        _purchaseRecords,
+        records,
       );
 
-      if (mounted) {
+      if (mounted && requestVersion == _requestVersion) {
         setState(() {
           _statistics = statistics.toMap();
         });
@@ -446,11 +485,29 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
           // 删除成功，立即从本地列表中移除
           setState(() {
             _purchaseRecords.removeWhere((r) => r.id == record.id);
-            _filterRecords(); // 重新过滤
+            _filteredRecords =
+                _purchaseRecords
+                    .where(
+                      (item) =>
+                          _searchQuery.isEmpty ||
+                          (item.supplier?.toLowerCase().contains(
+                                _searchQuery.toLowerCase(),
+                              ) ??
+                              false) ||
+                          (item.notes?.toLowerCase().contains(
+                                _searchQuery.toLowerCase(),
+                              ) ??
+                              false) ||
+                          (item.doctor?.toLowerCase().contains(
+                                _searchQuery.toLowerCase(),
+                              ) ??
+                              false),
+                    )
+                    .toList();
           });
 
           // 重新计算统计信息
-          _updateStatistics();
+          _updateStatistics(_filteredRecords, ++_requestVersion);
 
           // 强制刷新Provider状态
           provider.markPurchasesNeedRefresh();
@@ -488,17 +545,30 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
       // 准备采购项目数据映射
       final Map<int, List<PurchaseItem>> recordItemsMap = {};
 
-      for (final record in _purchaseRecords) {
-        final recordId = record.id;
-        if (recordId != null) {
+      final records = List<PurchaseRecord>.from(_filteredRecords);
+      final itemResults = await Future.wait(
+        records.map((record) async {
+          final recordId = record.id;
+          if (recordId == null) return (record, <PurchaseItem>[], true);
           try {
-            final items = await provider.getPurchaseItemsByRecordId(recordId);
-            recordItemsMap[recordId] = items;
+            return (
+              record,
+              await provider.getPurchaseItemsByRecordId(recordId),
+              false,
+            );
           } catch (e) {
             AppLogger.info('加载采购记录 $recordId 的项目失败: $e');
-            recordItemsMap[recordId] = [];
+            return (record, <PurchaseItem>[], true);
           }
-        }
+        }),
+      );
+      final failedRecordIds = <int>[];
+      for (final result in itemResults) {
+        final record = result.$1;
+        final recordId = record.id;
+        if (recordId == null) continue;
+        recordItemsMap[recordId] = result.$2;
+        if (result.$3) failedRecordIds.add(recordId);
       }
 
       // 关闭加载提示
@@ -512,9 +582,10 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
           context: context,
           builder:
               (context) => PurchaseStatisticsDialog(
-                purchaseRecords: _purchaseRecords,
+                purchaseRecords: records,
                 recordItemsMap: recordItemsMap,
                 purchaseProvider: provider,
+                failedRecordIds: failedRecordIds,
               ),
         );
       }
