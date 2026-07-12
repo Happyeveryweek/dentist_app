@@ -14,7 +14,7 @@ import '../providers/database_provider.dart';
 import '../features/financial/services/financial_calculator.dart';
 import '../features/financial/widgets/financial_sort_dialog.dart'
     as sort_dialog;
-import '../features/financial/widgets/progressive_statistics_dialog.dart';
+import '../features/financial/widgets/financial_statistics_dialog.dart';
 import '../features/financial/widgets/financial_management_screen_body.dart';
 import '../utils/app_logger.dart';
 
@@ -57,9 +57,10 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   // 全量统计缓存（顶部卡片用）
   Map<String, dynamic> _globalStats = {};
   bool _isStatsLoading = false;
-  // 保存 provider 引用，用于 dispose 时安全移除监听
-  FinancialProvider? _financialProviderRef;
   Timer? _searchDebounce;
+  int _requestVersion = 0;
+  List<FinancialRecord> _statisticsRecords = [];
+  Map<int, List<FinancialItem>> _statisticsItemsMap = {};
 
   @override
   void initState() {
@@ -186,6 +187,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     bool forceRefresh = false,
   }) async {
     if (!mounted) return;
+    final requestVersion = ++_requestVersion;
 
     try {
       final financialProvider = Provider.of<FinancialProvider>(
@@ -211,34 +213,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       if (forceRefresh) {
         financialProvider.clearCache();
         financialProvider.clearStatsCache();
-      }
-
-      // 有分页缓存且无时间筛选且不强制刷新，直接用缓存
-      if (!forceRefresh &&
-          financialProvider.hasCache &&
-          _startDate == null &&
-          _endDate == null) {
-        final cached = financialProvider.cachedRecords;
-        final cachedItems = financialProvider.cachedItemsMap;
-        setState(() {
-          _financialRecords = cached.take(_pageSize).toList();
-          _filteredRecords = _financialRecords;
-          _recordItemsMap = cachedItems;
-          _totalRecordsInDatabase = cached.length;
-          _currentPage = 1;
-          _hasMoreData = cached.length > _pageSize;
-          _isSearchMode = false;
-          _isLoading = false;
-        });
-        // 统计数据
-        final cachedStats = financialProvider.cachedStats;
-        if (cachedStats != null) {
-          setState(() {
-            _globalStats = cachedStats;
-          });
-        }
-        _loadGlobalStats(financialProvider, forceRefresh: false);
-        return;
       }
 
       setState(() {
@@ -269,19 +243,15 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       // 加载明细项
       final itemsMap = <int, List<FinancialItem>>{};
       for (final record in records) {
-        if (!mounted) return;
+        if (!mounted || requestVersion != _requestVersion) return;
         final recordId = record.id;
         if (recordId != null) {
-          try {
-            itemsMap[recordId] = await financialProvider
-                .getFinancialItemsByRecordId(recordId);
-          } catch (e) {
-            itemsMap[recordId] = [];
-          }
+          itemsMap[recordId] = await financialProvider
+              .getFinancialItemsByRecordId(recordId);
         }
       }
 
-      if (!mounted) return;
+      if (!mounted || requestVersion != _requestVersion) return;
       setState(() {
         _financialRecords = records;
         _filteredRecords = records;
@@ -291,7 +261,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       });
 
       // 异步加载全量统计（不阻塞列表显示）
-      _loadGlobalStats(financialProvider, forceRefresh: forceRefresh);
+      unawaited(_loadStatisticsForCurrentQuery(financialProvider));
 
       if (mounted && showToast) {
         SuccessToastManager.show(context, message: '数据已刷新');
@@ -314,50 +284,112 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     }
   }
 
-  /// 渐进式加载全量统计（先快速显示，后台独立任务继续更新）
-  Future<void> _loadGlobalStats(
-    FinancialProvider financialProvider, {
-    bool forceRefresh = false,
-  }) async {
+  /// 加载与当前列表相同查询条件的完整统计数据。
+  Future<void> _loadStatisticsForCurrentQuery(
+    FinancialProvider financialProvider,
+  ) async {
+    final requestVersion = ++_requestVersion;
+    final query = _searchQuery.trim();
+    final startDate = _startDate;
+    final endDate = _endDate;
+    final initialRecords = List<FinancialRecord>.from(_financialRecords);
+    final initialItemsMap = Map<int, List<FinancialItem>>.from(_recordItemsMap);
     if (mounted) {
       setState(() {
         _isStatsLoading = true;
+        if (initialRecords.isNotEmpty) {
+          _statisticsRecords = initialRecords;
+          _statisticsItemsMap = initialItemsMap;
+          _globalStats = {
+            ...financialProvider.calculateStatsFromData(
+              initialRecords,
+              initialItemsMap,
+            ),
+            '_isPartial': true,
+            '_loadedRecordCount': initialRecords.length,
+          };
+        } else {
+          _globalStats = {};
+          _statisticsRecords = [];
+          _statisticsItemsMap = {};
+        }
       });
     }
 
-    await financialProvider.loadStatsProgressively(
-      initialCount: 10,
-      batchSize: 20,
-      forceRefresh: forceRefresh,
-      onProgress: (stats, isDone) {
-        if (mounted) {
+    try {
+      final records = <FinancialRecord>[];
+      if (query.isNotEmpty) {
+        records.addAll(
+          await financialProvider.searchFinancialRecords(
+            query,
+            startDate: startDate,
+            endDate: endDate,
+          ),
+        );
+      } else {
+        final total = await financialProvider
+            .getFinancialRecordCountWithDateFilter(
+              startDate: startDate,
+              endDate: endDate,
+            );
+        for (var page = 1; records.length < total; page++) {
+          final pageRecords = await financialProvider
+              .getPaginatedFinancialRecordsWithDateFilter(
+                page,
+                _pageSize,
+                startDate: startDate,
+                endDate: endDate,
+              );
+          if (pageRecords.isEmpty) break;
+          records.addAll(pageRecords);
+        }
+      }
+
+      final itemsMap = <int, List<FinancialItem>>{};
+      if (records.isEmpty) {
+        if (!mounted || requestVersion != _requestVersion) return;
+        setState(() {
+          _statisticsRecords = [];
+          _statisticsItemsMap = {};
+          _globalStats = financialProvider.calculateStatsFromData([], {});
+          _isStatsLoading = false;
+        });
+        return;
+      }
+
+      const statsBatchSize = 20;
+      for (var index = 0; index < records.length; index++) {
+        final record = records[index];
+        final recordId = record.id;
+        if (recordId != null) {
+          itemsMap[recordId] = await financialProvider
+              .getFinancialItemsByRecordId(recordId);
+        }
+
+        final loadedRecordCount = index + 1;
+        final hasMoreItems = loadedRecordCount < records.length;
+        if (loadedRecordCount % statsBatchSize == 0 || !hasMoreItems) {
+          if (!mounted || requestVersion != _requestVersion) return;
           setState(() {
-            _globalStats = stats;
-            if (isDone) _isStatsLoading = false;
+            _statisticsRecords = records;
+            _statisticsItemsMap = Map.from(itemsMap);
+            _globalStats = {
+              ...financialProvider.calculateStatsFromData(records, itemsMap),
+              if (hasMoreItems) ...{
+                '_isPartial': true,
+                '_loadedRecordCount': loadedRecordCount,
+              },
+            };
+            _isStatsLoading = hasMoreItems;
           });
         }
-      },
-    );
-
-    // 确保后台全量加载任务已启动（独立于 widget 生命周期）
-    financialProvider.ensureFullDataCached(forceRefresh: forceRefresh);
-
-    // 只添加一次监听
-    if (_financialProviderRef == null) {
-      _financialProviderRef = financialProvider;
-      financialProvider.addListener(_onProviderStatsUpdated);
-    }
-  }
-
-  void _onProviderStatsUpdated() {
-    if (!mounted) return; // 安全检查，unmount 后不执行
-    final financialProvider = _financialProviderRef;
-    if (financialProvider == null) return;
-    final cachedStats = financialProvider.cachedStats;
-    if (cachedStats != null) {
+      }
+    } catch (e) {
+      AppLogger.info('加载财务统计数据失败: $e');
+      if (!mounted || requestVersion != _requestVersion) return;
       setState(() {
-        _globalStats = cachedStats;
-        _isStatsLoading = financialProvider.isBackgroundLoadingFull;
+        _globalStats = {'_error': '统计数据加载失败，请下拉刷新后重试'};
+        _isStatsLoading = false;
       });
     }
   }
@@ -368,9 +400,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     _searchController.dispose();
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
-    // 用保存的引用安全移除监听，不访问 context
-    _financialProviderRef?.removeListener(_onProviderStatsUpdated);
-    _financialProviderRef = null;
     super.dispose();
   }
 
@@ -400,12 +429,8 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         if (!mounted) return;
         final recordId = record.id;
         if (recordId != null) {
-          try {
-            itemsMap[recordId] = await financialProvider
-                .getFinancialItemsByRecordId(recordId);
-          } catch (e) {
-            itemsMap[recordId] = [];
-          }
+          itemsMap[recordId] = await financialProvider
+              .getFinancialItemsByRecordId(recordId);
         }
       }
 
@@ -418,7 +443,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           _hasMoreData = records.length >= _pageSize;
           _isLoadingMore = false;
         });
-        _sortRecords();
+        _sortLoadedRecords();
       }
     } catch (e) {
       AppLogger.info('❌ 加载更多财务记录失败: $e');
@@ -445,6 +470,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   Future<void> _performSearch() async {
     if (!mounted) return;
     final query = _searchQuery.trim();
+    final requestVersion = ++_requestVersion;
 
     if (query.isEmpty) {
       _loadData(showToast: false);
@@ -473,16 +499,12 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         if (!mounted) return;
         final recordId = record.id;
         if (recordId != null) {
-          try {
-            itemsMap[recordId] = await financialProvider
-                .getFinancialItemsByRecordId(recordId);
-          } catch (e) {
-            itemsMap[recordId] = [];
-          }
+          itemsMap[recordId] = await financialProvider
+              .getFinancialItemsByRecordId(recordId);
         }
       }
 
-      if (!mounted) return;
+      if (!mounted || requestVersion != _requestVersion) return;
       setState(() {
         _financialRecords = records;
         _filteredRecords = records;
@@ -490,7 +512,8 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         _totalRecordsInDatabase = records.length;
         _isLoading = false;
       });
-      _sortRecords();
+      _sortLoadedRecords();
+      unawaited(_loadStatisticsForCurrentQuery(financialProvider));
     } catch (e) {
       AppLogger.info('❌ 搜索财务记录失败: $e');
       if (!mounted) return;
@@ -595,14 +618,33 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
                 }
               });
               // 应用排序
-              _sortRecords();
+              _applySort();
             },
           ),
     );
   }
 
   /// 对记录进行排序（基于缓存数据）
-  void _sortRecords() {
+  Future<void> _applySort() async {
+    if (_currentSort != 'updated_time') {
+      final financialProvider = Provider.of<FinancialProvider>(
+        context,
+        listen: false,
+      );
+      await _loadStatisticsForCurrentQuery(financialProvider);
+      if (!mounted) return;
+      setState(() {
+        _financialRecords = List.from(_statisticsRecords);
+        _filteredRecords = List.from(_statisticsRecords);
+        _recordItemsMap = Map.from(_statisticsItemsMap);
+        _totalRecordsInDatabase = _statisticsRecords.length;
+        _hasMoreData = false;
+      });
+    }
+    _sortLoadedRecords();
+  }
+
+  void _sortLoadedRecords() {
     setState(() {
       switch (_currentSort) {
         case 'updated_time':
@@ -713,75 +755,41 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
     });
   }
 
-  /// 显示统计信息对话框 - 渐进式加载全量数据
+  /// 显示当前列表查询范围内的统计图表。
   void _showStatisticsDialog() async {
     final financialProvider = Provider.of<FinancialProvider>(
       context,
       listen: false,
     );
 
-    // 有完整 itemsMap 缓存，直接打开，不转圈
-    if (financialProvider.hasFullItemsCache) {
-      final allRecords = financialProvider.cachedRecords;
-      final allItemsMap = financialProvider.cachedFullItemsMap;
-      if (allItemsMap == null) {
-        return;
-      }
-      _openStatisticsDialog(
-        financialProvider,
-        allRecords,
-        initialItemsMap: allItemsMap,
+    if (_isStatsLoading || _statisticsRecords.isEmpty) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
       );
+      await _loadStatisticsForCurrentQuery(financialProvider);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    }
+
+    final statsError = _globalStats['_error'] as String?;
+    if (statsError != null) {
+      SuccessToastManager.showError(context, message: statsError);
       return;
     }
 
-    // 没有完整缓存，先加载前10条快速打开
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
+    _openStatisticsDialog(
+      financialProvider,
+      _statisticsRecords,
+      itemsMap: _statisticsItemsMap,
     );
-
-    try {
-      final initialRecords = await financialProvider
-          .getPaginatedFinancialRecords(1, 10);
-      final initialItemsMap = <int, List<FinancialItem>>{};
-      for (final r in initialRecords) {
-        final recordId = r.id;
-        if (recordId != null) {
-          try {
-            initialItemsMap[recordId] = await financialProvider
-                .getFinancialItemsByRecordId(recordId);
-          } catch (_) {
-            initialItemsMap[recordId] = [];
-          }
-        }
-      }
-
-      if (!mounted) return;
-      Navigator.of(context).pop();
-
-      // 用初步数据先打开图表
-      _openStatisticsDialog(
-        financialProvider,
-        initialRecords,
-        initialItemsMap: initialItemsMap,
-      );
-
-      // 启动后台全量加载（独立于 widget，关闭图表也继续跑）
-      financialProvider.ensureFullDataCached();
-    } catch (e) {
-      if (mounted) {
-        Navigator.of(context).pop();
-        SuccessToastManager.showError(context, message: '加载统计数据失败: $e');
-      }
-    }
   }
 
   void _openStatisticsDialog(
     FinancialProvider financialProvider,
     List<FinancialRecord> records, {
-    Map<int, List<FinancialItem>>? initialItemsMap,
+    required Map<int, List<FinancialItem>> itemsMap,
   }) {
     if (records.isEmpty) {
       SuccessToastManager.showInfo(
@@ -805,10 +813,12 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
             child: SizedBox(
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.height * 0.9,
-              child: ProgressiveStatisticsDialog(
+              child: FinancialStatisticsDialog(
                 financialProvider: financialProvider,
-                initialRecords: records,
-                initialItemsMap: initialItemsMap ?? {},
+                financialRecords: records,
+                recordItemsMap: itemsMap,
+                initialStartDate: _startDate,
+                initialEndDate: _endDate,
               ),
             ),
           ),

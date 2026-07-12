@@ -17,12 +17,16 @@ class FinancialStatisticsDialog extends StatefulWidget {
   final List<FinancialRecord> financialRecords;
   final Map<int, List<FinancialItem>> recordItemsMap;
   final FinancialProvider financialProvider;
+  final DateTime? initialStartDate;
+  final DateTime? initialEndDate;
 
   const FinancialStatisticsDialog({
     super.key,
     required this.financialRecords,
     required this.recordItemsMap,
     required this.financialProvider,
+    this.initialStartDate,
+    this.initialEndDate,
   });
 
   @override
@@ -32,10 +36,8 @@ class FinancialStatisticsDialog extends StatefulWidget {
 
 class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     with SingleTickerProviderStateMixin {
-  DateTime _startDate = DateTimeFormatter.nowLocal().subtract(
-    const Duration(days: 180),
-  ); // 初始化为6个月前
-  DateTime _endDate = DateTimeFormatter.nowLocal();
+  late DateTime _startDate;
+  late DateTime _endDate;
 
   TabController? _tabController;
 
@@ -58,7 +60,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _setDefaultDateRange();
+    _setInitialDateRange();
   }
 
   @override
@@ -67,10 +69,17 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
     super.dispose();
   }
 
-  void _setDefaultDateRange() {
+  void _setInitialDateRange() {
+    final initialStart = widget.initialStartDate;
+    final initialEnd = widget.initialEndDate;
+    if (initialStart != null && initialEnd != null) {
+      _startDate = initialStart;
+      _endDate = initialEnd;
+      return;
+    }
     final now = DateTimeFormatter.nowLocal();
-    _startDate = DateTime(now.year, now.month - 5, 1); // 默认显示最近6个月（半年）
-    _endDate = DateTime(now.year, now.month, now.day); // 设置为今天
+    _startDate = _getEarliestFinancialDate();
+    _endDate = DateTime(now.year, now.month, now.day);
   }
 
   /// 获取最早的财务记录日期（基于收费日期，与统计逻辑一致）
@@ -888,8 +897,7 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
 
       // 找到患者姓名
       final name = record.patientName;
-      String patientName =
-          name != null && name.isNotEmpty ? name : '未知患者';
+      String patientName = name != null && name.isNotEmpty ? name : '未知患者';
 
       patientTotals[patientName] =
           (patientTotals[patientName] ?? 0) + item.totalPrice;

@@ -1,6 +1,7 @@
 # ROADMAP
 
 ## 当前阶段
+- `android_app` 财务列表、顶部统计和统计图表的数据链路已统一为当前搜索/日期条件下的完整记录集；顶部统计先显示首屏临时结果、每 20 条动态刷新并标注加载中，完成后切换为完整值；收费项目变更会通过详情页返回结果触发列表强制刷新，异步搜索增加结果版本保护，金额排序改为基于完整结果集；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
 - `android_app` 仪表盘欢迎卡片已按登录页临床背景图风格重做，保留原有问候、日期、头像和预约数据链路，新增视觉颜色已收口到主题语义色；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
 - `android_app` 登录页背景已替换为临床后台图片 `assets/images/login_clinical_console.png`；已运行 `dart format lib\\screens\\login_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
 - `windows_app` 患者详情页预约记录标签已修复多条预约添加入口：存在预约记录时，列表顶部仍显示“添加预约”按钮，并复用原有保存、重新加载与父页刷新链路；已运行 `dart format lib\\screens\\patient_detail_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
@@ -34,6 +35,7 @@
 - 无
 
 ## 最近验证
+- 2026-07-12：`android_app` 财务数据一致性与渐进统计显示修复后运行 `dart format lib\\screens\\financial_detail_screen.dart lib\\screens\\financial_management_screen.dart lib\\providers\\financial_provider.dart lib\\features\\financial\\helpers\\financial_cache_helper.dart lib\\features\\financial\\widgets\\financial_statistics_dialog.dart lib\\features\\financial\\widgets\\financial_statistics_card.dart` 和全量 `flutter analyze`，结果 `No issues found!`；本轮覆盖详情页变更回传、搜索结果乱序保护、首屏临时统计与每 20 条动态刷新、按当前查询条件加载完整统计、图表初始范围同步、金额排序全量化，以及明细加载失败不再被当作空数据。
 - 2026-07-12：`android_app` 仪表盘欢迎卡片已使用登录页背景图重做为浅蓝紫临床控制台风格，并将相关颜色收口到 `AppTheme`；已运行 `dart format lib\\theme\\app_theme.dart lib\\features\\dashboard\\widgets\\welcome_section.dart` 和 `flutter analyze`，结果 `No issues found!`。
 - 2026-07-12：`android_app` 登录页背景已替换为 `assets/images/login_clinical_console.png`；已运行 `dart format lib\\screens\\login_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
 - 2026-07-10：修复 `windows_app` 备份数据源保存后重启回退到 SQLite 的问题：启动加载配置时已恢复 `backupDataSource` 字段，并新增“保存为 MySQL 后重新初始化仍为 MySQL”的持久化回归测试；定向测试通过，全量 `flutter analyze` 结果 `No issues found!`。

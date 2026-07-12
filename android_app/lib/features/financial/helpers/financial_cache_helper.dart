@@ -159,7 +159,7 @@ class FinancialCacheHelper {
         }
         // 每批完成后更新缓存（即使 widget 已关闭也会保存）
         _cachedFullItemsMap = Map.from(allItemsMap);
-        final partialStats = _buildStatsFromData(allRecords, allItemsMap);
+        final partialStats = buildStatsFromData(allRecords, allItemsMap);
         updateStatsCache(partialStats);
         // 通知监听者（如果有 widget 还在监听）
         notifyListeners();
@@ -167,11 +167,13 @@ class FinancialCacheHelper {
 
       // 全部完成
       _cachedFullItemsMap = allItemsMap;
-      final finalStats = _buildStatsFromData(allRecords, allItemsMap);
+      final finalStats = buildStatsFromData(allRecords, allItemsMap);
       updateStatsCache(finalStats);
       _isBackgroundLoadingFull = false;
       notifyListeners();
-      AppLogger.info('✅ 后台全量加载完成，共 ${allRecords.length} 条记录，${allItemsMap.length} 个明细项');
+      AppLogger.info(
+        '✅ 后台全量加载完成，共 ${allRecords.length} 条记录，${allItemsMap.length} 个明细项',
+      );
     } catch (e) {
       AppLogger.info('❌ 后台全量加载失败: $e');
       _isBackgroundLoadingFull = false;
@@ -179,7 +181,7 @@ class FinancialCacheHelper {
   }
 
   /// 从记录和明细项计算统计数据
-  Map<String, dynamic> _buildStatsFromData(
+  static Map<String, dynamic> buildStatsFromData(
     List<FinancialRecord> records,
     Map<int, List<FinancialItem>> itemsMap,
   ) {

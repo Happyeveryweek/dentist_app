@@ -23,6 +23,9 @@ class FinancialStatisticsCard extends StatelessWidget {
     final totalOutstanding = (globalStats['totalOutstanding'] ?? 0.0) as double;
     final totalProcessingFee =
         (globalStats['totalProcessingFee'] ?? 0.0) as double;
+    final statsError = globalStats['_error'] as String?;
+    final isPartial = globalStats['_isPartial'] == true;
+    final loadedRecordCount = globalStats['_loadedRecordCount'] as int?;
     final isFirstLoad = globalStats.isEmpty;
 
     return Container(
@@ -38,7 +41,20 @@ class FinancialStatisticsCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child:
-                isFirstLoad
+                statsError != null
+                    ? SizedBox(
+                      height: 56,
+                      child: Center(
+                        child: Text(
+                          statsError,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.red[700],
+                          ),
+                        ),
+                      ),
+                    )
+                    : isFirstLoad
                     ? const SizedBox(
                       height: 56,
                       child: Center(
@@ -110,7 +126,9 @@ class FinancialStatisticsCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                '统计数据加载中...',
+                                isPartial && loadedRecordCount != null
+                                    ? '已基于前 $loadedRecordCount 条记录计算，正在加载完整统计...'
+                                    : '统计数据加载中...',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.grey[400],

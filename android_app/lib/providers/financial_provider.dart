@@ -342,7 +342,9 @@ class FinancialProvider extends ChangeNotifier {
             _database,
             _currentMysqlConnection,
           );
-          AppLogger.info('✅ 权限过滤查询成功，获取到 ${records.length} 条财务记录（医生: $doctorFilter）');
+          AppLogger.info(
+            '✅ 权限过滤查询成功，获取到 ${records.length} 条财务记录（医生: $doctorFilter）',
+          );
         } else {
           // 使用数据源模式（统一接口）
           records = await _currentDataSource.getAllFinancialRecords();
@@ -384,7 +386,9 @@ class FinancialProvider extends ChangeNotifier {
         try {
           // 优先检查缓存（像患者管理一样）
           if (_cacheHelper.hasValidCache) {
-            AppLogger.info('使用缓存的财务记录数据: ${_cacheHelper.cachedRecords.length} 条');
+            AppLogger.info(
+              '使用缓存的财务记录数据: ${_cacheHelper.cachedRecords.length} 条',
+            );
             return _cacheHelper.cachedRecords;
           }
 
@@ -468,6 +472,14 @@ class FinancialProvider extends ChangeNotifier {
 
   void clearStatsCache() {
     _cacheHelper.clearStatsCache();
+  }
+
+  /// 根据已加载的完整记录和收费项目计算统计数据。
+  Map<String, dynamic> calculateStatsFromData(
+    List<FinancialRecord> records,
+    Map<int, List<FinancialItem>> itemsMap,
+  ) {
+    return FinancialCacheHelper.buildStatsFromData(records, itemsMap);
   }
 
   /// 启动后台全量加载任务（widget 无关，加载完自动缓存）

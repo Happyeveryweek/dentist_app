@@ -32,6 +32,8 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   List<FinancialItem> _items = [];
   Patient? _patient;
   bool _isLoading = false;
+  bool _dataChanged = false;
+  late final Future<String?> _recordPatientDoctorFuture;
 
   int get _recordId {
     final id = widget.record.id;
@@ -44,88 +46,100 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _recordPatientDoctorFuture = _getRecordPatientDoctor();
     _loadData();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-          tooltip: '返回',
-        ),
-        title: Text(
-          '${widget.record.patientName ?? _patient?.name ?? '患者'} - 财务详情',
-        ),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        actions: [
-          FutureBuilder<String?>(
-            future: _getRecordPatientDoctor(),
-            builder: (context, snapshot) {
-              final patientDoctor = snapshot.data;
-              return PermissionWrapper(
-                module: 'financial',
-                action: 'edit',
-                recordDoctor: patientDoctor,
-                onPermissionDenied: () {
-                  PermissionUtils.showPermissionDeniedMessage(
-                    context,
-                    customMessage: '您只能编辑自己负责患者的财务记录',
-                  );
-                },
-                child: IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => _editRecord(context),
-                  tooltip: '编辑备注',
-                ),
-              );
-            },
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.of(context).pop(_dataChanged ? true : null);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(_dataChanged),
+            tooltip: '返回',
           ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () => _deleteRecord(context),
-            tooltip: '删除记录',
+          title: Text(
+            '${widget.record.patientName ?? _patient?.name ?? '患者'} - 财务详情',
           ),
-        ],
-      ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(
-                onRefresh: _loadData,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 患者基本信息卡片
-                      PatientInfoCard(patient: _patient, record: widget.record),
+          backgroundColor: Theme.of(context).primaryColor,
+          foregroundColor: Colors.white,
+          actions: [
+            FutureBuilder<String?>(
+              future: _recordPatientDoctorFuture,
+              builder: (context, snapshot) {
+                final patientDoctor = snapshot.data;
+                return PermissionWrapper(
+                  module: 'financial',
+                  action: 'edit',
+                  recordDoctor: patientDoctor,
+                  onPermissionDenied: () {
+                    PermissionUtils.showPermissionDeniedMessage(
+                      context,
+                      customMessage: '您只能编辑自己负责患者的财务记录',
+                    );
+                  },
+                  child: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () => _editRecord(context),
+                    tooltip: '编辑备注',
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: () => _deleteRecord(context),
+              tooltip: '删除记录',
+            ),
+          ],
+        ),
+        body:
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : RefreshIndicator(
+                  onRefresh: _loadData,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 患者基本信息卡片
+                        PatientInfoCard(
+                          patient: _patient,
+                          record: widget.record,
+                        ),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      // 财务统计卡片
-                      FinancialSummaryCard(items: _items),
+                        // 财务统计卡片
+                        FinancialSummaryCard(items: _items),
 
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      // 收费记录历史卡片
-                      PaymentHistoryCard(
-                        items: _items,
-                        onAddItem: _addItem,
-                        itemBuilder:
-                            (item) => FinancialItemCard(
-                              item: item,
-                              onEdit: () => _editItem(item),
-                              onDelete: () => _deleteItem(item),
-                            ),
-                      ),
-                    ],
+                        // 收费记录历史卡片
+                        PaymentHistoryCard(
+                          items: _items,
+                          onAddItem: _addItem,
+                          itemBuilder:
+                              (item) => FinancialItemCard(
+                                item: item,
+                                onEdit: () => _editItem(item),
+                                onDelete: () => _deleteItem(item),
+                              ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+      ),
     );
   }
 
@@ -133,12 +147,16 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
   Future<void> _loadData() async {
     final recordId = widget.record.id;
     if (recordId == null) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('财务记录ID无效'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('财务记录ID无效'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
       return;
@@ -211,9 +229,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       final provider = Provider.of<FinancialProvider>(context, listen: false);
 
       // 获取该财务记录的所有收费项，重新计算总数量
-      final items = await provider.getFinancialItemsByRecordId(
-        _recordId,
-      );
+      final items = await provider.getFinancialItemsByRecordId(_recordId);
       final totalQuantity = items.fold<int>(
         0,
         (sum, item) => sum + item.quantity,
@@ -229,6 +245,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       AppLogger.info('✅ 财务记录更新成功：总数量 = $totalQuantity');
     } catch (e) {
       AppLogger.info('❌ 更新财务记录失败: $e');
+      rethrow;
     }
   }
 
@@ -243,6 +260,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
           ),
     ).then((result) {
       if (result == true) {
+        _dataChanged = true;
         _loadData(); // 刷新数据以显示更新后的备注
         // 通知父页面有修改
         if (context.mounted) {
@@ -301,6 +319,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
                 // 更新财务记录的收费项数量和更新时间
                 await _updateFinancialRecordAfterItemChange();
+                _dataChanged = true;
 
                 if (context.mounted) {
                   SuccessToastManager.show(context, message: '收费项目添加成功');
@@ -339,6 +358,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
                 // 更新财务记录的收费项数量和更新时间
                 await _updateFinancialRecordAfterItemChange();
+                _dataChanged = true;
 
                 if (context.mounted) {
                   SuccessToastManager.show(context, message: '收费项目更新成功');
@@ -395,6 +415,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
 
       // 更新财务记录的收费项数量和更新时间
       await _updateFinancialRecordAfterItemChange();
+      _dataChanged = true;
 
       if (mounted) {
         // 使用公共组件的删除成功提示
