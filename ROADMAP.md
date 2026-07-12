@@ -1,6 +1,7 @@
 # ROADMAP
 
 ## 当前阶段
+- `windows_app` 患者新增/编辑表单的每条牙齿状况记录已增加独立的可选预约开关；开启后可选择下次预约日期、时间，预约内容既可从历史预约治疗项目去重列表中选择，也可直接手动填写，默认“综合治疗”，并可独立勾选三个牙位十字中需要带入预约记录的内容；预约下拉菜单已增加圆角，预约信息区与十字记录间距已加大；预约编辑器已支持按实际数量渲染 0～3 个带入牙位，不再因单个牙位数据固定访问第二项而报错；提交患者时会使用保存后的患者 ID 自动创建预约，不改动数据库表结构或牙齿状况存储格式；已运行定向 `dart format`、预约治疗项目及牙位序列化/组件回归测试和全量 `flutter analyze`，结果均通过。
 - `android_app` 登录页已压缩登录框高度并整体上移，避免遮挡背景图底部牙齿图标；未改动登录校验、记住密码或背景资源逻辑；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
 - `android_app` 采购统计图表与财务统计图表均已补充明确关闭入口；财务图表点击后立即进入图表页，先展示现有数据并以“已完成 X / 总计 Y 条记录”的文字提示渐进加载，随后每 20 条并发读取明细并刷新图表；同一查询范围的完成快照可直接复用，列表重新加载、搜索或日期范围变化会失效重算；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
 - `android_app` 采购列表、顶部统计与统计图表已统一为当前搜索结果口径；采购明细新增/编辑/删除后会重新回算采购记录的总数量和总金额，详情页会回读最新记录并将变更回传列表；加载失败不再显示为空数据，搜索和统计增加结果版本保护，统计明细查询改为并发并对图表内不完整数据作出提示；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
@@ -38,6 +39,8 @@
 - 无
 
 ## 最近验证
+- 2026-07-12：修复 `windows_app` 患者牙齿状况带入预约后编辑报 `RangeError` 的问题；预约编辑牙齿组件由固定读取两个十字改为按实际牙位数量渲染，新增单个和三个牙位组件回归测试；运行 `flutter test test\appointment_treatment_utils_test.dart`，3 个测试全部通过，运行全量 `flutter analyze`，结果 `No issues found!`。
+- 2026-07-12：`windows_app` 患者牙齿状况行可选预约功能及后续牙位勾选、预约内容手动填写/历史下拉选择、下拉圆角和区域间距调整完成后，运行定向 `dart format`、`flutter test test\appointment_treatment_utils_test.dart` 和全量 `flutter analyze`；2 个回归测试全部通过，静态检查结果 `No issues found!`。
 - 2026-07-12：`android_app` 登录框高度与位置调整后运行 `dart format lib\screens\login_screen.dart lib\features\users\widgets\login_form.dart` 和全量 `flutter analyze`，结果 `No issues found!`；本轮仅压缩表单内部间距并上移登录框及底部装饰区域，避免遮挡背景牙齿图标。
 - 2026-07-12：`android_app` 采购/财务统计图表交互与财务渐进加载改造后运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`；本轮覆盖图表关闭入口、图表立即打开、文字化加载进度、每批 20 条并发明细加载、统计失败仍可进入图表页提示，以及当前查询范围快照复用与失效。
 - 2026-07-12：`android_app` 采购数据一致性修复后运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`；本轮覆盖采购明细变更后的记录汇总回算、详情页变更回传、当前搜索结果的列表/统计/图表口径、数据库错误提示、缓存有效性校验、异步搜索结果版本保护和统计明细并发加载。

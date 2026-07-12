@@ -6,10 +6,14 @@ import 'dart:convert';
 import 'dart:typed_data';
 import '../../../models/patient.dart';
 import '../../../models/dental_chart.dart';
+import '../../../models/appointment.dart';
+import '../../../providers/appointment_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/user_provider.dart';
 
 import '../../../widgets/modern_date_picker.dart';
+import '../../appointments/widgets/appointment_time_picker.dart';
+import '../../appointments/widgets/appointment_treatment_utils.dart';
 import '../models/patient_form_state.dart';
 import 'patient_form_components.dart';
 import '../../../utils/permission_utils.dart';
@@ -32,6 +36,8 @@ class PatientFormDialog extends StatefulWidget {
 
 class _PatientFormDialogState extends State<PatientFormDialog> {
   late final PatientFormState _formState = PatientFormState();
+  List<String> _appointmentTreatmentSuggestions = [];
+  int? _savedPatientId;
 
   // Overlay 相关（保留在 State 中，与 Flutter Overlay 交互紧密）
   OverlayEntry? _overlayEntry;
@@ -50,6 +56,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
     }
 
     _formState.nameController.addListener(_onNameChanged);
+    _loadAppointmentTreatmentSuggestions();
   }
 
   @override
@@ -233,7 +240,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
     }
 
     try {
-      _formState.dentalChartRows.clear();
+      _formState.clearDentalChartRows();
 
       Map<String, dynamic> dentalCharts = patient?.dentalCharts ?? {};
 
@@ -345,6 +352,112 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
     } catch (e) {
       LogManager.e('PatientFormDialog', '保存患者失败', error: e);
       rethrow;
+    }
+  }
+
+  Future<void> _loadAppointmentTreatmentSuggestions() async {
+    try {
+      final appointmentProvider =
+          Provider.of<AppointmentProvider>(context, listen: false);
+      final appointments = await appointmentProvider.getAllAppointments();
+      final suggestions = <String>{};
+      for (final appointment in appointments) {
+        suggestions.addAll(
+          extractAppointmentTreatments(appointment.treatmentType),
+        );
+      }
+      if (!mounted) return;
+      setState(() => _appointmentTreatmentSuggestions = suggestions.toList());
+    } catch (e) {
+      LogManager.e('PatientFormDialog', '加载预约内容下拉数据失败', error: e);
+    }
+  }
+
+  Future<void> _selectAppointmentDate(DentalChartRow row) async {
+    final draft = _formState.appointmentDraftFor(row);
+    final picked = await showDialog<DateTime>(
+      context: context,
+      builder: (context) => ModernDatePickerDialog(
+        initialDate: draft.appointmentDateTime,
+        firstDate: DateTime.now(),
+        lastDate: DateTime(2100),
+      ),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      final current = draft.appointmentDateTime;
+      draft.appointmentDateTime = DateTime(
+        picked.year,
+        picked.month,
+        picked.day,
+        current.hour,
+        current.minute,
+      );
+    });
+  }
+
+  Future<void> _selectAppointmentTime(DentalChartRow row) async {
+    final draft = _formState.appointmentDraftFor(row);
+    await showDialog<void>(
+      context: context,
+      builder: (context) => ModernTimePickerDialog(
+        initialTime: TimeOfDay.fromDateTime(draft.appointmentDateTime),
+        onTimeSelected: (time) {
+          setState(() {
+            final current = draft.appointmentDateTime;
+            draft.appointmentDateTime = DateTime(
+              current.year,
+              current.month,
+              current.day,
+              time.hour,
+              time.minute,
+            );
+          });
+          Navigator.of(context).pop();
+        },
+      ),
+    );
+  }
+
+  Future<void> _createSelectedAppointments(Patient patient) async {
+    final patientId = patient.id;
+    if (patientId == null) {
+      throw StateError('创建预约前未取得患者ID');
+    }
+
+    final appointmentProvider =
+        Provider.of<AppointmentProvider>(context, listen: false);
+    for (final row in _formState.dentalChartRows) {
+      final draft = _formState.appointmentDraftFor(row);
+      if (!draft.enabled) continue;
+
+      final appointmentDateTime = draft.appointmentDateTime;
+      final charts = [row.chart1, row.chart2, row.chart3];
+      final selectedTeethData = <Map<String, String>>[];
+      for (final chartIndex in [1, 2, 3]) {
+        if (!draft.selectedChartIndexes.contains(chartIndex)) continue;
+        final chart = charts[chartIndex - 1];
+        selectedTeethData.add({
+          'topLeft': chart.topLeftController.text,
+          'topRight': chart.topRightController.text,
+          'bottomLeft': chart.bottomLeftController.text,
+          'bottomRight': chart.bottomRightController.text,
+        });
+      }
+      await appointmentProvider.addAppointment(
+        Appointment(
+          patientId: patientId,
+          patient: patient,
+          appointmentDate: appointmentDateTime,
+          appointmentTime: DateFormat('HH:mm:ss').format(appointmentDateTime),
+          status: '已预约',
+          treatmentType: buildAppointmentTreatmentData(
+            [draft.treatmentController.text],
+            teethData: selectedTeethData,
+          ),
+        ),
+      );
+      draft.enabled = false;
     }
   }
 
@@ -499,7 +612,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
       final dentalCondition = patient.dentalCondition;
       if (dentalCondition != null && dentalCondition.isNotEmpty) {
         try {
-          _formState.dentalChartRows.clear();
+          _formState.clearDentalChartRows();
           Map<String, dynamic> dentalCharts = patient.dentalCharts;
 
           if (dentalCharts.isEmpty) {
@@ -617,7 +730,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
     try {
       bool nameExists = await patientProvider.checkPatientNameExists(
           _formState.nameController.text,
-          _formState.excludePatientId ?? widget.patient?.id);
+          _savedPatientId ?? _formState.excludePatientId ?? widget.patient?.id);
 
       if (nameExists) {
         List<Patient> patients = await patientProvider
@@ -627,7 +740,9 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
           for (var patient in patients) {
             if (patient.name == _formState.nameController.text &&
                 patient.id !=
-                    (_formState.excludePatientId ?? widget.patient?.id)) {
+                    (_savedPatientId ??
+                        _formState.excludePatientId ??
+                        widget.patient?.id)) {
               setState(() {
                 _formState.existingPatient = patient;
               });
@@ -902,6 +1017,18 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
       });
 
       try {
+        final invalidAppointment = _formState.dentalChartRows.any((row) {
+          final draft = _formState.appointmentDraftFor(row);
+          return draft.enabled &&
+              !draft.appointmentDateTime.isAfter(DateTime.now());
+        });
+        if (invalidAppointment) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('下次预约时间必须晚于当前时间')),
+          );
+          return;
+        }
+
         final patientProvider =
             Provider.of<PatientProvider>(context, listen: false);
         bool canProceed = true;
@@ -913,7 +1040,9 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
           bool medicalRecordExists =
               await patientProvider.checkMedicalRecordExists(
                   medicalRecordNumber,
-                  _formState.excludePatientId ?? widget.patient?.id);
+                  _savedPatientId ??
+                      _formState.excludePatientId ??
+                      widget.patient?.id);
 
           if (medicalRecordExists) {
             if (!mounted) return;
@@ -929,7 +1058,9 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
         if (canProceed) {
           bool nameExists = await patientProvider.checkPatientNameExists(
               _formState.nameController.text,
-              _formState.excludePatientId ?? widget.patient?.id);
+              _savedPatientId ??
+                  _formState.excludePatientId ??
+                  widget.patient?.id);
 
           if (nameExists) {
             List<Patient> existingPatients = await patientProvider
@@ -939,7 +1070,9 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
             for (var patient in existingPatients) {
               if (patient.name == _formState.nameController.text &&
                   patient.id !=
-                      (_formState.excludePatientId ?? widget.patient?.id)) {
+                      (_savedPatientId ??
+                          _formState.excludePatientId ??
+                          widget.patient?.id)) {
                 selectedPatient = patient;
                 break;
               }
@@ -989,7 +1122,9 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
 
         // 创建患者对象
         final Patient patient = Patient(
-          id: _formState.editingExistingPatient?.id ?? widget.patient?.id,
+          id: _savedPatientId ??
+              _formState.editingExistingPatient?.id ??
+              widget.patient?.id,
           name: _formState.nameController.text,
           namePinyin:
               (_formState.editingExistingPatient ?? widget.patient)?.namePinyin,
@@ -1028,6 +1163,8 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
         );
 
         final savedPatient = await _savePatientAndGetId(patient);
+        _savedPatientId = savedPatient.id;
+        await _createSelectedAppointments(savedPatient);
 
         if (!mounted) return;
         widget.onSave(savedPatient);
@@ -1048,7 +1185,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
       onSelectDate: (row) => _selectChartDate(context, row),
       onDeleteRow: (row) {
         setState(() {
-          _formState.dentalChartRows.remove(row);
+          _formState.removeDentalChartRow(row);
           for (int i = 0; i < _formState.dentalChartRows.length; i++) {
             _formState.dentalChartRows[i].index = i;
           }
@@ -1056,6 +1193,36 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
       },
       canEditRow: _canEditDentalChartRow,
       canDeleteRow: _canDeleteDentalChartRow,
+      appointmentDraftFor: _formState.appointmentDraftFor,
+      treatmentSuggestions: _appointmentTreatmentSuggestions,
+      onToggleAppointment: (row) {
+        setState(() {
+          final draft = _formState.appointmentDraftFor(row);
+          draft.enabled = !draft.enabled;
+          if (!draft.enabled) {
+            draft.selectedChartIndexes.clear();
+          }
+        });
+      },
+      onSelectAppointmentDate: _selectAppointmentDate,
+      onSelectAppointmentTime: _selectAppointmentTime,
+      onTreatmentChanged: (row, treatment) {
+        setState(() {
+          _formState.appointmentDraftFor(row).treatmentController.text =
+              treatment;
+        });
+      },
+      onChartSelectionChanged: (row, chartIndex, selected) {
+        setState(() {
+          final selectedIndexes =
+              _formState.appointmentDraftFor(row).selectedChartIndexes;
+          if (selected) {
+            selectedIndexes.add(chartIndex);
+          } else {
+            selectedIndexes.remove(chartIndex);
+          }
+        });
+      },
     );
   }
 

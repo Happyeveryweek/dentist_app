@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:collection';
 import '../../../theme/theme_context_extensions.dart';
 import 'dart:convert';
 import '../../../models/appointment.dart';
@@ -17,6 +16,7 @@ import './appointment_cost_status_section.dart';
 import './appointment_notes_section.dart';
 import '../../../widgets/patient_selection_dialog.dart';
 import '../../../utils/log_manager.dart';
+import 'appointment_treatment_utils.dart';
 
 class AppointmentFormDialog extends StatefulWidget {
   final DateTime initialDate;
@@ -105,7 +105,7 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
       // 尝试解析为JSON
       final decoded = json.decode(treatmentTypeStr);
       if (decoded is! Map<String, dynamic>) {
-        _selectedTreatments = _extractTreatmentItems(treatmentTypeStr);
+        _selectedTreatments = extractAppointmentTreatments(treatmentTypeStr);
         _updateTreatmentTypeController();
         return;
       }
@@ -119,12 +119,12 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
       }
 
       // 提取治疗项目数据
-      _selectedTreatments = _extractTreatmentItemsFromDecodedData(data);
+      _selectedTreatments = extractAppointmentTreatmentsFromMap(data);
       _updateTreatmentTypeController();
     } catch (e) {
       // 如果解析失败，可能是旧数据格式，直接设为治疗项目
       LogManager.e('AppointmentFormDialog', '解析treatment_type失败', error: e);
-      _selectedTreatments = _extractTreatmentItems(treatmentTypeStr);
+      _selectedTreatments = extractAppointmentTreatments(treatmentTypeStr);
       _updateTreatmentTypeController();
     }
   }
@@ -143,65 +143,6 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
     return json.encode(data);
   }
 
-  List<String> _normalizeTreatmentItems(List<String> items) {
-    return LinkedHashSet<String>.from(
-      items.map((item) => item.trim()).where((item) => item.isNotEmpty),
-    ).toList();
-  }
-
-  List<String> _extractTreatmentItems(String? source) {
-    if (source == null || source.trim().isEmpty) {
-      return [];
-    }
-
-    final trimmed = source.trim();
-
-    try {
-      final decoded = json.decode(trimmed);
-      if (decoded is Map<String, dynamic>) {
-        final extracted = _extractTreatmentItemsFromDecodedData(decoded);
-        if (extracted.isNotEmpty) {
-          return extracted;
-        }
-        return [];
-      }
-      if (decoded is List) {
-        return _normalizeTreatmentItems(
-          decoded.map((item) => item.toString()).toList(),
-        );
-      }
-    } catch (_) {}
-
-    return _normalizeTreatmentItems(trimmed.split(RegExp(r'[、,，\n]')));
-  }
-
-  List<String> _extractTreatmentItemsFromDecodedData(
-      Map<String, dynamic> data) {
-    if (data['treatments'] is List) {
-      return _normalizeTreatmentItems(
-        List<String>.from(
-          (data['treatments'] as List).map((item) => item.toString()),
-        ),
-      );
-    }
-
-    if (data['treatmentTypes'] is List) {
-      return _normalizeTreatmentItems(
-        List<String>.from(
-          (data['treatmentTypes'] as List).map((item) => item.toString()),
-        ),
-      );
-    }
-
-    if (data['treatmentType'] is String) {
-      return _normalizeTreatmentItems([
-        data['treatmentType'].toString(),
-      ]);
-    }
-
-    return [];
-  }
-
   Future<void> _loadTreatmentSuggestions() async {
     try {
       final appointmentProvider = Provider.of<AppointmentProvider>(
@@ -212,7 +153,8 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
       final suggestions = <String>{};
 
       for (final appointment in appointments) {
-        for (final item in _extractTreatmentItems(appointment.treatmentType)) {
+        for (final item
+            in extractAppointmentTreatments(appointment.treatmentType)) {
           suggestions.add(item);
         }
       }
@@ -241,7 +183,7 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
       return;
     }
 
-    _selectedTreatments = _normalizeTreatmentItems([
+    _selectedTreatments = normalizeAppointmentTreatments([
       ..._selectedTreatments,
       pending,
     ]);
@@ -525,7 +467,7 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
                           onTreatmentsChanged: (treatments) {
                             setState(() {
                               _selectedTreatments =
-                                  _normalizeTreatmentItems(treatments);
+                                  normalizeAppointmentTreatments(treatments);
                             });
                           },
                         ),

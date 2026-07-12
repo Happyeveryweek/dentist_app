@@ -84,14 +84,26 @@ class _TeethConditionWidgetState extends State<TeethConditionWidget> {
               ),
             ],
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Expanded(child: _buildCrossWidget(0)),
-              const SizedBox(width: 4),
-              Expanded(child: _buildCrossWidget(1)),
-            ],
-          ),
+          if (_localTeethData.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                '暂无牙位信息',
+                style: TextStyle(color: tokens.textMuted),
+              ),
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                for (int index = 0;
+                    index < _localTeethData.length;
+                    index++) ...[
+                  if (index > 0) const SizedBox(width: 4),
+                  Expanded(child: _buildCrossWidget(index)),
+                ],
+              ],
+            ),
         ],
       ),
     );

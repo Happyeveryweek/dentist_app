@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/dental_chart.dart';
+import '../models/patient_form_state.dart';
 
 class PatientFormDentalSection extends StatelessWidget {
   final List<DentalChartRow> rows;
@@ -11,6 +12,14 @@ class PatientFormDentalSection extends StatelessWidget {
   final ValueChanged<DentalChartRow> onDeleteRow;
   final bool Function(DentalChartRow row) canEditRow;
   final bool Function(DentalChartRow row) canDeleteRow;
+  final DentalAppointmentDraft Function(DentalChartRow row) appointmentDraftFor;
+  final List<String> treatmentSuggestions;
+  final ValueChanged<DentalChartRow> onToggleAppointment;
+  final ValueChanged<DentalChartRow> onSelectAppointmentDate;
+  final ValueChanged<DentalChartRow> onSelectAppointmentTime;
+  final void Function(DentalChartRow row, String treatment) onTreatmentChanged;
+  final void Function(DentalChartRow row, int chartIndex, bool selected)
+      onChartSelectionChanged;
 
   const PatientFormDentalSection({
     Key? key,
@@ -20,6 +29,13 @@ class PatientFormDentalSection extends StatelessWidget {
     required this.onDeleteRow,
     required this.canEditRow,
     required this.canDeleteRow,
+    required this.appointmentDraftFor,
+    required this.treatmentSuggestions,
+    required this.onToggleAppointment,
+    required this.onSelectAppointmentDate,
+    required this.onSelectAppointmentTime,
+    required this.onTreatmentChanged,
+    required this.onChartSelectionChanged,
   }) : super(key: key);
 
   @override
@@ -72,7 +88,11 @@ class PatientFormDentalSection extends StatelessWidget {
           const Divider(),
           const SizedBox(height: 2),
           SizedBox(
-            height: rows.length > 1 ? 420 : 280,
+            height: rows.length > 1
+                ? 420
+                : rows.any((row) => appointmentDraftFor(row).enabled)
+                    ? 360
+                    : 280,
             child: SingleChildScrollView(
               child: Column(
                 children: rows
@@ -84,6 +104,17 @@ class PatientFormDentalSection extends StatelessWidget {
                         canDelete: canDeleteRow(row),
                         onSelectDate: () => onSelectDate(row),
                         onDelete: () => onDeleteRow(row),
+                        appointmentDraft: appointmentDraftFor(row),
+                        treatmentSuggestions: treatmentSuggestions,
+                        onToggleAppointment: () => onToggleAppointment(row),
+                        onSelectAppointmentDate: () =>
+                            onSelectAppointmentDate(row),
+                        onSelectAppointmentTime: () =>
+                            onSelectAppointmentTime(row),
+                        onTreatmentChanged: (value) =>
+                            onTreatmentChanged(row, value),
+                        onChartSelectionChanged: (chartIndex, selected) =>
+                            onChartSelectionChanged(row, chartIndex, selected),
                       ),
                     )
                     .toList(),
@@ -103,6 +134,13 @@ class PatientFormDentalChartRow extends StatelessWidget {
   final bool canDelete;
   final VoidCallback onSelectDate;
   final VoidCallback onDelete;
+  final DentalAppointmentDraft appointmentDraft;
+  final List<String> treatmentSuggestions;
+  final VoidCallback onToggleAppointment;
+  final VoidCallback onSelectAppointmentDate;
+  final VoidCallback onSelectAppointmentTime;
+  final ValueChanged<String> onTreatmentChanged;
+  final void Function(int chartIndex, bool selected) onChartSelectionChanged;
 
   const PatientFormDentalChartRow({
     Key? key,
@@ -112,6 +150,13 @@ class PatientFormDentalChartRow extends StatelessWidget {
     required this.canDelete,
     required this.onSelectDate,
     required this.onDelete,
+    required this.appointmentDraft,
+    required this.treatmentSuggestions,
+    required this.onToggleAppointment,
+    required this.onSelectAppointmentDate,
+    required this.onSelectAppointmentTime,
+    required this.onTreatmentChanged,
+    required this.onChartSelectionChanged,
   }) : super(key: key);
 
   @override
@@ -242,25 +287,63 @@ class PatientFormDentalChartRow extends StatelessWidget {
                         chart: row.chart1,
                         chartIndex: 1,
                         enabled: canEdit,
+                        showAppointmentSelection: appointmentDraft.enabled,
+                        appointmentSelected:
+                            appointmentDraft.selectedChartIndexes.contains(1),
+                        onAppointmentSelectionChanged: (selected) =>
+                            onChartSelectionChanged(1, selected),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 3),
                     Expanded(
                       child: PatientFormSimpleCrossChart(
                         chart: row.chart2,
                         chartIndex: 2,
                         enabled: canEdit,
+                        showAppointmentSelection: appointmentDraft.enabled,
+                        appointmentSelected:
+                            appointmentDraft.selectedChartIndexes.contains(2),
+                        onAppointmentSelectionChanged: (selected) =>
+                            onChartSelectionChanged(2, selected),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 3),
                     Expanded(
                       child: PatientFormSimpleCrossChart(
                         chart: row.chart3,
                         chartIndex: 3,
                         enabled: canEdit,
+                        showAppointmentSelection: appointmentDraft.enabled,
+                        appointmentSelected:
+                            appointmentDraft.selectedChartIndexes.contains(3),
+                        onAppointmentSelectionChanged: (selected) =>
+                            onChartSelectionChanged(3, selected),
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              SizedBox(
+                width: 116,
+                child: OutlinedButton.icon(
+                  onPressed: canEdit ? onToggleAppointment : null,
+                  icon: Icon(
+                    appointmentDraft.enabled
+                        ? Icons.event_available
+                        : Icons.event_outlined,
+                    size: 16,
+                  ),
+                  label: Text(
+                    appointmentDraft.enabled ? '预约：是' : '预约：否',
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 8,
+                    ),
+                  ),
                 ),
               ),
               if (rowCount > 1 && canDelete)
@@ -293,6 +376,84 @@ class PatientFormDentalChartRow extends StatelessWidget {
                 ),
             ],
           ),
+          if (appointmentDraft.enabled) ...[
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                const SizedBox(width: 116),
+                Expanded(
+                  child: InkWell(
+                    onTap: onSelectAppointmentDate,
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: '下次预约日期',
+                        isDense: true,
+                        prefixIcon: Icon(Icons.calendar_today, size: 17),
+                      ),
+                      child: Text(
+                        DateFormat('yyyy-MM-dd').format(
+                          appointmentDraft.appointmentDateTime,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 150,
+                  child: InkWell(
+                    onTap: onSelectAppointmentTime,
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: '时间',
+                        isDense: true,
+                        prefixIcon: Icon(Icons.schedule, size: 17),
+                      ),
+                      child: Text(
+                        DateFormat('HH:mm').format(
+                          appointmentDraft.appointmentDateTime,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: appointmentDraft.treatmentController,
+                    decoration: InputDecoration(
+                      labelText: '预约内容',
+                      hintText: '可手动填写或选择已有内容',
+                      isDense: true,
+                      suffixIcon: PopupMenuButton<String>(
+                        tooltip: '选择已有预约内容',
+                        icon: const Icon(Icons.arrow_drop_down),
+                        color: context.tokens.cardBackground,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        itemBuilder: (context) => <String>{
+                          '综合治疗',
+                          ...treatmentSuggestions,
+                        }
+                            .map(
+                              (item) => PopupMenuItem<String>(
+                                value: item,
+                                child: Text(
+                                  item,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            )
+                            .toList(),
+                        onSelected: onTreatmentChanged,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
@@ -303,12 +464,18 @@ class PatientFormSimpleCrossChart extends StatelessWidget {
   final DentalChart chart;
   final int chartIndex;
   final bool enabled;
+  final bool showAppointmentSelection;
+  final bool appointmentSelected;
+  final ValueChanged<bool> onAppointmentSelectionChanged;
 
   const PatientFormSimpleCrossChart({
     Key? key,
     required this.chart,
     required this.chartIndex,
     required this.enabled,
+    required this.showAppointmentSelection,
+    required this.appointmentSelected,
+    required this.onAppointmentSelectionChanged,
   }) : super(key: key);
 
   @override
@@ -430,6 +597,28 @@ class PatientFormSimpleCrossChart extends StatelessWidget {
                   ),
                 ],
               ),
+              if (showAppointmentSelection)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Tooltip(
+                    message: '将此牙位十字带入预约记录',
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: Checkbox(
+                        value: appointmentSelected,
+                        visualDensity: VisualDensity.compact,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        onChanged: enabled
+                            ? (value) => onAppointmentSelectionChanged(
+                                  value ?? false,
+                                )
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

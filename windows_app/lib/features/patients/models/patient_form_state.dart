@@ -3,6 +3,18 @@ import 'package:flutter/material.dart';
 import '../../../models/dental_chart.dart';
 import '../../../models/patient.dart';
 
+class DentalAppointmentDraft {
+  bool enabled = false;
+  DateTime appointmentDateTime = DateTime.now().add(const Duration(days: 1));
+  final TextEditingController treatmentController =
+      TextEditingController(text: '综合治疗');
+  final Set<int> selectedChartIndexes = {};
+
+  void dispose() {
+    treatmentController.dispose();
+  }
+}
+
 /// 患者表单状态数据对象
 /// 从 _PatientFormDialogState 中提取，集中管理表单控制器和状态变量
 class PatientFormState {
@@ -34,6 +46,7 @@ class PatientFormState {
 
   // 牙齿状况十字图相关
   List<DentalChartRow> dentalChartRows = [];
+  final Map<DentalChartRow, DentalAppointmentDraft> appointmentDrafts = {};
 
   // 同名患者检查相关
   String? nameExistsError;
@@ -64,6 +77,30 @@ class PatientFormState {
     for (var row in dentalChartRows) {
       row.dispose();
     }
+    for (final draft in appointmentDrafts.values) {
+      draft.dispose();
+    }
+  }
+
+  DentalAppointmentDraft appointmentDraftFor(DentalChartRow row) {
+    return appointmentDrafts.putIfAbsent(row, DentalAppointmentDraft.new);
+  }
+
+  void removeDentalChartRow(DentalChartRow row) {
+    appointmentDrafts.remove(row)?.dispose();
+    row.dispose();
+    dentalChartRows.remove(row);
+  }
+
+  void clearDentalChartRows() {
+    for (final row in dentalChartRows) {
+      row.dispose();
+    }
+    dentalChartRows.clear();
+    for (final draft in appointmentDrafts.values) {
+      draft.dispose();
+    }
+    appointmentDrafts.clear();
   }
 
   /// 从已有患者加载基本信息到控制器
