@@ -97,28 +97,6 @@ class BackupLog {
     }
   }
 
-  static Future<DateTime?> getLastBackupDate() async {
-    try {
-      final logs = await getLogs();
-      if (logs.isEmpty) {
-        return null;
-      }
-
-      // 按日期排序，找出最近的成功备份
-      logs.sort((a, b) => b.backupDate.compareTo(a.backupDate));
-      for (var log in logs) {
-        if (log.success) {
-          return log.backupDate;
-        }
-      }
-
-      return null;
-    } catch (e) {
-      LogManager.e('BackupLog', '获取最后备份日期出错', error: e);
-      return null;
-    }
-  }
-
   // 清空所有备份日志
   static Future<bool> clearAllLogs() async {
     try {

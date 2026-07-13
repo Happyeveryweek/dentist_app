@@ -5,7 +5,6 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:mysql1/mysql1.dart';
 
-import '../models/patient.dart';
 import '../models/appointment.dart';
 // 随访记录相关导入已移除
 import '../models/user.dart';
@@ -130,12 +129,6 @@ class AppointmentProvider extends ChangeNotifier {
     if (dataSourceType != null) _dataSourceType = dataSourceType;
     if (currentUser != null) _currentUser = currentUser;
     if (patientProvider != null) _patientProvider = patientProvider;
-  }
-
-  // 标记刷新
-  void markAppointmentsNeedRefresh() {
-    _appointmentsNeedRefresh = true;
-    notifyListeners();
   }
 
   // 重置刷新标志
@@ -430,23 +423,6 @@ class AppointmentProvider extends ChangeNotifier {
   }
 
   // =================== 预约相关方法 ===================
-
-  // 通过PatientProvider获取患者信息
-  Future<Patient?> getPatientForAppointment(int patientId) async {
-    final patientProvider = _patientProvider;
-    if (patientProvider == null) {
-      LogManager.w('AppointmentProvider', 'PatientProvider未设置，无法获取患者信息');
-      return null;
-    }
-
-    try {
-      return await patientProvider.getPatient(patientId);
-    } catch (e) {
-      LogManager.e('AppointmentProvider', '通过PatientProvider获取患者信息失败',
-          error: e);
-      return null;
-    }
-  }
 
   // 获取患者的预约（使用数据源架构）
   Future<List<Appointment>> getAppointmentsByPatient(int patientId) async {

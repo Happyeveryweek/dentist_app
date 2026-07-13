@@ -48,9 +48,6 @@ class DatabaseProvider extends ChangeNotifier {
   // 数据源类型
   String _dataSourceType = 'sqlite';
 
-  // 刷新标志
-  bool _dashboardNeedRefresh = false;
-
   // 数据库路径
   String? _sqliteDbPath;
   String? _customSqliteDbPath;
@@ -74,8 +71,6 @@ class DatabaseProvider extends ChangeNotifier {
 
   Map<String, dynamic>? get mysqlSettings => _mysqlSettings;
   String get dataSourceType => _dataSourceType;
-
-  bool get dashboardNeedRefresh => _dashboardNeedRefresh;
 
   // 当前用户信息
   User? _currentUser;
@@ -147,7 +142,6 @@ class DatabaseProvider extends ChangeNotifier {
             await existingConnection.query('SELECT 1');
             LogManager.w('DatabaseProvider', '现有MySQL连接仍然有效，无需重新初始化');
             // 数据库初始化完成，表结构检测由SettingsProvider统一管理
-            _markAllDataForRefresh();
             notifyListeners();
             LogManager.i('DatabaseProvider', '数据库初始化完成（使用现有连接）');
             return;
@@ -220,8 +214,6 @@ class DatabaseProvider extends ChangeNotifier {
       }
 
       // 数据库初始化完成，表结构检测由SettingsProvider统一管理
-      // 标记所有数据需要刷新
-      _markAllDataForRefresh();
       notifyListeners();
       LogManager.i('DatabaseProvider', '数据库初始化完成');
 
@@ -273,29 +265,6 @@ class DatabaseProvider extends ChangeNotifier {
     return connectionInfo;
   }
 
-  _MySQLConnectionInfo _resolveMySQLCredentials({
-    Map<String, dynamic>? mysqlSettings,
-  }) {
-    if (mysqlSettings != null) {
-      return _MySQLConnectionInfo(
-        host: (mysqlSettings['host'] ?? _mysqlHost).toString(),
-        port: int.tryParse(mysqlSettings['port']?.toString() ?? _mysqlPort) ??
-            3306,
-        database: (mysqlSettings['database'] ?? _mysqlDatabase).toString(),
-        username: (mysqlSettings['username'] ?? _mysqlUsername).toString(),
-        password: (mysqlSettings['password'] ?? _mysqlPassword).toString(),
-      );
-    }
-
-    return _MySQLConnectionInfo(
-      host: _mysqlHost,
-      port: int.tryParse(_mysqlPort) ?? 3306,
-      database: _mysqlDatabase,
-      username: _mysqlUsername,
-      password: _mysqlPassword,
-    );
-  }
-
   // 初始化SQLite数据库（委托给服务）
   Future<Database> initSQLiteDatabase() async {
     return await _sqliteService.initSQLiteDatabase();
@@ -306,19 +275,6 @@ class DatabaseProvider extends ChangeNotifier {
     await _sqliteService.ensureSQLiteDatabase();
     _database = _sqliteService.database;
     _updateServiceConnections();
-  }
-
-  // 标记刷新
-
-  void markDashboardNeedRefresh() {
-    _dashboardNeedRefresh = true;
-    notifyListeners();
-  }
-
-  // 重置刷新标志
-
-  void resetDashboardRefreshFlag() {
-    _dashboardNeedRefresh = false;
   }
 
   // 数据库备份方法（委托给 DatabaseBackupService）
@@ -401,8 +357,6 @@ class DatabaseProvider extends ChangeNotifier {
       await _backupService.restoreDatabase(filePath);
     }
 
-    // 标记数据需要刷新
-    _markAllDataForRefresh();
     notifyListeners();
   }
 
@@ -519,9 +473,6 @@ class DatabaseProvider extends ChangeNotifier {
         await initDatabase(mysqlSettings: mysqlSettings);
       }
 
-      // 标记所有数据需要刷新
-      _markAllDataForRefresh();
-
       LogManager.i('DatabaseProvider', '数据源切换完成');
       notifyListeners();
     } catch (e) {
@@ -575,11 +526,6 @@ class DatabaseProvider extends ChangeNotifier {
     await initializeMySQLConnection(settings);
   }
 
-  // 标记所有数据需要刷新
-  void _markAllDataForRefresh() {
-    markDashboardNeedRefresh();
-  }
-
   // 获取数据库实例
   Future<Database?> getDatabase() async {
     if (_database != null) {
@@ -608,32 +554,8 @@ class DatabaseProvider extends ChangeNotifier {
         onLogOperation: onLogOperation);
   }
 
-  // MySQL备份功能已移动到SettingsProvider
-  // 请使用SettingsProvider.backupMySQLDatabase()方法
-
   // _formatValue 已移至 DatabaseBackupService
   // _getMySQLToolPath 已移至 DatabaseBackupService
-
-  // backupMySQLDatabase 已移至 DatabaseBackupService
-  Future<String> backupMySQLDatabase({
-    String? backupPath,
-    Map<String, dynamic>? mysqlSettings,
-  }) async {
-    _syncMysqlConnectionFromService();
-    _updateServiceConnections();
-
-    // 从内部变量或传入的设置获取连接参数
-    final credentials = _resolveMySQLCredentials(mysqlSettings: mysqlSettings);
-
-    return await _backupService.backupMySQLDatabase(
-      backupPath: backupPath,
-      host: credentials.host,
-      port: credentials.port,
-      database: credentials.database,
-      username: credentials.username,
-      password: credentials.password,
-    );
-  }
 
   // _convertResultRowToMap 已移至 DatabaseBackupService
   // _formatDateTime 已移至 DatabaseBackupService

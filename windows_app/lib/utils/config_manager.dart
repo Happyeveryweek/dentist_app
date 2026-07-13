@@ -30,24 +30,6 @@ class ConfigManager {
   /// 获取当前存储模式
   StorageMode get storageMode => _storageMode;
 
-  /// 保存配置
-  Future<bool> saveConfig(String key, dynamic value) async {
-    switch (_storageMode) {
-      case StorageMode.file:
-        return await _saveToFile(key, value);
-      case StorageMode.preferences:
-        return await _saveToPreferences(key, value);
-      case StorageMode.hybrid:
-        // 优先尝试文件存储
-        final fileResult = await _saveToFile(key, value);
-        if (fileResult) {
-          return true;
-        }
-        // 文件存储失败，回退到SharedPreferences
-        return await _saveToPreferences(key, value);
-    }
-  }
-
   /// 加载配置
   Future<T?> loadConfig<T>(String key, {T? defaultValue}) async {
     switch (_storageMode) {
@@ -143,17 +125,6 @@ class ConfigManager {
 
   // 私有方法：文件存储相关
 
-  Future<bool> _saveToFile(String key, dynamic value) async {
-    try {
-      final configs = await _loadAllFromFile();
-      configs[key] = value;
-      return await _saveAllToFile(configs);
-    } catch (e) {
-      LogManager.e('ConfigManager', '保存配置到文件失败', error: e);
-      return false;
-    }
-  }
-
   Future<T?> _loadFromFile<T>(String key, {T? defaultValue}) async {
     try {
       final configs = await _loadAllFromFile();
@@ -221,30 +192,6 @@ class ConfigManager {
   }
 
   // 私有方法：SharedPreferences存储相关
-
-  Future<bool> _saveToPreferences(String key, dynamic value) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      if (value is String) {
-        return await prefs.setString(key, value);
-      } else if (value is int) {
-        return await prefs.setInt(key, value);
-      } else if (value is double) {
-        return await prefs.setDouble(key, value);
-      } else if (value is bool) {
-        return await prefs.setBool(key, value);
-      } else if (value is List<String>) {
-        return await prefs.setStringList(key, value);
-      } else {
-        // 其他类型转换为JSON字符串
-        return await prefs.setString(key, jsonEncode(value));
-      }
-    } catch (e) {
-      LogManager.e('ConfigManager', '保存配置到SharedPreferences失败', error: e);
-      return false;
-    }
-  }
 
   Future<T?> _loadFromPreferences<T>(String key, {T? defaultValue}) async {
     try {

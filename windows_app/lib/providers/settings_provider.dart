@@ -7,7 +7,6 @@ import 'package:dentist_app_windows/features/settings/services/config_storage_se
 import 'package:dentist_app_windows/features/settings/services/backup_management_service.dart';
 import 'package:dentist_app_windows/features/settings/services/data_source_management_service.dart';
 import 'package:dentist_app_windows/features/settings/services/database_structure_detection_service.dart';
-import 'package:dentist_app_windows/features/settings/services/mysql_connection_service.dart';
 import 'package:dentist_app_windows/models/database_structure_log.dart';
 import 'package:dentist_app_windows/utils/datetime_formatter.dart';
 import 'package:dentist_app_windows/theme/app_theme.dart';
@@ -22,8 +21,6 @@ class SettingsProvider extends ChangeNotifier {
       DataSourceManagementService();
   final DatabaseStructureDetectionService _databaseStructureDetectionService =
       DatabaseStructureDetectionService();
-  final MySQLConnectionService _mysqlConnectionService =
-      MySQLConnectionService();
 
   // ==================== 状态字段 ====================
 
@@ -561,8 +558,4 @@ class SettingsProvider extends ChangeNotifier {
 
     return '${dataSourceType.toUpperCase()}数据库结构检测: 数据库结构正常，无需更新';
   }
-
-  // MySQL连接
-  Future<String> backupMySQLDatabase({String? backupPath}) =>
-      _mysqlConnectionService.backupMySQLDatabase(backupPath: backupPath);
 }

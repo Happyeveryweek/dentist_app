@@ -2,11 +2,11 @@
 
 方案日期：2026-07-13。
 
-状态：部分完成。批次 0、1A、1B 已于 2026-07-13 实施并通过自动验证；其余批次待实施。
+状态：部分完成。批次 0、1A、1B、2A、2B、2C 已于 2026-07-13 实施并通过自动验证；批次 3～5 待实施。
 
 本文承接 [Windows 端无用代码与重复逻辑治理总结](windows_app_dead_code_and_duplicate_logic_governance_summary_2026_07_13.md)，记录 2026-07-13 复审发现的剩余候选、实施批次、风险边界和验收方式。本文是后续实施依据，不代表所列事项已经完成。
 
-实施记录：批次 0 基线静态检查无问题、全量测试 68 个通过。批次 1A 已删除 `SplashScreen`、`ErrorScreen`、`AppToast`、`PermissionButton`、`PermissionIconButton`、`AvatarSelector`、`UserAvatar` 与 `DefaultTemplateInitializer`；`AppToastType`、`_ToastConfig` 仍被 `AppToastManager` 使用，按现有代码保留。批次 1B 已删除仅被 barrel export 的 `PatientSortOptionsSheet` 文件及 export。批次 1A、1B 后静态检查无问题、全量测试 68 个通过，且 `git diff --check` 与改动文件 LF 行尾检查通过；人工 UI 回归待主人执行。
+实施记录：批次 0 基线静态检查无问题、全量测试 68 个通过。批次 1A 已删除 `SplashScreen`、`ErrorScreen`、`AppToast`、`PermissionButton`、`PermissionIconButton`、`AvatarSelector`、`UserAvatar` 与 `DefaultTemplateInitializer`；`AppToastType`、`_ToastConfig` 仍被 `AppToastManager` 使用，按现有代码保留。批次 1B 已删除仅被 barrel export 的 `PatientSortOptionsSheet` 文件及 export。批次 2A 已清理确认无调用的 public API、由 `ConfigManager.saveConfig` 产生的私有保存孤儿链，以及无人读取的 Dashboard 刷新标志链。批次 2B 已删除设置侧旧 MySQL 备份 service 文件、字段和两层无消费者委托，现用 `DatabaseBackupService` 备份恢复路径保持不变。批次 2C 已让采购页面统一调用 `PurchaseExportService.showExportDialog`，并删除页面内两套重复私有编排方法。批次 2A～2C 后静态检查无问题，备份专项测试 3 个通过、全量测试 68 个通过，且 `git diff --check` 与改动文件 LF 行尾检查通过；批次 1A～2C 的人工 UI／功能回归待主人执行。
 
 ## 1. 目标与非目标
 
@@ -200,7 +200,7 @@ git ls-files --eol -- lib/main.dart lib/widgets/success_toast.dart lib/utils/per
 - 患者列表按修改日期、姓名、年龄、首诊日期的现行排序入口逐项回归。
 - 排序升降序切换、分页回到第一页等现有行为保持不变。
 
-## 8. 批次 2A：删除独立无调用 API 和状态链
+## 8. 批次 2A：删除独立无调用 API 和状态链（已完成）
 
 ### 8.1 独立方法候选
 
@@ -239,7 +239,7 @@ git ls-files --eol -- lib/main.dart lib/widgets/success_toast.dart lib/utils/per
 - 数据源切换后 Dashboard 数据刷新、预约列表首次加载和前后台刷新人工回归。
 - `MapParser` 涉及的模型解析测试继续通过。
 
-## 9. 批次 2B：删除无消费者 MySQL 备份委托链
+## 9. 批次 2B：删除无消费者 MySQL 备份委托链（已完成）
 
 ### 9.1 候选链
 
@@ -289,7 +289,7 @@ Settings / Backup UI
 
 任一备份入口仍依赖旧委托时，停止删除并重新绘制实际调用链，不通过复制旧逻辑解决。
 
-## 10. 批次 2C：收口采购导出重复编排
+## 10. 批次 2C：收口采购导出重复编排（已完成）
 
 ### 10.1 重复点
 

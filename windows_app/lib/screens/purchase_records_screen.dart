@@ -8,7 +8,6 @@ import '../providers/purchase_provider.dart';
 import '../widgets/mysql_connection_warning.dart';
 import '../widgets/dental_icons.dart';
 import '../widgets/unified_search_field.dart';
-import '../features/purchases/widgets/purchase_export_dialog.dart';
 import '../widgets/success_toast.dart';
 import '../features/purchases/widgets/purchase_statistics_dialog.dart';
 import '../features/purchases/widgets/purchase_detail_dialog.dart';
@@ -198,7 +197,11 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
           },
         );
       },
-      onExport: (record, items) => _showExportDialog(record, items),
+      onExport: (record, items) => PurchaseExportService.showExportDialog(
+        context,
+        record,
+        items,
+      ),
     );
   }
 
@@ -866,53 +869,6 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
           );
         },
       );
-    }
-  }
-
-  /// 显示导出内容选择对话框
-  Future<void> _showExportDialog(
-      PurchaseRecord record, List<PurchaseItem> purchaseItems) async {
-    final result = await showDialog<Map<String, bool>>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const PurchaseExportDialog(),
-    );
-
-    // 如果用户选择了导出选项，则执行导出
-    if (result != null) {
-      _exportPurchaseRecordAsImage(record, purchaseItems, result);
-    }
-  }
-
-  /// 导出采购记录为图片
-  Future<void> _exportPurchaseRecordAsImage(PurchaseRecord record,
-      List<PurchaseItem> purchaseItems, Map<String, bool> exportOptions) async {
-    try {
-      final exportService = PurchaseExportService();
-      // 创建图片数据
-      final imageData = await exportService.generatePurchaseRecordImage(
-        record,
-        purchaseItems,
-        exportOptions,
-        tokens: context.tokens,
-        colors: context.colors,
-      );
-
-      // 直接保存到下载目录
-      final result = await exportService.saveImageToDownloads(imageData);
-
-      if (result != null) {
-        if (!mounted) return;
-        // 显示成功提示
-        AppToastManager.showSuccess(context, message: '导出成功！图片已保存到下载目录');
-      } else {
-        if (!mounted) return;
-        // 显示失败提示
-        AppToastManager.showError(context, message: '图片保存失败');
-      }
-    } catch (e) {
-      if (!mounted) return;
-      AppToastManager.showError(context, message: '导出失败: $e');
     }
   }
 }

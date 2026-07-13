@@ -142,13 +142,4 @@ class MySqlConnectionManager {
     _cachedConnection = null;
     _lastValidationTime = null;
   }
-
-  /// 获取连接状态信息（用于调试）
-  Map<String, dynamic> getStatus() {
-    return {
-      'hasConnection': _cachedConnection != null,
-      'lastValidation': _lastValidationTime?.toIso8601String(),
-      'isRecentlyValidated': _isRecentlyValidated(),
-    };
-  }
 }

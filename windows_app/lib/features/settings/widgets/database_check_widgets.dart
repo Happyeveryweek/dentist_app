@@ -864,9 +864,9 @@ class DatabaseCheckWidgets {
                     decoration: BoxDecoration(
                       color: context.tokens.errorContainer,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color:
-                              context.tokens.error.withValues(alpha: 0.3)),
+                        border: Border.all(
+                            color:
+                                context.tokens.error.withValues(alpha: 0.3)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1045,14 +1045,6 @@ class DatabaseCheckWidgets {
     final tablesCreated = (details['tablesCreated'] as List?)?.length ?? 0;
     final columnsAdded = (details['columnsAdded'] as List?)?.length ?? 0;
     return tablesCreated + columnsAdded;
-  }
-
-  static bool hasActionableStructureIssues(Map<String, dynamic> result) {
-    final actionableCount = getActionableStructureChangeCount(result);
-    final missingTables = (result['missingTables'] as int?) ?? 0;
-    final errors =
-        (result['errors'] as List?)?.cast<String>() ?? const <String>[];
-    return missingTables > 0 || actionableCount > 0 || errors.isNotEmpty;
   }
 
   static bool _isActionableStructureLog(String log) {

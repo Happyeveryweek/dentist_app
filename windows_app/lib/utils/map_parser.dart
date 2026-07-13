@@ -69,20 +69,6 @@ class MapParser {
         (v) => v is double ? v : (v is num ? v.toDouble() : double.parse(v.toString())),
       );
 
-  /// 解析布尔值，支持默认值。
-  bool boolean(String key, {bool? defaultValue}) =>
-      optional(
-        key,
-        (v) {
-          if (v is bool) return v;
-          if (v is int) return v != 0;
-          final s = v.toString().toLowerCase();
-          return s == 'true' || s == '1' || s == 'yes';
-        },
-      ) ??
-      defaultValue ??
-      false;
-
   /// 解析日期时间，支持多种输入类型。
   DateTime? dateTime(String key) => optional(
         key,
@@ -92,10 +78,6 @@ class MapParser {
           return DateTime.parse(v.toString());
         },
       );
-
-  /// 解析日期时间，字段缺失时返回 [fallback]。
-  DateTime dateTimeOr(String key, DateTime fallback) =>
-      dateTime(key) ?? fallback;
 
   /// 解析列表，元素类型由 [parser] 决定。
   List<T> list<T>(String key, T Function(dynamic value) parser) =>

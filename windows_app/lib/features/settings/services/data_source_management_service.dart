@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:mysql1/mysql1.dart';
 import 'package:dentist_app_windows/utils/datetime_formatter.dart';
@@ -55,35 +54,6 @@ class DataSourceManagementService {
     final normalized = Map<String, String>.from(_defaultModuleDataSources);
     normalized.addAll(moduleDataSources);
     return normalized;
-  }
-
-  Map<String, String> parseModuleDataSources(dynamic rawValue) {
-    if (rawValue is Map) {
-      return _normalizeModuleDataSources(
-        rawValue.map((key, value) => MapEntry(
-              key.toString(),
-              value.toString(),
-            )),
-      );
-    }
-
-    if (rawValue is String && rawValue.isNotEmpty) {
-      try {
-        final decoded = jsonDecode(rawValue);
-        if (decoded is Map) {
-          return _normalizeModuleDataSources(
-            decoded.map((key, value) => MapEntry(
-                  key.toString(),
-                  value.toString(),
-                )),
-          );
-        }
-      } catch (e) {
-        LogManager.e('DataSourceManagementService', '解析模块数据源配置出错', error: e);
-      }
-    }
-
-    return Map<String, String>.from(_defaultModuleDataSources);
   }
 
   Map<String, dynamic> _buildMySQLSettings({
