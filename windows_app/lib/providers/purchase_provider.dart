@@ -57,7 +57,8 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 同步服务
   PurchaseMysqlConnectionService? _mysqlConnectionServiceInstance;
-  PurchaseMysqlConnectionService get _mysqlConnectionService => _mysqlConnectionServiceInstance ??= PurchaseMysqlConnectionService(
+  PurchaseMysqlConnectionService get _mysqlConnectionService =>
+      _mysqlConnectionServiceInstance ??= PurchaseMysqlConnectionService(
         getDatabaseProvider: () => _databaseProvider is DatabaseProvider
             ? _databaseProvider as DatabaseProvider
             : null,
@@ -68,7 +69,8 @@ class PurchaseProvider extends ChangeNotifier {
         getEffectiveDataSourceType: () => _effectiveDataSourceType,
       );
   PurchaseSyncService? _syncServiceInstance;
-  PurchaseSyncService get _syncService => _syncServiceInstance ??= PurchaseSyncService(
+  PurchaseSyncService get _syncService =>
+      _syncServiceInstance ??= PurchaseSyncService(
         getSyncMysqlConnection: () => _syncMysqlConnection,
         getEffectiveDataSourceType: () => _effectiveDataSourceType,
       );
@@ -718,22 +720,6 @@ class PurchaseProvider extends ChangeNotifier {
     }
   }
 
-  // 获取采购记录详情
-  Future<PurchaseRecord?> getPurchaseRecordById(int id) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    try {
-      // 使用数据源模式（统一接口）
-      final record = await _currentDataSource.getPurchaseById(id);
-      return record;
-    } catch (e) {
-      LogManager.e('PurchaseProvider', '获取采购记录详情时出错', error: e);
-      return null;
-    }
-  }
-
   // 更新采购记录
   Future<bool> updatePurchaseRecord(PurchaseRecord record) async {
     if (!initialized) {
@@ -860,11 +846,6 @@ class PurchaseProvider extends ChangeNotifier {
       LogManager.e('PurchaseProvider', '获取采购项目时出错', error: e);
       return [];
     }
-  }
-
-  // 创建采购项目表
-  Future<void> createPurchaseItemsTable() async {
-    await _currentDataSource.ensureTablesExist();
   }
 
   // 确保采购项目表存在

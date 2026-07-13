@@ -186,8 +186,7 @@ class UserProvider extends ChangeNotifier {
       // 如果有缓存数据，返回缓存（优雅降级）
       final cached = _cacheHelper.cachedUsers;
       if (cached != null) {
-        LogManager.w('UserProvider',
-            '使用缓存数据作为降级方案: ${cached.length} 条记录');
+        LogManager.w('UserProvider', '使用缓存数据作为降级方案: ${cached.length} 条记录');
         return List.from(cached);
       }
 
@@ -213,29 +212,6 @@ class UserProvider extends ChangeNotifier {
     } catch (e) {
       LogManager.e('UserProvider', '根据用户名获取用户失败', error: e);
       _setError('获取用户失败: $e');
-      return null;
-    }
-  }
-
-  // 用户登录验证（使用数据源架构）
-  Future<User?> loginUser(String username, String password) async {
-    try {
-      // 对密码进行MD5加密
-      final bytes = utf8.encode(password);
-      final digest = md5.convert(bytes);
-      final hashedPassword = digest.toString();
-
-      final user =
-          await _currentDataSource.authenticateUser(username, hashedPassword);
-      if (user != null) {
-        // 设置当前用户并加载权限
-        await loadUserPermissions(user);
-        LogManager.i('UserProvider', '用户登录成功');
-      }
-      return user;
-    } catch (e) {
-      LogManager.e('UserProvider', '用户登录失败', error: e);
-      _setError('用户登录失败: $e');
       return null;
     }
   }
@@ -387,24 +363,6 @@ class UserProvider extends ChangeNotifier {
     }
   }
 
-  // 搜索用户（使用数据源架构）
-  Future<List<User>> searchUsers(String query) async {
-    if (query.isEmpty) return [];
-
-    try {
-      return await _currentDataSource.getPaginatedUsers(
-        searchQuery: query,
-        pageSize: 100, // 搜索时返回更多结果
-        sortBy: 'created_at',
-        sortOrder: 'DESC',
-      );
-    } catch (e) {
-      LogManager.e('UserProvider', '搜索用户失败', error: e);
-      _setError('搜索用户失败: $e');
-      return [];
-    }
-  }
-
   // 获取当前用户
   User? get currentUser => _currentUser;
 
@@ -421,12 +379,6 @@ class UserProvider extends ChangeNotifier {
   // 设置当前用户
   void setCurrentUser(User user) {
     _currentUser = user;
-    notifyListeners();
-  }
-
-  // 用户登出
-  void logoutUser() {
-    _currentUser = null;
     notifyListeners();
   }
 
@@ -452,38 +404,6 @@ class UserProvider extends ChangeNotifier {
         return ['admin'].contains(user.role);
       default:
         return false;
-    }
-  }
-
-  // 获取用户角色列表
-  List<String> getAvailableRoles() {
-    return [
-      'admin',
-      'doctor',
-      'nurse',
-      'receptionist',
-      'accountant',
-      'inventory_manager'
-    ];
-  }
-
-  // 获取角色显示名称
-  String getRoleDisplayName(String role) {
-    switch (role) {
-      case 'admin':
-        return '管理员';
-      case 'doctor':
-        return '医生';
-      case 'nurse':
-        return '护士';
-      case 'receptionist':
-        return '前台';
-      case 'accountant':
-        return '会计';
-      case 'inventory_manager':
-        return '库存管理员';
-      default:
-        return role;
     }
   }
 
@@ -626,13 +546,6 @@ class UserProvider extends ChangeNotifier {
     return await _permissionServiceGetter.hasModulePermission(userId, module);
   }
 
-  // 检查当前用户的模块权限
-  bool hasCurrentUserModulePermission(String module) {
-    final user = _currentUser;
-    if (user == null) return false;
-    return user.hasModulePermission(module);
-  }
-
   // 更新用户权限配置
   Future<bool> updateUserPermissions(
       int userId, Map<String, bool> permissions) async {
@@ -652,24 +565,6 @@ class UserProvider extends ChangeNotifier {
     }
 
     return success;
-  }
-
-  // 获取当前用户权限
-  Map<String, bool> getCurrentUserPermissions() {
-    final user = _currentUser;
-    if (user == null) {
-      return {'dashboard': true};
-    }
-    return user.permissionMap;
-  }
-
-  // 获取当前用户允许的模块列表
-  List<String> getCurrentUserAllowedModules() {
-    final user = _currentUser;
-    if (user == null) {
-      return ['dashboard'];
-    }
-    return user.allowedModules;
   }
 
   // 加载用户权限（登录时调用）
@@ -727,84 +622,6 @@ class UserProvider extends ChangeNotifier {
     await _permissionServiceGetter.ensurePermissionsValid(_currentUser);
   }
 
-  // =================== 数据过滤辅助方法 ===================
-
-  // 构建医生过滤条件
-  String buildDoctorFilter(String baseQuery, {String? tableAlias}) {
-    try {
-      final user = _currentUser;
-      // 管理员不需要过滤
-      if (user == null || user.isAdmin) {
-        return baseQuery;
-      }
-
-      // 获取当前用户的医生字段值
-      final doctorName = user.doctor;
-      if (doctorName == null || doctorName.isEmpty) {
-        // 如果没有医生字段，返回空结果
-        return '$baseQuery AND 1 = 0';
-      }
-
-      // 构建过滤条件
-      final doctorColumn = tableAlias != null ? '$tableAlias.doctor' : 'doctor';
-
-      // 检查查询是否已包含WHERE子句
-      final hasWhere = baseQuery.toUpperCase().contains('WHERE');
-      final connector = hasWhere ? ' AND' : ' WHERE';
-
-      return '$baseQuery$connector $doctorColumn = \'$doctorName\'';
-    } catch (e) {
-      LogManager.e('UserProvider', '构建医生过滤条件失败', error: e);
-      // 出错时返回原查询，但添加安全过滤
-      return '$baseQuery AND 1 = 0';
-    }
-  }
-
-  // 判断是否需要数据过滤
-  bool shouldFilterByDoctor() {
-    final user = _currentUser;
-    // 管理员不需要过滤
-    if (user == null || user.isAdmin) {
-      return false;
-    }
-
-    // 有医生字段的用户需要过滤
-    return user.doctor?.isNotEmpty ?? false;
-  }
-
-  // 获取当前用户的医生过滤值
-  String? getCurrentUserDoctorFilter() {
-    final user = _currentUser;
-    if (user == null || user.isAdmin) {
-      return null;
-    }
-
-    return user.doctor;
-  }
-
-  // 验证权限并处理错误
-  Future<bool> validatePermissionAccess(String module) async {
-    try {
-      final user = _currentUser;
-      if (user == null) {
-        _setError('用户未登录');
-        return false;
-      }
-
-      final hasPermission = user.hasModulePermission(module);
-      if (!hasPermission) {
-        _setError('权限不足：无法访问$module模块');
-        return false;
-      }
-
-      return true;
-    } catch (e) {
-      LogManager.e('UserProvider', '权限验证失败', error: e);
-      _setError('权限验证失败: $e');
-      return false;
-    }
-  }
-
   // 权限变更时的缓存清理机制
   void onPermissionChanged(int userId) {
     _permissionServiceGetter.onPermissionChanged(userId, _currentUser);
@@ -824,47 +641,5 @@ class UserProvider extends ChangeNotifier {
   // 初始化权限缓存（登录后调用）
   Future<void> initializePermissionsCache() async {
     await _permissionServiceGetter.initializePermissionsCache(_currentUser);
-  }
-
-  // 构建患者关联的医生过滤条件（用于预约、财务等模块）
-  String buildPatientDoctorFilter(String baseQuery,
-      {String? patientTableAlias, String? joinCondition}) {
-    try {
-      final user = _currentUser;
-      // 管理员不需要过滤
-      if (user == null || user.isAdmin) {
-        return baseQuery;
-      }
-
-      // 获取当前用户的医生字段值
-      final doctorName = user.doctor;
-      if (doctorName == null || doctorName.isEmpty) {
-        // 如果没有医生字段，返回空结果
-        return '$baseQuery AND 1 = 0';
-      }
-
-      // 构建患者表的医生过滤条件
-      final patientAlias = patientTableAlias ?? 'p';
-      final doctorColumn = '$patientAlias.doctor';
-
-      // 如果需要JOIN患者表
-      String filteredQuery = baseQuery;
-      if (joinCondition != null &&
-          !baseQuery.toUpperCase().contains('JOIN patients')) {
-        // 添加患者表JOIN
-        filteredQuery =
-            '$baseQuery JOIN patients $patientAlias ON $joinCondition';
-      }
-
-      // 检查查询是否已包含WHERE子句
-      final hasWhere = filteredQuery.toUpperCase().contains('WHERE');
-      final connector = hasWhere ? ' AND' : ' WHERE';
-
-      return '$filteredQuery$connector $doctorColumn = \'$doctorName\'';
-    } catch (e) {
-      LogManager.e('UserProvider', '构建患者医生过滤条件失败', error: e);
-      // 出错时返回原查询，但添加安全过滤
-      return '$baseQuery AND 1 = 0';
-    }
   }
 }

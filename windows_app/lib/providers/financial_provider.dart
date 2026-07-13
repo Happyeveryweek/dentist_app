@@ -58,13 +58,15 @@ class FinancialProvider extends ChangeNotifier {
 
   // 查询服务
   FinancialQueryService? _queryServiceInstance;
-  FinancialQueryService get _queryService => _queryServiceInstance ??= FinancialQueryService(
+  FinancialQueryService get _queryService =>
+      _queryServiceInstance ??= FinancialQueryService(
         getCurrentDataSource: () => _currentDataSource,
         getDoctorFilter: () => _permissionService.getDoctorFilter(),
         isInitialized: () => initialized,
       );
   FinancialMysqlConnectionService? _mysqlConnectionServiceInstance;
-  FinancialMysqlConnectionService get _mysqlConnectionService => _mysqlConnectionServiceInstance ??= FinancialMysqlConnectionService(
+  FinancialMysqlConnectionService get _mysqlConnectionService =>
+      _mysqlConnectionServiceInstance ??= FinancialMysqlConnectionService(
         getDatabaseProvider: () => _databaseProvider is DatabaseProvider
             ? _databaseProvider as DatabaseProvider
             : null,
@@ -75,17 +77,20 @@ class FinancialProvider extends ChangeNotifier {
         getEffectiveDataSourceType: () => _effectiveDataSourceType,
       );
   FinancialSyncService? _syncServiceInstance;
-  FinancialSyncService get _syncService => _syncServiceInstance ??= FinancialSyncService(
+  FinancialSyncService get _syncService =>
+      _syncServiceInstance ??= FinancialSyncService(
         getSyncMysqlConnection: () => _syncMysqlConnection,
         getEffectiveDataSourceType: () => _effectiveDataSourceType,
       );
   FinancialPermissionService? _permissionServiceInstance;
-  FinancialPermissionService get _permissionService => _permissionServiceInstance ??= FinancialPermissionService(
+  FinancialPermissionService get _permissionService =>
+      _permissionServiceInstance ??= FinancialPermissionService(
         patientProvider: _patientProvider,
         userProvider: _userProvider,
       );
   FinancialDataSourceInitializer? _dataSourceInitializerInstance;
-  FinancialDataSourceInitializer get _dataSourceInitializer => _dataSourceInitializerInstance ??= FinancialDataSourceInitializer();
+  FinancialDataSourceInitializer get _dataSourceInitializer =>
+      _dataSourceInitializerInstance ??= FinancialDataSourceInitializer();
 
   // Getters
   bool get initialized => _database != null || _mysqlConnection != null;
@@ -130,8 +135,7 @@ class FinancialProvider extends ChangeNotifier {
     _cacheHelper.clearCache();
     _financialsNeedRefresh = true;
 
-    LogManager.w(
-        'FinancialProvider', 'FinancialProvider已设置PatientProvider引用');
+    LogManager.w('FinancialProvider', 'FinancialProvider已设置PatientProvider引用');
   }
 
   // 设置用户权限提供者
@@ -380,47 +384,6 @@ class FinancialProvider extends ChangeNotifier {
   // =================== 新的数据源模式方法 ===================
 
   // =================== 权限过滤方法 ===================
-
-  // 获取所有财务记录（纯数据源模式，支持权限过滤）
-  Future<List<FinancialRecord>> getAllFinancialRecordsNew() async {
-    if (!initialized) {
-      return _cacheHelper.cachedRecords ?? []; // 优雅降级而不是抛出异常
-    }
-
-    try {
-      // 优先检查缓存
-      final cachedRecords = _cacheHelper.cachedRecords;
-      if (_cacheHelper.hasValidCache &&
-          cachedRecords != null &&
-          !_financialsNeedRefresh) {
-        LogManager.w('FinancialProvider',
-            '使用缓存的财务记录数据: ${cachedRecords.length} 条');
-        return cachedRecords;
-      }
-
-      // 使用数据源模式（统一接口）
-      List<FinancialRecord> records =
-          await _currentDataSource.getAllFinancialRecords();
-      // 应用权限过滤
-      records = await _permissionService.applyPermissionFilter(records);
-
-      // 更新缓存
-      _cacheHelper.updateCache(records);
-      _financialsNeedRefresh = false; // 清除刷新标志
-
-      return records;
-    } catch (e) {
-      LogManager.e('FinancialProvider', '获取财务记录失败', error: e);
-
-      // 优雅降级：如果有缓存就返回缓存，否则返回空列表
-      final cachedRecords = _cacheHelper.cachedRecords;
-      if (cachedRecords != null) {
-        return cachedRecords;
-      }
-
-      return []; // 返回空列表而不是抛出异常
-    }
-  }
 
   // 分页：获取财务记录总数
   Future<int> getFinancialRecordsCount({
@@ -723,13 +686,6 @@ class FinancialProvider extends ChangeNotifier {
     }
   }
 
-  // =================== 兼容性方法（保持向后兼容） ===================
-
-  // 确保财务记录表存在
-  Future<void> ensureFinancialRecordsTableExists() async {
-    await _currentDataSource.ensureTablesExist();
-  }
-
   // =================== 向后兼容的方法 ===================
 
   // 获取所有财务记录（向后兼容）
@@ -744,8 +700,8 @@ class FinancialProvider extends ChangeNotifier {
       if (_cacheHelper.hasValidCache &&
           cachedRecords != null &&
           !_financialsNeedRefresh) {
-        LogManager.w('FinancialProvider',
-            '使用缓存的财务记录数据: ${cachedRecords.length} 条');
+        LogManager.w(
+            'FinancialProvider', '使用缓存的财务记录数据: ${cachedRecords.length} 条');
         return cachedRecords;
       }
 

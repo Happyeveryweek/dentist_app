@@ -66,7 +66,7 @@ git ls-files --eol -- <本批改动文件>
 | --- | --- | --- | --- | --- |
 | 0 | 重新取证、建立基线和测试映射 | 低 | 无 | 完成（2026-07-12） |
 | 1 | A 级独立辅助方法、通用工具和注释旧代码 | 低 | 每个符号仍无调用 | 完成（2026-07-13） |
-| 2 | 财务/采购/User/Material Provider 的旧入口 | 中 | 批次 1 完成 | 未开始 |
+| 2 | 财务/采购/User/Material Provider 的旧入口 | 中 | 批次 1 完成 | 完成（2026-07-13） |
 | 3 | SettingsProvider 历史设置及无消费者委托链 | 中高 | 批次 2 完成，设置与备份回归可执行 | 未开始 |
 | 4 | 一次性迁移、数据库与模板 API | 高 | 批次 3 完成，数据库回归环境可用 | 未开始 |
 | 5 | 五套患者同步日志 helper 收口 | 中高 | 批次 4 完成，先新增单测 | 未开始 |
@@ -319,7 +319,7 @@ class PatientSyncLogHelper {
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0：重新取证与基线 | 完成 | 2026-07-12 | 2026-07-12 | 仅更新本计划与 `ROADMAP.md`，未改业务代码 | 全量 `flutter test` 64 个通过；`flutter analyze` `No issues found!`；四组 `rg`、测试路径、`git diff --check` 和行尾已复核 | 未执行业务手动回归；本批无业务代码改动 | — |
 | 1：A 级独立方法 | 完成 | 2026-07-13 | 2026-07-13 | 删除 29 个文件中约 60 个无调用方法、2 行旧注释；清理 5 个孤儿 import（`database_type_converter_helper.dart` 的 `datetime_formatter`、`data_source_connection_service.dart` 的 `path`、`config_manager.dart` 的 `datetime_formatter`、`patient_form_validators.dart` 的 `flutter/material.dart`、`app_state.dart` 的 `_refreshCounter`/`refreshCounter` 孤儿字段）和 5 个孤儿私有方法（`config_manager.dart` 的 `_removeFromFile`/`_hasFileConfig`/`_removeFromPreferences`/`_hasPreferencesConfig`、`patient_form_validators.dart` 的 `_trimmedText`）；同步更新 `README_MYSQL_CONNECTION.md` | 全量 `flutter test` 64 个通过；`flutter analyze` `No issues found!`；`git diff --check` 通过；30 个改动文件行尾全部 LF | 待执行财务分页跳页、患者按 ID 读取与清缓存、材料直接跳页、病历表单加载模板、设置页备份路径与 SQLite/MySQL 选择手动回归 | — |
-| 2：Provider 旧入口 | 未开始 | — | — | — | — | — | — |
+| 2：Provider 旧入口 | 完成 | 2026-07-13 | 2026-07-13 | 删除 4 个 Provider 文件中 19 个无调用方法：`financial_provider.dart` 的 `getAllFinancialRecordsNew`/`ensureFinancialRecordsTableExists`；`purchase_provider.dart` 的 `getPurchaseRecordById`/`createPurchaseItemsTable`；`material_provider.dart` 的 `createMaterial`/`clearAllMaterials`（Provider 兼容性方法，保留 data_source 接口与实现）；`user_provider.dart` 的 13 个无调用方法。无孤儿 import 产生 | 定向 4 个测试文件 26 个通过；全量 `flutter test` 64 个通过；`flutter analyze` `No issues found!`；`git diff --check` 通过；4 个改动文件行尾全部 LF | 待执行财务/采购/材料/用户模块手动回归 | - |
 | 3A：历史设置 | 未开始 | — | — | — | — | — | — |
 | 3B：配置/备份委托 | 未开始 | — | — | — | — | — | — |
 | 3C：数据源状态委托 | 未开始 | — | — | — | — | — | — |
@@ -381,3 +381,18 @@ class PatientSyncLogHelper {
 - 手动回归：待执行财务分页跳页、患者按 ID 读取与清缓存、材料直接跳页、病历表单加载模板、设置页备份路径与 SQLite/MySQL 选择。本批为低风险 A 级方法删除，已通过全量自动化测试；手动回归不阻塞本批完成状态，但应在批次 2 开始前执行并记录。
 - 结论：批次 1 完成；批次 2～6 仍未开始，删除授权和高风险回归前置条件不变。
 - 下一步或阻塞：进入批次 2 前，需执行本批手动回归并记录结果；批次 2 为中风险 Provider 旧入口删除，需确认财务列表、采购详情、材料新增/初始化、登录/退出、用户权限和医生过滤等链路。
+
+#### 2026-07-13｜批次 2｜完成
+
+- 授权范围：主人授权删除 4 个 Provider 文件中 19 个重新确认无调用的旧入口方法；保留 data_source 层接口与实现、现用 Provider 入口（`getAllFinancialRecords`、`addMaterial`、`clearAllDentalMaterials`、`hasModulePermission`、`getUserPermissions`、`loadUserPermissions`、`initializePermissionsCache`、`setCurrentUser` 等）。
+- 重新搜索：对 19 个候选符号在 `windows_app/` 全目录（覆盖 `lib/` 与 `test/` 下所有 `.dart`）执行精确搜索。financial_provider 的 `getAllFinancialRecordsNew`/`ensureFinancialRecordsTableExists` 仅命中声明；purchase_provider 的 `getPurchaseRecordById`/`createPurchaseItemsTable` 仅命中声明；material_provider 的 `createMaterial`/`clearAllMaterials` 命中声明和 `_requireDataSource.createMaterial`/`clearAllMaterials` 调用（后者为 data_source 接口调用，非 Provider 方法调用）；user_provider 的 13 个方法仅命中声明。额外确认登录页 `login_screen.dart` 直接用 data_source + `setCurrentUser` + `loadUserPermissions`，不走 `loginUser`；退出按钮只做 `Navigator.pushReplacementNamed('/login')`，不走 `logoutUser`。
+- 实际改动：
+  - `financial_provider.dart`：删除 `getAllFinancialRecordsNew`（含权限过滤的重复实现）、`ensureFinancialRecordsTableExists`（兼容性委托）；
+  - `purchase_provider.dart`：删除 `getPurchaseRecordById`（委托 `getPurchaseById`）、`createPurchaseItemsTable`（兼容性委托 `ensureTablesExist`）；
+  - `material_provider.dart`：删除 Provider 兼容性方法 `createMaterial`（与现用 `addMaterial` 重复）、`clearAllMaterials`（委托现用 `clearAllDentalMaterials`）；保留 data_source 层同名接口和 sqlite/mysql 实现；
+  - `user_provider.dart`：删除 `loginUser`、`searchUsers`、`logoutUser`、`getAvailableRoles`、`getRoleDisplayName`、`hasCurrentUserModulePermission`、`getCurrentUserPermissions`、`getCurrentUserAllowedModules`、`buildDoctorFilter`、`shouldFilterByDoctor`、`getCurrentUserDoctorFilter`、`validatePermissionAccess`、`buildPatientDoctorFilter` 共 13 个方法，连同 `// =================== 数据过滤辅助方法 ===================` 分隔注释一并删除。
+  - 无孤儿 import 产生（`utf8`/`md5`/`sha256` 仍被 `registerUser`/`addUser`/`updateUser` 等保留方法使用）。
+- 自动验证：定向 `flutter test` 4 个文件（`user_permission_service_test.dart`、`user_validation_service_test.dart`、`financial_calculation_helper_test.dart`、`purchase_models_test.dart`）26 个通过；全量 `flutter test` 64 个通过；`flutter analyze` `No issues found!`；`dart format` 格式化 4 个改动文件；`git diff --check` 通过；4 个 Dart 改动文件行尾全部 LF。
+- 手动回归：待执行财务列表加载/筛选/分页/详情增删改、采购列表进入详情/采购项表初始化/数据源切换、材料新增/编辑/初始化与缓存刷新、登录/退出/用户搜索/角色展示/模块权限/医生维度患者筛选。本批已通过全量自动化测试；手动回归不阻塞本批完成状态，但应在批次 3 开始前执行并记录。
+- 结论：批次 2 完成；批次 3～6 仍未开始，删除授权和高风险回归前置条件不变。
+- 下一步或阻塞：进入批次 3 前，需执行本批手动回归并记录结果；批次 3 为 SettingsProvider 历史设置及无消费者委托链删除，中高风险，需确认主题切换、配置存储、备份策略和数据源状态等链路。
