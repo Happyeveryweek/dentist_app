@@ -36,9 +36,7 @@ class DatabaseProvider extends ChangeNotifier {
       );
   DatabaseSchemaService? _schemaServiceInstance;
   DatabaseSchemaService get _schemaService =>
-      _schemaServiceInstance ??= DatabaseSchemaService(
-        dataSourceType: _dataSourceType,
-      );
+      _schemaServiceInstance ??= DatabaseSchemaService();
 
   // 数据库实例（保留用于兼容）
   Database? _database;
@@ -243,9 +241,7 @@ class DatabaseProvider extends ChangeNotifier {
       dataSourceType: _dataSourceType,
     );
     _schemaServiceInstance = DatabaseSchemaService(
-      sqliteDatabase: _database,
       mysqlConnection: _mysqlConnection,
-      dataSourceType: _dataSourceType,
     );
   }
 

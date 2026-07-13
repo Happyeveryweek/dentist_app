@@ -323,7 +323,7 @@ class PatientSyncLogHelper {
 | 3A：历史设置 | 完成 | 2026-07-13 | 2026-07-13 | 删除 6 个历史设置入口及无消费者字段/持久化键 | 定向与全量自动验证通过 | 主人已确认主题切换及重启持久化通过 | — |
 | 3B：配置/备份委托 | 完成 | 2026-07-13 | 2026-07-13 | 删除 3 组配置存储和 11 组备份策略 Provider/service 委托 | 定向与全量自动验证通过 | 主人已确认主备路径、自动备份、导入导出恢复通过 | — |
 | 3C：数据源状态委托 | 完成 | 2026-07-13 | 2026-07-13 | 删除 8 组 MySQL/模块数据源状态 Provider/service 委托 | 定向与全量自动验证通过 | 主人已确认 SQLite/MySQL 切换和结构检测通过 | — |
-| 4：迁移/数据库/模板 | 未开始 | — | — | — | — | — | — |
+| 4：迁移/数据库/模板 | 完成 | 2026-07-13 | 2026-07-13 | 删除 11 个无调用候选及 `DatabaseSchemaService` 孤儿 SQLite 状态字段/构造参数 | 全量 `flutter test` 64 个通过；`flutter analyze` `No issues found!`；`git diff --check` 通过 | 主人已确认旧 SQLite/MySQL 数据库、模板导入导出、备份恢复和材料类型回归通过 | — |
 | 5.1：helper 测试与创建 | 未开始 | — | — | — | — | — | — |
 | 5.2：预约同步迁移 | 未开始 | — | — | — | — | — | — |
 | 5.3：财务同步迁移 | 未开始 | — | — | — | — | — | — |
@@ -409,3 +409,13 @@ class PatientSyncLogHelper {
 - 手动回归：主人已确认五套主题切换及重启持久化、应用名称、SQLite/MySQL 数据源切换、主备路径保存、自动备份设置、导入导出恢复和结构检测均通过。
 - 结论：批次 3 的代码删除、自动验证和手动回归均已完成。
 - 下一步或阻塞：可进入批次 4；该批涉及一次性迁移、数据库和模板 API，必须按高风险流程重新取证和验证。
+
+#### 2026-07-13｜批次 4｜完成
+
+- 授权范围：主人要求开始批次 4；仅处理本计划第 8 节列出的迁移、数据库与模板 API，保留 `PurchaseMigration.addDoctorFieldToSQLite/MySQL`。
+- 重新搜索：对 11 个候选及两项明确保留的 `addDoctorFieldToSQLite/MySQL` 在 `windows_app/lib`、`test` 和文档中执行精确 `rg`。11 个候选均只命中自身声明和两份审核/实施文档；`addDoctorFieldToSQLite/MySQL` 仍由 `PurchaseProvider._migratePurchaseRecordsTable()` 调用。调用链复核确认 SQLite 新建与升级走 `SqliteDatabaseService._createDatabase/_upgradeDatabase`，MySQL 连接与建表走 `MysqlConnectionService.initMySQLConnection`、`DatabaseSchemaService.createMySQLTables`，模板实际加载/编辑走 `getTemplates`、`getTreatmentTemplates`、`getNotesTemplates`、`addTemplate`、`updateTemplate`、`deleteTemplate`。
+- 实际改动：删除 `DatabaseSchemaService.createSQLiteTables/upgradeDatabase/getTableNames`、`MysqlConnectionService.testExistingConnection/checkTableExists`、`MedicalTemplateService.reorderTemplates/exportTemplateData/importTemplateData`、`PurchaseMigration.createPurchaseRecordsTableSQLite/createPurchaseRecordsTableMySQL`、`MaterialProvider.updateExistingMaterialTypes` 共 11 个无调用候选；同步删除由前 3 项移除产生的 `DatabaseSchemaService.sqliteDatabase/dataSourceType` 字段、构造参数和 `sqflite` import，并更新 `DatabaseProvider` 的两处构造调用。`PurchaseMigration.addDoctorFieldToSQLite/MySQL` 保留不变。
+- 自动验证：对 6 个改动 Dart 文件执行 `dart format`；全量 `flutter test --reporter expanded` 64 个测试通过；`flutter analyze` 返回 `No issues found!`；`git diff --check` 通过。
+- 手动回归：主人已确认旧 SQLite 数据库的新库初始化、旧库升级、备份恢复与采购记录读取通过；MySQL 连接、表存在性检测、初始化/结构检测与采购记录读取通过；真实模板导入导出、病历表单应用以及材料类型启动/编辑后保持可用。
+- 结论：代码删除、自动验证和真实历史数据手动回归均已完成。
+- 下一步或阻塞：可进入批次 5.1 的 helper 测试与创建。

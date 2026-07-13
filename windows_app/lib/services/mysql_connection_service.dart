@@ -131,22 +131,6 @@ class MysqlConnectionService {
     }
   }
 
-  /// 测试现有连接是否有效
-  Future<bool> testExistingConnection() async {
-    final mysqlConnection = _mysqlConnection;
-    if (mysqlConnection == null) {
-      return false;
-    }
-
-    try {
-      await mysqlConnection.query('SELECT 1');
-      return true;
-    } catch (e) {
-      LogManager.e('MysqlConnectionService', '现有 MySQL 连接测试失败', error: e);
-      return false;
-    }
-  }
-
   /// 设置 MySQL 会话字符集
   Future<void> _setCharacterSet(MySqlConnection connection) async {
     try {
@@ -155,26 +139,6 @@ class MysqlConnectionService {
       await connection.query("SET character_set_results = 'utf8mb4'");
     } catch (e) {
       LogManager.e('MysqlConnectionService', '设置 MySQL 会话字符集失败', error: e);
-    }
-  }
-
-  /// 检查表是否存在
-  Future<bool> checkTableExists(String tableName,
-      {String? databaseName}) async {
-    final mysqlConnection = _mysqlConnection;
-    if (mysqlConnection == null) {
-      throw Exception('MySQL 连接未建立');
-    }
-
-    try {
-      final dbName = databaseName ?? 'dentist_db'; // 默认数据库名
-      final result = await mysqlConnection.query(
-          'SELECT 1 FROM information_schema.tables WHERE table_schema = ? AND table_name = ?',
-          [dbName, tableName]);
-      return result.isNotEmpty;
-    } catch (e) {
-      LogManager.e('MysqlConnectionService', '检查表是否存在时出错', error: e);
-      return false;
     }
   }
 

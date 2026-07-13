@@ -306,81 +306,11 @@ class MedicalTemplateService {
     }
   }
 
-  /// 重新排序模板
-  static Future<void> reorderTemplates(
-      String type, List<String> orderedIds) async {
-    try {
-      final templates = await getTemplates(type);
-
-      // 根据新的顺序重新设置sortOrder
-      for (int i = 0; i < orderedIds.length; i++) {
-        final templateIndex =
-            templates.indexWhere((t) => t.id == orderedIds[i]);
-        if (templateIndex != -1) {
-          templates[templateIndex] =
-              templates[templateIndex].copyWith(sortOrder: i + 1);
-        }
-      }
-
-      await _saveTemplates(type, templates);
-      LogManager.i(
-          'MedicalTemplateService', 'MedicalTemplateService: 重新排序模板成功');
-    } catch (e) {
-      LogManager.e('MedicalTemplateService', 'MedicalTemplateService: 重新排序模板失败',
-          error: e);
-      rethrow;
-    }
-  }
-
   /// 生成新的模板ID
   static String generateTemplateId(String type) {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final prefix =
         type == MedicalTemplateType.treatment ? 'treatment' : 'notes';
     return '${prefix}_$timestamp';
-  }
-
-  /// 备份模板数据
-  static Future<Map<String, dynamic>> exportTemplateData() async {
-    try {
-      final treatmentTemplates = await getTreatmentTemplates();
-      final notesTemplates = await getNotesTemplates();
-
-      return {
-        'exportTime': DateTime.now().toIso8601String(),
-        'treatmentTemplates': treatmentTemplates.map((t) => t.toMap()).toList(),
-        'notesTemplates': notesTemplates.map((t) => t.toMap()).toList(),
-      };
-    } catch (e) {
-      LogManager.e('MedicalTemplateService', 'MedicalTemplateService: 导出模板数据失败',
-          error: e);
-      rethrow;
-    }
-  }
-
-  /// 导入模板数据
-  static Future<void> importTemplateData(Map<String, dynamic> data) async {
-    try {
-      if (data.containsKey('treatmentTemplates')) {
-        final treatmentList = data['treatmentTemplates'] as List<dynamic>;
-        final treatmentTemplates =
-            treatmentList.map((json) => MedicalTemplate.fromMap(json)).toList();
-        await _saveTemplates(MedicalTemplateType.treatment, treatmentTemplates);
-      }
-
-      if (data.containsKey('notesTemplates')) {
-        final notesList = data['notesTemplates'] as List<dynamic>;
-        final notesTemplates =
-            notesList.map((json) => MedicalTemplate.fromMap(json)).toList();
-        await _saveTemplates(MedicalTemplateType.notes, notesTemplates);
-      }
-
-      LogManager.i(
-          'MedicalTemplateService', 'MedicalTemplateService: 导入模板数据成功');
-    } catch (e) {
-      LogManager.e('MedicalTemplateService', 'MedicalTemplateService: 导入模板数据失败',
-          error: e);
-      rethrow;
-    }
   }
 }
