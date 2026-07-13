@@ -389,7 +389,7 @@ rg -n '_checkAndRefreshData|_onFocusChange|WidgetsBindingObserver|addObserver|re
 - 实际改动：仅更新本计划和根 `ROADMAP.md` 的批次 0 状态与取证记录；未修改 Android Dart、测试、原生配置、数据库或依赖。
 - 自动验证：重新取证命令全部执行成功；`flutter analyze` 为 `No issues found!`；`flutter test` 无测试目标；`git diff --check` 通过；本批改动文件行尾检查未发现 `w/crlf` 或 `w/mixed`。
 - 手动回归：无业务代码改动，不执行手动回归。
-- 提交：未提交；保留工作区既有改动和本批文档改动，等待后续按小批次执行。
+- 提交：`9499a36`，`refactor: 清理 Android 批次零取证文档与批次一孤立组件`。
 - 结论与下一步：批次 0 完成；批次 1 仍未开始。后续任何删除候选前，必须按计划逐项列出精确删除清单并取得主人明确授权。
 
 #### 2026-07-12｜批次 1｜完成
@@ -401,7 +401,7 @@ rg -n '_checkAndRefreshData|_onFocusChange|WidgetsBindingObserver|addObserver|re
 - 实际改动：删除上述 9 个文件；未修改业务 Dart 文件、测试、原生配置、数据库或依赖。
 - 自动验证：删除后精确 `rg` 复核无命中；`flutter analyze`、`git diff --check` 和本批文件行尾检查通过；无定向测试文件，未执行 `dart format`。
 - 手动回归：未执行运行时手动回归；主人明确要求本批按删除后精确引用复核、`flutter analyze`、diff 和行尾检查结果标记完成，登录、同步、财务列表/统计提示回归不作为本批阻塞条件。
-- 提交：本批与批次 0 文档、代码删除及进度文档一并提交。
+- 提交：`9499a36`，`refactor: 清理 Android 批次零取证文档与批次一孤立组件`。
 - 结论与下一步：批次 1 完成；批次 2 仍未开始。批次 2 删除旧模型、患者数据源和 Schema Validator 前，必须先补对应序列化、数据源和 schema 升级测试并重新取得授权。
 
 ## 14．执行前复核命令索引
