@@ -4,7 +4,7 @@
 
 制定日期：2026-07-12。
 
-当前进度（2026-07-12）：批次 0“重新取证、测试映射与基线冻结”和批次 1“A 级不可达 UI/工具文件”已完成；批次 2～7 未开始。批次 1 删除 9 个确认无入站引用的文件，未修改现用业务入口。
+当前进度（2026-07-13）：批次 0“重新取证、测试映射与基线冻结”、批次 1“A 级不可达 UI/工具文件”和批次 2“旧模型、患者数据源与旧 Schema Validator”代码清理已完成；批次 2 的手动业务回归待主人执行，批次 3A～7 未开始。批次 2 删除 4 个当日复核确认无入站引用的旧文件，未修改现用业务入口。
 
 本计划把 [Android 端无用文件、无用方法与重复实现审核报告](android_app_dead_code_duplicate_files_and_methods_audit_2026_07_12.md) 转换为可逐批执行、可验证、可记录的任务。执行者只需按本文指定批次、文件、符号、命令和验收场景操作；若实际搜索结果与本文不一致，立即停止该候选并记录原因，不能按旧结论强行删除。
 
@@ -78,7 +78,7 @@ git ls-files --eol -- <本批改动文件>
 | --- | --- | --- | --- | --- |
 | 0 | 重新取证、冻结基线、建立测试映射 | 低 | 无 | 完成 |
 | 1 | A 级不可达 UI/测试工具文件 | 低 | 每个文件仍无入站引用 | 完成 |
-| 2 | 旧 Appointment、患者数据源、Schema Validator | 中高 | 批次 1 完成，SQLite/MySQL 回归环境可用 | 未开始 |
+| 2 | 旧 Appointment、患者数据源、Schema Validator | 中高 | 批次 1 完成，SQLite/MySQL 回归环境可用 | 完成：代码清理与自动检查通过，待主人手动回归 |
 | 3A | 旧财务清理文件和独立低风险方法 | 中 | 批次 2 完成，每个方法仍无调用 | 未开始 |
 | 3B | Provider、SettingsProvider 与 Manager 无消费者链 | 中高 | 批次 3A 完成，设置持久化回归可执行 | 未开始 |
 | 4 | 备份、数据库工具、一次性迁移 | 高 | 新增测试，旧库副本和备份副本可用 | 未开始 |
@@ -403,6 +403,16 @@ rg -n '_checkAndRefreshData|_onFocusChange|WidgetsBindingObserver|addObserver|re
 - 手动回归：未执行运行时手动回归；主人明确要求本批按删除后精确引用复核、`flutter analyze`、diff 和行尾检查结果标记完成，登录、同步、财务列表/统计提示回归不作为本批阻塞条件。
 - 提交：`9499a36`，`refactor: 清理 Android 批次零取证文档与批次一孤立组件`。
 - 结论与下一步：批次 1 完成；批次 2 仍未开始。批次 2 删除旧模型、患者数据源和 Schema Validator 前，必须先补对应序列化、数据源和 schema 升级测试并重新取得授权。
+
+#### 2026-07-13｜批次 2｜完成（待手动回归）
+- 授权范围：开始批次 2，核对并准备删除 `lib/models/appointment.dart`、`lib/data_sources/mysql_patient_data_source.dart`、`lib/data_sources/sqlite_patient_data_source.dart`、`lib/models/schemas/schema_validator.dart`；删除前必须完成测试和链路确认。
+- 工作区隔离：Android 端无既有改动；仓库已有 Windows 端 `lib/providers/financial_provider.dart`、`material_provider.dart`、`purchase_provider.dart`、`user_provider.dart` 修改，本批未触碰。
+- 重新搜索：`rg -n "models/appointment|Appointment\\b|mysql_patient_data_source|sqlite_patient_data_source|MySqlPatientDataSource|SqlitePatientDataSource|models/schemas/schema_validator|SchemaValidator" lib -S` 确认旧预约模型、旧 SQLite/MySQL 患者数据源和旧 Schema Validator 无入站引用；现用入口分别为 `models/database_models.dart`、`data_sources/patient_data_source.dart` 和 `utils/schema_validator.dart`。实际同步入口为 `utils/sync_manager.dart`，计划旧文档中的 `services/sync_manager.dart` 路径不适用当前仓库。
+- 现用替代入口：预约使用 `database_models.dart` 与 `data_sources/appointment_data_source.dart`；患者使用合并后的 `data_sources/patient_data_source.dart`；Schema 使用 `utils/schema_validator.dart`。
+- 实际改动：删除 `lib/models/appointment.dart`、`lib/data_sources/mysql_patient_data_source.dart`、`lib/data_sources/sqlite_patient_data_source.dart`、`lib/models/schemas/schema_validator.dart`；未修改现用替代实现。
+- 自动验证：删除后精确引用复核仅命中现用 `database_models.dart`、合并后的 `patient_data_source.dart` 和 `utils/schema_validator.dart`；`flutter analyze` 为 `No issues found!`；`git diff --check`、行尾检查和 LF 行尾检查通过。
+- 手动回归：待主人点击验证 SQLite/MySQL 患者列表、搜索、分页、增删改、病历号，以及预约增改状态、仪表盘和旧库 Schema 升级。
+- 结论与下一步：批次 2 代码清理完成；不把未执行的手动回归写成已通过。批次 3A～7 保持未开始。
 
 ## 14．执行前复核命令索引
 
