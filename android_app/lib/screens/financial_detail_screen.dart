@@ -101,44 +101,43 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
             ),
           ],
         ),
-        body:
-            _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : RefreshIndicator(
-                  onRefresh: _loadData,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 患者基本信息卡片
-                        PatientInfoCard(
-                          patient: _patient,
-                          record: widget.record,
-                        ),
+        body: RefreshIndicator(
+          onRefresh: _loadData,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_isLoading) const LinearProgressIndicator(),
+                if (_isLoading) const SizedBox(height: 16),
 
-                        const SizedBox(height: 16),
+                // 患者基本信息卡片
+                PatientInfoCard(patient: _patient, record: widget.record),
 
-                        // 财务统计卡片
-                        FinancialSummaryCard(items: _items),
+                const SizedBox(height: 16),
 
-                        const SizedBox(height: 16),
+                // 财务统计卡片
+                FinancialSummaryCard(items: _items),
 
-                        // 收费记录历史卡片
-                        PaymentHistoryCard(
-                          items: _items,
-                          onAddItem: _addItem,
-                          itemBuilder:
-                              (item) => FinancialItemCard(
-                                item: item,
-                                onEdit: () => _editItem(item),
-                                onDelete: () => _deleteItem(item),
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
+                const SizedBox(height: 16),
+
+                // 收费记录历史卡片
+                PaymentHistoryCard(
+                  items: _items,
+                  isLoading: _isLoading,
+                  onAddItem: _addItem,
+                  itemBuilder:
+                      (item) => FinancialItemCard(
+                        item: item,
+                        onEdit: () => _editItem(item),
+                        onDelete: () => _deleteItem(item),
+                      ),
                 ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -161,6 +160,7 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
       }
       return;
     }
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
@@ -182,21 +182,21 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
         widget.record.patientId,
       );
 
+      if (!mounted) return;
       setState(() {
         _items = items;
         _patient = patient;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('加载数据失败: $e'), backgroundColor: Colors.red),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('加载数据失败: $e'), backgroundColor: Colors.red),
+      );
     }
   }
 

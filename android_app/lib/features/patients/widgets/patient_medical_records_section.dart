@@ -66,6 +66,13 @@ class _PatientMedicalRecordsSectionState
                   size: 20,
                 ),
                 onPressed: () {
+                  final patientId = widget.patient.id;
+                  if (patientId != null) {
+                    Provider.of<MedicalRecordProvider>(
+                      context,
+                      listen: false,
+                    ).refreshPatientMedicalRecords(patientId);
+                  }
                   setState(() {
                     _cachedMedicalRecords = null;
                     _medicalRecordsLoaded = false;

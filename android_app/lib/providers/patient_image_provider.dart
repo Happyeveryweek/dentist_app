@@ -12,7 +12,7 @@ import 'package:mysql1/mysql1.dart';
 import 'dart:async';
 import '../utils/app_logger.dart';
 
-class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
+class PatientImageProvider extends ChangeNotifier {
   final DatabaseProvider _databaseProvider;
 
   // 数据库操作包装器
@@ -32,11 +32,9 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
   final PatientImageInitializationService _initializationService;
 
   PatientImageProvider(this._databaseProvider)
-      : _connectionService = PatientImageConnectionService(_databaseProvider),
-        _initializationService = PatientImageInitializationService() {
+    : _connectionService = PatientImageConnectionService(_databaseProvider),
+      _initializationService = PatientImageInitializationService() {
     _cacheServiceInstance = PatientImageCacheService(() => notifyListeners());
-    // 添加应用生命周期监听
-    WidgetsBinding.instance.addObserver(this);
   }
 
   PatientImageCacheService get _cacheService {
@@ -50,27 +48,7 @@ class PatientImageProvider extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void dispose() {
     _cacheService.dispose();
-    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-
-    if (state == AppLifecycleState.resumed) {
-      AppLogger.info('PatientImageProvider: 应用从后台恢复，检查连接状态...');
-      _checkConnectionOnResume();
-    } else if (state == AppLifecycleState.paused) {
-      AppLogger.info('PatientImageProvider: 应用进入后台');
-    }
-  }
-
-  // 应用恢复时检查连接状态
-  Future<void> _checkConnectionOnResume() async {
-    if (_dataSourceType == 'mysql' && initialized) {
-      await _connectionService.checkConnectionOnResume();
-    }
   }
 
   // 初始化数据源

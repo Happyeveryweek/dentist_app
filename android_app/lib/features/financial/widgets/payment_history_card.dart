@@ -6,12 +6,14 @@ import '../../../models/financial_item.dart';
 /// 职责：显示收费记录历史卡片
 class PaymentHistoryCard extends StatelessWidget {
   final List<FinancialItem> items;
+  final bool isLoading;
   final VoidCallback onAddItem;
   final Widget Function(FinancialItem item) itemBuilder;
 
   const PaymentHistoryCard({
     super.key,
     required this.items,
+    this.isLoading = false,
     required this.onAddItem,
     required this.itemBuilder,
   });
@@ -53,7 +55,12 @@ class PaymentHistoryCard extends StatelessWidget {
               ],
             ),
           ),
-          if (items.isEmpty)
+          if (isLoading)
+            const Padding(
+              padding: EdgeInsets.all(32),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (items.isEmpty)
             const Padding(
               padding: EdgeInsets.all(32),
               child: Center(

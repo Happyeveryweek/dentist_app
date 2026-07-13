@@ -490,73 +490,94 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
 
   /// 显示采购统计图表
   Future<void> _showPurchaseStatistics() async {
+    final provider = Provider.of<PurchaseProvider>(context, listen: false);
+    final records = List<PurchaseRecord>.from(_filteredRecords);
+    final statisticsSnapshot = ValueNotifier(
+      PurchaseStatisticsSnapshot(
+        recordItemsMap: const {},
+        failedRecordIds: const [],
+        isLoading: records.isNotEmpty,
+        loadedRecordCount: 0,
+        totalRecordCount: records.length,
+      ),
+    );
+    var isDialogOpen = true;
+
     try {
-      // 显示加载提示
-      showDialog(
+      final dialogFuture = showDialog<void>(
         context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
+        builder:
+            (context) => ProgressivePurchaseStatisticsDialog(
+              purchaseRecords: records,
+              purchaseProvider: provider,
+              statisticsListenable: statisticsSnapshot,
+            ),
       );
 
-      final provider = Provider.of<PurchaseProvider>(context, listen: false);
-
-      // 准备采购项目数据映射
-      final Map<int, List<PurchaseItem>> recordItemsMap = {};
-
-      final records = List<PurchaseRecord>.from(_filteredRecords);
-      final itemResults = await Future.wait(
-        records.map((record) async {
-          final recordId = record.id;
-          if (recordId == null) return (record, <PurchaseItem>[], true);
-          try {
-            return (
-              record,
-              await provider.getPurchaseItemsByRecordId(recordId),
-              false,
-            );
-          } catch (e) {
-            AppLogger.info('加载采购记录 $recordId 的项目失败: $e');
-            return (record, <PurchaseItem>[], true);
-          }
-        }),
+      unawaited(
+        _loadPurchaseStatisticsItems(
+          provider: provider,
+          records: records,
+          statisticsSnapshot: statisticsSnapshot,
+          isDialogOpen: () => isDialogOpen,
+        ),
       );
-      final failedRecordIds = <int>[];
-      for (final result in itemResults) {
-        final record = result.$1;
-        final recordId = record.id;
-        if (recordId == null) continue;
-        recordItemsMap[recordId] = result.$2;
-        if (result.$3) failedRecordIds.add(recordId);
-      }
 
-      // 关闭加载提示
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-
-      // 显示统计图表对话框
-      if (mounted) {
-        await showDialog(
-          context: context,
-          builder:
-              (context) => PurchaseStatisticsDialog(
-                purchaseRecords: records,
-                recordItemsMap: recordItemsMap,
-                purchaseProvider: provider,
-                failedRecordIds: failedRecordIds,
-              ),
-        );
-      }
+      await dialogFuture;
     } catch (e) {
-      // 关闭加载提示
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-
       AppLogger.info('显示采购统计图表失败: $e');
       if (mounted) {
         SuccessToastManager.showError(context, message: '加载统计数据失败: $e');
       }
+    } finally {
+      isDialogOpen = false;
+      statisticsSnapshot.dispose();
     }
+  }
+
+  /// 后台并发加载采购明细，每完成一条即刷新已打开的图表。
+  Future<void> _loadPurchaseStatisticsItems({
+    required PurchaseProvider provider,
+    required List<PurchaseRecord> records,
+    required ValueNotifier<PurchaseStatisticsSnapshot> statisticsSnapshot,
+    required bool Function() isDialogOpen,
+  }) async {
+    final recordItemsMap = <int, List<PurchaseItem>>{};
+    final failedRecordIds = <int>[];
+    var loadedRecordCount = 0;
+
+    await Future.wait(
+      records.map((record) async {
+        final recordId = record.id;
+        List<PurchaseItem> items = [];
+        var loadFailed = recordId == null;
+
+        if (recordId != null) {
+          try {
+            items = await provider.getPurchaseItemsByRecordId(recordId);
+          } catch (e) {
+            loadFailed = true;
+            AppLogger.info('加载采购记录 $recordId 的项目失败: $e');
+          }
+        }
+
+        if (!isDialogOpen()) return;
+
+        if (recordId != null) {
+          recordItemsMap[recordId] = items;
+          if (loadFailed) {
+            failedRecordIds.add(recordId);
+          }
+        }
+        loadedRecordCount++;
+        statisticsSnapshot.value = PurchaseStatisticsSnapshot(
+          recordItemsMap: Map<int, List<PurchaseItem>>.from(recordItemsMap),
+          failedRecordIds: List<int>.from(failedRecordIds),
+          isLoading: loadedRecordCount < records.length,
+          loadedRecordCount: loadedRecordCount,
+          totalRecordCount: records.length,
+        );
+      }),
+    );
   }
 }

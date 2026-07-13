@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../models/purchase_record.dart';
@@ -12,12 +13,64 @@ import 'purchase_overview_tab.dart';
 import 'purchase_trend_tab.dart';
 import 'purchase_ranking_tab.dart';
 
+/// 采购图表明细加载过程中的数据快照。
+class PurchaseStatisticsSnapshot {
+  final Map<int, List<PurchaseItem>> recordItemsMap;
+  final List<int> failedRecordIds;
+  final bool isLoading;
+  final int loadedRecordCount;
+  final int totalRecordCount;
+
+  const PurchaseStatisticsSnapshot({
+    required this.recordItemsMap,
+    required this.failedRecordIds,
+    required this.isLoading,
+    required this.loadedRecordCount,
+    required this.totalRecordCount,
+  });
+}
+
+/// 图表立即打开，采购明细在后台加载并刷新图表内容。
+class ProgressivePurchaseStatisticsDialog extends StatelessWidget {
+  final List<PurchaseRecord> purchaseRecords;
+  final PurchaseProvider purchaseProvider;
+  final ValueListenable<PurchaseStatisticsSnapshot> statisticsListenable;
+
+  const ProgressivePurchaseStatisticsDialog({
+    super.key,
+    required this.purchaseRecords,
+    required this.purchaseProvider,
+    required this.statisticsListenable,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<PurchaseStatisticsSnapshot>(
+      valueListenable: statisticsListenable,
+      builder: (context, snapshot, child) {
+        return PurchaseStatisticsDialog(
+          purchaseRecords: purchaseRecords,
+          recordItemsMap: snapshot.recordItemsMap,
+          purchaseProvider: purchaseProvider,
+          failedRecordIds: snapshot.failedRecordIds,
+          isLoading: snapshot.isLoading,
+          loadedRecordCount: snapshot.loadedRecordCount,
+          totalRecordCount: snapshot.totalRecordCount,
+        );
+      },
+    );
+  }
+}
+
 /// 采购统计图表对话框 - 移动端版本
 class PurchaseStatisticsDialog extends StatefulWidget {
   final List<PurchaseRecord> purchaseRecords;
   final Map<int, List<PurchaseItem>> recordItemsMap;
   final PurchaseProvider purchaseProvider;
   final List<int> failedRecordIds;
+  final bool isLoading;
+  final int loadedRecordCount;
+  final int totalRecordCount;
 
   const PurchaseStatisticsDialog({
     super.key,
@@ -25,6 +78,9 @@ class PurchaseStatisticsDialog extends StatefulWidget {
     required this.recordItemsMap,
     required this.purchaseProvider,
     this.failedRecordIds = const [],
+    this.isLoading = false,
+    this.loadedRecordCount = 0,
+    this.totalRecordCount = 0,
   });
 
   @override
@@ -177,6 +233,34 @@ class _PurchaseStatisticsDialogState extends State<PurchaseStatisticsDialog>
             ),
             body: Column(
               children: [
+                if (widget.isLoading)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    color: Colors.green.shade50,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.insights_outlined,
+                          size: 16,
+                          color: Colors.green.shade800,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '统计图表正在加载采购明细：${widget.loadedRecordCount} / ${widget.totalRecordCount}',
+                            style: TextStyle(
+                              color: Colors.green.shade800,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 // 时间范围选择器
                 if (widget.failedRecordIds.isNotEmpty)
                   Container(

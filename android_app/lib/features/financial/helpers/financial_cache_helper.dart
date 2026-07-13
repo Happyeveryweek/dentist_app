@@ -7,6 +7,8 @@ import '../../../utils/app_logger.dart';
 class FinancialCacheHelper {
   List<FinancialRecord>? _cachedRecords;
   Map<int, List<FinancialItem>>? _cachedItemsMap;
+  final Map<int, _CachedFinancialItems> _cachedDetailItemsByRecordId = {};
+  final Map<int, _CachedFinancialRecords> _cachedRecordsByPatientId = {};
   DateTime? _lastCacheTime;
   static const Duration _cacheValidDuration = Duration(minutes: 30); // 缓存30分钟有效
 
@@ -52,6 +54,49 @@ class FinancialCacheHelper {
   /// 获取缓存的明细项映射
   Map<int, List<FinancialItem>> get cachedItemsMap => _cachedItemsMap ?? {};
 
+  /// 获取仍在有效期内的财务详情明细缓存。
+  List<FinancialItem>? getCachedDetailItems(int recordId) {
+    final cachedItems = _cachedDetailItemsByRecordId[recordId];
+    if (cachedItems == null ||
+        DateTime.now().difference(cachedItems.cachedAt) >=
+            _cacheValidDuration) {
+      _cachedDetailItemsByRecordId.remove(recordId);
+      return null;
+    }
+    return List.from(cachedItems.items);
+  }
+
+  /// 缓存单条财务记录的收费明细，供详情页重复打开时复用。
+  void cacheDetailItems(int recordId, List<FinancialItem> items) {
+    _cachedDetailItemsByRecordId[recordId] = _CachedFinancialItems(
+      List.from(items),
+      DateTime.now(),
+    );
+  }
+
+  /// 使单条财务记录的收费明细缓存失效。
+  void invalidateDetailItems(int recordId) {
+    _cachedDetailItemsByRecordId.remove(recordId);
+  }
+
+  List<FinancialRecord>? getCachedRecordsByPatientId(int patientId) {
+    final cachedRecords = _cachedRecordsByPatientId[patientId];
+    if (cachedRecords == null ||
+        DateTime.now().difference(cachedRecords.cachedAt) >=
+            _cacheValidDuration) {
+      _cachedRecordsByPatientId.remove(patientId);
+      return null;
+    }
+    return List.from(cachedRecords.records);
+  }
+
+  void cacheRecordsByPatientId(int patientId, List<FinancialRecord> records) {
+    _cachedRecordsByPatientId[patientId] = _CachedFinancialRecords(
+      List.from(records),
+      DateTime.now(),
+    );
+  }
+
   /// 获取最后缓存时间
   DateTime? get lastCacheTime => _lastCacheTime;
 
@@ -62,6 +107,8 @@ class FinancialCacheHelper {
   void clearCache() {
     _cachedRecords = null;
     _cachedItemsMap = null;
+    _cachedDetailItemsByRecordId.clear();
+    _cachedRecordsByPatientId.clear();
     _lastCacheTime = null;
     AppLogger.info('财务数据缓存已清除');
   }
@@ -224,4 +271,18 @@ class FinancialCacheHelper {
       'totalProcessingFee': totalProcessingFee,
     };
   }
+}
+
+class _CachedFinancialItems {
+  final List<FinancialItem> items;
+  final DateTime cachedAt;
+
+  const _CachedFinancialItems(this.items, this.cachedAt);
+}
+
+class _CachedFinancialRecords {
+  final List<FinancialRecord> records;
+  final DateTime cachedAt;
+
+  const _CachedFinancialRecords(this.records, this.cachedAt);
 }

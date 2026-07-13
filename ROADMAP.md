@@ -16,6 +16,12 @@
 - 2026-07-13 后续治理已完成：清理数据源注释旧实现、无消费者 UI／模型／服务 API、冗余直接依赖、无引用登录图片和两份一次性脚本；最终范围、验证和现用重复逻辑处置见 [治理总结](android_app/docs/android_app_dead_code_and_duplicate_logic_governance_summary_2026_07_13.md) 。
 - 登录“记住密码”、新建预约治疗项目窄屏布局、采购录入弹窗键盘适配均已完成代码与针对性静态检查，待人工回归确认。
 - 采购汇总无变化时 MySQL 将更新误报为失败的问题已修复：数据源在 `affectedRows = 0` 时验证记录存在性，覆盖单项目、浮点误差和同秒更新时间；待 Android 真机连接 MySQL 回归确认。
+- Android MySQL 前后台连接恢复已优化：后台暂停健康检查，前台统一串行重建并验证连接，业务重连与健康检查不会并发关闭／查询同一 socket；待 Android 真机前后台切换回归确认。
+- Android 采购图表与详情加载已优化：图表弹窗立即打开并渐进加载采购明细，详情页复用按采购记录缓存的明细数据；采购记录或项目变更时会使缓存失效，待人工回归确认。
+- Android 财务详情页异步加载已修复：打开时立即展示详情框架，返回页面后不再对已销毁 State 调用 `setState`；待真机确认。
+- Android 财务详情收费记录已补充按记录缓存：重复打开优先复用缓存，收费项目或财务记录变更时失效；待人工回归确认。
+- Android 预约与患者详情重复加载已优化：预约详情复用患者缓存和权限查询，患者详情复用患者、图片、财务、病历缓存；待人工回归确认。
+- Android 返回手势系统警告已处理：关闭未适配的预测性返回平台回调，保留现有 Flutter 返回行为；待真机确认日志不再重复输出。
 
 ## 待办与阻塞
 
@@ -25,6 +31,12 @@
 
 ## 最近验证
 
+- 2026-07-13：Android 返回手势警告修复完成。Manifest 将 `android:enableOnBackInvokedCallback` 设为 `false`，避免预测性返回取消路径反复输出 `WindowOnBackDispatcher sendCancelIfRunning`；Flutter `PopScope`／`Navigator` 返回逻辑不受影响，但不再显示预测返回动画。`flutter analyze --no-pub` 为 `No issues found!`；待真机验证系统返回、详情返回和对话框取消。
+- 2026-07-13：Android 预约与患者详情缓存优化完成。患者 Provider 增加按 ID 缓存；预约详情首次命中缓存时不再等待患者查询，三个权限控件复用同一 Future；患者详情不再每次清除图片缓存，财务记录按患者缓存，病历记录按患者缓存 5 分钟且手动刷新会失效该患者缓存。财务与采购缓存测试共 4 个通过，`flutter analyze --no-pub` 为 `No issues found!`；待真机验证重复打开预约／患者详情、患者图片与病历刷新、患者财务金额和预约编辑后的数据刷新。
+- 2026-07-13：Android 财务详情收费记录缓存完成。`FinancialProvider` 优先返回按财务记录 ID 缓存的明细，数据库查询结果自动回填；新增、编辑收费项目时精准失效对应缓存，删除时清除财务缓存，记录变更沿用全量缓存清除。新增 2 个财务缓存测试；财务与采购缓存测试共 4 个通过，`flutter analyze --no-pub` 为 `No issues found!`；待真机验证重复进入财务详情不重复加载，以及收费项目增删改后的详情刷新。
+- 2026-07-13：Android 财务详情页加载与返回异常修复完成。详情页加载时保留页面内容并在收费明细区显示进度，`_loadData()` 在异步查询结束及异常处理前均检查 `mounted`，避免用户加载中返回触发 `setState() called after dispose()`。`flutter analyze --no-pub` 为 `No issues found!`；待真机验证加载中返回、下拉刷新和收费项目增删改后的详情刷新。
+- 2026-07-13：Android 采购图表与详情加载优化完成。统计图表不再等待全部明细返回才弹出，改为打开后随明细完成进度刷新；采购明细按记录 ID 缓存 20 分钟，详情首次进入不再重复读取主记录，采购记录／项目变更会先清除缓存再重新计算汇总。新增 2 个缓存回归测试，`flutter test --no-pub test/features/purchases/purchase_cache_service_test.dart` 全部通过，`flutter analyze --no-pub` 为 `No issues found!`；待真机回归图表加载进度、详情重复进入与采购增删改后的金额／明细刷新。
+- 2026-07-13：Android MySQL 前后台连接恢复优化完成。后台停止健康监控并移除重复的快速检查，成功轮询不再输出日志；恢复前台时统一重建并验证新连接，重连前等待运行中的健康查询结束，患者图片 Provider 不再重复监听生命周期。`flutter analyze --no-pub` 为 `No issues found!`；项目无 Dart 测试文件，待真机验证后台切回前台后 MySQL 查询、图片读取及断线重连。
 - 2026-07-13：Android 登录页底部“技术支持：牙科诊所管理系统”白色文案和横线装饰已移除，避免遮挡底部图片内容；`flutter analyze --no-pub` 为 `No issues found!`。
 - 2026-07-13：Android 构建警告治理完成。Gradle Wrapper 从 8.11.1 升至 9.4.1、AGP 从 8.9.1 升至 9.2.0，应用模块移除 KGP 并使用 Built-in Kotlin；`flutter_file_dialog` 升至 3.3.1、`shared_preferences` 升至 2.5.5，锁定的 `shared_preferences_android` 升至 2.4.26。`flutter analyze` 为 `No issues found!`，`flutter build apk --debug` 成功生成 APK，原 Gradle、AGP、Kotlin 和 KGP 兼容性警告未再出现；其余 55 项“存在更高版本但不兼容当前约束”的依赖统计未批量升级。
 - 2026-07-13：Android 后续治理批次 3A、3B 已完成。移除 `flutter_phoenix`、`sqflite_common_ffi`、`cross_file` 三项冗余直接依赖，锁文件仅同步移除不再需要的 `flutter_phoenix`、`sqflite_common_ffi`、`sqlite3`，并保留 `cross_file` 的传递依赖；删除无引用的 `assets/images/login.jpg` 和两份硬编码绝对路径的一次性工具脚本。`flutter pub get`、`flutter analyze --no-pub`、`git diff --check` 与改动文本文件 LF 行尾检查通过；项目无 Dart 测试文件，启动、文件选择、备份恢复、PDF／患者导出、Cupertino 图标及登录／Dashboard 图片人工回归未执行。

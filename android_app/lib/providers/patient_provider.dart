@@ -92,6 +92,9 @@ class PatientProvider extends ChangeNotifier {
   // 获取数据源类型
   String get dataSourceType => _initService.dataSourceType;
 
+  Patient? getCachedPatientById(int id) =>
+      _cacheHelper.getCachedPatientById(id);
+
   // 强制刷新患者数据
   Future<void> forceRefreshPatients() async {
     _cacheHelper.clearCache();
@@ -252,13 +255,22 @@ class PatientProvider extends ChangeNotifier {
 
   // 根据ID获取患者
   Future<Patient?> getPatientById(int id) async {
+    final cachedPatient = _cacheHelper.getCachedPatientById(id);
+    if (cachedPatient != null) {
+      return cachedPatient;
+    }
+
     final wrapper = _dbWrapper;
     if (wrapper == null) return null;
 
     return await wrapper.wrapOperation('getPatientById', () async {
       try {
         // 使用数据源模式（统一接口）
-        return await _currentDataSource.getPatientById(id);
+        final patient = await _currentDataSource.getPatientById(id);
+        if (patient != null) {
+          _cacheHelper.cachePatient(patient);
+        }
+        return patient;
       } catch (e) {
         AppLogger.info('根据ID获取患者失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;

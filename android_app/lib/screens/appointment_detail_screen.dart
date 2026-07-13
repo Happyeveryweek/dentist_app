@@ -36,17 +36,30 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   Patient? _patient;
   bool _isLoading = true;
   bool _dataUpdated = false; // 标记数据是否已更新
+  late final Future<String?> _appointmentPatientDoctorFuture;
 
   @override
   void initState() {
     super.initState();
     _appointment = widget.appointment;
-    _loadPatientData();
+    final patientProvider = Provider.of<PatientProvider>(
+      context,
+      listen: false,
+    );
+    _patient = patientProvider.getCachedPatientById(
+      widget.appointment.patientId,
+    );
+    _isLoading = _patient == null;
+    _appointmentPatientDoctorFuture = _getAppointmentPatientDoctor();
+    if (_patient == null) {
+      _loadPatientData();
+    }
   }
 
   Future<void> _loadPatientData() async {
     final appointment = _appointment;
     if (appointment == null) return;
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
@@ -57,12 +70,14 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         listen: false,
       ).getPatientById(appointment.patientId);
 
+      if (!mounted) return;
       setState(() {
         _patient = patient;
         _isLoading = false;
       });
     } catch (e) {
       AppLogger.info('加载患者数据错误: $e');
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
@@ -100,7 +115,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
           actions: [
             // 编辑按钮
             FutureBuilder<String?>(
-              future: _getAppointmentPatientDoctor(),
+              future: _appointmentPatientDoctorFuture,
               builder: (context, snapshot) {
                 final patientDoctor = snapshot.data;
                 return PermissionWrapper(
@@ -126,7 +141,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
             ),
             // 删除按钮
             FutureBuilder<String?>(
-              future: _getAppointmentPatientDoctor(),
+              future: _appointmentPatientDoctorFuture,
               builder: (context, snapshot) {
                 final patientDoctor = snapshot.data;
                 return PermissionWrapper(
@@ -168,7 +183,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                       ),
                       const SizedBox(height: 16),
                       FutureBuilder<String?>(
-                        future: _getAppointmentPatientDoctor(),
+                        future: _appointmentPatientDoctorFuture,
                         builder: (context, snapshot) {
                           final patientDoctor = snapshot.data;
                           return AppointmentActionButtons(

@@ -419,6 +419,11 @@ class PurchaseProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
+    final cachedItems = _cacheService?.getCachedItems(recordId);
+    if (cachedItems != null) {
+      return cachedItems;
+    }
+
     return await _wrapPurchaseItemOperation(
       'getPurchaseItemsByRecordId',
       () async {
@@ -427,9 +432,14 @@ class PurchaseProvider extends ChangeNotifier {
           final results = await _currentDataSource.getPurchaseItemsByRecordId(
             recordId,
           );
-          return results
-              .map((e) => PurchaseItem.fromMap(e, dataSource: _dataSourceType))
-              .toList();
+          final items =
+              results
+                  .map(
+                    (e) => PurchaseItem.fromMap(e, dataSource: _dataSourceType),
+                  )
+                  .toList();
+          _cacheService?.cacheItems(recordId, items);
+          return items;
         } catch (e) {
           AppLogger.info('获取采购项目明细失败: $e');
           rethrow;
@@ -450,6 +460,7 @@ class PurchaseProvider extends ChangeNotifier {
         final id = await _currentDataSource.createPurchaseItem(item);
 
         if (id > 0) {
+          _cacheService?.clearCache();
           await _recalculatePurchaseRecordTotals(item.purchaseRecordId);
           markPurchasesNeedRefresh();
         }
@@ -475,6 +486,7 @@ class PurchaseProvider extends ChangeNotifier {
         final count = success ? 1 : 0;
 
         if (count > 0) {
+          _cacheService?.clearCache();
           await _recalculatePurchaseRecordTotals(item.purchaseRecordId);
           markPurchasesNeedRefresh();
         }
@@ -503,6 +515,7 @@ class PurchaseProvider extends ChangeNotifier {
         final count = success ? 1 : 0;
 
         if (count > 0) {
+          _cacheService?.clearCache();
           await _recalculatePurchaseRecordTotals(purchaseRecordId);
           markPurchasesNeedRefresh();
         }

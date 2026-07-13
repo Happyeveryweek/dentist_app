@@ -575,7 +575,16 @@ class FinancialProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
-    return await _recordService.getFinancialRecordsByPatientId(patientId);
+    final cachedRecords = _cacheHelper.getCachedRecordsByPatientId(patientId);
+    if (cachedRecords != null) {
+      return cachedRecords;
+    }
+
+    final records = await _recordService.getFinancialRecordsByPatientId(
+      patientId,
+    );
+    _cacheHelper.cacheRecordsByPatientId(patientId, records);
+    return records;
   }
 
   // =================== 财务项目明细相关方法（委托给 itemService）===================
@@ -586,7 +595,14 @@ class FinancialProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
-    return await _itemService.getFinancialItemsByRecordId(recordId);
+    final cachedItems = _cacheHelper.getCachedDetailItems(recordId);
+    if (cachedItems != null) {
+      return cachedItems;
+    }
+
+    final items = await _itemService.getFinancialItemsByRecordId(recordId);
+    _cacheHelper.cacheDetailItems(recordId, items);
+    return items;
   }
 
   // 添加财务项目明细
@@ -595,10 +611,14 @@ class FinancialProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
-    return await _itemService.addFinancialItem(
+    final itemId = await _itemService.addFinancialItem(
       item,
       markFinancialsNeedRefresh: markFinancialsNeedRefresh,
     );
+    if (itemId > 0) {
+      _cacheHelper.invalidateDetailItems(item.financialRecordId);
+    }
+    return itemId;
   }
 
   // 更新财务项目明细
@@ -607,10 +627,14 @@ class FinancialProvider extends ChangeNotifier {
       throw Exception('数据库未初始化或项目ID为空');
     }
 
-    return await _itemService.updateFinancialItem(
+    final count = await _itemService.updateFinancialItem(
       item,
       markFinancialsNeedRefresh: markFinancialsNeedRefresh,
     );
+    if (count > 0) {
+      _cacheHelper.invalidateDetailItems(item.financialRecordId);
+    }
+    return count;
   }
 
   // 删除财务项目明细
@@ -619,10 +643,14 @@ class FinancialProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
-    return await _itemService.deleteFinancialItem(
+    final count = await _itemService.deleteFinancialItem(
       itemId,
       markFinancialsNeedRefresh: markFinancialsNeedRefresh,
     );
+    if (count > 0) {
+      clearCache();
+    }
+    return count;
   }
 
   // =================== 统计方法（委托给 statisticsService）===================

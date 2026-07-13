@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/database_provider.dart';
@@ -64,8 +66,8 @@ class _AppLifecycleManagerState extends State<AppLifecycleManager>
 
     // 只对MySQL连接进行后台管理，SQLite不需要
     if (dbProvider.dbType == 'mysql') {
-      AppLogger.info('🔄 MySQL模式：启动后台保活机制');
-      _startBackgroundKeepAlive(dbProvider);
+      AppLogger.info('🔄 MySQL模式：暂停后台健康检查');
+      dbProvider.pauseMySqlHealthMonitoring();
     } else {
       AppLogger.info('📱 SQLite模式：无需后台连接管理');
     }
@@ -106,15 +108,6 @@ class _AppLifecycleManagerState extends State<AppLifecycleManager>
     dbProvider.closeDatabase();
   }
 
-  /// 启动后台保活机制
-  void _startBackgroundKeepAlive(DatabaseProvider dbProvider) {
-    // 在后台时，减少心跳频率以节省电量
-    AppLogger.info('🔄 启动后台MySQL连接保活机制');
-
-    // 这里可以实现后台保活逻辑
-    // 注意：Android系统限制后台网络活动，所以要谨慎使用
-  }
-
   /// 处理长时间后台返回
   void _handleLongBackgroundReturn(DatabaseProvider dbProvider) {
     // 只处理MySQL连接
@@ -122,21 +115,7 @@ class _AppLifecycleManagerState extends State<AppLifecycleManager>
 
     AppLogger.info('🔄 MySQL长时间后台返回，强制重新建立连接');
 
-    // 延迟执行，确保应用完全恢复
-    Future.delayed(const Duration(milliseconds: 500), () async {
-      try {
-        // 长时间后台返回，直接强制重连而不是检查
-        AppLogger.info('🔄 强制重新建立MySQL连接...');
-        final isConnected = await dbProvider.forceReconnect();
-        if (!isConnected) {
-          AppLogger.info('❌ MySQL强制重连失败，将在用户操作时自动重连');
-        } else {
-          AppLogger.info('✅ MySQL强制重连成功');
-        }
-      } catch (e) {
-        AppLogger.info('❌ MySQL应用恢复时强制重连失败: $e');
-      }
-    });
+    unawaited(_restoreMySqlConnection(dbProvider));
   }
 
   /// 处理中等时间后台返回
@@ -146,20 +125,7 @@ class _AppLifecycleManagerState extends State<AppLifecycleManager>
 
     AppLogger.info('🔄 MySQL中等时间后台返回，执行连接检查和可能的重连');
 
-    // 延迟执行，确保应用完全恢复
-    Future.delayed(const Duration(milliseconds: 300), () async {
-      try {
-        final isConnected = await dbProvider.checkConnectionOnAppResume();
-        if (!isConnected) {
-          AppLogger.info('❌ MySQL连接检查失败，执行强制重连');
-          await dbProvider.forceReconnect();
-        } else {
-          AppLogger.info('✅ MySQL连接检查成功');
-        }
-      } catch (e) {
-        AppLogger.info('❌ MySQL中等时间后台返回处理失败: $e');
-      }
-    });
+    unawaited(_restoreMySqlConnection(dbProvider));
   }
 
   /// 处理短时间后台返回
@@ -169,20 +135,21 @@ class _AppLifecycleManagerState extends State<AppLifecycleManager>
 
     AppLogger.info('🔄 MySQL短时间后台返回，强制重新建立连接');
 
-    // 延迟执行，确保应用完全恢复
-    Future.delayed(const Duration(milliseconds: 100), () async {
-      try {
-        // 即使是短时间后台，也强制重新建立连接（防止socket超时）
-        final isConnected = await dbProvider.checkConnectionOnAppResume();
-        if (!isConnected) {
-          AppLogger.info('❌ MySQL短时间后台返回重连失败');
-        } else {
-          AppLogger.info('✅ MySQL短时间后台返回重连成功');
-        }
-      } catch (e) {
-        AppLogger.info('❌ MySQL短时间后台返回处理失败: $e');
+    unawaited(_restoreMySqlConnection(dbProvider));
+  }
+
+  /// 前台恢复只通过这一条链路重建 MySQL 连接。
+  Future<void> _restoreMySqlConnection(DatabaseProvider dbProvider) async {
+    try {
+      final isConnected = await dbProvider.checkConnectionOnAppResume();
+      if (isConnected) {
+        AppLogger.info('✅ MySQL应用恢复重连成功');
+      } else {
+        AppLogger.info('❌ MySQL应用恢复重连失败，将在用户操作时自动重连');
       }
-    });
+    } catch (e) {
+      AppLogger.info('❌ MySQL应用恢复时重连失败: $e');
+    }
   }
 
   @override

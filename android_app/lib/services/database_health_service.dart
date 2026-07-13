@@ -7,7 +7,7 @@ import '../utils/app_logger.dart';
 class DatabaseHealthService {
   MySqlConnection? _mysqlConnection;
   Timer? _connectionHealthTimer;
-  Timer? _quickCheckTimer;
+  bool _isCheckingConnection = false;
 
   // 连接状态
   bool _isConnected = false;
@@ -15,7 +15,6 @@ class DatabaseHealthService {
 
   // 健康检查配置
   static const Duration _healthCheckInterval = Duration(seconds: 30);
-  static const Duration _quickCheckInterval = Duration(seconds: 30);
 
   // 回调函数
   Function(bool)? _onHealthStatusChanged;
@@ -55,14 +54,7 @@ class DatabaseHealthService {
     if (_connectionHealthTimer == null) {
       AppLogger.info('启动MySQL连接健康监控，检查间隔: $_healthCheckInterval');
       _connectionHealthTimer = Timer.periodic(_healthCheckInterval, (timer) {
-        _checkConnectionHealth();
-      });
-
-      // 添加更频繁的快速检查（用于检测连接丢失）
-      _quickCheckTimer = Timer.periodic(_quickCheckInterval, (timer) {
-        if (!_isReconnecting) {
-          _quickConnectionCheck();
-        }
+        unawaited(_checkConnectionHealth());
       });
     }
   }
@@ -71,16 +63,22 @@ class DatabaseHealthService {
   void stopHealthMonitoring() {
     _connectionHealthTimer?.cancel();
     _connectionHealthTimer = null;
-    _quickCheckTimer?.cancel();
-    _quickCheckTimer = null;
+  }
+
+  /// 等待正在执行的健康检查结束，避免重连时关闭仍在查询的 socket。
+  Future<void> waitForHealthCheckToFinish() async {
+    while (_isCheckingConnection) {
+      await Future.delayed(const Duration(milliseconds: 10));
+    }
   }
 
   /// 检查连接健康状态
   Future<void> _checkConnectionHealth() async {
-    if (_isReconnecting) return;
+    if (_isReconnecting || _isCheckingConnection) return;
+
+    _isCheckingConnection = true;
 
     try {
-      AppLogger.info('🔍 检查MySQL连接健康状态...');
       final isHealthy = await testConnectionHealth();
 
       if (!isHealthy && !_isReconnecting) {
@@ -98,37 +96,8 @@ class DatabaseHealthService {
       if (!_isReconnecting) {
         _onReconnectNeeded?.call();
       }
-    }
-  }
-
-  /// 快速连接检查（轻量级检查，用于频繁检测）
-  Future<void> _quickConnectionCheck() async {
-    final connection = _mysqlConnection;
-    if (_isReconnecting || connection == null) return;
-
-    try {
-      // 使用更快的超时时间进行快速检查
-      final results = await connection
-          .query('SELECT 1')
-          .timeout(
-            const Duration(seconds: 2),
-            onTimeout: () {
-              throw TimeoutException('快速连接检查超时', const Duration(seconds: 2));
-            },
-          );
-
-      if (results.isNotEmpty && !_isConnected) {
-        AppLogger.info('✅ 快速检查发现连接已恢复');
-        _isConnected = true;
-        _onHealthStatusChanged?.call(true);
-      }
-    } catch (e) {
-      // 快速检查失败，但不立即重连，等待完整检查
-      if (_isConnected) {
-        AppLogger.info('⚠️ 快速检查发现连接可能丢失: $e');
-        _isConnected = false;
-        _onHealthStatusChanged?.call(false);
-      }
+    } finally {
+      _isCheckingConnection = false;
     }
   }
 

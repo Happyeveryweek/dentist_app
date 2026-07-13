@@ -16,6 +16,7 @@ import '../utils/app_logger.dart';
 class MedicalRecordProvider extends ChangeNotifier {
   // 缓存数据
   List<MedicalRecordTemplate>? _cachedTemplates;
+  final Map<int, _CachedPatientMedicalRecords> _cachedRecordsByPatientId = {};
 
   // 数据源具体实现
   SqliteMedicalRecordDataSource? _sqliteDataSource;
@@ -180,6 +181,7 @@ class MedicalRecordProvider extends ChangeNotifier {
   // 强制刷新缓存
   void forceRefresh() {
     _cachedTemplates = null;
+    _cachedRecordsByPatientId.clear();
     _lastCacheTime = null;
     _safeNotifyListeners();
   }
@@ -218,14 +220,32 @@ class MedicalRecordProvider extends ChangeNotifier {
   Future<List<PatientMedicalRecord>> getPatientMedicalRecordsSimple(
     int patientId,
   ) async {
+    final cachedRecords = _cachedRecordsByPatientId[patientId];
+    if (cachedRecords != null &&
+        DateTime.now().difference(cachedRecords.cachedAt) <
+            _cacheValidDuration) {
+      return List.from(cachedRecords.records);
+    }
+
     try {
       // 直接使用数据源，不触发连接管理
-      return await _currentDataSource.getPatientMedicalRecords(patientId);
+      final records = await _currentDataSource.getPatientMedicalRecords(
+        patientId,
+      );
+      _cachedRecordsByPatientId[patientId] = _CachedPatientMedicalRecords(
+        List.from(records),
+        DateTime.now(),
+      );
+      return records;
     } catch (e) {
       AppLogger.info('简单获取患者病历记录失败: $e');
       if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
       return [];
     }
+  }
+
+  void refreshPatientMedicalRecords(int patientId) {
+    _cachedRecordsByPatientId.remove(patientId);
   }
 
   // 获取单个病历记录
@@ -398,6 +418,7 @@ class MedicalRecordProvider extends ChangeNotifier {
   // 清除所有缓存
   void clearAllCache() {
     _cachedTemplates = null;
+    _cachedRecordsByPatientId.clear();
     _lastCacheTime = null;
     _safeNotifyListeners();
   }
@@ -406,6 +427,14 @@ class MedicalRecordProvider extends ChangeNotifier {
   void dispose() {
     // 清理资源
     _cachedTemplates = null;
+    _cachedRecordsByPatientId.clear();
     super.dispose();
   }
+}
+
+class _CachedPatientMedicalRecords {
+  final List<PatientMedicalRecord> records;
+  final DateTime cachedAt;
+
+  const _CachedPatientMedicalRecords(this.records, this.cachedAt);
 }

@@ -111,10 +111,18 @@ class DatabaseProvider extends ChangeNotifier {
   Future<bool> checkConnectionOnAppResume() async {
     if (_dbType != 'mysql') return true;
     final result = await _reconnectService.checkConnectionOnAppResume();
+    _healthService.startHealthMonitoring();
     if (result) {
       notifyListeners();
     }
     return result;
+  }
+
+  /// 应用进入后台时停止 MySQL 心跳，避免后台持续访问网络。
+  void pauseMySqlHealthMonitoring() {
+    if (_dbType == 'mysql') {
+      _healthService.stopHealthMonitoring();
+    }
   }
 
   // 智能连接检查（用于操作前的连接验证）

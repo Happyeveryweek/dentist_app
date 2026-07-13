@@ -48,7 +48,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
     _loadPurchaseItems();
   }
 
-  Future<void> _loadPurchaseItems() async {
+  Future<void> _loadPurchaseItems({bool refreshRecord = false}) async {
     setState(() {
       _isLoading = true;
       _hasError = false;
@@ -69,7 +69,10 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
       final items = await purchaseProvider.getPurchaseItemsByRecordId(
         _recordId,
       );
-      final record = await purchaseProvider.getPurchaseRecordById(_recordId);
+      final record =
+          refreshRecord
+              ? await purchaseProvider.getPurchaseRecordById(_recordId)
+              : null;
 
       // ✅ 按更新时间降序排序，确保最新添加/更新的项目显示在最上面
       items.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
@@ -208,7 +211,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
         final itemId = await purchaseProvider.addPurchaseItem(purchaseItem);
         if (itemId > 0) {
           // 重新加载采购项目
-          await _loadPurchaseItems();
+          await _loadPurchaseItems(refreshRecord: true);
           _dataChanged = true;
 
           // ✅ 显示成功提示
@@ -245,7 +248,7 @@ class _PurchaseDetailScreenState extends State<PurchaseDetailScreen> {
 
     if (result == true) {
       // 编辑成功，重新加载数据
-      await _loadPurchaseItems();
+      await _loadPurchaseItems(refreshRecord: true);
       _dataChanged = true;
       if (!context.mounted) return;
       // 使用公共组件的绿色背景成功提示

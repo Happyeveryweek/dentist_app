@@ -49,19 +49,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     try {
       final patientId = widget.patient.id;
       if (patientId != null) {
-        final imageProvider = Provider.of<PatientImageProvider>(
-          context,
-          listen: false,
-        );
-
-        // 强制刷新图片数据缓存
-        if (imageProvider.hasCachedData(patientId)) {
-          AppLogger.info('清除患者图片缓存，强制重新获取最新数据');
-          imageProvider.clearPatientCache(patientId);
-        }
-
         try {
-          AppLogger.info('强制重新获取患者数据 ID: $patientId');
+          AppLogger.info('获取患者详情数据 ID: $patientId');
           final freshPatient = await Provider.of<PatientProvider>(
             context,
             listen: false,
@@ -77,10 +66,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
               // 重新初始化电话号码列表
               _initPhoneNumbers(freshPatient);
             });
-
-            // 强制重新获取图片数据
-            AppLogger.info('开始强制重新获取患者图片数据');
-            await imageProvider.getPatientImages(patientId);
 
             AppLogger.info('成功更新患者数据: ${freshPatient.toMap()}');
           } else {
