@@ -32,51 +32,6 @@ import 'utils/log_manager.dart';
 import 'utils/single_instance.dart';
 import 'services/medical_template_service.dart';
 
-// 加载页面
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
-  }
-}
-
-// 错误页面
-class ErrorScreen extends StatelessWidget {
-  final String error;
-
-  const ErrorScreen({Key? key, required this.error}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: context.tokens.error),
-            const SizedBox(height: 16),
-            const Text('出错了！', style: TextStyle(fontSize: 24)),
-            const SizedBox(height: 8),
-            Text(error, style: const TextStyle(fontSize: 16)),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                Provider.of<DatabaseProvider>(
-                  context,
-                  listen: false,
-                ).initDatabase();
-              },
-              child: const Text('重试'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 void main() async {
   // 确保Flutter绑定初始化
   WidgetsFlutterBinding.ensureInitialized();

@@ -16,5 +16,4 @@ export 'patient_screen_body.dart';
 export 'patient_screen_scaffold.dart';
 export 'patient_search_bar.dart';
 export 'patient_snack_bars.dart';
-export 'patient_sort_options_sheet.dart';
 export 'patient_statistics_navigation.dart';
