@@ -1,4 +1,5 @@
 import 'package:mysql1/mysql1.dart';
+import '../../patients/services/patient_sync_log_helper.dart';
 import '../../../models/patient_sync_log.dart';
 import '../../../utils/log_manager.dart';
 
@@ -58,7 +59,7 @@ class MedicalRecordSyncService {
           final values = fields.map((key) => normalizedRecordMap[key]).toList();
 
           if (existResult.isNotEmpty) {
-            final fieldChanges = _buildFieldChanges(
+            final fieldChanges = PatientSyncLogHelper.buildFieldChanges(
               oldValues: existResult.first.fields,
               newValues: normalizedRecordMap,
               fields: _medicalRecordSyncFields,
@@ -86,7 +87,7 @@ class MedicalRecordSyncService {
             LogManager.i('MedicalRecordSyncService',
                 '成功更新MySQL病历记录(id=$recordId)，影响行数: ${result.affectedRows}');
           } else {
-            final fieldChanges = _buildCreateChanges(
+            final fieldChanges = PatientSyncLogHelper.buildCreateChanges(
                 normalizedRecordMap, _medicalRecordSyncFields);
             final insertFields = ['id', ...fields];
             final placeholders =
@@ -338,55 +339,6 @@ class MedicalRecordSyncService {
         errorMessage: error,
       ),
     );
-  }
-
-  List<PatientSyncFieldChange> _buildCreateChanges(
-    Map<String, dynamic> values,
-    Map<String, String> fields,
-  ) {
-    return fields.entries
-        .where((entry) => _normalizeSyncValue(values[entry.key]).isNotEmpty)
-        .map(
-          (entry) => PatientSyncFieldChange(
-            field: entry.key,
-            label: entry.value,
-            oldValue: null,
-            newValue: _displaySyncValue(values[entry.key]),
-          ),
-        )
-        .toList();
-  }
-
-  List<PatientSyncFieldChange> _buildFieldChanges({
-    required Map<String, dynamic> oldValues,
-    required Map<String, dynamic> newValues,
-    required Map<String, String> fields,
-  }) {
-    final changes = <PatientSyncFieldChange>[];
-    for (final entry in fields.entries) {
-      final oldValue = _normalizeSyncValue(oldValues[entry.key]);
-      final newValue = _normalizeSyncValue(newValues[entry.key]);
-      if (oldValue == newValue) continue;
-      changes.add(
-        PatientSyncFieldChange(
-          field: entry.key,
-          label: entry.value,
-          oldValue: _displaySyncValue(oldValues[entry.key]),
-          newValue: _displaySyncValue(newValues[entry.key]),
-        ),
-      );
-    }
-    return changes;
-  }
-
-  String _normalizeSyncValue(dynamic value) {
-    if (value == null) return '';
-    return value.toString().trim();
-  }
-
-  String? _displaySyncValue(dynamic value) {
-    final normalized = _normalizeSyncValue(value);
-    return normalized.isEmpty ? null : normalized;
   }
 
   int? _intValue(dynamic value) {

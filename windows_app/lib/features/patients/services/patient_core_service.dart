@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
 import '../../../models/patient.dart';
 import '../../../models/patient_sync_log.dart';
+import 'patient_sync_log_helper.dart';
 import '../../../utils/datetime_formatter.dart';
 import '../../../utils/log_manager.dart';
 import '../../../utils/pinyin_util.dart';
@@ -304,7 +305,7 @@ class PatientCoreService {
       if (results.isEmpty) return false;
 
       final sqliteMap = sqlitePatient.toMap();
-      final changes = _buildFieldChanges(
+      final changes = PatientSyncLogHelper.buildFieldChanges(
         oldValues: results.first.fields,
         newValues: sqliteMap,
         fields: _patientSyncFields,
@@ -345,12 +346,13 @@ class PatientCoreService {
       );
       final isUpdate = existById.isNotEmpty;
       final fieldChanges = isUpdate
-          ? _buildFieldChanges(
+          ? PatientSyncLogHelper.buildFieldChanges(
               oldValues: existById.first.fields,
               newValues: patientMap,
               fields: _patientSyncFields,
             )
-          : _buildCreateChanges(patientMap, _patientSyncFields);
+          : PatientSyncLogHelper.buildCreateChanges(
+              patientMap, _patientSyncFields);
 
       if (isUpdate) {
         await conn.query('''
@@ -560,70 +562,13 @@ class PatientCoreService {
         status: status,
         patientId: patientId ?? recordId,
         recordId: recordId,
-        patientName: _extractSummaryValue(summary, 'name'),
-        medicalRecordNumber: _extractSummaryValue(summary, 'mrn'),
+        patientName: PatientSyncLogHelper.extractSummaryValue(summary, 'name'),
+        medicalRecordNumber:
+            PatientSyncLogHelper.extractSummaryValue(summary, 'mrn'),
         fieldChanges: fieldChanges,
         errorMessage: error,
       ),
     );
-  }
-
-  List<PatientSyncFieldChange> _buildCreateChanges(
-    Map<String, dynamic> values,
-    Map<String, String> fields,
-  ) {
-    return fields.entries
-        .where((entry) => _normalizeSyncValue(values[entry.key]).isNotEmpty)
-        .map(
-          (entry) => PatientSyncFieldChange(
-            field: entry.key,
-            label: entry.value,
-            oldValue: null,
-            newValue: _displaySyncValue(values[entry.key]),
-          ),
-        )
-        .toList();
-  }
-
-  List<PatientSyncFieldChange> _buildFieldChanges({
-    required Map<String, dynamic> oldValues,
-    required Map<String, dynamic> newValues,
-    required Map<String, String> fields,
-  }) {
-    final changes = <PatientSyncFieldChange>[];
-    for (final entry in fields.entries) {
-      final oldValue = _normalizeSyncValue(oldValues[entry.key]);
-      final newValue = _normalizeSyncValue(newValues[entry.key]);
-      if (oldValue == newValue) continue;
-      changes.add(
-        PatientSyncFieldChange(
-          field: entry.key,
-          label: entry.value,
-          oldValue: _displaySyncValue(oldValues[entry.key]),
-          newValue: _displaySyncValue(newValues[entry.key]),
-        ),
-      );
-    }
-    return changes;
-  }
-
-  String _normalizeSyncValue(dynamic value) {
-    if (value == null) return '';
-    if (value is DateTime) return DateTimeFormatter.toDbString(value);
-    return value.toString().trim();
-  }
-
-  String? _displaySyncValue(dynamic value) {
-    final normalized = _normalizeSyncValue(value);
-    return normalized.isEmpty ? null : normalized;
-  }
-
-  String? _extractSummaryValue(String? summary, String key) {
-    if (summary == null || summary.isEmpty) return null;
-    final pattern = RegExp('(?:^|, )$key=([^,]*)');
-    final match = pattern.firstMatch(summary);
-    final value = match?.group(1)?.trim();
-    return value == null || value.isEmpty ? null : value;
   }
 
   static const Map<String, String> _patientSyncFields = {

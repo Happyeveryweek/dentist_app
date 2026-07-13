@@ -1,4 +1,5 @@
 import 'package:mysql1/mysql1.dart';
+import '../../patients/services/patient_sync_log_helper.dart';
 import '../../../models/patient_sync_log.dart';
 import '../../../utils/log_manager.dart';
 
@@ -44,7 +45,7 @@ class FinancialSyncService {
           );
 
           if (existResult.isNotEmpty) {
-            final fieldChanges = _buildFieldChanges(
+            final fieldChanges = PatientSyncLogHelper.buildFieldChanges(
               oldValues: existResult.first.fields,
               newValues: recordMap,
               fields: _financialRecordSyncFields,
@@ -74,8 +75,8 @@ class FinancialSyncService {
             LogManager.i('FinancialSyncService',
                 '成功更新MySQL财务记录(id=$recordId)，影响行数: ${result.affectedRows}');
           } else {
-            final fieldChanges =
-                _buildCreateChanges(recordMap, _financialRecordSyncFields);
+            final fieldChanges = PatientSyncLogHelper.buildCreateChanges(
+                recordMap, _financialRecordSyncFields);
             final result = await conn.query('''
               INSERT INTO financial_records
               (id, patient_id, total_quantity, notes, created_at, updated_at)
@@ -231,7 +232,7 @@ class FinancialSyncService {
               );
 
         if (existResult.isNotEmpty) {
-          final fieldChanges = _buildFieldChanges(
+          final fieldChanges = PatientSyncLogHelper.buildFieldChanges(
             oldValues: existResult.first.fields,
             newValues: itemMap,
             fields: _financialItemSyncFields,
@@ -267,8 +268,8 @@ class FinancialSyncService {
           LogManager.i('FinancialSyncService',
               '成功更新MySQL财务项目(id=$itemId)，影响行数: ${result.affectedRows}');
         } else {
-          final fieldChanges =
-              _buildCreateChanges(itemMap, _financialItemSyncFields);
+          final fieldChanges = PatientSyncLogHelper.buildCreateChanges(
+              itemMap, _financialItemSyncFields);
           final result = await conn.query('''
             INSERT INTO financial_items
             (id, financial_record_id, item_name, item_price, processing_fee, quantity, total_price, charge_date, created_at, updated_at, payment_method)
@@ -409,55 +410,6 @@ class FinancialSyncService {
     );
     if (result.isEmpty) return null;
     return _intValue(result.first['patient_id']);
-  }
-
-  List<PatientSyncFieldChange> _buildCreateChanges(
-    Map<String, dynamic> values,
-    Map<String, String> fields,
-  ) {
-    return fields.entries
-        .where((entry) => _normalizeSyncValue(values[entry.key]).isNotEmpty)
-        .map(
-          (entry) => PatientSyncFieldChange(
-            field: entry.key,
-            label: entry.value,
-            oldValue: null,
-            newValue: _displaySyncValue(values[entry.key]),
-          ),
-        )
-        .toList();
-  }
-
-  List<PatientSyncFieldChange> _buildFieldChanges({
-    required Map<String, dynamic> oldValues,
-    required Map<String, dynamic> newValues,
-    required Map<String, String> fields,
-  }) {
-    final changes = <PatientSyncFieldChange>[];
-    for (final entry in fields.entries) {
-      final oldValue = _normalizeSyncValue(oldValues[entry.key]);
-      final newValue = _normalizeSyncValue(newValues[entry.key]);
-      if (oldValue == newValue) continue;
-      changes.add(
-        PatientSyncFieldChange(
-          field: entry.key,
-          label: entry.value,
-          oldValue: _displaySyncValue(oldValues[entry.key]),
-          newValue: _displaySyncValue(newValues[entry.key]),
-        ),
-      );
-    }
-    return changes;
-  }
-
-  String _normalizeSyncValue(dynamic value) {
-    if (value == null) return '';
-    return value.toString().trim();
-  }
-
-  String? _displaySyncValue(dynamic value) {
-    final normalized = _normalizeSyncValue(value);
-    return normalized.isEmpty ? null : normalized;
   }
 
   int? _intValue(dynamic value) {

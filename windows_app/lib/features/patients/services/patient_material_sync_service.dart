@@ -1,4 +1,5 @@
 import 'package:mysql1/mysql1.dart';
+import 'patient_sync_log_helper.dart';
 import '../../../models/material_image.dart';
 import '../../../models/patient_material.dart';
 import '../../../models/patient_sync_log.dart';
@@ -57,7 +58,7 @@ class PatientMaterialSyncService {
         );
 
         if (exists.isNotEmpty) {
-          final fieldChanges = _buildFieldChanges(
+          final fieldChanges = PatientSyncLogHelper.buildFieldChanges(
             oldValues: exists.first.fields,
             newValues: materialMap,
             fields: _patientMaterialSyncFields,
@@ -96,8 +97,8 @@ class PatientMaterialSyncService {
           LogManager.i('PatientMaterialSyncService',
               '成功更新MySQL患者材料(id=$materialId)，影响行数: ${result.affectedRows}');
         } else {
-          final fieldChanges =
-              _buildCreateChanges(materialMap, _patientMaterialSyncFields);
+          final fieldChanges = PatientSyncLogHelper.buildCreateChanges(
+              materialMap, _patientMaterialSyncFields);
           final result = await conn.query(
             '''
             INSERT INTO patient_materials
@@ -282,7 +283,7 @@ class PatientMaterialSyncService {
         );
 
         if (exists.isNotEmpty) {
-          final fieldChanges = _buildFieldChanges(
+          final fieldChanges = PatientSyncLogHelper.buildFieldChanges(
             oldValues: exists.first.fields,
             newValues: imageMap,
             fields: _materialImageSyncFields,
@@ -329,8 +330,8 @@ class PatientMaterialSyncService {
           LogManager.i('PatientMaterialSyncService',
               '成功更新MySQL材料图片(id=$imageId)，影响行数: ${result.affectedRows}');
         } else {
-          final fieldChanges =
-              _buildCreateChanges(imageMap, _materialImageSyncFields);
+          final fieldChanges = PatientSyncLogHelper.buildCreateChanges(
+              imageMap, _materialImageSyncFields);
           final patientId = await _getPatientIdByMaterialId(
             conn,
             image.materialId,
@@ -518,56 +519,6 @@ class PatientMaterialSyncService {
     );
     if (result.isEmpty) return null;
     return _intValue(result.first['patient_id']);
-  }
-
-  List<PatientSyncFieldChange> _buildCreateChanges(
-    Map<String, dynamic> values,
-    Map<String, String> fields,
-  ) {
-    return fields.entries
-        .where((entry) => _normalizeSyncValue(values[entry.key]).isNotEmpty)
-        .map(
-          (entry) => PatientSyncFieldChange(
-            field: entry.key,
-            label: entry.value,
-            oldValue: null,
-            newValue: _displaySyncValue(values[entry.key]),
-          ),
-        )
-        .toList();
-  }
-
-  List<PatientSyncFieldChange> _buildFieldChanges({
-    required Map<String, dynamic> oldValues,
-    required Map<String, dynamic> newValues,
-    required Map<String, String> fields,
-  }) {
-    final changes = <PatientSyncFieldChange>[];
-    for (final entry in fields.entries) {
-      final oldValue = _normalizeSyncValue(oldValues[entry.key]);
-      final newValue = _normalizeSyncValue(newValues[entry.key]);
-      if (oldValue == newValue) continue;
-      changes.add(
-        PatientSyncFieldChange(
-          field: entry.key,
-          label: entry.value,
-          oldValue: _displaySyncValue(oldValues[entry.key]),
-          newValue: _displaySyncValue(newValues[entry.key]),
-        ),
-      );
-    }
-    return changes;
-  }
-
-  String _normalizeSyncValue(dynamic value) {
-    if (value == null) return '';
-    if (value is List<int>) return '${value.length} bytes';
-    return value.toString().trim();
-  }
-
-  String? _displaySyncValue(dynamic value) {
-    final normalized = _normalizeSyncValue(value);
-    return normalized.isEmpty ? null : normalized;
   }
 
   int? _intValue(dynamic value) {
