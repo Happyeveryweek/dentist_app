@@ -50,14 +50,4 @@ class DateTimeFormatter {
 
     return localTime;
   }
-
-  /// 验证时间字符串格式是否正确
-  static bool isValidDbFormat(String dateTimeString) {
-    try {
-      _dbFormat.parse(dateTimeString);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
 }

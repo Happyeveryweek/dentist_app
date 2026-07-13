@@ -297,11 +297,6 @@ class FinancialProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 清除刷新标志
-  void clearFinancialsNeedRefresh() {
-    _financialsNeedRefresh = false;
-  }
-
   // =================== 财务记录相关方法 ===================
 
   // 获取所有财务记录（带缓存）
@@ -491,56 +486,6 @@ class FinancialProvider extends ChangeNotifier {
       getItemsByRecordId: getFinancialItemsByRecordId,
       notifyListeners: notifyListeners,
     );
-  }
-
-  /// 渐进式加载统计：先快速显示初步数字，后台任务独立运行
-  Future<void> loadStatsProgressively({
-    required int initialCount,
-    required int batchSize,
-    required void Function(Map<String, dynamic> stats, bool isDone) onProgress,
-    bool forceRefresh = false,
-  }) async {
-    if (!initialized) return;
-
-    Future<void> emitInitialStats() async {
-      try {
-        final initialRecords = await getPaginatedFinancialRecords(
-          1,
-          initialCount,
-        );
-        final initialItemsMap = <int, List<FinancialItem>>{};
-        for (final r in initialRecords) {
-          final id = r.id;
-          if (id != null) {
-            try {
-              initialItemsMap[id] = await getFinancialItemsByRecordId(id);
-            } catch (_) {
-              initialItemsMap[id] = [];
-            }
-          }
-        }
-        final cachedStats = _cacheHelper.cachedStats;
-        if (cachedStats != null) {
-          onProgress(cachedStats, false);
-        }
-      } catch (_) {}
-    }
-
-    // 有完整缓存：先显示初步数字，再立即给出完整缓存
-    if (!forceRefresh && _cacheHelper.hasFullItemsCache) {
-      await emitInitialStats();
-      final cachedStats = _cacheHelper.cachedStats;
-      if (cachedStats != null) {
-        onProgress(cachedStats, true);
-      }
-      return;
-    }
-
-    // 无完整缓存：先显示初步数字
-    await emitInitialStats();
-
-    // 启动后台全量加载（独立于 widget 生命周期）
-    ensureFullDataCached(forceRefresh: forceRefresh);
   }
 
   // 带日期筛选的分页查询（日期为空则不筛选）

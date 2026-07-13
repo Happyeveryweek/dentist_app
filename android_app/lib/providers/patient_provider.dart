@@ -250,32 +250,6 @@ class PatientProvider extends ChangeNotifier {
     });
   }
 
-  // 获取最后一位患者
-  Future<Patient?> getLastPatient() async {
-    try {
-      if (_initService.dataSourceType == 'sqlite') {
-        final db = _initService.sqliteDataSource?.database;
-        if (db != null) {
-          final List<Map<String, dynamic>> maps = await db.query(
-            'patients',
-            orderBy: 'medical_record_number DESC',
-            limit: 1,
-          );
-          if (maps.isNotEmpty) {
-            return Patient.fromMap(maps.first);
-          }
-        }
-      } else if (_initService.dataSourceType == 'mysql') {
-        // MySQL 暂不支持
-        AppLogger.info('MySQL 数据源暂不支持获取最后一位患者');
-      }
-      return null;
-    } catch (e) {
-      AppLogger.info('获取最后一位患者错误: $e');
-      return null;
-    }
-  }
-
   // 根据ID获取患者
   Future<Patient?> getPatientById(int id) async {
     final wrapper = _dbWrapper;

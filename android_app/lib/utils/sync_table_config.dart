@@ -37,17 +37,6 @@ class SyncTableConfig {
     };
   }
 
-  /// 检查表名是否在同步列表中
-  static bool isSyncTable(String tableName) {
-    return syncTableNames.contains(tableName);
-  }
-
   /// 获取同步表数量
   static int get syncTableCount => syncTableNames.length;
-
-  /// 获取表的SQLite结构
-  static TableSchema? getTableSchema(String tableName) {
-    final tables = getSyncTables();
-    return tables[tableName];
-  }
 }

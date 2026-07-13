@@ -52,11 +52,6 @@ mixin AppointmentCacheMixin on ChangeNotifier {
     notifyListeners();
   }
 
-  // 清除刷新标志
-  void clearAppointmentsNeedRefresh() {
-    _appointmentsNeedRefresh = false;
-  }
-
   // 强制刷新预约数据缓存
   void forceRefreshAppointments() {
     AppLogger.info('强制刷新预约数据缓存');

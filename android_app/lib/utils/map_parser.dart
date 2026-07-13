@@ -45,8 +45,7 @@ class MapParser {
       optional(key, (v) => v.toString()) ?? defaultValue;
 
   /// 解析可选字符串字段。
-  String? stringOptional(String key) =>
-      optional(key, (v) => v.toString());
+  String? stringOptional(String key) => optional(key, (v) => v.toString());
 
   /// 解析整数字段，为空或 null 时返回 [defaultValue]。
   int integer(String key, {int defaultValue = 0}) =>
@@ -66,15 +65,9 @@ class MapParser {
   bool boolean(String key, {bool defaultValue = false}) =>
       optional(key, _parseBool) ?? defaultValue;
 
-  /// 解析可选布尔字段。
-  bool? booleanOptional(String key) => optional(key, _parseBool);
-
   /// 解析日期时间字段。
   DateTime dateTime(String key, {DateTime? defaultValue}) =>
       optional(key, _parseDateTime) ?? defaultValue ?? DateTime.now();
-
-  /// 解析可选日期时间字段。
-  DateTime? dateTimeOptional(String key) => optional(key, _parseDateTime);
 
   /// 解析列表字段。
   ///

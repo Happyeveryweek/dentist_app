@@ -264,26 +264,6 @@ class DatabaseHelper {
 
   // 存储当前数据库路径
   String? _currentDatabasePath;
-
-  // 重新打开数据库连接
-  Future<void> reopenDatabase() async {
-    AppLogger.info('重新打开数据库连接');
-    try {
-      // 如果数据库已经打开，先关闭
-      if (_database != null && _database!.isOpen) {
-        await _database!.close();
-        _database = null;
-      }
-
-      // 重新获取数据库实例（会自动重新打开）
-      await database;
-
-      AppLogger.info('数据库已重新打开');
-    } catch (e) {
-      AppLogger.info('重新打开数据库错误: $e');
-      rethrow;
-    }
-  }
 }
 
 // 用户模型

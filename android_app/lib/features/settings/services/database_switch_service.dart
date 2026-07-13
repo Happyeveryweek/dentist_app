@@ -143,49 +143,6 @@ class DatabaseSwitchService {
     }
   }
 
-  /// 先选择目录，再选择数据库文件
-  ///
-  /// 返回选择的文件路径，如果用户取消则返回 null
-  static Future<String?> selectCustomDbPathAlternative() async {
-    try {
-      // Step 1: 先选择目录
-      final String? directoryPath = await getDirectoryPath();
-
-      if (directoryPath == null) {
-        return null;
-      }
-
-      AppLogger.info('选择的目录: $directoryPath');
-
-      // 确认目录存在
-      final selectedDir = Directory(directoryPath);
-      if (!await selectedDir.exists()) {
-        return null;
-      }
-
-      // Step 2: 从目录中列出并选择数据库文件
-      final List<FileSystemEntity> entities = await selectedDir.list().toList();
-      final List<File> dbFiles =
-          entities.whereType<File>().where((file) {
-            final extension = path.extension(file.path).toLowerCase();
-            return extension == '.db' ||
-                extension == '.sqlite' ||
-                extension == '.sqlite3';
-          }).toList();
-
-      // 如果目录中没有数据库文件，提示用户
-      if (dbFiles.isEmpty) {
-        return null;
-      }
-
-      // 返回第一个文件（简化处理，实际应该让用户选择）
-      return dbFiles.first.path;
-    } catch (e) {
-      AppLogger.info('选择数据库路径错误: $e');
-      return null;
-    }
-  }
-
   /// 获取目录路径
   ///
   /// 返回选择的目录路径，如果用户取消则返回 null
@@ -201,29 +158,5 @@ class DatabaseSwitchService {
       AppLogger.info('获取目录路径错误: $e');
       return null;
     }
-  }
-
-  /// 保存数据库配置
-  ///
-  /// [dbConfig] - 数据库配置对象
-  ///
-  /// 返回 true 表示保存成功，false 表示保存失败
-  static Future<bool> saveDatabaseConfig(DatabaseConfig dbConfig) async {
-    try {
-      await dbConfig.saveConfig();
-      return true;
-    } catch (e) {
-      AppLogger.info('保存数据库配置失败: $e');
-      return false;
-    }
-  }
-
-  /// 检查是否使用的是缓存路径
-  ///
-  /// [dbPath] - 数据库路径
-  ///
-  /// 返回 true 表示是缓存路径，false 表示不是
-  static bool isUsingCachePath(String dbPath) {
-    return dbPath.contains('/cache/') || dbPath.endsWith('.bin');
   }
 }

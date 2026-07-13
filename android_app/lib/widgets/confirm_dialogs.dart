@@ -48,7 +48,8 @@ class DeleteConfirmDialog extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: Text(
-                itemName != null ? message.replaceAll('{itemName}', itemName)
+                itemName != null
+                    ? message.replaceAll('{itemName}', itemName)
                     : message,
                 style: const TextStyle(fontSize: 16),
               ),
@@ -133,30 +134,6 @@ class DeleteConfirmDialogManager {
       title: '确认删除',
       message: '您确定要删除{itemName}吗？此操作不可撤销。',
       itemName: itemName ?? itemType,
-    );
-  }
-
-  /// 显示采购记录删除确认框
-  static Future<bool> showPurchaseRecordDelete(
-    BuildContext context, {
-    required String purchaseInfo,
-  }) async {
-    return show(
-      context,
-      title: '确认删除',
-      message: '您确定要删除采购记录"$purchaseInfo"吗？此操作不可撤销。',
-    );
-  }
-
-  /// 显示采购项目删除确认框
-  static Future<bool> showPurchaseItemDelete(
-    BuildContext context, {
-    required String itemName,
-  }) async {
-    return show(
-      context,
-      title: '确认删除',
-      message: '您确定要删除采购项目"$itemName"吗？此操作不可撤销。',
     );
   }
 }
@@ -445,14 +422,6 @@ class LogoutConfirmDialogManager {
           ),
     );
     return result ?? false;
-  }
-
-  /// 显示带用户名的退出登录确认框
-  static Future<bool> showWithUsername(
-    BuildContext context, {
-    required String username,
-  }) async {
-    return show(context, username: username);
   }
 }
 

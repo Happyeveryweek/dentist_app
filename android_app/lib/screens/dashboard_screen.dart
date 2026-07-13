@@ -296,12 +296,4 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
     );
   }
-
-  // 公共方法：允许外部调用刷新仪表盘数据
-  void refreshDashboardData() {
-    AppLogger.info('外部请求刷新仪表盘数据');
-    if (mounted) {
-      _loadDataWithRetry();
-    }
-  }
 }

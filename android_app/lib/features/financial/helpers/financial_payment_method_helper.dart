@@ -68,11 +68,6 @@ class FinancialPaymentMethodHelper {
     }
   }
 
-  static String displayNameOrDefault(String? value) {
-    final name = displayName(value);
-    return name.isEmpty ? displayName(defaultPaymentMethod) : name;
-  }
-
   static String iconAssetPath(String? value) {
     if (!_hasValue(value)) {
       return '';

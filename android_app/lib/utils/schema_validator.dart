@@ -277,29 +277,6 @@ class SchemaValidationResult {
       return '检查了 $totalTables 个表，更新了 $updatedCount 个表: ${updatedTables.join(", ")}';
     }
   }
-
-  /// 获取详细信息
-  Map<String, dynamic> getDetails() {
-    final details = <String, dynamic>{};
-
-    for (final entry in tableResults.entries) {
-      final tableName = entry.key;
-      final result = entry.value;
-
-      details[tableName] = {
-        'exists': result.exists,
-        'needsUpdate': result.needsUpdate,
-        'action': result.action,
-        'details': result.details,
-        'missingColumns': result.missingColumns,
-        'differentColumns': result.differentColumns,
-        'extraColumns': result.extraColumns,
-        'error': result.error,
-      };
-    }
-
-    return details;
-  }
 }
 
 /// 单个表验证结果

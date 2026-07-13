@@ -33,9 +33,4 @@ class AppointmentStatusHelper {
         return StatusInfo(color: AppTheme.secondaryText, text: status);
     }
   }
-
-  /// 获取状态颜色
-  static Color getColorForStatus(String status) {
-    return getStatusInfo(status).color;
-  }
 }

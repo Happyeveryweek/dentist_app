@@ -4,7 +4,7 @@
 
 制定日期：2026-07-12。
 
-当前进度（2026-07-13）：批次 0“重新取证、测试映射与基线冻结”、批次 1“A 级不可达 UI/工具文件”和批次 2“旧模型、患者数据源与旧 Schema Validator”代码清理已完成；批次 2 的手动业务回归待主人执行，批次 3A～7 未开始。批次 2 删除 4 个当日复核确认无入站引用的旧文件，未修改现用业务入口。
+当前进度（2026-07-13）：批次 0“重新取证、测试映射与基线冻结”、批次 1“A 级不可达 UI/工具文件”和批次 2“旧模型、患者数据源与旧 Schema Validator”代码清理已完成；批次 2 的手动业务回归待主人执行，批次 3A“旧财务清理文件和独立低风险方法”代码清理和自动验证已完成，手动回归待主人执行；批次 3B～7 未开始。批次 3A 删除 1 个旧财务清理文件和 30 个无调用方法，清理 1 个孤儿 import，未修改现用业务入口。
 
 本计划把 [Android 端无用文件、无用方法与重复实现审核报告](android_app_dead_code_duplicate_files_and_methods_audit_2026_07_12.md) 转换为可逐批执行、可验证、可记录的任务。执行者只需按本文指定批次、文件、符号、命令和验收场景操作；若实际搜索结果与本文不一致，立即停止该候选并记录原因，不能按旧结论强行删除。
 
@@ -79,7 +79,7 @@ git ls-files --eol -- <本批改动文件>
 | 0 | 重新取证、冻结基线、建立测试映射 | 低 | 无 | 完成 |
 | 1 | A 级不可达 UI/测试工具文件 | 低 | 每个文件仍无入站引用 | 完成 |
 | 2 | 旧 Appointment、患者数据源、Schema Validator | 中高 | 批次 1 完成，SQLite/MySQL 回归环境可用 | 完成：代码清理与自动检查通过，待主人手动回归 |
-| 3A | 旧财务清理文件和独立低风险方法 | 中 | 批次 2 完成，每个方法仍无调用 | 未开始 |
+| 3A | 旧财务清理文件和独立低风险方法 | 中 | 批次 2 完成，每个方法仍无调用 | 完成：代码清理与自动检查通过，待主人手动回归 |
 | 3B | Provider、SettingsProvider 与 Manager 无消费者链 | 中高 | 批次 3A 完成，设置持久化回归可执行 | 未开始 |
 | 4 | 备份、数据库工具、一次性迁移 | 高 | 新增测试，旧库副本和备份副本可用 | 未开始 |
 | 5 | 采购页空监听基础设施 | 中 | 批次 4 完成，刷新场景可手动回归 | 未开始 |
@@ -413,6 +413,25 @@ rg -n '_checkAndRefreshData|_onFocusChange|WidgetsBindingObserver|addObserver|re
 - 自动验证：删除后精确引用复核仅命中现用 `database_models.dart`、合并后的 `patient_data_source.dart` 和 `utils/schema_validator.dart`；`flutter analyze` 为 `No issues found!`；`git diff --check`、行尾检查和 LF 行尾检查通过。
 - 手动回归：待主人点击验证 SQLite/MySQL 患者列表、搜索、分页、增删改、病历号，以及预约增改状态、仪表盘和旧库 Schema 升级。
 - 结论与下一步：批次 2 代码清理完成；不把未执行的手动回归写成已通过。批次 3A～7 保持未开始。
+
+#### 2026-07-13｜批次 3A｜完成（待手动回归）
+
+- 授权范围：删除旧财务清理文件 `lib/features/financial/utils/financial_data_cleaner.dart`，以及审核报告 5.1～5.5、5.9、5.10、5.11 列出的 30 个无调用方法；保留 `FinancialDataCleanerService`、`calculatePatientLatestReceivableAmount`/`calculatePatientLatestCollectedAmount`、`getStatusInfo`、`getFilteredItems`/`isWithinRange`、`ModernDeleteDialogManager` 等现用入口。
+- 工作区隔离：执行前 `git status --short` 显示仓库已有 Windows 端代码/文档改动和 `ROADMAP.md` 改动；本批只修改 Android 端 Dart 文件和两份文档，未触碰 Windows 端改动。
+- 重新搜索：在 `android_app/lib/` 对全部 30 个方法符号和文件名执行精确 `rg` 搜索，所有候选仅命中声明行，无外部调用；`test/` 目录不存在。文件级候选 `financial_data_cleaner.dart` 无 `lib/` 入站 import，`financial_provider.dart` 确认使用 `services/financial_data_cleaner_service.dart`。`reopenDatabase` 确认不是连接恢复动态入口。`MapParser.booleanOptional/dateTimeOptional`、MySQL 元数据方法和同步配置方法无脚本、初始化或日志诊断引用。
+- 现用替代入口：财务清理使用 `FinancialDataCleanerService`；财务计算使用 `calculatePatientLatestReceivableAmount`/`calculatePatientLatestCollectedAmount`；预约状态颜色使用 `getStatusInfo`；病历日期选择使用 `getAvailableDates`/`getDentalConditionByDate`/`formatDateForDisplay`；患者图片缓存使用 `getPatientMaterialsCache`/`getMaterialImagesCache`；连接恢复使用 `checkConnectionOnResume`；数据库切换使用 `initDatabaseConfig`/`switchDatabaseType`/`selectCustomDbPath`；删除确认使用 `ModernDeleteDialogManager`。
+- 实际改动：
+  - 文件级：删除 `lib/features/financial/utils/financial_data_cleaner.dart`。
+  - 3A-1：删除 `appointment_cache_mixin.dart` 的 `clearAppointmentsNeedRefresh`、`appointment_status_helper.dart` 的 `getColorForStatus`、`dashboard_screen.dart` 的 `refreshDashboardData`。
+  - 3A-2：删除 `financial_calculator.dart` 的 `calculateTotalAmount`、`calculateSettledCount`、`calculateUniquePatientCount`、`calculateTotalRecords`、`calculateTotalReceivable`、`calculateTotalCollected`、`calculateTotalOutstanding`、`calculateTotalProcessingFee`。
+  - 3A-3：删除 `financial_payment_method_helper.dart` 的 `displayNameOrDefault`、`financial_provider.dart` 的 `clearFinancialsNeedRefresh` 和 `loadStatsProgressively`。
+  - 3A-4：删除 `dental_condition_integration.dart` 的 `hasRecordForDate`/`getRecordSummary`/`getDateSelectorOptions`/`validateDentalData`、`patient_image_cache_service.dart` 的 `hasPatientMaterialsCache`/`hasMaterialImagesCache`、`patient_image_connection_service.dart` 的 `checkSQLiteConnection`、`patient_provider.dart` 的 `getLastPatient`。
+  - 3A-5：删除 `database_switch_service.dart` 的 `selectCustomDbPathAlternative`/`saveDatabaseConfig`/`isUsingCachePath`、`sqlite_config_dialogs.dart` 的 `showSqliteConfigSavedDialogWithLoadOption`、`database_models.dart` 的 `reopenDatabase`、`app_theme.dart` 的 `inputDecoration`、`datetime_formatter.dart` 的 `isValidDbFormat`、`map_parser.dart` 的 `booleanOptional`/`dateTimeOptional`、`mysql_utils.dart` 的 `checkTablesExist`/`getTableCount`/`getLastUpdateTime`、`notification_helper.dart` 的 `showDatabaseSwitchNotification`、`schema_validator.dart` 的 `getDetails`、`sync_logger.dart` 的 `getLogById`/`getLogStats`、`sync_table_config.dart` 的 `isSyncTable`/`getTableSchema`。
+  - 3A-6：删除 `confirm_dialogs.dart` 的 `showPurchaseRecordDelete`/`showPurchaseItemDelete`/`showWithUsername`、`loading_dialog.dart` 的 `showWithCancel`。
+  - 孤儿 import：清理 `mysql_utils.dart` 中由 `getLastUpdateTime` 产生的 `import 'datetime_formatter.dart'`。
+- 自动验证：`dart format` 对 24 个改动文件定向格式化完成（1 个文件有格式变更）；`flutter analyze` 为 `No issues found!`；`git diff --check` 通过；全部改动文件行尾检查为 `w/lf`，无 `w/crlf` 或 `w/mixed`。
+- 手动回归：待主人验证财务列表/搜索/统计/图表、预约缓存刷新、仪表盘刷新、病历日期选择、患者材料图片缓存、SQLite/MySQL 切换、删除确认提示和普通 loading 显示关闭。
+- 结论与下一步：批次 3A 代码清理和自动验证完成；不把未执行的手动回归写成已通过。批次 3B～7 保持未开始。
 
 ## 14．执行前复核命令索引
 

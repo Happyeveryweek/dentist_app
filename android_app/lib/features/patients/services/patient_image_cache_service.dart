@@ -27,11 +27,6 @@ class PatientImageCacheService {
 
   PatientImageCacheService(this._notifyCallback);
 
-  /// 检查是否有患者材料缓存
-  bool hasPatientMaterialsCache(int patientId) {
-    return _patientMaterialsCache.containsKey(patientId);
-  }
-
   /// 获取患者材料缓存
   List<PatientMaterial>? getPatientMaterialsCache(int patientId) {
     return _patientMaterialsCache[patientId];
@@ -44,11 +39,6 @@ class PatientImageCacheService {
   ) {
     _patientMaterialsCache[patientId] = materials;
     _safeNotifyListeners();
-  }
-
-  /// 检查是否有材料图片缓存
-  bool hasMaterialImagesCache(int materialId) {
-    return _materialImagesCache.containsKey(materialId);
   }
 
   /// 获取材料图片缓存

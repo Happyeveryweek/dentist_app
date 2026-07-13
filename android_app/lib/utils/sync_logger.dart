@@ -132,16 +132,6 @@ class SyncLogger {
     return [];
   }
 
-  /// 根据ID获取日志详情
-  static Future<SyncLog?> getLogById(String id) async {
-    try {
-      final logs = await getAllLogs();
-      return logs.firstWhere((log) => log.id == id);
-    } catch (e) {
-      return null;
-    }
-  }
-
   /// 清除所有日志
   static Future<void> clearAllLogs() async {
     try {
@@ -162,34 +152,6 @@ class SyncLogger {
       await logFile.writeAsString(jsonEncode(jsonList));
     } catch (e) {
       AppLogger.info('保存同步日志失败: $e');
-    }
-  }
-
-  /// 获取日志统计信息
-  static Future<Map<String, dynamic>> getLogStats() async {
-    try {
-      final logs = await getAllLogs();
-      final successCount = logs.where((log) => log.success).length;
-      final failureCount = logs.length - successCount;
-
-      return {
-        'total_count': logs.length,
-        'success_count': successCount,
-        'failure_count': failureCount,
-        'success_rate':
-            logs.isEmpty
-                ? 0
-                : (successCount / logs.length * 100).toStringAsFixed(1),
-        'last_sync_time': logs.isEmpty ? null : logs.first.formattedTime,
-      };
-    } catch (e) {
-      return {
-        'total_count': 0,
-        'success_count': 0,
-        'failure_count': 0,
-        'success_rate': '0.0',
-        'last_sync_time': null,
-      };
     }
   }
 }

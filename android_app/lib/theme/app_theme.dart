@@ -119,28 +119,6 @@ class AppTheme {
     elevation: 0,
   );
 
-  // 输入框样式
-  static InputDecoration inputDecoration(String hintText) {
-    return InputDecoration(
-      hintText: hintText,
-      filled: true,
-      fillColor: backgroundColor,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(smallBorderRadius),
-        borderSide: BorderSide(color: lightText.withValues(alpha: 0.3)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(smallBorderRadius),
-        borderSide: BorderSide(color: lightText.withValues(alpha: 0.3)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(smallBorderRadius),
-        borderSide: const BorderSide(color: primaryColor),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    );
-  }
-
   // 卡片装饰
   static BoxDecoration cardDecoration = BoxDecoration(
     color: cardBackground,

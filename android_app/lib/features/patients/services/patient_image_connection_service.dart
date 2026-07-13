@@ -109,25 +109,6 @@ class PatientImageConnectionService {
     }
   }
 
-  /// 检查SQLite数据库状态
-  Future<bool> checkSQLiteConnection(dynamic sqliteDatabase) async {
-    try {
-      if (sqliteDatabase == null) {
-        AppLogger.info('PatientImageConnectionService: SQLite数据库对象为null');
-        return false;
-      }
-
-      await sqliteDatabase.rawQuery('SELECT 1');
-      AppLogger.info('PatientImageConnectionService: SQLite连接检查成功');
-      _isConnected = true;
-      return true;
-    } catch (e) {
-      AppLogger.info('PatientImageConnectionService: SQLite连接检查失败: $e');
-      _isConnected = false;
-      return false;
-    }
-  }
-
   /// 应用恢复时检查连接状态
   Future<void> checkConnectionOnResume() async {
     if (_mysqlConnection != null) {
