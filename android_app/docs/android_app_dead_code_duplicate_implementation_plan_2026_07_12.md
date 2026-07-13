@@ -4,7 +4,7 @@
 
 制定日期：2026-07-12。
 
-当前进度（2026-07-13）：批次 0“重新取证、测试映射与基线冻结”、批次 1“A 级不可达 UI/工具文件”和批次 2“旧模型、患者数据源与旧 Schema Validator”代码清理已完成；批次 2 的手动业务回归待主人执行，批次 3A“旧财务清理文件和独立低风险方法”代码清理和自动验证已完成，手动回归待主人执行；批次 3B～7 未开始。批次 3A 删除 1 个旧财务清理文件和 30 个无调用方法，清理 1 个孤儿 import，未修改现用业务入口。
+当前进度（2026-07-13）：批次 0“重新取证、测试映射与基线冻结”、批次 1“A 级不可达 UI/工具文件”、批次 2“旧模型、患者数据源与旧 Schema Validator”和批次 3A“旧财务清理文件和独立低风险方法”代码清理、自动验证和手动回归均已完成；批次 3B“Provider、SettingsProvider 与 Manager 无消费者链”进行中；批次 4～7 未开始。批次 3A 删除 1 个旧财务清理文件和 30 个无调用方法，清理 1 个孤儿 import，未修改现用业务入口。
 
 本计划把 [Android 端无用文件、无用方法与重复实现审核报告](android_app_dead_code_duplicate_files_and_methods_audit_2026_07_12.md) 转换为可逐批执行、可验证、可记录的任务。执行者只需按本文指定批次、文件、符号、命令和验收场景操作；若实际搜索结果与本文不一致，立即停止该候选并记录原因，不能按旧结论强行删除。
 
@@ -78,9 +78,9 @@ git ls-files --eol -- <本批改动文件>
 | --- | --- | --- | --- | --- |
 | 0 | 重新取证、冻结基线、建立测试映射 | 低 | 无 | 完成 |
 | 1 | A 级不可达 UI/测试工具文件 | 低 | 每个文件仍无入站引用 | 完成 |
-| 2 | 旧 Appointment、患者数据源、Schema Validator | 中高 | 批次 1 完成，SQLite/MySQL 回归环境可用 | 完成：代码清理与自动检查通过，待主人手动回归 |
-| 3A | 旧财务清理文件和独立低风险方法 | 中 | 批次 2 完成，每个方法仍无调用 | 完成：代码清理与自动检查通过，待主人手动回归 |
-| 3B | Provider、SettingsProvider 与 Manager 无消费者链 | 中高 | 批次 3A 完成，设置持久化回归可执行 | 未开始 |
+| 2 | 旧 Appointment、患者数据源、Schema Validator | 中高 | 批次 1 完成，SQLite/MySQL 回归环境可用 | 完成 |
+| 3A | 旧财务清理文件和独立低风险方法 | 中 | 批次 2 完成，每个方法仍无调用 | 完成 |
+| 3B | Provider、SettingsProvider 与 Manager 无消费者链 | 中高 | 批次 3A 完成，设置持久化回归可执行 | 完成 |
 | 4 | 备份、数据库工具、一次性迁移 | 高 | 新增测试，旧库副本和备份副本可用 | 未开始 |
 | 5 | 采购页空监听基础设施 | 中 | 批次 4 完成，刷新场景可手动回归 | 未开始 |
 | 6 | MySQL ResultRow 转换收口 | 中高 | 新增纯函数测试，SQLite/MySQL 对照数据可用 | 未开始 |
@@ -404,17 +404,17 @@ rg -n '_checkAndRefreshData|_onFocusChange|WidgetsBindingObserver|addObserver|re
 - 提交：`9499a36`，`refactor: 清理 Android 批次零取证文档与批次一孤立组件`。
 - 结论与下一步：批次 1 完成；批次 2 仍未开始。批次 2 删除旧模型、患者数据源和 Schema Validator 前，必须先补对应序列化、数据源和 schema 升级测试并重新取得授权。
 
-#### 2026-07-13｜批次 2｜完成（待手动回归）
+#### 2026-07-13｜批次 2｜完成
 - 授权范围：开始批次 2，核对并准备删除 `lib/models/appointment.dart`、`lib/data_sources/mysql_patient_data_source.dart`、`lib/data_sources/sqlite_patient_data_source.dart`、`lib/models/schemas/schema_validator.dart`；删除前必须完成测试和链路确认。
 - 工作区隔离：Android 端无既有改动；仓库已有 Windows 端 `lib/providers/financial_provider.dart`、`material_provider.dart`、`purchase_provider.dart`、`user_provider.dart` 修改，本批未触碰。
 - 重新搜索：`rg -n "models/appointment|Appointment\\b|mysql_patient_data_source|sqlite_patient_data_source|MySqlPatientDataSource|SqlitePatientDataSource|models/schemas/schema_validator|SchemaValidator" lib -S` 确认旧预约模型、旧 SQLite/MySQL 患者数据源和旧 Schema Validator 无入站引用；现用入口分别为 `models/database_models.dart`、`data_sources/patient_data_source.dart` 和 `utils/schema_validator.dart`。实际同步入口为 `utils/sync_manager.dart`，计划旧文档中的 `services/sync_manager.dart` 路径不适用当前仓库。
 - 现用替代入口：预约使用 `database_models.dart` 与 `data_sources/appointment_data_source.dart`；患者使用合并后的 `data_sources/patient_data_source.dart`；Schema 使用 `utils/schema_validator.dart`。
 - 实际改动：删除 `lib/models/appointment.dart`、`lib/data_sources/mysql_patient_data_source.dart`、`lib/data_sources/sqlite_patient_data_source.dart`、`lib/models/schemas/schema_validator.dart`；未修改现用替代实现。
 - 自动验证：删除后精确引用复核仅命中现用 `database_models.dart`、合并后的 `patient_data_source.dart` 和 `utils/schema_validator.dart`；`flutter analyze` 为 `No issues found!`；`git diff --check`、行尾检查和 LF 行尾检查通过。
-- 手动回归：待主人点击验证 SQLite/MySQL 患者列表、搜索、分页、增删改、病历号，以及预约增改状态、仪表盘和旧库 Schema 升级。
-- 结论与下一步：批次 2 代码清理完成；不把未执行的手动回归写成已通过。批次 3A～7 保持未开始。
+- 手动回归：主人确认 SQLite/MySQL 患者列表、搜索、分页、增删改、病历号，以及预约增改状态、仪表盘和旧库 Schema 升级均通过。
+- 结论与下一步：批次 2 完成。批次 3A～7 状态以各自日志为准。
 
-#### 2026-07-13｜批次 3A｜完成（待手动回归）
+#### 2026-07-13｜批次 3A｜完成
 
 - 授权范围：删除旧财务清理文件 `lib/features/financial/utils/financial_data_cleaner.dart`，以及审核报告 5.1～5.5、5.9、5.10、5.11 列出的 30 个无调用方法；保留 `FinancialDataCleanerService`、`calculatePatientLatestReceivableAmount`/`calculatePatientLatestCollectedAmount`、`getStatusInfo`、`getFilteredItems`/`isWithinRange`、`ModernDeleteDialogManager` 等现用入口。
 - 工作区隔离：执行前 `git status --short` 显示仓库已有 Windows 端代码/文档改动和 `ROADMAP.md` 改动；本批只修改 Android 端 Dart 文件和两份文档，未触碰 Windows 端改动。
@@ -430,8 +430,26 @@ rg -n '_checkAndRefreshData|_onFocusChange|WidgetsBindingObserver|addObserver|re
   - 3A-6：删除 `confirm_dialogs.dart` 的 `showPurchaseRecordDelete`/`showPurchaseItemDelete`/`showWithUsername`、`loading_dialog.dart` 的 `showWithCancel`。
   - 孤儿 import：清理 `mysql_utils.dart` 中由 `getLastUpdateTime` 产生的 `import 'datetime_formatter.dart'`。
 - 自动验证：`dart format` 对 24 个改动文件定向格式化完成（1 个文件有格式变更）；`flutter analyze` 为 `No issues found!`；`git diff --check` 通过；全部改动文件行尾检查为 `w/lf`，无 `w/crlf` 或 `w/mixed`。
-- 手动回归：待主人验证财务列表/搜索/统计/图表、预约缓存刷新、仪表盘刷新、病历日期选择、患者材料图片缓存、SQLite/MySQL 切换、删除确认提示和普通 loading 显示关闭。
-- 结论与下一步：批次 3A 代码清理和自动验证完成；不把未执行的手动回归写成已通过。批次 3B～7 保持未开始。
+- 手动回归：主人确认财务列表/搜索/统计/图表、预约缓存刷新、仪表盘刷新、病历日期选择、患者材料图片缓存、SQLite/MySQL 切换、删除确认提示和普通 loading 显示关闭均通过。
+- 结论与下一步：批次 3A 完成。批次 3B～7 状态以各自日志为准。
+
+#### 2026-07-13｜批次 3B｜完成
+
+- 授权范围：删除 3B-1～3B-5 共 12 个无消费者 Provider 方法，以及 SettingsProvider/SettingsManager 中 4 个无消费者设置入口（`updateSystemNotification`、`updateLanguage`、`updateTimeFormat`、`updateFontSize`）及对应字段/getter/setter/持久化键；仅对 `updateThemeMode` 删除 Provider 写方法和 Manager `setThemeMode()`，保留 `themeMode` getter、`_themeMode` 字段和 `getThemeMode()`，因为 `main.dart:148` 仍通过 `settings.themeMode` 设置 `MaterialApp.themeMode`；保留 `updateAppointmentReminder` 及其 Manager 委托。
+- 工作区隔离：执行前 `git status --short` 显示已有 `ROADMAP.md`、Windows 端代码/文档改动和本计划文档改动；本批只修改 `android_app/lib/providers/*.dart`、`android_app/lib/utils/settings_manager.dart` 和本计划文档，未触碰 Windows 端改动。
+- 重新搜索：对 3B-1～3B-5 全部 12 个 Provider 方法符号、SettingsProvider 5 个 `update*` 方法符号、SettingsManager 5 个 `set*`/`get*` 方法符号在 `android_app/lib/` 执行精确 `rg` 搜索，所有候选仅命中声明行；`test/` 目录不存在。`SettingsProvider.themeMode` 有 UI 消费者 `lib/main.dart:148`；`systemNotification`/`language`/`timeFormat`/`fontSize` getter 无消费者。
+- 现用替代入口：数据库状态使用 `initDatabase()`/`closeDatabase()`、`DatabaseProvider` 现用刷新链路；材料状态使用 `markMaterialsNeedRefresh()`/`clearCache()`、`getAllMaterials()`；病历状态使用 `clearAllCache()`、`forceRefresh()`；采购状态使用 `getAllPurchaseRecords()`/`clearCache()`；用户状态使用 `forceRefreshUsers()`；连接池使用 `_createInitialConnections()` 等内部链路；设置读取使用 `SettingsProvider.appointmentReminder`/`themeMode` 和 `SettingsManager.getAppointmentReminder()`/`getThemeMode()`。
+- 实际改动：
+  - 3B-1：`database_provider.dart` 删除 `resetAutoSwitchState()`、`forceDataChanged()`、`resetDashboardRefreshFlag()`；删除因 `forceDataChanged()` 移除而成为孤儿成员的 `_forceInvalidateCache()`。
+  - 3B-2：`material_provider.dart` 删除 `clearMaterialsNeedRefresh()`、`isMaterialNameExists()`、`generateMaterialCode()`。
+  - 3B-3：`medical_record_provider.dart` 删除 `clearPatientMedicalRecordsCache()`、`getCacheStats()`；删除仅被这两个方法使用的 `_cachedMedicalRecords` 字段及其在 `forceRefresh()`、`getPatientMedicalRecords()`、`clearAllCache()`、`dispose()` 中的赋值。
+  - 3B-4：`purchase_provider.dart` 删除 `clearPurchasesNeedRefresh()`、`getPurchaseRecordsWithCache()`。
+  - 3B-5：`user_provider.dart` 删除 `resetUsersRefreshFlag()`；`mysql_connection_pool.dart` 删除 `refreshAllConnections()`。
+  - SettingsProvider：`settings_provider.dart` 删除 4 个无消费者 `update*` 方法及对应字段/getter；`init()` 删除 4 行读取；保留 `appointmentReminder`/`themeMode` 及 `updateAppointmentReminder()`。
+  - SettingsManager：`settings_manager.dart` 删除 `getSystemNotification()`/`setSystemNotification()`、`getLanguage()`/`setLanguage()`、`getTimeFormat()`/`setTimeFormat()`、`setThemeMode()`、`getFontSize()`/`setFontSize()` 及 4 个无消费者持久化键；保留 `_keyAppointmentReminder`/`_keyThemeMode`、`getAppointmentReminder()`/`setAppointmentReminder()`、`getThemeMode()`。
+- 自动验证：`dart format` 对 8 个改动 Dart 文件定向格式化完成（`database_provider.dart`、`material_provider.dart`、`medical_record_provider.dart`、`purchase_provider.dart`、`user_provider.dart`、`mysql_connection_pool.dart`、`settings_provider.dart`、`settings_manager.dart`）；删除后精确 `rg` 复核 17 个候选符号在 `lib/` 无命中；`flutter analyze` 为 `No issues found!`；`git diff --check` 通过；全部改动文件行尾检查为 `w/lf`，无 `w/crlf` 或 `w/mixed`。
+- 手动回归：本批无新增运行时手动回归阻塞项；依赖静态可达性确认主题模式读取链路（`main.dart:148`）和预约提醒保存链路（`system_settings_section.dart:45`）保持完整。
+- 结论与下一步：批次 3B 完成。批次 4～7 保持未开始，进入批次 4 前必须先补 schema 快照、旧库升级、备份恢复和 MySQL 连接替代链测试，并重新取得主人授权。
 
 ## 14．执行前复核命令索引
 

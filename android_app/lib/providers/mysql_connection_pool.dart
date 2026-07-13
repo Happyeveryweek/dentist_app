@@ -309,33 +309,6 @@ class MySQLConnectionPool {
     }
   }
 
-  /// 强制刷新所有连接（用于网络恢复后）
-  Future<void> refreshAllConnections() async {
-    AppLogger.info('强制刷新所有连接...');
-
-    // 关闭所有现有连接
-    for (final connection in List.from(_availableConnections)) {
-      try {
-        await connection.close();
-      } catch (_) {}
-    }
-    _availableConnections.clear();
-
-    for (final connection in List.from(_busyConnections)) {
-      try {
-        await connection.close();
-      } catch (_) {}
-    }
-    _busyConnections.clear();
-
-    _totalConnections = 0;
-    _activeConnections = 0;
-
-    // 重新创建初始连接
-    await _createInitialConnections();
-    AppLogger.info('连接池已刷新，当前连接数: $_totalConnections');
-  }
-
   /// 获取详细的连接状态
   Map<String, dynamic> getDetailedStats() {
     final settings = _settings;

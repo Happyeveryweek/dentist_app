@@ -78,9 +78,7 @@ class DatabaseProvider extends ChangeNotifier {
   // 获取当前实际使用的数据库类型描述
   String get currentDbTypeDescription {
     final config = _dbConfig;
-    if (config != null &&
-        _isAutoSwitchedToSQLite &&
-        config.dbType == 'mysql') {
+    if (config != null && _isAutoSwitchedToSQLite && config.dbType == 'mysql') {
       return 'SQLite (MySQL连接失败时自动切换)';
     }
     return _dbType == 'mysql' ? 'MySQL' : 'SQLite';
@@ -187,36 +185,7 @@ class DatabaseProvider extends ChangeNotifier {
     _shouldNavigateToDashboard = false;
   }
 
-  // 重置自动切换状态（用于下次启动时重新尝试MySQL）
-  void resetAutoSwitchState() {
-    _isAutoSwitchedToSQLite = false;
-    // 不重置_dbType，让它从配置文件重新加载
-  }
-
-  // 强制设置数据库变更标志
-  void forceDataChanged({bool navigateToDashboard = false}) {
-    AppLogger.info('强制设置数据变更标志, 导航到仪表盘: $navigateToDashboard');
-
-    // 只有明确要求导航到仪表盘时才设置全局变更标志
-    if (navigateToDashboard) {
-      _databaseChanged = true;
-      _shouldNavigateToDashboard = true;
-    } else {
-      // 否则只标记仪表盘需要刷新，不导航
-      _dashboardNeedsRefresh = true;
-    }
-
-    _forceInvalidateCache();
-    notifyListeners();
-  }
-
   // 患者数据刷新操作已迁移到 PatientProvider
-
-  // 重置仪表盘刷新标志
-  void resetDashboardRefreshFlag() {
-    AppLogger.info('重置仪表盘刷新标志');
-    _dashboardNeedsRefresh = false;
-  }
 
   // 初始化数据库
   Future<void> initDatabase() async {
@@ -280,37 +249,6 @@ class DatabaseProvider extends ChangeNotifier {
     } catch (e) {
       AppLogger.info('初始化Provider时出错: $e');
     }
-  }
-
-  // 强制使所有缓存失效并重建
-  void _forceInvalidateCache() {
-    AppLogger.info('强制清除所有缓存数据');
-
-    // 其他可能的缓存数据
-    // 修改为仅标记仪表盘需要刷新，不设置全局变更标志
-    _dashboardNeedsRefresh = true;
-    // _databaseChanged = true;
-
-    // 主动加载一些数据以刷新缓存
-    Future.delayed(Duration.zero, () async {
-      try {
-        AppLogger.info('主动重新加载数据以更新缓存');
-        if (_dbType == 'sqlite') {
-          final db = await _sqliteInitService.getDatabase();
-          // 执行一些简单查询以确保数据库连接正常
-          if (db != null) {
-            await db.rawQuery('SELECT 1');
-          }
-
-          // 患者数据缓存更新已迁移到 PatientProvider
-
-          // 再次通知监听者
-          notifyListeners();
-        }
-      } catch (e) {
-        AppLogger.info('主动加载数据失败: $e');
-      }
-    });
   }
 
   // 数据库配置相关操作

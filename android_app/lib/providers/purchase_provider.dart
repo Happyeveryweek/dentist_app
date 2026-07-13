@@ -206,11 +206,6 @@ class PurchaseProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 清除刷新标志
-  void clearPurchasesNeedRefresh() {
-    _purchasesNeedRefresh = false;
-  }
-
   // 清除缓存
   void clearCache() {
     _cacheService?.clearCache();
@@ -275,37 +270,6 @@ class PurchaseProvider extends ChangeNotifier {
         rethrow;
       }
     });
-  }
-
-  // 智能获取采购记录（优先使用缓存）
-  Future<List<PurchaseRecord>> getPurchaseRecordsWithCache() async {
-    // 如果缓存有效且连接正常，直接返回缓存
-    if (_cacheService?.isCacheValid() == true &&
-        isConnected &&
-        !_purchasesNeedRefresh) {
-      AppLogger.info('使用缓存的采购记录数据: ${cachedRecords.length} 条');
-      return cachedRecords;
-    }
-
-    try {
-      AppLogger.info('🔄 缓存无效或需要刷新，从数据库获取最新数据...');
-      // 尝试从数据库获取最新数据
-      final records = await getAllPurchaseRecords();
-
-      // 更新缓存并清除刷新标志
-      _cacheService?.updateCache(records, {});
-      _purchasesNeedRefresh = false;
-
-      return records;
-    } catch (e) {
-      AppLogger.info('❌ 获取最新数据失败: $e');
-      // 如果获取失败但有缓存，返回缓存数据
-      if (hasCache) {
-        AppLogger.info('使用缓存的采购记录数据，连接异常: $e');
-        return cachedRecords;
-      }
-      rethrow;
-    }
   }
 
   // 搜索采购记录

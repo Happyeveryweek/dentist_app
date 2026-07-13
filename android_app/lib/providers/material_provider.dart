@@ -226,11 +226,6 @@ class MaterialProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 清除刷新标志
-  void clearMaterialsNeedRefresh() {
-    _materialsNeedRefresh = false;
-  }
-
   // =================== 材料相关方法 ===================
 
   // 获取所有材料
@@ -368,31 +363,6 @@ class MaterialProvider extends ChangeNotifier {
     });
   }
 
-  // 检查材料名称是否已存在
-  Future<bool> isMaterialNameExists(
-    String materialName, {
-    int? excludeId,
-  }) async {
-    if (!initialized) {
-      return false;
-    }
-
-    try {
-      // 使用数据源模式（通过搜索实现）
-      final results = await searchMaterials(materialName);
-      if (results.isEmpty) return false;
-      if (excludeId != null) {
-        return results.any(
-          (m) => m.id != excludeId && m.materialName == materialName,
-        );
-      }
-      return results.any((m) => m.materialName == materialName);
-    } catch (e) {
-      AppLogger.info('检查材料名称是否存在失败: $e');
-      return false;
-    }
-  }
-
   // 获取材料统计信息
   Future<Map<String, dynamic>> getMaterialStatistics() async {
     if (!initialized) {
@@ -409,63 +379,6 @@ class MaterialProvider extends ChangeNotifier {
         return {'totalMaterials': 0, 'totalValue': 0.0, 'supplierCount': 0};
       }
     });
-  }
-
-  // 生成材料编码
-  Future<String> generateMaterialCode() async {
-    if (!initialized) {
-      return 'M001';
-    }
-
-    try {
-      String prefix = 'M';
-      int nextNumber = 1;
-
-      if (_dataSourceType == 'sqlite') {
-        final db = _database;
-        if (db == null) return 'M001';
-
-        final result = await db.rawQuery(
-          'SELECT material_code FROM materials WHERE material_code LIKE ? ORDER BY material_code DESC LIMIT 1',
-          ['M%'],
-        );
-
-        if (result.isNotEmpty) {
-          final lastCode = result.first['material_code'] as String?;
-          if (lastCode != null && lastCode.startsWith('M')) {
-            final numberStr = lastCode.substring(1);
-            final number = int.tryParse(numberStr);
-            if (number != null) {
-              nextNumber = number + 1;
-            }
-          }
-        }
-      } else if (_dataSourceType == 'mysql') {
-        final conn = _currentMysqlConnection;
-        if (conn == null) return 'M001';
-
-        final results = await conn.query(
-          'SELECT material_code FROM materials WHERE material_code LIKE ? ORDER BY material_code DESC LIMIT 1',
-          ['M%'],
-        );
-
-        if (results.isNotEmpty) {
-          final lastCode = results.first['material_code']?.toString();
-          if (lastCode != null && lastCode.startsWith('M')) {
-            final numberStr = lastCode.substring(1);
-            final number = int.tryParse(numberStr);
-            if (number != null) {
-              nextNumber = number + 1;
-            }
-          }
-        }
-      }
-
-      return '$prefix${nextNumber.toString().padLeft(3, '0')}';
-    } catch (e) {
-      AppLogger.info('生成材料编码失败: $e');
-      return 'M001';
-    }
   }
 
   Future<T> _wrapMaterialOperation<T>(

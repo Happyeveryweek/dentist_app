@@ -5,11 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SettingsManager {
   // 共享偏好设置键
   static const String _keyAppointmentReminder = 'appointment_reminder';
-  static const String _keySystemNotification = 'system_notification';
-  static const String _keyLanguage = 'language';
-  static const String _keyTimeFormat = 'time_format';
   static const String _keyThemeMode = 'theme_mode';
-  static const String _keyFontSize = 'font_size';
 
   // 单例模式
   static SettingsManager? _instance;
@@ -42,36 +38,6 @@ class SettingsManager {
     return await _prefs?.setBool(_keyAppointmentReminder, value) ?? false;
   }
 
-  // 获取系统通知设置
-  bool getSystemNotification() {
-    return _prefs?.getBool(_keySystemNotification) ?? true;
-  }
-
-  // 设置系统通知
-  Future<bool> setSystemNotification(bool value) async {
-    return await _prefs?.setBool(_keySystemNotification, value) ?? false;
-  }
-
-  // 获取语言设置
-  String getLanguage() {
-    return _prefs?.getString(_keyLanguage) ?? '中文';
-  }
-
-  // 设置语言
-  Future<bool> setLanguage(String value) async {
-    return await _prefs?.setString(_keyLanguage, value) ?? false;
-  }
-
-  // 获取时间格式设置
-  String getTimeFormat() {
-    return _prefs?.getString(_keyTimeFormat) ?? '24小时制';
-  }
-
-  // 设置时间格式
-  Future<bool> setTimeFormat(String value) async {
-    return await _prefs?.setString(_keyTimeFormat, value) ?? false;
-  }
-
   // 获取主题模式
   ThemeMode getThemeMode() {
     final String? themeModeString = _prefs?.getString(_keyThemeMode);
@@ -85,32 +51,5 @@ class SettingsManager {
       default:
         return ThemeMode.light; // 默认使用浅色主题
     }
-  }
-
-  // 设置主题模式
-  Future<bool> setThemeMode(ThemeMode value) async {
-    String themeModeString;
-    switch (value) {
-      case ThemeMode.light:
-        themeModeString = 'light';
-        break;
-      case ThemeMode.dark:
-        themeModeString = 'dark';
-        break;
-      case ThemeMode.system:
-        themeModeString = 'system';
-        break;
-    }
-    return await _prefs?.setString(_keyThemeMode, themeModeString) ?? false;
-  }
-
-  // 获取字体大小设置
-  String getFontSize() {
-    return _prefs?.getString(_keyFontSize) ?? '中';
-  }
-
-  // 设置字体大小
-  Future<bool> setFontSize(String value) async {
-    return await _prefs?.setString(_keyFontSize, value) ?? false;
   }
 }

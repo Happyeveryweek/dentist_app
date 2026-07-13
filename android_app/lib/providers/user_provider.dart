@@ -300,11 +300,6 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 重置刷新标志
-  void resetUsersRefreshFlag() {
-    _usersNeedRefresh = false;
-  }
-
   // 强制刷新用户数据缓存
   Future<void> forceRefreshUsers() async {
     AppLogger.info('强制刷新用户数据缓存');
@@ -357,10 +352,7 @@ class UserProvider extends ChangeNotifier {
   Future<User?> authenticateUser(String username, String password) async {
     final service = _authenticationService;
     if (service == null) return null;
-    final user = await service.authenticateUser(
-      username,
-      password,
-    );
+    final user = await service.authenticateUser(username, password);
     if (user != null) {
       _currentUser = user;
     }
@@ -428,10 +420,7 @@ class UserProvider extends ChangeNotifier {
   Future<bool> isUsernameExists(String username, {int? excludeId}) async {
     final service = _validationService;
     if (service == null) return false;
-    return await service.isUsernameExists(
-      username,
-      excludeId: excludeId,
-    );
+    return await service.isUsernameExists(username, excludeId: excludeId);
   }
 
   // 检查邮箱是否存在
@@ -475,11 +464,7 @@ class UserProvider extends ChangeNotifier {
   Future<bool> hasModulePermission(int userId, String module) async {
     final service = _permissionService;
     if (service == null) return false;
-    return await service.hasModulePermission(
-      userId,
-      module,
-      getUserById,
-    );
+    return await service.hasModulePermission(userId, module, getUserById);
   }
 
   /// 更新用户权限配置
@@ -521,9 +506,7 @@ class UserProvider extends ChangeNotifier {
   Future<bool> hasCurrentUserModulePermission(String module) async {
     final service = _currentPermissionService;
     if (service == null) return false;
-    return await service.hasCurrentUserModulePermission(
-      module,
-    );
+    return await service.hasCurrentUserModulePermission(module);
   }
 
   /// 获取当前用户权限配置

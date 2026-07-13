@@ -15,7 +15,6 @@ import '../utils/app_logger.dart';
 /// Android端专注于查看和PDF导出功能，不包含编辑权限控制
 class MedicalRecordProvider extends ChangeNotifier {
   // 缓存数据
-  List<PatientMedicalRecord>? _cachedMedicalRecords;
   List<MedicalRecordTemplate>? _cachedTemplates;
 
   // 数据源具体实现
@@ -180,7 +179,6 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 强制刷新缓存
   void forceRefresh() {
-    _cachedMedicalRecords = null;
     _cachedTemplates = null;
     _lastCacheTime = null;
     _safeNotifyListeners();
@@ -193,32 +191,27 @@ class MedicalRecordProvider extends ChangeNotifier {
     final wrapper = _dbWrapper;
     if (wrapper == null) return [];
 
-    return await wrapper.wrapOperation(
-      'getPatientMedicalRecords',
-      () async {
-        try {
-          _setLoading(true);
-          _setError(null);
+    return await wrapper.wrapOperation('getPatientMedicalRecords', () async {
+      try {
+        _setLoading(true);
+        _setError(null);
 
-          final records = await _currentDataSource.getPatientMedicalRecords(
-            patientId,
-          );
+        final records = await _currentDataSource.getPatientMedicalRecords(
+          patientId,
+        );
 
-          // 更新缓存
-          _cachedMedicalRecords = records;
-          _lastCacheTime = DateTime.now();
+        _lastCacheTime = DateTime.now();
 
-          return records;
-        } catch (e) {
-          AppLogger.info('获取患者病历记录失败: $e');
-          _setError('获取病历记录失败: $e');
-          if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
-          return [];
-        } finally {
-          _setLoading(false);
-        }
-      },
-    );
+        return records;
+      } catch (e) {
+        AppLogger.info('获取患者病历记录失败: $e');
+        _setError('获取病历记录失败: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
+        return [];
+      } finally {
+        _setLoading(false);
+      }
+    });
   }
 
   // 简单获取患者病历记录（不使用包装器，像患者提供者的getPatientById一样）
@@ -280,36 +273,32 @@ class MedicalRecordProvider extends ChangeNotifier {
     final cachedTemplates = _cachedTemplates;
     if (wrapper == null) return cachedTemplates ?? [];
 
-    return await wrapper.wrapOperation(
-      'getMedicalRecordTemplates',
-      () async {
-        try {
-          // 检查缓存
-          if (cachedTemplates != null && _isCacheValid()) {
-            return cachedTemplates;
-          }
-
-          _setLoading(true);
-          _setError(null);
-
-          final templates =
-              await _currentDataSource.getMedicalRecordTemplates();
-
-          // 更新缓存
-          _cachedTemplates = templates;
-          _lastCacheTime = DateTime.now();
-
-          return templates;
-        } catch (e) {
-          AppLogger.info('获取病历模板失败: $e');
-          _setError('获取病历模板失败: $e');
-          if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
-          return [];
-        } finally {
-          _setLoading(false);
+    return await wrapper.wrapOperation('getMedicalRecordTemplates', () async {
+      try {
+        // 检查缓存
+        if (cachedTemplates != null && _isCacheValid()) {
+          return cachedTemplates;
         }
-      },
-    );
+
+        _setLoading(true);
+        _setError(null);
+
+        final templates = await _currentDataSource.getMedicalRecordTemplates();
+
+        // 更新缓存
+        _cachedTemplates = templates;
+        _lastCacheTime = DateTime.now();
+
+        return templates;
+      } catch (e) {
+        AppLogger.info('获取病历模板失败: $e');
+        _setError('获取病历模板失败: $e');
+        if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
+        return [];
+      } finally {
+        _setLoading(false);
+      }
+    });
   }
 
   // 根据类别获取病历模板
@@ -406,36 +395,16 @@ class MedicalRecordProvider extends ChangeNotifier {
     return await getTemplatesByCategory(MedicalRecordTemplateCategory.allergy);
   }
 
-  // 清除指定患者的病历缓存
-  void clearPatientMedicalRecordsCache(int patientId) {
-    _cachedMedicalRecords?.removeWhere(
-      (record) => record.patientId == patientId,
-    );
-    _safeNotifyListeners();
-  }
-
   // 清除所有缓存
   void clearAllCache() {
-    _cachedMedicalRecords = null;
     _cachedTemplates = null;
     _lastCacheTime = null;
     _safeNotifyListeners();
   }
 
-  // 获取缓存统计信息（用于调试）
-  Map<String, dynamic> getCacheStats() {
-    return {
-      'cachedMedicalRecordsCount': _cachedMedicalRecords?.length ?? 0,
-      'cachedTemplatesCount': _cachedTemplates?.length ?? 0,
-      'lastCacheTime': _lastCacheTime?.toString(),
-      'isCacheValid': _isCacheValid(),
-    };
-  }
-
   @override
   void dispose() {
     // 清理资源
-    _cachedMedicalRecords = null;
     _cachedTemplates = null;
     super.dispose();
   }
