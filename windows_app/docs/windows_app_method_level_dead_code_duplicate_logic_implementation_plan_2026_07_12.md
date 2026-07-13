@@ -67,7 +67,7 @@ git ls-files --eol -- <本批改动文件>
 | 0 | 重新取证、建立基线和测试映射 | 低 | 无 | 完成（2026-07-12） |
 | 1 | A 级独立辅助方法、通用工具和注释旧代码 | 低 | 每个符号仍无调用 | 完成（2026-07-13） |
 | 2 | 财务/采购/User/Material Provider 的旧入口 | 中 | 批次 1 完成 | 完成（2026-07-13） |
-| 3 | SettingsProvider 历史设置及无消费者委托链 | 中高 | 批次 2 完成，设置与备份回归可执行 | 未开始 |
+| 3 | SettingsProvider 历史设置及无消费者委托链 | 中高 | 批次 2 完成，设置与备份回归可执行 | 完成（2026-07-13） |
 | 4 | 一次性迁移、数据库与模板 API | 高 | 批次 3 完成，数据库回归环境可用 | 未开始 |
 | 5 | 五套患者同步日志 helper 收口 | 中高 | 批次 4 完成，先新增单测 | 未开始 |
 | 6 | 统计图表组件与财务查询对象治理 | 架构重构 | 批次 5 完成，另行确认验收 | 未开始 |
@@ -320,9 +320,9 @@ class PatientSyncLogHelper {
 | 0：重新取证与基线 | 完成 | 2026-07-12 | 2026-07-12 | 仅更新本计划与 `ROADMAP.md`，未改业务代码 | 全量 `flutter test` 64 个通过；`flutter analyze` `No issues found!`；四组 `rg`、测试路径、`git diff --check` 和行尾已复核 | 未执行业务手动回归；本批无业务代码改动 | — |
 | 1：A 级独立方法 | 完成 | 2026-07-13 | 2026-07-13 | 删除 29 个文件中约 60 个无调用方法、2 行旧注释；清理 5 个孤儿 import（`database_type_converter_helper.dart` 的 `datetime_formatter`、`data_source_connection_service.dart` 的 `path`、`config_manager.dart` 的 `datetime_formatter`、`patient_form_validators.dart` 的 `flutter/material.dart`、`app_state.dart` 的 `_refreshCounter`/`refreshCounter` 孤儿字段）和 5 个孤儿私有方法（`config_manager.dart` 的 `_removeFromFile`/`_hasFileConfig`/`_removeFromPreferences`/`_hasPreferencesConfig`、`patient_form_validators.dart` 的 `_trimmedText`）；同步更新 `README_MYSQL_CONNECTION.md` | 全量 `flutter test` 64 个通过；`flutter analyze` `No issues found!`；`git diff --check` 通过；30 个改动文件行尾全部 LF | 待执行财务分页跳页、患者按 ID 读取与清缓存、材料直接跳页、病历表单加载模板、设置页备份路径与 SQLite/MySQL 选择手动回归 | — |
 | 2：Provider 旧入口 | 完成 | 2026-07-13 | 2026-07-13 | 删除 4 个 Provider 文件中 19 个无调用方法：`financial_provider.dart` 的 `getAllFinancialRecordsNew`/`ensureFinancialRecordsTableExists`；`purchase_provider.dart` 的 `getPurchaseRecordById`/`createPurchaseItemsTable`；`material_provider.dart` 的 `createMaterial`/`clearAllMaterials`（Provider 兼容性方法，保留 data_source 接口与实现）；`user_provider.dart` 的 13 个无调用方法。无孤儿 import 产生 | 定向 4 个测试文件 26 个通过；全量 `flutter test` 64 个通过；`flutter analyze` `No issues found!`；`git diff --check` 通过；4 个改动文件行尾全部 LF | 待执行财务/采购/材料/用户模块手动回归 | - |
-| 3A：历史设置 | 未开始 | — | — | — | — | — | — |
-| 3B：配置/备份委托 | 未开始 | — | — | — | — | — | — |
-| 3C：数据源状态委托 | 未开始 | — | — | — | — | — | — |
+| 3A：历史设置 | 完成 | 2026-07-13 | 2026-07-13 | 删除 6 个历史设置入口及无消费者字段/持久化键 | 定向与全量自动验证通过 | 主人已确认主题切换及重启持久化通过 | — |
+| 3B：配置/备份委托 | 完成 | 2026-07-13 | 2026-07-13 | 删除 3 组配置存储和 11 组备份策略 Provider/service 委托 | 定向与全量自动验证通过 | 主人已确认主备路径、自动备份、导入导出恢复通过 | — |
+| 3C：数据源状态委托 | 完成 | 2026-07-13 | 2026-07-13 | 删除 8 组 MySQL/模块数据源状态 Provider/service 委托 | 定向与全量自动验证通过 | 主人已确认 SQLite/MySQL 切换和结构检测通过 | — |
 | 4：迁移/数据库/模板 | 未开始 | — | — | — | — | — | — |
 | 5.1：helper 测试与创建 | 未开始 | — | — | — | — | — | — |
 | 5.2：预约同步迁移 | 未开始 | — | — | — | — | — | — |
@@ -396,3 +396,16 @@ class PatientSyncLogHelper {
 - 手动回归：待执行财务列表加载/筛选/分页/详情增删改、采购列表进入详情/采购项表初始化/数据源切换、材料新增/编辑/初始化与缓存刷新、登录/退出/用户搜索/角色展示/模块权限/医生维度患者筛选。本批已通过全量自动化测试；手动回归不阻塞本批完成状态，但应在批次 3 开始前执行并记录。
 - 结论：批次 2 完成；批次 3～6 仍未开始，删除授权和高风险回归前置条件不变。
 - 下一步或阻塞：进入批次 3 前，需执行本批手动回归并记录结果；批次 3 为 SettingsProvider 历史设置及无消费者委托链删除，中高风险，需确认主题切换、配置存储、备份策略和数据源状态等链路。
+
+#### 2026-07-13｜批次 3｜完成
+
+- 授权范围：主人授权按本计划执行批次 3；仅删除重新确认无消费者的历史设置入口、配置/备份策略委托和数据源状态委托，以及由本批产生的孤儿字段、私有方法和 import。保留 `setWindowsThemeVariant`、`setBackupPath`、`setBackupPath2`、`testMySQLConnection`、`importDatabase`、`exportDatabase`、结构检测和真实恢复链路。
+- 重新搜索：对 3A 的 6 个、3B 的 14 个、3C 的 8 个候选符号在 `windows_app/lib` 和 `test` 执行精确 `rg`。3A 均仅命中 Provider 声明；3B/3C 均只形成 Provider 委托和同名 service 声明两层，未发现 UI、业务或测试消费者。完整类复核确认均非 override、抽象接口、序列化入口、生命周期、回调注册、字符串路由或动态访问入口。
+- 实际改动：
+  - 3A：在 `settings_provider.dart` 删除 `setExtendedThemeMode`、`setThemeMode`、`setFontSize`、`setLanguage`、`saveWindowSize`、`loadWindowSize`，以及无消费者的 `ExtendedThemeMode`、历史主题/字号/语言/窗口字段、getter、加载逻辑和保存键；保留现用 `setWindowsThemeVariant`。
+  - 3B：在 `settings_provider.dart`、`config_storage_service.dart`、`backup_management_service.dart` 删除 3 组配置存储和 11 组备份策略的无消费者委托；清理由 `performAutoBackup`、统计和还原文件列表删除产生的 3 个私有辅助方法及 `datetime_formatter` 孤儿 import。
+  - 3C：在 `settings_provider.dart`、`data_source_management_service.dart` 删除 8 组 MySQL/模块数据源状态的无消费者委托。
+- 自动验证：`dart format` 已覆盖 4 个 Dart 文件；定向 `settings_provider_persistence_test.dart` 1 个通过、`database_backup_service_test.dart` 2 个通过；全量 `flutter test` 64 个通过；`flutter analyze` 返回 `No issues found!`；`git diff --check` 通过；4 个 Dart 文件行尾均为 LF。
+- 手动回归：主人已确认五套主题切换及重启持久化、应用名称、SQLite/MySQL 数据源切换、主备路径保存、自动备份设置、导入导出恢复和结构检测均通过。
+- 结论：批次 3 的代码删除、自动验证和手动回归均已完成。
+- 下一步或阻塞：可进入批次 4；该批涉及一次性迁移、数据库和模板 API，必须按高风险流程重新取证和验证。

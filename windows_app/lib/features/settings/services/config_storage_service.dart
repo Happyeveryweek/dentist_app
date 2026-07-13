@@ -84,7 +84,8 @@ class ConfigStorageService {
     final prefs = await SharedPreferences.getInstance();
 
     return {
-      'windowsThemeVariant': prefs.getString('windowsThemeVariant') ?? 'medicalBlue',
+      'windowsThemeVariant':
+          prefs.getString('windowsThemeVariant') ?? 'medicalBlue',
       'extendedThemeMode': prefs.getInt('extendedThemeMode') ?? 0,
       'themeMode': prefs.getInt('themeMode') ?? 0,
       'fontSize': prefs.getDouble('fontSize') ?? 1.0,
@@ -251,34 +252,6 @@ class ConfigStorageService {
     if (settings.containsKey('windowHeight')) {
       await prefs.setDouble('windowHeight', settings['windowHeight']);
     }
-  }
-
-  /// 强制切换到文件存储模式
-  Future<bool> switchToFileStorage() async {
-    try {
-      final canUse = await _checkFileStorageAvailability();
-      if (canUse) {
-        _useFileStorage = true;
-        _configManager.setStorageMode(StorageMode.file);
-        await _migrateConfigsToFile();
-        return true;
-      }
-      return false;
-    } catch (e) {
-      LogManager.e('ConfigStorageService', '切换到文件存储失败', error: e);
-      return false;
-    }
-  }
-
-  /// 强制切换到SharedPreferences存储模式
-  Future<void> switchToPreferencesStorage() async {
-    _useFileStorage = false;
-    _configManager.setStorageMode(StorageMode.preferences);
-  }
-
-  /// 使用配置管理器保存配置
-  Future<bool> saveConfigValue(String key, dynamic value) async {
-    return await _configManager.saveConfig(key, value);
   }
 
   /// 使用配置管理器加载配置

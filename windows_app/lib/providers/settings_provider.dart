@@ -13,9 +13,6 @@ import 'package:dentist_app_windows/utils/datetime_formatter.dart';
 import 'package:dentist_app_windows/theme/app_theme.dart';
 import '../utils/log_manager.dart';
 
-// 扩展主题模式枚举（历史兼容，当前只保留标准主题）
-enum ExtendedThemeMode { light }
-
 class SettingsProvider extends ChangeNotifier {
   // ==================== Service 实例 ====================
   final ConfigStorageService _configStorageService = ConfigStorageService();
@@ -34,29 +31,9 @@ class SettingsProvider extends ChangeNotifier {
   WindowsThemeVariant _windowsThemeVariant = WindowsThemeVariant.medicalBlue;
   WindowsThemeVariant get windowsThemeVariant => _windowsThemeVariant;
 
-  // 扩展主题设置（历史兼容，当前只保留标准主题）
-  ExtendedThemeMode _extendedThemeMode = ExtendedThemeMode.light;
-  ExtendedThemeMode get extendedThemeMode => _extendedThemeMode;
-
-  // 兼容原有的ThemeMode
-  ThemeMode _themeMode = ThemeMode.light;
-  ThemeMode get themeMode => ThemeMode.light;
-
-  // 字体大小设置
-  double _fontSize = 1.0;
-  double get fontSize => _fontSize;
-
-  // 语言设置
-  String _language = 'zh_CN';
-  String get language => _language;
-
   // 应用名称设置
   String _appName = '牙科诊所管理系统';
   String get appName => _appName;
-
-  // Windows特定设置
-  Size _windowSize = const Size(1280, 720);
-  Size get windowSize => _windowSize;
 
   // 数据库连接实例 - 用于结构检测
   Database? _database;
@@ -124,24 +101,7 @@ class SettingsProvider extends ChangeNotifier {
     _windowsThemeVariant = WindowsThemeVariantParsing.fromStorageValue(
       settings['windowsThemeVariant']?.toString(),
     );
-    _extendedThemeMode = ExtendedThemeMode.light;
-
-    final themeModeIndex = settings['themeMode'] ?? 0;
-    if (themeModeIndex is int && themeModeIndex < ThemeMode.values.length) {
-      _themeMode = ThemeMode.values[themeModeIndex];
-    }
-
-    // 加载其他设置
-    _fontSize = (settings['fontSize'] as num?)?.toDouble() ?? 1.0;
-    _language = settings['language']?.toString() ?? 'zh_CN';
     _appName = settings['appName']?.toString() ?? '牙科诊所管理系统';
-
-    // 加载窗口大小
-    final width = (settings['windowWidth'] as num?)?.toDouble();
-    final height = (settings['windowHeight'] as num?)?.toDouble();
-    if (width != null && height != null) {
-      _windowSize = Size(width, height);
-    }
 
     // 更新 Service 状态
     _backupManagementService.updateBackupPaths(
@@ -200,10 +160,6 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> _saveSettings() async {
     final settings = <String, dynamic>{
       'windowsThemeVariant': _windowsThemeVariant.storageValue,
-      'extendedThemeMode': _extendedThemeMode.index,
-      'themeMode': _themeMode.index,
-      'fontSize': _fontSize,
-      'language': _language,
       'appName': _appName,
       'backupPath': _backupManagementService.backupPath,
       'backupPath2': _backupManagementService.backupPath2,
@@ -221,8 +177,6 @@ class SettingsProvider extends ChangeNotifier {
       'mysqlPassword': _dataSourceManagementService.mysqlPassword,
       'backupDataSource': _dataSourceManagementService.backupDataSource,
       'moduleDataSources': _dataSourceManagementService.moduleDataSources,
-      'windowWidth': _windowSize.width,
-      'windowHeight': _windowSize.height,
     };
 
     await _configStorageService.saveSettings(settings);
@@ -230,38 +184,8 @@ class SettingsProvider extends ChangeNotifier {
 
   // ==================== 主题设置 ====================
 
-  Future<void> setExtendedThemeMode(ExtendedThemeMode mode) async {
-    _extendedThemeMode = mode;
-    _themeMode = ThemeMode.light;
-    _windowsThemeVariant = WindowsThemeVariant.medicalBlue;
-    await _saveSettings();
-    notifyListeners();
-  }
-
-  Future<void> setThemeMode(ThemeMode mode) async {
-    _themeMode = mode;
-    _extendedThemeMode = ExtendedThemeMode.light;
-    _windowsThemeVariant = WindowsThemeVariant.medicalBlue;
-    await _saveSettings();
-    notifyListeners();
-  }
-
   Future<void> setWindowsThemeVariant(WindowsThemeVariant variant) async {
     _windowsThemeVariant = variant;
-    _extendedThemeMode = ExtendedThemeMode.light;
-    _themeMode = ThemeMode.light;
-    await _saveSettings();
-    notifyListeners();
-  }
-
-  Future<void> setFontSize(double size) async {
-    _fontSize = size;
-    await _saveSettings();
-    notifyListeners();
-  }
-
-  Future<void> setLanguage(String lang) async {
-    _language = lang;
     await _saveSettings();
     notifyListeners();
   }
@@ -274,24 +198,6 @@ class SettingsProvider extends ChangeNotifier {
     _appName = name.trim();
     await _saveSettings();
     notifyListeners();
-  }
-
-  // ==================== 窗口设置 ====================
-
-  Future<void> saveWindowSize(Size size) async {
-    _windowSize = size;
-    await _saveSettings();
-    notifyListeners();
-  }
-
-  Future<void> loadWindowSize() async {
-    final settings = await _configStorageService.loadSettings();
-    final width = settings['windowWidth'];
-    final height = settings['windowHeight'];
-    if (width != null && height != null) {
-      _windowSize = Size(width, height);
-      notifyListeners();
-    }
   }
 
   // ==================== 备份路径设置 ====================
@@ -462,12 +368,6 @@ class SettingsProvider extends ChangeNotifier {
   // 配置存储
   Map<String, dynamic> getConfigStorageInfo() =>
       _configStorageService.getConfigStorageInfo();
-  Future<bool> switchToFileStorage() =>
-      _configStorageService.switchToFileStorage();
-  Future<void> switchToPreferencesStorage() =>
-      _configStorageService.switchToPreferencesStorage();
-  Future<bool> saveConfigValue(String key, dynamic value) =>
-      _configStorageService.saveConfigValue(key, value);
   Future<T?> loadConfigValue<T>(String key, {T? defaultValue}) =>
       _configStorageService.loadConfigValue<T>(key, defaultValue: defaultValue);
   Future<bool> clearAllConfigs() => _configStorageService.clearAllConfigs();
@@ -476,8 +376,6 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> clearAllSettings() => _configStorageService.clearAllSettings();
 
   // 备份管理
-  Future<String> performAutoBackup() =>
-      _backupManagementService.performAutoBackup();
   Future<void> logBackupSuccess(String backupPath) =>
       _backupManagementService.logBackupSuccess(backupPath);
   Future<void> logBackupFailure(String errorMessage) =>
@@ -486,38 +384,8 @@ class SettingsProvider extends ChangeNotifier {
       _backupManagementService.validateBackupPath(backupPath);
   Future<List<FileSystemEntity>> getBackupFiles() =>
       _backupManagementService.getBackupFiles();
-  Future<Map<String, dynamic>> getBackupStatistics() =>
-      _backupManagementService.getBackupStatistics();
-  bool shouldPerformAutoBackup() =>
-      _backupManagementService.shouldPerformAutoBackup();
-  DateTime? getNextAutoBackupTime() =>
-      _backupManagementService.getNextAutoBackupTime();
-  Future<void> setBackupStrategy(
-          {required bool autoBackup,
-          required int backupInterval,
-          required int keepBackupCount}) =>
-      _backupManagementService.setBackupStrategy(
-          autoBackup: autoBackup,
-          backupInterval: backupInterval,
-          keepBackupCount: keepBackupCount);
-  Map<String, dynamic> getBackupStrategy() =>
-      _backupManagementService.getBackupStrategy();
-  Future<void> setRestoreStrategy(
-          {required bool autoRestore,
-          required bool backupBeforeRestore,
-          required bool validateRestoreData}) =>
-      _backupManagementService.setRestoreStrategy(
-          autoRestore: autoRestore,
-          backupBeforeRestore: backupBeforeRestore,
-          validateRestoreData: validateRestoreData);
-  Map<String, dynamic> getRestoreStrategy() =>
-      _backupManagementService.getRestoreStrategy();
-  Future<void> setRestorePath(String restorePath) =>
-      _backupManagementService.setRestorePath(restorePath);
   Future<bool> validateRestorePath(String restorePath) =>
       _backupManagementService.validateRestorePath(restorePath);
-  Future<List<FileSystemEntity>> getAvailableRestoreFiles() =>
-      _backupManagementService.getAvailableRestoreFiles();
   Future<String?> createPreRestoreBackup({
     required Future<String> Function({
       String? backupPath,
@@ -541,13 +409,6 @@ class SettingsProvider extends ChangeNotifier {
       _backupManagementService.detectRestoreFileType(filePath);
   Future<Map<String, dynamic>> getRestoreFileInfo(String filePath) =>
       _backupManagementService.getRestoreFileInfo(filePath);
-  Future<void> updateRestoreProgress(
-          {required String operation,
-          required int current,
-          required int total,
-          String? detail}) =>
-      _backupManagementService.updateRestoreProgress(
-          operation: operation, current: current, total: total, detail: detail);
   Future<void> logRestoreOperation(
           {required String operation,
           required String filePath,
@@ -601,23 +462,6 @@ class SettingsProvider extends ChangeNotifier {
       _dataSourceManagementService.getCompleteMySQLSettings();
   bool isMySQLSettingsComplete() =>
       _dataSourceManagementService.isMySQLSettingsComplete();
-  Future<void> resetMySQLSettings() async =>
-      _dataSourceManagementService.resetMySQLSettings();
-  Future<void> clearMySQLSettings() async =>
-      _dataSourceManagementService.clearMySQLSettings();
-  String getValidatedDataSourceType() =>
-      _dataSourceManagementService.getValidatedDataSourceType();
-  bool shouldShowMySQLWarning() =>
-      _dataSourceManagementService.shouldShowMySQLWarning();
-  String getModuleDataSource(String module) =>
-      _dataSourceManagementService.getModuleDataSource(module);
-  bool isModuleUsingMySQL(String module) =>
-      _dataSourceManagementService.isModuleUsingMySQL(module);
-  List<String> getMySQLModules() =>
-      _dataSourceManagementService.getMySQLModules();
-  List<String> getSQLiteModules() =>
-      _dataSourceManagementService.getSQLiteModules();
-
   // 数据库结构检测
   void setDatabaseConnection(
       {Database? database, MySqlConnection? mysqlConnection}) {
