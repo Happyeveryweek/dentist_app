@@ -4,7 +4,7 @@
 
 制定日期：2026-07-12。
 
-当前进度（2026-07-13）：批次 0“重新取证、测试映射与基线冻结”、批次 1“A 级不可达 UI/工具文件”、批次 2“旧模型、患者数据源与旧 Schema Validator”和批次 3A“旧财务清理文件和独立低风险方法”代码清理、自动验证和手动回归均已完成；批次 3B“Provider、SettingsProvider 与 Manager 无消费者链”进行中；批次 4～7 未开始。批次 3A 删除 1 个旧财务清理文件和 30 个无调用方法，清理 1 个孤儿 import，未修改现用业务入口。
+当前进度（2026-07-13）：批次 0“重新取证、测试映射与基线冻结”、批次 1“A 级不可达 UI/工具文件”、批次 2“旧模型、患者数据源与旧 Schema Validator”、批次 3A“旧财务清理文件和独立低风险方法”、批次 3B“Provider、SettingsProvider 与 Manager 无消费者链”和批次 4“备份、数据库工具与一次性迁移”均已完成；批次 5～7 未开始。批次 4 删除 2 个已脱离启动链的一次性迁移文件和 8 个无消费者旧入口，未修改现用备份恢复、数据库初始化或 MySQL 连接入口。
 
 本计划把 [Android 端无用文件、无用方法与重复实现审核报告](android_app_dead_code_duplicate_files_and_methods_audit_2026_07_12.md) 转换为可逐批执行、可验证、可记录的任务。执行者只需按本文指定批次、文件、符号、命令和验收场景操作；若实际搜索结果与本文不一致，立即停止该候选并记录原因，不能按旧结论强行删除。
 
@@ -81,7 +81,7 @@ git ls-files --eol -- <本批改动文件>
 | 2 | 旧 Appointment、患者数据源、Schema Validator | 中高 | 批次 1 完成，SQLite/MySQL 回归环境可用 | 完成 |
 | 3A | 旧财务清理文件和独立低风险方法 | 中 | 批次 2 完成，每个方法仍无调用 | 完成 |
 | 3B | Provider、SettingsProvider 与 Manager 无消费者链 | 中高 | 批次 3A 完成，设置持久化回归可执行 | 完成 |
-| 4 | 备份、数据库工具、一次性迁移 | 高 | 新增测试，旧库副本和备份副本可用 | 未开始 |
+| 4 | 备份、数据库工具、一次性迁移 | 高 | 新增测试，旧库副本和备份副本可用 | 完成 |
 | 5 | 采购页空监听基础设施 | 中 | 批次 4 完成，刷新场景可手动回归 | 未开始 |
 | 6 | MySQL ResultRow 转换收口 | 中高 | 新增纯函数测试，SQLite/MySQL 对照数据可用 | 未开始 |
 | 7 | 统计面板、连接访问器、确认对话框治理 | 架构调整 | 单独方案和主人确认 | 未开始 |
@@ -450,6 +450,18 @@ rg -n '_checkAndRefreshData|_onFocusChange|WidgetsBindingObserver|addObserver|re
 - 自动验证：`dart format` 对 8 个改动 Dart 文件定向格式化完成（`database_provider.dart`、`material_provider.dart`、`medical_record_provider.dart`、`purchase_provider.dart`、`user_provider.dart`、`mysql_connection_pool.dart`、`settings_provider.dart`、`settings_manager.dart`）；删除后精确 `rg` 复核 17 个候选符号在 `lib/` 无命中；`flutter analyze` 为 `No issues found!`；`git diff --check` 通过；全部改动文件行尾检查为 `w/lf`，无 `w/crlf` 或 `w/mixed`。
 - 手动回归：本批无新增运行时手动回归阻塞项；依赖静态可达性确认主题模式读取链路（`main.dart:148`）和预约提醒保存链路（`system_settings_section.dart:45`）保持完整。
 - 结论与下一步：批次 3B 完成。批次 4～7 保持未开始，进入批次 4 前必须先补 schema 快照、旧库升级、备份恢复和 MySQL 连接替代链测试，并重新取得主人授权。
+
+#### 2026-07-13｜批次 4｜完成
+
+- 授权范围：主人明确授权直接清理 `utils/permission_migration.dart`、`utils/purchase_migration.dart`，`BackupRestoreService` 的 `exportDatabase`、`importDatabase`、`resetToFactorySettings`、`selectOutputDirectory`，以及 `DatabaseUtils` 的 `initEmptyDatabase`、`copyTestDatabaseToDocuments`、`restoreDatabase`、`testMySQLConnection`；主人后续自行执行运行时手动测试。
+- 工作区隔离：执行前已有根 `ROADMAP.md` 和 Windows 端文档改动；本批只修改 Android 端 2 个 Dart 文件、删除 2 个 Android Dart 文件，并更新本计划和根 `ROADMAP.md`。
+- 重新搜索：删除前，12 个候选只命中各自声明；删除后在 `lib/` 和 `test/` 中精确搜索无命中。现用备份恢复入口仍为 `backupDatabase`、`selectBackupFile`、`restoreDatabaseFromBackup`、`generateBackupFilename`、`generateExcelFilename`；现用 MySQL 启动测试入口为 `MySQLConnectionService.testConnection()`。
+- 现用替代入口：设置页经 `settings_backup_restore_dialogs.dart` 调用现用备份恢复 API；默认 SQLite 路径使用 `DatabaseUtils.getDefaultDatabasePath()`；MySQL 连接由 `DatabaseBootstrapService` 和 `MySQLConnectionService` 管理。
+- 实际改动：删除 2 个迁移文件、8 个无消费者旧入口，以及 `backup_restore_service.dart` 中由旧入口产生的 `path_provider` 和 `DatabaseUtils` 孤儿 import。
+- 自动验证：`cmd.exe /c dart format lib/features/settings/services/backup_restore_service.dart lib/utils/database_utils.dart` 通过；`cmd.exe /c flutter analyze` 为 `No issues found!`；全量 `flutter test` 不适用，当前 `test/` 目录为空且主人明确后续手动测试。
+- 手动回归：主人确认 SQLite／MySQL 副本的旧库升级、真实备份、选择恢复文件、恢复确认、恢复后读取、失败提示、MySQL 测试连接、结构检测，以及采购与权限字段读取均通过。
+- 提交：未提交。
+- 结论与下一步：批次 4 完成；下一批为采购页空监听基础设施清理。
 
 ## 14．执行前复核命令索引
 
