@@ -8,29 +8,10 @@ class LoginBottomDecorations extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textSize = isSmallScreen ? 12.0 : 14.0;
     final spacing = isSmallScreen ? 4.0 : 8.0;
 
     return Column(
-      children: [
-        SizedBox(height: spacing * 2.5),
-        Text(
-          '技术支持: 牙科诊所管理系统',
-          style: TextStyle(
-            fontSize: textSize,
-            color: Colors.white.withValues(alpha: 0.7),
-          ),
-        ),
-        SizedBox(height: spacing),
-        Container(
-          width: isSmallScreen ? 40 : 50,
-          height: 2,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(1),
-          ),
-        ),
-      ],
+      children: [SizedBox(height: spacing * 2.5), SizedBox(height: spacing)],
     );
   }
 }
