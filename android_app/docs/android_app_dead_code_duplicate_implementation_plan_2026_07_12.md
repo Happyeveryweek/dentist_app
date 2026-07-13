@@ -4,7 +4,7 @@
 
 制定日期：2026-07-12。
 
-当前进度（2026-07-13）：批次 0“重新取证、测试映射与基线冻结”、批次 1“A 级不可达 UI/工具文件”、批次 2“旧模型、患者数据源与旧 Schema Validator”、批次 3A“旧财务清理文件和独立低风险方法”、批次 3B“Provider、SettingsProvider 与 Manager 无消费者链”和批次 4“备份、数据库工具与一次性迁移”均已完成；批次 5～7 未开始。批次 4 删除 2 个已脱离启动链的一次性迁移文件和 8 个无消费者旧入口，未修改现用备份恢复、数据库初始化或 MySQL 连接入口。
+当前进度（2026-07-13）：批次 0“重新取证、测试映射与基线冻结”、批次 1“A 级不可达 UI/工具文件”、批次 2“旧模型、患者数据源与旧 Schema Validator”、批次 3A“旧财务清理文件和独立低风险方法”、批次 3B“Provider、SettingsProvider 与 Manager 无消费者链”、批次 4“备份、数据库工具与一次性迁移”和批次 5“采购页空监听基础设施”均已完成；批次 6～7 未开始。批次 4 删除 2 个已脱离启动链的一次性迁移文件和 8 个无消费者旧入口，未修改现用备份恢复、数据库初始化或 MySQL 连接入口。
 
 本计划把 [Android 端无用文件、无用方法与重复实现审核报告](android_app_dead_code_duplicate_files_and_methods_audit_2026_07_12.md) 转换为可逐批执行、可验证、可记录的任务。执行者只需按本文指定批次、文件、符号、命令和验收场景操作；若实际搜索结果与本文不一致，立即停止该候选并记录原因，不能按旧结论强行删除。
 
@@ -82,7 +82,7 @@ git ls-files --eol -- <本批改动文件>
 | 3A | 旧财务清理文件和独立低风险方法 | 中 | 批次 2 完成，每个方法仍无调用 | 完成 |
 | 3B | Provider、SettingsProvider 与 Manager 无消费者链 | 中高 | 批次 3A 完成，设置持久化回归可执行 | 完成 |
 | 4 | 备份、数据库工具、一次性迁移 | 高 | 新增测试，旧库副本和备份副本可用 | 完成 |
-| 5 | 采购页空监听基础设施 | 中 | 批次 4 完成，刷新场景可手动回归 | 未开始 |
+| 5 | 采购页空监听基础设施 | 中 | 批次 4 完成，刷新场景可手动回归 | 完成 |
 | 6 | MySQL ResultRow 转换收口 | 中高 | 新增纯函数测试，SQLite/MySQL 对照数据可用 | 未开始 |
 | 7 | 统计面板、连接访问器、确认对话框治理 | 架构调整 | 单独方案和主人确认 | 未开始 |
 
@@ -462,6 +462,18 @@ rg -n '_checkAndRefreshData|_onFocusChange|WidgetsBindingObserver|addObserver|re
 - 手动回归：主人确认 SQLite／MySQL 副本的旧库升级、真实备份、选择恢复文件、恢复确认、恢复后读取、失败提示、MySQL 测试连接、结构检测，以及采购与权限字段读取均通过。
 - 提交：未提交。
 - 结论与下一步：批次 4 完成；下一批为采购页空监听基础设施清理。
+
+#### 2026-07-13｜批次 5｜完成
+
+- 授权范围：主人要求继续批次 5；仅清理 `purchase_records_screen.dart` 的空监听基础设施。
+- 工作区隔离：执行前已有根 `ROADMAP.md` 与 Windows 端文档改动；本批只修改 Android 端采购页面和本计划、根 `ROADMAP.md`。
+- 重新搜索：`rg -n '_checkAndRefreshData|_onFocusChange|WidgetsBindingObserver|addObserver|removeObserver|_focusNode|Focus\(' lib test -S` 显示候选仅在采购页声明、注册和移除处命中；删除后对该文件复核无命中。
+- 现用替代入口：首次进入页面由 `initState` 调用 `_loadData(showToast: false)`；下拉刷新、重试、新增记录、编辑记录和删除记录后的刷新均继续调用 `_loadData`。
+- 实际改动：删除 `_checkAndRefreshData`、`_onFocusChange`、`_focusNode`、外层 `Focus`、`WidgetsBindingObserver`、observer 注册／注销、焦点 listener 注册／移除及无行为的生命周期 override。
+- 自动验证：`cmd.exe /c dart format lib/features/purchases/screens/purchase_records_screen.dart` 通过；`cmd.exe /c flutter analyze` 为 `No issues found!`；`git diff --check` 通过。全量 `flutter test` 不适用，当前 `test/` 目录为空。
+- 手动回归：主人确认采购页首次加载、下拉刷新、新增／编辑／删除后刷新及后台切回前台均通过，未丢失实际刷新入口。
+- 提交：未提交。
+- 结论与下一步：批次 5 完成；下一批为 MySQL ResultRow 转换收口，须先建立纯函数测试。
 
 ## 14．执行前复核命令索引
 

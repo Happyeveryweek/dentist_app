@@ -26,8 +26,7 @@ class PurchaseRecordsScreen extends StatefulWidget {
   State<PurchaseRecordsScreen> createState() => _PurchaseRecordsScreenState();
 }
 
-class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
-    with WidgetsBindingObserver {
+class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
   List<PurchaseRecord> _purchaseRecords = [];
   List<PurchaseRecord> _filteredRecords = [];
   bool _isLoading = false;
@@ -36,118 +35,77 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen>
   Map<String, dynamic> _statistics = {};
   String? _loadErrorMessage;
   int _requestVersion = 0;
-  FocusNode? _focusNode;
   Timer? _searchDebounce;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    final focusNode = FocusNode();
-    focusNode.addListener(_onFocusChange);
-    _focusNode = focusNode;
     _loadData(showToast: false); // 初始加载时不显示提示
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    final focusNode = _focusNode;
-    if (focusNode != null) {
-      focusNode.removeListener(_onFocusChange);
-      focusNode.dispose();
-    }
     _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    // 当应用从后台恢复时刷新数据
-    if (state == AppLifecycleState.resumed) {
-      _checkAndRefreshData();
-    }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // ❌ 完全移除自动刷新逻辑，避免任何意外触发
-    // 所有数据刷新都由用户明确操作触发（手动刷新、下拉刷新、增删改操作）
-  }
-
-  /// 检查并刷新数据（已废弃，不再使用）
-  void _checkAndRefreshData() {
-    // ❌ 不再使用这个方法，避免不必要的刷新检查
-  }
-
-  /// 焦点变化监听（已废弃，不再使用）
-  void _onFocusChange() {
-    // ❌ 不再监听焦点变化来触发刷新，避免从其他页面返回时误触发
-    // 只在明确的操作（增删改）后通过回调触发刷新
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Focus(
-      focusNode: _focusNode,
-      child: Scaffold(
-        body: Column(
-          children: [
-            // 统计信息卡片
-            PurchaseStatisticsCard(
-              statistics: _statistics,
-              onTap: _showPurchaseStatistics,
-            ),
+    return Scaffold(
+      body: Column(
+        children: [
+          // 统计信息卡片
+          PurchaseStatisticsCard(
+            statistics: _statistics,
+            onTap: _showPurchaseStatistics,
+          ),
 
-            // 搜索栏
-            PurchaseSearchBar(
-              controller: _searchController,
-              searchQuery: _searchQuery,
-              onSearchChanged: _onSearchChanged,
-              onSearchSubmitted: () {
-                _searchDebounce?.cancel();
-                setState(() {
-                  _searchQuery = _searchController.text.trim();
-                });
-                _performSearch();
-              },
-              onClear: () {
-                _searchDebounce?.cancel();
-                setState(() {
-                  _searchQuery = '';
-                  _searchController.clear();
-                });
-                _filterRecords();
-                _updateStatistics(_filteredRecords, ++_requestVersion);
-              },
-            ),
+          // 搜索栏
+          PurchaseSearchBar(
+            controller: _searchController,
+            searchQuery: _searchQuery,
+            onSearchChanged: _onSearchChanged,
+            onSearchSubmitted: () {
+              _searchDebounce?.cancel();
+              setState(() {
+                _searchQuery = _searchController.text.trim();
+              });
+              _performSearch();
+            },
+            onClear: () {
+              _searchDebounce?.cancel();
+              setState(() {
+                _searchQuery = '';
+                _searchController.clear();
+              });
+              _filterRecords();
+              _updateStatistics(_filteredRecords, ++_requestVersion);
+            },
+          ),
 
-            // 采购记录列表 - 添加下拉刷新
-            Expanded(
-              child:
-                  _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : RefreshIndicator(
-                        onRefresh: () async {
-                          await _loadData(showToast: false, forceRefresh: true);
-                          if (context.mounted) {
-                            SuccessToastManager.show(context, message: '刷新成功');
-                          }
-                        },
-                        child: _buildPurchaseRecordsList(),
-                      ),
-            ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _showAddPurchaseRecordDialog(context),
-          backgroundColor: Theme.of(context).primaryColor,
-          heroTag: 'purchase_add_button',
-          child: const Icon(Icons.add, color: Colors.white),
-        ),
+          // 采购记录列表 - 添加下拉刷新
+          Expanded(
+            child:
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : RefreshIndicator(
+                      onRefresh: () async {
+                        await _loadData(showToast: false, forceRefresh: true);
+                        if (context.mounted) {
+                          SuccessToastManager.show(context, message: '刷新成功');
+                        }
+                      },
+                      child: _buildPurchaseRecordsList(),
+                    ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddPurchaseRecordDialog(context),
+        backgroundColor: Theme.of(context).primaryColor,
+        heroTag: 'purchase_add_button',
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
