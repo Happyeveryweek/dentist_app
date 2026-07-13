@@ -1,103 +1,33 @@
 # ROADMAP
 
-## 当前阶段
-- `windows_app` 方法级无用代码与重复逻辑实施计划已完成批次 0～4：批次 0 冻结基线；批次 1 删除 29 个文件中约 60 个无调用 A 级方法、2 行旧注释，同步更新 README 示例和清理由本批产生的孤儿 import/私有方法；批次 2 删除 4 个 Provider 文件中 19 个无调用旧入口方法（财务/采购/材料/用户），保留 data_source 接口和现用 Provider 入口，无孤儿 import；批次 3 删除 SettingsProvider 的 6 个历史设置入口、3 组配置存储、11 组备份策略和 8 组数据源状态的无消费者 Provider/service 委托，以及由此产生的孤儿字段、私有方法和 import。批次 4 已删除 11 个无代码消费者的迁移、数据库、模板和材料维护方法，并清理 `DatabaseSchemaService` 孤儿 SQLite 状态字段与构造参数；上述批次均已通过自动验证，且批次 3、4 手动回归已确认。批次 5 的代码收口与自动验证已完成：新增 `PatientSyncLogHelper`，迁移预约、财务、病历、患者材料和患者核心五套同步服务，删除 21 个私有重复 helper，新增 4 个行为测试；全量 `flutter test` 68 个通过、`flutter analyze` 为 `No issues found!`、`git diff --check` 和行尾检查通过。批次 5 待完成五类同步日志手动回归，批次 6 尚未开始且需要单独授权。
-- `android_app` 无用文件、无调用方法与重复实现实施计划的批次 0、批次 1 已完成，批次 2 已完成代码清理，批次 3A 已完成代码清理和自动验证：删除旧财务清理文件 `financial_data_cleaner.dart` 和 30 个无调用方法（预约/仪表盘 3 个、财务计算 8 个、财务辅助 3 个、病历/患者辅助 8 个、设置/通用工具 12 个、对话框/Loading 4 个），清理 1 个孤儿 import；保留 `FinancialDataCleanerService`、`calculatePatientLatestReceivableAmount`/`calculatePatientLatestCollectedAmount`、`ModernDeleteDialogManager` 等现用入口；`flutter analyze` 为 `No issues found!`，`git diff --check` 和行尾检查通过。批次 3B～7 尚未开始。原始证据仍以 `android_app/docs/android_app_dead_code_duplicate_files_and_methods_audit_2026_07_12.md` 为准。
-- `windows_app` 已完成第二阶段方法级无用代码与重复逻辑静态审核：在当前 353 个可达 Dart 文件、约 95725 行代码中，复核无调用公有方法、Provider/service 兼容委托、一次性迁移入口和跨模块重复实现；详细候选、排除项、六批执行方案、精确搜索命令和验证协议已写入 `windows_app/docs/windows_app_method_level_dead_code_and_duplicate_logic_audit_2026_07_12.md`。本轮只新增审核文档，未删除候选方法或重构业务代码。
-- `windows_app` 患者详情编辑后的 SQLite → MySQL 同步已修复重复日志：患者更新链路改为等待 `PatientCoreService` 内既有同步完成，详情页保存回调只刷新同步状态，不再对同一次保存执行第二次同步；预约状态服务测试夹具已修正，全量 `flutter test` 64 个测试全部通过；无用代码清理的 39 个候选文件删除、静态检查和现有自动化测试已完成，各批手动业务回归尚未全部完成。
-- `windows_app` 已完成无用 Dart 文件与重复实现专项静态审核：以 `lib/main.dart` 为根检查 392 个 Dart 文件的 `import/export/part` 引用图，识别出 34 个无入站文件及 5 个仅被死入口引用的传递文件，共 39 个不可达候选、约 8484 行；已在 `windows_app/docs/windows_app_dead_code_and_duplicate_implementation_audit_2026_07_12.md` 记录逐文件证据、风险分级、五批清理方案和验证协议，并在 `windows_app/docs/windows_app_dead_code_cleanup_plan_2026_07_12.md` 制定可执行清理计划。
-- `windows_app` 无用代码清理第一批已执行：删除预约旧四组件、旧时间格式工具、备份路径旧组件、采购导出兼容壳、采购未接入拆分组件、财务辅助孤立组件、设置页孤立组件和占位文件共 18 个文件；`flutter analyze` `No issues found!`，`git diff --check` 通过；`flutter test` 因网络超时无法下载 sqlite3 原生库失败（环境问题）。
-- `windows_app` 无用代码清理第二批已执行：删除财务旧编辑弹窗 `edit_financial_item_dialog.dart`、旧统计对话框 `financial_statistics_dialog_widget.dart`、旧统计组件 `financial_stats_section.dart` 共 3 个文件；`flutter analyze` `No issues found!`，`git diff --check` 通过。
-- `windows_app` 无用代码清理第三批已执行：删除采购旧统计图表 `purchase_statistics_chart.dart` 及其依赖 `purchase_stat_card.dart` 共 2 个文件；`flutter analyze` `No issues found!`，`git diff --check` 通过。
-- `windows_app` 无用代码清理第四批已执行：删除患者材料旧编辑器孤岛 5 文件（`material_input_widget.dart`、`material_debug_info_dialog.dart`、`material_image_detail_dialog.dart`、`material_input_card.dart`、`material_image_preview.dart`）及全局无调用的 `thumbnail_manager.dart` 共 6 个文件；现用新增/编辑仍走 `SingleMaterialEditor`；`flutter analyze` `No issues found!`，`git diff --check` 通过。
-- `windows_app` 无用代码清理第五批已执行（拆 3 个提交）：删除医学常量与治疗模型 4 文件、旧 schema/MySQL 工具 4 文件、旧数据同步弹窗与材料类型下拉 2 文件，共 10 个文件；`flutter analyze` `No issues found!`，`git diff --check` 通过。审核报告列出的 39 个不可达候选文件级清理已全部完成。
-- `windows_app` 患者新增/编辑表单的每条牙齿状况记录已增加独立的可选预约开关；开启后可选择下次预约日期、时间，预约内容既可从历史预约治疗项目去重列表中选择，也可直接手动填写，默认“综合治疗”，并可独立勾选三个牙位十字中需要带入预约记录的内容；预约下拉菜单已增加圆角，预约信息区与十字记录间距已加大；预约编辑器已支持按实际数量渲染 0～3 个带入牙位，不再因单个牙位数据固定访问第二项而报错；提交患者时会使用保存后的患者 ID 自动创建预约，不改动数据库表结构或牙齿状况存储格式；已运行定向 `dart format`、预约治疗项目及牙位序列化/组件回归测试和全量 `flutter analyze`，结果均通过。
-- `android_app` 登录页已压缩登录框高度并整体上移，避免遮挡背景图底部牙齿图标；未改动登录校验、记住密码或背景资源逻辑；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
-- `android_app` 采购统计图表与财务统计图表均已补充明确关闭入口；财务图表点击后立即进入图表页，先展示现有数据并以“已完成 X / 总计 Y 条记录”的文字提示渐进加载，随后每 20 条并发读取明细并刷新图表；同一查询范围的完成快照可直接复用，列表重新加载、搜索或日期范围变化会失效重算；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
-- `android_app` 采购列表、顶部统计与统计图表已统一为当前搜索结果口径；采购明细新增/编辑/删除后会重新回算采购记录的总数量和总金额，详情页会回读最新记录并将变更回传列表；加载失败不再显示为空数据，搜索和统计增加结果版本保护，统计明细查询改为并发并对图表内不完整数据作出提示；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
-- `android_app` 财务列表、顶部统计和统计图表的数据链路已统一为当前搜索/日期条件下的完整记录集；顶部统计先显示首屏临时结果、每 20 条动态刷新并标注加载中，完成后切换为完整值；收费项目变更会通过详情页返回结果触发列表强制刷新，异步搜索增加结果版本保护，金额排序改为基于完整结果集；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
-- `android_app` 仪表盘欢迎卡片已按登录页临床背景图风格重做，保留原有问候、日期、头像和预约数据链路，新增视觉颜色已收口到主题语义色；已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`。
-- `android_app` 登录页背景已替换为临床后台图片 `assets/images/login_clinical_console.png`；已运行 `dart format lib\\screens\\login_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
-- `windows_app` 患者详情页预约记录标签已修复多条预约添加入口：存在预约记录时，列表顶部仍显示“添加预约”按钮，并复用原有保存、重新加载与父页刷新链路；已运行 `dart format lib\\screens\\patient_detail_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
-- `windows_app` 数据源配置编辑态与数据库备份可靠性修复已完成并验证：SQLite/MySQL/备份数据源编辑区增加明确的“编辑中”状态和强调边框；MySQL 备份启用一致快照及完整对象参数，并在每次独立导出后校验完成标记、表/视图清单、文件哈希和备份内行数清单；SQLite 改用 `VACUUM INTO` 生成一致快照并执行完整性检查，自定义路径恢复会先校验临时文件、保留恢复前数据库后再替换真实活动路径。新增 2 个 SQLite 备份/恢复回归测试并通过，`flutter analyze` 结果 `No issues found!`。
-- `windows_app` 备份/恢复链路高风险修复已完成并验证：MySQL 部分失败不再误报成功，还原前备份改为真实执行，SQLite 文件恢复前会先关闭连接并在恢复后重建；采购导出服务已收口为单一核心实现。已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
-- `android_app` 采购详情页导出与材料库初始化修复已完成代码修改，待在 `android_app/` 运行 `flutter analyze` 验证。
-- `windows_app` 预约管理菜单重复点击闪屏修复已完成代码修改，待在 `windows_app/` 运行 `flutter analyze` 验证。
-- `windows_app` 预约/财务弹窗对比度修正已完成代码修改，待在 `windows_app/` 运行 `flutter analyze` 验证。
-- `windows_app` 侧边栏/用户管理/病历管理闪烁修复已完成代码修改，待在 `windows_app/` 运行 `flutter analyze` 验证。
+## 当前状态
 
-## 进行中
-- `windows_app` 无用代码清理第一至五批已删除 39 个文件并通过 `flutter analyze`，文件级清理完成；待手动回归预约、采购、设置备份路径、财务、患者材料、病历疾病过敏选择、预约治疗项目、数据库初始化/结构检测/备份恢复、设置页同步入口、材料类型选择后确认运行时无回归；`flutter test` 因网络超时未能运行，待环境恢复后补测。
-- `android_app` 登录页“记住密码”已恢复为安全存储方案，并补成“勾选后实时保存草稿、取消勾选立即清空”；预约新增页“治疗项目”输入区已改为窄屏自适应布局并消除下拉溢出。当前已通过针对性静态检查，待登录页和新建预约页手动回归确认。
-- `android_app` 采购“添加采购项目”弹窗已改为键盘弹起时高度自适应、表单内容可滚动、底部按钮固定，已消除底部 `RenderFlex overflow` 风险。当前已通过针对性静态检查，待采购录入弹窗手动回归确认。
+### Windows 端
 
-## 已完成
-- 根目录已新增仓库级 `.githooks/pre-commit` 行尾守卫，并约定新克隆仓库或新建 worktree 后先执行 `git config --local core.hooksPath .githooks`：提交前自动检查暂存文本文件，若工作区出现 `CRLF` 或混合行尾则直接阻止提交；根目录 `AGENTS.md` 已同步补充启用命令与“提交前先用 `git ls-files --eol -- <file>` 检查并先修正为 `LF`”规则。
-- `windows_app` 仪表盘欢迎长条图和侧边栏顶部 Logo 已按确认的蓝紫玻璃风格替换并二次修正：新增并更新 `assets/images/home_welcome_banner.png` 与 `assets/images/sidebar_tooth_logo.png`，Logo 已换为圆角图标并在 UI 层强制圆角裁切；欢迎卡保留动态用户名、欢迎语、刷新入口和用户头像数据位，并改为按可用宽度自适应高度、背景图轻微放大裁切以减少边缘留白；欢迎图右侧已移除突兀的大牙齿主体，改为更小、更淡的牙科/医疗装饰图形，降低视觉焦点干扰；欢迎区中部已叠加低强度动态流光、光点和医疗符号装饰，补足空白但不遮挡文字与刷新操作；已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
-- `windows_app` 登录页已按确认的临床后台风格重做并二次调整：背景改用 `assets/images/login_clinical_console.png`，登录卡片调整为右侧毛玻璃面板，表单、Logo、状态信息和按钮样式对齐医疗蓝主题，并通过 Flutter 代码增加低强度动态光扫、底部波线和节点呼吸效果；登录卡片已调整为比原版略小并向右固定到背景图右侧诊室区域，紧凑窗口下不再横向拉满变形，并改为按窗口宽高计算比例缩放；已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
-- `windows_app` 预约详情页头部摘要卡片背景已进一步压浅：不再使用偏深背景，也不再直接复用偏可见的浅渐变 token，改为接近白色的定制轻渐变，并同步压轻阴影和边框，只保留一点点层次避免头部发沉；已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
-- `windows_app` 牙齿状况线条显示已完成修复并验证：添加/编辑患者、添加/编辑预约、查看患者、查看预约中的牙位十字线均已改为更深更粗显示；备注横线仅保留在患者添加/编辑和患者查看页，不扩展到预约查看页，提升浅色主题下的可读性；已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
-- `windows_app` 患者详情页同步状态按钮与公共患者选择弹窗已完成修复并验证：同步按钮在“检查中/不可用”状态下禁用，避免在非 SQLite 主库场景误导用户触发失败提示；公共患者选择弹窗已补回电话和病历号显示，降低财务/预约场景同名患者误选风险。已在 `windows_app/` 运行 `flutter analyze`，结果 `No issues found!`。
-- `windows_app` 患者 SQLite → MySQL 同步规则已修正为以 SQLite `id` 为主键来源：MySQL 命中同 `id` 时直接更新，未命中时插入同 `id`；患者详情页进入财务数据源补齐患者也使用同一 id-upsert 规则。已新增本地 `patient_sync_logs.json` 结构化日志和设置页“患者同步日志”查看入口，日志已按患者基本信息/患者材料/材料图片/预约记录/财务记录/财务明细/病历记录分类展示同步新建、同步更新、同步删除，并记录字段从旧值到新值的变更明细；财务详情页新增 MySQL 患者缺失/SQLite 与 MySQL 信息不一致的明确拦截提示；仓库新增 `.gitattributes` 固定文本文件 LF 行尾；全量 `flutter analyze` `No issues found!`。
-- 根目录已新增 [crlf_to_lf_execution_2026_07_07.md](D:/Data/android_project/dentist_app/docs/crlf_to_lf_execution_2026_07_07.md)，用于后续按批次将仓库文本文件从 CRLF 统一修复为 LF，文档包含可直接执行的 PowerShell 命令、分批提交顺序和验证步骤。
-- `windows_app` 五套主题已按 `windows_app/docs/dental_management_themes.md` 9.7 严格实施协议接入：`AppThemeTokens` 五套 factory、`WindowsThemeVariant` 主题枚举与解析、设置持久化、`AppTheme.resolve(...)` 统一入口和设置页主题选择 UI 已落地；全量 `flutter analyze` `No issues found!`，业务页面无新增主题分支。
-- `windows_app` 主题治理与医学识别色治理已完成归档，统一以 [windows_app_theme_governance_final_summary_2026_07_05.md](D:/Data/android_project/dentist_app/windows_app/docs/windows_app_theme_governance_final_summary_2026_07_05.md) 为最终状态源，不再依赖已删除的阶段性文档。
-- `windows_app` 空安全与 Flutter Analyze 治理已完成：`!` 已清零到仅注释示例保留，日志输出已统一收敛到 `LogManager`，`flutter analyze` 0 issue；归档文档为 `windows_app/docs/windows_app_null_safety_and_analysis_governance_summary.md`。
-- `android_app` 空安全与静态检查治理已完成：`!` / `late` 在 Provider、Service、DataSource、UI 层已清零，`MapParser` 已建立并完成主要模型改造；归档文档为 `android_app/docs/android_app_null_safety_governance_summary.md`。
-- 根目录与子项目 `AGENTS.md` 已完成共享边界、Flutter 命令约定、格式化/验证流程和 UI 复用规则同步，当前以仓库内现有 `AGENTS.md` 为准。
+- 无用代码与重复逻辑治理已完成：删除 39 个不可达 Dart 文件、方法级无调用 API 与无消费者委托链；五套患者同步服务已通过 `PatientSyncLogHelper` 收口。最终状态见 [治理总结](windows_app/docs/windows_app_dead_code_and_duplicate_logic_governance_summary_2026_07_13.md) 。
+- 图表组件抽取、财务查询对象和 schema 模板重构均已暂缓：当前收益不足以覆盖跨模块行为风险，不是遗留缺陷。
+- 主题治理、SQLite/MySQL 数据源与备份恢复、患者 SQLite → MySQL 同步规则均已完成；业务变更以对应模块代码和测试为准。
 
-## 阻塞
-- 无
+### Android 端
+
+- 无用代码与重复实现治理已完成批次 0～5；批次 6～7 已暂缓，结论见 [治理总结](android_app/docs/android_app_dead_code_and_duplicate_logic_governance_summary_2026_07_13.md) 。
+- 登录“记住密码”、新建预约治疗项目窄屏布局、采购录入弹窗键盘适配均已完成代码与针对性静态检查，待人工回归确认。
+
+## 待办与阻塞
+
+- Windows 端：无用代码治理无阻塞项；若后续出现财务筛选扩展或 SQLite/MySQL 查询结果不一致，再单独评估财务查询对象重构。
+- Android 端：无死代码清理待办。若未来出现 MySQL 图片、文本或日期转换不一致，再按治理总结建立专项测试与迁移方案。
+- 阻塞：无。
 
 ## 最近验证
-- 2026-07-13：完成 `windows_app` 方法级无用代码与重复逻辑清理批次 3；对 6 个历史设置、14 个配置/备份、8 个数据源状态候选精确搜索，确认 3A 仅有 Provider 声明，3B/3C 仅有 Provider 委托和 service 声明两层；删除历史主题/字号/语言/窗口设置及无消费者字段/持久化键，删除配置存储、备份策略、MySQL/模块数据源状态的无消费者 Provider/service 委托，保留主题变体、主备路径、导入导出、连通性、结构检测和真实恢复链路；清理 3 个孤儿私有辅助方法和 1 个孤儿 import。定向设置持久化测试 1 个、数据库备份恢复测试 2 个通过；全量 `flutter test` 64 个通过，`flutter analyze` `No issues found!`，`git diff --check` 通过，4 个 Dart 文件行尾为 LF；主人已确认主题、备份恢复和数据源手动回归通过。
-- 2026-07-13：执行 `windows_app` 方法级无用代码与重复逻辑清理批次 2；对 4 个 Provider 的 19 个候选符号重新执行精确搜索确认仅命中声明（material_provider 的命中区分了 Provider 兼容性方法与 data_source 接口调用），读取完整类确认非 override/接口/序列化/生命周期/回调/路由/动态入口；额外确认登录页直接用 data_source + `setCurrentUser` + `loadUserPermissions` 不走 `loginUser`，退出按钮只做路由跳转不走 `logoutUser`；删除 `financial_provider.dart` 的 `getAllFinancialRecordsNew`/`ensureFinancialRecordsTableExists`、`purchase_provider.dart` 的 `getPurchaseRecordById`/`createPurchaseItemsTable`、`material_provider.dart` 的 `createMaterial`/`clearAllMaterials`（Provider 兼容性方法，保留 data_source 接口与实现）、`user_provider.dart` 的 13 个无调用方法，无孤儿 import 产生；定向 4 个测试文件 26 个通过，全量 `flutter test` 64 个通过，`flutter analyze` `No issues found!`，`git diff --check` 通过，4 个改动文件行尾为 LF。
-- 2026-07-13：执行 `windows_app` 方法级无用代码与重复逻辑清理批次 1；对约 60 个候选符号重新执行精确搜索确认仅命中声明，读取完整类确认非 override/接口/序列化/生命周期/回调/路由/动态入口；删除 MySQL 数据源辅助方法、财务分页、患者缓存、材料分页、病历权限/模板、患者表单 Controller 包装、数据库类型转换、设置独立 API、模型展示/校验方法、AppState 强制重建、通用工具方法共约 60 个，并清理由本批产生的 5 个孤儿 import 和 5 个孤儿私有方法；同步更新 `README_MYSQL_CONNECTION.md` 移除已删除方法的示例；定向 `patient_form_validators_test.dart` 11 个通过，全量 `flutter test` 64 个通过，`flutter analyze` `No issues found!`，`git diff --check` 通过，全部改动文件行尾为 LF。
-- 2026-07-12：执行 `windows_app` 方法级无用代码与重复逻辑清理批次 0；完成四组精确 `rg` 复核、批次 1～4 候选测试映射和测试文件存在性检查，确认患者表单校验测试实际路径为 `test/features/patients/services/patient_form_validators_test.dart`，同步相关目录暂无独立 sync 测试文件；全量 `flutter test` 64 个通过，`flutter analyze` `No issues found!`。本批未修改业务代码，批次 1～6 仍待逐批授权。
-- 2026-07-13：执行 `android_app` 无用代码与重复实现清理批次 3A：删除旧财务清理文件 `financial_data_cleaner.dart` 和 30 个无调用方法（3A-1 预约/仪表盘 3 个、3A-2 财务计算 8 个、3A-3 财务辅助 3 个、3A-4 病历/患者辅助 8 个、3A-5 设置/通用工具 12 个、3A-6 对话框/Loading 4 个），清理 `mysql_utils.dart` 中由 `getLastUpdateTime` 产生的孤儿 import `datetime_formatter.dart`；保留 `FinancialDataCleanerService`、`calculatePatientLatestReceivableAmount`/`calculatePatientLatestCollectedAmount`、`getStatusInfo`、`ModernDeleteDialogManager` 等现用入口；`flutter analyze` 为 `No issues found!`，`git diff --check` 通过，全部改动文件行尾为 LF。待手动回归财务列表/搜索/统计/图表、预约缓存刷新、仪表盘、病历日期选择、患者材料图片缓存、SQLite/MySQL 切换和删除确认提示。
-- 2026-07-13：完成 `android_app` 无用代码与重复实现实施计划批次 1：删除 9 个重新搜索确认无 `lib/`/`test/` 外部入站引用的 A 级不可达 UI、连接状态、Toast 和测试工具文件；保留 dashboard `StatCard`、现用 Toast/数据库入口；删除后精确引用复核无命中，`flutter analyze` 为 `No issues found!`，`git diff --check` 和行尾检查通过。按主人要求，未执行的运行时手动回归不阻塞本批完成；批次 2～7 尚未开始。
-- 2026-07-12：根据 `windows_app` 方法级无用代码与重复逻辑审核报告新增独立实施计划，明确 0～6 批的候选范围、删除授权边界、取证命令、自动/手动验收和逐批进度表；本轮未修改 Dart 代码，未运行 Flutter 验证。
-- 2026-07-12：完成 `android_app` 无用文件、无调用方法与重复实现专项审核；建立 `main.dart` 引用图确认 288 个 Dart 文件中 16 个不可达、约 2203 行，并复核方法级低引用候选和跨模块重复片段；全量 `flutter analyze` 结果 `No issues found!`。Android 当前没有 `test/**/*.dart` 自动化测试，数据库、迁移、备份和同步类候选已在报告中标为执行前必须补测试或真实回归。
-- 2026-07-12：完成 `windows_app` 第二阶段方法级无用代码与重复逻辑静态审核；当前基线为 353 个 Dart 文件、约 95725 行，确认多批无调用 public API、Settings Provider/service 无消费者委托链，以及五套同步服务字段差异 helper 重复实现；报告已写入 `windows_app/docs/windows_app_method_level_dead_code_and_duplicate_logic_audit_2026_07_12.md`。本轮未修改业务代码，沿用最近全量 `flutter test` 64 个通过和 `flutter analyze` `No issues found!` 的基线。
-- 2026-07-12：修复 `appointment_state_service_test.dart` 的 5 个测试失败：患者搜索和数据变更分组此前未关闭 `AppointmentStateService` 默认日期筛选，固定在 2026-07-05 的测试数据会被当前日期过滤为空；仅调整测试夹具，不修改业务服务。单文件 14 个测试全部通过，全量 `flutter test` 64 个测试全部通过。
-- 2026-07-12：定位并修复 `windows_app` 患者详情编辑后同步日志重复问题；根因是 `PatientCoreService.updatePatient()` 已触发一次后台同步，详情页保存回调又显式同步一次。本轮将患者更新后的同步改为等待完成，详情页保存回调仅检查同步状态；并在清理计划补充完成状态复核。已运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`；全量 `flutter test` 64 个测试全部通过；待手动编辑同一患者并确认本次操作只新增一条同步日志。
-- 2026-07-12：执行 `windows_app` 无用代码清理第五批，分 3 个提交删除 10 个不可达文件（医学常量与治疗模型、旧 schema/MySQL 工具、旧数据同步弹窗与材料类型下拉）；删除前符号搜索确认无新增引用，现用路径确认在用；删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过；纯删除批次未执行 `dart format`。
-- 2026-07-12：执行 `windows_app` 无用代码清理第四批，删除 6 个不可达文件（患者材料旧编辑器 5 文件孤岛 + `thumbnail_manager.dart`）；删除前符号搜索确认无新增引用，现用 `material_detail_manager.dart` 新增/编辑仍实例化 `SingleMaterialEditor`；删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过；纯删除批次未执行 `dart format`。
-- 2026-07-12：执行 `windows_app` 无用代码清理第三批，删除 2 个不可达文件（采购旧统计图表 `purchase_statistics_chart.dart` 及其依赖 `purchase_stat_card.dart`）；删除前符号搜索确认仅子图内部引用，现用 `PurchaseStatsDialog` 确认在用；删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过。
-- 2026-07-12：执行 `windows_app` 无用代码清理第二批，删除 3 个不可达文件（财务旧编辑弹窗 `edit_financial_item_dialog.dart`、旧统计对话框 `financial_statistics_dialog_widget.dart`、旧统计组件 `financial_stats_section.dart`）；删除前逐个符号搜索确认无新增引用，现用 `FinancialStatsDialog` 和编辑链路确认在用；删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过。
-- 2026-07-12：执行 `windows_app` 无用代码清理第一批，删除 18 个不可达文件（预约旧四组件、旧时间格式工具、备份路径旧组件、采购导出兼容壳、采购未接入拆分组件、财务辅助孤立组件、设置页孤立组件、占位文件）；删除前逐个符号/路径搜索确认无新增引用，删除后运行全量 `flutter analyze` 结果 `No issues found!`，`git diff --check` 通过；`flutter test` 因网络超时无法下载 sqlite3 原生库失败（环境问题，非代码问题），待环境恢复后补测。
-- 2026-07-12：完成 `windows_app/lib` 无用文件与重复实现专项静态审核；枚举 392 个 Dart 文件并从 `lib/main.dart` 遍历引用图，确认 39 个不可达候选、约 8484 行，详细结果与后续五批清理协议已写入 `windows_app/docs/windows_app_dead_code_and_duplicate_implementation_audit_2026_07_12.md`；本轮仅新增/更新 Markdown 文档，未运行 Flutter 命令。
-- 2026-07-12：修复 `windows_app` 患者牙齿状况带入预约后编辑报 `RangeError` 的问题；预约编辑牙齿组件由固定读取两个十字改为按实际牙位数量渲染，新增单个和三个牙位组件回归测试；运行 `flutter test test\appointment_treatment_utils_test.dart`，3 个测试全部通过，运行全量 `flutter analyze`，结果 `No issues found!`。
-- 2026-07-12：`windows_app` 患者牙齿状况行可选预约功能及后续牙位勾选、预约内容手动填写/历史下拉选择、下拉圆角和区域间距调整完成后，运行定向 `dart format`、`flutter test test\appointment_treatment_utils_test.dart` 和全量 `flutter analyze`；2 个回归测试全部通过，静态检查结果 `No issues found!`。
-- 2026-07-12：`android_app` 登录框高度与位置调整后运行 `dart format lib\screens\login_screen.dart lib\features\users\widgets\login_form.dart` 和全量 `flutter analyze`，结果 `No issues found!`；本轮仅压缩表单内部间距并上移登录框及底部装饰区域，避免遮挡背景牙齿图标。
-- 2026-07-12：`android_app` 采购/财务统计图表交互与财务渐进加载改造后运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`；本轮覆盖图表关闭入口、图表立即打开、文字化加载进度、每批 20 条并发明细加载、统计失败仍可进入图表页提示，以及当前查询范围快照复用与失效。
-- 2026-07-12：`android_app` 采购数据一致性修复后运行定向 `dart format` 和全量 `flutter analyze`，结果 `No issues found!`；本轮覆盖采购明细变更后的记录汇总回算、详情页变更回传、当前搜索结果的列表/统计/图表口径、数据库错误提示、缓存有效性校验、异步搜索结果版本保护和统计明细并发加载。
-- 2026-07-12：`android_app` 财务数据一致性与渐进统计显示修复后运行 `dart format lib\\screens\\financial_detail_screen.dart lib\\screens\\financial_management_screen.dart lib\\providers\\financial_provider.dart lib\\features\\financial\\helpers\\financial_cache_helper.dart lib\\features\\financial\\widgets\\financial_statistics_dialog.dart lib\\features\\financial\\widgets\\financial_statistics_card.dart` 和全量 `flutter analyze`，结果 `No issues found!`；本轮覆盖详情页变更回传、搜索结果乱序保护、首屏临时统计与每 20 条动态刷新、按当前查询条件加载完整统计、图表初始范围同步、金额排序全量化，以及明细加载失败不再被当作空数据。
-- 2026-07-12：`android_app` 仪表盘欢迎卡片已使用登录页背景图重做为浅蓝紫临床控制台风格，并将相关颜色收口到 `AppTheme`；已运行 `dart format lib\\theme\\app_theme.dart lib\\features\\dashboard\\widgets\\welcome_section.dart` 和 `flutter analyze`，结果 `No issues found!`。
-- 2026-07-12：`android_app` 登录页背景已替换为 `assets/images/login_clinical_console.png`；已运行 `dart format lib\\screens\\login_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
-- 2026-07-10：修复 `windows_app` 备份数据源保存后重启回退到 SQLite 的问题：启动加载配置时已恢复 `backupDataSource` 字段，并新增“保存为 MySQL 后重新初始化仍为 MySQL”的持久化回归测试；定向测试通过，全量 `flutter analyze` 结果 `No issues found!`。
-- 2026-07-10：修复 MySQL 备份完整性校验把含 BLOB 原始字节的 SQL 强制按 UTF-8 解码而误报失败的问题；校验改为单字节安全解析，后续 `mysqldump` 增加 `--hex-blob`。现场生成的 `D:\`、`E:\` 两份失败提示对应 SQL 均已确认包含 14 张表、18 组数据语句和正常完成标记；修复后运行全量 `flutter analyze`，结果 `No issues found!`。
-- 2026-07-10：`windows_app` 完成数据源编辑态、MySQL 备份完整性校验及 SQLite 一致快照/真实路径安全恢复修复；运行 `flutter test test\services\database_backup_service_test.dart`，2 个测试全部通过；运行全量 `flutter analyze`，结果 `No issues found!`。
-- 2026-07-08：根目录已新增 `.githooks/pre-commit` 并配置为仓库本地 `core.hooksPath`；使用临时 `CRLF` 文本文件做真实拦截测试时，hook 已按预期阻止 `git commit`，同时在清洁工作区下返回通过；本轮验证只覆盖提交前行尾守卫，不改动业务代码逻辑。
-- 2026-07-08：`windows_app` 修复仪表盘欢迎区动态层登录后红屏问题：补齐 `_welcomeAmbientController` 初始化与释放，解决 `LateInitializationError`；已运行 `dart format lib\screens\modern_dashboard_screen.dart` 和 `flutter analyze`，结果 `No issues found!`。
-- 2026-07-08：`windows_app` 仪表盘欢迎长条图中部已新增非交互动态装饰层，包含慢速流光线、呼吸光点和低透明医疗符号气泡；已运行 `dart format lib\screens\modern_dashboard_screen.dart` 和 `flutter analyze`，结果 `No issues found!`；本轮只调整欢迎区视觉动效，不改动仪表盘数据加载、导航权限、卡片点击和登录逻辑。
-- 2026-07-08：`windows_app` 登录页卡片尺寸已从过小状态调回接近原版但略小，紧凑窗口下不再使用全宽拉伸，改为按可用宽度比例限制并保留最小/最大尺寸；已运行 `dart format lib\screens\login_screen.dart` 和 `flutter analyze`，结果 `No issues found!`；本轮只调整登录页视觉尺寸和响应式布局，不改动登录校验、记住密码、权限加载和跳转逻辑。
-- 2026-07-08：`windows_app` 登录页毛玻璃登录卡片已缩小约五分之一、向右固定到背景图右侧区域，并按窗口宽高计算 `layoutScale` 实现自适应缩放；已运行 `dart format lib\screens\login_screen.dart` 和 `flutter analyze`，结果 `No issues found!`；本轮只调整登录页视觉尺寸、定位和响应式缩放，不改动登录校验、记住密码、权限加载和跳转逻辑。
-- 2026-07-08：`windows_app` 仪表盘欢迎长条图右侧大牙齿已改为小型弱化装饰图形，并运行 `flutter analyze`，结果 `No issues found!`；本轮只覆盖 `assets/images/home_welcome_banner.png`，不改动欢迎区代码、导航权限、仪表盘数据加载和登录逻辑。
-- 2026-07-07：`windows_app` 登录页重做后运行 `dart format lib\screens\login_screen.dart` 和 `flutter analyze`，结果 `No issues found!`；本轮仅调整登录页视觉、背景资源引用和低强度动态背景层，不改动登录校验、记住密码、权限加载和跳转逻辑。
-- 2026-07-07：`windows_app` 预约详情页头部摘要卡片背景已进一步压浅，并运行 `flutter analyze`，`No issues found!`；本轮仅调整预约详情页顶部摘要卡片的背景渐变、阴影和边框层次，不改动状态徽标、时间文案和业务逻辑。
-- 2026-07-07：`windows_app` 牙齿状况线条显示已统一加深加粗，并运行 `flutter analyze`，`No issues found!`；本轮覆盖添加/编辑患者、添加/编辑预约、查看患者、查看预约中的牙位十字线，以及患者表单/患者查看中的备注横线显示，不改动牙齿状况数据结构和业务逻辑。
-- 2026-07-07：`windows_app` 重复打开应用的单实例拦截提示已改为明确页面提示，不再灰屏后立即退出；当前会显示“应用已经打开”说明、5 秒倒计时和手动退出按钮，并运行 `flutter analyze`，`No issues found!`。
-- 2026-07-07：`windows_app` 编辑财务记录专用弹窗 `financial_record_edit_dialog.dart` 已补回右上角关闭按钮，并运行 `flutter analyze`，`No issues found!`；本轮修复的是财务管理列表“编辑财务记录”链路，不涉及新增财务记录弹窗主体逻辑。
-- 2026-07-07：`windows_app` 财务管理添加/编辑财务记录弹窗已补回右上角关闭按钮，并运行 `flutter analyze`，`No issues found!`；本轮仅修复标题栏关闭入口缺失，不改动财务表单业务逻辑。
-- 2026-07-07：`windows_app` 公共患者选择弹窗列顺序已调整为“病历号 / 姓名电话 / 最近就诊”，并运行 `flutter analyze`，`No issues found!`；本轮仅调整患者辨识信息的展示顺序，降低同名患者选择时的扫描成本。
-- 2026-07-07：`windows_app` 患者详情页同步状态按钮与公共患者选择弹窗修复后运行 `flutter analyze`，`No issues found!`；本轮覆盖同步按钮禁用边界、同步状态文案，以及患者选择弹窗电话/病历号辨识信息恢复。
-- 2026-07-07：`windows_app` 患者 SQLite → MySQL 同步修复后运行全量 `flutter analyze`，`No issues found!`；`git diff --check` 通过；本轮覆盖患者同步 id-upsert、患者详情页财务数据源补齐 id-upsert、患者同步 JSON 日志、设置页查看入口、患者材料/材料图片/预约/财务/病历等患者相关同步日志、字段变更明细、财务详情页 MySQL 患者缺失/信息不一致提示和 LF 行尾规则。
-- 2026-07-07：根目录已补充 `docs/crlf_to_lf_execution_2026_07_07.md`，定义 CRLF→LF 的可执行分批修复方案；本次文档补齐未单独运行 Flutter 命令。
-- 2026-07-06：`windows_app` 备份/恢复与采购导出治理后运行全量 `flutter analyze`，`No issues found!`；本轮修复覆盖 MySQL 恢复成功判定、真实预恢复备份、SQLite 恢复前断开连接/恢复后重建、还原文件句柄关闭、SQLite 路径错误兜底移除，以及采购导出服务重复实现收口。
-- 2026-07-06：根目录 `AGENTS.md` 已补充 Dart 定向格式化规则与默认验证顺序：先格式化改动文件，再运行 `flutter analyze`，命中测试条件时再运行 `flutter test`；本次仅更新协作文档，未运行 Flutter 命令。
-- 2026-07-05：`windows_app` 五套主题接入后运行全量 `flutter analyze`，`No issues found!`；并完成搜索复核，主题枚举仅存在于主题入口与设置相关文件，业务页面 `DentalColors` / `AppTheme.primaryColor` / `AppTheme.secondaryColor` / `AppTheme.primaryGradient` 为 0 命中。
-- 2026-07-05：`windows_app` 主题治理阶段文档已归档合并为 `windows_app/docs/windows_app_theme_governance_final_summary_2026_07_05.md`，旧的 9 份阶段性文档已删除；本次仅整理文档，未运行 Flutter 命令。
-- 2026-07-04：`windows_app` 阶段 5 范围运行针对性 `flutter analyze`，`No issues found!`；图表、统计弹窗、牙位相关组件的旧 `DentalColors`、`AppTheme.primaryGradient` / `AppTheme.primaryColor` 和普通硬编码边框已清零。
-- 2026-07-04：`windows_app` 阶段 6 完成后运行全量 `flutter analyze`，0 error、0 warning，仅剩预先存在的 `prefer_const` info；运行链路中仅保留 `AppTheme.standardTheme()`、`AppTheme.smallBorderRadius` 和 `AppTheme.dangerGradient`。
-- 2026-07-01：`android_app` 对采购初始化与采购统计相关文件运行针对性 `flutter analyze`，0 issue。
+
+- 2026-07-13：Windows 方法级治理批次 5 完成。新增 4 个 `PatientSyncLogHelper` 测试；全量 `flutter test` 68 个通过，`flutter analyze` 为 `No issues found!`，`git diff --check` 与 LF 行尾检查通过；五类同步日志手动回归已确认。
+- 2026-07-13：Windows 方法级治理批次 1～4 完成。全量 `flutter test` 64 个通过，`flutter analyze` 为 `No issues found!`；设置、备份恢复、数据源切换、数据库/模板/材料类型高风险回归已确认。
+- 2026-07-13：Android 无用代码治理批次 3A 完成。删除旧财务清理文件及 30 个无调用方法；`flutter analyze` 为 `No issues found!`，`git diff --check` 与 LF 行尾检查通过。
+- 2026-07-13：Android 无用代码治理批次 4 完成。删除 2 个一次性迁移文件和 8 个无消费者备份／数据库旧入口；Windows Flutter `flutter analyze` 为 `No issues found!`；SQLite／MySQL 的备份恢复、旧库升级和连接回归已确认通过。
+- 2026-07-13：Android 无用代码治理批次 5 完成。删除采购页空焦点／生命周期监听链；Windows Flutter `flutter analyze` 为 `No issues found!`，`git diff --check` 通过；采购页首次、下拉、增删改和前后台刷新回归已确认。
+
+## 维护规则
+
+- 只有已实现并验证的事项进入“完成”；未确认信息放入“待办与阻塞”。
+- 详细执行过程不再重复保存在本文件；使用模块内最终总结文档和 Git 历史追溯。
