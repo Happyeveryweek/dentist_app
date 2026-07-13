@@ -13,12 +13,12 @@ import '../models/user.dart';
 import '../models/financial_record.dart';
 import '../models/financial_item.dart';
 import '../data_sources/financial_data_source.dart';
-import '../features/financial/services/financial_mysql_connection_service.dart';
 import '../features/financial/services/financial_query_service.dart';
 import '../features/financial/services/financial_sync_service.dart';
 import '../features/financial/services/financial_permission_service.dart';
 import '../features/financial/services/financial_data_source_initializer.dart';
 import '../features/financial/helpers/financial_cache_helper.dart';
+import '../services/module_mysql_connection_service.dart';
 import '../utils/log_manager.dart';
 
 /// 财务管理提供者
@@ -64,9 +64,10 @@ class FinancialProvider extends ChangeNotifier {
         getDoctorFilter: () => _permissionService.getDoctorFilter(),
         isInitialized: () => initialized,
       );
-  FinancialMysqlConnectionService? _mysqlConnectionServiceInstance;
-  FinancialMysqlConnectionService get _mysqlConnectionService =>
-      _mysqlConnectionServiceInstance ??= FinancialMysqlConnectionService(
+  ModuleMysqlConnectionService? _mysqlConnectionServiceInstance;
+  ModuleMysqlConnectionService get _mysqlConnectionService =>
+      _mysqlConnectionServiceInstance ??= ModuleMysqlConnectionService(
+        logTag: 'FinancialMysqlConnectionService',
         getDatabaseProvider: () => _databaseProvider is DatabaseProvider
             ? _databaseProvider as DatabaseProvider
             : null,

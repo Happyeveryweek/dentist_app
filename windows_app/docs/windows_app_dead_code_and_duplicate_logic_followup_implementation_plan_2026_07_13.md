@@ -2,11 +2,11 @@
 
 方案日期：2026-07-13。
 
-状态：部分完成。批次 0、1A、1B、2A、2B、2C 已于 2026-07-13 实施并通过自动验证；批次 3～5 待实施。
+状态：代码实施和自动验证已完成。批次 0～5 已于 2026-07-13 实施，`flutter analyze --no-pub` 无问题，全量测试 75 个通过；规定的人工 UI／功能回归待主人执行。
 
 本文承接 [Windows 端无用代码与重复逻辑治理总结](windows_app_dead_code_and_duplicate_logic_governance_summary_2026_07_13.md)，记录 2026-07-13 复审发现的剩余候选、实施批次、风险边界和验收方式。本文是后续实施依据，不代表所列事项已经完成。
 
-实施记录：批次 0 基线静态检查无问题、全量测试 68 个通过。批次 1A 已删除 `SplashScreen`、`ErrorScreen`、`AppToast`、`PermissionButton`、`PermissionIconButton`、`AvatarSelector`、`UserAvatar` 与 `DefaultTemplateInitializer`；`AppToastType`、`_ToastConfig` 仍被 `AppToastManager` 使用，按现有代码保留。批次 1B 已删除仅被 barrel export 的 `PatientSortOptionsSheet` 文件及 export。批次 2A 已清理确认无调用的 public API、由 `ConfigManager.saveConfig` 产生的私有保存孤儿链，以及无人读取的 Dashboard 刷新标志链。批次 2B 已删除设置侧旧 MySQL 备份 service 文件、字段和两层无消费者委托，现用 `DatabaseBackupService` 备份恢复路径保持不变。批次 2C 已让采购页面统一调用 `PurchaseExportService.showExportDialog`，并删除页面内两套重复私有编排方法。批次 2A～2C 后静态检查无问题，备份专项测试 3 个通过、全量测试 68 个通过，且 `git diff --check` 与改动文件 LF 行尾检查通过；批次 1A～2C 的人工 UI／功能回归待主人执行。
+实施记录：批次 0 基线静态检查无问题、全量测试 68 个通过。批次 1A 已删除 `SplashScreen`、`ErrorScreen`、`AppToast`、`PermissionButton`、`PermissionIconButton`、`AvatarSelector`、`UserAvatar` 与 `DefaultTemplateInitializer`；`AppToastType`、`_ToastConfig` 仍被 `AppToastManager` 使用，按现有代码保留。批次 1B 已删除仅被 barrel export 的 `PatientSortOptionsSheet` 文件及 export。批次 2A 已清理确认无调用的 public API、由 `ConfigManager.saveConfig` 产生的私有保存孤儿链，以及无人读取的 Dashboard 刷新标志链。批次 2B 已删除设置侧旧 MySQL 备份 service 文件、字段和两层无消费者委托，现用 `DatabaseBackupService` 备份恢复路径保持不变。批次 2C 已让采购页面统一调用 `PurchaseExportService.showExportDialog`，并删除页面内两套重复私有编排方法。批次 3 已移除 9 项无用直接依赖，`equatable`、`ffi`、`win32` 因其他依赖仍需使用而保留为传递依赖。批次 4 已新增 `ModuleMysqlConnectionService` 和 7 个行为测试，四个 Provider 已迁移到共享实现，四个共 452 行的旧 service 文件已删除。批次 3～5 后静态检查无问题，全量测试由 68 个增至 75 个，`git diff --check` 与改动文件 LF 行尾检查通过；全部人工 UI／功能回归待主人执行。
 
 ## 1. 目标与非目标
 
@@ -58,12 +58,12 @@
 | 0（已完成） | 实施前基线确认 | 低 | 否 | 否 |
 | 1A（已完成） | 删除无消费者类型和同文件孤儿代码 | 低 | 否 | UI 冒烟检查待确认 |
 | 1B（已完成） | 删除仅被 export 的患者排序文件 | 低 | 是 | 患者列表排序回归待确认 |
-| 2A | 删除独立无调用 public API 和刷新标志链 | 低至中 | 否 | 对应模块回归 |
-| 2B | 删除无消费者 MySQL 备份委托链和旧 service | 中 | 是 | 备份恢复回归 |
-| 2C | 收口采购导出重复编排 | 中 | 否 | 采购导出回归 |
-| 3 | 清理无用直接依赖 | 中 | 否 | 启动、PDF、插件回归 |
-| 4 | 统一四模块 MySQL 连接服务 | 中至高 | 是 | SQLite/MySQL 连接与同步回归 |
-| 5 | 全量验证与文档收口 | 中 | 否 | 全量回归 |
+| 2A（已完成） | 删除独立无调用 public API 和刷新标志链 | 低至中 | 否 | 对应模块回归 |
+| 2B（已完成） | 删除无消费者 MySQL 备份委托链和旧 service | 中 | 是 | 备份恢复回归 |
+| 2C（已完成） | 收口采购导出重复编排 | 中 | 否 | 采购导出回归 |
+| 3（已完成） | 清理无用直接依赖 | 中 | 否 | 启动、PDF、插件回归待确认 |
+| 4（已完成） | 统一四模块 MySQL 连接服务 | 中至高 | 是 | SQLite/MySQL 连接与同步回归待确认 |
+| 5（自动验证已完成） | 全量验证与文档收口 | 中 | 否 | 人工全量回归待确认 |
 
 ## 5. 批次 0：实施前基线确认（已完成）
 
@@ -328,7 +328,7 @@ onExport: (record, items) => PurchaseExportService.showExportDialog(
 - 关闭页面或弹窗后不发生 `BuildContext` 异步使用异常。
 - `flutter analyze` 和全量测试通过。
 
-## 11. 批次 3：清理无用直接依赖
+## 11. 批次 3：清理无用直接依赖（已完成）
 
 ### 11.1 候选
 
@@ -372,7 +372,14 @@ onExport: (record, items) => PurchaseExportService.showExportDialog(
 - Windows 应用启动检查只在主人明确授权后执行。
 - 手动检查 PDF 导出、采购图片导出、头像上传、文件选择和外部链接相关入口；若某个依赖存在动态或资产用途，恢复该依赖并记录证据。
 
-## 12. 批次 4：统一四模块 MySQL 连接服务
+### 11.5 实施结果
+
+- 已从 `pubspec.yaml` 移除 9 项无用直接依赖并成功执行 `flutter pub get`。
+- `equatable`、`ffi`、`win32` 降为传递依赖；其余候选及其不再需要的传递依赖已从锁文件移除。
+- `printing`、`url_launcher_windows` 及随 `image_picker` 移除后不再需要的 `file_selector_windows` 插件注册已由 Flutter 自动更新。
+- 自动验证已通过；启动、PDF、采购图片导出、头像上传和文件选择人工回归待确认。
+
+## 12. 批次 4：统一四模块 MySQL 连接服务（已完成）
 
 ### 12.1 当前重复范围
 
@@ -457,7 +464,15 @@ lib/services/module_mysql_connection_service.dart
 
 模块范围：预约、财务、材料、采购。患者和病历的连接路径不在本批次修改，但需要确认没有被共享工具的改动间接影响。
 
-## 13. 批次 5：全量验证与文档收口
+### 12.6 实施结果
+
+- 新增 `lib/services/module_mysql_connection_service.dart`，统一连接获取、有效性检查、同步连接、连接测试和重连行为。
+- 预约、财务、材料、采购四个 Provider 已迁移到共享服务，并保留原模块日志标签。
+- 新增 7 个状态流行为测试，覆盖非 MySQL 降级、Provider 缺失、最新连接缓存、失效重连、测试失败清缓存、同步连接优先级和同步连接失败降级。
+- 经主人确认后删除四个旧 service 文件，共删除 452 行重复实现。
+- 自动验证已通过；四模块 SQLite/MySQL 连接、失效重连和同步人工回归待确认。
+
+## 13. 批次 5：全量验证与文档收口（自动验证已完成）
 
 ### 13.1 自动验证顺序
 

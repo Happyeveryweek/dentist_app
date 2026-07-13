@@ -11,8 +11,8 @@ import '../models/user.dart';
 import '../providers/patient_provider.dart';
 import '../providers/user_provider.dart';
 import '../data_sources/appointment_data_source.dart';
-import '../features/appointments/services/appointment_mysql_connection_service.dart';
 import '../features/appointments/services/appointment_sync_service.dart';
+import '../services/module_mysql_connection_service.dart';
 import '../utils/log_manager.dart';
 
 /// 预约管理提供者
@@ -55,12 +55,16 @@ class AppointmentProvider extends ChangeNotifier {
 
   // 同步服务
   AppointmentSyncService? _syncServiceInstance;
-  AppointmentSyncService get _syncService => _syncServiceInstance ??= AppointmentSyncService(
-        getSyncMysqlConnection: () => _mysqlConnectionService.getSyncConnection(),
+  AppointmentSyncService get _syncService =>
+      _syncServiceInstance ??= AppointmentSyncService(
+        getSyncMysqlConnection: () =>
+            _mysqlConnectionService.getSyncConnection(),
         getEffectiveDataSourceType: () => _effectiveDataSourceType,
       );
-  AppointmentMysqlConnectionService? _mysqlConnectionServiceInstance;
-  AppointmentMysqlConnectionService get _mysqlConnectionService => _mysqlConnectionServiceInstance ??= AppointmentMysqlConnectionService(
+  ModuleMysqlConnectionService? _mysqlConnectionServiceInstance;
+  ModuleMysqlConnectionService get _mysqlConnectionService =>
+      _mysqlConnectionServiceInstance ??= ModuleMysqlConnectionService(
+        logTag: 'AppointmentMysqlConnectionService',
         getDatabaseProvider: () => _databaseProvider,
         getCachedConnection: () => _mysqlConnection,
         setCachedConnection: (connection) {
@@ -150,8 +154,8 @@ class AppointmentProvider extends ChangeNotifier {
       mysqlDataSource.setPatientProvider(patientProvider);
     }
 
-    LogManager.w('AppointmentProvider',
-        'AppointmentProvider已设置PatientProvider并传递给数据源');
+    LogManager.w(
+        'AppointmentProvider', 'AppointmentProvider已设置PatientProvider并传递给数据源');
   }
 
   // 设置用户权限提供者
@@ -199,11 +203,9 @@ class AppointmentProvider extends ChangeNotifier {
       reconnectCallback: () async {
         try {
           await _mysqlConnectionService.reconnectConnection();
-          LogManager.i(
-              'AppointmentProvider', 'AppointmentProvider: MySQL重连成功');
+          LogManager.i('AppointmentProvider', 'AppointmentProvider: MySQL重连成功');
         } catch (e) {
-          LogManager.e(
-              'AppointmentProvider', 'AppointmentProvider: MySQL重连失败',
+          LogManager.e('AppointmentProvider', 'AppointmentProvider: MySQL重连失败',
               error: e);
         }
       },
@@ -484,8 +486,8 @@ class AppointmentProvider extends ChangeNotifier {
       // 如果有缓存数据，返回缓存（优雅降级）
       final cached = _cachedAppointments;
       if (cached != null) {
-        LogManager.w('AppointmentProvider',
-            '使用缓存数据作为降级方案: ${cached.length} 条记录');
+        LogManager.w(
+            'AppointmentProvider', '使用缓存数据作为降级方案: ${cached.length} 条记录');
         return List.from(cached);
       }
 

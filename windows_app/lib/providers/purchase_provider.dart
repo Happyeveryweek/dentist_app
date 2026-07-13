@@ -13,8 +13,8 @@ import '../models/purchase_item.dart';
 import '../providers/user_provider.dart';
 import '../data_sources/purchase_data_source.dart';
 import '../utils/purchase_migration.dart';
-import '../features/purchases/services/purchase_mysql_connection_service.dart';
 import '../features/purchases/services/purchase_sync_service.dart';
+import '../services/module_mysql_connection_service.dart';
 import '../utils/log_manager.dart';
 
 /// 采购管理提供者
@@ -56,9 +56,10 @@ class PurchaseProvider extends ChangeNotifier {
   MySqlPurchaseDataSource? _mysqlDataSource;
 
   // 同步服务
-  PurchaseMysqlConnectionService? _mysqlConnectionServiceInstance;
-  PurchaseMysqlConnectionService get _mysqlConnectionService =>
-      _mysqlConnectionServiceInstance ??= PurchaseMysqlConnectionService(
+  ModuleMysqlConnectionService? _mysqlConnectionServiceInstance;
+  ModuleMysqlConnectionService get _mysqlConnectionService =>
+      _mysqlConnectionServiceInstance ??= ModuleMysqlConnectionService(
+        logTag: 'PurchaseMysqlConnectionService',
         getDatabaseProvider: () => _databaseProvider is DatabaseProvider
             ? _databaseProvider as DatabaseProvider
             : null,

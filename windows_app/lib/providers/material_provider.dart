@@ -5,8 +5,8 @@ import 'package:mysql1/mysql1.dart';
 
 import '../models/material.dart' as material_models;
 import '../data_sources/material_data_source.dart';
-import '../features/materials/services/material_mysql_connection_service.dart';
 import '../features/materials/services/material_sync_service.dart';
+import '../services/module_mysql_connection_service.dart';
 import '../utils/log_manager.dart';
 
 /// 材料管理提供者
@@ -26,9 +26,10 @@ class MaterialProvider extends ChangeNotifier {
         getEffectiveDataSourceType: () =>
             _effectiveDataSourceType ?? _dataSourceType,
       );
-  MaterialMysqlConnectionService? _mysqlConnectionServiceInstance;
-  MaterialMysqlConnectionService get _mysqlConnectionService =>
-      _mysqlConnectionServiceInstance ??= MaterialMysqlConnectionService(
+  ModuleMysqlConnectionService? _mysqlConnectionServiceInstance;
+  ModuleMysqlConnectionService get _mysqlConnectionService =>
+      _mysqlConnectionServiceInstance ??= ModuleMysqlConnectionService(
+        logTag: 'MaterialMysqlConnectionService',
         getDatabaseProvider: () => _databaseProvider,
         getCachedConnection: () => _mysqlConnection,
         setCachedConnection: (connection) {
