@@ -21,7 +21,6 @@ class MySQLConnectionPool {
 
   // 连接统计
   int _totalConnections = 0;
-  int _activeConnections = 0;
 
   // 配置信息
   ConnectionSettings? _settings;
@@ -100,7 +99,6 @@ class MySQLConnectionPool {
     if (_availableConnections.isNotEmpty) {
       final connection = _availableConnections.removeAt(0);
       _busyConnections.add(connection);
-      _activeConnections++;
       return connection;
     }
 
@@ -110,7 +108,6 @@ class MySQLConnectionPool {
         final connection = await _createConnection();
         _busyConnections.add(connection);
         _totalConnections++;
-        _activeConnections++;
         return connection;
       } catch (e) {
         AppLogger.info('创建新连接失败，加入等待队列: $e');
@@ -138,7 +135,6 @@ class MySQLConnectionPool {
     }
 
     _busyConnections.remove(connection);
-    _activeConnections--;
 
     // 检查连接是否仍然有效
     try {
@@ -149,7 +145,6 @@ class MySQLConnectionPool {
         final completer = _waitingQueue.removeAt(0);
         if (!completer.isCompleted) {
           _busyConnections.add(connection);
-          _activeConnections++;
           completer.complete(connection);
         }
       } else {
@@ -201,17 +196,6 @@ class MySQLConnectionPool {
     }
   }
 
-  /// 获取连接池状态
-  Map<String, dynamic> getPoolStats() {
-    return {
-      'totalConnections': _totalConnections,
-      'activeConnections': _activeConnections,
-      'availableConnections': _availableConnections.length,
-      'busyConnections': _busyConnections.length,
-      'waitingQueue': _waitingQueue.length,
-    };
-  }
-
   /// 清理空闲连接
   Future<void> _cleanupIdleConnections() async {
     // 清理过期的可用连接
@@ -256,73 +240,8 @@ class MySQLConnectionPool {
     _availableConnections.clear();
     _busyConnections.clear();
     _totalConnections = 0;
-    _activeConnections = 0;
     _isInitialized = false;
 
     AppLogger.info('MySQL连接池已关闭');
-  }
-
-  /// 检查连接池健康状态
-  Future<bool> checkHealth() async {
-    if (!_isInitialized) {
-      return false;
-    }
-
-    try {
-      // 检查可用连接
-      for (final connection in List.from(_availableConnections)) {
-        try {
-          await connection.query('SELECT 1');
-        } catch (e) {
-          // 移除失效连接
-          _availableConnections.remove(connection);
-          _totalConnections--;
-          try {
-            await connection.close();
-          } catch (_) {}
-        }
-      }
-
-      // 检查忙碌连接（可选，可能正在使用）
-      for (final connection in List.from(_busyConnections)) {
-        try {
-          await connection.query('SELECT 1');
-        } catch (e) {
-          // 标记为失效，等待归还时处理
-        }
-      }
-
-      // 确保最小连接数
-      if (_availableConnections.isEmpty &&
-          _totalConnections < _minConnections) {
-        try {
-          final newConnection = await _createConnection();
-          _availableConnections.add(newConnection);
-          _totalConnections++;
-        } catch (_) {}
-      }
-
-      return _totalConnections > 0;
-    } catch (e) {
-      AppLogger.info('连接池健康检查失败: $e');
-      return false;
-    }
-  }
-
-  /// 获取详细的连接状态
-  Map<String, dynamic> getDetailedStats() {
-    final settings = _settings;
-    return {
-      ...getPoolStats(),
-      'isInitialized': _isInitialized,
-      'settings':
-          settings != null
-              ? {
-                'host': settings.host,
-                'port': settings.port,
-                'database': settings.db,
-              }
-              : null,
-    };
   }
 }

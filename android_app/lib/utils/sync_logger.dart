@@ -3,7 +3,6 @@ import 'datetime_formatter.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-import 'package:intl/intl.dart';
 import './app_logger.dart';
 
 /// 同步日志模型
@@ -55,21 +54,6 @@ class SyncLog {
       'error': error,
       'schema_changes': schemaChanges,
     };
-  }
-
-  // 获取格式化的时间字符串
-  String get formattedTime {
-    return DateFormat('yyyy-MM-dd HH:mm:ss').format(timestamp);
-  }
-
-  // 获取状态文本
-  String get statusText {
-    return success ? '成功' : '失败';
-  }
-
-  // 获取状态颜色
-  String get statusColor {
-    return success ? 'green' : 'red';
   }
 }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
-import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
+import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/widgets/app_card.dart';
 import 'package:dentist_app/features/appointments/widgets/treatment_info_display.dart';
@@ -62,12 +62,7 @@ class AppointmentInfoCard extends StatelessWidget {
           ],
           if (notes != null && notes.isNotEmpty) ...[
             const SizedBox(height: 12),
-            _buildInfoRow(
-              CupertinoIcons.doc_text,
-              '备注',
-              notes,
-              alignTop: true,
-            ),
+            _buildInfoRow(CupertinoIcons.doc_text, '备注', notes, alignTop: true),
           ],
           const SizedBox(height: 12),
           _buildInfoRow(

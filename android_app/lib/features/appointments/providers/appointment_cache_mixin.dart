@@ -12,13 +12,8 @@ mixin AppointmentCacheMixin on ChangeNotifier {
   DateTime? _lastCacheTime;
   static const Duration _cacheValidDuration = Duration(minutes: 15);
 
-  // 刷新标志
-  bool _appointmentsNeedRefresh = false;
-
   // Getters
-  bool get appointmentsNeedRefresh => _appointmentsNeedRefresh;
   DateTime? get lastCacheTime => _lastCacheTime;
-  int get cachedAppointmentsCount => _cachedAppointments?.length ?? 0;
   bool get hasValidCache => isCacheValid();
 
   // 检查缓存是否有效
@@ -40,15 +35,13 @@ mixin AppointmentCacheMixin on ChangeNotifier {
   void clearCache() {
     _cachedAppointments = null;
     _lastCacheTime = null;
-    _appointmentsNeedRefresh = true; // 标记需要刷新
-    AppLogger.info('预约数据缓存已清除，标记需要刷新');
+    AppLogger.info('预约数据缓存已清除');
     // 延迟通知以避免在build阶段调用setState
     Future.microtask(() => notifyListeners());
   }
 
   // 标记需要刷新
   void markAppointmentsNeedRefresh() {
-    _appointmentsNeedRefresh = true;
     notifyListeners();
   }
 

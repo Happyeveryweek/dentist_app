@@ -36,7 +36,4 @@ class SyncTableConfig {
       'medical_record_templates': SQLiteMedicalRecordTemplatesTableSchema(),
     };
   }
-
-  /// 获取同步表数量
-  static int get syncTableCount => syncTableNames.length;
 }

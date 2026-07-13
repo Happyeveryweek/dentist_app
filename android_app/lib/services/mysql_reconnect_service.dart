@@ -16,11 +16,9 @@ class MySQLReconnectService {
 
   // 回调函数
   Function()? _onReconnectSuccess;
-  Function()? _onReconnectFailed;
 
   /// 获取重连状态
   bool get isReconnecting => _healthService.isReconnecting;
-  int get reconnectAttempts => _reconnectAttempts;
 
   /// 构造函数
   MySQLReconnectService({
@@ -37,11 +35,6 @@ class MySQLReconnectService {
     _onReconnectSuccess = callback;
   }
 
-  /// 设置重连失败回调
-  void setOnReconnectFailed(Function() callback) {
-    _onReconnectFailed = callback;
-  }
-
   /// 启动自动重连（指数退避机制）
   void _startAutoReconnect() {
     if (_healthService.isReconnecting) {
@@ -56,7 +49,9 @@ class MySQLReconnectService {
     final backoffDelay = Duration(
       seconds: (1 << (_reconnectAttempts - 1)).clamp(1, 32),
     );
-    AppLogger.info('🔄 开始第 $_reconnectAttempts 次重连尝试，延迟 ${backoffDelay.inSeconds} 秒...');
+    AppLogger.info(
+      '🔄 开始第 $_reconnectAttempts 次重连尝试，延迟 ${backoffDelay.inSeconds} 秒...',
+    );
 
     _reconnectTimer = Timer(backoffDelay, () async {
       await _performReconnect();
@@ -99,7 +94,6 @@ class MySQLReconnectService {
       } else {
         AppLogger.info('❌ 已达到最大重连次数，停止重连');
         _healthService.setReconnectingStatus(false);
-        _onReconnectFailed?.call();
       }
     }
   }
@@ -223,12 +217,6 @@ class MySQLReconnectService {
 
     // 执行连接检查
     return await ensureConnection();
-  }
-
-  /// 重置重连状态
-  void resetReconnectState() {
-    _reconnectAttempts = 0;
-    _healthService.setReconnectingStatus(false);
   }
 
   /// 销毁资源

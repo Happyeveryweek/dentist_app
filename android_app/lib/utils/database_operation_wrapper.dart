@@ -99,41 +99,6 @@ class DatabaseOperationWrapper {
         errorString.contains('数据库未初始化') ||
         errorString.contains('mysql连接已断开');
   }
-
-  /// 包装查询操作
-  Future<List<Map<String, dynamic>>> wrapQuery(
-    String operationName,
-    Future<List<Map<String, dynamic>>> Function() queryOperation,
-  ) async {
-    return await wrapOperation<List<Map<String, dynamic>>>(
-      operationName,
-      queryOperation,
-    );
-  }
-
-  /// 包装插入操作
-  Future<int> wrapInsert(
-    String operationName,
-    Future<int> Function() insertOperation,
-  ) async {
-    return await wrapOperation<int>(operationName, insertOperation);
-  }
-
-  /// 包装更新操作
-  Future<int> wrapUpdate(
-    String operationName,
-    Future<int> Function() updateOperation,
-  ) async {
-    return await wrapOperation<int>(operationName, updateOperation);
-  }
-
-  /// 包装删除操作
-  Future<int> wrapDelete(
-    String operationName,
-    Future<int> Function() deleteOperation,
-  ) async {
-    return await wrapOperation<int>(operationName, deleteOperation);
-  }
 }
 
 /// 数据库连接异常

@@ -124,20 +124,6 @@ class MedicalRecordTemplate {
     );
   }
 
-  /// 获取完整的显示名称（包含父级疾病）
-  String get fullDisplayName {
-    if (parentName != null && parentName!.isNotEmpty) {
-      return '$parentName - $name';
-    }
-    return name;
-  }
-
-  /// 检查是否为主疾病类型（没有父级）
-  bool get isMainType => parentName == null || parentName!.isEmpty;
-
-  /// 检查是否为子类型（有父级）
-  bool get isSubType => parentName != null && parentName!.isNotEmpty;
-
   @override
   String toString() {
     return 'MedicalRecordTemplate{id: $id, category: $category, name: $name, parentName: $parentName, isActive: $isActive}';
@@ -166,41 +152,6 @@ class MedicalRecordTemplateCategory {
   static const String dentalDisease = 'dental_disease'; // 牙科疾病
   static const String systemicDisease = 'systemic_disease'; // 全身疾病
   static const String allergy = 'allergy'; // 过敏史
-
-  static const List<String> all = [dentalDisease, systemicDisease, allergy];
-
-  /// 获取类别的中文名称
-  static String getCategoryName(String category) {
-    switch (category) {
-      case dentalDisease:
-        return '牙科疾病';
-      case systemicDisease:
-        return '全身疾病';
-      case allergy:
-        return '过敏类型';
-      default:
-        return '未知类别';
-    }
-  }
-
-  /// 获取类别的英文名称
-  static String getCategoryEnglishName(String category) {
-    switch (category) {
-      case dentalDisease:
-        return 'Dental Disease';
-      case systemicDisease:
-        return 'Systemic Disease';
-      case allergy:
-        return 'Allergy';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  /// 检查是否为有效的类别
-  static bool isValidCategory(String category) {
-    return all.contains(category);
-  }
 }
 
 /// 默认模板数据初始化器

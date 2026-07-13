@@ -55,17 +55,8 @@ class AppTheme {
 
   // 间距
   static const double padding = 16.0;
-  static const double smallPadding = 8.0;
-  static const double largePadding = 24.0;
 
   // 文本样式
-  static const TextStyle headingStyle = TextStyle(
-    fontSize: 24,
-    fontWeight: FontWeight.bold,
-    color: primaryText,
-    letterSpacing: -0.5,
-  );
-
   static const TextStyle titleStyle = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.w600,
@@ -262,84 +253,4 @@ class AppTheme {
     ),
     brightness: Brightness.dark,
   );
-}
-
-// 自定义卡片组件
-class AppCard extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry? padding;
-  final double? width;
-  final double? height;
-
-  const AppCard({
-    super.key,
-    required this.child,
-    this.padding,
-    this.width,
-    this.height,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      padding: padding ?? const EdgeInsets.all(AppTheme.padding),
-      decoration: AppTheme.cardDecoration,
-      child: child,
-    );
-  }
-}
-
-// 自定义按钮组件
-class PrimaryButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onPressed;
-  final bool isLoading;
-
-  const PrimaryButton({
-    super.key,
-    required this.text,
-    required this.onPressed,
-    this.isLoading = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: isLoading ? null : onPressed,
-      style: AppTheme.primaryButtonStyle,
-      child:
-          isLoading
-              ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-              : Text(text),
-    );
-  }
-}
-
-class SecondaryButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onPressed;
-
-  const SecondaryButton({
-    super.key,
-    required this.text,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onPressed,
-      style: AppTheme.secondaryButtonStyle,
-      child: Text(text),
-    );
-  }
 }

@@ -6,13 +6,11 @@ import '../utils/app_logger.dart';
 // 全局应用状态管理类
 class AppState extends ChangeNotifier {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-  int _refreshCounter = 0;
 
   // 登录状态管理
   bool _isLoggedIn = false;
   User? _currentUser;
 
-  int get refreshCounter => _refreshCounter;
   bool get isLoggedIn => _isLoggedIn;
   User? get currentUser => _currentUser;
 
@@ -39,7 +37,6 @@ class AppState extends ChangeNotifier {
   // 强制重建整个应用
   void forceRefresh() {
     AppLogger.info('强制刷新整个应用');
-    _refreshCounter++;
     notifyListeners();
   }
 
@@ -53,7 +50,6 @@ class AppState extends ChangeNotifier {
   // 重置应用状态 - 用于数据库恢复后
   void resetState() {
     AppLogger.info('重置应用状态');
-    _refreshCounter++;
     notifyListeners();
     resetToHome();
   }

@@ -101,27 +101,6 @@ class SQLiteInitializationService {
     }
   }
 
-  /// 确保数据库路径存在
-  Future<void> ensureDatabasePath() async {
-    final config = _dbConfig;
-    if (config == null) {
-      throw Exception('数据库配置未设置');
-    }
-
-    if (config.sqlite.path.isEmpty) {
-      config.sqlite.path = await DatabaseUtils.getDefaultDatabasePath();
-      await config.saveConfig();
-    }
-
-    _dbPath = config.sqlite.path;
-
-    // 确保目录存在
-    final dbDir = Directory(path.dirname(_dbPath));
-    if (!dbDir.existsSync()) {
-      await dbDir.create(recursive: true);
-    }
-  }
-
   /// 获取 SQLite 数据库实例
   Future<Database?> getDatabase() async {
     final helper = _dbHelper;

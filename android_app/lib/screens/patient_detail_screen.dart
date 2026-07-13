@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
-import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
+import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/providers/financial_provider.dart';
 
 import 'package:dentist_app/providers/patient_image_provider.dart';
@@ -353,9 +353,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                   // 打印详细日志用于诊断
                   AppLogger.info('传递给编辑表单的患者数据: ${patientToEdit.toMap()}');
                   AppLogger.info('传递的电话号码格式: ${patientToEdit.phone}');
-                  AppLogger.info('电话号码格式类型: ${patientToEdit.phone.runtimeType}');
+                  AppLogger.info(
+                    '电话号码格式类型: ${patientToEdit.phone.runtimeType}',
+                  );
                   patientToEdit.debugPhoneFormat();
-                  AppLogger.info('电话号码是否包含逗号: ${patientToEdit.phone.contains(',')}');
+                  AppLogger.info(
+                    '电话号码是否包含逗号: ${patientToEdit.phone.contains(',')}',
+                  );
                   AppLogger.info('解析后的电话号码列表: $_phoneNumbers');
 
                   // 创建一个确保电话号码为JSON格式的患者对象
@@ -627,9 +631,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                           );
                         }
 
-                        final error = imageProvider.getError(
-                          currentPatientId,
-                        );
+                        final error = imageProvider.getError(currentPatientId);
                         if (error != null) {
                           return Card(
                             margin: const EdgeInsets.symmetric(
@@ -676,7 +678,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                           );
                         }
 
-                        return const PatientImageViewer(materials: [], images: []);
+                        return const PatientImageViewer(
+                          materials: [],
+                          images: [],
+                        );
                       },
                     );
                   },

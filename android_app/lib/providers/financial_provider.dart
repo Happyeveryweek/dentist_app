@@ -31,9 +31,6 @@ class FinancialProvider extends ChangeNotifier {
   bool _isInitializedFlag = false;
   Future<void>? _initializationFuture;
 
-  // 刷新标志
-  bool _financialsNeedRefresh = false;
-
   // Service 和 Helper 实例
   final FinancialCacheHelper _cacheHelper = FinancialCacheHelper();
   final FinancialPermissionService _permissionService =
@@ -80,7 +77,6 @@ class FinancialProvider extends ChangeNotifier {
   bool get initialized =>
       _isInitializedFlag &&
       (_database != null || _currentMysqlConnection != null);
-  bool get financialsNeedRefresh => _financialsNeedRefresh;
   bool get isConnected => _connectionService.isConnected;
   bool get isReconnecting => _connectionService.isReconnecting;
   String? get lastError => _connectionService.lastError;
@@ -139,8 +135,7 @@ class FinancialProvider extends ChangeNotifier {
   // 清除缓存
   void clearCache() {
     _cacheHelper.clearCache();
-    _financialsNeedRefresh = true; // 标记需要刷新
-    AppLogger.info('财务数据缓存已清除，标记需要刷新');
+    AppLogger.info('财务数据缓存已清除');
     notifyListeners();
   }
 
@@ -293,7 +288,6 @@ class FinancialProvider extends ChangeNotifier {
 
   // 标记需要刷新
   void markFinancialsNeedRefresh() {
-    _financialsNeedRefresh = true;
     notifyListeners();
   }
 

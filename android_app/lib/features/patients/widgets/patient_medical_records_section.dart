@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
+import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/providers/database_provider.dart';
 import 'package:dentist_app/providers/medical_record_provider.dart';
 import 'package:dentist_app/models/database_models.dart';

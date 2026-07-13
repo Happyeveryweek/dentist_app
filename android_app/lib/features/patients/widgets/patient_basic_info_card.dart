@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
-import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
+import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/widgets/app_card.dart';
 import 'package:dentist_app/features/patients/widgets/patient_info_row.dart';
@@ -108,7 +108,8 @@ class PatientBasicInfoCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
           ],
-          if (identificationNumber != null && identificationNumber.isNotEmpty) ...[
+          if (identificationNumber != null &&
+              identificationNumber.isNotEmpty) ...[
             PatientInfoRow(
               icon: CupertinoIcons.creditcard,
               label: '身份证号',

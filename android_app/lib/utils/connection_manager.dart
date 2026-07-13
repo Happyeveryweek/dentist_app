@@ -16,7 +16,6 @@ class ConnectionManager {
   DatabaseProvider? _databaseProvider;
   Timer? _reconnectTimer;
   bool _isMonitoring = false;
-  bool _connectivityPluginAvailable = true;
 
   /// 开始监控网络状态
   void startMonitoring(DatabaseProvider databaseProvider) {
@@ -71,7 +70,6 @@ class ConnectionManager {
 
         AppLogger.info('✅ MySQL网络监控已启动');
       } catch (e) {
-        _connectivityPluginAvailable = false;
         AppLogger.info('❌ 启动网络监控失败: $e');
 
         if (e is MissingPluginException) {
@@ -210,19 +208,4 @@ class ConnectionManager {
       AppLogger.info('❌ 连接检查失败: $e');
     }
   }
-
-  /// 手动触发连接检查
-  Future<bool> checkConnection() async {
-    if (_databaseProvider?.dbType != 'mysql') return true;
-
-    try {
-      return await _databaseProvider!.ensureConnection();
-    } catch (e) {
-      AppLogger.info('❌ 手动连接检查失败: $e');
-      return false;
-    }
-  }
-
-  /// 检查网络监控是否可用
-  bool get isNetworkMonitoringAvailable => _connectivityPluginAvailable;
 }

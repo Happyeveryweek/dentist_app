@@ -58,9 +58,6 @@ class MapParser {
   double doubleValue(String key, {double defaultValue = 0.0}) =>
       optional(key, _parseDouble) ?? defaultValue;
 
-  /// 解析可选双精度浮点数字段。
-  double? doubleOptional(String key) => optional(key, _parseDouble);
-
   /// 解析布尔字段。
   bool boolean(String key, {bool defaultValue = false}) =>
       optional(key, _parseBool) ?? defaultValue;

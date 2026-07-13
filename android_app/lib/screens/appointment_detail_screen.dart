@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
+import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/providers/appointments_provider.dart';
 import 'package:dentist_app/providers/patient_provider.dart';
 import 'package:dentist_app/models/database_models.dart';
@@ -73,9 +73,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   Widget build(BuildContext context) {
     final appointment = _appointment;
     if (appointment == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     return PopScope(
       canPop: false,

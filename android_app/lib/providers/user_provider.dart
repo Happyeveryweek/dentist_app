@@ -55,9 +55,6 @@ class UserProvider extends ChangeNotifier {
   // 当前用户信息
   User? _currentUser;
 
-  // 刷新标志
-  bool _usersNeedRefresh = false;
-
   // 用户列表缓存
   List<User> _users = [];
 
@@ -66,7 +63,6 @@ class UserProvider extends ChangeNotifier {
 
   // Getters
   bool get initialized => _database != null || _currentMysqlConnection != null;
-  bool get usersNeedRefresh => _usersNeedRefresh;
   User? get currentUser => _currentUser;
   List<User> get users => _users;
   String? get error => _error;
@@ -191,7 +187,6 @@ class UserProvider extends ChangeNotifier {
   // 清除缓存
   void clearCache() {
     _cacheService.clearCache();
-    _usersNeedRefresh = true; // 标记需要刷新
     // 延迟通知以避免在build阶段调用setState
     Future.microtask(() => notifyListeners());
   }
@@ -296,7 +291,6 @@ class UserProvider extends ChangeNotifier {
 
   // 标记刷新
   void markUsersNeedRefresh() {
-    _usersNeedRefresh = true;
     notifyListeners();
   }
 

@@ -30,12 +30,8 @@ class MaterialProvider extends ChangeNotifier {
   bool _isInitializedFlag = false;
   bool _isInitializing = false;
 
-  // 刷新标志
-  bool _materialsNeedRefresh = false;
-
   // Getters
   bool get initialized => _database != null || _mysqlConnection != null;
-  bool get materialsNeedRefresh => _materialsNeedRefresh;
 
   // 检查数据库是否已初始化
   bool get isInitialized {
@@ -222,7 +218,6 @@ class MaterialProvider extends ChangeNotifier {
 
   // 标记需要刷新
   void markMaterialsNeedRefresh() {
-    _materialsNeedRefresh = true;
     notifyListeners();
   }
 

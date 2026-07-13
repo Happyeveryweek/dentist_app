@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app/theme/app_theme.dart';
-import 'package:flutter_file_dialog/flutter_file_dialog.dart';
-import 'package:intl/intl.dart';
 
 class AppCard extends StatelessWidget {
   final Widget child;
@@ -41,24 +39,5 @@ class AppCard extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-Future<void> saveBackupWithSaf(String sourcePath) async {
-  try {
-    const mimeType = 'application/octet-stream';
-    final date = DateFormat('yyyy-MM-dd_HH-mm-ss').format(DateTime.now());
-    final fileName = 'dental_clinic_backup_$date.db';
-
-    final params = SaveFileDialogParams(
-      sourceFilePath: sourcePath,
-      fileName: fileName,
-      mimeTypesFilter: [mimeType],
-    );
-
-    await FlutterFileDialog.saveFile(params: params);
-    // 保存成功
-  } catch (e) {
-    throw Exception('备份创建失败：$e');
   }
 }

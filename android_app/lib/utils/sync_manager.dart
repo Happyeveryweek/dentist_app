@@ -475,33 +475,6 @@ class SyncManager {
     return '';
   }
 
-  /// 检查并执行同步（带连接检测）
-  static Future<bool> checkAndSync() async {
-    try {
-      final dbConfig = await DatabaseConfig.loadConfig();
-      final syncConfig = await SyncConfig.loadSyncConfig();
-
-      // 如果未启用同步，直接返回
-      if (!syncConfig.syncEnabled) {
-        AppLogger.info('同步未启用');
-        return true;
-      }
-
-      // 测试MySQL连接
-      final canConnect = await MySqlUtils.testConnection(dbConfig);
-      if (!canConnect) {
-        AppLogger.info('MySQL连接失败，跳过同步');
-        return false;
-      }
-
-      // 执行同步（自动同步，需要检查间隔）
-      return await performSync(forceSync: false);
-    } catch (e) {
-      AppLogger.info('检查并执行同步失败: $e');
-      return false;
-    }
-  }
-
   /// 强制同步（忽略间隔检查）
   static Future<bool> forceSync() async {
     try {

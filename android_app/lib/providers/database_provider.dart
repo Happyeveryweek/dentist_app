@@ -1,10 +1,7 @@
 import 'package:flutter/foundation.dart';
-// 患者相关模型已迁移到 PatientProvider
 import 'package:sqflite/sqflite.dart';
-import '../models/database_config.dart';
 import 'package:mysql1/mysql1.dart';
 import 'dart:async';
-import 'mysql_connection_pool.dart';
 // 导入新创建的服务
 import '../services/mysql_connection_service.dart';
 import '../services/database_health_service.dart';
@@ -28,61 +25,20 @@ class DatabaseProvider extends ChangeNotifier {
 
   String _dbType = ''; // 初始化前不设置默认值，避免误导
   String _dbPath = '';
-  DatabaseConfig? _dbConfig;
   bool _initialized = false;
   // 添加一个数据库变更标志，当数据库切换时会变更
   bool _databaseChanged = false;
   bool _shouldNavigateToDashboard = false; // 添加控制是否导航到仪表盘的标志
 
-  // 用于仪表盘页面检查是否需要刷新数据
-  bool _dashboardNeedsRefresh = false;
-  bool get dashboardNeedsRefresh => _dashboardNeedsRefresh;
-
-  // MySQL连接池
-  MySQLConnectionPool? _connectionPool;
-
   // 获取连接状态（从健康服务获取）
   bool get isConnected => _healthService.isConnected;
   bool get isReconnecting => _healthService.isReconnecting;
-  bool get hasConnectionIssues =>
-      !_healthService.isConnected && _dbType == 'mysql';
-
-  // 获取连接状态描述
-  String get connectionStatusText {
-    if (_dbType != 'mysql') return '本地数据库';
-    if (_healthService.isReconnecting) return '正在重连...';
-    if (_healthService.isConnected) return '已连接';
-    return '连接断开';
-  }
-
-  // 获取连接状态图标
-  String get connectionStatusIcon {
-    if (_dbType != 'mysql') return '💾';
-    if (_healthService.isReconnecting) return '🔄';
-    if (_healthService.isConnected) return '✅';
-    return '❌';
-  }
 
   // 获取数据库类型
   String get dbType => _dbType.isEmpty ? 'initializing' : _dbType;
 
-  // 获取MySQL连接池
-  MySQLConnectionPool? get connectionPool => _connectionPool;
-
   // 获取MySQL连接（从连接服务获取）
   MySqlConnection? get mysqlConnection => _mysqlConnectionService.connection;
-
-  // 获取配置文件中设置的数据库类型（不受自动切换影响）
-  String get configDbType => _dbConfig?.dbType ?? 'sqlite';
-
-  // 获取当前实际使用的数据库类型描述
-  String get currentDbTypeDescription {
-    final config = _dbConfig;
-    if (config != null && _isAutoSwitchedToSQLite && config.dbType == 'mysql') {
-      return 'SQLite (MySQL连接失败时自动切换)';
-    }
-    return _dbType == 'mysql' ? 'MySQL' : 'SQLite';
-  }
 
   // 用于记录之前的数据库类型
   String previousDbType = 'sqlite';
@@ -123,9 +79,7 @@ class DatabaseProvider extends ChangeNotifier {
       notifyListeners();
     });
 
-    _reconnectService.setOnReconnectSuccess(() {
-      _markDataNeedsRefresh();
-    });
+    _reconnectService.setOnReconnectSuccess(notifyListeners);
 
     // 延迟初始化数据源，避免循环依赖
   }
@@ -133,13 +87,6 @@ class DatabaseProvider extends ChangeNotifier {
   // 强制数据同步（供外部调用）
   Future<bool> forceDataSync() async {
     return await _syncService.forceDataSync();
-  }
-
-  // 标记数据需要刷新
-  void _markDataNeedsRefresh() {
-    _dashboardNeedsRefresh = true;
-    // 通知其他Provider数据需要刷新
-    notifyListeners();
   }
 
   // 手动重连（供UI调用）
@@ -165,7 +112,7 @@ class DatabaseProvider extends ChangeNotifier {
     if (_dbType != 'mysql') return true;
     final result = await _reconnectService.checkConnectionOnAppResume();
     if (result) {
-      _markDataNeedsRefresh();
+      notifyListeners();
     }
     return result;
   }
@@ -202,7 +149,6 @@ class DatabaseProvider extends ChangeNotifier {
         syncService: _syncService,
       );
 
-      _dbConfig = result.dbConfig;
       _dbType = result.dbType;
       _dbPath = result.dbPath;
       _initialized = result.initialized;

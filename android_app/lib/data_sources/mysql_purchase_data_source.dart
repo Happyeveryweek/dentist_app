@@ -154,7 +154,18 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
       ],
     );
 
-    return (result.affectedRows ?? 0) > 0;
+    if ((result.affectedRows ?? 0) > 0) {
+      return true;
+    }
+
+    // MySQL 对数据库层面无变化的 UPDATE 返回 affectedRows = 0。
+    // 采购汇总由明细重算，浮点运算或 DATETIME 秒级精度都可能让本次
+    // UPDATE 最终没有可写入的差异；此时只要记录仍存在，就应视为成功。
+    final existing = await _connection().query(
+      'SELECT 1 FROM purchase_records WHERE id = ? LIMIT 1',
+      [purchase.id],
+    );
+    return existing.isNotEmpty;
   }
 
   @override

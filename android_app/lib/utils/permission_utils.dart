@@ -253,39 +253,3 @@ class _PermissionWrapperState extends State<PermissionWrapper> {
     return widget.child;
   }
 }
-
-/// 权限按钮组件 - 带有权限检查的按钮
-class PermissionButton extends StatelessWidget {
-  final Widget child;
-  final VoidCallback? onPressed;
-  final String module;
-  final String action;
-  final String? recordDoctor;
-  final String? permissionDeniedMessage;
-
-  const PermissionButton({
-    super.key,
-    required this.child,
-    required this.onPressed,
-    required this.module,
-    required this.action,
-    this.recordDoctor,
-    this.permissionDeniedMessage,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return PermissionWrapper(
-      module: module,
-      action: action,
-      recordDoctor: recordDoctor,
-      onPermissionDenied: () {
-        PermissionUtils.showPermissionDeniedMessage(
-          context,
-          customMessage: permissionDeniedMessage,
-        );
-      },
-      child: GestureDetector(onTap: onPressed, child: child),
-    );
-  }
-}

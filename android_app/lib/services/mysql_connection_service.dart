@@ -108,9 +108,7 @@ class MySQLConnectionService {
 
           // 设置连接保持参数
           await connection.query("SET wait_timeout = 28800"); // 8小时
-          await connection.query(
-            "SET interactive_timeout = 28800",
-          ); // 8小时
+          await connection.query("SET interactive_timeout = 28800"); // 8小时
           AppLogger.info('MySQL字符编码和连接超时已设置');
         } catch (e) {
           AppLogger.info('MySQL连接错误: $e');
@@ -165,120 +163,6 @@ class MySQLConnectionService {
         }
         await Future.delayed(retryDelay);
       }
-    }
-  }
-
-  /// 使用参数初始化MySQL连接
-  Future<void> initWithParams(
-    String host,
-    String port,
-    String database,
-    String username,
-    String password,
-  ) async {
-    try {
-      AppLogger.info('使用参数初始化MySQL连接...');
-
-      // 首先关闭已有连接
-      final existingConnection = _mysqlConnection;
-      if (existingConnection != null) {
-        await existingConnection.close();
-        _mysqlConnection = null;
-      }
-
-      // 检查参数
-      if (host.isEmpty) {
-        throw Exception('MySQL主机名为空');
-      }
-
-      // 检查并转换localhost为10.0.2.2（如果在Android平台）
-      String effectiveHost = host;
-      if (Platform.isAndroid && (host == 'localhost' || host == '127.0.0.1')) {
-        AppLogger.info('Android连接检测到localhost参数，自动转换为10.0.2.2');
-        effectiveHost = '10.0.2.2';
-      }
-
-      // 打印所有连接参数，帮助调试
-      AppLogger.info(
-        'MySQL连接参数: host=$effectiveHost (原始值:$host), port=$port, db=$database, user=$username',
-      );
-
-      // 对于Android模拟器，如果使用10.0.2.2，记录下来
-      if (effectiveHost == "10.0.2.2") {
-        AppLogger.info('使用Android模拟器特殊主机: 10.0.2.2 (模拟器中的localhost)');
-      }
-
-      // 先测试Socket连接
-      AppLogger.info('测试Socket连接到MySQL: $effectiveHost:$port');
-      try {
-        final socket = await Socket.connect(
-          effectiveHost,
-          int.parse(port),
-          timeout: const Duration(seconds: 15),
-          sourceAddress: InternetAddress.anyIPv4,
-        );
-        AppLogger.info('Socket连接成功，销毁临时Socket');
-        socket.destroy();
-      } catch (socketError) {
-        AppLogger.info('Socket连接测试失败: $socketError');
-        throw Exception('无法连接到MySQL服务器: $socketError');
-      }
-
-      // 创建新连接设置
-      final settings = ConnectionSettings(
-        host: effectiveHost,
-        port: int.parse(port),
-        user: username,
-        password: password,
-        db: database,
-        timeout: const Duration(seconds: 20),
-      );
-
-      // 尝试连接
-      AppLogger.info('准备连接到MySQL: $effectiveHost:$port/$database');
-
-      try {
-        final connection = await MySqlConnection.connect(settings);
-        _mysqlConnection = connection;
-
-        // 设置会话字符编码，确保中文字符正确显示
-        await connection.query("SET NAMES 'utf8mb4'");
-        await connection.query("SET CHARACTER SET utf8mb4");
-        await connection.query("SET character_set_connection=utf8mb4");
-        AppLogger.info('MySQL字符编码已设置为utf8mb4');
-      } catch (e) {
-        AppLogger.info('MySQL连接错误: $e');
-        if (e.toString().contains('SocketException')) {
-          throw Exception('无法连接到MySQL服务器，请检查主机名和端口是否正确');
-        } else if (e.toString().contains('Access denied')) {
-          throw Exception('MySQL访问被拒绝，请检查用户名和密码是否正确');
-        } else if (e.toString().contains('Unknown database')) {
-          throw Exception('数据库不存在，请检查数据库名称是否正确');
-        } else {
-          throw Exception('MySQL连接失败: $e');
-        }
-      }
-
-      // 测试连接
-      final newConnection = _mysqlConnection;
-      if (newConnection == null) {
-        throw Exception('MySQL连接未建立');
-      }
-      try {
-        final results = await newConnection.query('SELECT 1');
-        if (results.isNotEmpty) {
-          AppLogger.info('MySQL连接测试成功');
-        } else {
-          throw Exception('MySQL连接测试失败: 查询返回空结果');
-        }
-      } catch (e) {
-        AppLogger.info('MySQL查询测试错误: $e');
-        throw Exception('MySQL连接成功但查询测试失败: $e');
-      }
-    } catch (e) {
-      AppLogger.info('MySQL连接错误: $e');
-      _mysqlConnection = null;
-      throw Exception('MySQL连接失败: $e');
     }
   }
 
@@ -347,10 +231,5 @@ class MySQLConnectionService {
         _mysqlConnection = null;
       }
     }
-  }
-
-  /// 重置连接状态
-  void resetConnection() {
-    _mysqlConnection = null;
   }
 }

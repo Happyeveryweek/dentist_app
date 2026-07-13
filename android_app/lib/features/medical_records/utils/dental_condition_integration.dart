@@ -104,42 +104,6 @@ class DentalConditionIntegration {
     return result;
   }
 
-  /// 获取所有可用的牙齿状况日期列表
-  ///
-  /// [dentalData] 解析后的牙齿状况数据
-  /// 返回按时间排序的日期列表（最新的在前）
-  static List<String> getAvailableDates(Map<String, dynamic> dentalData) {
-    if (dentalData.isEmpty) {
-      return [];
-    }
-
-    final dates = <String>[];
-    for (final entry in dentalData.entries) {
-      final key = entry.key;
-      final value = entry.value;
-      if (key.startsWith('date-') &&
-          value != null &&
-          value.toString().isNotEmpty) {
-        dates.add(value.toString());
-      }
-    }
-
-    // 去重并排序（最新的在前）
-    final uniqueDates = dates.toSet().toList();
-    uniqueDates.sort((a, b) {
-      try {
-        final dateA = DateTime.parse(a);
-        final dateB = DateTime.parse(b);
-        return dateB.compareTo(dateA); // 降序排列
-      } catch (e) {
-        // 如果日期解析失败，按字符串排序
-        return b.compareTo(a);
-      }
-    });
-
-    return uniqueDates;
-  }
-
   /// 格式化日期显示
   ///
   /// [dateString] 日期字符串

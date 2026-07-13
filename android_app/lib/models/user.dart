@@ -173,64 +173,6 @@ class User {
     return allowedModules.contains(module);
   }
 
-  /// 获取权限映射
-  Map<String, bool> get permissionMap {
-    if (role == 'admin') {
-      // 管理员拥有所有权限
-      return {
-        'dashboard': true,
-        'patients': true,
-        'appointments': true,
-        'financial': true,
-        'materials': true,
-        'purchase': true,
-        'users': true,
-        'settings': true,
-      };
-    }
-
-    if (modulePermissions == null || modulePermissions!.isEmpty) {
-      // 如果没有权限配置，返回默认权限
-      return {
-        'dashboard': true,
-        'patients': false,
-        'appointments': false,
-        'financial': false,
-        'materials': false,
-        'purchase': false,
-        'users': false,
-        'settings': false,
-      };
-    }
-
-    try {
-      final permissions =
-          jsonDecode(modulePermissions!) as Map<String, dynamic>;
-      return {
-        'dashboard': true, // 仪表盘始终可访问
-        'patients': permissions['patients'] == true,
-        'appointments': permissions['appointments'] == true,
-        'financial': permissions['financial'] == true,
-        'materials': permissions['materials'] == true,
-        'purchase': permissions['purchase'] == true,
-        'users': permissions['users'] == true,
-        'settings': permissions['settings'] == true,
-      };
-    } catch (e) {
-      AppLogger.info('解析权限配置失败: $e');
-      return {
-        'dashboard': true,
-        'patients': false,
-        'appointments': false,
-        'financial': false,
-        'materials': false,
-        'purchase': false,
-        'users': false,
-        'settings': false,
-      };
-    }
-  }
-
   @override
   String toString() {
     return 'User(id: $id, username: $username, email: $email, role: $role, doctor: $doctor, avatar: $avatar, modulePermissions: $modulePermissions, imageData: ${imageData != null ? '${imageData!.length} bytes' : 'null'})';

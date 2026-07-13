@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:dentist_app/theme/app_theme.dart' hide AppCard;
+import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/models/database_models.dart';
 import 'package:dentist_app/widgets/app_card.dart';
 import 'package:dentist_app/features/patients/widgets/patient_phone_display.dart';
@@ -90,8 +90,7 @@ class PatientInfoCard extends StatelessWidget {
               alignTop: true,
             ),
           ],
-          if (treatmentItems != null &&
-              treatmentItems.isNotEmpty) ...[
+          if (treatmentItems != null && treatmentItems.isNotEmpty) ...[
             const SizedBox(height: 20),
             const Text(
               '患者治疗项目',

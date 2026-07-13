@@ -773,8 +773,6 @@ class Patient {
     };
   }
 
-  String get originalPhone => phone;
-
   // 允许修改电话号码
   set phoneNumber(String newPhone) {
     phone = newPhone;

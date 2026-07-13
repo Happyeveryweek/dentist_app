@@ -533,6 +533,16 @@ class PurchaseProvider extends ChangeNotifier {
       0.0,
       (sum, item) => sum + item.totalPrice,
     );
+
+    // MySQL 对值未变化的 UPDATE 会返回 affectedRows = 0。新增采购记录时，
+    // 主记录已带有界面计算的汇总值，只有一个明细时重算结果通常完全一致，
+    // 不应将这类无须写入的情况误判为更新失败。
+    if (record.totalQuantity == totalQuantity &&
+        record.totalAmount == totalAmount) {
+      clearCache();
+      return;
+    }
+
     final updated = await _currentDataSource.updatePurchase(
       record.copyWith(totalQuantity: totalQuantity, totalAmount: totalAmount),
     );

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-
 import '../models/database_config.dart';
 import '../services/database_health_service.dart';
 import '../services/database_sync_service.dart';
@@ -10,7 +9,6 @@ import '../utils/app_logger.dart';
 
 /// 数据库启动编排结果
 class DatabaseBootstrapResult {
-  final DatabaseConfig dbConfig;
   final String dbType;
   final String dbPath;
   final bool initialized;
@@ -20,7 +18,6 @@ class DatabaseBootstrapResult {
   final String previousDbType;
 
   const DatabaseBootstrapResult({
-    required this.dbConfig,
     required this.dbType,
     required this.dbPath,
     required this.initialized,
@@ -115,9 +112,7 @@ class DatabaseBootstrapService {
         if (connection == null) {
           throw Exception('MySQL连接未建立');
         }
-        final results = await connection.query(
-          'SELECT 1',
-        );
+        final results = await connection.query('SELECT 1');
         if (results.isNotEmpty) {
           AppLogger.info('数据库连接测试成功');
         } else {
@@ -135,7 +130,6 @@ class DatabaseBootstrapService {
     AppLogger.info('数据库初始化完成，initialized = $initialized');
 
     return DatabaseBootstrapResult(
-      dbConfig: dbConfig,
       dbType: dbType,
       dbPath: dbPath,
       initialized: initialized,
