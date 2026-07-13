@@ -12,18 +12,21 @@
 ### Android 端
 
 - 无用代码与重复实现治理已完成批次 0～5；批次 6～7 已暂缓，结论见 [治理总结](android_app/docs/android_app_dead_code_and_duplicate_logic_governance_summary_2026_07_13.md) 。
+- 2026-07-13 后续治理批次 1A、1B 已完成：删除 876 行注释旧实现及 356 行无消费者 MySQL 旧实现，并清理专用 import 和采购 Provider 的冗余 `hide`。实施进度见 [后续治理实施方案](android_app/docs/android_app_dead_code_and_duplicate_logic_followup_implementation_plan_2026_07_13.md) 。
 - 登录“记住密码”、新建预约治疗项目窄屏布局、采购录入弹窗键盘适配均已完成代码与针对性静态检查，待人工回归确认。
 - 采购单仅含一个项目时，MySQL 将未变化的汇总更新误报为失败的问题已修复；待 Android 真机连接 MySQL 回归确认。
 
 ## 待办与阻塞
 
 - Windows 端：后续治理批次 0～5 的代码实施和自动验证已完成；启动、提示、权限、用户头像、患者排序、预约刷新、数据源切换、备份恢复、PDF／采购图片导出、文件选择及四模块 SQLite/MySQL 连接与同步人工回归待确认。若后续出现财务筛选扩展或 SQLite/MySQL 查询结果不一致，再单独评估财务查询对象重构。
-- Android 端：无死代码清理待办。若未来出现 MySQL 图片、文本或日期转换不一致，再按治理总结建立专项测试与迁移方案。
+- Android 端：后续无用代码与重复逻辑治理待实施批次 2～3；删除无引用图片和一次性工具脚本前需确认。财务表单、牙齿状况展示和图表重复逻辑暂缓，需先补测试或结合相关页面改版；若未来出现 MySQL 图片、文本或日期转换不一致，再按治理总结建立专项测试与迁移方案。
 - 阻塞：无。
 
 ## 最近验证
 
+- 2026-07-13：Android 后续治理批次 1A、1B 完成。删除用户／采购数据源 876 行注释旧实现和采购接口文件内 356 行无消费者 MySQL 旧实现，清理专用 import 及采购 Provider 冗余 `hide`。修改前后 `flutter analyze --no-pub` 均为 `No issues found!`；`git diff --check` 与改动文本文件 LF 行尾检查通过。项目无 Dart 测试文件；SQLite／MySQL 采购人工回归未执行，主人确认按现有验证结果完成。
 - 2026-07-13：Windows 后续治理批次 3～5 的代码实施和自动验证完成。移除 9 项无用直接依赖；新增 `ModuleMysqlConnectionService` 和 7 个行为测试，迁移四个 Provider 并删除四个共 452 行的重复连接 service。`flutter analyze --no-pub` 为 `No issues found!`，全量 `flutter test --no-pub` 75 个通过；`git diff --check` 与改动文本文件 LF 行尾检查通过。人工回归待确认。
+- 2026-07-13：Android 无用代码与重复逻辑再次复审完成并形成后续实施方案。复审覆盖 272 个 Dart 文件以及资源、工具和直接依赖，未发现完全不可达 Dart 文件；发现数据源旧实现、无调用 public API、无引用图片和冗余依赖等后续候选。`flutter analyze --no-pub` 为 `No issues found!`；本次仅新增方案文档并更新进度，未修改业务代码。
 - 2026-07-13：Windows 后续治理批次 2A、2B、2C 完成。清理独立无调用 API 与 Dashboard 刷新标志链，删除设置侧旧 MySQL 备份 service 文件及无消费者委托，并将采购图片导出收口到 `PurchaseExportService`。`flutter analyze --no-pub` 为 `No issues found!`，备份专项测试 3 个通过，全量 `flutter test --no-pub` 68 个通过；`git diff --check` 与改动文本文件 LF 行尾检查通过。人工回归待确认。
 - 2026-07-13：Windows 后续治理批次 0、1A、1B 完成。删除 8 个无消费者旧 UI 类型／类及 1 个仅被 barrel export 的患者排序文件；`AppToastType`、`_ToastConfig` 因仍服务于 `AppToastManager` 保留。基线及修改后 `flutter analyze --no-pub` 均为 `No issues found!`，全量 `flutter test --no-pub` 均为 68 个通过；`git diff --check` 与改动文本文件 LF 行尾检查通过。人工 UI 回归待确认。
 - 2026-07-13：Windows 无用代码与重复逻辑复审及后续实施方案完成；复审覆盖 354 个 Dart 文件、public 类型／方法引用和直接依赖，`flutter analyze --no-pub` 为 `No issues found!`。本次仅新增方案文档，代码治理尚未实施。

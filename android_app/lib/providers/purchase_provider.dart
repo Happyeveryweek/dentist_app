@@ -3,8 +3,7 @@ import 'package:dentist_app/models/purchase_item.dart';
 import 'package:dentist_app/models/purchase_record.dart';
 import 'package:dentist_app/providers/user_provider.dart';
 import 'package:dentist_app/utils/database_operation_wrapper.dart';
-import 'package:dentist_app/data_sources/purchase_data_source.dart'
-    hide MySqlPurchaseDataSource;
+import 'package:dentist_app/data_sources/purchase_data_source.dart';
 import 'package:dentist_app/data_sources/sqlite_purchase_data_source.dart';
 import 'package:dentist_app/data_sources/mysql_purchase_data_source.dart';
 import 'package:dentist_app/features/purchases/services/purchase_cache_service.dart';
