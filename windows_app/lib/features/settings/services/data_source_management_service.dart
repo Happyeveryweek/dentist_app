@@ -185,21 +185,6 @@ class DataSourceManagementService {
     _applyMySQLSettings(mysqlSettings);
   }
 
-  /// 保存上次MySQL设置
-  void saveLastMySQLSettings() {
-    try {
-      _lastMySQLSettings = {
-        'host': _mysqlHost,
-        'port': _mysqlPort,
-        'database': _mysqlDatabase,
-        'username': _mysqlUsername,
-        'password': _mysqlPassword,
-      };
-    } catch (e) {
-      LogManager.e('DataSourceManagementService', '保存MySQL设置失败', error: e);
-    }
-  }
-
   /// 获取完整的MySQL设置
   Map<String, dynamic> getCompleteMySQLSettings() {
     return _buildMySQLSettings(

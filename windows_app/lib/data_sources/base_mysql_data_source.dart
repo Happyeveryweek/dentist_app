@@ -124,37 +124,8 @@ abstract class BaseMySqlDataSource {
     return normalized == 'image_data' || normalized == 'thumbnail_data';
   }
 
-  /// 辅助方法：安全地获取整数值
-  int safeGetInt(dynamic value, {int defaultValue = 0}) {
-    if (value == null) return defaultValue;
-    if (value is int) return value;
-    if (value is BigInt) return value.toInt();
-    if (value is String) return int.tryParse(value) ?? defaultValue;
-    return defaultValue;
-  }
-
-  /// 辅助方法：安全地获取双精度浮点数值
-  double safeGetDouble(dynamic value, {double defaultValue = 0.0}) {
-    if (value == null) return defaultValue;
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    if (value is BigInt) return value.toDouble();
-    if (value is String) return double.tryParse(value) ?? defaultValue;
-    return defaultValue;
-  }
-
   /// 强制验证连接
   Future<bool> validateConnection() async {
     return await _connectionManager.forceValidate();
-  }
-
-  /// 清除连接缓存
-  void clearConnectionCache() {
-    _connectionManager.clearCache();
-  }
-
-  /// 获取连接状态（用于调试）
-  Map<String, dynamic> getConnectionStatus() {
-    return _connectionManager.getStatus();
   }
 }

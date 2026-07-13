@@ -79,15 +79,6 @@ class PermissionUtils {
     return currentUser != null;
   }
 
-  /// 检查当前用户是否可以查看
-  static bool canView(BuildContext context) {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
-    final currentUser = userProvider.currentUser;
-
-    // 所有登录用户都可以查看
-    return currentUser != null;
-  }
-
   /// 检查当前用户是否有特定模块权限
   static bool hasModulePermission(BuildContext context, String module) {
     final userProvider = Provider.of<UserProvider>(context, listen: false);
@@ -280,7 +271,8 @@ class PermissionButton extends StatelessWidget {
                 message: permissionDeniedMessage,
               );
             },
-      style: hasPermission ? style : (disabledStyle ?? _getDisabledStyle(context)),
+      style:
+          hasPermission ? style : (disabledStyle ?? _getDisabledStyle(context)),
       child: hasPermission ? child : _getDisabledChild(),
     );
   }

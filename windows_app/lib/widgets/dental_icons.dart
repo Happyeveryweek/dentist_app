@@ -74,65 +74,6 @@ class DentalIcons {
   static const IconData female = Icons.female;
   static const IconData child = Icons.child_care;
 
-  // 获取治疗类型对应的图标
-  static IconData getTreatmentIcon(String treatmentType) {
-    switch (treatmentType.toLowerCase()) {
-      case '洁治':
-      case '洗牙':
-        return cleaning;
-      case '充填':
-      case '补牙':
-        return filling;
-      case '冠修复':
-      case '牙冠':
-        return crown;
-      case '桥修复':
-        return bridge;
-      case '拔牙':
-      case '拔除':
-        return extraction;
-      case '正畸':
-      case '矫正':
-        return orthodontics;
-      case '种植':
-      case '植牙':
-        return implant;
-      case '根管治疗':
-      case '根管':
-        return rootCanal;
-      case '义齿':
-      case '假牙':
-        return dentures;
-      case '美白':
-        return whitening;
-      case '牙周治疗':
-      case '牙周':
-        return periodontics;
-      case '手术':
-        return surgery;
-      default:
-        return tooth;
-    }
-  }
-
-  // 获取状态对应的图标
-  static IconData getStatusIcon(String status) {
-    switch (status) {
-      case '已完成':
-        return completed;
-      case '已预约':
-        return pending;
-      case '已取消':
-        return cancelled;
-      case '未到诊':
-        return warning;
-      case '紧急':
-        return emergency;
-      default:
-        return pending;
-    }
-  }
-
   // 获取性别对应的图标
   static IconData getGenderIcon(String gender) {
     switch (gender) {
@@ -271,7 +212,12 @@ class DentalCard extends StatelessWidget {
       margin: margin ?? const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20.0),
-        gradient: color == null ? LinearGradient(colors: [context.tokens.cardBackground, context.tokens.mutedBackground]) : null,
+        gradient: color == null
+            ? LinearGradient(colors: [
+                context.tokens.cardBackground,
+                context.tokens.mutedBackground
+              ])
+            : null,
         boxShadow: [
           BoxShadow(
             color: context.tokens.shadow,
@@ -361,7 +307,8 @@ class DentalGradientButton extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                       ] else if (icon != null) ...[
-                        Icon(icon, color: context.tokens.primaryAccent, size: 20),
+                        Icon(icon,
+                            color: context.tokens.primaryAccent, size: 20),
                         const SizedBox(width: 8),
                       ],
                       Text(

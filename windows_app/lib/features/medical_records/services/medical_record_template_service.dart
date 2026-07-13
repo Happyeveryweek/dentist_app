@@ -331,24 +331,6 @@ class MedicalRecordTemplateService {
     }
   }
 
-  /// 加载模板数据（按类别）
-  Future<void> loadTemplateData(String category) async {
-    try {
-      setLoading(true);
-
-      // 强制刷新该类别的模板数据
-      await getTemplatesByCategory(category, forceRefresh: true);
-
-      clearError();
-    } catch (e) {
-      LogManager.e('MedicalRecordTemplateService', '加载模板数据时出错', error: e);
-      setError('加载模板数据失败: $e');
-      rethrow;
-    } finally {
-      setLoading(false);
-    }
-  }
-
   /// 获取疾病选项（供病历表单使用）
   Future<Map<String, List<String>>> getDiseaseOptions(String category) async {
     final dataSource = getCurrentDataSource();

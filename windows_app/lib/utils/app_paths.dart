@@ -288,11 +288,6 @@ class AppPaths {
     }
   }
 
-  /// 获取相对于数据目录的路径
-  static String getDataPath(String relativePath) {
-    return path.join(dataDirectory, relativePath);
-  }
-
   /// 检查是否为便携模式（应用目录下有data文件夹）
   static bool get isPortableMode {
     final appDir = _appDirectory;

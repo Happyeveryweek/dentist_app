@@ -1,7 +1,7 @@
 # ROADMAP
 
 ## 当前阶段
-- `windows_app` 方法级无用代码与重复逻辑实施计划已完成批次 0：四组候选精确搜索、测试路径映射和全量基线已冻结；`flutter test` 64 个通过，`flutter analyze` 为 `No issues found!`。批次 1～6 仍未开始，尚未删除候选方法或重构重复逻辑。
+- `windows_app` 方法级无用代码与重复逻辑实施计划已完成批次 0、批次 1：批次 0 冻结基线；批次 1 删除 29 个文件中约 60 个无调用 A 级方法、2 行旧注释，同步更新 README 示例和清理由本批产生的孤儿 import/私有方法；`flutter test` 64 个通过，`flutter analyze` 为 `No issues found!`，`git diff --check` 和行尾检查通过。批次 2～6 仍未开始。
 - `android_app` 无用文件、无调用方法与重复实现实施计划的批次 0、批次 1 已完成：批次 0 完成重新取证和基线冻结；批次 1 删除 9 个重新确认无入站引用的 A 级不可达 UI/工具文件，并通过 `flutter analyze`、精确引用复核和 diff 检查；批次 2～7 尚未开始。原始证据仍以 `android_app/docs/android_app_dead_code_duplicate_files_and_methods_audit_2026_07_12.md` 为准。
 - `windows_app` 已完成第二阶段方法级无用代码与重复逻辑静态审核：在当前 353 个可达 Dart 文件、约 95725 行代码中，复核无调用公有方法、Provider/service 兼容委托、一次性迁移入口和跨模块重复实现；详细候选、排除项、六批执行方案、精确搜索命令和验证协议已写入 `windows_app/docs/windows_app_method_level_dead_code_and_duplicate_logic_audit_2026_07_12.md`。本轮只新增审核文档，未删除候选方法或重构业务代码。
 - `windows_app` 患者详情编辑后的 SQLite → MySQL 同步已修复重复日志：患者更新链路改为等待 `PatientCoreService` 内既有同步完成，详情页保存回调只刷新同步状态，不再对同一次保存执行第二次同步；预约状态服务测试夹具已修正，全量 `flutter test` 64 个测试全部通过；无用代码清理的 39 个候选文件删除、静态检查和现有自动化测试已完成，各批手动业务回归尚未全部完成。
@@ -50,6 +50,7 @@
 - 无
 
 ## 最近验证
+- 2026-07-13：执行 `windows_app` 方法级无用代码与重复逻辑清理批次 1；对约 60 个候选符号重新执行精确搜索确认仅命中声明，读取完整类确认非 override/接口/序列化/生命周期/回调/路由/动态入口；删除 MySQL 数据源辅助方法、财务分页、患者缓存、材料分页、病历权限/模板、患者表单 Controller 包装、数据库类型转换、设置独立 API、模型展示/校验方法、AppState 强制重建、通用工具方法共约 60 个，并清理由本批产生的 5 个孤儿 import 和 5 个孤儿私有方法；同步更新 `README_MYSQL_CONNECTION.md` 移除已删除方法的示例；定向 `patient_form_validators_test.dart` 11 个通过，全量 `flutter test` 64 个通过，`flutter analyze` `No issues found!`，`git diff --check` 通过，全部改动文件行尾为 LF。
 - 2026-07-12：执行 `windows_app` 方法级无用代码与重复逻辑清理批次 0；完成四组精确 `rg` 复核、批次 1～4 候选测试映射和测试文件存在性检查，确认患者表单校验测试实际路径为 `test/features/patients/services/patient_form_validators_test.dart`，同步相关目录暂无独立 sync 测试文件；全量 `flutter test` 64 个通过，`flutter analyze` `No issues found!`。本批未修改业务代码，批次 1～6 仍待逐批授权。
 - 2026-07-13：完成 `android_app` 无用代码与重复实现实施计划批次 1：删除 9 个重新搜索确认无 `lib/`/`test/` 外部入站引用的 A 级不可达 UI、连接状态、Toast 和测试工具文件；保留 dashboard `StatCard`、现用 Toast/数据库入口；删除后精确引用复核无命中，`flutter analyze` 为 `No issues found!`，`git diff --check` 和行尾检查通过。按主人要求，未执行的运行时手动回归不阻塞本批完成；批次 2～7 尚未开始。
 - 2026-07-12：根据 `windows_app` 方法级无用代码与重复逻辑审核报告新增独立实施计划，明确 0～6 批的候选范围、删除授权边界、取证命令、自动/手动验收和逐批进度表；本轮未修改 Dart 代码，未运行 Flutter 验证。

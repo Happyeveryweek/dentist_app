@@ -33,7 +33,7 @@ final connection = await manager.getConnection();
 - 封装连接管理逻辑
 - 提供自动重试机制
 - 统一的数据类型转换
-- 辅助方法（convertRowToMap、safeGetInt等）
+- 辅助方法（convertRowToMap等）
 
 **使用方式：**
 ```dart
@@ -228,8 +228,8 @@ bool _isConnectionError(MySqlException e) {
 
 ### 获取连接状态
 ```dart
-final status = dataSource.getConnectionStatus();
-print('连接状态: $status');
+// final status = dataSource.getConnectionStatus();
+// print('连接状态: $status');
 // 输出: {hasConnection: true, lastValidation: 2024-01-01T12:00:00, isRecentlyValidated: true}
 ```
 
@@ -243,7 +243,7 @@ if (!isValid) {
 
 ### 清除连接缓存
 ```dart
-dataSource.clearConnectionCache();
+// dataSource.clearConnectionCache();
 // 下次查询时会重新获取和验证连接
 ```
 

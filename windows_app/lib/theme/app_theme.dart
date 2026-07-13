@@ -215,28 +215,6 @@ class AppTheme {
     elevation: 0,
   );
 
-  // 输入框样式 - 现代输入框
-  static InputDecoration inputDecoration(String hintText) {
-    return InputDecoration(
-      hintText: hintText,
-      filled: true,
-      fillColor: backgroundColor,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: const BorderSide(color: primaryColor, width: 1.5),
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    );
-  }
-
   // 卡片装饰 - 更现代的卡片样式
   static BoxDecoration cardDecoration = BoxDecoration(
     color: cardBackground,
@@ -370,8 +348,7 @@ class AppTheme {
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: tokens.shellBackground,
-        selectedIconTheme:
-            IconThemeData(color: tokens.primaryAccent, size: 24),
+        selectedIconTheme: IconThemeData(color: tokens.primaryAccent, size: 24),
         unselectedIconTheme: IconThemeData(color: tokens.iconMuted, size: 24),
         selectedLabelTextStyle: TextStyle(
           color: tokens.primaryAccent,
@@ -395,8 +372,7 @@ class AppTheme {
         ),
       ),
       dataTableTheme: DataTableThemeData(
-        headingRowColor:
-            WidgetStateProperty.all(tokens.tableHeaderBackground),
+        headingRowColor: WidgetStateProperty.all(tokens.tableHeaderBackground),
         dividerThickness: 1,
       ),
     );

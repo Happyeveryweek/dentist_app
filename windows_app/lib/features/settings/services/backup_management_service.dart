@@ -294,30 +294,6 @@ class BackupManagementService {
     };
   }
 
-  /// 备份路径管理
-  Future<void> setBackupPaths({
-    required String primaryPath,
-    String? secondaryPath,
-  }) async {
-    _backupPath = primaryPath;
-    if (secondaryPath != null) {
-      _backupPath2 = secondaryPath;
-    }
-
-    // 验证路径
-    final primaryValid = await validateBackupPath(primaryPath);
-    if (!primaryValid) {
-      throw Exception('主备份路径无效或无法访问: $primaryPath');
-    }
-
-    if (secondaryPath != null && secondaryPath.isNotEmpty) {
-      final secondaryValid = await validateBackupPath(secondaryPath);
-      if (!secondaryValid) {
-        throw Exception('备用备份路径无效或无法访问: $secondaryPath');
-      }
-    }
-  }
-
   /// 检查备份路径状态
   Future<Map<String, bool>> checkBackupPathStatus() async {
     final primaryStatus = await validateBackupPath(_backupPath);

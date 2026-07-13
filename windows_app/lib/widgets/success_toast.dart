@@ -570,21 +570,6 @@ class DeleteConfirmDialogManager {
     return result ?? false;
   }
 
-  /// 显示通用的删除确认框
-  /// 适用于大多数删除场景
-  static Future<bool> showGeneric(
-    BuildContext context, {
-    required String itemType,
-    String? itemName,
-  }) async {
-    return show(
-      context,
-      title: '确认删除',
-      message: '您确定要删除{itemName}吗？此操作不可撤销。',
-      itemName: itemName ?? itemType,
-    );
-  }
-
   /// 显示用户删除确认框
   static Future<bool> showUserDelete(
     BuildContext context, {
@@ -630,18 +615,6 @@ class DeleteConfirmDialogManager {
       context,
       title: '确认删除',
       message: '您确定要删除预约"$appointmentInfo"吗？此操作不可撤销。',
-    );
-  }
-
-  /// 显示财务记录删除确认框
-  static Future<bool> showFinancialRecordDelete(
-    BuildContext context, {
-    required String patientName,
-  }) async {
-    return show(
-      context,
-      title: '确认删除',
-      message: '您确定要删除患者"$patientName"的财务记录吗？此操作不可撤销。',
     );
   }
 
@@ -1021,21 +994,6 @@ class LogoutConfirmDialogManager {
       ),
     );
     return result ?? false;
-  }
-
-  /// 显示带用户名的退出登录确认框
-  static Future<bool> showWithUsername(
-    BuildContext context, {
-    required String username,
-    String confirmText = '退出登录',
-    String cancelText = '取消',
-  }) async {
-    return show(
-      context,
-      username: username,
-      confirmText: confirmText,
-      cancelText: cancelText,
-    );
   }
 }
 

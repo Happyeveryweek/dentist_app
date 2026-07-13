@@ -424,17 +424,4 @@ class PurchaseExportService {
       return null;
     }
   }
-
-  /// 打开文件所在文件夹
-  void openFileLocation(String filePath) {
-    try {
-      final file = File(filePath);
-      if (file.existsSync()) {
-        // 在Windows上打开文件所在文件夹
-        Process.run('explorer', ['/select,', filePath]);
-      }
-    } catch (e) {
-      LogManager.e('PurchaseExportService', '打开文件夹失败', error: e);
-    }
-  }
 }

@@ -47,47 +47,4 @@ class DataSourceProviderSyncService {
       rethrow;
     }
   }
-
-  /// 更新单个Provider的模块数据源配置
-  ///
-  /// [providerType] Provider类型（'purchase', 'financial', 'material'等）
-  /// [moduleDataSources] 模块数据源配置映射
-  void updateSingleProviderModuleDataSources(
-    String providerType,
-    Map<String, String> moduleDataSources,
-  ) {
-    try {
-      switch (providerType) {
-        case 'purchase':
-          final purchaseProvider =
-              Provider.of<PurchaseProvider>(context, listen: false);
-          purchaseProvider.updateModuleDataSources(moduleDataSources);
-          LogManager.w(
-              'DataSourceProviderSyncService', '已更新PurchaseProvider的模块数据源配置');
-          break;
-        case 'financial':
-          final financialProvider =
-              Provider.of<FinancialProvider>(context, listen: false);
-          financialProvider.updateModuleDataSources(moduleDataSources);
-          LogManager.w(
-              'DataSourceProviderSyncService', '已更新FinancialProvider的模块数据源配置');
-          break;
-        case 'material':
-          final materialProvider =
-              Provider.of<MaterialProvider>(context, listen: false);
-          materialProvider.updateModuleDataSources(moduleDataSources);
-          LogManager.w(
-              'DataSourceProviderSyncService', '已更新MaterialProvider的模块数据源配置');
-          break;
-        default:
-          LogManager.w(
-              'DataSourceProviderSyncService', '未知的Provider类型: $providerType');
-      }
-    } catch (e) {
-      LogManager.e(
-          'DataSourceProviderSyncService', '更新$providerType Provider模块数据源配置失败',
-          error: e);
-      rethrow;
-    }
-  }
 }

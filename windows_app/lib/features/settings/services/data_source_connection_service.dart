@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'package:path/path.dart' as path;
 import '../../../providers/database_provider.dart';
 
 /// 数据源连接测试服务
@@ -65,60 +64,6 @@ class DataSourceConnectionService {
       return selectedPath;
     } catch (e) {
       throw Exception('选择文件时出错: $e');
-    }
-  }
-
-  /// 验证SQLite数据库文件路径
-  ///
-  /// [filePath] 文件路径
-  ///
-  /// 返回文件是否有效
-  Future<bool> validateSqliteFile(String filePath) async {
-    try {
-      final file = File(filePath);
-
-      // 检查文件是否存在
-      if (!await file.exists()) {
-        return false;
-      }
-
-      // 检查文件扩展名
-      final extension = path.extension(filePath).toLowerCase();
-      if (!['.db', '.sqlite', '.sqlite3'].contains(extension)) {
-        return false;
-      }
-
-      // 检查文件大小（至少要有一些内容）
-      final fileSize = await file.length();
-      if (fileSize < 100) {
-        return false;
-      }
-
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// 获取SQLite数据库文件信息
-  ///
-  /// [filePath] 文件路径
-  ///
-  /// 返回文件信息（文件名、大小等）
-  Future<Map<String, dynamic>> getSqliteFileInfo(String filePath) async {
-    try {
-      final file = File(filePath);
-      final stat = await file.stat();
-
-      return {
-        'path': filePath,
-        'name': path.basename(filePath),
-        'size': stat.size,
-        'modified': stat.modified,
-        'exists': await file.exists(),
-      };
-    } catch (e) {
-      throw Exception('获取文件信息失败: $e');
     }
   }
 }

@@ -32,9 +32,4 @@ class FinancialPaginationHelper {
 
     return data.sublist(startIndex, endIndex);
   }
-
-  /// 验证页码是否有效
-  static bool isValidPage(int page, int totalPages) {
-    return page >= 1 && page <= totalPages;
-  }
 }

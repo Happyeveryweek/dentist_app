@@ -217,25 +217,6 @@ class MedicalRecordTemplateCategory {
         return '未知类别';
     }
   }
-
-  /// 获取类别的英文名称
-  static String getCategoryEnglishName(String category) {
-    switch (category) {
-      case dentalDisease:
-        return 'Dental Disease';
-      case systemicDisease:
-        return 'Systemic Disease';
-      case allergy:
-        return 'Allergy';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  /// 检查是否为有效的类别
-  static bool isValidCategory(String category) {
-    return all.contains(category);
-  }
 }
 
 /// 默认模板数据初始化器
@@ -419,14 +400,5 @@ class DefaultTemplateInitializer {
     });
 
     return templates;
-  }
-
-  /// 获取所有默认模板数据
-  static List<MedicalRecordTemplate> getAllDefaultTemplates() {
-    final List<MedicalRecordTemplate> allTemplates = [];
-    allTemplates.addAll(getDentalDiseaseTemplates());
-    allTemplates.addAll(getSystemicDiseaseTemplates());
-    allTemplates.addAll(getAllergyTemplates());
-    return allTemplates;
   }
 }

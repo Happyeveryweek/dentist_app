@@ -14,12 +14,6 @@ class LogManager {
   static const int maxLogFileSize = 10 * 1024 * 1024; // 10MB
   static const int maxLogFiles = 5; // 保留最多5个日志文件
 
-  /// 写入应用日志
-  static Future<void> writeAppLog(String message,
-      {String level = 'INFO'}) async {
-    await _writeLog(AppPaths.appLogPath, message, level: level);
-  }
-
   /// 写入错误日志
   static Future<void> writeErrorLog(String message,
       {String? stackTrace}) async {
@@ -28,11 +22,6 @@ class LogManager {
       fullMessage += '\nStack Trace:\n$stackTrace';
     }
     await _writeLog(AppPaths.errorLogPath, fullMessage, level: 'ERROR');
-  }
-
-  /// 写入调试日志
-  static Future<void> writeDebugLog(String message) async {
-    await _writeLog(AppPaths.appLogPath, message, level: 'DEBUG');
   }
 
   /// 写入信息日志

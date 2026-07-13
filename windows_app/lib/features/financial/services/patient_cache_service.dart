@@ -11,16 +11,6 @@ class PatientCacheService {
 
   PatientCacheService(this._patientProvider);
 
-  /// 从缓存获取患者信息
-  Patient? getFromCache(int patientId) {
-    return _cache[patientId];
-  }
-
-  /// 将患者信息添加到缓存
-  void addToCache(int patientId, Patient patient) {
-    _cache[patientId] = patient;
-  }
-
   /// 从预加载列表中获取患者信息
   Patient? getFromPreloadedList(
       int patientId, List<Patient> preloadedPatients) {

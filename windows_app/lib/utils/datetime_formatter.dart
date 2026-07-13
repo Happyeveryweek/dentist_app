@@ -32,35 +32,4 @@ class DateTimeFormatter {
   static String nowDbString() {
     return toDbString(DateTime.now());
   }
-
-  /// 验证时间字符串格式是否正确
-  static bool isValidDbFormat(String dateTimeString) {
-    try {
-      _dbFormat.parse(dateTimeString);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// 简化的格式转换方法（仅用于一次性数据迁移）
-  /// 迁移完成后可以删除此方法
-  static String convertToStandardFormat(String oldTimeString) {
-    try {
-      DateTime dateTime;
-      if (oldTimeString.contains('T')) {
-        // ISO格式转换
-        dateTime = DateTime.parse(oldTimeString);
-      } else {
-        // 已经是标准格式
-        dateTime = _dbFormat.parse(oldTimeString);
-      }
-      return toDbString(dateTime);
-    } catch (e) {
-      LogManager.e(
-          'DatetimeFormatter', 'DateTimeFormatter: 格式转换失败: $oldTimeString, 错误',
-          error: e);
-      return nowDbString();
-    }
-  }
 }

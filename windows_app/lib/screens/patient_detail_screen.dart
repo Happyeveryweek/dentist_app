@@ -822,9 +822,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     );
   }
 
-  // 移除添加患者材料的方法 - 功能已迁移到MaterialDetailManager
-  // void _addPatientMaterial() async { ... }
-
   void _savePatient(Patient updatedPatient) async {
     try {
       // 患者已经在PatientFormDialog中保存过了，这里只需要刷新数据

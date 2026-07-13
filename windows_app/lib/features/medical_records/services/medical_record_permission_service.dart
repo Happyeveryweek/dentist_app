@@ -73,14 +73,4 @@ class MedicalRecordPermissionService {
   User? get currentUser {
     return getUserProvider?.call()?.currentUser ?? getCurrentUser?.call();
   }
-
-  /// 获取当前用户的医生名称（用于数据源初始化）
-  String? getDoctorName() {
-    return currentUser?.doctor;
-  }
-
-  /// 检查当前用户是否为管理员（用于数据源初始化）
-  bool? getIsAdmin() {
-    return currentUser?.role == 'admin';
-  }
 }

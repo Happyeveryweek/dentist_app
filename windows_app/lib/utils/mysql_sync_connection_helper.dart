@@ -92,30 +92,4 @@ class MySqlSyncConnectionHelper {
         'MysqlSyncConnectionHelper', 'MySqlSyncConnectionHelper: 无可用的MySQL连接');
     return null;
   }
-
-  /// 简化版本：直接从DatabaseProvider获取连接（不使用缓存）
-  ///
-  /// 适用于不需要缓存连接的场景
-  static MySqlConnection? getDirectConnection(
-      DatabaseProvider? databaseProvider) {
-    if (databaseProvider == null) {
-      LogManager.w('MysqlSyncConnectionHelper',
-          'MySqlSyncConnectionHelper: DatabaseProvider为null');
-      return null;
-    }
-
-    try {
-      final connection = databaseProvider.mysqlConnection;
-      if (connection == null) {
-        LogManager.w('MysqlSyncConnectionHelper',
-            'MySqlSyncConnectionHelper: DatabaseProvider中的MySQL连接为null');
-      }
-      return connection;
-    } catch (e) {
-      LogManager.e('MysqlSyncConnectionHelper',
-          'MySqlSyncConnectionHelper: 获取MySQL连接时发生异常',
-          error: e);
-      return null;
-    }
-  }
 }

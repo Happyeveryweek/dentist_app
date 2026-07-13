@@ -6,16 +6,6 @@ class AppState extends ChangeNotifier {
   // 全局导航键
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-  // 应用刷新计数器
-  int _refreshCounter = 0;
-  int get refreshCounter => _refreshCounter;
-
-  // 强制整个应用重建
-  void forceAppRebuild() {
-    _refreshCounter++;
-    notifyListeners();
-  }
-
   // 显示全局消息
   void showMessage(String message, {bool isError = false}) {
     final context = navigatorKey.currentContext;

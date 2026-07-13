@@ -65,7 +65,7 @@ git ls-files --eol -- <本批改动文件>
 | 批次 | 范围 | 风险 | 前置条件 | 当前状态 |
 | --- | --- | --- | --- | --- |
 | 0 | 重新取证、建立基线和测试映射 | 低 | 无 | 完成（2026-07-12） |
-| 1 | A 级独立辅助方法、通用工具和注释旧代码 | 低 | 每个符号仍无调用 | 未开始 |
+| 1 | A 级独立辅助方法、通用工具和注释旧代码 | 低 | 每个符号仍无调用 | 完成（2026-07-13） |
 | 2 | 财务/采购/User/Material Provider 的旧入口 | 中 | 批次 1 完成 | 未开始 |
 | 3 | SettingsProvider 历史设置及无消费者委托链 | 中高 | 批次 2 完成，设置与备份回归可执行 | 未开始 |
 | 4 | 一次性迁移、数据库与模板 API | 高 | 批次 3 完成，数据库回归环境可用 | 未开始 |
@@ -318,7 +318,7 @@ class PatientSyncLogHelper {
 | 批次 | 状态 | 开始日期 | 完成日期 | 代码/文档改动 | 验证结果 | 手动回归 | 阻塞或跳过原因 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0：重新取证与基线 | 完成 | 2026-07-12 | 2026-07-12 | 仅更新本计划与 `ROADMAP.md`，未改业务代码 | 全量 `flutter test` 64 个通过；`flutter analyze` `No issues found!`；四组 `rg`、测试路径、`git diff --check` 和行尾已复核 | 未执行业务手动回归；本批无业务代码改动 | — |
-| 1：A 级独立方法 | 未开始 | — | — | — | — | — | — |
+| 1：A 级独立方法 | 完成 | 2026-07-13 | 2026-07-13 | 删除 29 个文件中约 60 个无调用方法、2 行旧注释；清理 5 个孤儿 import（`database_type_converter_helper.dart` 的 `datetime_formatter`、`data_source_connection_service.dart` 的 `path`、`config_manager.dart` 的 `datetime_formatter`、`patient_form_validators.dart` 的 `flutter/material.dart`、`app_state.dart` 的 `_refreshCounter`/`refreshCounter` 孤儿字段）和 5 个孤儿私有方法（`config_manager.dart` 的 `_removeFromFile`/`_hasFileConfig`/`_removeFromPreferences`/`_hasPreferencesConfig`、`patient_form_validators.dart` 的 `_trimmedText`）；同步更新 `README_MYSQL_CONNECTION.md` | 全量 `flutter test` 64 个通过；`flutter analyze` `No issues found!`；`git diff --check` 通过；30 个改动文件行尾全部 LF | 待执行财务分页跳页、患者按 ID 读取与清缓存、材料直接跳页、病历表单加载模板、设置页备份路径与 SQLite/MySQL 选择手动回归 | — |
 | 2：Provider 旧入口 | 未开始 | — | — | — | — | — | — |
 | 3A：历史设置 | 未开始 | — | — | — | — | — | — |
 | 3B：配置/备份委托 | 未开始 | — | — | — | — | — | — |
@@ -366,3 +366,18 @@ class PatientSyncLogHelper {
 - 手动回归：本批无业务代码改动，不执行业务手动回归；后续批次按映射执行。
 - 结论：批次 0 完成；批次 1～6 仍未开始，删除授权和高风险回归前置条件不变。
 - 下一步或阻塞：进入批次 1 前，按计划再次逐个打开候选完整类并确认 override、序列化、生命周期、回调、字符串路由和动态访问边界。
+
+#### 2026-07-13｜批次 1｜完成
+
+- 授权范围：主人授权删除审核报告第 4.1～4.9、4.13、4.15 节中重新确认无调用的全部 A 级方法、2 行旧注释，以及由本批产生的孤儿 import 和孤儿私有方法；同步更新 `README_MYSQL_CONNECTION.md`；`removeConfig`/`hasConfig` 经主人确认纳入本批一起删除。
+- 重新搜索：对约 60 个候选符号在 `windows_app/` 全目录（覆盖 `lib/` 与 `test/` 下所有 `.dart`）执行精确搜索，全部仅命中声明，无任何调用点。同时搜索 `*.md` 文件确认 `README_MYSQL_CONNECTION.md` 对 `safeGetInt`、`getConnectionStatus`、`clearConnectionCache` 存在示例引用。读取每个候选声明所在完整类，确认均非 `@override`、非抽象接口实现、非序列化入口（`fromJson`/`toJson`/`copyWith`）、非 Flutter 生命周期、非回调注册、非字符串路由、非动态访问入口。
+- 实际改动：
+  - 删除 29 个 Dart 文件中约 60 个无调用 public 方法（含文档注释）和 `patient_detail_screen.dart` 中 2 行旧注释；
+  - 清理由本批产生的 5 个孤儿 import：`database_type_converter_helper.dart` 的 `datetime_formatter`、`data_source_connection_service.dart` 的 `package:path/path.dart`、`config_manager.dart` 的 `datetime_formatter`、`patient_form_validators.dart` 的 `flutter/material.dart`、`app_state.dart` 的 `_refreshCounter`/`refreshCounter` 孤儿字段与 getter；
+  - 清理由本批产生的 5 个孤儿私有方法：`config_manager.dart` 的 `_removeFromFile`/`_hasFileConfig`/`_removeFromPreferences`/`_hasPreferencesConfig`、`patient_form_validators.dart` 的 `_trimmedText`；`config_manager.dart` 的 `ConfigManagerExtension` 因 12 个方法全部删除后变空，连同 extension 声明一起删除；
+  - 同步更新 `README_MYSQL_CONNECTION.md`：移除 `safeGetInt` 引用，注释掉 `getConnectionStatus()` 和 `clearConnectionCache()` 示例代码。
+- 路径勘误：本计划第 5.1 节中 `patient_cache_service.dart` 路径应为 `features/financial/services/`（非 `features/patients/services/`）；MySQL 数据源 4 个方法实际在 `data_sources/base_mysql_data_source.dart`（非 `features/settings/services/data_source_connection_service.dart`，后者是 `validateSqliteFile`/`getSqliteFileInfo` 所在文件）。仅记录勘误，不影响删除结果。
+- 自动验证：定向 `flutter test test/features/patients/services/patient_form_validators_test.dart --reporter expanded` 11 个测试全部通过；全量 `flutter test --reporter expanded` 64 个测试全部通过；`flutter analyze` 返回 `No issues found!`；`dart format` 格式化 29 个改动 Dart 文件（3 个有格式调整）；`git diff --check` 通过；`git ls-files --eol` 确认 30 个改动文件（29 个 Dart + 1 个 Markdown）行尾全部为 `i/lf w/lf`。
+- 手动回归：待执行财务分页跳页、患者按 ID 读取与清缓存、材料直接跳页、病历表单加载模板、设置页备份路径与 SQLite/MySQL 选择。本批为低风险 A 级方法删除，已通过全量自动化测试；手动回归不阻塞本批完成状态，但应在批次 2 开始前执行并记录。
+- 结论：批次 1 完成；批次 2～6 仍未开始，删除授权和高风险回归前置条件不变。
+- 下一步或阻塞：进入批次 2 前，需执行本批手动回归并记录结果；批次 2 为中风险 Provider 旧入口删除，需确认财务列表、采购详情、材料新增/初始化、登录/退出、用户权限和医生过滤等链路。

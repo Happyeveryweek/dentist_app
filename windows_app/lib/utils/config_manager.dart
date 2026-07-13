@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app_paths.dart';
-import 'datetime_formatter.dart';
 import 'log_manager.dart';
 
 /// 配置存储模式
@@ -67,28 +66,6 @@ class ConfigManager {
     }
   }
 
-  /// 删除配置
-  Future<bool> removeConfig(String key) async {
-    bool result = true;
-
-    switch (_storageMode) {
-      case StorageMode.file:
-        result = await _removeFromFile(key);
-        break;
-      case StorageMode.preferences:
-        result = await _removeFromPreferences(key);
-        break;
-      case StorageMode.hybrid:
-        // 两种存储都尝试删除
-        final fileResult = await _removeFromFile(key);
-        final prefResult = await _removeFromPreferences(key);
-        result = fileResult || prefResult;
-        break;
-    }
-
-    return result;
-  }
-
   /// 清空所有配置
   Future<bool> clearAllConfigs() async {
     bool result = true;
@@ -113,20 +90,6 @@ class ConfigManager {
 
   /// 获取配置文件路径
   String get configFilePath => AppPaths.configPath;
-
-  /// 检查配置是否存在
-  Future<bool> hasConfig(String key) async {
-    switch (_storageMode) {
-      case StorageMode.file:
-        return await _hasFileConfig(key);
-      case StorageMode.preferences:
-        return await _hasPreferencesConfig(key);
-      case StorageMode.hybrid:
-        final hasFile = await _hasFileConfig(key);
-        if (hasFile) return true;
-        return await _hasPreferencesConfig(key);
-    }
-  }
 
   /// 获取所有配置键
   Future<List<String>> getAllConfigKeys() async {
@@ -205,31 +168,11 @@ class ConfigManager {
     }
   }
 
-  Future<bool> _removeFromFile(String key) async {
-    try {
-      final configs = await _loadAllFromFile();
-      configs.remove(key);
-      return await _saveAllToFile(configs);
-    } catch (e) {
-      LogManager.e('ConfigManager', '从文件删除配置失败', error: e);
-      return false;
-    }
-  }
-
   Future<bool> _clearFileConfigs() async {
     try {
       return await _saveAllToFile({});
     } catch (e) {
       LogManager.e('ConfigManager', '清空文件配置失败', error: e);
-      return false;
-    }
-  }
-
-  Future<bool> _hasFileConfig(String key) async {
-    try {
-      final configs = await _loadAllFromFile();
-      return configs.containsKey(key);
-    } catch (e) {
       return false;
     }
   }
@@ -329,31 +272,12 @@ class ConfigManager {
     }
   }
 
-  Future<bool> _removeFromPreferences(String key) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return await prefs.remove(key);
-    } catch (e) {
-      LogManager.e('ConfigManager', '从SharedPreferences删除配置失败', error: e);
-      return false;
-    }
-  }
-
   Future<bool> _clearPreferencesConfigs() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       return await prefs.clear();
     } catch (e) {
       LogManager.e('ConfigManager', '清空SharedPreferences配置失败', error: e);
-      return false;
-    }
-  }
-
-  Future<bool> _hasPreferencesConfig(String key) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.containsKey(key);
-    } catch (e) {
       return false;
     }
   }
@@ -365,67 +289,5 @@ class ConfigManager {
     } catch (e) {
       return [];
     }
-  }
-}
-
-/// 配置管理器扩展方法
-extension ConfigManagerExtension on ConfigManager {
-  /// 保存备份路径配置
-  Future<bool> saveBackupPath(String path) async {
-    return await saveConfig('backupPath', path);
-  }
-
-  /// 加载备份路径配置
-  Future<String> loadBackupPath() async {
-    return await loadConfig<String>('backupPath', defaultValue: '') ?? '';
-  }
-
-  /// 保存备份路径2配置
-  Future<bool> saveBackupPath2(String path) async {
-    return await saveConfig('backupPath2', path);
-  }
-
-  /// 加载备份路径2配置
-  Future<String> loadBackupPath2() async {
-    return await loadConfig<String>('backupPath2', defaultValue: '') ?? '';
-  }
-
-  /// 保存自动备份设置
-  Future<bool> saveAutoBackup(bool enabled) async {
-    return await saveConfig('autoBackup', enabled);
-  }
-
-  /// 加载自动备份设置
-  Future<bool> loadAutoBackup() async {
-    return await loadConfig<bool>('autoBackup', defaultValue: false) ?? false;
-  }
-
-  /// 保存备份间隔
-  Future<bool> saveBackupInterval(int days) async {
-    return await saveConfig('backupInterval', days);
-  }
-
-  /// 加载备份间隔
-  Future<int> loadBackupInterval() async {
-    return await loadConfig<int>('backupInterval', defaultValue: 7) ?? 7;
-  }
-
-  /// 保存最后备份时间
-  Future<bool> saveLastBackupDate(DateTime date) async {
-    return await saveConfig(
-        'lastBackupDate', DateTimeFormatter.toDbString(date));
-  }
-
-  /// 加载最后备份时间
-  Future<DateTime?> loadLastBackupDate() async {
-    final dateStr = await loadConfig<String>('lastBackupDate');
-    if (dateStr != null && dateStr.isNotEmpty) {
-      try {
-        return DateTimeFormatter.fromDbString(dateStr);
-      } catch (e) {
-        LogManager.e('ConfigManager', '解析最后备份时间失败', error: e);
-      }
-    }
-    return null;
   }
 }

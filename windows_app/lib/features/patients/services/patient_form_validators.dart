@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 /// 患者表单字段校验器
 ///
 /// 将患者添加/编辑表单中的校验逻辑集中到这里，便于单元测试和复用。
@@ -39,20 +37,5 @@ class PatientFormValidators {
       return validatePhone(value);
     }
     return null;
-  }
-
-  /// 从 TextEditingController 安全读取文本并 trim
-  static String _trimmedText(TextEditingController controller) {
-    return controller.text.trim();
-  }
-
-  /// 校验主手机号 Controller
-  static String? validatePrimaryPhoneController(TextEditingController controller) {
-    return validatePhone(_trimmedText(controller));
-  }
-
-  /// 校验备用手机号 Controller
-  static String? validateBackupPhoneController(TextEditingController controller) {
-    return validateOptionalPhone(_trimmedText(controller));
   }
 }

@@ -166,19 +166,4 @@ class DatabaseStructureLog {
       createdAt: createdAt ?? this.createdAt,
     );
   }
-
-  /// 生成摘要信息
-  String generateSummary() {
-    final tablesCreated = (details['tablesCreated'] as List?)?.length ?? 0;
-    final tablesUpdated = (details['tablesUpdated'] as List?)?.length ?? 0;
-    final columnsAdded = (details['columnsAdded'] as List?)?.length ?? 0;
-
-    if (errors.isNotEmpty) {
-      return '检测失败: ${errors.length} 个错误';
-    } else if (tablesCreated > 0 || tablesUpdated > 0 || columnsAdded > 0) {
-      return '检测完成: 创建${1}个表, 更新${1}个表, 添加${1}个字段';
-    } else {
-      return '检测完成: 数据库结构正常，无需更新';
-    }
-  }
 }

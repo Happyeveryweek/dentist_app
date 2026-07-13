@@ -104,22 +104,6 @@ class MaterialFilterPaginationService {
     }
     return currentResult;
   }
-
-  /// 跳转到上一页
-  FilterResult goToPreviousPage(FilterResult currentResult) {
-    if (currentResult.currentPage > 1) {
-      return goToPage(currentResult, currentResult.currentPage - 1);
-    }
-    return currentResult;
-  }
-
-  /// 跳转到下一页
-  FilterResult goToNextPage(FilterResult currentResult) {
-    if (currentResult.currentPage < currentResult.totalPages) {
-      return goToPage(currentResult, currentResult.currentPage + 1);
-    }
-    return currentResult;
-  }
 }
 
 /// 筛选结果

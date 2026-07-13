@@ -105,9 +105,4 @@ class MedicalTemplateType {
         return '未知类型';
     }
   }
-
-  /// 检查是否为有效的类型
-  static bool isValidType(String type) {
-    return all.contains(type);
-  }
 }
