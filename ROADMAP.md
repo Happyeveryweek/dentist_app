@@ -11,19 +11,23 @@
 
 ### Android 端
 
+- Android 构建链已迁移至 AGP 9.2／Gradle 9.4.1 和 Built-in Kotlin，`flutter_file_dialog`、`shared_preferences_android` 已升级至兼容实现；debug APK 构建不再输出 Gradle、AGP、Kotlin 或 KGP 兼容性警告。
 - 无用代码与重复实现治理已完成批次 0～5；批次 6～7 已暂缓，结论见 [治理总结](android_app/docs/android_app_dead_code_and_duplicate_logic_governance_summary_2026_07_13.md) 。
-- 2026-07-13 后续治理批次 1A、1B、2A～2C 已完成：清理无消费者 UI、模型辅助、刷新字段，以及连接、同步和初始化服务中的无调用入口与递归孤儿链。实施进度见 [后续治理实施方案](android_app/docs/android_app_dead_code_and_duplicate_logic_followup_implementation_plan_2026_07_13.md) 。
+- 2026-07-13 后续治理已完成：清理数据源注释旧实现、无消费者 UI／模型／服务 API、冗余直接依赖、无引用登录图片和两份一次性脚本；最终范围、验证和现用重复逻辑处置见 [治理总结](android_app/docs/android_app_dead_code_and_duplicate_logic_governance_summary_2026_07_13.md) 。
 - 登录“记住密码”、新建预约治疗项目窄屏布局、采购录入弹窗键盘适配均已完成代码与针对性静态检查，待人工回归确认。
 - 采购汇总无变化时 MySQL 将更新误报为失败的问题已修复：数据源在 `affectedRows = 0` 时验证记录存在性，覆盖单项目、浮点误差和同秒更新时间；待 Android 真机连接 MySQL 回归确认。
 
 ## 待办与阻塞
 
 - Windows 端：后续治理批次 0～5 的代码实施和自动验证已完成；启动、提示、权限、用户头像、患者排序、预约刷新、数据源切换、备份恢复、PDF／采购图片导出、文件选择及四模块 SQLite/MySQL 连接与同步人工回归待确认。若后续出现财务筛选扩展或 SQLite/MySQL 查询结果不一致，再单独评估财务查询对象重构。
-- Android 端：后续治理批次 2A～2C 已完成，UI、SQLite 和 MySQL 人工回归未执行但主人已确认按自动验证完成；批次 3A 待实施，删除无引用图片和一次性工具脚本的批次 3B 仍需确认。财务表单、牙齿状况展示和图表重复逻辑暂缓，需先补测试或结合相关页面改版；若未来出现 MySQL 图片、文本或日期转换不一致，再按治理总结建立专项测试与迁移方案。
+- Android 端：后续治理已完成，UI、SQLite、MySQL 及登录／Dashboard 图片人工回归未执行但主人已确认按自动验证完成。财务表单和牙齿状况展示重复逻辑仅随相关需求实施；图表及日期范围不纳入计划，除非统计页改版、需统一产品规则或出现实际缺陷。若未来出现 MySQL 图片、文本或日期转换不一致，再按治理总结建立专项测试与迁移方案。
 - 阻塞：无。
 
 ## 最近验证
 
+- 2026-07-13：Android 登录页底部“技术支持：牙科诊所管理系统”白色文案和横线装饰已移除，避免遮挡底部图片内容；`flutter analyze --no-pub` 为 `No issues found!`。
+- 2026-07-13：Android 构建警告治理完成。Gradle Wrapper 从 8.11.1 升至 9.4.1、AGP 从 8.9.1 升至 9.2.0，应用模块移除 KGP 并使用 Built-in Kotlin；`flutter_file_dialog` 升至 3.3.1、`shared_preferences` 升至 2.5.5，锁定的 `shared_preferences_android` 升至 2.4.26。`flutter analyze` 为 `No issues found!`，`flutter build apk --debug` 成功生成 APK，原 Gradle、AGP、Kotlin 和 KGP 兼容性警告未再出现；其余 55 项“存在更高版本但不兼容当前约束”的依赖统计未批量升级。
+- 2026-07-13：Android 后续治理批次 3A、3B 已完成。移除 `flutter_phoenix`、`sqflite_common_ffi`、`cross_file` 三项冗余直接依赖，锁文件仅同步移除不再需要的 `flutter_phoenix`、`sqflite_common_ffi`、`sqlite3`，并保留 `cross_file` 的传递依赖；删除无引用的 `assets/images/login.jpg` 和两份硬编码绝对路径的一次性工具脚本。`flutter pub get`、`flutter analyze --no-pub`、`git diff --check` 与改动文本文件 LF 行尾检查通过；项目无 Dart 测试文件，启动、文件选择、备份恢复、PDF／患者导出、Cupertino 图标及登录／Dashboard 图片人工回归未执行。
 - 2026-07-13：Android 后续治理批次 2A～2C 已完成。删除无消费者 UI 类型、备份函数、模型辅助、getter、刷新字段，以及连接、同步和初始化服务中的无调用 API 与递归孤儿链；现用通知、缓存失效、连接池、强制同步、健康监控、重连、SQLite 初始化和通用数据库重试逻辑均保留。`flutter analyze --no-pub` 为 `No issues found!`，`git diff --check` 与改动文本文件 LF 行尾检查通过；项目无 Dart 测试文件，UI、SQLite 和 MySQL 人工回归未执行，主人确认按自动验证完成。
 - 2026-07-13：Android 后续治理批次 1A、1B 完成。删除用户／采购数据源 876 行注释旧实现和采购接口文件内 356 行无消费者 MySQL 旧实现，清理专用 import 及采购 Provider 冗余 `hide`。修改前后 `flutter analyze --no-pub` 均为 `No issues found!`；`git diff --check` 与改动文本文件 LF 行尾检查通过。项目无 Dart 测试文件；SQLite／MySQL 采购人工回归未执行，主人确认按现有验证结果完成。
 - 2026-07-13：Windows 后续治理批次 3～5 的代码实施和自动验证完成。移除 9 项无用直接依赖；新增 `ModuleMysqlConnectionService` 和 7 个行为测试，迁移四个 Provider 并删除四个共 452 行的重复连接 service。`flutter analyze --no-pub` 为 `No issues found!`，全量 `flutter test --no-pub` 75 个通过；`git diff --check` 与改动文本文件 LF 行尾检查通过。人工回归待确认。
