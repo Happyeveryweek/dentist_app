@@ -338,11 +338,11 @@ class _UserDialogState extends State<UserDialog> {
             );
           }).toList(),
       onChanged: (value) {
-          if (value == null) return;
-          setState(() {
-            _selectedRole = value;
-          });
-        },
+        if (value == null) return;
+        setState(() {
+          _selectedRole = value;
+        });
+      },
       validator: (value) {
         if (value == null || value.isEmpty) {
           return '请选择用户角色';
@@ -468,7 +468,7 @@ class _UserDialogState extends State<UserDialog> {
     try {
       AppLogger.info('开始选择图片...');
 
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.image,
         allowMultiple: false,
         withData: true, // 确保获取字节数据
@@ -487,7 +487,7 @@ class _UserDialogState extends State<UserDialog> {
         final fileBytes = file.bytes;
         if (fileBytes != null) {
           bytes = fileBytes;
-          AppLogger.info('从bytes属性获取数据: ${bytes.length} 字节');
+          AppLogger.info('从bytes属性获取数据: ${fileBytes.length} 字节');
         }
         // 如果bytes为空，尝试从路径读取
         else {
@@ -527,7 +527,9 @@ class _UserDialogState extends State<UserDialog> {
         // 获取原始图片信息
         final dimensions = ImageCompressor.getImageDimensions(bytes);
         if (dimensions != null) {
-          AppLogger.info('原始图片尺寸: ${dimensions['width']}x${dimensions['height']}');
+          AppLogger.info(
+            '原始图片尺寸: ${dimensions['width']}x${dimensions['height']}',
+          );
         }
 
         AppLogger.info('开始压缩图片...');
