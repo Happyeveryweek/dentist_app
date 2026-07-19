@@ -3,6 +3,13 @@ import 'package:provider/provider.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'dart:typed_data';
 import '../../../providers/user_provider.dart';
+import '../../../providers/database_provider.dart';
+import '../../../providers/patient_provider.dart';
+import '../../../providers/appointment_provider.dart';
+import '../../../providers/purchase_provider.dart';
+import '../../../providers/financial_provider.dart';
+import '../../../providers/medical_record_provider.dart';
+import '../../../providers/material_provider.dart';
 import '../../../widgets/success_toast.dart';
 
 class NavigationItem {
@@ -152,7 +159,8 @@ class UserInfoSection extends StatelessWidget {
 
                 if (confirmed) {
                   if (!context.mounted) return;
-                  // 退出登录
+                  await _clearSession(context);
+                  if (!context.mounted) return;
                   Navigator.of(context).pushReplacementNamed('/login');
                 }
               },
@@ -162,5 +170,25 @@ class UserInfoSection extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _clearSession(BuildContext context) async {
+    final userProvider = context.read<UserProvider>();
+    final databaseProvider = context.read<DatabaseProvider>();
+    final patientProvider = context.read<PatientProvider>();
+    final appointmentProvider = context.read<AppointmentProvider>();
+    final purchaseProvider = context.read<PurchaseProvider>();
+    final financialProvider = context.read<FinancialProvider>();
+    final medicalRecordProvider = context.read<MedicalRecordProvider>();
+    final materialProvider = context.read<MaterialProvider>();
+
+    await userProvider.clearSession();
+    await databaseProvider.clearSession();
+    patientProvider.clearCache();
+    appointmentProvider.clearCache();
+    purchaseProvider.clearCache();
+    financialProvider.clearCache();
+    medicalRecordProvider.clearAllCache();
+    materialProvider.clearCache();
   }
 }

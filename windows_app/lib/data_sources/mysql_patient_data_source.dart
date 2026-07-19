@@ -224,8 +224,7 @@ class MySqlPatientDataSource extends BaseMySqlDataSource
   @override
   Future<bool> deletePatient(int patientId) async {
     try {
-      await executeQuery('SET FOREIGN_KEY_CHECKS = 0');
-      // 深度删除逻辑
+      await executeQuery('START TRANSACTION');
       final materialIdsResult = await executeQuery(
           'SELECT id FROM patient_materials WHERE patient_id = ?', [patientId]);
       final materialIds =
@@ -260,12 +259,11 @@ class MySqlPatientDataSource extends BaseMySqlDataSource
           [patientId]);
       final result =
           await executeQuery('DELETE FROM patients WHERE id = ?', [patientId]);
-
-      await executeQuery('SET FOREIGN_KEY_CHECKS = 1');
+      await executeQuery('COMMIT');
       return (result.affectedRows ?? 0) > 0;
     } catch (e) {
       try {
-        await executeQuery('SET FOREIGN_KEY_CHECKS = 1');
+        await executeQuery('ROLLBACK');
       } catch (_) {}
       throw Exception('MySQL删除患者失败: $e');
     }

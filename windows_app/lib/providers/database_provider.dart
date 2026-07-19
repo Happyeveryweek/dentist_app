@@ -101,6 +101,12 @@ class DatabaseProvider extends ChangeNotifier {
     _currentUser = user;
   }
 
+  /// 清除仅属于当前登录用户的会话信息，不关闭已配置的数据连接。
+  Future<void> clearSession() async {
+    _currentUser = null;
+    notifyListeners();
+  }
+
   // 初始化数据库
   Future<void> initDatabase(
       {String? customPath, Map<String, dynamic>? mysqlSettings}) async {

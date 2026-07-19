@@ -389,6 +389,17 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 清除当前登录会话及用户、权限缓存。
+  Future<void> clearSession() async {
+    _currentUser = null;
+    _cacheHelper.clearCache();
+    _cacheHelper.clearPermissionsCache();
+    _usersNeedRefresh = false;
+    _lastError = null;
+    _isConnected = true;
+    notifyListeners();
+  }
+
   // 检查用户权限
   bool hasPermission(String permission) {
     final user = _currentUser;

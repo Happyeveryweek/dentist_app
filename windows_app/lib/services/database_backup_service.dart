@@ -724,48 +724,30 @@ class DatabaseBackupService {
       int failCount = 0;
       final failedStatements = <String>[];
 
-      // 禁用外键约束检查
       try {
         await mysqlConnection.query('SET FOREIGN_KEY_CHECKS = 0');
-      } catch (e) {
-        LogManager.e('DatabaseBackupService', '禁用外键约束检查失败', error: e);
-      }
+        for (int i = 0; i < statements.length; i++) {
+          final statement = statements[i].trim();
+          if (statement.isEmpty || statement.startsWith('--')) continue;
 
-      // 执行每条 SQL 语句
-      for (int i = 0; i < statements.length; i++) {
-        String statement = statements[i].trim();
-        if (statement.isEmpty || statement.startsWith('--')) {
-          continue;
-        }
-
-        try {
-          await mysqlConnection.query(statement);
-          successCount++;
-
-          if (i % 20 == 0 || i == statements.length - 1) {
-            LogManager.w('DatabaseBackupService',
-                '已执行 ${i + 1}/${statements.length} 条 SQL 语句');
+          try {
+            await mysqlConnection.query(statement);
+            successCount++;
+            if (i % 20 == 0 || i == statements.length - 1) {
+              LogManager.w('DatabaseBackupService',
+                  '已执行 ${i + 1}/${statements.length} 条 SQL 语句');
+            }
+          } catch (e) {
+            failCount++;
+            failedStatements.add(statement.length > 200
+                ? '${statement.substring(0, 200)}...'
+                : statement);
+            LogManager.e('DatabaseBackupService', '执行 SQL 语句失败', error: e);
+            break;
           }
-        } catch (e) {
-          failCount++;
-          if (failedStatements.length < 5) {
-            failedStatements.add(
-              statement.length > 200
-                  ? '${statement.substring(0, 200)}...'
-                  : statement,
-            );
-          }
-          LogManager.e('DatabaseBackupService', '执行 SQL 语句失败', error: e);
-          LogManager.w('DatabaseBackupService',
-              '问题语句: ${statement.length > 100 ? "${statement.substring(0, 100)}..." : statement}');
         }
-      }
-
-      // 重新启用外键约束检查
-      try {
+      } finally {
         await mysqlConnection.query('SET FOREIGN_KEY_CHECKS = 1');
-      } catch (e) {
-        LogManager.e('DatabaseBackupService', '重新启用外键约束检查失败', error: e);
       }
 
       LogManager.w('DatabaseBackupService', 'MySQL 数据库已从文件还原: $dumpFilePath');

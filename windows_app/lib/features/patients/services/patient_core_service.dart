@@ -109,8 +109,8 @@ class PatientCoreService {
       final conn = getSyncMysqlConnection();
       if (conn == null) return;
 
-      await conn.query('SET FOREIGN_KEY_CHECKS = 0');
       try {
+        await conn.query('START TRANSACTION');
         final matIds = (await conn.query(
                 'SELECT id FROM patient_materials WHERE patient_id = ?',
                 [patientId]))
@@ -143,8 +143,10 @@ class PatientCoreService {
         await conn.query(
             'DELETE FROM patient_medical_records WHERE patient_id = ?',
             [patientId]);
-      } finally {
-        await conn.query('SET FOREIGN_KEY_CHECKS = 1');
+        await conn.query('COMMIT');
+      } catch (_) {
+        await conn.query('ROLLBACK');
+        rethrow;
       }
     } catch (e) {
       LogManager.e('PatientCoreService', 'PatientCoreService: 清理 MySQL 关联数据失败',
@@ -481,7 +483,7 @@ class PatientCoreService {
           return;
         }
 
-        await conn.query('SET FOREIGN_KEY_CHECKS = 0');
+        await conn.query('START TRANSACTION');
 
         final matIds = (await conn.query(
                 'SELECT id FROM patient_materials WHERE patient_id = ?',
@@ -495,6 +497,17 @@ class PatientCoreService {
         }
         await conn.query(
             'DELETE FROM patient_materials WHERE patient_id = ?', [patientId]);
+        final financialRecordIds = (await conn.query(
+                'SELECT id FROM financial_records WHERE patient_id = ?',
+                [patientId]))
+            .map((r) => r['id'] as int)
+            .toList();
+        if (financialRecordIds.isNotEmpty) {
+          final p = financialRecordIds.map((_) => '?').join(',');
+          await conn.query(
+              'DELETE FROM financial_items WHERE financial_record_id IN ($p)',
+              financialRecordIds);
+        }
         await conn.query(
             'DELETE FROM financial_records WHERE patient_id = ?', [patientId]);
         await conn.query(
@@ -503,8 +516,7 @@ class PatientCoreService {
             'DELETE FROM patient_medical_records WHERE patient_id = ?',
             [patientId]);
         await conn.query('DELETE FROM patients WHERE id = ?', [patientId]);
-
-        await conn.query('SET FOREIGN_KEY_CHECKS = 1');
+        await conn.query('COMMIT');
         await _logPatientSyncOperation(
           module: 'patient',
           action: 'delete',
@@ -514,6 +526,10 @@ class PatientCoreService {
           summary: summary,
         );
       } catch (e) {
+        try {
+          final conn = getSyncMysqlConnection();
+          if (conn != null) await conn.query('ROLLBACK');
+        } catch (_) {}
         await _logPatientSyncOperation(
           module: 'patient',
           action: 'delete',
