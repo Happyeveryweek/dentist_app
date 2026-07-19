@@ -94,56 +94,6 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource
   }
 
   @override
-  Future<int> getFinancialRecordsCount({String? searchQuery}) async {
-    String whereClause = '';
-    List<dynamic> whereArgs = [];
-
-    if (searchQuery != null && searchQuery.trim().isNotEmpty) {
-      whereClause = ' WHERE notes LIKE ?';
-      whereArgs.add('%$searchQuery%');
-    }
-
-    final result = await executeQuery(
-      'SELECT COUNT(*) AS count FROM financial_records$whereClause',
-      whereArgs,
-    );
-    final row = result.first;
-    final dynamic count = row['count'] ?? row[0];
-    if (count is int) return count;
-    if (count is BigInt) return count.toInt();
-    return 0;
-  }
-
-  @override
-  Future<List<FinancialRecord>> getPaginatedFinancialRecords({
-    int page = 1,
-    int pageSize = 10,
-    String sortBy = 'updated_at',
-    String sortOrder = 'DESC',
-    String? searchQuery,
-  }) async {
-    final offset = (page - 1) * pageSize;
-    String whereClause = '';
-    List<dynamic> whereArgs = [];
-
-    if (searchQuery != null && searchQuery.trim().isNotEmpty) {
-      whereClause = ' WHERE notes LIKE ?';
-      whereArgs.add('%$searchQuery%');
-    }
-
-    final sql =
-        'SELECT * FROM financial_records$whereClause ORDER BY $sortBy $sortOrder LIMIT $offset, $pageSize';
-    final result = await executeQuery(sql, whereArgs);
-
-    final records = <FinancialRecord>[];
-    for (final row in result) {
-      final recordMap = convertRowToMap(row);
-      records.add(FinancialRecord.fromMap(recordMap));
-    }
-    return records;
-  }
-
-  @override
   Future<List<FinancialItem>> getFinancialItemsByRecordId(int recordId) async {
     final result = await executeQuery(
       'SELECT * FROM financial_items WHERE financial_record_id = ? ORDER BY updated_at DESC',

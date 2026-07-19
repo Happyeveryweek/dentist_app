@@ -10,23 +10,6 @@ class SqliteFinancialDataSource implements FinancialDataSource {
 
   SqliteFinancialDataSource(this._database);
 
-  _FinancialQueryParts _buildFinancialRecordQueryParts({
-    String? searchQuery,
-  }) {
-    final conditions = <String>[];
-    final args = <dynamic>[];
-
-    if (searchQuery != null && searchQuery.trim().isNotEmpty) {
-      conditions.add('notes LIKE ?');
-      args.add('%${searchQuery.trim()}%');
-    }
-
-    return _FinancialQueryParts(
-      whereClause: _whereOrEmpty(conditions),
-      whereArgs: args,
-    );
-  }
-
   _FinancialQueryParts _buildPatientAggregateQueryParts({
     List<int>? patientIds,
     DateTime? startDate,
@@ -199,33 +182,6 @@ class SqliteFinancialDataSource implements FinancialDataSource {
       whereArgs: [id],
     );
     return count > 0;
-  }
-
-  @override
-  Future<int> getFinancialRecordsCount({String? searchQuery}) async {
-    final parts = _buildFinancialRecordQueryParts(searchQuery: searchQuery);
-    final result = await _database.rawQuery(
-      'SELECT COUNT(*) AS count FROM financial_records${parts.whereClause}',
-      parts.whereArgs,
-    );
-    return result.first['count'] as int;
-  }
-
-  @override
-  Future<List<FinancialRecord>> getPaginatedFinancialRecords({
-    int page = 1,
-    int pageSize = 10,
-    String sortBy = 'updated_at',
-    String sortOrder = 'DESC',
-    String? searchQuery,
-  }) async {
-    final offset = (page - 1) * pageSize;
-    final parts = _buildFinancialRecordQueryParts(searchQuery: searchQuery);
-    final result = await _database.rawQuery(
-      'SELECT * FROM financial_records${parts.whereClause} ORDER BY $sortBy $sortOrder LIMIT ? OFFSET ?',
-      [...parts.whereArgs, pageSize, offset],
-    );
-    return result.map((e) => FinancialRecord.fromMap(e)).toList();
   }
 
   @override

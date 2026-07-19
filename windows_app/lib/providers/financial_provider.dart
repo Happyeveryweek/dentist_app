@@ -384,62 +384,6 @@ class FinancialProvider extends ChangeNotifier {
 
   // =================== 新的数据源模式方法 ===================
 
-  // =================== 权限过滤方法 ===================
-
-  // 分页：获取财务记录总数
-  Future<int> getFinancialRecordsCount({
-    String? searchQuery,
-  }) async {
-    if (!initialized) {
-      throw Exception(
-          '数据库未初始化 - SQLite: ${_database != null}, MySQL: ${_mysqlConnection != null}');
-    }
-
-    try {
-      // 使用数据源模式（统一接口）
-      final count = await _currentDataSource.getFinancialRecordsCount(
-          searchQuery: searchQuery);
-      return count;
-    } catch (e) {
-      LogManager.e('FinancialProvider', 'getFinancialRecordsCount 出错',
-          error: e);
-      return 0;
-    }
-  }
-
-  // 分页：获取财务记录
-  Future<List<FinancialRecord>> getFinancialRecords({
-    int page = 1,
-    int pageSize = 10,
-    String sortBy = 'updated_at',
-    String sortOrder = 'DESC',
-    String? searchQuery,
-  }) async {
-    if (!initialized) {
-      throw Exception(
-          '数据库未初始化 - SQLite: ${_database != null}, MySQL: ${_mysqlConnection != null}');
-    }
-
-    try {
-      // 使用数据源模式（统一接口）
-      List<FinancialRecord> records =
-          await _currentDataSource.getPaginatedFinancialRecords(
-        page: page,
-        pageSize: pageSize,
-        sortBy: sortBy,
-        sortOrder: sortOrder,
-        searchQuery: searchQuery,
-      );
-      // 应用权限过滤
-      records = await _permissionService.applyPermissionFilter(records);
-
-      return records;
-    } catch (e) {
-      LogManager.e('FinancialProvider', 'getFinancialRecords 出错', error: e);
-      return [];
-    }
-  }
-
   // 添加财务记录
   Future<int> addFinancialRecord(FinancialRecord record) async {
     if (!initialized) {
@@ -722,22 +666,6 @@ class FinancialProvider extends ChangeNotifier {
         return cachedRecords;
       }
 
-      return [];
-    }
-  }
-
-  // 获取财务项目（向后兼容）
-  Future<List<FinancialItem>> getFinancialItems(int recordId) async {
-    if (!initialized) {
-      throw Exception('数据库未初始化');
-    }
-
-    try {
-      // 使用数据源模式（统一接口）
-      final items =
-          await _currentDataSource.getFinancialItemsByRecordId(recordId);
-      return items;
-    } catch (e) {
       return [];
     }
   }

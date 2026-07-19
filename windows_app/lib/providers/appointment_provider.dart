@@ -657,62 +657,6 @@ class AppointmentProvider extends ChangeNotifier {
     }
   }
 
-  // =================== 新增数据源架构方法 ===================
-
-  // 分页获取预约
-  Future<List<Appointment>> getPaginatedAppointments({
-    int page = 1,
-    int pageSize = 10,
-    String sortBy = 'appointment_date',
-    String sortOrder = 'DESC',
-    String? searchQuery,
-    DateTime? filterDate,
-    String? filterDoctor,
-  }) async {
-    try {
-      return await _currentDataSource.getPaginatedAppointments(
-        page: page,
-        pageSize: pageSize,
-        sortBy: sortBy,
-        sortOrder: sortOrder,
-        searchQuery: searchQuery,
-        filterDate: filterDate,
-        filterDoctor: filterDoctor,
-      );
-    } catch (e) {
-      LogManager.e('AppointmentProvider', '分页获取预约失败', error: e);
-      _setError('分页获取预约失败: $e');
-      return [];
-    }
-  }
-
-  // 获取预约总数
-  Future<int> getAppointmentsCount({String? searchQuery}) async {
-    try {
-      return await _currentDataSource.getAppointmentsCount(
-          searchQuery: searchQuery);
-    } catch (e) {
-      LogManager.e('AppointmentProvider', '获取预约总数失败', error: e);
-      _setError('获取预约总数失败: $e');
-      return 0;
-    }
-  }
-
-  // 获取预约统计信息
-  Future<Map<String, dynamic>> getAppointmentStatistics() async {
-    try {
-      return await _currentDataSource.getAppointmentStatistics();
-    } catch (e) {
-      LogManager.e('AppointmentProvider', '获取预约统计信息失败', error: e);
-      _setError('获取预约统计信息失败: $e');
-      return {
-        'totalAppointments': 0,
-        'statusStatistics': <String, int>{},
-        'todayAppointments': 0,
-      };
-    }
-  }
-
   // 根据ID获取预约
   Future<Appointment?> getAppointmentById(int id) async {
     try {

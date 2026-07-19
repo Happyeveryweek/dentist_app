@@ -13,16 +13,6 @@ abstract class FinancialDataSource {
   Future<bool> updateFinancialRecord(FinancialRecord record);
   Future<bool> deleteFinancialRecord(int id);
 
-  // 分页查询方法
-  Future<int> getFinancialRecordsCount({String? searchQuery});
-  Future<List<FinancialRecord>> getPaginatedFinancialRecords({
-    int page = 1,
-    int pageSize = 10,
-    String sortBy = 'updated_at',
-    String sortOrder = 'DESC',
-    String? searchQuery,
-  });
-
   // 财务项目相关方法
   Future<List<FinancialItem>> getFinancialItemsByRecordId(int recordId);
   Future<int> createFinancialItem(FinancialItem item);

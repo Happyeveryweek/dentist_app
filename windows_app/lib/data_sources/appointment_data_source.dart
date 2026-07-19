@@ -21,19 +21,4 @@ abstract class AppointmentDataSource {
   Future<List<Appointment>> getAppointmentsByPatient(int patientId);
   Future<List<Appointment>> getAppointmentsByDoctor(String doctorName);
   Future<List<Appointment>> getTodayAppointments({String? doctorName});
-
-  // 分页查询方法
-  Future<int> getAppointmentsCount({String? searchQuery});
-  Future<List<Appointment>> getPaginatedAppointments({
-    int page = 1,
-    int pageSize = 10,
-    String sortBy = 'appointment_date',
-    String sortOrder = 'DESC',
-    String? searchQuery,
-    DateTime? filterDate,
-    String? filterDoctor,
-  });
-
-  // 统计方法
-  Future<Map<String, dynamic>> getAppointmentStatistics();
 }

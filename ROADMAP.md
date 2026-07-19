@@ -5,6 +5,9 @@
 ### Windows 端
 
 - Windows 端第二轮代码审核整改正在实施：进度 1、2 已完成代码与自动验证。密码写入、默认管理员和登录认证均统一为 PBKDF2-HMAC-SHA256；历史 SHA-256、MD5 与明文仅保留兼容验证，并会在成功登录后升级。固定密码不再可绕过任意账户认证，完整范围见 [审核整改执行方案](windows_app/docs/windows_app_code_audit_remediation_plan_2026_07_19.md) 。
+- Windows 端审核整改进度 4 已完成：财务患者聚合、收费明细、计数与分页已统一按医生权限过滤；缺少用户身份或医生字段时失败关闭并返回空结果。主人确认按自动验证完成。
+- Windows 端审核整改进度 5 已完成：采购搜索改为 350ms 防抖并只采纳最新请求，采购页与材料页异步结束后均保护页面生命周期；主人确认按自动验证完成。
+- Windows 端第二轮代码审核整改进度 1～7 已全部完成：认证安全、财务权限、采购异步生命周期、冗余 API 与重复通知均已整改并通过自动验证；主人确认按现有验证完成。
 - 无用代码与重复逻辑治理已完成：删除 39 个不可达 Dart 文件、方法级无调用 API 与无消费者委托链；五套患者同步服务已通过 `PatientSyncLogHelper` 收口。最终状态见 [治理总结](windows_app/docs/windows_app_dead_code_and_duplicate_logic_governance_summary_2026_07_13.md) 。
 - 2026-07-13 复审后续治理批次 0～5 的代码实施和自动验证已完成：清理无消费者代码与 9 项无用直接依赖，采购图片导出统一由 `PurchaseExportService` 编排，四模块 MySQL 连接统一由 `ModuleMysqlConnectionService` 管理。最终状态见 [后续治理实施方案](windows_app/docs/windows_app_dead_code_and_duplicate_logic_followup_implementation_plan_2026_07_13.md) ；人工 UI／功能回归待确认。
 - 图表组件抽取、财务查询对象和 schema 模板重构均已暂缓：当前收益不足以覆盖跨模块行为风险，不是遗留缺陷。
@@ -26,12 +29,16 @@
 
 ## 待办与阻塞
 
-- Windows 端：第二轮审核整改的进度 1、2 和本地凭证保留决定已完成；SQLite／MySQL 人工认证回归由主人确认按自动验证完成。其后依次处理财务权限查询、采购搜索竞态与生命周期、无消费者 API 和重复通知。主人明确保留本地“记住用户名密码”，因此密码仍会明文保存于应用偏好文件。数据库 schema 变更与删除文件需另行确认。此前治理批次 0～5 的启动、提示、权限、用户头像、患者排序、预约刷新、数据源切换、备份恢复、PDF／采购图片导出、文件选择及四模块 SQLite/MySQL 连接与同步人工回归仍待确认。
+- Windows 端：第二轮审核整改进度 1～7 已完成，主人确认按现有验证收口。主人明确保留本地“记住用户名密码”，因此密码仍会明文保存于应用偏好文件。此前治理批次 0～5 的启动、提示、权限、用户头像、患者排序、预约刷新、数据源切换、备份恢复、PDF／采购图片导出、文件选择及四模块 SQLite/MySQL 连接与同步人工回归仍待确认。
 - Android 端：后续治理已完成，UI、SQLite、MySQL 及登录／Dashboard 图片人工回归未执行但主人已确认按自动验证完成。财务表单和牙齿状况展示重复逻辑仅随相关需求实施；图表及日期范围不纳入计划，除非统计页改版、需统一产品规则或出现实际缺陷。若未来出现 MySQL 图片、文本或日期转换不一致，再按治理总结建立专项测试与迁移方案。
 - 阻塞：无。
 
 ## 最近验证
 
+- 2026-07-19：Windows 端审核整改进度 7 已完成最终自动验证。`flutter analyze --no-pub` 为 `No issues found!`，全量 `flutter test --no-pub` 75 项通过，`git diff --check` 与本批次改动文件 LF 行尾检查通过；主人确认阶段 7 按现有验证完成，第二轮审核整改方案已收口。
+- 2026-07-19：Windows 端审核整改进度 6 完成代码与自动验证。患者详情服务改用现有按记录 ID 查询，移除财务重复委托及无消费者的财务／预约旧分页、计数、统计 API 链；采购记录新增、删除各消除一次重复刷新通知。`flutter analyze --no-pub` 为 `No issues found!`，全量 `flutter test --no-pub` 通过；SQLite/MySQL 人工回归未执行。
+- 2026-07-19：Windows 端审核整改进度 5 完成。采购搜索采用 350ms 防抖和请求世代校验，旧请求、异常或已销毁页面均不能更新状态；材料页异步成功与异常路径补齐 `mounted` 检查。`flutter analyze --no-pub` 为 `No issues found!`；现有测试结构未提供可注入的页面异步数据源，未新增脱离实际生命周期的伪测试；主人确认按自动验证完成。
+- 2026-07-19：Windows 端审核整改进度 4 完成代码与自动验证。患者聚合、收费项计数和分页明细的医生条件已贯通 QueryService、Provider、接口与 SQLite/MySQL 数据源；用户身份或医生字段缺失时失败关闭。新增 SQLite 权限回归测试覆盖医生甲、管理员和无访问主体，`flutter test --no-pub test/data_sources/sqlite_financial_data_source_permission_test.dart` 3 项通过，`flutter analyze --no-pub` 为 `No issues found!`；SQLite/MySQL 人工回归未执行。
 - 2026-07-19：Windows 端审核整改进度 1、2 及本地凭证保留决定完成。登录页改经统一认证服务验证，移除 SQLite/MySQL 内嵌建表、MD5 及固定密码放行；默认管理员创建使用 `PasswordService`，历史密码成功登录后升级。`flutter test --no-pub test/features/users/services/user_validation_service_test.dart test/features/users/services/user_authentication_service_test.dart` 14 项通过，`flutter analyze --no-pub` 为 `No issues found!`；SQLite／MySQL 新安装、旧密码升级和本地凭证重启回填由主人确认按自动验证完成。
 - 2026-07-19：Windows 端审核整改进度 1 已开始。新增 `PasswordService`，新写入密码统一为 PBKDF2-HMAC-SHA256，历史 SHA-256、MD5 和明文密码均有受限兼容验证；`UserProvider` 的新增、编辑、注册、重置密码四个入口已收口。`flutter test --no-pub test/features/users/services/user_validation_service_test.dart` 11 项通过，`flutter analyze --no-pub` 为 `No issues found!`；登录认证入口、默认管理员和升级写回尚未实施，未进行人工回归。
 - 2026-07-19：Windows 端第二轮代码审核和整改执行方案完成，本次只新增方案文档并更新进度，未修改业务代码。审核确认认证绕过、密码格式分叉、明文凭证、财务权限分页不完整、采购搜索竞态和剩余冗余候选；`flutter analyze --no-pub` 为 `No issues found!`，全量 `flutter test --no-pub` 75 项通过，但现有测试尚未覆盖上述问题。

@@ -93,13 +93,13 @@ class PatientDetailLoaderService {
         LogManager.w(
           'PatientDetailData',
           '患者详情页未能在预约数据源中匹配到同一患者，已阻止错误预约关联: '
-          'patientId=$patientId, patientDataSource=$patientDataSourceType, appointmentDataSource=$appointmentDataSourceType',
+              'patientId=$patientId, patientDataSource=$patientDataSourceType, appointmentDataSource=$appointmentDataSourceType',
         );
       } else if (appointmentContextPatient.id != patientId) {
         LogManager.w(
           'PatientDetailData',
           '患者详情页预约患者已按业务标识重映射: '
-          'sourcePatientId=$patientId -> appointmentPatientId=${appointmentContextPatient.id}',
+              'sourcePatientId=$patientId -> appointmentPatientId=${appointmentContextPatient.id}',
         );
       }
     }
@@ -122,7 +122,8 @@ class PatientDetailLoaderService {
       int financialPatientId = patientId;
 
       if (patientDataSourceType != financialDataSourceType) {
-        financialContextPatient = await patientProvider.resolvePatientForDataSource(
+        financialContextPatient =
+            await patientProvider.resolvePatientForDataSource(
           freshPatient,
           targetDataSourceType: financialDataSourceType,
         );
@@ -130,13 +131,13 @@ class PatientDetailLoaderService {
           LogManager.w(
             'PatientDetailData',
             '患者详情页未能在财务数据源中匹配到同一患者，已阻止错误财务关联: '
-            'patientId=$patientId, patientDataSource=$patientDataSourceType, financialDataSource=$financialDataSourceType',
+                'patientId=$patientId, patientDataSource=$patientDataSourceType, financialDataSource=$financialDataSourceType',
           );
         } else if (financialContextPatient.id != patientId) {
           LogManager.w(
             'PatientDetailData',
             '患者详情页财务患者已按业务标识重映射: '
-            'sourcePatientId=$patientId -> financialPatientId=${financialContextPatient.id}',
+                'sourcePatientId=$patientId -> financialPatientId=${financialContextPatient.id}',
           );
         }
       }
@@ -156,7 +157,8 @@ class PatientDetailLoaderService {
         for (var record in patientFinancialRecords) {
           final recordId = record.id;
           if (recordId == null) continue;
-          final items = await financialProvider.getFinancialItems(recordId);
+          final items =
+              await financialProvider.getFinancialItemsByRecordId(recordId);
           allFinancialItems.addAll(items);
         }
       }
