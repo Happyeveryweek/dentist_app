@@ -20,6 +20,7 @@ import '../utils/log_manager.dart';
 /// 采购管理提供者
 /// 负责处理所有与采购相关的数据库操作
 class PurchaseProvider extends ChangeNotifier {
+  static const String _noPurchaseAccessDoctor = '__NO_PURCHASE_ACCESS__';
   // 数据库实例
   Database? _database;
   MySqlConnection? _mysqlConnection;
@@ -652,27 +653,26 @@ class PurchaseProvider extends ChangeNotifier {
   // 获取医生过滤条件（用于数据库层面过滤）
   String? _getDoctorFilter() {
     try {
-      // 如果没有用户权限提供者或当前用户是管理员，不进行过滤
+      // 只有明确管理员可查看全部采购记录。
       final userProvider = _userProvider;
-      if (userProvider == null) return null;
+      if (userProvider == null) return _noPurchaseAccessDoctor;
 
       final currentUser = userProvider.currentUser;
-      if (currentUser == null || currentUser.isAdmin) {
-        return null; // 无用户或管理员不过滤
-      }
+      if (currentUser == null) return _noPurchaseAccessDoctor;
+      if (currentUser.isAdmin) return null;
 
       // 获取当前用户的医生字段
       final doctorName = currentUser.doctor;
       if (doctorName == null || doctorName.isEmpty) {
         // 如果没有医生字段，返回一个不存在的值，确保查询结果为空
-        return '__NO_DOCTOR__';
+        return _noPurchaseAccessDoctor;
       }
 
       return doctorName;
     } catch (e) {
       LogManager.e('PurchaseProvider', '❌ 获取医生过滤条件失败', error: e);
       // 出错时返回安全的过滤条件
-      return '__NO_DOCTOR__';
+      return _noPurchaseAccessDoctor;
     }
   }
 

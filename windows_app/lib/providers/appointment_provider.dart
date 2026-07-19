@@ -18,6 +18,7 @@ import '../utils/log_manager.dart';
 /// 预约管理提供者
 /// 负责处理所有与预约相关的数据库操作
 class AppointmentProvider extends ChangeNotifier {
+  static const String _noAppointmentAccessReason = '当前登录身份无预约访问权限';
   // 数据库实例
   Database? _database;
   MySqlConnection? _mysqlConnection;
@@ -619,14 +620,17 @@ class AppointmentProvider extends ChangeNotifier {
       final userProvider = _userProvider;
       final patientProvider = _patientProvider;
 
-      // 如果没有用户权限提供者或当前用户是管理员，不进行过滤
+      // 只有明确管理员可跳过过滤。
       if (userProvider == null) {
-        return appointments;
+        LogManager.w('AppointmentProvider', _noAppointmentAccessReason);
+        return [];
       }
       final currentUser = userProvider.currentUser;
-      if (currentUser == null || currentUser.isAdmin) {
-        return appointments;
+      if (currentUser == null) {
+        LogManager.w('AppointmentProvider', _noAppointmentAccessReason);
+        return [];
       }
+      if (currentUser.isAdmin) return appointments;
 
       // 获取当前用户的医生字段
       final doctorName = currentUser.doctor;

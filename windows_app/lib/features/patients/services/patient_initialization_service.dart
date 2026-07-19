@@ -47,8 +47,11 @@ class PatientInitializationService {
     if (dbType == 'sqlite') {
       database = dbProvider.database;
       if (database != null) {
-        sqliteDS =
-            SqlitePatientDataSource(database, doctorName: null, isAdmin: true);
+        sqliteDS = SqlitePatientDataSource(
+          database,
+          doctorName: currentUser?.doctor,
+          isAdmin: currentUser?.isAdmin ?? false,
+        );
       } else {
         LogManager.e('PatientInitializationService',
             'PatientInitializationService: SQLite数据库连接不可用');
@@ -58,8 +61,8 @@ class PatientInitializationService {
       if (mysqlConn != null) {
         mysqlDS = MySqlPatientDataSource.withConnectionGetter(
           () async => dbProvider.mysqlConnection,
-          doctorName: null,
-          isAdmin: true,
+          doctorName: currentUser?.doctor,
+          isAdmin: currentUser?.isAdmin ?? false,
           reconnectCallback: () async {
             if (dbProvider != null) await dbProvider.initializeMySQL();
           },
@@ -70,8 +73,11 @@ class PatientInitializationService {
           effectiveType = 'sqlite';
           database = dbProvider.database;
           if (database != null) {
-            sqliteDS = SqlitePatientDataSource(database,
-                doctorName: null, isAdmin: true);
+            sqliteDS = SqlitePatientDataSource(
+              database,
+              doctorName: currentUser?.doctor,
+              isAdmin: currentUser?.isAdmin ?? false,
+            );
           }
         } else {}
       } else {

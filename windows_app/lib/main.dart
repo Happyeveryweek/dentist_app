@@ -467,11 +467,7 @@ class DentistApp extends StatelessWidget {
           update: (_, dbProvider, userProvider, patientProvider) {
             patientProvider ??= PatientProvider();
 
-            // 设置当前用户信息
-            final currentUser = userProvider.currentUser;
-            if (currentUser != null) {
-              patientProvider.setCurrentUser(currentUser);
-            }
+            patientProvider.setUserProvider(userProvider);
 
             // 获取设置提供者以获取模块配置
             final settings = Provider.of<SettingsProvider>(_, listen: false);
@@ -483,15 +479,17 @@ class DentistApp extends StatelessWidget {
               dbProvider,
               moduleDataSources: moduleDataSources,
               dataSourceMode: dataSourceMode,
+              userProvider: userProvider,
             );
 
             return patientProvider;
           },
         ),
-        ChangeNotifierProxyProvider2<DatabaseProvider, PatientProvider,
-            AppointmentProvider>(
+        ChangeNotifierProxyProvider3<DatabaseProvider, PatientProvider,
+            UserProvider, AppointmentProvider>(
           create: (_) => AppointmentProvider(),
-          update: (_, dbProvider, patientProvider, appointmentProvider) {
+          update: (_, dbProvider, patientProvider, userProvider,
+              appointmentProvider) {
             appointmentProvider ??= AppointmentProvider();
 
             // 获取设置提供者以获取模块配置
@@ -505,6 +503,7 @@ class DentistApp extends StatelessWidget {
               moduleDataSources: moduleDataSources,
               dataSourceMode: dataSourceMode,
               patientProvider: patientProvider,
+              userProvider: userProvider,
             );
 
             return appointmentProvider;

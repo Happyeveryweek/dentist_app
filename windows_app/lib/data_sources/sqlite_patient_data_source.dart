@@ -31,9 +31,13 @@ class SqlitePatientDataSource implements PatientDataSource {
     if (clauses.isNotEmpty) {
       whereParts.addAll(clauses);
     }
-    if (includeDoctorFilter && !_isAdmin && _hasDoctorName) {
-      whereParts.add('doctor = ?');
-      args.add(_doctorName);
+    if (includeDoctorFilter && !_isAdmin) {
+      if (_hasDoctorName) {
+        whereParts.add('doctor = ?');
+        args.add(_doctorName);
+      } else {
+        whereParts.add('1 = 0');
+      }
     }
     return _PatientQueryParts(
       whereParts.join(' AND '),
@@ -110,7 +114,12 @@ class SqlitePatientDataSource implements PatientDataSource {
   @override
   Future<List<Patient>> getAllPatients() async {
     try {
-      final maps = await _database.query('patients');
+      final parts = _buildQueryParts([], []);
+      final maps = await _database.query(
+        'patients',
+        where: parts.where.isEmpty ? null : parts.where,
+        whereArgs: parts.args.isEmpty ? null : parts.args,
+      );
       return maps.map((m) => Patient.fromMap(m)).toList();
     } catch (e) {
       LogManager.e('SqlitePatientDataSource', 'getAllPatients 出错', error: e);

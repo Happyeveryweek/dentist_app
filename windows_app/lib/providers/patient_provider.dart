@@ -122,8 +122,9 @@ class PatientProvider extends ChangeNotifier {
     if (requestedType == 'sqlite') {
       final database = _database;
       if (_sqliteDataSource == null && database != null) {
-        final doctor = _currentUser?.doctor;
-        final isAdmin = _currentUser == null || _currentUser?.role == 'admin';
+        final user = _userProvider?.currentUser ?? _currentUser;
+        final doctor = user?.doctor;
+        final isAdmin = user?.isAdmin ?? false;
         _sqliteDataSource = SqlitePatientDataSource(
           database,
           doctorName: doctor,
@@ -144,8 +145,9 @@ class PatientProvider extends ChangeNotifier {
         }
       }
       if (_mysqlDataSource == null && mysqlConnection != null) {
-        final doctor = _currentUser?.doctor;
-        final isAdmin = _currentUser == null || _currentUser?.role == 'admin';
+        final user = _userProvider?.currentUser ?? _currentUser;
+        final doctor = user?.doctor;
+        final isAdmin = user?.isAdmin ?? false;
         _mysqlConnection = mysqlConnection;
         _mysqlDataSource = MySqlPatientDataSource.withConnectionGetter(
           () async => _currentMysqlConnection,

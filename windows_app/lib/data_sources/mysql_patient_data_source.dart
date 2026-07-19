@@ -27,9 +27,13 @@ class MySqlPatientDataSource extends BaseMySqlDataSource
     if (clauses.isNotEmpty) {
       whereParts.addAll(clauses);
     }
-    if (includeDoctorFilter && !_isAdmin && _hasDoctorName) {
-      whereParts.add('doctor = ?');
-      args.add(_doctorName);
+    if (includeDoctorFilter && !_isAdmin) {
+      if (_hasDoctorName) {
+        whereParts.add('doctor = ?');
+        args.add(_doctorName);
+      } else {
+        whereParts.add('1 = 0');
+      }
     }
     return _PatientQueryParts(whereParts.join(' AND '), args);
   }
@@ -121,7 +125,11 @@ class MySqlPatientDataSource extends BaseMySqlDataSource
   @override
   Future<List<Patient>> getAllPatients() async {
     try {
-      final results = await executeQuery('SELECT * FROM patients');
+      final parts = _buildQueryParts([], []);
+      final results = await executeQuery(
+        'SELECT * FROM patients${_whereOrEmpty(parts.where)}',
+        parts.args,
+      );
       List<Patient> patients = [];
       for (var row in results) {
         patients.add(Patient.fromMap(convertRowToMap(row)));
