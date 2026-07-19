@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mysql1/mysql1.dart';
-import 'package:crypto/crypto.dart';
 
 import '../models/user.dart';
 import '../data_sources/user_data_source.dart';
@@ -9,11 +7,16 @@ import '../features/users/services/user_sync_service.dart';
 import '../features/users/helpers/user_cache_helper.dart';
 import '../features/users/services/user_permission_service.dart';
 import '../features/users/services/user_data_source_initializer.dart';
+import '../features/users/services/password_service.dart';
+import '../features/users/services/user_authentication_service.dart';
 import '../utils/log_manager.dart';
 
 /// 用户管理提供者
 /// 负责处理所有与用户相关的数据库操作
 class UserProvider extends ChangeNotifier {
+  final PasswordService _passwordService = PasswordService();
+  final UserAuthenticationService _authenticationService =
+      UserAuthenticationService();
   // 当前用户信息
   User? _currentUser;
 
@@ -227,10 +230,7 @@ class UserProvider extends ChangeNotifier {
         return false; // 用户名已存在
       }
 
-      // 对密码进行MD5加密
-      final bytes = utf8.encode(password);
-      final digest = md5.convert(bytes);
-      final hashedPassword = digest.toString();
+      final hashedPassword = _passwordService.hashPassword(password);
 
       final success = await _currentDataSource.registerUser(
         user.username,
@@ -257,10 +257,7 @@ class UserProvider extends ChangeNotifier {
       String? modulePermissions,
       List<int>? imageData}) async {
     try {
-      // 使用SHA-256加密密码，与原有代码保持一致
-      var bytes = utf8.encode(password);
-      var digest = sha256.convert(bytes);
-      final hashedPassword = digest.toString();
+      final hashedPassword = _passwordService.hashPassword(password);
 
       // 构建User对象
       final user = User(
@@ -297,12 +294,9 @@ class UserProvider extends ChangeNotifier {
         throw Exception('用户不存在');
       }
 
-      // 使用SHA-256加密新密码（如果提供）
       String finalPassword = existingUser.password;
       if (password != null && password.isNotEmpty) {
-        var bytes = utf8.encode(password);
-        var digest = sha256.convert(bytes);
-        finalPassword = digest.toString();
+        finalPassword = _passwordService.hashPassword(password);
       }
 
       // 构建更新后的User对象
@@ -331,12 +325,7 @@ class UserProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
-    // 使用MD5加密密码，确保与登录验证一致
-    var bytes = utf8.encode(newPassword);
-    var digest = md5.convert(bytes);
-    String hashedPassword = digest.toString();
-
-    LogManager.w('UserProvider', '更新用户密码，使用MD5加密: $hashedPassword');
+    final hashedPassword = _passwordService.hashPassword(newPassword);
 
     try {
       final count =
@@ -374,6 +363,24 @@ class UserProvider extends ChangeNotifier {
 
     // 从数据库中获取当前登录用户信息
     return _currentUser;
+  }
+
+  /// 验证用户名和密码；历史格式验证成功后会升级为当前密码格式。
+  Future<User?> authenticate(String username, String password) async {
+    if (!initialized) {
+      throw Exception('数据库未初始化');
+    }
+
+    final user = await _authenticationService.authenticate(
+      dataSource: _currentDataSource,
+      username: username,
+      password: password,
+    );
+    if (user != null) {
+      setCurrentUser(user);
+      clearCache();
+    }
+    return user;
   }
 
   // 设置当前用户

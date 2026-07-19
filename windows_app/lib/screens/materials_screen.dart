@@ -145,6 +145,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
     bool showLoading = true,
     bool forceRefresh = false,
   }) async {
+    if (!mounted) return;
     if (showLoading) {
       setState(() {
         _isLoading = true;
@@ -164,6 +165,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
       final materials = await materialProvider.getAllMaterials(
         forceRefresh: forceRefresh,
       );
+      if (!mounted) return;
 
       // 不再自动初始化材料，只在用户主动点击时才执行
       setState(() {
@@ -191,6 +193,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             '强制重置后错误状态: _hasError=$_hasError, _errorMessage=');
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _hasError = true;
         _errorMessage = '加载材料数据失败: $e';
@@ -775,7 +778,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: context.tokens.primaryAccent.withValues(alpha: 0.1),
+                          color: context.tokens.primaryAccent
+                              .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
@@ -806,7 +810,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: context.tokens.warning.withValues(alpha: 0.1),
+                            color:
+                                context.tokens.warning.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
@@ -944,7 +949,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: context.tokens.cardBackground.withValues(alpha: 0.2),
+                        color: context.tokens.cardBackground
+                            .withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -984,8 +990,9 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                         height: 18,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient:
-                              isSelected ? context.tokens.primaryHeaderGradient : null,
+                          gradient: isSelected
+                              ? context.tokens.primaryHeaderGradient
+                              : null,
                           border: Border.all(
                             color: isSelected
                                 ? Colors.transparent
@@ -1018,7 +1025,8 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: context.tokens.primaryAccent.withValues(alpha: 0.1),
+                            color: context.tokens.primaryAccent
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(

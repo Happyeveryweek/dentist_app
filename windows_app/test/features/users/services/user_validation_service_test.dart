@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:crypto/crypto.dart';
+import 'package:dentist_app_windows/features/users/services/password_service.dart';
 import 'package:dentist_app_windows/features/users/services/user_validation_service.dart';
 import 'package:dentist_app_windows/models/user.dart';
 import 'package:dentist_app_windows/providers/user_provider.dart';
@@ -14,12 +16,72 @@ class _FakeUserProvider extends UserProvider {
 
 void main() {
   group('用户管理-密码加密', () {
-    test('相同密码生成一致的SHA256哈希', () {
-      final hash1 = UserValidationService.hashPassword('123456');
-      final hash2 = UserValidationService.hashPassword('123456');
-      expect(hash1, hash2);
-      expect(hash1.length, 64);
-      expect(hash1, isNot(equals('123456')));
+    final passwordService = PasswordService();
+
+    test('相同密码生成不同哈希且都能验证', () {
+      final hash1 = passwordService.hashPassword('123456');
+      final hash2 = passwordService.hashPassword('123456');
+
+      expect(hash1, isNot(equals(hash2)));
+      expect(passwordService.verifyPassword('123456', hash1).isValid, isTrue);
+      expect(passwordService.verifyPassword('123456', hash2).isValid, isTrue);
+    });
+
+    test('错误密码验证失败', () {
+      final hash = passwordService.hashPassword('correct-password');
+
+      expect(
+        passwordService.verifyPassword('wrong-password', hash).isValid,
+        isFalse,
+      );
+    });
+
+    test('历史 MD5 和 SHA-256 密码可验证并标记升级', () {
+      final md5Hash = md5.convert('legacy-password'.codeUnits).toString();
+      final sha256Hash = sha256.convert('legacy-password'.codeUnits).toString();
+
+      for (final hash in [md5Hash, sha256Hash]) {
+        final result = passwordService.verifyPassword('legacy-password', hash);
+        expect(result.isValid, isTrue);
+        expect(result.needsUpgrade, isTrue);
+        expect(
+          passwordService.verifyPassword('wrong-password', hash).isValid,
+          isFalse,
+        );
+      }
+    });
+
+    test('历史明文只匹配自身并标记升级', () {
+      final result =
+          passwordService.verifyPassword('legacy-password', 'legacy-password');
+
+      expect(result.isValid, isTrue);
+      expect(result.needsUpgrade, isTrue);
+      expect(
+        passwordService
+            .verifyPassword('other-password', 'legacy-password')
+            .isValid,
+        isFalse,
+      );
+    });
+
+    test('123456 不能通过其他账户的密码验证', () {
+      final hash = passwordService.hashPassword('another-password');
+
+      expect(passwordService.verifyPassword('123456', hash).isValid, isFalse);
+    });
+
+    test('畸形版本密码串安全失败', () {
+      for (final hash in [
+        r'pbkdf2_sha256$invalid$salt$hash',
+        r'pbkdf2_sha256$0$c2FsdA==$aGFzaA==',
+        r'pbkdf2_sha256$100000$not-base64$not-base64',
+      ]) {
+        expect(
+          passwordService.verifyPassword('123456', hash).isValid,
+          isFalse,
+        );
+      }
     });
   });
 

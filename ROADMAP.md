@@ -4,6 +4,7 @@
 
 ### Windows 端
 
+- Windows 端第二轮代码审核整改正在实施：进度 1、2 已完成代码与自动验证。密码写入、默认管理员和登录认证均统一为 PBKDF2-HMAC-SHA256；历史 SHA-256、MD5 与明文仅保留兼容验证，并会在成功登录后升级。固定密码不再可绕过任意账户认证，完整范围见 [审核整改执行方案](windows_app/docs/windows_app_code_audit_remediation_plan_2026_07_19.md) 。
 - 无用代码与重复逻辑治理已完成：删除 39 个不可达 Dart 文件、方法级无调用 API 与无消费者委托链；五套患者同步服务已通过 `PatientSyncLogHelper` 收口。最终状态见 [治理总结](windows_app/docs/windows_app_dead_code_and_duplicate_logic_governance_summary_2026_07_13.md) 。
 - 2026-07-13 复审后续治理批次 0～5 的代码实施和自动验证已完成：清理无消费者代码与 9 项无用直接依赖，采购图片导出统一由 `PurchaseExportService` 编排，四模块 MySQL 连接统一由 `ModuleMysqlConnectionService` 管理。最终状态见 [后续治理实施方案](windows_app/docs/windows_app_dead_code_and_duplicate_logic_followup_implementation_plan_2026_07_13.md) ；人工 UI／功能回归待确认。
 - 图表组件抽取、财务查询对象和 schema 模板重构均已暂缓：当前收益不足以覆盖跨模块行为风险，不是遗留缺陷。
@@ -25,12 +26,16 @@
 
 ## 待办与阻塞
 
-- Windows 端：后续治理批次 0～5 的代码实施和自动验证已完成；启动、提示、权限、用户头像、患者排序、预约刷新、数据源切换、备份恢复、PDF／采购图片导出、文件选择及四模块 SQLite/MySQL 连接与同步人工回归待确认。若后续出现财务筛选扩展或 SQLite/MySQL 查询结果不一致，再单独评估财务查询对象重构。
+- Windows 端：第二轮审核整改的进度 1、2 和本地凭证保留决定已完成；SQLite／MySQL 人工认证回归由主人确认按自动验证完成。其后依次处理财务权限查询、采购搜索竞态与生命周期、无消费者 API 和重复通知。主人明确保留本地“记住用户名密码”，因此密码仍会明文保存于应用偏好文件。数据库 schema 变更与删除文件需另行确认。此前治理批次 0～5 的启动、提示、权限、用户头像、患者排序、预约刷新、数据源切换、备份恢复、PDF／采购图片导出、文件选择及四模块 SQLite/MySQL 连接与同步人工回归仍待确认。
 - Android 端：后续治理已完成，UI、SQLite、MySQL 及登录／Dashboard 图片人工回归未执行但主人已确认按自动验证完成。财务表单和牙齿状况展示重复逻辑仅随相关需求实施；图表及日期范围不纳入计划，除非统计页改版、需统一产品规则或出现实际缺陷。若未来出现 MySQL 图片、文本或日期转换不一致，再按治理总结建立专项测试与迁移方案。
 - 阻塞：无。
 
 ## 最近验证
 
+- 2026-07-19：Windows 端审核整改进度 1、2 及本地凭证保留决定完成。登录页改经统一认证服务验证，移除 SQLite/MySQL 内嵌建表、MD5 及固定密码放行；默认管理员创建使用 `PasswordService`，历史密码成功登录后升级。`flutter test --no-pub test/features/users/services/user_validation_service_test.dart test/features/users/services/user_authentication_service_test.dart` 14 项通过，`flutter analyze --no-pub` 为 `No issues found!`；SQLite／MySQL 新安装、旧密码升级和本地凭证重启回填由主人确认按自动验证完成。
+- 2026-07-19：Windows 端审核整改进度 1 已开始。新增 `PasswordService`，新写入密码统一为 PBKDF2-HMAC-SHA256，历史 SHA-256、MD5 和明文密码均有受限兼容验证；`UserProvider` 的新增、编辑、注册、重置密码四个入口已收口。`flutter test --no-pub test/features/users/services/user_validation_service_test.dart` 11 项通过，`flutter analyze --no-pub` 为 `No issues found!`；登录认证入口、默认管理员和升级写回尚未实施，未进行人工回归。
+- 2026-07-19：Windows 端第二轮代码审核和整改执行方案完成，本次只新增方案文档并更新进度，未修改业务代码。审核确认认证绕过、密码格式分叉、明文凭证、财务权限分页不完整、采购搜索竞态和剩余冗余候选；`flutter analyze --no-pub` 为 `No issues found!`，全量 `flutter test --no-pub` 75 项通过，但现有测试尚未覆盖上述问题。
+- 2026-07-14：Android 采购列表项目数修复完成。采购统计在获取明细时按记录 ID 回填明细条数，列表卡片显示该值，总采购量仍按明细数量求和；新增“总数量 82、项目数 2”回归测试。`flutter test --no-pub test/features/purchases/purchase_cache_service_test.dart test/features/purchases/purchase_statistics_service_test.dart` 3 项通过，`flutter analyze --no-pub` 为 `No issues found!`；待真机确认采购列表加载后的项目数。
 - 2026-07-13：Android 返回手势警告修复完成。Manifest 将 `android:enableOnBackInvokedCallback` 设为 `false`，避免预测性返回取消路径反复输出 `WindowOnBackDispatcher sendCancelIfRunning`；Flutter `PopScope`／`Navigator` 返回逻辑不受影响，但不再显示预测返回动画。`flutter analyze --no-pub` 为 `No issues found!`；待真机验证系统返回、详情返回和对话框取消。
 - 2026-07-13：Android 预约与患者详情缓存优化完成。患者 Provider 增加按 ID 缓存；预约详情首次命中缓存时不再等待患者查询，三个权限控件复用同一 Future；患者详情不再每次清除图片缓存，财务记录按患者缓存，病历记录按患者缓存 5 分钟且手动刷新会失效该患者缓存。财务与采购缓存测试共 4 个通过，`flutter analyze --no-pub` 为 `No issues found!`；待真机验证重复打开预约／患者详情、患者图片与病历刷新、患者财务金额和预约编辑后的数据刷新。
 - 2026-07-13：Android 财务详情收费记录缓存完成。`FinancialProvider` 优先返回按财务记录 ID 缓存的明细，数据库查询结果自动回填；新增、编辑收费项目时精准失效对应缓存，删除时清除财务缓存，记录变更沿用全量缓存清除。新增 2 个财务缓存测试；财务与采购缓存测试共 4 个通过，`flutter analyze --no-pub` 为 `No issues found!`；待真机验证重复进入财务详情不重复加载，以及收费项目增删改后的详情刷新。

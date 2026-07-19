@@ -1,18 +1,9 @@
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
 import '../../../providers/user_provider.dart';
 import '../../../utils/log_manager.dart';
 
 /// 用户验证服务
 /// 负责密码加密、邮箱验证等业务逻辑
 class UserValidationService {
-  /// 加密密码
-  static String hashPassword(String password) {
-    var bytes = utf8.encode(password);
-    var digest = sha256.convert(bytes);
-    return digest.toString();
-  }
-
   /// 检查邮箱是否已存在
   ///
   /// [userProvider] 用户数据提供者

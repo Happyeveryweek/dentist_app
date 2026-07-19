@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
-import 'package:crypto/crypto.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
@@ -11,7 +9,6 @@ import '../providers/database_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/settings_provider.dart';
 import '../screens/home_screen.dart';
-import '../models/user.dart';
 import '../features/users/helpers/credential_storage_helper.dart';
 import '../utils/log_manager.dart';
 
@@ -101,195 +98,6 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  // 加密密码
-  String _hashPassword(String password) {
-    var bytes = utf8.encode(password);
-    var digest = md5.convert(bytes);
-    return digest.toString();
-  }
-
-  // 确保用户表存在
-  Future<void> _ensureUserTableExists(DatabaseProvider dbProvider) async {
-    // SQLite数据库检查
-    final db = dbProvider.database;
-    if (dbProvider.dataSourceType == 'sqlite' && db != null) {
-      // 检查users表是否存在
-      final tables = await db.rawQuery(
-          "SELECT name FROM sqlite_master WHERE type='table' AND name='users'");
-
-      if (tables.isEmpty) {
-        // 创建users表
-        await db.execute('''
-          CREATE TABLE users(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL UNIQUE,
-            email TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL,
-            role TEXT NOT NULL,
-            doctor TEXT,
-            avatar TEXT DEFAULT 'avatar_1',
-            created_at DATETIME NOT NULL
-          ),
-        ''');
-
-        // 添加默认管理员用户
-        final hashedPassword = _hashPassword('123456');
-        await db.insert('users', {
-          'username': 'admin',
-          'email': 'admin@example.com',
-          'password': hashedPassword,
-          'role': 'admin',
-          'doctor': '系统管理员',
-          'avatar': 'avatar_5', // 使用管理员头像
-          'created_at':
-              DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
-        });
-      }
-    }
-
-    // MySQL数据库检查
-    final conn = dbProvider.mysqlConnection;
-    if (dbProvider.dataSourceType == 'mysql' && conn != null) {
-      try {
-        // 尝试查询users表，如果失败则创建
-        await conn.query('SELECT 1 FROM users LIMIT 1');
-      } catch (e) {
-        // 创建users表
-        await conn.query('''
-          CREATE TABLE IF NOT EXISTS `users` (
-            `id` int(11) NOT NULL AUTO_INCREMENT,
-            `username` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-            `email` varchar(120) COLLATE utf8mb4_unicode_ci NOT NULL,
-            `password` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL,
-            `role` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
-            `doctor` varchar(100) COLLATE utf8mb4_unicode_ci,
-            `avatar` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'avatar_1',
-            `created_at` datetime NOT NULL,
-            PRIMARY KEY (`id`) USING BTREE,
-            UNIQUE KEY `username` (`username`) USING BTREE,
-            UNIQUE KEY `email` (`email`) USING BTREE
-          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC
-        ''');
-
-        // 添加默认管理员用户
-        final hashedPassword = _hashPassword('123456');
-        await conn.query(
-            'INSERT INTO users (username, email, password, role, doctor, avatar, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [
-              'admin',
-              'admin@example.com',
-              hashedPassword,
-              'admin',
-              '系统管理员',
-              'avatar_5', // 使用管理员头像
-              DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())
-            ]);
-      }
-    }
-  }
-
-  // SQLite登录
-  Future<bool> _loginWithSQLite(
-      DatabaseProvider dbProvider, String username, String password) async {
-    if (dbProvider.database == null) {
-      throw Exception('SQLite数据库未初始化');
-    }
-
-    final database = dbProvider.database;
-    if (database == null) {
-      throw Exception('SQLite 数据库未初始化');
-    }
-
-    // 从数据库查询用户
-    final result = await database.query(
-      'users',
-      where: 'username = ?',
-      whereArgs: [username],
-    );
-
-    if (result.isEmpty) {
-      return false;
-    }
-
-    // 验证密码
-    final storedPassword = result.first['password'] as String;
-
-    // 比较明文密码（用于演示）和哈希密码
-    if (password == 'admin' ||
-        password == '123456' ||
-        _hashPassword(password) == storedPassword ||
-        password == storedPassword) {
-      // 登录成功，设置当前用户
-      final user = User.fromMap(result.first);
-      dbProvider.setCurrentUser(user);
-
-      if (!mounted) return false;
-      // 同时设置到UserProvider
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      userProvider.setCurrentUser(user);
-
-      return true;
-    }
-
-    return false;
-  }
-
-  // MySQL登录
-  Future<bool> _loginWithMySQL(
-      DatabaseProvider dbProvider, String username, String password) async {
-    final conn = dbProvider.mysqlConnection;
-    if (conn == null) {
-      throw Exception('MySQL连接未初始化');
-    }
-
-    // 从数据库查询用户
-    final results = await conn.query(
-      'SELECT * FROM users WHERE username = ?',
-      [username],
-    );
-
-    if (results.isEmpty) {
-      return false;
-    }
-
-    // 验证密码
-    final row = results.first;
-    final storedPassword = row['password'].toString();
-
-    // 比较明文密码（用于演示）和哈希密码
-    if (password == 'admin' ||
-        password == '123456' ||
-        _hashPassword(password) == storedPassword ||
-        password == storedPassword) {
-      // 登录成功，设置当前用户
-      final map = <String, dynamic>{};
-      for (var field in row.fields.keys) {
-        var value = row[field];
-        // 对于doctor字段，直接使用原始值，避免乱码
-        if (field == 'doctor') {
-          map[field] = value?.toString() ?? '';
-        } else if (field == 'created_at' && value is DateTime) {
-          map[field] = DateFormat('yyyy-MM-dd HH:mm:ss').format(value);
-        } else {
-          // 其他字段保持原样
-          map[field] = value;
-        }
-      }
-
-      final user = User.fromMap(map);
-      dbProvider.setCurrentUser(user);
-
-      if (!mounted) return false;
-      // 同时设置到UserProvider
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      userProvider.setCurrentUser(user);
-
-      return true;
-    }
-
-    return false;
-  }
-
   // 登录方法
   Future<void> _login() async {
     if (_formKey.currentState?.validate() != true) {
@@ -308,31 +116,32 @@ class _LoginScreenState extends State<LoginScreen>
       if (!dbProvider.initialized) {
         await dbProvider.initDatabase();
       }
+      if (!mounted) return;
 
       final username = _usernameController.text.trim();
       final password = _passwordController.text;
 
-      // 检查用户表是否存在，如果不存在则创建
-      await _ensureUserTableExists(dbProvider);
-
-      // 根据数据源类型不同，使用不同的查询方法
-      bool loginSuccess = false;
-
-      if (dbProvider.dataSourceType == 'sqlite') {
-        loginSuccess = await _loginWithSQLite(dbProvider, username, password);
-      } else {
-        loginSuccess = await _loginWithMySQL(dbProvider, username, password);
-      }
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final settingsProvider =
+          Provider.of<SettingsProvider>(context, listen: false);
+      await userProvider.initializeFromDatabase(
+        dbProvider,
+        moduleDataSources: settingsProvider.moduleDataSources,
+        dataSourceMode: settingsProvider.dataSourceMode,
+      );
+      if (!mounted) return;
+      final user = await userProvider.authenticate(username, password);
+      final loginSuccess = user != null;
 
       if (loginSuccess) {
+        dbProvider.setCurrentUser(user);
         // 保存登录凭证（如果勾选了记住密码）
         await _saveCredentials(username, password);
 
         // 登录成功，加载用户权限并导航到首页
         if (!mounted) return;
 
-        // 获取UserProvider并加载权限
-        final userProvider = Provider.of<UserProvider>(context, listen: false);
+        // 获取当前用户并加载权限
         final currentUser = await dbProvider.getCurrentUser();
 
         if (currentUser != null) {

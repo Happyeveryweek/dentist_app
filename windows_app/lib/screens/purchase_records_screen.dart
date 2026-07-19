@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -27,12 +29,16 @@ class PurchaseRecordsScreen extends StatefulWidget {
 }
 
 class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
+  static const _searchDebounceDuration = Duration(milliseconds: 350);
+
   List<PurchaseRecord> _purchaseRecords = [];
   bool _isLoading = false;
   bool _hasError = false;
   String _errorMessage = '';
   String _searchQuery = '';
   late TextEditingController _searchController;
+  Timer? _searchDebounceTimer;
+  int _loadGeneration = 0;
 
   // 分页状态
   int _currentPage = 1;
@@ -65,6 +71,11 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
   }
 
   Future<void> _loadData({bool showLoading = true}) async {
+    final loadGeneration = ++_loadGeneration;
+    final searchQuery = _searchQuery;
+    var page = _currentPage;
+
+    if (!mounted) return;
     if (showLoading) {
       setState(() {
         _isLoading = true;
@@ -82,46 +93,61 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
 
       // 先获取总数
       final total = await purchaseProvider.getPurchaseRecordsCount(
-        searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
+        searchQuery: searchQuery.isNotEmpty ? searchQuery : null,
       );
+      if (!mounted || loadGeneration != _loadGeneration) return;
 
       // 获取统计信息（所有记录的汇总）
-      await _loadStatistics();
+      final statisticsRecords =
+          await _loadStatistics(purchaseProvider, searchQuery);
+      if (!mounted || loadGeneration != _loadGeneration) return;
 
       // 计算总页数并校正当前页
       final computedTotalPages =
           (total / _recordsPerPage).ceil().clamp(1, 1 << 30);
-      if (_currentPage > computedTotalPages && computedTotalPages > 0) {
-        _currentPage = computedTotalPages;
+      if (page > computedTotalPages && computedTotalPages > 0) {
+        page = computedTotalPages;
       }
 
       // 再获取当前页
       List<PurchaseRecord> records = await purchaseProvider.getPurchaseRecords(
-        page: _currentPage,
+        page: page,
         pageSize: _recordsPerPage,
         sortBy: 'updated_at',
         sortOrder: 'DESC',
-        searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
+        searchQuery: searchQuery.isNotEmpty ? searchQuery : null,
       );
+      if (!mounted || loadGeneration != _loadGeneration) return;
 
       // 如果存在数据但当前页为空，回退到第一页重试
-      if (records.isEmpty && total > 0 && _currentPage != 1) {
-        _currentPage = 1;
+      if (records.isEmpty && total > 0 && page != 1) {
+        page = 1;
         records = await purchaseProvider.getPurchaseRecords(
-          page: _currentPage,
+          page: page,
           pageSize: _recordsPerPage,
           sortBy: 'updated_at',
           sortOrder: 'DESC',
-          searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
+          searchQuery: searchQuery.isNotEmpty ? searchQuery : null,
         );
+        if (!mounted || loadGeneration != _loadGeneration) return;
       }
 
       setState(() {
         _purchaseRecords = records;
         _totalRecords = total;
+        _currentPage = page;
+        _totalQuantity = statisticsRecords.fold<int>(
+          0,
+          (sum, record) => sum + record.totalQuantity,
+        );
+        _totalAmount = statisticsRecords.fold<double>(
+          0.0,
+          (sum, record) => sum + record.totalAmount,
+        );
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted || loadGeneration != _loadGeneration) return;
       setState(() {
         _hasError = true;
         _errorMessage = '加载采购记录失败: $e';
@@ -131,22 +157,17 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
   }
 
   // 加载统计信息
-  Future<void> _loadStatistics() async {
+  Future<List<PurchaseRecord>> _loadStatistics(
+    PurchaseProvider purchaseProvider,
+    String searchQuery,
+  ) async {
     try {
-      final purchaseProvider =
-          Provider.of<PurchaseProvider>(context, listen: false);
-      final records = _searchQuery.isEmpty
+      return searchQuery.isEmpty
           ? await purchaseProvider.getAllPurchaseRecords()
-          : await purchaseProvider.searchPurchaseRecords(_searchQuery);
-
-      _totalQuantity =
-          records.fold<int>(0, (sum, record) => sum + record.totalQuantity);
-      _totalAmount =
-          records.fold<double>(0.0, (sum, record) => sum + record.totalAmount);
+          : await purchaseProvider.searchPurchaseRecords(searchQuery);
     } catch (e) {
       LogManager.e('PurchaseRecordsScreen', '加载统计信息失败', error: e);
-      _totalQuantity = 0;
-      _totalAmount = 0.0;
+      return [];
     }
   }
 
@@ -155,11 +176,19 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
       _searchQuery = value;
       _currentPage = 1;
     });
-    _loadData(showLoading: false);
+    _searchDebounceTimer?.cancel();
+    _loadGeneration++;
+    _searchDebounceTimer = Timer(_searchDebounceDuration, () {
+      if (mounted) {
+        _loadData(showLoading: false);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _searchDebounceTimer?.cancel();
+    _loadGeneration++;
     _searchController.dispose();
     super.dispose();
   }
@@ -659,12 +688,8 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
                         _applySearch(value);
                       },
                       onClear: () {
-                        setState(() {
-                          _searchQuery = '';
-                          _currentPage = 1;
-                        });
                         _searchController.clear();
-                        _loadData(showLoading: false);
+                        _applySearch('');
                       },
                     ),
                   ),

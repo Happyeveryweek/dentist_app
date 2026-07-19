@@ -6,6 +6,7 @@ import 'package:dentist_app_windows/utils/datetime_formatter.dart';
 import 'package:dentist_app_windows/features/settings/helpers/table_definitions_adapter.dart';
 import 'package:dentist_app_windows/features/settings/helpers/database_type_converter_helper.dart';
 import 'package:dentist_app_windows/utils/log_manager.dart';
+import 'package:dentist_app_windows/features/users/services/password_service.dart';
 
 /// 数据库结构检测服务
 /// 负责检测和更新SQLite和MySQL数据库结构
@@ -301,10 +302,9 @@ class DatabaseStructureDetectionService {
           'SELECT COUNT(*) as count FROM users WHERE username = ?', ['admin']);
 
       if (existingUsers.first['count'] == 0) {
-        final hashedPassword =
-            DatabaseTypeConverterHelper.hashPassword('123456');
+        final hashedPassword = PasswordService().hashPassword('123456');
         await _requireMysqlConnection.query('''
-          INSERT INTO users (username, email, password, role, doctor, avatar, createdAt, updatedAt) 
+          INSERT INTO users (username, email, password, role, doctor, avatar, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())
         ''', [
           'admin',
@@ -328,8 +328,7 @@ class DatabaseStructureDetectionService {
           .query('users', where: 'username = ?', whereArgs: ['admin']);
 
       if (existingUsers.isEmpty) {
-        final hashedPassword =
-            DatabaseTypeConverterHelper.hashPassword('123456');
+        final hashedPassword = PasswordService().hashPassword('123456');
         final now = DateTimeFormatter.nowDbString();
         await _requireDatabase.insert('users', {
           'username': 'admin',

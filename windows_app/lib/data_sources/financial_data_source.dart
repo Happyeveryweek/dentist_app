@@ -45,6 +45,7 @@ abstract class FinancialDataSource {
     List<int>? patientIds,
     DateTime? startDate,
     DateTime? endDate,
+    String? doctorFilter,
   });
 
   /// 获取某患者最近更新的财务记录
@@ -66,6 +67,7 @@ abstract class FinancialDataSource {
     double? receivedMax,
     double? processingMin,
     double? processingMax,
+    String? doctorFilter,
   });
 
   /// 分页获取收费项明细（JOIN 查询）
@@ -85,6 +87,7 @@ abstract class FinancialDataSource {
     double? receivedMax,
     double? processingMin,
     double? processingMax,
+    String? doctorFilter,
   });
 
   /// 获取全部收费项明细用于统计（含权限过滤 JOIN）

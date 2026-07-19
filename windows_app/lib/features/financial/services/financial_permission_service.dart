@@ -6,6 +6,8 @@ import '../../../utils/log_manager.dart';
 /// 财务权限过滤服务
 /// 负责根据用户权限过滤财务记录
 class FinancialPermissionService {
+  static const noAccessDoctorFilter = '__NO_FINANCIAL_ACCESS__';
+
   final PatientProvider? patientProvider;
   final UserProvider? userProvider;
 
@@ -18,12 +20,15 @@ class FinancialPermissionService {
   String? getDoctorFilter() {
     try {
       final provider = userProvider;
-      // 如果没有用户权限提供者或当前用户是管理员，不进行过滤
+      // 权限主体缺失时失败关闭，不能将其等同于管理员。
       if (provider == null) {
-        return null;
+        return noAccessDoctorFilter;
       }
       final currentUser = provider.currentUser;
-      if (currentUser == null || currentUser.isAdmin) {
+      if (currentUser == null) {
+        return noAccessDoctorFilter;
+      }
+      if (currentUser.isAdmin) {
         return null; // 管理员不过滤
       }
 
@@ -31,14 +36,14 @@ class FinancialPermissionService {
       final doctorName = currentUser.doctor;
       if (doctorName == null || doctorName.isEmpty) {
         // 如果没有医生字段，返回一个不存在的值，确保查询结果为空
-        return '__NO_DOCTOR__';
+        return noAccessDoctorFilter;
       }
 
       return doctorName;
     } catch (e) {
       LogManager.e('FinancialPermissionService', '获取医生过滤条件失败', error: e);
       // 出错时返回安全的过滤条件
-      return '__NO_DOCTOR__';
+      return noAccessDoctorFilter;
     }
   }
 

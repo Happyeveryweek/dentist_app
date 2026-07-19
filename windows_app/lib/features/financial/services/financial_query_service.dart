@@ -36,6 +36,7 @@ class FinancialQueryService {
         patientIds: patientIds,
         startDate: startDate,
         endDate: endDate,
+        doctorFilter: getDoctorFilter(),
       );
     } catch (e) {
       LogManager.e('FinancialQueryService', 'getPatientAggregatesPage 失败',
@@ -108,6 +109,7 @@ class FinancialQueryService {
         receivedMax: receivedMax,
         processingMin: processingMin,
         processingMax: processingMax,
+        doctorFilter: getDoctorFilter(),
       );
     } catch (e) {
       LogManager.e('FinancialQueryService', '获取收费项总数失败', error: e);
@@ -151,6 +153,7 @@ class FinancialQueryService {
         receivedMax: receivedMax,
         processingMin: processingMin,
         processingMax: processingMax,
+        doctorFilter: getDoctorFilter(),
       );
     } catch (e) {
       LogManager.e('FinancialQueryService', '获取分页收费项失败', error: e);

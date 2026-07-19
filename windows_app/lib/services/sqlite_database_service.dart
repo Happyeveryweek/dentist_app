@@ -1,13 +1,12 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:intl/intl.dart';
-import 'package:crypto/crypto.dart';
 import '../utils/app_paths.dart';
 import '../models/schemas/table_schema.dart';
 import '../utils/log_manager.dart';
+import '../features/users/services/password_service.dart';
 
 /// SQLite 数据库服务
 /// 职责：SQLite 连接管理、初始化、表创建
@@ -194,7 +193,7 @@ class SqliteDatabaseService {
       // 添加默认管理员用户
       try {
         final DateFormat dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
-        final hashedPassword = _hashPassword('123456');
+        final hashedPassword = PasswordService().hashPassword('123456');
 
         final now = dateFormat.format(DateTime.now());
         await db.insert('users', {
@@ -248,13 +247,6 @@ class SqliteDatabaseService {
             'SqliteDatabaseService', '版本3材料表升级由 MaterialProvider 负责...');
       }
     }
-  }
-
-  /// 密码哈希方法
-  String _hashPassword(String password) {
-    var bytes = utf8.encode(password);
-    var digest = md5.convert(bytes);
-    return digest.toString();
   }
 
   /// 关闭数据库连接

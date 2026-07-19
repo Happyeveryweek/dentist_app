@@ -31,9 +31,15 @@ class SqliteFinancialDataSource implements FinancialDataSource {
     List<int>? patientIds,
     DateTime? startDate,
     DateTime? endDate,
+    String? doctorFilter,
   }) {
     final conditions = <String>[];
     final args = <dynamic>[];
+
+    if (doctorFilter != null) {
+      conditions.add('p.doctor = ?');
+      args.add(doctorFilter);
+    }
 
     if (patientIds != null && patientIds.isNotEmpty) {
       final placeholders = List.filled(patientIds.length, '?').join(',');
@@ -296,12 +302,14 @@ class SqliteFinancialDataSource implements FinancialDataSource {
     List<int>? patientIds,
     DateTime? startDate,
     DateTime? endDate,
+    String? doctorFilter,
   }) async {
     final offset = (page - 1) * pageSize;
     final parts = _buildPatientAggregateQueryParts(
       patientIds: patientIds,
       startDate: startDate,
       endDate: endDate,
+      doctorFilter: doctorFilter,
     );
 
     late final String orderExprSql;
@@ -425,6 +433,7 @@ class SqliteFinancialDataSource implements FinancialDataSource {
     double? receivedMax,
     double? processingMin,
     double? processingMax,
+    String? doctorFilter,
   }) async {
     final parts = _buildFinancialItemQueryParts(
       searchQuery: searchQuery,
@@ -438,10 +447,15 @@ class SqliteFinancialDataSource implements FinancialDataSource {
       receivedMax: receivedMax,
       processingMin: processingMin,
       processingMax: processingMax,
+      doctorFilter: doctorFilter,
+      joinPatients: doctorFilter != null,
     );
 
     final result = await _database.rawQuery(
-      'SELECT COUNT(*) FROM financial_items${parts.whereClause}',
+      'SELECT COUNT(*) FROM financial_items fi '
+      'JOIN financial_records fr ON fi.financial_record_id = fr.id '
+      '${doctorFilter != null ? 'JOIN patients p ON p.id = fr.patient_id ' : ''}'
+      '${parts.whereClause}',
       parts.whereArgs,
     );
     return Sqflite.firstIntValue(result) ?? 0;
@@ -464,6 +478,7 @@ class SqliteFinancialDataSource implements FinancialDataSource {
     double? receivedMax,
     double? processingMin,
     double? processingMax,
+    String? doctorFilter,
   }) async {
     final offset = (page - 1) * pageSize;
     final parts = _buildFinancialItemQueryParts(
@@ -478,6 +493,8 @@ class SqliteFinancialDataSource implements FinancialDataSource {
       receivedMax: receivedMax,
       processingMin: processingMin,
       processingMax: processingMax,
+      doctorFilter: doctorFilter,
+      joinPatients: true,
     );
 
     final orderBy = 'fi.$sortBy $sortOrder';
@@ -485,6 +502,7 @@ class SqliteFinancialDataSource implements FinancialDataSource {
       SELECT fi.*, fr.patient_id, fr.notes
       FROM financial_items fi
       JOIN financial_records fr ON fi.financial_record_id = fr.id
+      JOIN patients p ON p.id = fr.patient_id
       ${parts.whereClause}
       ORDER BY $orderBy
       LIMIT ? OFFSET ?

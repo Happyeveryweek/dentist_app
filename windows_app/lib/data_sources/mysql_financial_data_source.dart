@@ -275,11 +275,17 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource
     List<int>? patientIds,
     DateTime? startDate,
     DateTime? endDate,
+    String? doctorFilter,
   }) async {
     final offset = (page - 1) * pageSize;
     String whereClause = '';
     List<dynamic> whereArgs = [];
     List<String> conditions = [];
+
+    if (doctorFilter != null) {
+      conditions.add('p.doctor = ?');
+      whereArgs.add(doctorFilter);
+    }
 
     if (patientIds != null && patientIds.isNotEmpty) {
       final placeholders = List.filled(patientIds.length, '?').join(',');
@@ -419,10 +425,16 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource
     double? receivedMax,
     double? processingMin,
     double? processingMax,
+    String? doctorFilter,
   }) async {
     String whereClause = '';
     List<dynamic> whereArgs = [];
     List<String> conditions = [];
+
+    if (doctorFilter != null) {
+      conditions.add('p.doctor = ?');
+      whereArgs.add(doctorFilter);
+    }
 
     if (patientIds != null && patientIds.isNotEmpty) {
       final placeholders = List.filled(patientIds.length, '?').join(',');
@@ -472,7 +484,10 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource
     }
 
     final results = await executeQuery(
-      'SELECT COUNT(*) as count FROM financial_items$whereClause',
+      'SELECT COUNT(*) as count FROM financial_items fi '
+      'JOIN financial_records fr ON fi.financial_record_id = fr.id '
+      '${doctorFilter != null ? 'JOIN patients p ON p.id = fr.patient_id ' : ''}'
+      '$whereClause',
       whereArgs,
     );
     final row = results.first;
@@ -499,11 +514,17 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource
     double? receivedMax,
     double? processingMin,
     double? processingMax,
+    String? doctorFilter,
   }) async {
     final offset = (page - 1) * pageSize;
     String whereClause = '';
     List<dynamic> whereArgs = [];
     List<String> conditions = [];
+
+    if (doctorFilter != null) {
+      conditions.add('p.doctor = ?');
+      whereArgs.add(doctorFilter);
+    }
 
     if (patientIds != null && patientIds.isNotEmpty) {
       final placeholders = List.filled(patientIds.length, '?').join(',');
@@ -557,6 +578,7 @@ class MySqlFinancialDataSource extends BaseMySqlDataSource
       SELECT fi.*, fr.patient_id, fr.notes
       FROM financial_items fi
       JOIN financial_records fr ON fi.financial_record_id = fr.id
+      JOIN patients p ON p.id = fr.patient_id
       $whereClause
       ORDER BY $orderBy
       LIMIT $offset, $pageSize
