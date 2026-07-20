@@ -1,4 +1,3 @@
-import 'package:crypto/crypto.dart';
 import 'package:sqflite/sqflite.dart';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -33,17 +32,18 @@ class SqliteUserDataSource implements UserDataSource {
   }
 
   @override
-  Future<int> createUser(User user) async {
-    final bytes = utf8.encode(user.password);
-    final digest = sha256.convert(bytes);
-    final hashedPassword = digest.toString();
-
-    AppLogger.info(
-      '创建用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword',
+  Future<User?> getUserByUsername(String username) async {
+    final result = await _database.rawQuery(
+      'SELECT * FROM users WHERE username = ?',
+      [username],
     );
+    if (result.isEmpty) return null;
+    return User.fromMap(result.first);
+  }
 
+  @override
+  Future<int> createUser(User user) async {
     final userData = user.toMap();
-    userData['password'] = hashedPassword;
 
     if (userData['module_permissions'] != null) {
       userData['module_permissions'] =
@@ -59,16 +59,7 @@ class SqliteUserDataSource implements UserDataSource {
 
   @override
   Future<bool> updateUser(User user) async {
-    final bytes = utf8.encode(user.password);
-    final digest = sha256.convert(bytes);
-    final hashedPassword = digest.toString();
-
-    AppLogger.info(
-      '更新用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword',
-    );
-
     final updateData = user.toMap();
-    updateData['password'] = hashedPassword;
 
     if (updateData['module_permissions'] != null) {
       updateData['module_permissions'] =
@@ -85,6 +76,17 @@ class SqliteUserDataSource implements UserDataSource {
       updateData,
       where: 'id = ?',
       whereArgs: [user.id],
+    );
+    return count > 0;
+  }
+
+  @override
+  Future<bool> updateUserPassword(int id, String passwordHash) async {
+    final count = await _database.update(
+      'users',
+      {'password': passwordHash},
+      where: 'id = ?',
+      whereArgs: [id],
     );
     return count > 0;
   }
@@ -119,72 +121,6 @@ class SqliteUserDataSource implements UserDataSource {
     );
     final row = result.first;
     return (row['count'] as int?) ?? 0;
-  }
-
-  @override
-  Future<User?> authenticateUser(String username, String password) async {
-    AppLogger.info('用户认证 - 用户名: $username, 原始密码: $password');
-
-    final bytes = utf8.encode(password);
-    final md5Hash = md5.convert(bytes).toString();
-    final sha256Hash = sha256.convert(bytes).toString();
-
-    AppLogger.info('尝试MD5加密密码: $md5Hash');
-    AppLogger.info('尝试SHA-256加密密码: $sha256Hash');
-
-    var result = await _database.rawQuery(
-      'SELECT * FROM users WHERE username = ? AND password = ?',
-      [username, sha256Hash],
-    );
-
-    if (result.isEmpty) {
-      AppLogger.info('SHA-256密码认证失败，尝试MD5密码');
-      result = await _database.rawQuery(
-        'SELECT * FROM users WHERE username = ? AND password = ?',
-        [username, md5Hash],
-      );
-    }
-
-    if (result.isEmpty) {
-      AppLogger.info('MD5密码认证失败，尝试明文密码');
-      result = await _database.rawQuery(
-        'SELECT * FROM users WHERE username = ? AND password = ?',
-        [username, password],
-      );
-    }
-
-    AppLogger.info('SQLite查询结果: ${result.length} 行');
-    if (result.isNotEmpty) {
-      final user = User.fromMap(result.first);
-      AppLogger.info('SQLite认证成功，用户: ${user.username}');
-
-      final currentPassword = result.first['password'] as String;
-
-      if (currentPassword == password) {
-        AppLogger.info('检测到明文密码，自动更新为SHA-256密码');
-        await _database.update(
-          'users',
-          {'password': sha256Hash},
-          where: 'id = ?',
-          whereArgs: [user.id],
-        );
-        AppLogger.info('密码已更新为SHA-256格式');
-      } else if (currentPassword == md5Hash) {
-        AppLogger.info('检测到MD5密码，自动更新为SHA-256密码');
-        await _database.update(
-          'users',
-          {'password': sha256Hash},
-          where: 'id = ?',
-          whereArgs: [user.id],
-        );
-        AppLogger.info('密码已更新为SHA-256格式');
-      }
-
-      return user;
-    }
-
-    AppLogger.info('用户认证失败: 用户名或密码错误');
-    return null;
   }
 
   @override

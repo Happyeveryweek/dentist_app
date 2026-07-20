@@ -35,6 +35,11 @@ mixin AppointmentPermissionMixin {
     return provider.shouldFilterByDoctor(currentUser);
   }
 
+  bool get hasAppointmentAccess {
+    final currentUser = _userProvider?.currentUser;
+    return currentUser?.role == 'admin' || shouldFilterByDoctor();
+  }
+
   // 获取 UserProvider（供子类使用）
   UserProvider? get userProvider => _userProvider;
   set userProvider(UserProvider? value) => _userProvider = value;

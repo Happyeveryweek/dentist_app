@@ -295,6 +295,7 @@ class FinancialProvider extends ChangeNotifier {
 
   // 获取所有财务记录（带缓存）
   Future<List<FinancialRecord>> getAllFinancialRecords() async {
+    if (!_permissionService.hasAccess()) return [];
     if (!initialized) {
       throw Exception('数据库未初始化');
     }

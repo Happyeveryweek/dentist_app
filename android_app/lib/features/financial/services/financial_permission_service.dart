@@ -39,9 +39,13 @@ class FinancialPermissionService {
       return false;
     }
 
-    // 财务管理：有医生字段的用户需要数据过滤
     final doctor = currentUser.doctor;
-    return doctor != null && doctor.isNotEmpty;
+    return currentUser.role == 'doctor' && doctor != null && doctor.isNotEmpty;
+  }
+
+  bool hasAccess() {
+    final user = _userProvider?.currentUser;
+    return user?.role == 'admin' || shouldFilterByDoctor();
   }
 
   /// 获取过滤后的财务记录（基于医生字段）

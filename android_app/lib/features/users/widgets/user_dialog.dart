@@ -711,7 +711,18 @@ class _UserDialogState extends State<UserDialog> {
 
       if (_isEditMode) {
         // 更新模式
-        await provider.updateUser(user);
+        final updated = await provider.updateUser(user);
+        if (!updated) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('用户更新失败，请重试'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -723,6 +734,17 @@ class _UserDialogState extends State<UserDialog> {
       } else {
         // 新增模式
         final id = await provider.addUser(user);
+        if (id <= 0) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('用户创建失败，请重试'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

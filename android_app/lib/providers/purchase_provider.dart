@@ -218,6 +218,7 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 获取所有采购记录（带缓存）
   Future<List<PurchaseRecord>> getAllPurchaseRecords() async {
+    if (!(_permissionService?.hasAccess() ?? false)) return [];
     if (!initialized) {
       return cachedRecords; // 优雅降级而不是抛出异常
     }
@@ -273,6 +274,7 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 搜索采购记录
   Future<List<PurchaseRecord>> searchPurchaseRecords(String keyword) async {
+    if (!(_permissionService?.hasAccess() ?? false)) return [];
     if (!initialized) {
       return [];
     }
@@ -307,6 +309,7 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 根据ID获取采购记录
   Future<PurchaseRecord?> getPurchaseRecordById(int id) async {
+    if (!(_permissionService?.hasAccess() ?? false)) return null;
     if (!initialized) {
       return null;
     }
@@ -322,6 +325,7 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 添加采购记录
   Future<int> addPurchaseRecord(PurchaseRecord record) async {
+    if (!(_permissionService?.hasAccess() ?? false)) return -1;
     if (!initialized) {
       throw Exception('数据库未初始化');
     }
@@ -352,6 +356,7 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 更新采购记录
   Future<int> updatePurchaseRecord(PurchaseRecord record) async {
+    if (!(_permissionService?.hasAccess() ?? false)) return 0;
     if (!initialized || record.id == null) {
       throw Exception('数据库未初始化或记录ID为空');
     }
@@ -383,6 +388,7 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 删除采购记录
   Future<int> deletePurchaseRecord(int recordId) async {
+    if (!(_permissionService?.hasAccess() ?? false)) return 0;
     if (!initialized) {
       throw Exception('数据库未初始化');
     }

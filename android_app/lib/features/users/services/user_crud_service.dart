@@ -1,6 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:crypto/crypto.dart';
-import 'dart:convert';
 import 'package:mysql1/mysql1.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -10,6 +8,8 @@ import '../../../utils/database_operation_wrapper.dart';
 import '../../../utils/datetime_formatter.dart';
 import 'user_cache_service.dart';
 import '../../../utils/app_logger.dart';
+import 'password_service.dart';
+import 'user_permission_service.dart';
 
 /// 用户增删改查服务
 class UserCrudService {
@@ -24,6 +24,8 @@ class UserCrudService {
   final void Function(String?) _setError;
   final VoidCallback _clearCache;
   final VoidCallback _markUsersNeedRefresh;
+  final PasswordService _passwordService;
+  final User? Function() _currentUser;
 
   UserCrudService({
     required bool Function() isInitialized,
@@ -37,6 +39,8 @@ class UserCrudService {
     required void Function(String?) setError,
     required VoidCallback clearCache,
     required VoidCallback markUsersNeedRefresh,
+    PasswordService? passwordService,
+    required User? Function() currentUser,
   }) : _isInitialized = isInitialized,
        _dbWrapper = dbWrapper,
        _currentDataSource = currentDataSource,
@@ -47,9 +51,15 @@ class UserCrudService {
        _setUsers = setUsers,
        _setError = setError,
        _clearCache = clearCache,
-       _markUsersNeedRefresh = markUsersNeedRefresh;
+       _markUsersNeedRefresh = markUsersNeedRefresh,
+       _passwordService = passwordService ?? PasswordService(),
+       _currentUser = currentUser;
+
+  bool get _canManageUsers =>
+      UserPermissionService.canManageUsers(_currentUser());
 
   Future<List<User>> getAllUsers() async {
+    if (!_canManageUsers) return [];
     if (!_isInitialized()) {
       return _cacheService.getCachedUsers() ?? [];
     }
@@ -87,6 +97,7 @@ class UserCrudService {
   }
 
   Future<User?> getUserById(int id) async {
+    if (!_canManageUsers) return null;
     if (!_isInitialized()) {
       return null;
     }
@@ -127,6 +138,7 @@ class UserCrudService {
   }
 
   Future<int> addUser(User user) async {
+    if (!_canManageUsers) return -1;
     if (!_isInitialized()) {
       AppLogger.info('UserProvider未初始化，无法创建用户');
       return -1;
@@ -137,13 +149,7 @@ class UserCrudService {
 
     return await dbWrapper.wrapOperation('addUser', () async {
       try {
-        final bytes = utf8.encode(user.password);
-        final digest = md5.convert(bytes);
-        final hashedPassword = digest.toString();
-
-        AppLogger.info(
-          '创建用户 - 用户名: ${user.username}, 原始密码: ${user.password}, 加密后: $hashedPassword',
-        );
+        final hashedPassword = _passwordService.hashPassword(user.password);
 
         int id = 0;
 
@@ -209,6 +215,7 @@ class UserCrudService {
   }
 
   Future<bool> updateUser(User user) async {
+    if (!_canManageUsers) return false;
     if (!_isInitialized()) {
       AppLogger.info('UserProvider未初始化，无法更新用户');
       return false;
@@ -219,14 +226,6 @@ class UserCrudService {
 
     return await dbWrapper.wrapOperation('updateUser', () async {
       try {
-        final bytes = utf8.encode(user.password);
-        final digest = md5.convert(bytes);
-        final hashedPassword = digest.toString();
-
-        AppLogger.info(
-          '更新用户 - 用户名: ${user.username}, 原始密码: ${user.password}, 加密后: $hashedPassword',
-        );
-
         bool success = false;
 
         if (_dataSourceType() == 'sqlite') {
@@ -237,7 +236,13 @@ class UserCrudService {
           }
 
           final updateData = user.toMap();
-          updateData['password'] = hashedPassword;
+          if (user.password.isEmpty) {
+            updateData.remove('password');
+          } else {
+            updateData['password'] = _passwordService.hashPassword(
+              user.password,
+            );
+          }
 
           if (updateData['image_data'] != null &&
               updateData['image_data'] is List<int>) {
@@ -266,22 +271,21 @@ class UserCrudService {
             imageBlob = Uint8List.fromList(updateImageData);
           }
 
-          final results = await conn.query(
-            '''UPDATE users SET 
-               username = ?, email = ?, password = ?, role = ?, 
-               doctor = ?, avatar = ?, image_data = ?
-               WHERE id = ?''',
-            [
-              user.username,
-              user.email,
-              hashedPassword,
-              user.role,
-              user.doctor,
-              user.avatar,
-              imageBlob,
-              user.id,
-            ],
-          );
+          final passwordClause = user.password.isEmpty ? '' : ', password = ?';
+          final values = <dynamic>[
+            user.username,
+            user.email,
+            user.role,
+            user.doctor,
+            user.avatar,
+            imageBlob,
+            if (user.password.isNotEmpty)
+              _passwordService.hashPassword(user.password),
+            user.id,
+          ];
+          final results = await conn.query('''UPDATE users SET
+               username = ?, email = ?, role = ?, doctor = ?, avatar = ?, image_data = ?$passwordClause
+               WHERE id = ?''', values);
           success = (results.affectedRows ?? 0) > 0;
         }
 
@@ -300,6 +304,7 @@ class UserCrudService {
   }
 
   Future<bool> deleteUser(int userId) async {
+    if (!_canManageUsers) return false;
     if (!_isInitialized()) {
       AppLogger.info('UserProvider未初始化，无法删除用户');
       return false;

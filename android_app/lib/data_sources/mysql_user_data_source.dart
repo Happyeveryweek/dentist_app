@@ -1,4 +1,3 @@
-import 'package:crypto/crypto.dart';
 import 'package:mysql1/mysql1.dart';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -108,20 +107,24 @@ class MySqlUserDataSource implements UserDataSource {
   }
 
   @override
+  Future<User?> getUserByUsername(String username) async {
+    final connection = _getConnection();
+    if (connection == null) throw Exception('MySQL连接不可用');
+
+    final results = await connection.query(
+      'SELECT * FROM users WHERE username = ?',
+      [username],
+    );
+    if (results.isEmpty) return null;
+    return User.fromMap(_convertMySqlRow(results.first));
+  }
+
+  @override
   Future<int> createUser(User user) async {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
 
-    final bytes = utf8.encode(user.password);
-    final digest = sha256.convert(bytes);
-    final hashedPassword = digest.toString();
-
-    AppLogger.info(
-      '创建用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword',
-    );
-
     final userData = user.toMap();
-    userData['password'] = hashedPassword;
 
     if (userData['module_permissions'] != null) {
       userData['module_permissions'] =
@@ -149,16 +152,7 @@ class MySqlUserDataSource implements UserDataSource {
     final connection = _getConnection();
     if (connection == null) throw Exception('MySQL连接不可用');
 
-    final bytes = utf8.encode(user.password);
-    final digest = sha256.convert(bytes);
-    final hashedPassword = digest.toString();
-
-    AppLogger.info(
-      '更新用户 - 用户名: ${user.username}, 原始密码: ${user.password}, SHA-256加密后: $hashedPassword',
-    );
-
     final userData = user.toMap();
-    userData['password'] = hashedPassword;
 
     if (userData['module_permissions'] != null) {
       userData['module_permissions'] =
@@ -179,6 +173,18 @@ class MySqlUserDataSource implements UserDataSource {
       values,
     );
 
+    return (result.affectedRows ?? 0) > 0;
+  }
+
+  @override
+  Future<bool> updateUserPassword(int id, String passwordHash) async {
+    final connection = _getConnection();
+    if (connection == null) throw Exception('MySQL连接不可用');
+
+    final result = await connection.query(
+      'UPDATE users SET password = ? WHERE id = ?',
+      [passwordHash, id],
+    );
     return (result.affectedRows ?? 0) > 0;
   }
 
@@ -223,70 +229,6 @@ class MySqlUserDataSource implements UserDataSource {
     if (count is BigInt) return count.toInt();
     if (count is String) return int.tryParse(count) ?? 0;
     return 0;
-  }
-
-  @override
-  Future<User?> authenticateUser(String username, String password) async {
-    final connection = _getConnection();
-    if (connection == null) throw Exception('MySQL连接不可用');
-
-    AppLogger.info('用户认证 - 用户名: $username, 原始密码: $password');
-    final bytes = utf8.encode(password);
-
-    final md5Hash = md5.convert(bytes).toString();
-    final sha256Hash = sha256.convert(bytes).toString();
-
-    AppLogger.info('尝试MD5加密密码: $md5Hash');
-    AppLogger.info('尝试SHA-256加密密码: $sha256Hash');
-
-    var results = await connection.query(
-      'SELECT * FROM users WHERE username = ? AND password = ?',
-      [username, sha256Hash],
-    );
-
-    if (results.isEmpty) {
-      AppLogger.info('SHA-256密码认证失败，尝试MD5密码');
-      results = await connection.query(
-        'SELECT * FROM users WHERE username = ? AND password = ?',
-        [username, md5Hash],
-      );
-    }
-
-    if (results.isEmpty) {
-      AppLogger.info('MD5密码认证失败，尝试明文密码');
-      results = await connection.query(
-        'SELECT * FROM users WHERE username = ? AND password = ?',
-        [username, password],
-      );
-    }
-
-    AppLogger.info('MySQL查询结果: ${results.length} 行');
-    if (results.isNotEmpty) {
-      final user = User.fromMap(_convertMySqlRow(results.first));
-      AppLogger.info('MySQL认证成功，用户: ${user.username}');
-      final currentPassword = results.first['password'];
-
-      if (currentPassword == password) {
-        AppLogger.info('检测到明文密码，自动更新为SHA-256密码');
-        await connection.query('UPDATE users SET password = ? WHERE id = ?', [
-          sha256Hash,
-          user.id,
-        ]);
-        AppLogger.info('密码已更新为SHA-256格式');
-      } else if (currentPassword == md5Hash) {
-        AppLogger.info('检测到MD5密码，自动更新为SHA-256密码');
-        await connection.query('UPDATE users SET password = ? WHERE id = ?', [
-          sha256Hash,
-          user.id,
-        ]);
-        AppLogger.info('密码已更新为SHA-256格式');
-      }
-
-      return user;
-    }
-
-    AppLogger.info('用户认证失败: 用户名或密码错误');
-    return null;
   }
 
   @override

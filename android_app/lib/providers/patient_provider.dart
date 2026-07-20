@@ -25,6 +25,7 @@ class PatientProvider extends ChangeNotifier {
 
   // 缓存助手
   final PatientCacheHelper _cacheHelper = PatientCacheHelper();
+  UserProvider? _userProvider;
 
   // 数据库操作包装器
   DatabaseOperationWrapper? _dbWrapper;
@@ -86,8 +87,26 @@ class PatientProvider extends ChangeNotifier {
 
   // 设置UserProvider引用
   void setUserProvider(UserProvider userProvider) {
-    // 保留方法签名以兼容外部调用
+    _userProvider = userProvider;
+    _cacheHelper.clearCache();
   }
+
+  bool get _hasPatientAccess {
+    final user = _userProvider?.currentUser;
+    return user?.role == 'admin' ||
+        (user?.role == 'doctor' && user?.doctor?.isNotEmpty == true);
+  }
+
+  bool _canAccessPatient(Patient patient) {
+    final user = _userProvider?.currentUser;
+    return user?.role == 'admin' ||
+        (user?.role == 'doctor' &&
+            user?.doctor?.isNotEmpty == true &&
+            patient.doctor == user?.doctor);
+  }
+
+  List<Patient> _filterPatients(List<Patient> patients) =>
+      patients.where(_canAccessPatient).toList();
 
   // 获取数据源类型
   String get dataSourceType => _initService.dataSourceType;
@@ -124,6 +143,7 @@ class PatientProvider extends ChangeNotifier {
 
   // 获取所有患者（Android端不过滤查看权限）
   Future<List<Patient>> getAllPatients() async {
+    if (!_hasPatientAccess) return [];
     final wrapper = _dbWrapper;
     if (wrapper == null) return [];
 
@@ -132,14 +152,14 @@ class PatientProvider extends ChangeNotifier {
         final cachedPatients = _cacheHelper.cachedPatients;
         if (_cacheHelper.hasCache() && cachedPatients != null) {
           // Android端：返回所有缓存数据，不过滤
-          return cachedPatients;
+          return _filterPatients(cachedPatients);
         }
 
         // 使用数据源模式（统一接口）
         final patients = await _currentDataSource.getAllPatients();
 
         _cacheHelper.setCachedPatients(patients); // 缓存数据
-        return patients; // Android端：返回所有数据，不过滤
+        return _filterPatients(patients);
       } catch (e) {
         AppLogger.info('获取所有患者失败: $e');
         AppLogger.info('错误堆栈: ${StackTrace.current}');
@@ -151,14 +171,14 @@ class PatientProvider extends ChangeNotifier {
 
   // 获取患者总数（Android端不过滤查看权限）
   Future<int> getPatientCount() async {
+    if (!_hasPatientAccess) return 0;
     final wrapper = _dbWrapper;
     if (wrapper == null) return 0;
 
     return await wrapper.wrapOperation('getPatientCount', () async {
       try {
         // Android端：所有用户都能查看所有数据，直接返回数据库总数
-        final count = await _currentDataSource.getPatientsCount();
-        return count;
+        return (await getAllPatients()).length;
       } catch (e) {
         AppLogger.info('获取患者总数错误: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
@@ -206,6 +226,7 @@ class PatientProvider extends ChangeNotifier {
     String? sortField,
     bool? ascending,
   }) async {
+    if (!_hasPatientAccess) return [];
     final wrapper = _dbWrapper;
     if (wrapper == null) return [];
 
@@ -220,7 +241,7 @@ class PatientProvider extends ChangeNotifier {
         );
 
         // Android端：不过滤查看权限，返回所有数据
-        return patients;
+        return _filterPatients(patients);
       } catch (e) {
         AppLogger.info('分页获取患者错误: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
@@ -231,6 +252,7 @@ class PatientProvider extends ChangeNotifier {
 
   // 搜索患者（带权限过滤）
   Future<List<Patient>> searchPatients(String query) async {
+    if (!_hasPatientAccess) return [];
     final wrapper = _dbWrapper;
     if (wrapper == null) return [];
 
@@ -244,7 +266,7 @@ class PatientProvider extends ChangeNotifier {
 
         // Android端：不过滤查看权限，返回所有数据
 
-        return patients;
+        return _filterPatients(patients);
       } catch (e) {
         AppLogger.info('搜索患者错误: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
@@ -255,9 +277,10 @@ class PatientProvider extends ChangeNotifier {
 
   // 根据ID获取患者
   Future<Patient?> getPatientById(int id) async {
+    if (!_hasPatientAccess) return null;
     final cachedPatient = _cacheHelper.getCachedPatientById(id);
     if (cachedPatient != null) {
-      return cachedPatient;
+      return _canAccessPatient(cachedPatient) ? cachedPatient : null;
     }
 
     final wrapper = _dbWrapper;
@@ -270,7 +293,7 @@ class PatientProvider extends ChangeNotifier {
         if (patient != null) {
           _cacheHelper.cachePatient(patient);
         }
-        return patient;
+        return patient != null && _canAccessPatient(patient) ? patient : null;
       } catch (e) {
         AppLogger.info('根据ID获取患者失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
@@ -281,6 +304,9 @@ class PatientProvider extends ChangeNotifier {
 
   // 添加患者
   Future<int> addPatient(Patient patient) async {
+    if (!_hasPatientAccess) return -1;
+    final user = _userProvider?.currentUser;
+    if (user?.role == 'doctor') patient.doctor = user?.doctor;
     final wrapper = _dbWrapper;
     if (wrapper == null) return -1;
 
@@ -302,6 +328,7 @@ class PatientProvider extends ChangeNotifier {
 
   // 更新患者
   Future<bool> updatePatient(Patient patient) async {
+    if (!_hasPatientAccess || !_canAccessPatient(patient)) return false;
     final wrapper = _dbWrapper;
     if (wrapper == null) return false;
 
@@ -332,6 +359,8 @@ class PatientProvider extends ChangeNotifier {
 
   // 删除患者
   Future<int> deletePatient(int id) async {
+    final patient = await getPatientById(id);
+    if (patient == null) return 0;
     final wrapper = _dbWrapper;
     if (wrapper == null) return 0;
 

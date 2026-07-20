@@ -181,6 +181,7 @@ class UserProvider extends ChangeNotifier {
       setError: (error) => _error = error,
       clearCache: clearCache,
       markUsersNeedRefresh: markUsersNeedRefresh,
+      currentUser: () => _currentUser,
     );
   }
 
@@ -365,7 +366,13 @@ class UserProvider extends ChangeNotifier {
         return null;
       }
 
-      final user = await sqliteDataSource.authenticateUser(username, password);
+      final service = _authenticationService;
+      if (service == null) return null;
+      final user = await service.authenticateWithDataSource(
+        sqliteDataSource,
+        username,
+        password,
+      );
       if (user != null) {
         _sqliteDataSource = sqliteDataSource;
         _dataSourceType = 'sqlite';

@@ -8,6 +8,7 @@ import 'package:dentist_app/screens/user_detail_screen.dart';
 import 'package:dentist_app/features/users/widgets/user_dialog.dart';
 import 'package:dentist_app/widgets/toast_manager.dart';
 import 'package:dentist_app/widgets/confirm_dialogs.dart';
+import 'package:dentist_app/features/users/services/user_permission_service.dart';
 import '../widgets/app_card.dart';
 
 /// 用户管理主页面
@@ -33,6 +34,10 @@ class _UsersScreenState extends State<UsersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = context.watch<UserProvider>().currentUser;
+    if (!UserPermissionService.canManageUsers(currentUser)) {
+      return const Center(child: Text('您没有用户管理权限'));
+    }
     return Scaffold(
       body: Column(
         children: [
@@ -311,14 +316,10 @@ class _UsersScreenState extends State<UsersScreen> {
                       vertical: 5,
                     ),
                     decoration: BoxDecoration(
-                      color: _getRoleColor(
-                        user.role,
-                      ).withValues(alpha: 0.15),
+                      color: _getRoleColor(user.role).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: _getRoleColor(
-                          user.role,
-                        ).withValues(alpha: 0.3),
+                        color: _getRoleColor(user.role).withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -341,7 +342,10 @@ class _UsersScreenState extends State<UsersScreen> {
                       decoration: BoxDecoration(
                         color: Colors.green[100],
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.green.shade300, width: 1),
+                        border: Border.all(
+                          color: Colors.green.shade300,
+                          width: 1,
+                        ),
                       ),
                       child: Text(
                         '医生: ${user.doctor}',
@@ -542,7 +546,13 @@ class _UsersScreenState extends State<UsersScreen> {
     }
     try {
       final provider = Provider.of<UserProvider>(context, listen: false);
-      await provider.deleteUser(userId);
+      final deleted = await provider.deleteUser(userId);
+      if (!deleted) {
+        if (mounted) {
+          SuccessToastManager.showError(context, message: '用户删除失败，请重试');
+        }
+        return;
+      }
 
       if (mounted) {
         // 使用公共组件的删除成功提示

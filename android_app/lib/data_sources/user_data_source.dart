@@ -4,12 +4,13 @@ import '../models/user.dart';
 abstract class UserDataSource {
   Future<List<User>> getAllUsers();
   Future<User?> getUserById(int id);
+  Future<User?> getUserByUsername(String username);
   Future<int> createUser(User user);
   Future<bool> updateUser(User user);
+  Future<bool> updateUserPassword(int id, String passwordHash);
   Future<bool> deleteUser(int id);
   Future<List<User>> searchUsers(String keyword);
   Future<int> getUsersCount();
-  Future<User?> authenticateUser(String username, String password);
   Future<bool> isUsernameExists(String username, {int? excludeId});
   Future<bool> isEmailExists(String email, {int? excludeId});
   Future<Map<String, dynamic>> getUserStatistics();

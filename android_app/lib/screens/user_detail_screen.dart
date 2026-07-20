@@ -99,9 +99,7 @@ class UserDetailScreen extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: _getRoleColor(
-                      user.role,
-                    ).withValues(alpha: 0.15),
+                    color: _getRoleColor(user.role).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
@@ -143,12 +141,7 @@ class UserDetailScreen extends StatelessWidget {
               _buildInfoRow(context, Icons.person, '用户名:', user.username),
               _buildInfoRow(context, Icons.email, '邮箱:', user.email ?? '未设置'),
               if (doctor != null && doctor.isNotEmpty)
-                _buildInfoRow(
-                  context,
-                  Icons.medical_services,
-                  '医生信息:',
-                  doctor,
-                ),
+                _buildInfoRow(context, Icons.medical_services, '医生信息:', doctor),
               if (avatar != null && avatar.isNotEmpty)
                 _buildInfoRow(context, Icons.face, '头像:', avatar),
             ],
@@ -327,7 +320,13 @@ class UserDetailScreen extends StatelessWidget {
     }
     try {
       final provider = Provider.of<UserProvider>(context, listen: false);
-      await provider.deleteUser(userId);
+      final deleted = await provider.deleteUser(userId);
+      if (!deleted) {
+        if (context.mounted) {
+          SuccessToastManager.showError(context, message: '用户删除失败，请重试');
+        }
+        return;
+      }
 
       if (!context.mounted) return;
       DeleteSuccessToastManager.show(context, message: '用户删除成功');

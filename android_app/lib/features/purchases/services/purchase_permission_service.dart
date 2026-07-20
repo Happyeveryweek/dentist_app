@@ -22,16 +22,12 @@ class PurchasePermissionService {
   /// 采购管理需要数据过滤 - 普通用户只能查看自己医生的数据
   bool shouldFilterByDoctor() {
     final currentUser = _userProvider?.currentUser;
-    if (currentUser == null) {
-      return false;
-    }
+    return currentUser?.role == 'doctor' &&
+        currentUser?.doctor?.isNotEmpty == true;
+  }
 
-    // 管理员不需要数据过滤
-    if (currentUser.role == 'admin') {
-      return false;
-    }
-
-    // 采购管理：有医生字段的用户需要数据过滤
-    return currentUser.doctor?.isNotEmpty == true;
+  bool hasAccess() {
+    final user = _userProvider?.currentUser;
+    return user?.role == 'admin' || shouldFilterByDoctor();
   }
 }

@@ -2,6 +2,7 @@ import '../../../models/user.dart';
 import '../../../data_sources/user_data_source.dart';
 import '../../../utils/database_operation_wrapper.dart';
 import '../../../utils/app_logger.dart';
+import 'password_service.dart';
 
 /// 用户认证服务
 /// 职责：用户登录、登出、认证
@@ -14,6 +15,7 @@ class UserAuthenticationService {
   final Future<void> Function(User) _primeCurrentUserPermissions;
   final Future<User?> Function(String username, String password)
   _authenticateWithLocalSqlite;
+  final PasswordService _passwordService;
 
   UserAuthenticationService({
     required UserDataSource dataSource,
@@ -24,13 +26,15 @@ class UserAuthenticationService {
     required Future<void> Function(User) primeCurrentUserPermissions,
     required Future<User?> Function(String username, String password)
     authenticateWithLocalSqlite,
+    PasswordService? passwordService,
   }) : _dataSource = dataSource,
        _dbWrapper = dbWrapper,
        _isInitialized = isInitialized,
        _getDataSourceType = getDataSourceType,
        _notifyListeners = notifyListeners,
        _primeCurrentUserPermissions = primeCurrentUserPermissions,
-       _authenticateWithLocalSqlite = authenticateWithLocalSqlite;
+       _authenticateWithLocalSqlite = authenticateWithLocalSqlite,
+       _passwordService = passwordService ?? PasswordService();
 
   /// 用户认证
   Future<User?> authenticateUser(String username, String password) async {
@@ -44,10 +48,11 @@ class UserAuthenticationService {
 
     return await dbWrapper.wrapOperation('authenticateUser', () async {
       try {
-        AppLogger.info('用户认证 - 用户名: $username, 原始密码: $password');
-
-        // 使用数据源模式（统一接口）
-        final user = await _dataSource.authenticateUser(username, password);
+        final user = await authenticateWithDataSource(
+          _dataSource,
+          username,
+          password,
+        );
 
         if (user != null) {
           AppLogger.info('用户认证成功: ${user.username}');
@@ -86,5 +91,32 @@ class UserAuthenticationService {
         rethrow;
       }
     });
+  }
+
+  Future<User?> authenticateWithDataSource(
+    UserDataSource dataSource,
+    String username,
+    String password,
+  ) async {
+    final user = await dataSource.getUserByUsername(username);
+    if (user == null) return null;
+
+    final verification = _passwordService.verifyPassword(
+      password,
+      user.password,
+    );
+    if (!verification.isValid) return null;
+
+    final userId = user.id;
+    if (verification.needsUpgrade && userId != null) {
+      final updated = await dataSource.updateUserPassword(
+        userId,
+        _passwordService.hashPassword(password),
+      );
+      if (!updated) {
+        AppLogger.info('用户密码格式升级失败: $username');
+      }
+    }
+    return user;
   }
 }

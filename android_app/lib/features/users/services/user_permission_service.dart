@@ -15,6 +15,33 @@ class UserPermissionService {
   }) : _dataSource = dataSource,
        _cacheService = cacheService;
 
+  static const _doctorModules = {
+    'patients',
+    'appointments',
+    'financial',
+    'purchase',
+  };
+
+  static bool canAccessModule(User? user, String module) {
+    if (user == null) return false;
+    if (module == 'dashboard' || module == 'settings') {
+      return user.role != 'user';
+    }
+    if (user.role == 'admin') return true;
+    return user.role == 'doctor' && _doctorModules.contains(module);
+  }
+
+  static bool canManageUsers(User? user) => user?.role == 'admin';
+
+  static bool canAccessDoctorData(User? user, String? recordDoctor) {
+    if (user?.role == 'admin') return true;
+    final doctor = user?.doctor;
+    return user?.role == 'doctor' &&
+        doctor != null &&
+        doctor.isNotEmpty &&
+        doctor == recordDoctor;
+  }
+
   /// 获取用户权限配置
   Future<Map<String, bool>?> getUserPermissions(int userId) async {
     // 检查缓存
@@ -44,23 +71,8 @@ class UserPermissionService {
     String module,
     Future<User?> Function(int) getUserById,
   ) async {
-    // 管理员拥有所有权限
     final user = await getUserById(userId);
-    if (user?.role == 'admin') {
-      return true;
-    }
-
-    // 仪表盘对所有用户可见
-    if (module == 'dashboard') {
-      return true;
-    }
-
-    final permissions = await getUserPermissions(userId);
-    if (permissions == null) {
-      return false; // 如果没有权限配置，默认无权限
-    }
-
-    return permissions[module] == true;
+    return canAccessModule(user, module);
   }
 
   /// 更新用户权限配置
@@ -96,23 +108,15 @@ class UserPermissionService {
   String? buildDoctorFilter(User? user) {
     if (user == null) return null;
 
-    // 管理员不受数据过滤限制
-    if (user.role == 'admin') {
-      return null;
-    }
-
-    // 普通用户只能查看自己医生字段匹配的数据
     final doctor = user.doctor;
-    if (doctor != null && doctor.isNotEmpty) {
+    if (user.role == 'doctor' && doctor != null && doctor.isNotEmpty) {
       return doctor;
     }
 
     return null;
   }
 
-  /// Android端不需要数据查看过滤 - 权限控制只在编辑/删除时生效
   bool shouldFilterByDoctor(User? user) {
-    // Android端：所有用户都能查看所有数据，权限控制只在操作时生效
-    return false;
+    return user?.role == 'doctor' && user?.doctor?.isNotEmpty == true;
   }
 }

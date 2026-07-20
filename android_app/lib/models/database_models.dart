@@ -8,6 +8,7 @@ import 'schemas/table_schema.dart';
 import '../utils/datetime_formatter.dart';
 import '../utils/app_logger.dart';
 import '../utils/map_parser.dart';
+import '../features/users/services/password_service.dart';
 
 // 数据库助手类
 class DatabaseHelper {
@@ -206,7 +207,7 @@ class DatabaseHelper {
         final defaultUser = {
           'username': 'admin',
           'email': 'admin@dental.com',
-          'password': '123456', // 简单密码，生产环境应该使用加密
+          'password': PasswordService().hashPassword('123456'),
           'role': 'admin',
           'doctor': '系统管理员',
           'avatar': 'avatar_1',
@@ -224,31 +225,7 @@ class DatabaseHelper {
         };
 
         await db.insert('users', defaultUser);
-        AppLogger.info('✅ 已创建默认管理员用户: admin/123456');
-
-        // 可选：创建一个普通员工用户作为示例
-        final staffUser = {
-          'username': 'staff',
-          'email': 'staff@dental.com',
-          'password': '123456',
-          'role': 'staff',
-          'doctor': '普通员工',
-          'avatar': 'avatar_2',
-          'module_permissions': jsonEncode({
-            'patients': true,
-            'appointments': true,
-            'financial': false,
-            'materials': true,
-            'purchase': false,
-            'reports': false,
-            'settings': false,
-          }),
-          'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(now),
-          'updated_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(now),
-        };
-
-        await db.insert('users', staffUser);
-        AppLogger.info('✅ 已创建默认员工用户: staff/123456');
+        AppLogger.info('✅ 已创建默认管理员用户: admin');
       } else {
         AppLogger.info('ℹ️ 用户表已存在数据，跳过创建默认用户');
       }

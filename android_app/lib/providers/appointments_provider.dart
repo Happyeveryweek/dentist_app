@@ -78,6 +78,7 @@ class AppointmentsProvider extends ChangeNotifier
 
   // 获取所有预约（带缓存）
   Future<List<Appointment>> getAllAppointments() async {
+    if (!hasAppointmentAccess) return [];
     if (!initialized) {
       return cachedAppointments ?? []; // 优雅降级而不是抛出异常
     }
@@ -97,10 +98,8 @@ class AppointmentsProvider extends ChangeNotifier
         AppLogger.info('🔄 从数据库获取最新预约数据...');
         List<Appointment> appointments = [];
 
-        // 使用数据源模式（统一接口）
-        // Android端：不过滤查看权限，所有用户都能查看所有数据
         appointments = await currentDataSource.getAllAppointments(
-          doctorFilter: null,
+          doctorFilter: getDoctorFilter(),
         );
 
         // 更新缓存
@@ -138,6 +137,7 @@ class AppointmentsProvider extends ChangeNotifier
 
   // 获取预约总数
   Future<int> getAppointmentCount() async {
+    if (!hasAppointmentAccess) return 0;
     final wrapper = _dbWrapper;
     if (wrapper == null) return 0;
 
@@ -145,10 +145,8 @@ class AppointmentsProvider extends ChangeNotifier
       try {
         AppLogger.info('正在获取预约总数...');
 
-        // 使用数据源模式（统一接口）
-        // Android端：不过滤查看权限，返回所有预约总数
         final count = await currentDataSource.getAppointmentsCount(
-          doctorFilter: null,
+          doctorFilter: getDoctorFilter(),
         );
 
         return count;
@@ -161,6 +159,7 @@ class AppointmentsProvider extends ChangeNotifier
 
   // 获取今日预约
   Future<List<Appointment>> getTodayAppointments() async {
+    if (!hasAppointmentAccess) return [];
     final wrapper = _dbWrapper;
     if (wrapper == null) return [];
 
@@ -177,12 +176,10 @@ class AppointmentsProvider extends ChangeNotifier
           59,
         );
 
-        // 使用数据源模式（统一接口）
-        // Android端：不过滤查看权限，返回所有今日预约
         return await currentDataSource.getAppointmentsByDateRange(
           startDate,
           endDate,
-          doctorFilter: null,
+          doctorFilter: getDoctorFilter(),
         );
       } catch (e) {
         AppLogger.info('获取今日预约错误: $e');
@@ -193,6 +190,7 @@ class AppointmentsProvider extends ChangeNotifier
 
   // 添加预约
   Future<int> addAppointment(Appointment appointment) async {
+    if (!hasAppointmentAccess) return -1;
     if (!initialized) {
       throw Exception('数据库未初始化');
     }
@@ -222,6 +220,7 @@ class AppointmentsProvider extends ChangeNotifier
 
   // 更新预约
   Future<bool> updateAppointment(Appointment appointment) async {
+    if (!hasAppointmentAccess) return false;
     if (!initialized || appointment.id == null) {
       throw Exception('数据库未初始化或预约ID为空');
     }
@@ -251,6 +250,7 @@ class AppointmentsProvider extends ChangeNotifier
 
   // 删除预约
   Future<bool> deleteAppointment(int id) async {
+    if (!hasAppointmentAccess) return false;
     if (!initialized) {
       throw Exception('数据库未初始化');
     }
@@ -280,29 +280,28 @@ class AppointmentsProvider extends ChangeNotifier
 
   // 根据患者ID获取预约
   Future<List<Appointment>> getAppointmentsByPatientId(int patientId) async {
+    if (!hasAppointmentAccess) return [];
     final wrapper = _dbWrapper;
     if (wrapper == null) return [];
 
-    return await wrapper.wrapOperation(
-      'getAppointmentsByPatientId',
-      () async {
-        try {
-          // 使用数据源模式（统一接口）
-          final doctorFilter = getDoctorFilter();
-          return await currentDataSource.getAppointmentsByPatientId(
-            patientId,
-            doctorFilter: doctorFilter,
-          );
-        } catch (e) {
-          AppLogger.info('获取患者预约错误: $e');
-          return [];
-        }
-      },
-    );
+    return await wrapper.wrapOperation('getAppointmentsByPatientId', () async {
+      try {
+        // 使用数据源模式（统一接口）
+        final doctorFilter = getDoctorFilter();
+        return await currentDataSource.getAppointmentsByPatientId(
+          patientId,
+          doctorFilter: doctorFilter,
+        );
+      } catch (e) {
+        AppLogger.info('获取患者预约错误: $e');
+        return [];
+      }
+    });
   }
 
   // 搜索预约
   Future<List<Appointment>> searchAppointments(String keyword) async {
+    if (!hasAppointmentAccess) return [];
     final wrapper = _dbWrapper;
     if (wrapper == null) return [];
 
@@ -326,25 +325,23 @@ class AppointmentsProvider extends ChangeNotifier
     DateTime startDate,
     DateTime endDate,
   ) async {
+    if (!hasAppointmentAccess) return [];
     final wrapper = _dbWrapper;
     if (wrapper == null) return [];
 
-    return await wrapper.wrapOperation(
-      'getAppointmentsByDateRange',
-      () async {
-        try {
-          // 使用数据源模式（统一接口）
-          final doctorFilter = getDoctorFilter();
-          return await currentDataSource.getAppointmentsByDateRange(
-            startDate,
-            endDate,
-            doctorFilter: doctorFilter,
-          );
-        } catch (e) {
-          AppLogger.info('根据日期范围获取预约错误: $e');
-          return [];
-        }
-      },
-    );
+    return await wrapper.wrapOperation('getAppointmentsByDateRange', () async {
+      try {
+        // 使用数据源模式（统一接口）
+        final doctorFilter = getDoctorFilter();
+        return await currentDataSource.getAppointmentsByDateRange(
+          startDate,
+          endDate,
+          doctorFilter: doctorFilter,
+        );
+      } catch (e) {
+        AppLogger.info('根据日期范围获取预约错误: $e');
+        return [];
+      }
+    });
   }
 }
