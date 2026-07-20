@@ -78,7 +78,7 @@ class ReusableDateRangePicker extends StatefulWidget {
                 });
               }
 
-              Widget buildDateTile(String label, DateTime date,
+              Widget buildDateTile(DateTime date,
                   {required VoidCallback onTap,
                   required bool hovering,
                   required void Function(bool) onHover}) {
@@ -93,7 +93,8 @@ class ReusableDateRangePicker extends StatefulWidget {
                           horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
                         color: hovering
-                            ? context.tokens.primaryAccent.withValues(alpha: 0.06)
+                            ? context.tokens.primaryAccent
+                                .withValues(alpha: 0.06)
                             : context.tokens.inputBackground,
                         border: Border.all(
                             color: hovering
@@ -109,8 +110,7 @@ class ReusableDateRangePicker extends StatefulWidget {
                                   ? context.tokens.primaryAccent
                                   : context.tokens.iconMuted),
                           const SizedBox(width: 10),
-                          Text(
-                              '${1}: ${DateFormat('yyyy年MM月dd日').format(date)}',
+                          Text(DateFormat('yyyy年MM月dd日').format(date),
                               style: TextStyle(
                                   fontSize: 14,
                                   color: hovering
@@ -176,7 +176,7 @@ class ReusableDateRangePicker extends StatefulWidget {
                     const SizedBox(height: 10),
                     const Text('开始日期:', style: TextStyle(fontSize: 13)),
                     const SizedBox(height: 6),
-                    buildDateTile('开始', pickedStart, hovering: hoverStart,
+                    buildDateTile(pickedStart, hovering: hoverStart,
                         onHover: (v) {
                       setState(() {
                         hoverStart = v;
@@ -204,8 +204,7 @@ class ReusableDateRangePicker extends StatefulWidget {
                     const SizedBox(height: 10),
                     const Text('结束日期:', style: TextStyle(fontSize: 13)),
                     const SizedBox(height: 6),
-                    buildDateTile('结束', pickedEnd, hovering: hoverEnd,
-                        onHover: (v) {
+                    buildDateTile(pickedEnd, hovering: hoverEnd, onHover: (v) {
                       setState(() {
                         hoverEnd = v;
                       });
@@ -307,7 +306,8 @@ class _PresetChipState extends State<_PresetChip> {
             boxShadow: _hovering
                 ? [
                     BoxShadow(
-                        color: context.tokens.primaryAccent.withValues(alpha: 0.15),
+                        color: context.tokens.primaryAccent
+                            .withValues(alpha: 0.15),
                         blurRadius: 6,
                         offset: const Offset(0, 2))
                   ]

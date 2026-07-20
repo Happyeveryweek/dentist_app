@@ -20,13 +20,9 @@ class PatientScreenBody extends StatelessWidget {
   final String sortField;
   final bool sortAscending;
   final int totalPatients;
-  final bool showDateFilter;
   final ValueChanged<String> onSortChanged;
-  final VoidCallback onDateFilterToggled;
-  final String dateFilterType;
   final DateTime? startDate;
   final DateTime? endDate;
-  final ValueChanged<String> onFilterTypeChanged;
   final VoidCallback onSelectDateRange;
   final VoidCallback onClearFilters;
   final bool isLoading;
@@ -50,13 +46,9 @@ class PatientScreenBody extends StatelessWidget {
     required this.sortField,
     required this.sortAscending,
     required this.totalPatients,
-    required this.showDateFilter,
     required this.onSortChanged,
-    required this.onDateFilterToggled,
-    required this.dateFilterType,
     required this.startDate,
     required this.endDate,
-    required this.onFilterTypeChanged,
     required this.onSelectDateRange,
     required this.onClearFilters,
     required this.isLoading,
@@ -82,26 +74,17 @@ class PatientScreenBody extends StatelessWidget {
           onAdvancedSearchToggled: onAdvancedSearchToggled,
           onAddPatient: onAddPatient,
           searchReadOnly: searchReadOnly,
+          startDate: startDate,
+          endDate: endDate,
+          onSelectDateRange: onSelectDateRange,
+          onClearFilters: onClearFilters,
         ),
         PatientFilterBar(
-          searchQuery: searchQuery,
           sortField: sortField,
           sortAscending: sortAscending,
           totalPatients: totalPatients,
-          showDateFilter: showDateFilter,
           onSortChanged: onSortChanged,
-          onDateFilterToggled: onDateFilterToggled,
         ),
-        if (showDateFilter)
-          PatientDateFilterChip(
-            searchQuery: searchQuery,
-            dateFilterType: dateFilterType,
-            startDate: startDate,
-            endDate: endDate,
-            onFilterTypeChanged: onFilterTypeChanged,
-            onSelectDateRange: onSelectDateRange,
-            onClearFilters: onClearFilters,
-          ),
         Expanded(
           child: Stack(
             children: [

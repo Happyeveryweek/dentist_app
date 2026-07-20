@@ -42,8 +42,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
   // 日期过滤相关变量
   DateTime? _startDate;
   DateTime? _endDate;
-  bool _showDateFilter = false;
-  String _dateFilterType = 'first_visit_date'; // 默认按首诊时间筛选
+  final String _dateFilterType = 'first_visit_date'; // 默认按首诊时间筛选
 
   // 高级搜索相关变量
   bool _showAdvancedSearch = false;
@@ -209,7 +208,6 @@ class _PatientsScreenState extends State<PatientsScreen> {
     setState(() {
       _startDate = null;
       _endDate = null;
-      _showDateFilter = false;
       _currentPage = 1;
       // 不清除搜索状态，以便在搜索结果上进行操作
     });
@@ -343,25 +341,9 @@ class _PatientsScreenState extends State<PatientsScreen> {
         sortField: _sortField,
         sortAscending: _sortAscending,
         totalPatients: _totalPatients,
-        showDateFilter: _showDateFilter,
         onSortChanged: _changeSort,
-        onDateFilterToggled: () {
-          setState(() {
-            _showDateFilter = !_showDateFilter;
-            if (!_showDateFilter) {
-              _startDate = null;
-              _endDate = null;
-              _loadPatients();
-            }
-          });
-        },
-        dateFilterType: _dateFilterType,
         startDate: _startDate,
         endDate: _endDate,
-        onFilterTypeChanged: (value) {
-          setState(() => _dateFilterType = value);
-          if (_startDate != null && _endDate != null) _loadPatients();
-        },
         onSelectDateRange: _selectDateRange,
         onClearFilters: _clearFilters,
         isLoading: _isLoading,
