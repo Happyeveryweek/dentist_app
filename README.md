@@ -290,16 +290,18 @@
 
 ```
 dentist_app/
-├── lib/                    # 主要源代码（Android 端）
-│   ├── models/            # 数据模型
-│   ├── providers/         # 状态管理
-│   ├── screens/           # 界面页面
-│   ├── widgets/           # 自定义组件
-│   └── utils/             # 工具类
-├── windows_app/           # Windows 端源代码
-├── android/               # Android 平台配置
-├── windows/               # Windows 平台配置
-└── assets/                # 资源文件
+├── android_app/           # Android 端 Flutter 项目
+│   ├── lib/               # 业务代码
+│   ├── test/              # 测试
+│   ├── android/           # Android 原生配置
+│   └── assets/            # 资源文件
+├── windows_app/           # Windows 端 Flutter 项目
+│   ├── lib/               # 业务代码
+│   ├── test/              # 测试
+│   ├── windows/           # Windows 原生配置
+│   └── assets/            # 资源文件
+├── AGENTS.md              # 项目协作与工程规则
+└── ROADMAP.md             # 当前进度与验证记录
 ```
 
 ### 技术栈
@@ -316,9 +318,10 @@ dentist_app/
 
 1. Fork 本项目
 2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 创建 Pull Request
+3. 在目标子项目中定向格式化改动的 Dart 文件，再运行 `flutter analyze` 和相关 `flutter test`
+4. 使用中文提交信息 (`git commit -m 'feat: 增加预约筛选'`)
+5. 推送到分支 (`git push origin feature/AmazingFeature`)
+6. 创建 Pull Request
 
 ## 📄 免责声明与法律声明
 

@@ -11,12 +11,14 @@ class PurchaseStatistics {
   final double totalAmount;
   final int totalQuantity;
   final int materialCount;
+  final Map<int, int> projectCountsByRecordId;
 
   PurchaseStatistics({
     required this.totalRecords,
     required this.totalAmount,
     required this.totalQuantity,
     required this.materialCount,
+    required this.projectCountsByRecordId,
   });
 
   Map<String, dynamic> toMap() {
@@ -48,12 +50,14 @@ class PurchaseStatisticsService {
         totalAmount: 0.0,
         totalQuantity: 0,
         materialCount: 0,
+        projectCountsByRecordId: {},
       );
     }
 
     double totalAmount = 0.0;
     int totalQuantity = 0;
     Set<String> materials = {};
+    final projectCountsByRecordId = <int, int>{};
 
     for (final record in records) {
       totalAmount += record.totalAmount;
@@ -76,6 +80,10 @@ class PurchaseStatisticsService {
         totalQuantity += result.$1.totalQuantity;
         continue;
       }
+      final recordId = result.$1.id;
+      if (recordId != null) {
+        projectCountsByRecordId[recordId] = result.$2.length;
+      }
       for (final item in result.$2) {
         totalQuantity += item.quantity;
         materials.add(item.materialName);
@@ -91,6 +99,7 @@ class PurchaseStatisticsService {
       totalAmount: totalAmount,
       totalQuantity: totalQuantity,
       materialCount: materials.length,
+      projectCountsByRecordId: projectCountsByRecordId,
     );
   }
 
@@ -106,6 +115,7 @@ class PurchaseStatisticsService {
         totalAmount: 0.0,
         totalQuantity: 0,
         materialCount: 0,
+        projectCountsByRecordId: {},
       );
     }
 
@@ -122,6 +132,7 @@ class PurchaseStatisticsService {
       totalAmount: totalAmount,
       totalQuantity: totalQuantity,
       materialCount: 0, // 基础统计无法获取材料种类
+      projectCountsByRecordId: {},
     );
   }
 }

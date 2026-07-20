@@ -10,7 +10,9 @@ class MySqlUtils {
     try {
       final settings = ConnectionSettings(
         host: config.mysql.host,
-        port: int.tryParse(config.mysql.port) ?? 3306,
+        port:
+            int.tryParse(config.mysql.port) ??
+            int.parse(DatabaseDefaults.mysqlPort),
         user: config.mysql.username,
         password: config.mysql.password,
         db: config.mysql.database,
@@ -31,7 +33,9 @@ class MySqlUtils {
     try {
       final settings = ConnectionSettings(
         host: config.mysql.host,
-        port: int.tryParse(config.mysql.port) ?? 3306,
+        port:
+            int.tryParse(config.mysql.port) ??
+            int.parse(DatabaseDefaults.mysqlPort),
         user: config.mysql.username,
         password: config.mysql.password,
         db: config.mysql.database,

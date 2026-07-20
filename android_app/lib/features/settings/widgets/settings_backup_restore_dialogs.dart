@@ -14,6 +14,7 @@ import 'package:dentist_app/providers/app_state.dart';
 import 'package:dentist_app/providers/database_provider.dart';
 import 'package:dentist_app/providers/patient_provider.dart';
 import 'package:dentist_app/theme/app_theme.dart';
+import 'package:dentist_app/utils/app_paths.dart';
 
 class SettingsBackupRestoreDialogs {
   static Future<void> showBackupDialog(
@@ -99,7 +100,7 @@ class SettingsBackupRestoreDialogs {
                                             title: const Text('下载文件夹'),
                                             onTap: () async {
                                               final dir = Directory(
-                                                '/storage/emulated/0/Download',
+                                                AppPaths.downloadsDirectoryPath,
                                               );
                                               if (await dir.exists()) {
                                                 if (!context.mounted) return;
@@ -194,10 +195,7 @@ class SettingsBackupRestoreDialogs {
                                 filename += '.db';
                               }
 
-                              final backupPath = path.join(
-                                dir,
-                                filename,
-                              );
+                              final backupPath = path.join(dir, filename);
 
                               if (!mounted()) return;
                               setState(() {});
@@ -426,7 +424,7 @@ class SettingsBackupRestoreDialogs {
                                             title: const Text('下载文件夹'),
                                             onTap: () async {
                                               final dir = Directory(
-                                                '/storage/emulated/0/Download',
+                                                AppPaths.downloadsDirectoryPath,
                                               );
                                               if (await dir.exists()) {
                                                 if (!context.mounted) return;
@@ -521,10 +519,7 @@ class SettingsBackupRestoreDialogs {
                                 filename += '.xlsx';
                               }
 
-                              final exportPath = path.join(
-                                dir,
-                                filename,
-                              );
+                              final exportPath = path.join(dir, filename);
 
                               if (!mounted()) return;
                               setState(() {});

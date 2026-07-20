@@ -3,6 +3,7 @@ import 'package:path/path.dart' as path;
 
 /// 应用路径管理类
 class AppPaths {
+  static const downloadsDirectoryPath = '/storage/emulated/0/Download';
   static String? _appDataPath;
 
   /// 获取应用数据目录路径

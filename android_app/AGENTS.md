@@ -10,6 +10,5 @@
 
 - 默认只改 `lib/`、`test/` 和必要的 `pubspec.yaml`。
 - 修改 `android/` 原生配置、签名、权限、Gradle 配置前先说明影响并等待确认。
-- 数据解析、Provider 状态、UI 异步加载必须显式处理 null，不新增非必要 `!`。
-- 验证命令按根目录 `AGENTS.md` 执行，并在本目录下运行。
+- Provider 状态和 UI 异步加载必须显式处理 null 与组件生命周期。
 - APK 构建只在用户明确要求时执行：`cmd.exe /c flutter build apk`。

@@ -85,31 +85,31 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: Icons.dashboard_rounded,
                       label: '仪表盘',
                       index: 0,
-                      color: const Color(0xFF1A73E8),
+                      color: AppTheme.primaryColor,
                     ),
                     _buildNavItem(
                       icon: Icons.people_rounded,
                       label: '患者',
                       index: 1,
-                      color: const Color(0xFF00BFA5),
+                      color: AppTheme.secondaryColor,
                     ),
                     _buildNavItem(
                       icon: Icons.calendar_month_rounded,
                       label: '预约',
                       index: 2,
-                      color: const Color(0xFFFF5722),
+                      color: AppTheme.accentColor,
                     ),
                     _buildNavItem(
                       icon: Icons.business_center_rounded,
                       label: '业务',
                       index: 3,
-                      color: const Color(0xFF9C27B0),
+                      color: AppTheme.navigationBusiness,
                     ),
                     _buildNavItem(
                       icon: Icons.settings_rounded,
                       label: '设置',
                       index: 4,
-                      color: const Color(0xFF607D8B),
+                      color: AppTheme.navigationSettings,
                     ),
                   ],
                 ),
@@ -231,7 +231,6 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
     const _KeepAlivePage(child: UsersScreen()),
   ];
 
-
   @override
   void initState() {
     super.initState();
@@ -284,21 +283,21 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
                       icon: Icons.account_balance_wallet_rounded,
                       label: '财务',
                       index: 0,
-                      color: const Color(0xFF4CAF50),
+                      color: AppTheme.successColor,
                     ),
                     const SizedBox(width: 8),
                     _buildCompactTab(
                       icon: Icons.shopping_cart_rounded,
                       label: '采购',
                       index: 1,
-                      color: const Color(0xFF2196F3),
+                      color: AppTheme.infoColor,
                     ),
                     const SizedBox(width: 8),
                     _buildCompactTab(
                       icon: Icons.people_rounded,
                       label: '用户',
                       index: 2,
-                      color: const Color(0xFF9C27B0),
+                      color: AppTheme.navigationBusiness,
                     ),
                   ],
                 ),

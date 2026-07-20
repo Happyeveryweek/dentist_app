@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../models/purchase_record.dart';
 import '../../../models/purchase_item.dart';
 import '../../../utils/app_logger.dart';
+import '../../../utils/app_paths.dart';
 
 /// 采购记录导出服务
 /// 负责将采购记录导出为图片
@@ -36,10 +37,7 @@ class PurchaseExportService {
 
     // 先按内容估算高度铺满白底，避免导出长图底部出现黑边
     paint.color = const Color(0xFFFFFFFF);
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, scaledWidth, estimatedHeight),
-      paint,
-    );
+    canvas.drawRect(Rect.fromLTWH(0, 0, scaledWidth, estimatedHeight), paint);
 
     // 边距和间距设置
     const double margin = 60.0 * scale;
@@ -516,7 +514,8 @@ class PurchaseExportService {
       } else {
         height += 80 * scale;
         height += purchaseItems.length * 100 * scale;
-        height += (exportOptions['purchaseSummary'] == true ? 180 : 100) * scale;
+        height +=
+            (exportOptions['purchaseSummary'] == true ? 180 : 100) * scale;
       }
     }
 
@@ -531,7 +530,7 @@ class PurchaseExportService {
 
       try {
         // 尝试获取外部存储的下载目录
-        directory = Directory('/storage/emulated/0/Download');
+        directory = Directory(AppPaths.downloadsDirectoryPath);
         if (!await directory.exists()) {
           directory = null;
         }

@@ -27,6 +27,9 @@ class AppTheme {
   static const Color errorColor = Color(0xFFEA4335);
   static const Color infoColor = Color(0xFF4285F4);
 
+  static const Color navigationBusiness = Color(0xFF9C27B0);
+  static const Color navigationSettings = Color(0xFF607D8B);
+
   // 仪表盘欢迎卡片语义色
   static const Color dashboardWelcomeBorder = Color(0xFF8FB6F3);
   static const Color dashboardWelcomeShadow = Color(0xFF526FB5);

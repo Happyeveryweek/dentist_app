@@ -33,6 +33,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   Map<String, dynamic> _statistics = {};
+  Map<int, int> _projectCountsByRecordId = {};
   String? _loadErrorMessage;
   int _requestVersion = 0;
   Timer? _searchDebounce;
@@ -146,6 +147,8 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
         final record = _filteredRecords[index];
         return PurchaseRecordCard(
           record: record,
+          projectCount:
+              record.id == null ? null : _projectCountsByRecordId[record.id],
           onTap: () => _showPurchaseRecordDetails(context, record),
           onDelete: () => _deletePurchaseRecord(record),
         );
@@ -337,6 +340,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
           'totalQuantity': 0,
           'materialCount': 0,
         };
+        _projectCountsByRecordId = {};
       });
       return;
     }
@@ -353,6 +357,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
       if (mounted && requestVersion == _requestVersion) {
         setState(() {
           _statistics = statistics.toMap();
+          _projectCountsByRecordId = statistics.projectCountsByRecordId;
         });
       }
     } catch (e) {
@@ -366,6 +371,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
       if (mounted && requestVersion == _requestVersion) {
         setState(() {
           _statistics = statistics.toMap();
+          _projectCountsByRecordId = {};
         });
       }
     }

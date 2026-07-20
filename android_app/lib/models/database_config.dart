@@ -1,5 +1,13 @@
 import '../utils/config_utils.dart';
 
+abstract final class DatabaseDefaults {
+  static const sqliteFileName = 'dental_clinic.db';
+  static const mysqlHost = 'localhost';
+  static const mysqlPort = '3306';
+  static const mysqlDatabase = 'dental_clinic';
+  static const mysqlUsername = 'root';
+}
+
 // 数据库配置模型
 class DatabaseConfig {
   String dbType; // 'sqlite' 或 'mysql'
@@ -54,10 +62,10 @@ class DatabaseConfig {
 class SqliteConfig {
   String path;
 
-  SqliteConfig({this.path = 'dental_clinic.db'});
+  SqliteConfig({this.path = DatabaseDefaults.sqliteFileName});
 
   factory SqliteConfig.fromJson(Map<String, dynamic> json) {
-    return SqliteConfig(path: json['path'] ?? 'dental_clinic.db');
+    return SqliteConfig(path: json['path'] ?? DatabaseDefaults.sqliteFileName);
   }
 
   Map<String, dynamic> toJson() {
@@ -74,19 +82,19 @@ class MySqlConfig {
   String password;
 
   MySqlConfig({
-    this.host = 'localhost',
-    this.port = '3306',
-    this.database = 'dental_clinic',
-    this.username = 'root',
+    this.host = DatabaseDefaults.mysqlHost,
+    this.port = DatabaseDefaults.mysqlPort,
+    this.database = DatabaseDefaults.mysqlDatabase,
+    this.username = DatabaseDefaults.mysqlUsername,
     this.password = '',
   });
 
   factory MySqlConfig.fromJson(Map<String, dynamic> json) {
     return MySqlConfig(
-      host: json['host'] ?? 'localhost',
-      port: json['port'] ?? '3306',
-      database: json['database'] ?? 'dental_clinic',
-      username: json['username'] ?? 'root',
+      host: json['host'] ?? DatabaseDefaults.mysqlHost,
+      port: json['port'] ?? DatabaseDefaults.mysqlPort,
+      database: json['database'] ?? DatabaseDefaults.mysqlDatabase,
+      username: json['username'] ?? DatabaseDefaults.mysqlUsername,
       password: json['password'] ?? '',
     );
   }

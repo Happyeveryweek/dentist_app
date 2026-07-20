@@ -7,12 +7,14 @@ import '../../../models/purchase_record.dart';
 /// 职责：显示单个采购记录的详细信息
 class PurchaseRecordCard extends StatelessWidget {
   final PurchaseRecord record;
+  final int? projectCount;
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
   const PurchaseRecordCard({
     super.key,
     required this.record,
+    required this.projectCount,
     required this.onTap,
     required this.onDelete,
   });
@@ -115,7 +117,7 @@ class PurchaseRecordCard extends StatelessWidget {
         Icon(Icons.list, size: 14, color: Colors.orange[600]),
         const SizedBox(width: 3),
         Text(
-          '项目数: ${record.totalQuantity > 0 ? record.totalQuantity : '待定'}',
+          '项目数: ${projectCount ?? '待定'}',
           style: TextStyle(
             color: Colors.orange[600],
             fontSize: 11,

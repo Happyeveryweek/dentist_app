@@ -71,6 +71,12 @@ backups/*.db
 backups/*.sql
 
 # Configuration files with sensitive data
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
 config/database_settings.json
 .kiro/settings/
 **/config/encryption.key

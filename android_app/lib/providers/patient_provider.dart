@@ -315,7 +315,10 @@ class PatientProvider extends ChangeNotifier {
   Future<int> addPatient(Patient patient) async {
     if (!_hasPatientAccess) return -1;
     final user = _userProvider?.currentUser;
-    if (user?.role == 'doctor') patient.doctor = user?.doctor;
+    final doctor = user?.doctor?.trim();
+    if (doctor != null && doctor.isNotEmpty) {
+      patient.doctor = doctor;
+    }
     final wrapper = _dbWrapper;
     if (wrapper == null) return -1;
 

@@ -16,27 +16,27 @@ class UserPermissionService {
        _cacheService = cacheService;
 
   static const _doctorModules = {
-    'patients',
-    'appointments',
-    'financial',
-    'purchase',
+    ModulePermission.patients,
+    ModulePermission.appointments,
+    ModulePermission.financial,
+    ModulePermission.purchase,
   };
 
   static bool canAccessModule(User? user, String module) {
     if (user == null) return false;
-    if (module == 'dashboard' || module == 'settings') {
-      return user.role != 'user';
+    if (module == ModulePermission.dashboard || module == ModulePermission.settings) {
+      return user.role != UserRole.user;
     }
-    if (user.role == 'admin') return true;
-    return user.role == 'doctor' && _doctorModules.contains(module);
+    if (user.role == UserRole.admin) return true;
+    return user.role == UserRole.doctor && _doctorModules.contains(module);
   }
 
-  static bool canManageUsers(User? user) => user?.role == 'admin';
+  static bool canManageUsers(User? user) => user?.role == UserRole.admin;
 
   static bool canAccessDoctorData(User? user, String? recordDoctor) {
-    if (user?.role == 'admin') return true;
+    if (user?.role == UserRole.admin) return true;
     final doctor = user?.doctor;
-    return user?.role == 'doctor' &&
+    return user?.role == UserRole.doctor &&
         doctor != null &&
         doctor.isNotEmpty &&
         doctor == recordDoctor;
@@ -109,7 +109,7 @@ class UserPermissionService {
     if (user == null) return null;
 
     final doctor = user.doctor;
-    if (user.role == 'doctor' && doctor != null && doctor.isNotEmpty) {
+    if (user.role == UserRole.doctor && doctor != null && doctor.isNotEmpty) {
       return doctor;
     }
 
@@ -117,6 +117,6 @@ class UserPermissionService {
   }
 
   bool shouldFilterByDoctor(User? user) {
-    return user?.role == 'doctor' && user?.doctor?.isNotEmpty == true;
+    return user?.role == UserRole.doctor && user?.doctor?.isNotEmpty == true;
   }
 }

@@ -3,6 +3,34 @@ import '../utils/datetime_formatter.dart';
 import '../utils/app_logger.dart';
 import '../utils/map_parser.dart';
 
+abstract final class UserRole {
+  static const admin = 'admin';
+  static const doctor = 'doctor';
+  static const user = 'user';
+}
+
+abstract final class ModulePermission {
+  static const dashboard = 'dashboard';
+  static const patients = 'patients';
+  static const appointments = 'appointments';
+  static const financial = 'financial';
+  static const materials = 'materials';
+  static const purchase = 'purchase';
+  static const users = 'users';
+  static const settings = 'settings';
+
+  static const all = <String>[
+    dashboard,
+    patients,
+    appointments,
+    financial,
+    materials,
+    purchase,
+    users,
+    settings,
+  ];
+}
+
 class User {
   final int? id;
   final String username;
@@ -128,23 +156,14 @@ class User {
 
   /// 获取用户允许访问的模块列表
   List<String> get allowedModules {
-    if (role == 'admin') {
+    if (role == UserRole.admin) {
       // 管理员拥有所有权限
-      return [
-        'dashboard',
-        'patients',
-        'appointments',
-        'financial',
-        'materials',
-        'purchase',
-        'users',
-        'settings',
-      ];
+      return ModulePermission.all;
     }
 
     if (modulePermissions == null || modulePermissions!.isEmpty) {
       // 如果没有权限配置，返回默认的基础权限
-      return ['dashboard'];
+      return [ModulePermission.dashboard];
     }
 
     try {
@@ -156,17 +175,17 @@ class User {
           .toList();
     } catch (e) {
       AppLogger.info('解析权限配置失败: $e');
-      return ['dashboard']; // 默认只有仪表盘权限
+      return [ModulePermission.dashboard]; // 默认只有仪表盘权限
     }
   }
 
   /// 检查用户是否有特定模块的权限
   bool hasModulePermission(String module) {
-    if (role == 'admin') {
+    if (role == UserRole.admin) {
       return true; // 管理员拥有所有权限
     }
 
-    if (module == 'dashboard') {
+    if (module == ModulePermission.dashboard) {
       return true; // 仪表盘对所有用户可见
     }
 
