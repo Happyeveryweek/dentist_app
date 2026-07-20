@@ -30,6 +30,8 @@ class FinancialProvider extends ChangeNotifier {
   // 初始化标志
   bool _isInitializedFlag = false;
   Future<void>? _initializationFuture;
+  UserProvider? _userProvider;
+  int? _sessionRevision;
 
   // Service 和 Helper 实例
   final FinancialCacheHelper _cacheHelper = FinancialCacheHelper();
@@ -103,7 +105,13 @@ class FinancialProvider extends ChangeNotifier {
 
   // 设置用户提供者（用于权限控制）
   void setUserProvider(UserProvider userProvider) {
+    _userProvider = userProvider;
     _permissionService.setUserProvider(userProvider);
+    final nextRevision = userProvider.sessionRevision;
+    if (_sessionRevision != null && _sessionRevision != nextRevision) {
+      _cacheHelper.clearCache();
+    }
+    _sessionRevision = nextRevision;
   }
 
   // 获取当前数据源（必须可用，否则抛出异常）
@@ -301,6 +309,7 @@ class FinancialProvider extends ChangeNotifier {
     }
 
     final wrapper = _dbWrapper;
+    final requestSessionRevision = _sessionRevision;
     if (wrapper == null) return [];
 
     return await wrapper.wrapOperation('getAllFinancialRecords', () async {
@@ -341,6 +350,8 @@ class FinancialProvider extends ChangeNotifier {
           AppLogger.info('✅ 数据源模式查询成功，获取到 ${records.length} 条财务记录');
         }
 
+        if (requestSessionRevision != _sessionRevision) return [];
+
         // 以下代码保留作为参考，但不再使用
         /*
         if (_dataSourceType == 'sqlite') {
@@ -353,6 +364,7 @@ class FinancialProvider extends ChangeNotifier {
         return records;
       } catch (e) {
         AppLogger.info('❌ 获取财务记录失败: $e');
+        if (requestSessionRevision != _sessionRevision) return [];
 
         // 如果有缓存数据，返回缓存
         if (_cacheHelper.hasValidCache) {
@@ -581,9 +593,11 @@ class FinancialProvider extends ChangeNotifier {
       return cachedRecords;
     }
 
+    final requestSessionRevision = _userProvider?.sessionRevision;
     final records = await _recordService.getFinancialRecordsByPatientId(
       patientId,
     );
+    if (requestSessionRevision != _userProvider?.sessionRevision) return [];
     _cacheHelper.cacheRecordsByPatientId(patientId, records);
     return records;
   }
@@ -601,7 +615,9 @@ class FinancialProvider extends ChangeNotifier {
       return cachedItems;
     }
 
+    final requestSessionRevision = _userProvider?.sessionRevision;
     final items = await _itemService.getFinancialItemsByRecordId(recordId);
+    if (requestSessionRevision != _userProvider?.sessionRevision) return [];
     _cacheHelper.cacheDetailItems(recordId, items);
     return items;
   }

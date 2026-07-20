@@ -69,55 +69,69 @@ class SyncManager {
         return false;
       }
 
-      final sqliteDb = await DatabaseHelper().database;
-
-      // 1. 首先检查并更新表结构
-      AppLogger.info('SyncManager: 检查并更新SQLite表结构...');
-      final schemaResult = await SchemaValidator.validateAndUpdateSchema(
-        sqliteDb,
-      );
-
-      if (!schemaResult.success) {
-        await SyncLogger.logSync(
-          success: false,
-          message: '表结构检查失败',
-          tableCounts: {},
-          tableDetails: {},
-          error: schemaResult.error ?? '未知错误',
-          schemaChanges: schemaResult.getSummary(),
+      try {
+        final sqliteDb = await DatabaseHelper().database;
+        final insertionOrder = SyncTableConfig.insertionOrder(
+          syncConfig.syncTables,
         );
-        return false;
-      }
-
-      AppLogger.info('SyncManager: 表结构检查完成: ${schemaResult.getSummary()}');
-
-      // 开始事务
-      await sqliteDb.transaction((txn) async {
-        final tableCounts = <String, int>{};
-        final tableDetails = <String, String>{};
-
-        try {
-          for (final tableName in SyncTableConfig.syncTableNames) {
-            AppLogger.info('同步表: $tableName');
-            final result = await _syncTableInternal(mysqlConn, txn, tableName);
-            tableCounts[tableName] = result.count;
-            tableDetails[tableName] = result.detail;
-            AppLogger.info('表 $tableName 同步完成: ${result.detail}');
+        final availableTables = <String>[];
+        for (final tableName in insertionOrder) {
+          if (await _mysqlTableExists(mysqlConn, tableName)) {
+            availableTables.add(tableName);
+          } else {
+            AppLogger.info('同步表 $tableName 跳过: MySQL源表不存在');
           }
+        }
+        final deletionOrder = SyncTableConfig.deletionOrder(availableTables);
+        AppLogger.info('SyncManager: 本次将整表覆盖以下表: ${insertionOrder.join(', ')}');
 
-          // 更新同步时间
-          await syncConfig.updateLastSyncTime();
+        // 1. 首先检查并更新表结构
+        AppLogger.info('SyncManager: 检查并更新SQLite表结构...');
+        final schemaResult = await SchemaValidator.validateAndUpdateSchema(
+          sqliteDb,
+        );
 
-          // 记录成功日志
+        if (!schemaResult.success) {
           await SyncLogger.logSync(
-            success: true,
-            message: 'MySQL到SQLite数据同步成功',
-            tableCounts: tableCounts,
-            tableDetails: tableDetails,
+            success: false,
+            message: '表结构检查失败',
+            tableCounts: {},
+            tableDetails: {},
+            error: schemaResult.error ?? '未知错误',
             schemaChanges: schemaResult.getSummary(),
           );
+          return false;
+        }
+
+        AppLogger.info('SyncManager: 表结构检查完成: ${schemaResult.getSummary()}');
+
+        final tableCounts = <String, int>{};
+        final tableDetails = <String, String>{};
+        for (final tableName in insertionOrder) {
+          if (!availableTables.contains(tableName)) {
+            tableCounts[tableName] = 0;
+            tableDetails[tableName] = 'MySQL源表不存在，已跳过';
+          }
+        }
+
+        try {
+          await sqliteDb.transaction((txn) async {
+            for (final tableName in deletionOrder) {
+              await txn.delete(tableName);
+            }
+            for (final tableName in availableTables) {
+              AppLogger.info('同步表: $tableName');
+              final result = await _syncTableInternal(
+                mysqlConn,
+                txn,
+                tableName,
+              );
+              tableCounts[tableName] = result.count;
+              tableDetails[tableName] = result.detail;
+              AppLogger.info('表 $tableName 同步完成: ${result.detail}');
+            }
+          });
         } catch (e) {
-          // 记录失败日志
           await SyncLogger.logSync(
             success: false,
             message: '数据同步过程中发生错误',
@@ -128,11 +142,20 @@ class SyncManager {
           );
           rethrow;
         }
-      });
 
-      await mysqlConn.close();
-      AppLogger.info('SyncManager: 数据同步完成，返回成功');
-      return true;
+        await syncConfig.updateLastSyncTime();
+        await SyncLogger.logSync(
+          success: true,
+          message: 'MySQL到SQLite数据同步成功',
+          tableCounts: tableCounts,
+          tableDetails: tableDetails,
+          schemaChanges: schemaResult.getSummary(),
+        );
+        AppLogger.info('SyncManager: 数据同步完成，返回成功');
+        return true;
+      } finally {
+        await mysqlConn.close();
+      }
     } catch (e) {
       AppLogger.info('SyncManager: 数据同步失败: $e');
       AppLogger.info('SyncManager: 错误堆栈: ${StackTrace.current}');
@@ -146,16 +169,6 @@ class SyncManager {
     String tableName,
   ) async {
     try {
-      final tableExists = await _mysqlTableExists(mysqlConn, tableName);
-      if (!tableExists) {
-        const detail = 'MySQL源表不存在，已跳过';
-        AppLogger.info('同步表 $tableName 跳过: $detail');
-        return const _SyncTableResult(count: 0, detail: 'MySQL源表不存在，已跳过');
-      }
-
-      // 清空SQLite表
-      await txn.delete(tableName);
-
       // 获取MySQL数据
       final mysqlResult = await mysqlConn.query('SELECT * FROM $tableName');
 

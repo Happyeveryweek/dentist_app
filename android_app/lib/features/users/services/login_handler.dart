@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/user_provider.dart';
-import '../../../providers/app_state.dart';
 import '../../../providers/database_provider.dart';
 import '../../../utils/message_toast_helper.dart';
 import '../../../widgets/loading_dialog.dart';
@@ -26,7 +25,6 @@ class LoginHandler {
 
     try {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final appState = Provider.of<AppState>(context, listen: false);
       final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
 
       // 再次确认数据库已初始化
@@ -49,10 +47,6 @@ class LoginHandler {
           password,
           rememberPassword,
         );
-
-        // 登录成功，更新应用状态
-        appState.setCurrentUser(user);
-        appState.setLoggedIn(true);
 
         if (context.mounted) {
           MessageToastHelper.showSuccess(context, '登录成功！欢迎回来，${user.username}');

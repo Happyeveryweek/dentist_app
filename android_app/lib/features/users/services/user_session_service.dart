@@ -30,13 +30,10 @@ class UserSessionService {
   static void logout(
     User? currentUser,
     void Function(int?) clearPermissionsCache,
-    void Function() notifyListeners,
   ) {
     final userId = currentUser?.id;
     if (userId != null) {
       clearPermissionsCache(userId);
     }
-
-    notifyListeners();
   }
 }

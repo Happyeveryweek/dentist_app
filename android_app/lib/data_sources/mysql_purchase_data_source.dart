@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import '../models/purchase_record.dart';
+import '../models/purchase_item.dart';
 import '../utils/datetime_formatter.dart';
 import 'purchase_data_source.dart';
 import '../utils/app_logger.dart';
@@ -170,15 +171,17 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
 
   @override
   Future<bool> deletePurchase(int id) async {
-    await _connection().query(
-      'DELETE FROM purchase_items WHERE purchase_record_id = ?',
-      [id],
-    );
-    final result = await _connection().query(
-      'DELETE FROM purchase_records WHERE id = ?',
-      [id],
-    );
-    return (result.affectedRows ?? 0) > 0;
+    return _runTransaction((connection) async {
+      await connection.query(
+        'DELETE FROM purchase_items WHERE purchase_record_id = ?',
+        [id],
+      );
+      final result = await connection.query(
+        'DELETE FROM purchase_records WHERE id = ?',
+        [id],
+      );
+      return (result.affectedRows ?? 0) > 0;
+    });
   }
 
   @override
@@ -289,61 +292,121 @@ class MySqlPurchaseDataSource implements PurchaseDataSource {
   }
 
   @override
-  Future<int> createPurchaseItem(dynamic item) async {
-    final result = await _connection().query(
-      '''
-      INSERT INTO purchase_items
-      (purchase_record_id, material_id, material_name, quantity, unit_price, total_price, unit, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''',
-      [
-        item.purchaseRecordId,
-        item.materialId,
-        item.materialName,
-        item.quantity,
-        item.unitPrice,
-        item.totalPrice,
-        item.unit,
-        DateTimeFormatter.toDbString(item.createdAt),
-        DateTimeFormatter.toDbString(item.updatedAt),
-      ],
-    );
-
-    return result.insertId ?? 0;
+  Future<int> createPurchaseItemWithTotals(PurchaseItem item) async {
+    return _runTransaction((connection) async {
+      final result = await connection.query(
+        '''
+        INSERT INTO purchase_items
+        (purchase_record_id, material_id, material_name, quantity, unit_price, total_price, unit, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ''',
+        [
+          item.purchaseRecordId,
+          item.materialId,
+          item.materialName,
+          item.quantity,
+          item.unitPrice,
+          item.totalPrice,
+          item.unit,
+          DateTimeFormatter.toDbString(item.createdAt),
+          DateTimeFormatter.toDbString(item.updatedAt),
+        ],
+      );
+      await _updateTotals(connection, item.purchaseRecordId);
+      return result.insertId ?? 0;
+    });
   }
 
   @override
-  Future<bool> updatePurchaseItem(dynamic item) async {
-    final result = await _connection().query(
+  Future<bool> updatePurchaseItemWithTotals(PurchaseItem item) async {
+    return _runTransaction((connection) async {
+      final result = await connection.query(
+        '''
+        UPDATE purchase_items SET
+        purchase_record_id = ?, material_id = ?, material_name = ?, quantity = ?,
+        unit_price = ?, total_price = ?, unit = ?, updated_at = ?
+        WHERE id = ?
+      ''',
+        [
+          item.purchaseRecordId,
+          item.materialId,
+          item.materialName,
+          item.quantity,
+          item.unitPrice,
+          item.totalPrice,
+          item.unit,
+          DateTimeFormatter.toDbString(item.updatedAt),
+          item.id,
+        ],
+      );
+      if ((result.affectedRows ?? 0) == 0) return false;
+      await _updateTotals(connection, item.purchaseRecordId);
+      return true;
+    });
+  }
+
+  @override
+  Future<bool> deletePurchaseItemWithTotals(
+    int itemId, {
+    required int purchaseRecordId,
+  }) async {
+    return _runTransaction((connection) async {
+      final result = await connection.query(
+        'DELETE FROM purchase_items WHERE id = ? AND purchase_record_id = ?',
+        [itemId, purchaseRecordId],
+      );
+      if ((result.affectedRows ?? 0) == 0) return false;
+      await _updateTotals(connection, purchaseRecordId);
+      return true;
+    });
+  }
+
+  Future<void> _updateTotals(
+    MySqlConnection connection,
+    int purchaseRecordId,
+  ) async {
+    final existing = await connection.query(
+      'SELECT 1 FROM purchase_records WHERE id = ? LIMIT 1',
+      [purchaseRecordId],
+    );
+    if (existing.isEmpty) {
+      throw StateError('采购记录不存在，无法更新采购汇总');
+    }
+    await connection.query(
       '''
-      UPDATE purchase_items SET
-      purchase_record_id = ?, material_id = ?, material_name = ?, quantity = ?,
-      unit_price = ?, total_price = ?, unit = ?, updated_at = ?
+      UPDATE purchase_records
+      SET total_quantity = (
+            SELECT COALESCE(SUM(quantity), 0)
+            FROM purchase_items
+            WHERE purchase_record_id = ?
+          ),
+          total_amount = (
+            SELECT COALESCE(SUM(total_price), 0)
+            FROM purchase_items
+            WHERE purchase_record_id = ?
+          )
       WHERE id = ?
-    ''',
-      [
-        item.purchaseRecordId,
-        item.materialId,
-        item.materialName,
-        item.quantity,
-        item.unitPrice,
-        item.totalPrice,
-        item.unit,
-        DateTimeFormatter.toDbString(item.updatedAt),
-        item.id,
-      ],
+      ''',
+      [purchaseRecordId, purchaseRecordId, purchaseRecordId],
     );
-
-    return (result.affectedRows ?? 0) > 0;
   }
 
-  @override
-  Future<bool> deletePurchaseItem(int itemId) async {
-    final result = await _connection().query(
-      'DELETE FROM purchase_items WHERE id = ?',
-      [itemId],
-    );
-
-    return (result.affectedRows ?? 0) > 0;
+  Future<T> _runTransaction<T>(
+    Future<T> Function(MySqlConnection connection) operation,
+  ) async {
+    final connection = _connection();
+    await connection.query('START TRANSACTION');
+    try {
+      final result = await operation(connection);
+      await connection.query('COMMIT');
+      return result;
+    } catch (_) {
+      try {
+        await connection.query('ROLLBACK');
+      } catch (rollbackError) {
+        AppLogger.info('MySQL采购事务回滚失败: $rollbackError');
+      }
+      rethrow;
+    }
   }
 }

@@ -27,6 +27,7 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 用户提供者引用（用于权限控制）
   UserProvider? _userProvider;
+  int? _sessionRevision;
 
   // 数据库操作包装器
   DatabaseOperationWrapper? _dbWrapper;
@@ -85,6 +86,11 @@ class PurchaseProvider extends ChangeNotifier {
   // 设置用户提供者（用于权限控制）
   void setUserProvider(UserProvider userProvider) {
     _userProvider = userProvider;
+    final nextRevision = userProvider.sessionRevision;
+    if (_sessionRevision != null && _sessionRevision != nextRevision) {
+      _cacheService?.clearCache();
+    }
+    _sessionRevision = nextRevision;
   }
 
   // 获取当前数据源（必须可用，否则抛出异常）
@@ -224,6 +230,7 @@ class PurchaseProvider extends ChangeNotifier {
     }
 
     final wrapper = _dbWrapper;
+    final requestSessionRevision = _sessionRevision;
     if (wrapper == null) return cachedRecords;
 
     return await wrapper.wrapOperation('getAllPurchaseRecords', () async {
@@ -254,12 +261,15 @@ class PurchaseProvider extends ChangeNotifier {
           AppLogger.info('✅ 数据源模式查询成功，获取到 ${records.length} 条采购记录');
         }
 
+        if (requestSessionRevision != _sessionRevision) return [];
+
         // 更新缓存
         _cacheService?.updateCache(records, {});
         AppLogger.info('✅ 采购记录缓存已更新');
         return records;
       } catch (e) {
         AppLogger.info('❌ 获取采购记录失败: $e');
+        if (requestSessionRevision != _sessionRevision) return [];
 
         // 缓存已在查询前返回；这里继续吞掉异常会让页面把数据库故障误判为空数据。
         if (_cacheService?.isCacheValid() == true) {
@@ -351,7 +361,7 @@ class PurchaseProvider extends ChangeNotifier {
         AppLogger.info('添加采购记录失败: $e');
         rethrow;
       }
-    });
+    }, maxRetries: 1);
   }
 
   // 更新采购记录
@@ -383,7 +393,7 @@ class PurchaseProvider extends ChangeNotifier {
         AppLogger.info('更新采购记录失败: $e');
         rethrow;
       }
-    });
+    }, maxRetries: 1);
   }
 
   // 删除采购记录
@@ -414,7 +424,7 @@ class PurchaseProvider extends ChangeNotifier {
         AppLogger.info('删除采购记录失败: $e');
         rethrow;
       }
-    });
+    }, maxRetries: 1);
   }
 
   // =================== 采购项目明细相关方法 ===================
@@ -430,6 +440,7 @@ class PurchaseProvider extends ChangeNotifier {
       return cachedItems;
     }
 
+    final requestSessionRevision = _sessionRevision;
     return await _wrapPurchaseItemOperation(
       'getPurchaseItemsByRecordId',
       () async {
@@ -444,6 +455,7 @@ class PurchaseProvider extends ChangeNotifier {
                     (e) => PurchaseItem.fromMap(e, dataSource: _dataSourceType),
                   )
                   .toList();
+          if (requestSessionRevision != _sessionRevision) return [];
           _cacheService?.cacheItems(recordId, items);
           return items;
         } catch (e) {
@@ -463,11 +475,10 @@ class PurchaseProvider extends ChangeNotifier {
     return await _wrapPurchaseItemOperation('addPurchaseItem', () async {
       try {
         // 使用数据源模式（统一接口）
-        final id = await _currentDataSource.createPurchaseItem(item);
+        final id = await _currentDataSource.createPurchaseItemWithTotals(item);
 
         if (id > 0) {
           _cacheService?.clearCache();
-          await _recalculatePurchaseRecordTotals(item.purchaseRecordId);
           markPurchasesNeedRefresh();
         }
 
@@ -488,12 +499,13 @@ class PurchaseProvider extends ChangeNotifier {
     return await _wrapPurchaseItemOperation('updatePurchaseItem', () async {
       try {
         // 使用数据源模式（统一接口）
-        final success = await _currentDataSource.updatePurchaseItem(item);
+        final success = await _currentDataSource.updatePurchaseItemWithTotals(
+          item,
+        );
         final count = success ? 1 : 0;
 
         if (count > 0) {
           _cacheService?.clearCache();
-          await _recalculatePurchaseRecordTotals(item.purchaseRecordId);
           markPurchasesNeedRefresh();
         }
 
@@ -517,12 +529,14 @@ class PurchaseProvider extends ChangeNotifier {
     return await _wrapPurchaseItemOperation('deletePurchaseItem', () async {
       try {
         // 使用数据源模式（统一接口）
-        final success = await _currentDataSource.deletePurchaseItem(itemId);
+        final success = await _currentDataSource.deletePurchaseItemWithTotals(
+          itemId,
+          purchaseRecordId: purchaseRecordId,
+        );
         final count = success ? 1 : 0;
 
         if (count > 0) {
           _cacheService?.clearCache();
-          await _recalculatePurchaseRecordTotals(purchaseRecordId);
           markPurchasesNeedRefresh();
         }
 
@@ -534,43 +548,6 @@ class PurchaseProvider extends ChangeNotifier {
     });
   }
 
-  Future<void> _recalculatePurchaseRecordTotals(int? recordId) async {
-    if (recordId == null) {
-      throw Exception('采购记录ID为空，无法更新采购汇总');
-    }
-
-    final record = await _currentDataSource.getPurchaseById(recordId);
-    if (record == null) {
-      throw Exception('采购记录不存在，无法更新采购汇总');
-    }
-    final items = await getPurchaseItemsByRecordId(recordId);
-    final totalQuantity = items.fold<int>(
-      0,
-      (sum, item) => sum + item.quantity,
-    );
-    final totalAmount = items.fold<double>(
-      0.0,
-      (sum, item) => sum + item.totalPrice,
-    );
-
-    // MySQL 对值未变化的 UPDATE 会返回 affectedRows = 0。新增采购记录时，
-    // 主记录已带有界面计算的汇总值，只有一个明细时重算结果通常完全一致，
-    // 不应将这类无须写入的情况误判为更新失败。
-    if (record.totalQuantity == totalQuantity &&
-        record.totalAmount == totalAmount) {
-      clearCache();
-      return;
-    }
-
-    final updated = await _currentDataSource.updatePurchase(
-      record.copyWith(totalQuantity: totalQuantity, totalAmount: totalAmount),
-    );
-    if (!updated) {
-      throw Exception('采购汇总更新失败');
-    }
-    clearCache();
-  }
-
   Future<T> _wrapPurchaseItemOperation<T>(
     String operationName,
     Future<T> Function() operation,
@@ -579,7 +556,7 @@ class PurchaseProvider extends ChangeNotifier {
     if (wrapper == null) {
       return await operation();
     }
-    return await wrapper.wrapOperation(operationName, operation);
+    return await wrapper.wrapOperation(operationName, operation, maxRetries: 1);
   }
 
   // =================== 统计方法 ===================

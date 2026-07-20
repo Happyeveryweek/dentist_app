@@ -145,6 +145,7 @@ class PatientProvider extends ChangeNotifier {
   Future<List<Patient>> getAllPatients() async {
     if (!_hasPatientAccess) return [];
     final wrapper = _dbWrapper;
+    final requestSessionRevision = _userProvider?.sessionRevision;
     if (wrapper == null) return [];
 
     return await wrapper.wrapOperation('getAllPatients', () async {
@@ -157,6 +158,10 @@ class PatientProvider extends ChangeNotifier {
 
         // 使用数据源模式（统一接口）
         final patients = await _currentDataSource.getAllPatients();
+
+        if (requestSessionRevision != _userProvider?.sessionRevision) {
+          return [];
+        }
 
         _cacheHelper.setCachedPatients(patients); // 缓存数据
         return _filterPatients(patients);
@@ -286,10 +291,14 @@ class PatientProvider extends ChangeNotifier {
     final wrapper = _dbWrapper;
     if (wrapper == null) return null;
 
+    final requestSessionRevision = _userProvider?.sessionRevision;
     return await wrapper.wrapOperation('getPatientById', () async {
       try {
         // 使用数据源模式（统一接口）
         final patient = await _currentDataSource.getPatientById(id);
+        if (requestSessionRevision != _userProvider?.sessionRevision) {
+          return null;
+        }
         if (patient != null) {
           _cacheHelper.cachePatient(patient);
         }

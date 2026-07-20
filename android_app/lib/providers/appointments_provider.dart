@@ -29,6 +29,15 @@ class AppointmentsProvider extends ChangeNotifier
   bool get isReconnecting => _isReconnecting;
   String? get lastError => _lastError;
 
+  @override
+  void setUserProvider(UserProvider userProvider) {
+    final previousRevision = sessionRevision;
+    super.setUserProvider(userProvider);
+    if (previousRevision != null && previousRevision != sessionRevision) {
+      clearCache();
+    }
+  }
+
   // 从DatabaseProvider获取数据库连接（保持向后兼容）
   Future<void> initializeFromDatabase(
     dynamic dbProvider, {
@@ -85,6 +94,7 @@ class AppointmentsProvider extends ChangeNotifier
 
     final wrapper = _dbWrapper;
     final cached = cachedAppointments;
+    final requestSessionRevision = sessionRevision;
     if (wrapper == null) return cached ?? [];
 
     return await wrapper.wrapOperation('getAllAppointments', () async {
@@ -102,12 +112,15 @@ class AppointmentsProvider extends ChangeNotifier
           doctorFilter: getDoctorFilter(),
         );
 
+        if (requestSessionRevision != sessionRevision) return [];
+
         // 更新缓存
         updateCache(appointments);
         AppLogger.info('✅ 预约数据缓存已更新');
         return appointments;
       } catch (e) {
         AppLogger.info('❌ 获取预约数据失败: $e');
+        if (requestSessionRevision != sessionRevision) return [];
         if (_isConnectionError(e)) rethrow;
 
         // 优雅降级：如果有缓存就返回缓存，否则返回空列表

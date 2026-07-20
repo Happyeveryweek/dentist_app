@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 import '../models/purchase_record.dart';
+import '../models/purchase_item.dart';
 import 'purchase_data_source.dart';
 
 class SqlitePurchaseDataSource implements PurchaseDataSource {
@@ -54,18 +55,19 @@ class SqlitePurchaseDataSource implements PurchaseDataSource {
 
   @override
   Future<bool> deletePurchase(int id) async {
-    await _database.delete(
-      'purchase_items',
-      where: 'purchase_record_id = ?',
-      whereArgs: [id],
-    );
-
-    final count = await _database.delete(
-      'purchase_records',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    return count > 0;
+    return _database.transaction((txn) async {
+      await txn.delete(
+        'purchase_items',
+        where: 'purchase_record_id = ?',
+        whereArgs: [id],
+      );
+      final count = await txn.delete(
+        'purchase_records',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      return count > 0;
+    });
   }
 
   @override
@@ -161,28 +163,71 @@ class SqlitePurchaseDataSource implements PurchaseDataSource {
   }
 
   @override
-  Future<int> createPurchaseItem(dynamic item) async {
-    return _database.insert('purchase_items', item.toMap());
+  Future<int> createPurchaseItemWithTotals(PurchaseItem item) async {
+    return _database.transaction((txn) async {
+      final id = await txn.insert('purchase_items', item.toMap());
+      await _updateTotals(txn, item.purchaseRecordId);
+      return id;
+    });
   }
 
   @override
-  Future<bool> updatePurchaseItem(dynamic item) async {
-    final count = await _database.update(
-      'purchase_items',
-      item.toMap(),
-      where: 'id = ?',
-      whereArgs: [item.id],
-    );
-    return count > 0;
+  Future<bool> updatePurchaseItemWithTotals(PurchaseItem item) async {
+    return _database.transaction((txn) async {
+      final count = await txn.update(
+        'purchase_items',
+        item.toMap(),
+        where: 'id = ?',
+        whereArgs: [item.id],
+      );
+      if (count == 0) return false;
+      await _updateTotals(txn, item.purchaseRecordId);
+      return true;
+    });
   }
 
   @override
-  Future<bool> deletePurchaseItem(int itemId) async {
-    final count = await _database.delete(
-      'purchase_items',
-      where: 'id = ?',
-      whereArgs: [itemId],
+  Future<bool> deletePurchaseItemWithTotals(
+    int itemId, {
+    required int purchaseRecordId,
+  }) async {
+    return _database.transaction((txn) async {
+      final count = await txn.delete(
+        'purchase_items',
+        where: 'id = ? AND purchase_record_id = ?',
+        whereArgs: [itemId, purchaseRecordId],
+      );
+      if (count == 0) return false;
+      await _updateTotals(txn, purchaseRecordId);
+      return true;
+    });
+  }
+
+  Future<void> _updateTotals(
+    DatabaseExecutor executor,
+    int purchaseRecordId,
+  ) async {
+    final totals = await executor.rawQuery(
+      '''
+      SELECT COALESCE(SUM(quantity), 0) AS total_quantity,
+             COALESCE(SUM(total_price), 0) AS total_amount
+      FROM purchase_items
+      WHERE purchase_record_id = ?
+      ''',
+      [purchaseRecordId],
     );
-    return count > 0;
+    final row = totals.first;
+    final count = await executor.update(
+      'purchase_records',
+      {
+        'total_quantity': (row['total_quantity'] as num).toInt(),
+        'total_amount': (row['total_amount'] as num).toDouble(),
+      },
+      where: 'id = ?',
+      whereArgs: [purchaseRecordId],
+    );
+    if (count == 0) {
+      throw StateError('采购记录不存在，无法更新采购汇总');
+    }
   }
 }

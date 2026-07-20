@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'dart:io';
 import '../utils/app_paths.dart';
+import '../utils/atomic_file_writer.dart';
 import '../utils/datetime_formatter.dart';
 import '../utils/app_logger.dart';
+import '../utils/sync_table_config.dart';
 
 /// 同步配置模型
 class SyncConfig {
@@ -19,28 +20,29 @@ class SyncConfig {
     this.lastSyncTime = '',
     List<String>? syncTables,
   }) : syncTables =
-           syncTables ??
-           [
-             'patients',
-             'purchase_items',
-             'purchase_records',
-             'patient_materials',
-             'financial_records',
-             'financial_items',
-             'patient_medical_records',
-             'medical_record_templates',
-           ];
+           syncTables ?? List<String>.from(SyncTableConfig.syncTableNames);
 
   // 从JSON创建配置
   factory SyncConfig.fromJson(Map<String, dynamic> json) {
+    final rawTables = json['sync_tables'];
+    if (rawTables != null && rawTables is! List) {
+      throw const FormatException('sync_tables 必须是数组');
+    }
+    final List<String>? tables =
+        rawTables?.map<String>((value) {
+          if (value is! String) {
+            throw const FormatException('sync_tables 只能包含表名字符串');
+          }
+          return value;
+        }).toList();
+    if (tables != null) {
+      SyncTableConfig.validate(tables);
+    }
     return SyncConfig(
-      syncEnabled: json['sync_enabled'] ?? false,
-      syncIntervalDays: json['sync_interval_days'] ?? 7,
-      lastSyncTime: json['last_sync_time'] ?? '',
-      syncTables:
-          json['sync_tables'] != null
-              ? List<String>.from(json['sync_tables'])
-              : null,
+      syncEnabled: json['sync_enabled'] as bool? ?? false,
+      syncIntervalDays: json['sync_interval_days'] as int? ?? 7,
+      lastSyncTime: json['last_sync_time'] as String? ?? '',
+      syncTables: tables,
     );
   }
 
@@ -55,10 +57,14 @@ class SyncConfig {
   }
 
   // 保存同步配置
-  static Future<void> saveSyncConfig(SyncConfig config) async {
+  static Future<void> saveSyncConfig(
+    SyncConfig config, {
+    String? filePath,
+  }) async {
     try {
+      SyncTableConfig.validate(config.syncTables);
       // 使用应用数据目录
-      final configPath = await AppPaths.syncConfigPath;
+      final configPath = filePath ?? await AppPaths.syncConfigPath;
       final configFile = File(configPath);
 
       // 确保目录存在
@@ -67,51 +73,44 @@ class SyncConfig {
         await configDir.create(recursive: true);
       }
 
-      await configFile.writeAsString(jsonEncode(config.toJson()));
+      await AtomicFileWriter.write(configFile, jsonEncode(config.toJson()));
       AppLogger.info('同步配置已保存到: $configPath');
     } catch (e) {
-      AppLogger.info('保存同步配置失败，尝试使用文档目录: $e');
-      try {
-        // 回退到文档目录
-        final appDir = await getApplicationDocumentsDirectory();
-        final configFile = File(path.join(appDir.path, 'sync_config.json'));
-        await configFile.writeAsString(jsonEncode(config.toJson()));
-      } catch (fallbackError) {
-        AppLogger.info('保存同步配置完全失败: $fallbackError');
-      }
+      AppLogger.info('保存同步配置失败: $e');
+      rethrow;
     }
   }
 
   // 加载同步配置
-  static Future<SyncConfig> loadSyncConfig() async {
-    try {
-      // 使用应用数据目录
-      final configPath = await AppPaths.syncConfigPath;
-      final configFile = File(configPath);
+  static Future<SyncConfig> loadSyncConfig({String? filePath}) async {
+    final configPath = filePath ?? await AppPaths.syncConfigPath;
+    final configFile = File(configPath);
 
-      if (await configFile.exists()) {
-        final jsonString = await configFile.readAsString();
-        AppLogger.info('从应用目录加载同步配置: $configPath');
-        return SyncConfig.fromJson(jsonDecode(jsonString));
-      }
-    } catch (e) {
-      AppLogger.info('从应用目录加载同步配置失败，尝试文档目录: $e');
+    if (await configFile.exists()) {
       try {
-        // 回退到文档目录
-        final appDir = await getApplicationDocumentsDirectory();
-        final configFile = File(path.join(appDir.path, 'sync_config.json'));
-
-        if (await configFile.exists()) {
-          final jsonString = await configFile.readAsString();
-          AppLogger.info('从文档目录加载同步配置');
-          return SyncConfig.fromJson(jsonDecode(jsonString));
+        AppLogger.info('从应用目录加载同步配置: $configPath');
+        return await _readConfigFile(configFile);
+      } catch (primaryError) {
+        AppLogger.info('同步配置读取失败，尝试最近备份: $primaryError');
+        final backupFile = File(
+          '${configFile.path}${AtomicFileWriter.backupSuffix}',
+        );
+        if (await backupFile.exists()) {
+          return await _readConfigFile(backupFile);
         }
-      } catch (fallbackError) {
-        AppLogger.info('加载同步配置完全失败: $fallbackError');
+        rethrow;
       }
     }
 
     return SyncConfig(); // 返回默认配置
+  }
+
+  static Future<SyncConfig> _readConfigFile(File configFile) async {
+    final decoded = jsonDecode(await configFile.readAsString());
+    if (decoded is! Map<String, dynamic>) {
+      throw const FormatException('同步配置JSON结构无效');
+    }
+    return SyncConfig.fromJson(decoded);
   }
 
   /// 检查是否需要同步

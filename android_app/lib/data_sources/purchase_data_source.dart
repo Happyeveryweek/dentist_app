@@ -1,4 +1,5 @@
 import '../models/purchase_record.dart';
+import '../models/purchase_item.dart';
 
 // 抽象采购数据源接口
 abstract class PurchaseDataSource {
@@ -20,7 +21,10 @@ abstract class PurchaseDataSource {
 
   // 采购项目明细相关方法
   Future<List<dynamic>> getPurchaseItemsByRecordId(int recordId);
-  Future<int> createPurchaseItem(dynamic item);
-  Future<bool> updatePurchaseItem(dynamic item);
-  Future<bool> deletePurchaseItem(int itemId);
+  Future<int> createPurchaseItemWithTotals(PurchaseItem item);
+  Future<bool> updatePurchaseItemWithTotals(PurchaseItem item);
+  Future<bool> deletePurchaseItemWithTotals(
+    int itemId, {
+    required int purchaseRecordId,
+  });
 }

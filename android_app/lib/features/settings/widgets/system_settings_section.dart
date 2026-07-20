@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/providers/settings_provider.dart';
-import 'package:dentist_app/providers/app_state.dart';
+import 'package:dentist_app/providers/user_provider.dart';
 
 /// 系统设置区域组件
 /// 负责显示通知设置、账户管理、退出登录等功能
@@ -73,9 +73,9 @@ class SystemSettingsSection extends StatelessWidget {
                       const SizedBox(height: 16),
 
                       // 当前用户信息
-                      Consumer<AppState>(
-                        builder: (context, appState, _) {
-                          final currentUser = appState.currentUser;
+                      Consumer<UserProvider>(
+                        builder: (context, userProvider, _) {
+                          final currentUser = userProvider.currentUser;
                           if (currentUser != null) {
                             return Container(
                               padding: const EdgeInsets.all(12),

@@ -5,11 +5,15 @@ import '../../../providers/user_provider.dart';
 mixin AppointmentPermissionMixin {
   // UserProvider引用（用于权限检查）
   UserProvider? _userProvider;
+  int? _sessionRevision;
 
   // 设置UserProvider引用
   void setUserProvider(UserProvider userProvider) {
     _userProvider = userProvider;
+    _sessionRevision = userProvider.sessionRevision;
   }
+
+  int? get sessionRevision => _sessionRevision;
 
   // 获取医生过滤条件
   String? getDoctorFilter() {

@@ -4,6 +4,7 @@
 
 ### Windows 端
 
+- 工程规则已精简：根规则合并重复的命令、格式化、测试和验证说明，Windows 子规则只保留平台差异；静态检查新增订阅和 Sink 释放 lint。
 - Windows 端第二轮代码审核整改正在实施：进度 1、2 已完成代码与自动验证。密码写入、默认管理员和登录认证均统一为 PBKDF2-HMAC-SHA256；历史 SHA-256、MD5 与明文仅保留兼容验证，并会在成功登录后升级。固定密码不再可绕过任意账户认证，完整范围见 [审核整改执行方案](windows_app/docs/windows_app_code_audit_remediation_plan_2026_07_19.md) 。
 - Windows 端高风险复审整改方案已建立：覆盖患者权限、采购／预约失败关闭、MySQL 删除与恢复原子性和登出会话清理；持久化同步任务已从方案删除，详见 [高风险整改方案](windows_app/docs/windows_app_high_risk_remediation_plan_2026_07_19.md) 。
 - Windows 端高风险复审整改批次 0～2 已完成：患者 SQLite／MySQL 全量、分页、搜索和按 ID 读取统一失败关闭；采购与预约缺少身份、权限 Provider 或医生字段时均拒绝访问，用户切换会失效相关缓存。主人确认按自动验证完成，详见 [高风险整改方案](windows_app/docs/windows_app_high_risk_remediation_plan_2026_07_19.md) 。
@@ -17,7 +18,9 @@
 
 ### Android 端
 
-- Android 端现用代码审核已完成，确认权限边界、默认弱密码、用户编辑清空密码、密码算法分裂、采购复合写入、患者删除、配置降级、同步范围、MySQL 直连与系统性硬编码等问题；审核报告和分批整改方案已建立，当前仅完成只读基线，业务整改尚未开始。详见 [审核报告](android_app/docs/android_app_code_audit_report_2026_07_19.md) 和 [整改方案](android_app/docs/android_app_code_audit_remediation_plan_2026_07_19.md) 。
+- 工程规则已精简：Android 子规则只保留平台差异；静态检查新增原始泛型、订阅和 Sink 释放约束。
+- Android 端代码审核整改批次 1、2 已完成代码与自动验证：密码写入、默认管理员和登录认证均统一为 PBKDF2-HMAC-SHA256；历史 SHA-256、MD5 与明文仅保留兼容验证，并会在成功登录后升级；编辑留空密码不再被改写。新数据库仅创建 `admin / 123456`，不再创建 staff；SQLite／MySQL 人工回归待执行。详见 [审核报告](android_app/docs/android_app_code_audit_report_2026_07_19.md) 和 [整改方案](android_app/docs/android_app_code_audit_remediation_plan_2026_07_19.md) 。
+- Android 端代码审核整改批次 4～6 已完成：会话唯一真源收口到 `UserProvider`，退出与换用户会使权限和业务缓存失效；采购明细与汇总改为 SQLite／MySQL 同事务且非幂等写入不自动重放；配置采用临时文件替换和备份恢复，同步严格使用已保存表范围。患者删除按主人决定保持现状；主人确认按现有验证收口。
 - 采购列表项目数已修复：列表按采购明细条数显示项目数，不再误用总采购数量；自动测试与静态检查通过，待真机确认。
 - Android 构建链已迁移至 AGP 9.2／Gradle 9.4.1 和 Built-in Kotlin，`flutter_file_dialog`、`shared_preferences_android` 已升级至兼容实现；debug APK 构建不再输出 Gradle、AGP、Kotlin 或 KGP 兼容性警告。
 - 无用代码与重复实现治理已完成批次 0～5；批次 6～7 已暂缓，结论见 [治理总结](android_app/docs/android_app_dead_code_and_duplicate_logic_governance_summary_2026_07_13.md) 。
@@ -34,14 +37,17 @@
 ## 待办与阻塞
 
 - Windows 端：第二轮审核整改进度 1～7 已完成，主人确认按现有验证收口。高风险整改方案批次 0～2 已完成，批次 3、5 代码完成并待 MySQL 删除／恢复和登出／切换用户人工回归；批次 4（持久化同步任务）已按主人决定从方案删除；批次 6 被既有 `build/test_cache` 编译缓存冲突阻塞。主人明确保留本地“记住用户名密码”，因此密码仍会明文保存于应用偏好文件。此前治理批次 0～5 的启动、提示、权限、用户头像、患者排序、预约刷新、数据源切换、备份恢复、PDF／采购图片导出、文件选择及四模块 SQLite/MySQL 连接与同步人工回归仍待确认。
-- Android 端：现用代码审核整改批次 1～6、8 待实施；批次 7（MySQL 架构、网络与原生权限）已从方案删除，应用按受控局域网使用，保留直连 MySQL、现有网络／原生权限和本地“记住密码”方案。默认账号规则已确认，新数据库删除 `staff / 123456` 创建逻辑，只保留经统一密码服务哈希保存的 `admin / 123456`。应先处理权限、密码服务和用户编辑误改密码，再处理采购事务、患者删除与配置同步。数据可见范围和患者删除策略仍需按整改方案在实施前确认。此前后续治理已完成，UI、SQLite、MySQL 及登录／Dashboard 图片人工回归未执行但主人已确认按自动验证完成。财务表单和牙齿状况展示重复逻辑仅随相关需求实施；图表及日期范围不纳入计划，除非统计页改版、需统一产品规则或出现实际缺陷。
+- Android 端：审核整改批次 1～6 已完成；批次 7 待实施。患者删除按主人决定保持现有删除全部关联数据行为，本轮不修改。MySQL 凭证本地保存、直连架构、网络与原生权限不纳入整改，应用按受控局域网使用；配置有效但 MySQL 连接失败时仍自动切换本地 SQLite。此前后续治理已完成，UI、SQLite、MySQL 及登录／Dashboard 图片人工回归未执行但主人已确认按自动验证完成。
 - 阻塞：无。
 
 ## 最近验证
 
+- 2026-07-20：Android 审核整改批次 4～6 完成。当前用户唯一真源收口到 `UserProvider`，退出清理权限和业务缓存且旧会话请求不能回填缓存；采购明细及汇总在 SQLite／MySQL 同一事务提交，非幂等采购写入不自动重放；数据库与同步配置原子保存并保留备份，损坏配置不删除或静默改为 SQLite，同步严格按已选表和依赖顺序执行。患者删除保持现状。全量 `flutter test --no-pub` 17 项通过，`flutter analyze --no-pub` 为 `No issues found!`；主人确认按现有验证收口。
+- 2026-07-20：工程规范精简与 lint 基线收紧完成。硬编码规则改为按配置、业务枚举和视觉 token 分类管理；两端启用 `cancel_subscriptions` 和 `close_sinks`，Android 额外启用 `strict-raw-types`；`.gitignore` 补齐 `.env*` 保护，README 同步双子项目结构、验证顺序和中文提交示例。Windows 与 Android 的 `flutter analyze --no-pub` 均为 `No issues found!`，`git diff --check` 与本次改动文件 LF 行尾检查通过。
+- 2026-07-20：Android 端审核整改批次 1、2 完成代码实施。新增 `PasswordService`，新写入密码统一使用 PBKDF2-HMAC-SHA256；历史 SHA-256、MD5 与明文仅在认证成功时兼容并升级。新数据库仅创建 admin，编辑留空密码不再改写密码列，用户新增／编辑／删除提示按真实结果显示。`flutter test --no-pub test/features/users/services/password_service_test.dart` 4 项通过，`flutter analyze --no-pub` 为 `No issues found!`；SQLite／MySQL 人工回归待执行。批次 3 因数据权限矩阵未确认尚未开始。
 - 2026-07-19：Windows 端高风险整改批次 3、5 完成代码实施：MySQL 患者删除链路改为事务提交／回滚，不再切换 `FOREIGN_KEY_CHECKS`；MySQL 转储恢复首错即停，并在 `finally` 恢复外键检查；登出跳转前清除用户、权限和业务缓存。`flutter analyze --no-pub` 为 `No issues found!`，`flutter test --no-pub` 在既有 `build/test_cache` 文件冲突的编译阶段失败，未运行测试；`git diff --check` 与 LF 行尾检查通过。批次 3、5 待人工回归，批次 6 阻塞。
 - 2026-07-19：Windows 端高风险整改批次 0～2 完成。新增患者 SQLite 权限回归测试，覆盖管理员、医生和无访问身份；患者 SQLite／MySQL 数据源全量读取统一应用医生条件，无用户／无医生身份失败关闭；采购与预约缺少权限上下文时不再放行，身份切换清除缓存。专项 6 项、全量 `flutter test --no-pub` 89 项通过，`flutter analyze --no-pub` 为 `No issues found!`；MySQL 实连与 UI 权限人工回归未执行。
-- 2026-07-19：根据受控局域网使用决定，从 Android 整改方案直接删除批次 7（MySQL 架构、网络与原生权限），批次 8 编号保持不变；保留直连 MySQL、现有原生配置和本地“记住密码”方案。本次仅更新文档，未修改代码。
+- 2026-07-19：根据受控局域网使用决定，从 Android 审核报告和整改方案删除“客户端直接持有 MySQL 凭证”问题及相关架构、网络与原生权限整改任务；保留本地 MySQL 配置、直连 MySQL、现有原生配置和本地“记住密码”方案。原批次 8 顺延为批次 7，现有整改批次连续编号为 0～7。本次仅更新文档，未修改代码。
 - 2026-07-19：Windows 端高风险复审整改方案创建完成，覆盖患者权限泄漏、权限失败关闭、MySQL 删除／恢复原子性、持久化同步和登出会话清理；本次仅新增方案文档并更新进度，未修改业务代码或执行新的 Flutter 验证。
 - 2026-07-19：Android 默认账号整改规则已确认并同步到审核报告与整改方案：删除新数据库的 `staff / 123456` 创建逻辑，只保留 `admin / 123456`；默认 admin 后续必须通过统一密码服务哈希保存，不能作为任意账户的通用密码。本次仅更新文档，业务代码尚未修改。
 - 2026-07-19：Android 端现用代码只读审核完成。审核覆盖 272 个 Dart 文件以及 Manifest、网络安全、认证、权限、患者、采购、同步和配置主链路，新增详细审核报告与含进度表的整改方案；`cmd.exe /c flutter analyze` 为 `No issues found!`。本次未修改业务代码，未执行 SQLite／MySQL 写入或真机回归。

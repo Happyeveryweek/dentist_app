@@ -9,7 +9,7 @@ import 'users_screen.dart';
 import 'settings_screen.dart';
 import 'login_screen.dart';
 import '../theme/app_theme.dart';
-import '../providers/app_state.dart';
+import '../providers/user_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -55,10 +55,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AppState>(
-      builder: (context, appState, child) {
+    return Consumer<UserProvider>(
+      builder: (context, userProvider, child) {
         // 检查登录状态
-        if (!appState.isLoggedIn) {
+        if (userProvider.currentUser == null) {
           return const LoginScreen();
         }
 

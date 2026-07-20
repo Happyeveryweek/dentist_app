@@ -54,6 +54,7 @@ class UserProvider extends ChangeNotifier {
 
   // 当前用户信息
   User? _currentUser;
+  int _sessionRevision = 0;
 
   // 用户列表缓存
   List<User> _users = [];
@@ -64,6 +65,7 @@ class UserProvider extends ChangeNotifier {
   // Getters
   bool get initialized => _database != null || _currentMysqlConnection != null;
   User? get currentUser => _currentUser;
+  int get sessionRevision => _sessionRevision;
   List<User> get users => _users;
   String? get error => _error;
   bool get isConnected => _connectionService.isConnected;
@@ -347,9 +349,15 @@ class UserProvider extends ChangeNotifier {
   Future<User?> authenticateUser(String username, String password) async {
     final service = _authenticationService;
     if (service == null) return null;
+    _sessionRevision++;
+    _currentUser = null;
+    clearPermissionsCache();
+    clearCache();
+    notifyListeners();
     final user = await service.authenticateUser(username, password);
     if (user != null) {
       _currentUser = user;
+      notifyListeners();
     }
     return user;
   }
@@ -377,6 +385,7 @@ class UserProvider extends ChangeNotifier {
         _sqliteDataSource = sqliteDataSource;
         _dataSourceType = 'sqlite';
         _currentUser = user;
+        notifyListeners();
         AppLogger.info('离线SQLite认证成功，已切换到本地数据源');
       }
       return user;
@@ -399,12 +408,14 @@ class UserProvider extends ChangeNotifier {
 
   // 用户登出
   void logout() {
-    UserSessionService.logout(
-      _currentUser,
-      clearPermissionsCache,
-      notifyListeners,
-    );
+    final previousUser = _currentUser;
+    _sessionRevision++;
     _currentUser = null;
+    UserSessionService.logout(previousUser, clearPermissionsCache);
+    clearCache();
+    _users = [];
+    _error = null;
+    notifyListeners();
   }
 
   // 搜索用户

@@ -6,6 +6,13 @@ import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/models/database_config.dart';
 import 'package:dentist_app/providers/database_provider.dart';
 import 'package:dentist_app/providers/app_state.dart';
+import 'package:dentist_app/providers/appointments_provider.dart';
+import 'package:dentist_app/providers/financial_provider.dart';
+import 'package:dentist_app/providers/medical_record_provider.dart';
+import 'package:dentist_app/providers/patient_image_provider.dart';
+import 'package:dentist_app/providers/patient_provider.dart';
+import 'package:dentist_app/providers/purchase_provider.dart';
+import 'package:dentist_app/providers/user_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dentist_app/widgets/confirm_dialogs.dart';
@@ -716,8 +723,8 @@ class _SettingsScreenState extends State<SettingsScreen>
   // 显示退出登录对话框
   void _showLogoutDialog() {
     // 获取当前用户信息
-    final appState = Provider.of<AppState>(context, listen: false);
-    final currentUser = appState.currentUser;
+    final currentUser =
+        Provider.of<UserProvider>(context, listen: false).currentUser;
 
     // 使用公共组件显示退出登录对话框
     LogoutConfirmDialogManager.show(
@@ -733,11 +740,39 @@ class _SettingsScreenState extends State<SettingsScreen>
   // 执行退出登录
   void _performLogout() async {
     try {
-      // 获取应用状态管理器
-      final appState = Provider.of<AppState>(context, listen: false);
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final patientProvider = Provider.of<PatientProvider>(
+        context,
+        listen: false,
+      );
+      final appointmentsProvider = Provider.of<AppointmentsProvider>(
+        context,
+        listen: false,
+      );
+      final financialProvider = Provider.of<FinancialProvider>(
+        context,
+        listen: false,
+      );
+      final purchaseProvider = Provider.of<PurchaseProvider>(
+        context,
+        listen: false,
+      );
+      final patientImageProvider = Provider.of<PatientImageProvider>(
+        context,
+        listen: false,
+      );
+      final medicalRecordProvider = Provider.of<MedicalRecordProvider>(
+        context,
+        listen: false,
+      );
 
-      // 清除登录状态
-      appState.logout();
+      userProvider.logout();
+      await patientProvider.forceRefreshPatients();
+      appointmentsProvider.clearCache();
+      financialProvider.clearCache();
+      purchaseProvider.clearCache();
+      patientImageProvider.clearAllCache();
+      medicalRecordProvider.clearAllCache();
 
       // 显示退出成功消息
       if (mounted) {

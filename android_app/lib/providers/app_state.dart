@@ -1,38 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/user.dart';
 import '../utils/app_logger.dart';
 
 // 全局应用状态管理类
 class AppState extends ChangeNotifier {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
-  // 登录状态管理
-  bool _isLoggedIn = false;
-  User? _currentUser;
-
-  bool get isLoggedIn => _isLoggedIn;
-  User? get currentUser => _currentUser;
-
-  // 设置登录状态
-  void setLoggedIn(bool value) {
-    _isLoggedIn = value;
-    notifyListeners();
-  }
-
-  // 设置当前用户
-  void setCurrentUser(User user) {
-    _currentUser = user;
-    _isLoggedIn = true;
-    notifyListeners();
-  }
-
-  // 清除用户信息并登出
-  void logout() {
-    _currentUser = null;
-    _isLoggedIn = false;
-    notifyListeners();
-  }
 
   // 强制重建整个应用
   void forceRefresh() {
