@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
 import '../models/user.dart';
+import '../models/database_config.dart';
 import '../models/database_models.dart' show DatabaseHelper;
 import '../utils/database_operation_wrapper.dart';
 import '../data_sources/user_data_source.dart';
@@ -63,7 +64,8 @@ class UserProvider extends ChangeNotifier {
   String? _error;
 
   // Getters
-  bool get initialized => _database != null || _currentMysqlConnection != null;
+  bool get initialized => _isInitializedFlag;
+  String get dataSourceType => _dataSourceType;
   User? get currentUser => _currentUser;
   int get sessionRevision => _sessionRevision;
   List<User> get users => _users;
@@ -249,10 +251,11 @@ class UserProvider extends ChangeNotifier {
 
   // 从DatabaseProvider获取数据库连接（保持向后兼容）
   Future<void> initializeFromDatabase(dynamic dbProvider) async {
-    if (_isInitializedFlag) return;
+    final targetDataSourceType = dbProvider.dbType as String;
+    if (_isInitializedFlag && _dataSourceType == targetDataSourceType) return;
 
     try {
-      AppLogger.info('UserProvider开始初始化...');
+      AppLogger.info('UserProvider开始初始化，目标数据源: $targetDataSourceType');
 
       // 保存DatabaseProvider引用
       _databaseProvider = dbProvider;
@@ -263,6 +266,11 @@ class UserProvider extends ChangeNotifier {
       _database = result.database;
       _mysqlConnection = result.mysqlConnection;
       _dataSourceType = result.dataSourceType;
+      if (_dataSourceType == 'sqlite') {
+        _mysqlDataSource = null;
+      } else {
+        _sqliteDataSource = null;
+      }
       final conn = _mysqlConnection;
       final db = _database;
       if (_dataSourceType == 'mysql' && conn != null) {
@@ -397,6 +405,8 @@ class UserProvider extends ChangeNotifier {
 
   Future<SqliteUserDataSource?> _loadLocalSqliteDataSource() async {
     try {
+      final dbConfig = await DatabaseConfig.loadConfig();
+      DatabaseHelper.setCustomDbPath(dbConfig.sqlite.path);
       final database = await DatabaseHelper().database;
       _database = database;
       return SqliteUserDataSource(database);

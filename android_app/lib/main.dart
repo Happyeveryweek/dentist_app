@@ -265,7 +265,9 @@ void main() async {
           create: (_) => UserProvider(),
           update: (_, dbProvider, userProvider) {
             userProvider ??= UserProvider();
-            if (dbProvider.isInitialized && !userProvider.initialized) {
+            if (dbProvider.isInitialized &&
+                (!userProvider.initialized ||
+                    userProvider.dataSourceType != dbProvider.dbType)) {
               userProvider.initializeFromDatabase(dbProvider);
             }
             return userProvider;

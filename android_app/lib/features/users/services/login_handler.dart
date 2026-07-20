@@ -34,7 +34,17 @@ class LoginHandler {
         return;
       }
 
-      // 验证用户登录（authenticateUser 内部会处理 UserProvider 的初始化）
+      // 登录前确保用户认证服务已绑定到当前运行时数据源。
+      await userProvider.initializeFromDatabase(dbProvider);
+      if (!userProvider.initialized ||
+          userProvider.dataSourceType != dbProvider.dbType) {
+        if (context.mounted) {
+          LoadingDialog.hide(context);
+          MessageToastHelper.showError(context, '本地数据库切换失败，请重启应用');
+        }
+        return;
+      }
+
       final user = await userProvider.authenticateUser(username, password);
 
       // 隐藏加载提示

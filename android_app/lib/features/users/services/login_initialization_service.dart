@@ -44,7 +44,8 @@ class LoginInitializationService {
       AppLogger.info('🔄 等待 UserProvider 初始化...');
 
       // 第二步：等待 UserProvider 初始化
-      if (!userProvider.initialized) {
+      if (!userProvider.initialized ||
+          userProvider.dataSourceType != dbProvider.dbType) {
         try {
           await userProvider.initializeFromDatabase(dbProvider);
         } catch (e) {
@@ -62,12 +63,15 @@ class LoginInitializationService {
 
       // 等待 UserProvider 完全初始化（最多等待2秒）
       retryCount = 0;
-      while (!userProvider.initialized && retryCount < 20) {
+      while ((!userProvider.initialized ||
+              userProvider.dataSourceType != dbProvider.dbType) &&
+          retryCount < 20) {
         await Future.delayed(const Duration(milliseconds: 100));
         retryCount++;
       }
 
-      if (!userProvider.initialized) {
+      if (!userProvider.initialized ||
+          userProvider.dataSourceType != dbProvider.dbType) {
         AppLogger.info('❌ UserProvider 初始化超时');
         if (context.mounted) {
           onInitializationComplete(false);

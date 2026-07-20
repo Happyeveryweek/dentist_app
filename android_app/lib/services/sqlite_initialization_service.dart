@@ -51,6 +51,7 @@ class SQLiteInitializationService {
 
     // 设置数据库路径
     _dbPath = config.sqlite.path;
+    DatabaseHelper.setCustomDbPath(_dbPath);
     AppLogger.info('SQLite数据库路径: $_dbPath');
 
     // 初始化 SQLite 数据库
@@ -83,6 +84,7 @@ class SQLiteInitializationService {
         await config.saveConfig();
       }
       _dbPath = config.sqlite.path;
+      DatabaseHelper.setCustomDbPath(_dbPath);
 
       // 确保目录存在
       final dbDir = Directory(path.dirname(_dbPath));

@@ -70,6 +70,7 @@ class SyncManager {
       }
 
       try {
+        DatabaseHelper.setCustomDbPath(dbConfig.sqlite.path);
         final sqliteDb = await DatabaseHelper().database;
         final insertionOrder = SyncTableConfig.insertionOrder(
           syncConfig.syncTables,

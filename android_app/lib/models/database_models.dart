@@ -22,6 +22,7 @@ class DatabaseHelper {
 
   // 设置自定义数据库路径
   static void setCustomDbPath(String dbPath) {
+    if (_customDbPath == dbPath) return;
     _customDbPath = dbPath;
     _database = null; // 清除现有数据库实例，以便重新连接
   }
