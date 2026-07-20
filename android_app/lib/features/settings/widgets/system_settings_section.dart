@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/providers/settings_provider.dart';
 import 'package:dentist_app/providers/user_provider.dart';
+import 'package:dentist_app/widgets/user_avatar.dart';
 
 /// 系统设置区域组件
 /// 负责显示通知设置、账户管理、退出登录等功能
@@ -92,19 +93,11 @@ class SystemSettingsSection extends StatelessWidget {
                               ),
                               child: Row(
                                 children: [
-                                  CircleAvatar(
+                                  UserAvatar(
+                                    imageData: currentUser.imageData,
+                                    username: currentUser.username,
+                                    role: currentUser.role,
                                     radius: 20,
-                                    backgroundColor: AppTheme.primaryColor,
-                                    child: Text(
-                                      currentUser.username.isNotEmpty
-                                          ? currentUser.username[0]
-                                              .toUpperCase()
-                                          : 'U',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
