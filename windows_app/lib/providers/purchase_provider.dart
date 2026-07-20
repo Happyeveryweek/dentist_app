@@ -10,6 +10,8 @@ import '../providers/database_provider.dart';
 import '../models/user.dart';
 import '../models/purchase_record.dart';
 import '../models/purchase_item.dart';
+import '../models/app_module.dart';
+import '../models/data_source.dart';
 import '../providers/user_provider.dart';
 import '../data_sources/purchase_data_source.dart';
 import '../utils/purchase_migration.dart';
@@ -96,7 +98,8 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 获取有效的数据源类型（考虑模块化配置）
   String get _effectiveDataSourceType {
-    final moduleType = _moduleDataSources?['purchase'];
+    final moduleType =
+        _moduleDataSources?[AppModule.purchase.dataSourceConfigKey];
     if (moduleType != null) {
       return moduleType;
     }
@@ -144,9 +147,9 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 获取当前数据源（必须可用，否则抛出异常）
   PurchaseDataSource get _currentDataSource {
-    final effectiveType = _effectiveDataSourceType;
+    final effectiveType = DataSourceType.tryParse(_effectiveDataSourceType);
 
-    if (effectiveType == 'mysql') {
+    if (effectiveType == DataSourceType.mysql) {
       // 如果要求使用MySQL但未初始化，尝试降级到SQLite
       final mysqlDataSource = _mysqlDataSource;
       if (mysqlDataSource == null) {
@@ -158,13 +161,14 @@ class PurchaseProvider extends ChangeNotifier {
         throw Exception('MySQL采购数据源未初始化 - 模块配置要求使用MySQL但数据源未设置');
       }
       return mysqlDataSource;
-    } else {
+    } else if (effectiveType == DataSourceType.sqlite) {
       final sqliteDataSource = _sqliteDataSource;
       if (sqliteDataSource == null) {
         throw Exception('SQLite采购数据源未初始化');
       }
       return sqliteDataSource;
     }
+    throw StateError('未知采购数据源类型: $_effectiveDataSourceType');
   }
 
   // 获取最新的MySQL连接（防止连接过期）
@@ -387,7 +391,7 @@ class PurchaseProvider extends ChangeNotifier {
     LogManager.w('PurchaseProvider',
         'PurchaseProvider.updateModuleDataSources - 当前需要的数据源类型: $requiredType');
 
-    if (requiredType == 'mysql' && _mysqlDataSource == null) {
+    if (requiredType.isMySqlDataSource && _mysqlDataSource == null) {
       LogManager.w('PurchaseProvider', '⚠️ 警告：模块配置要求使用MySQL，但MySQL数据源未初始化');
       LogManager.w('PurchaseProvider', '⚠️ MySQL连接状态');
 
@@ -405,7 +409,7 @@ class PurchaseProvider extends ChangeNotifier {
           LogManager.e('PurchaseProvider', '❌ 获取MySQL连接失败', error: e);
         }
       }
-    } else if (requiredType == 'sqlite' && _sqliteDataSource == null) {
+    } else if (requiredType.isSqliteDataSource && _sqliteDataSource == null) {
       LogManager.w('PurchaseProvider', '⚠️ 警告：模块配置要求使用SQLite，但SQLite数据源未初始化');
       LogManager.w('PurchaseProvider', '⚠️ SQLite连接状态');
 
@@ -438,7 +442,7 @@ class PurchaseProvider extends ChangeNotifier {
 
       // 如果是模块化模式且有模块配置，优先使用模块配置
       final purchaseType = moduleDataSources?['purchase'];
-      if (dataSourceMode == 'modular' && purchaseType != null) {
+      if (dataSourceMode.isModularDataSourceMode && purchaseType != null) {
         dbType = purchaseType;
       } else {
         // 否则使用全局配置
@@ -453,10 +457,10 @@ class PurchaseProvider extends ChangeNotifier {
 
       // 检查是否需要重新初始化
       if (_isInitialized && _lastInitializedDataSource == dbType) {
-        if (dbType == 'mysql' && _mysqlDataSource == null) {
+        if (dbType.isMySqlDataSource && _mysqlDataSource == null) {
           LogManager.w(
               'PurchaseProvider', '⚠️ PurchaseProvider检测到MySQL数据源未就绪，继续尝试初始化');
-        } else if (dbType == 'sqlite' && _sqliteDataSource == null) {
+        } else if (dbType.isSqliteDataSource && _sqliteDataSource == null) {
           LogManager.w(
               'PurchaseProvider', '⚠️ PurchaseProvider检测到SQLite数据源未就绪，继续尝试初始化');
         } else {
@@ -486,7 +490,7 @@ class PurchaseProvider extends ChangeNotifier {
       }
 
       // 输出使用的数据源类型
-      if (dataSourceMode == 'modular' &&
+      if (dataSourceMode.isModularDataSourceMode &&
           moduleDataSources != null &&
           moduleDataSources.containsKey('purchase')) {
         LogManager.w(
@@ -507,7 +511,7 @@ class PurchaseProvider extends ChangeNotifier {
       _dataSourceType = dbType;
 
       // 根据确定的数据源类型初始化对应的数据源
-      if (dbType == 'sqlite') {
+      if (dbType.isSqliteDataSource) {
         // 初始化SQLite数据源
         try {
           if (dbProvider.database != null) {
@@ -521,7 +525,7 @@ class PurchaseProvider extends ChangeNotifier {
         } catch (e) {
           LogManager.e('PurchaseProvider', '获取SQLite数据库失败', error: e);
         }
-      } else if (dbType == 'mysql') {
+      } else if (dbType.isMySqlDataSource) {
         // 初始化MySQL数据源
         try {
           final mysqlConnection = dbProvider.mysqlConnection;
@@ -595,20 +599,21 @@ class PurchaseProvider extends ChangeNotifier {
     final effectiveDataSourceType = _effectiveDataSourceType;
 
     // 根据数据源类型检查是否已完成迁移
-    if (effectiveDataSourceType == 'sqlite' && _sqliteMigrationCompleted) {
+    if (effectiveDataSourceType.isSqliteDataSource &&
+        _sqliteMigrationCompleted) {
       return;
     }
-    if (effectiveDataSourceType == 'mysql' && _mysqlMigrationCompleted) {
+    if (effectiveDataSourceType.isMySqlDataSource && _mysqlMigrationCompleted) {
       return;
     }
 
     try {
       final database = _database;
       final mysqlConnection = _mysqlConnection;
-      if (effectiveDataSourceType == 'sqlite' && database != null) {
+      if (effectiveDataSourceType.isSqliteDataSource && database != null) {
         await PurchaseMigration.addDoctorFieldToSQLite(database);
         _sqliteMigrationCompleted = true;
-      } else if (effectiveDataSourceType == 'mysql' &&
+      } else if (effectiveDataSourceType.isMySqlDataSource &&
           mysqlConnection != null) {
         await PurchaseMigration.addDoctorFieldToMySQL(mysqlConnection);
         _mysqlMigrationCompleted = true;

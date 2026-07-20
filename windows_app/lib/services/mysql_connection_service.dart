@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:mysql1/mysql1.dart';
 import '../utils/log_manager.dart';
+import '../config/app_defaults.dart';
 
 /// MySQL 连接服务
 /// 职责：MySQL 连接管理、连接测试、字符集设置
@@ -28,7 +29,7 @@ class MysqlConnectionService {
 
     // 使用 3 秒连接超时，快速失败以支持降级
     final connection = await MySqlConnection.connect(settings).timeout(
-      const Duration(seconds: 3),
+      MySqlConnectionPolicy.connectionTimeout,
       onTimeout: () => throw TimeoutException('MySQL 连接超时，请检查网络和服务器配置'),
     );
 
@@ -56,7 +57,7 @@ class MysqlConnectionService {
         try {
           // 测试现有连接（5 秒超时）
           await existingConnection.query('SELECT 1').timeout(
-                const Duration(seconds: 5),
+                MySqlConnectionPolicy.validationTimeout,
                 onTimeout: () => throw TimeoutException('MySQL 连接验证超时'),
               );
           LogManager.w('MysqlConnectionService', '现有 MySQL 连接可用');
@@ -80,7 +81,7 @@ class MysqlConnectionService {
           password: password,
         ),
       ).timeout(
-        const Duration(seconds: 3),
+        MySqlConnectionPolicy.connectionTimeout,
         onTimeout: () => throw TimeoutException('MySQL 连接超时，请检查网络和服务器配置'),
       );
 
@@ -116,10 +117,16 @@ class MysqlConnectionService {
           user: username,
           password: password,
         ),
+      ).timeout(
+        MySqlConnectionPolicy.userTestTimeout,
+        onTimeout: () => throw TimeoutException('MySQL 连接测试超时'),
       );
 
       // 测试连接是否成功
-      await conn.query('SELECT 1');
+      await conn.query('SELECT 1').timeout(
+            MySqlConnectionPolicy.userTestTimeout,
+            onTimeout: () => throw TimeoutException('MySQL 连接测试超时'),
+          );
 
       // 关闭连接
       await conn.close();

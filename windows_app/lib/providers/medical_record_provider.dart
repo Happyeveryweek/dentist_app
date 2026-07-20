@@ -16,6 +16,7 @@ import '../features/medical_records/services/medical_record_service.dart';
 import '../features/medical_records/helpers/medical_record_cache_helper.dart';
 import '../providers/user_provider.dart';
 import '../models/user.dart';
+import '../models/data_source.dart';
 import '../utils/medical_record_pdf_exporter.dart';
 import '../utils/log_manager.dart';
 
@@ -31,7 +32,8 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 同步服务
   MedicalRecordSyncService? _syncServiceInstance;
-  MedicalRecordSyncService get _syncService => _syncServiceInstance ??= MedicalRecordSyncService(
+  MedicalRecordSyncService get _syncService =>
+      _syncServiceInstance ??= MedicalRecordSyncService(
         getSyncMysqlConnection: () => _syncMysqlConnection,
         getEffectiveDataSourceType: () =>
             _effectiveDataSourceType ?? _dataSourceType,
@@ -39,7 +41,8 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 模板管理服务
   MedicalRecordTemplateService? _templateServiceInstance;
-  MedicalRecordTemplateService get _templateService => _templateServiceInstance ??= MedicalRecordTemplateService(
+  MedicalRecordTemplateService get _templateService =>
+      _templateServiceInstance ??= MedicalRecordTemplateService(
         getCurrentDataSource: () => _currentDataSource,
         setLoading: _setLoading,
         clearError: _clearError,
@@ -51,7 +54,8 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 数据源初始化服务
   MedicalRecordDataSourceInitializer? _dataSourceInitializerInstance;
-  MedicalRecordDataSourceInitializer get _dataSourceInitializer => _dataSourceInitializerInstance ??= MedicalRecordDataSourceInitializer(
+  MedicalRecordDataSourceInitializer get _dataSourceInitializer =>
+      _dataSourceInitializerInstance ??= MedicalRecordDataSourceInitializer(
         getDatabaseProvider: () => _databaseProvider,
         getUserProvider: () => _userProvider,
         getCurrentUser: () => _currentUser,
@@ -61,7 +65,8 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 权限检查服务
   MedicalRecordPermissionService? _permissionServiceInstance;
-  MedicalRecordPermissionService get _permissionService => _permissionServiceInstance ??= MedicalRecordPermissionService(
+  MedicalRecordPermissionService get _permissionService =>
+      _permissionServiceInstance ??= MedicalRecordPermissionService(
         getUserProvider: () => _userProvider,
         getCurrentUser: () => _currentUser,
         getMedicalRecordById: getMedicalRecordById,
@@ -69,7 +74,8 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 病历记录管理服务
   MedicalRecordService? _medicalRecordServiceInstance;
-  MedicalRecordService get _medicalRecordService => _medicalRecordServiceInstance ??= MedicalRecordService(
+  MedicalRecordService get _medicalRecordService =>
+      _medicalRecordServiceInstance ??= MedicalRecordService(
         getCurrentDataSource: () => _currentDataSource,
         setLoading: _setLoading,
         clearError: _clearError,
@@ -82,7 +88,8 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 缓存管理助手
   MedicalRecordCacheHelper? _cacheHelperInstance;
-  MedicalRecordCacheHelper get _cacheHelper => _cacheHelperInstance ??= MedicalRecordCacheHelper();
+  MedicalRecordCacheHelper get _cacheHelper =>
+      _cacheHelperInstance ??= MedicalRecordCacheHelper();
 
   // 用户权限提供者引用
   UserProvider? _userProvider;
@@ -140,9 +147,10 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // 获取当前数据源
   MedicalRecordDataSource? get _currentDataSource {
-    if (_effectiveDataSourceType == 'mysql') {
+    final type = DataSourceType.tryParse(_effectiveDataSourceType);
+    if (type == DataSourceType.mysql) {
       return _mysqlDataSource;
-    } else if (_effectiveDataSourceType == 'sqlite') {
+    } else if (type == DataSourceType.sqlite) {
       return _sqliteDataSource;
     }
     return null;

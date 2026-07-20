@@ -12,6 +12,7 @@ import '../providers/user_provider.dart';
 import '../models/user.dart';
 import '../models/financial_record.dart';
 import '../models/financial_item.dart';
+import '../models/data_source.dart';
 import '../data_sources/financial_data_source.dart';
 import '../features/financial/services/financial_query_service.dart';
 import '../features/financial/services/financial_sync_service.dart';
@@ -295,9 +296,9 @@ class FinancialProvider extends ChangeNotifier {
       _dataSourceType = _dataSourceInitializer.effectiveDataSourceType;
 
       // 更新本地数据库连接字段
-      if (_dataSourceType == 'sqlite') {
+      if (_dataSourceType.isSqliteDataSource) {
         _database = dbProvider.database;
-      } else if (_dataSourceType == 'mysql') {
+      } else if (_dataSourceType.isMySqlDataSource) {
         _mysqlConnection = dbProvider.mysqlConnection;
       }
 
@@ -332,7 +333,7 @@ class FinancialProvider extends ChangeNotifier {
     LogManager.w('FinancialProvider',
         'FinancialProvider.updateModuleDataSources - 当前需要的数据源类型: $requiredType');
 
-    if (requiredType == 'mysql' &&
+    if (requiredType.isMySqlDataSource &&
         _dataSourceInitializer.mysqlDataSource == null) {
       LogManager.w('FinancialProvider', '⚠️ 警告：模块配置要求使用MySQL，但MySQL数据源未初始化');
       LogManager.w('FinancialProvider', '⚠️ MySQL连接状态');
@@ -354,7 +355,7 @@ class FinancialProvider extends ChangeNotifier {
           LogManager.e('FinancialProvider', '❌ 获取MySQL连接失败', error: e);
         }
       }
-    } else if (requiredType == 'sqlite' &&
+    } else if (requiredType.isSqliteDataSource &&
         _dataSourceInitializer.sqliteDataSource == null) {
       LogManager.w('FinancialProvider', '⚠️ 警告：模块配置要求使用SQLite，但SQLite数据源未初始化');
       LogManager.w('FinancialProvider', '⚠️ SQLite连接状态');

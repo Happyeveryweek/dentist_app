@@ -3,6 +3,7 @@ import '../../../utils/datetime_formatter.dart';
 import '../../../models/user.dart';
 import 'package:flutter/foundation.dart';
 import '../../../utils/log_manager.dart';
+import '../../../models/data_source.dart';
 
 /// 用户同步服务
 /// 负责处理 SQLite → MySQL 的数据同步逻辑（从 UserProvider 中提取）
@@ -16,7 +17,7 @@ class UserSyncService {
   });
 
   /// 判断是否需要同步（当前使用 SQLite 数据源时需要同步到 MySQL）
-  bool get needsSync => getEffectiveDataSourceType() == 'sqlite';
+  bool get needsSync => getEffectiveDataSourceType().isSqliteDataSource;
 
   /// 尝试将SQLite中的用户同步到MySQL（非阻塞操作）
   Future<void> syncUserToMySQL(User user, {required bool isUpdate}) async {

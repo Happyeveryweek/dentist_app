@@ -5,6 +5,7 @@ import '../../../providers/database_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../models/backup_log.dart';
 import 'package:dentist_app_windows/utils/log_manager.dart';
+import '../../../models/data_source.dart';
 
 /// 备份恢复服务
 /// 负责数据库备份和恢复的业务逻辑
@@ -185,7 +186,7 @@ class BackupRestoreService {
   ///
   /// 返回选中的文件路径，如果用户取消则返回 null
   Future<String?> selectBackupFile() async {
-    final isMySQL = _settingsProvider.dataSourceType == 'mysql';
+    final isMySQL = _settingsProvider.dataSourceType.isMySqlDataSource;
 
     // 根据数据源类型选择不同的文件扩展名
     final allowedExtensions = isMySQL ? ['sql'] : ['db', 'sqlite', 'sqlite3'];
@@ -218,7 +219,7 @@ class BackupRestoreService {
       return '文件不存在';
     }
 
-    final isMySQL = _settingsProvider.dataSourceType == 'mysql';
+    final isMySQL = _settingsProvider.dataSourceType.isMySqlDataSource;
 
     // 验证文件类型
     if (isMySQL && !filePath.toLowerCase().endsWith('.sql')) {
@@ -239,7 +240,7 @@ class BackupRestoreService {
   ///
   /// 返回恢复结果
   Future<RestoreResult> performRestore(String filePath) async {
-    final isMySQL = _settingsProvider.dataSourceType == 'mysql';
+    final isMySQL = _settingsProvider.dataSourceType.isMySqlDataSource;
     String? preBackup;
 
     try {

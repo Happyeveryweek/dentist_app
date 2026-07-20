@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:mysql1/mysql1.dart';
 import '../utils/log_manager.dart';
+import '../config/app_defaults.dart';
 
 /// MySQL连接管理器 - 统一处理连接验证、重连和健康检查
 ///
@@ -17,10 +18,12 @@ class MySqlConnectionManager {
   DateTime? _lastValidationTime;
 
   // 连接验证间隔（避免频繁验证）
-  static const Duration _validationInterval = Duration(seconds: 30);
+  static const Duration _validationInterval =
+      MySqlConnectionPolicy.healthCheckInterval;
 
   // 连接验证超时时间
-  static const Duration _validationTimeout = Duration(seconds: 3);
+  static const Duration _validationTimeout =
+      MySqlConnectionPolicy.validationTimeout;
 
   MySqlConnectionManager({
     required Future<MySqlConnection?> Function() connectionProvider,

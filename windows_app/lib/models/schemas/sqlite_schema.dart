@@ -17,7 +17,7 @@ class SQLitePatientsTableSchema implements TableSchema {
         'gender': 'VARCHAR(10) NOT NULL',
         'phone': 'VARCHAR(100)',
         'identification_number': 'VARCHAR(100)',
-        'doctor': 'VARCHAR(100) DEFAULT \'申向歌\'',
+        'doctor': 'VARCHAR(100)',
         'address': 'VARCHAR(500)',
         'address_pinyin': 'VARCHAR(400)',
         'first_visit_date': 'TEXT NOT NULL',

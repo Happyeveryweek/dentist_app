@@ -46,34 +46,6 @@ class ThemeSection extends StatelessWidget {
     WindowsThemeVariant.peachPink: Icons.spa_outlined,
   };
 
-  static const _swatches = {
-    WindowsThemeVariant.medicalBlue: [
-      Color(0xFF2E7DB8),
-      Color(0xFF5BA8D6),
-      Color(0xFFF4F7FA),
-    ],
-    WindowsThemeVariant.slateBlue: [
-      Color(0xFF4F7CAC),
-      Color(0xFF6A9A8B),
-      Color(0xFFF3F5F7),
-    ],
-    WindowsThemeVariant.purplePinkGray: [
-      Color(0xFF9A78A8),
-      Color(0xFFC99AAD),
-      Color(0xFFF8F5F9),
-    ],
-    WindowsThemeVariant.freshGreen: [
-      Color(0xFF2F8F72),
-      Color(0xFF2E7DB8),
-      Color(0xFFF5F8F6),
-    ],
-    WindowsThemeVariant.peachPink: [
-      Color(0xFFC97888),
-      Color(0xFF8FA7A0),
-      Color(0xFFF9F6F4),
-    ],
-  };
-
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -107,7 +79,7 @@ class ThemeSection extends StatelessWidget {
                   title: _titles[variant]!,
                   subtitle: _subtitles[variant]!,
                   icon: _icons[variant]!,
-                  swatches: _swatches[variant]!,
+                  swatches: _swatchesFor(variant),
                   isSelected: variant == currentVariant,
                 );
               }).toList(),
@@ -116,5 +88,14 @@ class ThemeSection extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<Color> _swatchesFor(WindowsThemeVariant variant) {
+    final tokens = variant.tokens;
+    return [
+      tokens.primaryAccent,
+      tokens.secondaryAccent,
+      tokens.pageBackground,
+    ];
   }
 }

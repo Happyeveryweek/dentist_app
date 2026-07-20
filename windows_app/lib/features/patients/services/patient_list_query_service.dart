@@ -14,6 +14,8 @@ class PatientListPageResult {
 class PatientListQueryService {
   const PatientListQueryService._();
 
+  static const int exportBatchSize = 500;
+
   static Future<PatientListPageResult> loadPage({
     required PatientProvider patientProvider,
     required int page,
@@ -40,6 +42,40 @@ class PatientListQueryService {
       patients: patientsData['patients'] as List<Patient>,
       totalCount: patientsData['totalCount'] as int,
     );
+  }
+
+  static Future<List<Patient>> loadAllPages({
+    required PatientProvider patientProvider,
+    required String searchQuery,
+    required String sortField,
+    required bool sortAscending,
+    required DateTime? startDate,
+    required DateTime? endDate,
+    required String dateFilterType,
+  }) async {
+    final patients = <Patient>[];
+    var page = 1;
+
+    while (true) {
+      final result = await loadPage(
+        patientProvider: patientProvider,
+        page: page,
+        pageSize: exportBatchSize,
+        searchQuery: searchQuery,
+        sortField: sortField,
+        sortAscending: sortAscending,
+        startDate: startDate,
+        endDate: endDate,
+        dateFilterType: dateFilterType,
+      );
+      patients.addAll(result.patients);
+
+      if (patients.length >= result.totalCount ||
+          result.patients.length < exportBatchSize) {
+        return patients;
+      }
+      page++;
+    }
   }
 
   static Future<PatientListPageResult> loadAdvancedSearch({

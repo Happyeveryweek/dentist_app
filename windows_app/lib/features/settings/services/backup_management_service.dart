@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:dentist_app_windows/models/backup_log.dart';
 import 'package:dentist_app_windows/utils/log_manager.dart';
+import 'package:dentist_app_windows/models/data_source.dart';
 
 /// 备份管理服务
 /// 负责应用的备份和还原管理
@@ -312,11 +313,11 @@ class BackupManagementService {
       // 检查文件类型是否匹配数据源
       final fileType = detectRestoreFileType(filePath);
 
-      if (targetDataSource == 'mysql' && fileType != 'mysql') {
+      if (targetDataSource.isMySqlDataSource && !fileType.isMySqlDataSource) {
         return false;
       }
 
-      if (targetDataSource == 'sqlite' && fileType != 'sqlite') {
+      if (targetDataSource.isSqliteDataSource && !fileType.isSqliteDataSource) {
         return false;
       }
 

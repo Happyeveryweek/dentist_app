@@ -31,6 +31,9 @@ import 'utils/app_paths.dart';
 import 'utils/log_manager.dart';
 import 'utils/single_instance.dart';
 import 'services/medical_template_service.dart';
+import 'config/app_defaults.dart';
+import 'models/data_source.dart';
+import 'models/app_module.dart';
 
 void main() async {
   // 确保Flutter绑定初始化
@@ -43,7 +46,7 @@ void main() async {
       try {
         await windowManager.ensureInitialized();
         const duplicateWindowOptions = WindowOptions(
-          title: '牙科诊所管理系统',
+          title: defaultAppName,
           titleBarStyle: TitleBarStyle.normal,
           windowButtonVisibility: true,
         );
@@ -114,7 +117,7 @@ void main() async {
         LogManager.i('Main', 'main(): 初始化Windows窗口...');
         await windowManager.ensureInitialized();
         WindowOptions windowOptions = const WindowOptions(
-          title: '牙科诊所管理系统',
+          title: defaultAppName,
           titleBarStyle: TitleBarStyle.normal,
           windowButtonVisibility: true,
         );
@@ -314,7 +317,7 @@ class _AlreadyRunningScreenState extends State<AlreadyRunningScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                '检测到牙科诊所管理系统已经在运行。\n\n为了避免数据冲突，不允许重复打开多个实例。\n请切换到已打开的窗口继续操作。',
+                '检测到$defaultAppName已经在运行。\n\n为了避免数据冲突，不允许重复打开多个实例。\n请切换到已打开的窗口继续操作。',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium?.copyWith(
                   height: 1.6,
@@ -565,8 +568,8 @@ class _AppWithProvidersState extends State<AppWithProviders> {
       String dataSourceType = settings.dataSourceType;
       if (dataSourceType.isEmpty) {
         LogManager.w('Main', '数据源类型为空，使用默认SQLite');
-        dataSourceType = 'sqlite';
-        await settings.setDataSourceType('sqlite');
+        dataSourceType = DataSourceType.sqlite.storageValue;
+        await settings.setDataSourceType(DataSourceType.sqlite.storageValue);
       }
       LogManager.i('Main', '初始化数据源类型: $dataSourceType');
 
@@ -574,7 +577,7 @@ class _AppWithProvidersState extends State<AppWithProviders> {
       final dataSourceMode = settings.dataSourceMode;
       LogManager.i('Main', '数据源模式: $dataSourceMode');
 
-      if (dataSourceType == 'sqlite') {
+      if (dataSourceType == DataSourceType.sqlite.storageValue) {
         // 如果是SQLite，检查是否有自定义数据库路径
         String? sqliteDbPath = settings.sqliteDbPath;
         LogManager.i('Main', 'SQLite数据库路径: $sqliteDbPath');
@@ -586,11 +589,12 @@ class _AppWithProvidersState extends State<AppWithProviders> {
         );
         // 主动选择SQLite，不是MySQL失败，所以 isFailure = false
         appState.setMySQLConnectionStatus(false, isFailure: false);
-      } else if (dataSourceType == 'mysql') {
+      } else if (dataSourceType == DataSourceType.mysql.storageValue) {
         // 如果是MySQL，设置连接参数
         Map<String, dynamic> mysqlSettings = {
           'host': settings.mysqlHost,
-          'port': int.tryParse(settings.mysqlPort) ?? 3306,
+          'port': int.tryParse(settings.mysqlPort) ??
+              MySqlConnectionPolicy.defaultPort,
           'database': settings.mysqlDatabase,
           'username': settings.mysqlUsername,
           'password': settings.mysqlPassword,
@@ -609,37 +613,40 @@ class _AppWithProvidersState extends State<AppWithProviders> {
         } catch (mysqlError) {
           LogManager.e('Main', 'MySQL连接失败，自动回退到SQLite', error: mysqlError);
           // 自动回退到SQLite
-          await dbProvider.setDataSourceType('sqlite');
+          await dbProvider
+              .setDataSourceType(DataSourceType.sqlite.storageValue);
           // 更新设置中的数据源类型
-          await settings.setDataSourceType('sqlite');
+          await settings.setDataSourceType(DataSourceType.sqlite.storageValue);
           // MySQL连接失败，设置 isFailure = true
           appState.setMySQLConnectionStatus(false, isFailure: true);
         }
       } else {
         LogManager.w('Main', '未知的数据源类型，使用默认SQLite');
         // 默认使用SQLite，并确保设置被保存
-        await dbProvider.setDataSourceType('sqlite');
-        await settings.setDataSourceType('sqlite');
+        await dbProvider.setDataSourceType(DataSourceType.sqlite.storageValue);
+        await settings.setDataSourceType(DataSourceType.sqlite.storageValue);
         // 主动选择SQLite，不是MySQL失败
         appState.setMySQLConnectionStatus(false, isFailure: false);
       }
 
       // 如果是模块化模式，检查是否需要额外初始化MySQL连接
-      if (dataSourceMode == 'modular') {
+      if (dataSourceMode == DataSourceMode.modular.storageValue) {
         final moduleDataSources = settings.moduleDataSources;
         final affectedModules = moduleDataSources.entries
-            .where((entry) => entry.value == 'mysql')
+            .where((entry) => entry.value == DataSourceType.mysql.storageValue)
             .map((entry) => entry.key)
             .toList();
         final hasMySQLModules = affectedModules.isNotEmpty;
 
-        if (hasMySQLModules && dataSourceType != 'mysql') {
+        if (hasMySQLModules &&
+            dataSourceType != DataSourceType.mysql.storageValue) {
           LogManager.i('Main', '检测到模块化模式中有MySQL模块，初始化MySQL连接...');
 
           // 初始化MySQL连接
           Map<String, dynamic> mysqlSettings = {
             'host': settings.mysqlHost,
-            'port': int.tryParse(settings.mysqlPort) ?? 3306,
+            'port': int.tryParse(settings.mysqlPort) ??
+                MySqlConnectionPolicy.defaultPort,
             'database': settings.mysqlDatabase,
             'username': settings.mysqlUsername,
             'password': settings.mysqlPassword,
@@ -649,7 +656,7 @@ class _AppWithProvidersState extends State<AppWithProviders> {
           try {
             // 添加5秒的主级超时保险，防止长时间等待
             await dbProvider.initializeMySQLConnection(mysqlSettings).timeout(
-              const Duration(seconds: 5),
+              MySqlConnectionPolicy.modularInitializationTimeout,
               onTimeout: () {
                 LogManager.w('Main', 'MySQL连接初始化超时，自动降级到SQLite');
                 throw TimeoutException('MySQL连接超时');
@@ -669,19 +676,22 @@ class _AppWithProvidersState extends State<AppWithProviders> {
             final temporaryModuleDataSources =
                 Map<String, String>.from(settings.moduleDataSources);
             for (final module in affectedModules) {
-              temporaryModuleDataSources[module] = 'sqlite';
+              temporaryModuleDataSources[module] =
+                  DataSourceType.sqlite.storageValue;
               LogManager.w('Main', '临时切换 $module 模块到SQLite（不保存设置）');
             }
 
             // 更新各个Provider的模块数据源配置（仅运行时）
             if (!mounted) return;
-            if (affectedModules.contains('purchase')) {
+            if (affectedModules
+                .contains(AppModule.purchase.dataSourceConfigKey)) {
               final purchaseProvider =
                   Provider.of<PurchaseProvider>(context, listen: false);
               purchaseProvider
                   .updateModuleDataSources(temporaryModuleDataSources);
             }
-            if (affectedModules.contains('financial')) {
+            if (affectedModules
+                .contains(AppModule.financial.dataSourceConfigKey)) {
               final financialProvider =
                   Provider.of<FinancialProvider>(context, listen: false);
               financialProvider
@@ -713,7 +723,7 @@ class _AppWithProvidersState extends State<AppWithProviders> {
       Provider.of<FinancialProvider>(context, listen: false);
 
       // 在模块化模式下，需要同时传递SQLite和MySQL连接
-      if (dataSourceMode == 'modular') {
+      if (dataSourceMode == DataSourceMode.modular.storageValue) {
         // MaterialProvider已在ChangeNotifierProxyProvider中使用initializeFromDatabase初始化，无需重复初始化
         // PurchaseProvider和FinancialProvider已在ChangeNotifierProxyProvider中初始化，无需重复初始化
         // AppointmentProvider已在ChangeNotifierProxyProvider中使用initializeFromDatabase初始化，无需重复初始化
@@ -730,9 +740,9 @@ class _AppWithProvidersState extends State<AppWithProviders> {
       try {
         // 发生错误时，尝试使用默认SQLite
         LogManager.w('Main', '尝试使用默认SQLite初始化...');
-        await dbProvider.setDataSourceType('sqlite');
+        await dbProvider.setDataSourceType(DataSourceType.sqlite.storageValue);
         // 确保设置被保存
-        await settings.setDataSourceType('sqlite');
+        await settings.setDataSourceType(DataSourceType.sqlite.storageValue);
         LogManager.i('Main', '默认SQLite初始化成功');
       } catch (fallbackError, fallbackStackTrace) {
         LogManager.e('Main', '默认SQLite初始化也失败',
@@ -795,10 +805,11 @@ class _AppWithProvidersState extends State<AppWithProviders> {
 
     try {
       // 强制使用默认路径创建SQLite数据库
-      await dbProvider.setDataSourceType('sqlite', customSqlitePath: null);
+      await dbProvider.setDataSourceType(DataSourceType.sqlite.storageValue,
+          customSqlitePath: null);
 
       // 确保设置被保存
-      await settings.setDataSourceType('sqlite');
+      await settings.setDataSourceType(DataSourceType.sqlite.storageValue);
 
       LogManager.i('Main', '紧急SQLite数据库创建成功');
     } catch (e) {
@@ -861,7 +872,7 @@ class _AppWithProvidersState extends State<AppWithProviders> {
       final settings = Provider.of<SettingsProvider>(context);
 
       return MaterialApp(
-        title: '牙科诊所管理系统',
+        title: settings.appName,
         navigatorKey: appState.navigatorKey,
         theme: AppTheme.resolve(settings.windowsThemeVariant),
         builder: (context, child) {

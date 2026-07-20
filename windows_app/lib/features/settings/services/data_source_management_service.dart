@@ -3,32 +3,31 @@ import 'package:mysql1/mysql1.dart';
 import 'package:dentist_app_windows/utils/datetime_formatter.dart';
 import 'package:path/path.dart' as path;
 import '../../../utils/log_manager.dart';
+import '../../../config/app_defaults.dart';
+import '../../../models/data_source.dart';
+import '../../../models/app_module.dart';
 
 /// 数据源管理服务
 /// 负责数据源的配置和管理，包括SQLite和MySQL
 class DataSourceManagementService {
-  static const Map<String, String> _defaultModuleDataSources = {
-    'patients': 'sqlite',
-    'appointments': 'sqlite',
-    'financial': 'sqlite',
-    'materials': 'sqlite',
-    'purchase': 'sqlite',
-    'users': 'sqlite',
-    'medical': 'sqlite',
+  static final Map<String, String> _defaultModuleDataSources = {
+    for (final module in AppModule.values)
+      if (module.dataSourceConfigKey case final key?)
+        key: DataSourceType.sqlite.storageValue,
   };
 
-  String _dataSourceType = 'sqlite';
-  String _dataSourceMode = 'global';
+  String _dataSourceType = DataSourceType.sqlite.storageValue;
+  String _dataSourceMode = DataSourceMode.global.storageValue;
   String _sqliteDbPath = '';
   String _customSqliteDbPath = '';
   String _mysqlHost = '';
-  String _mysqlPort = '3306';
+  String _mysqlPort = '${MySqlConnectionPolicy.defaultPort}';
   String _mysqlDatabase = '';
   String _mysqlUsername = '';
   String _mysqlPassword = '';
   Map<String, dynamic>? _mysqlSettings;
   Map<String, dynamic>? _lastMySQLSettings;
-  String _backupDataSource = 'sqlite';
+  String _backupDataSource = DataSourceType.sqlite.storageValue;
   Map<String, String> _moduleDataSources =
       Map<String, String>.from(_defaultModuleDataSources);
 
@@ -52,7 +51,21 @@ class DataSourceManagementService {
   Map<String, String> _normalizeModuleDataSources(
       Map<String, String> moduleDataSources) {
     final normalized = Map<String, String>.from(_defaultModuleDataSources);
-    normalized.addAll(moduleDataSources);
+    for (final entry in moduleDataSources.entries) {
+      final module = AppModule.values.firstWhere(
+        (module) => module.dataSourceConfigKey == entry.key,
+        orElse: () => AppModule.dashboard,
+      );
+      final type = DataSourceType.tryParse(entry.value);
+      if (module.dataSourceConfigKey == null || type == null) {
+        LogManager.e(
+          'DataSourceManagementService',
+          '忽略未知模块或数据源配置: ${entry.key}=${entry.value}',
+        );
+        continue;
+      }
+      normalized[module.dataSourceConfigKey!] = type.storageValue;
+    }
     return normalized;
   }
 
@@ -65,7 +78,7 @@ class DataSourceManagementService {
   }) {
     return {
       'host': host,
-      'port': int.tryParse(port) ?? 3306,
+      'port': int.tryParse(port) ?? MySqlConnectionPolicy.defaultPort,
       'database': database,
       'username': username,
       'password': password,
@@ -74,7 +87,8 @@ class DataSourceManagementService {
 
   void _applyMySQLSettings(Map<String, dynamic> mysqlSettings) {
     _mysqlHost = mysqlSettings['host']?.toString() ?? '';
-    _mysqlPort = mysqlSettings['port']?.toString() ?? '3306';
+    _mysqlPort = mysqlSettings['port']?.toString() ??
+        '${MySqlConnectionPolicy.defaultPort}';
     _mysqlDatabase = mysqlSettings['database']?.toString() ?? '';
     _mysqlUsername = mysqlSettings['username']?.toString() ?? '';
     _mysqlPassword = mysqlSettings['password']?.toString() ?? '';
@@ -83,12 +97,14 @@ class DataSourceManagementService {
 
   /// 更新数据源类型
   void updateDataSourceType(String type) {
-    _dataSourceType = type;
+    _dataSourceType = DataSourceType.tryParse(type)?.storageValue ??
+        DataSourceType.sqlite.storageValue;
   }
 
   /// 更新数据源模式
   void updateDataSourceMode(String mode) {
-    _dataSourceMode = mode;
+    _dataSourceMode = DataSourceMode.tryParse(mode)?.storageValue ??
+        DataSourceMode.global.storageValue;
   }
 
   /// 更新SQLite路径
@@ -126,7 +142,7 @@ class DataSourceManagementService {
 
   /// 设置数据源模式
   void setDataSourceMode(String mode) {
-    _dataSourceMode = mode;
+    updateDataSourceMode(mode);
   }
 
   /// 设置数据源类型
@@ -135,9 +151,11 @@ class DataSourceManagementService {
     Map<String, dynamic>? mysqlSettings,
     String? customSqlitePath,
   }) {
-    _dataSourceType = type;
+    final parsedType = DataSourceType.tryParse(type);
+    if (parsedType == null) return;
+    _dataSourceType = parsedType.storageValue;
 
-    if (type == 'sqlite') {
+    if (parsedType == DataSourceType.sqlite) {
       if (customSqlitePath != null && customSqlitePath.isNotEmpty) {
         _customSqliteDbPath = customSqlitePath;
         _sqliteDbPath = customSqlitePath;
@@ -145,7 +163,7 @@ class DataSourceManagementService {
       return;
     }
 
-    if (type == 'mysql' && mysqlSettings != null) {
+    if (parsedType == DataSourceType.mysql && mysqlSettings != null) {
       _applyMySQLSettings(mysqlSettings);
     }
   }
@@ -176,14 +194,27 @@ class DataSourceManagementService {
 
   /// 设置备份数据源
   void setBackupDataSource(String dataSource) {
-    _backupDataSource = dataSource;
+    _backupDataSource = DataSourceType.tryParse(dataSource)?.storageValue ??
+        DataSourceType.sqlite.storageValue;
   }
 
   /// 设置模块数据源
   void setModuleDataSource(String module, String dataSource) {
+    final parsedModule = AppModule.values.firstWhere(
+      (moduleValue) => moduleValue.dataSourceConfigKey == module,
+      orElse: () => AppModule.dashboard,
+    );
+    final parsedType = DataSourceType.tryParse(dataSource);
+    if (parsedModule.dataSourceConfigKey == null || parsedType == null) {
+      LogManager.e(
+        'DataSourceManagementService',
+        '拒绝未知模块或数据源配置: $module=$dataSource',
+      );
+      return;
+    }
     _moduleDataSources = _normalizeModuleDataSources({
       ..._moduleDataSources,
-      module: dataSource,
+      parsedModule.dataSourceConfigKey!: parsedType.storageValue,
     });
   }
 
@@ -294,7 +325,7 @@ class DataSourceManagementService {
       final exportFileName = 'export_${_dataSourceType}_$timestamp';
 
       String exportPath;
-      if (_dataSourceType == 'mysql') {
+      if (_dataSourceType.isMySqlDataSource) {
         exportPath = '$exportFileName.sql';
       } else {
         exportPath = '$exportFileName.db';

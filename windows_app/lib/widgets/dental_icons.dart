@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import '../models/appointment_status.dart';
+import 'package:dentist_app_windows/theme/medical_semantic_colors.dart';
 // import 'package:line_icons/line_icons.dart'; // 暂时注释掉，使用FontAwesome替代
 
 class DentalIcons {
@@ -84,106 +86,6 @@ class DentalIcons {
   }
 }
 
-// 牙科主题颜色
-class DentalColors {
-  // 主色调 - 现代医疗蓝绿渐变
-  static const Color primary = Color(0xFF2196F3);
-  static const Color primaryLight = Color(0xFF64B5F6);
-  static const Color primaryDark = Color(0xFF1976D2);
-  static const Color secondary = Color(0xFF03DAC6);
-  static const Color tertiary = Color(0xFF00BCD4);
-  static const Color accent = Color(0xFF4FC3F7);
-
-  // 功能颜色
-  static const Color success = Color(0xFF4CAF50);
-  static const Color warning = Color(0xFFFF9800);
-  static const Color error = Color(0xFFF44336);
-  static const Color info = Color(0xFF2196F3);
-
-  // Gender specific colors
-  static const Color femalePink = Color(0xFFE91E63);
-  static const Color maleBlue = Color(0xFF2196F3);
-
-  // 状态颜色
-  static const Color completed = Color(0xFF66BB6A);
-  static const Color pending = Color(0xFFFFB74D);
-  static const Color cancelled = Color(0xFFEF5350);
-  static const Color urgent = Color(0xFFFF7043);
-
-  // 中性颜色
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color background = Color(0xFFF8FCFF);
-  static const Color backgroundDark = Color(0xFFF0F9FF);
-  static const Color onSurface = Color(0xFF263238);
-  static const Color onSurfaceVariant = Color(0xFF546E7A);
-  static const Color onPrimary = Color(0xFFFFFFFF);
-  static const Color divider = Color(0xFFE0E0E0);
-
-  // 卡片颜色
-  static const Color cardPrimary = Color(0xFFE3F2FD);
-  static const Color cardSecondary = Color(0xFFE0F2F1);
-  static const Color cardSuccess = Color(0xFFE8F5E8);
-  static const Color cardWarning = Color(0xFFFFF3E0);
-  static const Color cardError = Color(0xFFFFEBEE);
-
-  // 牙科专业颜色
-  static const Color dentalBlue = Color(0xFF0D47A1);
-  static const Color dentalTeal = Color(0xFF00695C);
-  static const Color dentalGreen = Color(0xFF2E7D32);
-  static const Color toothWhite = Color(0xFFFFFDE7);
-  static const Color gumPink = Color(0xFFE1BEE7);
-
-  // 现代医疗渐变
-  static const LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF2196F3), Color(0xFF03DAC6), Color(0xFF00BCD4)],
-    stops: [0.0, 0.5, 1.0],
-  );
-
-  static const LinearGradient secondaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF03DAC6), Color(0xFF4FC3F7)],
-  );
-
-  static const LinearGradient successGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF66BB6A), Color(0xFF81C784)],
-  );
-
-  static const LinearGradient warningGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFFFFB74D), Color(0xFFFFCC02)],
-  );
-
-  static const LinearGradient errorGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFFEF5350), Color(0xFFFF7043)],
-  );
-
-  // 背景装饰渐变
-  static const LinearGradient backgroundGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    colors: [Color(0xFFF8FCFF), Color(0xFFE3F2FD)],
-  );
-
-  static const LinearGradient cardGradient = LinearGradient(
-    colors: [surface, Color(0xFFF5F7FA)],
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-  );
-
-  // 阴影颜色
-  static Color shadowLight = const Color(0xFF2196F3).withValues(alpha: 0.1);
-  static Color shadowMedium = const Color(0xFF2196F3).withValues(alpha: 0.2);
-  static Color shadowDark = const Color(0xFF2196F3).withValues(alpha: 0.3);
-}
-
 // 牙科主题组件
 class DentalCard extends StatelessWidget {
   final Widget child;
@@ -223,7 +125,7 @@ class DentalCard extends StatelessWidget {
             spreadRadius: 0,
           ),
           BoxShadow(
-            color: Colors.white.withValues(alpha: 0.8),
+            color: context.tokens.cardBackground.withValues(alpha: 0.8),
             blurRadius: 1.0,
             offset: const Offset(0, 1),
             spreadRadius: 0,
@@ -350,23 +252,25 @@ class DentalGradientButton extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (isLoading) ...[
-                      const SizedBox(
+                      SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                           strokeWidth: 2,
                         ),
                       ),
                       const SizedBox(width: 8),
                     ] else if (icon != null) ...[
-                      Icon(icon, color: Colors.white, size: 20),
+                      Icon(icon,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          size: 20),
                       const SizedBox(width: 8),
                     ],
                     Text(
                       text ?? '',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
                       ),
@@ -396,8 +300,9 @@ class DentalAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isFemale = gender == '女';
-    final Color baseColor =
-        isFemale ? DentalColors.femalePink : DentalColors.maleBlue;
+    final Color baseColor = isFemale
+        ? MedicalSemanticColors.femaleGender
+        : MedicalSemanticColors.maleGender;
     final Color backgroundColor = baseColor.withValues(alpha: 0.14);
     final Color textColor = baseColor;
     final String initial = name.isNotEmpty ? name[0] : '?';
@@ -490,36 +395,34 @@ class DentalStatusIndicator extends StatelessWidget {
   }
 
   Color _getStatusColor(BuildContext context, String status) {
-    switch (status) {
-      case '已完成':
-        return DentalColors.completed;
-      case '已预约':
-        return DentalColors.info;
-      case '已取消':
-        return DentalColors.cancelled;
-      case '未到诊':
-        return DentalColors.warning;
-      case '紧急':
-        return DentalColors.urgent;
+    switch (AppointmentStatus.tryParse(status)) {
+      case AppointmentStatus.completed:
+        return context.tokens.success;
+      case AppointmentStatus.scheduled:
+        return context.tokens.info;
+      case AppointmentStatus.cancelled:
+        return context.tokens.error;
+      case AppointmentStatus.missed:
+        return context.tokens.warning;
       default:
-        return context.tokens.textMuted;
+        return status == '紧急' ? context.tokens.error : context.tokens.textMuted;
     }
   }
 
   IconData _getStatusIcon(String status) {
-    switch (status) {
-      case '已完成':
+    switch (AppointmentStatus.tryParse(status)) {
+      case AppointmentStatus.completed:
         return Icons.check_circle_rounded;
-      case '已预约':
+      case AppointmentStatus.scheduled:
         return Icons.schedule_rounded;
-      case '已取消':
+      case AppointmentStatus.cancelled:
         return Icons.cancel_rounded;
-      case '未到诊':
+      case AppointmentStatus.missed:
         return Icons.warning_rounded;
-      case '紧急':
-        return Icons.priority_high_rounded;
       default:
-        return Icons.info_rounded;
+        return status == '紧急'
+            ? Icons.priority_high_rounded
+            : Icons.info_rounded;
     }
   }
 }

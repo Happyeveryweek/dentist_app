@@ -7,6 +7,7 @@ import 'package:dentist_app_windows/features/settings/helpers/table_definitions_
 import 'package:dentist_app_windows/features/settings/helpers/database_type_converter_helper.dart';
 import 'package:dentist_app_windows/utils/log_manager.dart';
 import 'package:dentist_app_windows/features/users/services/password_service.dart';
+import 'package:dentist_app_windows/models/data_source.dart';
 
 /// 数据库结构检测服务
 /// 负责检测和更新SQLite和MySQL数据库结构
@@ -79,8 +80,10 @@ class DatabaseStructureDetectionService {
 
       // 设置字符集
       await _requireMysqlConnection.query("SET NAMES 'utf8mb4'");
-      await _requireMysqlConnection.query("SET character_set_connection = 'utf8mb4'");
-      await _requireMysqlConnection.query("SET character_set_results = 'utf8mb4'");
+      await _requireMysqlConnection
+          .query("SET character_set_connection = 'utf8mb4'");
+      await _requireMysqlConnection
+          .query("SET character_set_results = 'utf8mb4'");
 
       LogManager.i('DatabaseStructureDetectionService', 'MySQL连接初始化成功');
     } catch (e) {
@@ -127,9 +130,9 @@ class DatabaseStructureDetectionService {
       LogManager.i('DatabaseStructureDetectionService',
           '开始检测数据库结构，数据源: $dataSource，必需表数: ${systemTables.length}');
 
-      if (dataSource == 'sqlite') {
+      if (dataSource.isSqliteDataSource) {
         await _detectAndUpdateSQLiteStructure(result, systemTables);
-      } else if (dataSource == 'mysql') {
+      } else if (dataSource.isMySqlDataSource) {
         await _detectAndUpdateMySQLStructure(result, systemTables);
       } else {
         throw Exception('不支持的数据源类型: $dataSource');
@@ -464,8 +467,8 @@ class DatabaseStructureDetectionService {
 
             final requiredType = requiredColumns[columnName];
             if (requiredType == null) continue;
-            final columnDef = DatabaseTypeConverterHelper.convertToSQLiteType(
-                requiredType);
+            final columnDef =
+                DatabaseTypeConverterHelper.convertToSQLiteType(requiredType);
             String safeColumnDef = columnDef
                 .replaceAll('PRIMARY KEY', '')
                 .replaceAll('AUTOINCREMENT', '')
@@ -655,7 +658,8 @@ class DatabaseStructureDetectionService {
     if (_database == null) return {};
 
     try {
-      final result = await _requireDatabase.rawQuery('PRAGMA table_info($tableName)');
+      final result =
+          await _requireDatabase.rawQuery('PRAGMA table_info($tableName)');
       final columns = <String, Map<String, dynamic>>{};
 
       for (final row in result) {
@@ -798,8 +802,8 @@ class DatabaseStructureDetectionService {
           if (requiredType == null) continue;
 
           try {
-            final columnDef = DatabaseTypeConverterHelper.convertToMySQLType(
-                requiredType);
+            final columnDef =
+                DatabaseTypeConverterHelper.convertToMySQLType(requiredType);
             String mysqlColumnDef =
                 columnDef.replaceAll('PRIMARY KEY', '').trim();
 

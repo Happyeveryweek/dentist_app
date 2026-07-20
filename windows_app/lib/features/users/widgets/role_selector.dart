@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import '../../../models/user_role.dart';
 
 class RoleSelector extends StatelessWidget {
   final String selectedRole;
@@ -15,29 +16,6 @@ class RoleSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final roleInfo = {
-      'admin': {
-        'name': '管理员',
-        'icon': Icons.admin_panel_settings,
-        'color': context.tokens.error
-      },
-      'doctor': {
-        'name': '医生',
-        'icon': Icons.medical_services,
-        'color': context.tokens.success
-      },
-      'assistant': {
-        'name': '助理',
-        'icon': Icons.assistant,
-        'color': context.tokens.warning
-      },
-      'receptionist': {
-        'name': '前台',
-        'icon': Icons.person_outline,
-        'color': context.tokens.info
-      },
-    };
-
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
@@ -69,11 +47,7 @@ class RoleSelector extends StatelessWidget {
             onChanged: onRoleChanged,
             selectedItemBuilder: (context) {
               return availableRoles.map<Widget>((role) {
-                final info = roleInfo[role] ?? {
-                  'name': role,
-                  'icon': Icons.person,
-                  'color': context.tokens.textMuted,
-                };
+                final info = UserRole.fromValue(role);
                 return Row(
                   children: [
                     Icon(Icons.work,
@@ -93,7 +67,7 @@ class RoleSelector extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            info['name'] as String,
+                            info?.displayName ?? role,
                             style: TextStyle(
                               fontSize: 16,
                               color: context.colors.onSurface,
@@ -108,11 +82,9 @@ class RoleSelector extends StatelessWidget {
               }).toList();
             },
             items: availableRoles.map((role) {
-              final info = roleInfo[role] ?? {
-                'name': role,
-                'icon': Icons.person,
-                'color': context.tokens.textMuted,
-              };
+              final info = UserRole.fromValue(role);
+              final color =
+                  info?.color(context.tokens) ?? context.tokens.textMuted;
               return DropdownMenuItem<String>(
                 value: role,
                 child: Container(
@@ -120,7 +92,7 @@ class RoleSelector extends StatelessWidget {
                       const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   decoration: BoxDecoration(
                     color: selectedRole == role
-                        ? (info['color'] as Color).withValues(alpha: 0.1)
+                        ? color.withValues(alpha: 0.1)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -129,26 +101,25 @@ class RoleSelector extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color:
-                              (info['color'] as Color).withValues(alpha: 0.1),
+                          color: color.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
-                          info['icon'] as IconData,
-                          color: info['color'] as Color,
+                          info?.icon ?? Icons.person,
+                          color: color,
                           size: 20,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        info['name'] as String,
+                        info?.displayName ?? role,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: selectedRole == role
                               ? FontWeight.bold
                               : FontWeight.w500,
                           color: selectedRole == role
-                              ? (info['color'] as Color)
+                              ? color
                               : context.colors.onSurface,
                         ),
                       ),

@@ -2,6 +2,7 @@ import '../../../providers/database_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../providers/material_provider.dart';
 import 'package:dentist_app_windows/utils/log_manager.dart';
+import '../../../models/data_source.dart';
 
 /// 数据库结构检测服务
 /// 负责数据库结构检测的业务逻辑
@@ -30,7 +31,7 @@ class DatabaseStructureCheckService {
         'DatabaseStructureCheckService', '开始数据库结构检测，数据源: $selectedDataSource');
     try {
       // 根据选择的数据源设置连接
-      if (selectedDataSource == 'sqlite') {
+      if (selectedDataSource.isSqliteDataSource) {
         // 确保SQLite连接可用
         if (_dbProvider.database == null) {
           await _dbProvider.ensureSQLiteDatabase();
@@ -42,7 +43,7 @@ class DatabaseStructureCheckService {
           database: _dbProvider.database,
           dataSourceType: 'sqlite',
         );
-      } else if (selectedDataSource == 'mysql') {
+      } else if (selectedDataSource.isMySqlDataSource) {
         // 确保SQLite连接可用（用于保存日志）
         if (_dbProvider.database == null) {
           await _dbProvider.ensureSQLiteDatabase();

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../models/appointment.dart';
+import '../../../models/appointment_status.dart';
 import '../../../widgets/dental_icons.dart';
 
 class PatientAppointmentsEmptyState extends StatelessWidget {
@@ -145,8 +146,7 @@ class PatientAppointmentCard extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        if (treatmentType != null &&
-                            treatmentType.isNotEmpty)
+                        if (treatmentType != null && treatmentType.isNotEmpty)
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
@@ -187,8 +187,7 @@ class PatientAppointmentCard extends StatelessWidget {
                               ],
                             ),
                           ),
-                        if (treatmentType != null &&
-                            treatmentType.isNotEmpty)
+                        if (treatmentType != null && treatmentType.isNotEmpty)
                           const SizedBox(height: 4),
                         if (notes != null && notes.isNotEmpty)
                           Text(
@@ -259,12 +258,12 @@ class PatientAppointmentCard extends StatelessWidget {
 
   Color _getStatusColor(BuildContext context, String status) {
     final tokens = context.tokens;
-    switch (status) {
-      case '已完成':
+    switch (AppointmentStatus.tryParse(status)) {
+      case AppointmentStatus.completed:
         return tokens.success;
-      case '已取消':
+      case AppointmentStatus.cancelled:
         return tokens.error;
-      case '待确认':
+      case AppointmentStatus.missed:
         return tokens.warning;
       default:
         return tokens.info;

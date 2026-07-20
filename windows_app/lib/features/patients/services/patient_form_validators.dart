@@ -12,6 +12,14 @@ class PatientFormValidators {
     return null;
   }
 
+  /// 校验主治医生：不能为空
+  static String? validateDoctor(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return '请先填写主治医生';
+    }
+    return null;
+  }
+
   /// 校验年龄：非必填，但填写时必须是有效整数
   static String? validateAge(String? value) {
     if (value == null || value.isEmpty) return null;

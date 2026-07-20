@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:mysql1/mysql1.dart';
 
 import '../models/appointment.dart';
+import '../models/app_module.dart';
+import '../models/data_source.dart';
 // 随访记录相关导入已移除
 import '../models/user.dart';
 import '../providers/patient_provider.dart';
@@ -174,7 +176,8 @@ class AppointmentProvider extends ChangeNotifier {
   String get _effectiveDataSourceType {
     final moduleDataSources = _moduleDataSources;
     if (moduleDataSources != null) {
-      final appointmentType = moduleDataSources['appointments'];
+      final appointmentType =
+          moduleDataSources[AppModule.appointments.dataSourceConfigKey];
       if (appointmentType != null) {
         return appointmentType;
       }
@@ -221,20 +224,21 @@ class AppointmentProvider extends ChangeNotifier {
 
   // 获取当前数据源（必须可用，否则抛出异常）
   AppointmentDataSource get _currentDataSource {
-    final effectiveType = _effectiveDataSourceType;
-    if (effectiveType == 'mysql') {
+    final effectiveType = DataSourceType.tryParse(_effectiveDataSourceType);
+    if (effectiveType == DataSourceType.mysql) {
       final dataSource = _mysqlDataSource;
       if (dataSource == null) {
         throw Exception('MySQL预约数据源未初始化 - 模块配置要求使用MySQL但数据源未设置');
       }
       return dataSource;
-    } else {
+    } else if (effectiveType == DataSourceType.sqlite) {
       final dataSource = _sqliteDataSource;
       if (dataSource == null) {
         throw Exception('SQLite预约数据源未初始化');
       }
       return dataSource;
     }
+    throw StateError('未知预约数据源类型: $_effectiveDataSourceType');
   }
 
   // 测试MySQL连接是否有效
@@ -319,7 +323,7 @@ class AppointmentProvider extends ChangeNotifier {
 
       // 如果是模块化模式且有预约模块配置，优先使用模块配置
       final appointmentType = moduleDataSources?['appointments'];
-      if (dataSourceMode == 'modular' && appointmentType != null) {
+      if (dataSourceMode.isModularDataSourceMode && appointmentType != null) {
         dbType = appointmentType;
         LogManager.w('AppointmentProvider',
             'AppointmentProvider使用模块化配置: appointments -> $dbType');
@@ -334,7 +338,7 @@ class AppointmentProvider extends ChangeNotifier {
       _dataSourceType = dbType;
 
       // 一次性初始化正确的数据源
-      if (dbType == 'sqlite') {
+      if (dbType.isSqliteDataSource) {
         final database = dbProvider?.database;
         if (database != null) {
           _database = database;
@@ -342,7 +346,7 @@ class AppointmentProvider extends ChangeNotifier {
         } else {
           throw Exception('SQLite数据库连接不可用');
         }
-      } else if (dbType == 'mysql') {
+      } else if (dbType.isMySqlDataSource) {
         final mysqlConnection = dbProvider?.mysqlConnection;
         if (mysqlConnection != null) {
           _mysqlConnection = mysqlConnection;

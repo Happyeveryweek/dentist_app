@@ -2,6 +2,7 @@ import 'patient.dart';
 import '../utils/datetime_formatter.dart';
 import '../utils/log_manager.dart';
 import '../utils/map_parser.dart';
+import 'appointment_status.dart';
 
 class Appointment {
   final int? id;
@@ -40,7 +41,7 @@ class Appointment {
       patientId: p.optional('patient_id', (v) => v as int),
       appointmentDate: _parseDateTime(map['appointment_date']),
       appointmentTime: _parseAppointmentTime(map['appointment_time']),
-      status: p.string('status'),
+      status: AppointmentStatus.normalizeStorageValue(p.string('status')),
       treatmentType: p.optional('treatment_type', (v) => v.toString()),
       notes: p.optional('notes', (v) => v.toString()),
       cost: p.decimalOrNull('cost'),
@@ -57,7 +58,7 @@ class Appointment {
       'appointment_date': DateTimeFormatter.toDbString(appointmentDate),
       'appointment_time': appointmentTime ??
           _extractTimeFromDateTime(appointmentDate), // 确保总是有时间值
-      'status': status,
+      'status': AppointmentStatus.normalizeStorageValue(status),
       if (treatmentType != null) 'treatment_type': treatmentType,
       if (notes != null) 'notes': notes,
       if (cost != null) 'cost': cost,
@@ -140,36 +141,21 @@ class Appointment {
 
   // 获取状态显示名称
   String get statusDisplay {
-    switch (status.toLowerCase()) {
-      case 'scheduled':
-        return '已预约';
-      case 'completed':
-        return '已完成';
-      case 'cancelled':
-        return '已取消';
-      case 'missed':
-        return '未到诊';
-      default:
-        return status;
-    }
+    return AppointmentStatus.displayNameOf(status);
   }
 
   // 获取状态颜色
   String get statusColor {
-    switch (status.toLowerCase()) {
-      case 'scheduled':
-      case '已预约':
+    switch (AppointmentStatus.tryParse(status)) {
+      case AppointmentStatus.scheduled:
         return '#2196F3'; // 蓝色
-      case 'completed':
-      case '已完成':
+      case AppointmentStatus.completed:
         return '#4CAF50'; // 绿色
-      case 'cancelled':
-      case '已取消':
+      case AppointmentStatus.cancelled:
         return '#F44336'; // 红色
-      case 'missed':
-      case '未到诊':
+      case AppointmentStatus.missed:
         return '#FF9800'; // 橙色
-      default:
+      case null:
         return '#9E9E9E'; // 灰色
     }
   }

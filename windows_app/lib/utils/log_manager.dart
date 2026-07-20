@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'app_paths.dart';
 import 'package:flutter/foundation.dart';
+import '../config/app_defaults.dart';
 
 /// 日志管理器
 /// 统一管理应用的所有日志文件
@@ -266,7 +267,10 @@ class LogManager {
   }
 
   /// 导出所有日志到指定目录
-  static Future<String?> exportLogs(String exportPath) async {
+  static Future<String?> exportLogs(
+    String exportPath, {
+    String appName = defaultAppName,
+  }) async {
     try {
       final exportDir = Directory(exportPath);
       if (!await exportDir.exists()) {
@@ -282,7 +286,7 @@ class LogManager {
       final logFiles = await getLogFiles();
 
       final buffer = StringBuffer();
-      buffer.writeln('牙科诊所管理系统 - 日志导出');
+      buffer.writeln('$appName - 日志导出');
       buffer.writeln(
           '导出时间: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}');
       buffer.writeln('=' * 80);

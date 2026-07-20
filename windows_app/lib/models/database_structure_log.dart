@@ -1,4 +1,3 @@
-import 'package:intl/intl.dart';
 import '../utils/datetime_formatter.dart';
 import 'dart:convert';
 import '../utils/log_manager.dart';
@@ -126,7 +125,7 @@ class DatabaseStructureLog {
     return {
       'id': id,
       'data_source_type': dataSourceType,
-      'detection_time': DateFormat('yyyy-MM-dd HH:mm:ss').format(detectionTime),
+      'detection_time': DateTimeFormatter.toDbString(detectionTime),
       'status': status,
       'required_tables': requiredTables,
       'missing_tables': missingTables,
@@ -134,7 +133,7 @@ class DatabaseStructureLog {
       'errors': errors,
       'details': details,
       'summary': summary,
-      'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(createdAt),
+      'created_at': DateTimeFormatter.toDbString(createdAt),
     };
   }
 

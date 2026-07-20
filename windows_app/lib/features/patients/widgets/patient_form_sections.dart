@@ -111,9 +111,10 @@ class PatientFormBasicSection extends StatelessWidget {
             child: PatientFormTextField(
               controller: doctorController,
               labelText: '主治医生',
-              hintText: '选填',
+              hintText: '必填',
               icon: Icons.medical_services,
               enabled: canEditBasicInfo,
+              validator: PatientFormValidators.validateDoctor,
             ),
           ),
           const SizedBox(width: 12),
@@ -197,9 +198,7 @@ class PatientFormContactSection extends StatelessWidget {
                     icon: Icon(
                       hasBackupPhone ? Icons.remove_circle : Icons.add_circle,
                       color: canEditBasicInfo
-                          ? (hasBackupPhone
-                              ? tokens.error
-                              : tokens.info)
+                          ? (hasBackupPhone ? tokens.error : tokens.info)
                           : tokens.disabledText,
                     ),
                     tooltip: hasBackupPhone ? '移除备用电话' : '添加备用电话',
@@ -254,7 +253,6 @@ class PatientFormContactSection extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class PatientFormTreatmentSection extends StatelessWidget {

@@ -17,6 +17,8 @@ import '../services/mysql_connection_service.dart';
 import '../services/database_backup_service.dart';
 import '../services/database_schema_service.dart';
 import '../utils/log_manager.dart';
+import '../config/app_defaults.dart';
+import '../models/data_source.dart';
 
 class DatabaseProvider extends ChangeNotifier {
   static const String dbName = 'dentist_clinic.db';
@@ -56,7 +58,7 @@ class DatabaseProvider extends ChangeNotifier {
 
   // MySQL连接参数 - 用于内部操作
   String _mysqlHost = 'localhost';
-  String _mysqlPort = '3306';
+  String _mysqlPort = '${MySqlConnectionPolicy.defaultPort}';
   String _mysqlDatabase = 'dentist_db';
   String _mysqlUsername = 'root';
   String _mysqlPassword = '';
@@ -117,7 +119,7 @@ class DatabaseProvider extends ChangeNotifier {
 
     try {
       // 关闭现有连接
-      if (_dataSourceType == 'sqlite') {
+      if (_dataSourceType.isSqliteDataSource) {
         final db = _database;
         if (db != null) {
           await db.close();
@@ -138,7 +140,7 @@ class DatabaseProvider extends ChangeNotifier {
         _updateServiceConnections();
 
         LogManager.i('DatabaseProvider', 'SQLite数据库初始化完成，路径');
-      } else if (_dataSourceType == 'mysql') {
+      } else if (_dataSourceType.isMySqlDataSource) {
         // 检查是否已经有有效的MySQL连接
         _syncMysqlConnectionFromService();
         final existingConnection = _mysqlConnection;
@@ -255,7 +257,8 @@ class DatabaseProvider extends ChangeNotifier {
       Map<String, dynamic> mysqlSettings) {
     final connectionInfo = _MySQLConnectionInfo(
       host: (mysqlSettings['host'] ?? 'localhost').toString(),
-      port: int.tryParse(mysqlSettings['port']?.toString() ?? '3306') ?? 3306,
+      port: int.tryParse(mysqlSettings['port']?.toString() ?? '') ??
+          MySqlConnectionPolicy.defaultPort,
       database: (mysqlSettings['database'] ?? 'dentist_db').toString(),
       username: (mysqlSettings['username'] ?? 'root').toString(),
       password: (mysqlSettings['password'] ?? '').toString(),
@@ -295,14 +298,15 @@ class DatabaseProvider extends ChangeNotifier {
 
     // 如果备份 MySQL，需要传递连接参数
     final targetDataSource = backupDataSource ?? _dataSourceType;
-    if (targetDataSource == 'mysql') {
+    if (targetDataSource.isMySqlDataSource) {
       return await _backupService.backupDatabase(
         backupPath: backupPath,
         onLogSuccess: onLogSuccess,
         onLogFailure: onLogFailure,
         backupDataSource: backupDataSource,
         mysqlHost: _mysqlHost,
-        mysqlPort: int.tryParse(_mysqlPort) ?? 3306,
+        mysqlPort:
+            int.tryParse(_mysqlPort) ?? MySqlConnectionPolicy.defaultPort,
         mysqlDatabase: _mysqlDatabase,
         mysqlUsername: _mysqlUsername,
         mysqlPassword: _mysqlPassword,
@@ -337,7 +341,7 @@ class DatabaseProvider extends ChangeNotifier {
     _syncMysqlConnectionFromService();
     _updateServiceConnections();
 
-    if (_dataSourceType == 'sqlite') {
+    if (_dataSourceType.isSqliteDataSource) {
       final extension = path.extension(filePath).toLowerCase();
       final isSqliteSnapshot = extension == '.db' ||
           extension == '.sqlite' ||
@@ -379,15 +383,20 @@ class DatabaseProvider extends ChangeNotifier {
     Map<String, dynamic>? mysqlSettings,
     String? customSqlitePath,
   }) async {
-    LogManager.w('DatabaseProvider', '开始切换数据源类型到: $type');
+    final targetType = DataSourceType.tryParse(type);
+    if (targetType == null) {
+      throw ArgumentError.value(type, 'type', '未知数据源类型');
+    }
+    final targetStorageValue = targetType.storageValue;
+    LogManager.w('DatabaseProvider', '开始切换数据源类型到: $targetStorageValue');
     LogManager.w('DatabaseProvider', '当前数据源类型: $_dataSourceType');
 
     try {
       // 如果切换到相同的数据源类型，检查是否需要重新初始化
-      if (_dataSourceType == type) {
+      if (_dataSourceType == targetStorageValue) {
         LogManager.w('DatabaseProvider', '数据源类型未改变，检查连接状态...');
 
-        if (type == 'sqlite') {
+        if (targetType == DataSourceType.sqlite) {
           // 检查SQLite连接是否有效
           final db = _database;
           if (db != null) {
@@ -399,7 +408,7 @@ class DatabaseProvider extends ChangeNotifier {
               LogManager.w('DatabaseProvider', 'SQLite连接已失效，需要重新初始化');
             }
           }
-        } else if (type == 'mysql') {
+        } else if (targetType == DataSourceType.mysql) {
           // 检查MySQL连接是否有效
           _syncMysqlConnectionFromService();
           final mysqlConnection = _mysqlConnection;
@@ -416,7 +425,7 @@ class DatabaseProvider extends ChangeNotifier {
       }
 
       // 如果切换到SQLite，检查是否有自定义数据库路径
-      if (type == 'sqlite') {
+      if (targetType == DataSourceType.sqlite) {
         // 从设置中获取SQLite路径
         String? sqliteDbPath = customSqlitePath;
         LogManager.w('DatabaseProvider', '从设置中获取的SQLite路径: $sqliteDbPath');
@@ -446,17 +455,17 @@ class DatabaseProvider extends ChangeNotifier {
 
       // 关闭现有数据库连接
       LogManager.w('DatabaseProvider', '关闭现有数据库连接...');
-      if (_dataSourceType != type) {
+      if (_dataSourceType != targetStorageValue) {
         // 只有在真正切换数据源类型时才关闭连接
         await closeDatabase();
       }
 
       // 更新数据源类型
-      _dataSourceType = type;
-      LogManager.w('DatabaseProvider', '数据源类型已切换为: $type');
+      _dataSourceType = targetStorageValue;
+      LogManager.w('DatabaseProvider', '数据源类型已切换为: $targetStorageValue');
 
       // 如果是MySQL，保存设置
-      if (type == 'mysql' && mysqlSettings != null) {
+      if (targetType == DataSourceType.mysql && mysqlSettings != null) {
         // 保存完整的MySQL设置
         _normalizeMySQLSettings(mysqlSettings);
 
@@ -465,7 +474,7 @@ class DatabaseProvider extends ChangeNotifier {
 
       // 初始化新数据源连接
       LogManager.w('DatabaseProvider', '初始化新数据源连接...');
-      if (type == 'sqlite') {
+      if (targetType == DataSourceType.sqlite) {
         try {
           LogManager.w(
               'DatabaseProvider', '使用自定义SQLite路径初始化数据库: $_customSqliteDbPath');
@@ -475,7 +484,7 @@ class DatabaseProvider extends ChangeNotifier {
           // 如果常规初始化失败，尝试紧急初始化
           await ensureSQLiteDatabase();
         }
-      } else if (type == 'mysql') {
+      } else if (targetType == DataSourceType.mysql) {
         await initDatabase(mysqlSettings: mysqlSettings);
       }
 
@@ -538,7 +547,7 @@ class DatabaseProvider extends ChangeNotifier {
       return _database;
     }
 
-    if (_dataSourceType == 'sqlite') {
+    if (_dataSourceType.isSqliteDataSource) {
       _database ??= await initSQLiteDatabase();
       return _database;
     }

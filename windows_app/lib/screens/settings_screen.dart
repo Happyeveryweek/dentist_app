@@ -8,6 +8,7 @@ import '../providers/database_provider.dart';
 import '../providers/material_provider.dart';
 import '../screens/data_source_screen.dart'; // 数据源配置页面
 import '../widgets/dental_icons.dart';
+import '../config/app_defaults.dart';
 
 import '../features/settings/widgets/settings_header_card.dart';
 import '../features/settings/widgets/settings_section_header.dart';
@@ -814,7 +815,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '✓ 应用名称：牙科诊所管理系统\n'
+                    '✓ 应用名称：$defaultAppName\n'
                     '✓ 数据源：SQLite（默认）\n'
                     '✓ 备份设置：已清空\n'
                     '✓ MySQL连接：已清空\n'

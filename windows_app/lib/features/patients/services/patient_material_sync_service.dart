@@ -4,6 +4,7 @@ import '../../../models/material_image.dart';
 import '../../../models/patient_material.dart';
 import '../../../models/patient_sync_log.dart';
 import '../../../utils/log_manager.dart';
+import '../../../models/data_source.dart';
 
 /// 患者材料同步服务
 /// 负责处理 SQLite -> MySQL 的患者材料和材料图片同步
@@ -16,7 +17,7 @@ class PatientMaterialSyncService {
     required this.getEffectiveDataSourceType,
   });
 
-  bool get needsSync => getEffectiveDataSourceType() == 'sqlite';
+  bool get needsSync => getEffectiveDataSourceType().isSqliteDataSource;
 
   Future<void> syncPatientMaterialToMySQL(
     PatientMaterial material,

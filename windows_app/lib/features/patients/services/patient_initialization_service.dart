@@ -4,6 +4,9 @@ import 'package:mysql1/mysql1.dart';
 import '../../../data_sources/patient_data_source.dart';
 import '../../../models/user.dart';
 import '../../../utils/log_manager.dart';
+import '../../../config/app_defaults.dart';
+import '../../../models/app_module.dart';
+import '../../../models/data_source.dart';
 
 /// 患者模块初始化与数据源构建服务
 class PatientInitializationService {
@@ -11,7 +14,9 @@ class PatientInitializationService {
   static Future<bool> testMySqlConnection(MySqlConnection? conn) async {
     if (conn == null) return false;
     try {
-      await conn.query('SELECT 1').timeout(const Duration(seconds: 10));
+      await conn
+          .query('SELECT 1')
+          .timeout(MySqlConnectionPolicy.validationTimeout);
       return true;
     } catch (e) {
       LogManager.e('PatientInitializationService',
@@ -28,23 +33,21 @@ class PatientInitializationService {
     String? dataSourceMode,
     User? currentUser,
   }) async {
-    String dbType = 'sqlite';
-    if (dataSourceMode == 'modular' && moduleDataSources != null) {
-      final patientsType = moduleDataSources['patients'];
-      if (patientsType != null) {
-        dbType = patientsType;
-      }
-    } else {
-      dbType = dbProvider.dataSourceType ?? 'sqlite';
-    }
-
-    String effectiveType = dbType;
+    final mode =
+        DataSourceMode.tryParse(dataSourceMode) ?? DataSourceMode.global;
+    final configuredType = mode == DataSourceMode.modular
+        ? DataSourceType.tryParse(
+                moduleDataSources?[AppModule.patients.dataSourceConfigKey]) ??
+            DataSourceType.sqlite
+        : DataSourceType.tryParse(dbProvider.dataSourceType?.toString()) ??
+            DataSourceType.sqlite;
+    var effectiveType = configuredType;
     SqlitePatientDataSource? sqliteDS;
     MySqlPatientDataSource? mysqlDS;
     Database? database;
     MySqlConnection? mysqlConn;
 
-    if (dbType == 'sqlite') {
+    if (configuredType == DataSourceType.sqlite) {
       database = dbProvider.database;
       if (database != null) {
         sqliteDS = SqlitePatientDataSource(
@@ -56,7 +59,7 @@ class PatientInitializationService {
         LogManager.e('PatientInitializationService',
             'PatientInitializationService: SQLite数据库连接不可用');
       }
-    } else if (dbType == 'mysql') {
+    } else if (configuredType == DataSourceType.mysql) {
       mysqlConn = dbProvider.mysqlConnection;
       if (mysqlConn != null) {
         mysqlDS = MySqlPatientDataSource.withConnectionGetter(
@@ -70,7 +73,7 @@ class PatientInitializationService {
 
         // 验证 MySQL 连通性，失败则降级
         if (!await testMySqlConnection(mysqlConn)) {
-          effectiveType = 'sqlite';
+          effectiveType = DataSourceType.sqlite;
           database = dbProvider.database;
           if (database != null) {
             sqliteDS = SqlitePatientDataSource(
@@ -87,7 +90,7 @@ class PatientInitializationService {
     }
 
     return {
-      'effectiveType': effectiveType,
+      'effectiveType': effectiveType.storageValue,
       'sqliteDataSource': sqliteDS,
       'mysqlDataSource': mysqlDS,
       'database': database,
@@ -110,10 +113,11 @@ class PatientInitializationService {
     final doctor = user?.doctor;
     final isAdmin = user?.role == 'admin';
 
-    if (effectiveType == 'sqlite' && database != null) {
+    final type = DataSourceType.parseOrThrow(effectiveType);
+    if (type == DataSourceType.sqlite && database != null) {
       sqliteDS = SqlitePatientDataSource(database,
           doctorName: doctor, isAdmin: isAdmin);
-    } else if (effectiveType == 'mysql' && mysqlConnection != null) {
+    } else if (type == DataSourceType.mysql && mysqlConnection != null) {
       mysqlDS = MySqlPatientDataSource.withConnectionGetter(
         mysqlConnectionGetter,
         doctorName: doctor,

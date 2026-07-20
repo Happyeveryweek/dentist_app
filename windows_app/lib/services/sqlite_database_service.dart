@@ -2,10 +2,10 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:intl/intl.dart';
 import '../utils/app_paths.dart';
 import '../models/schemas/table_schema.dart';
 import '../utils/log_manager.dart';
+import '../utils/datetime_formatter.dart';
 import '../features/users/services/password_service.dart';
 
 /// SQLite 数据库服务
@@ -192,10 +192,9 @@ class SqliteDatabaseService {
 
       // 添加默认管理员用户
       try {
-        final DateFormat dateFormat = DateFormat('yyyy-MM-dd HH:mm:ss');
         final hashedPassword = PasswordService().hashPassword('123456');
 
-        final now = dateFormat.format(DateTime.now());
+        final now = DateTimeFormatter.nowDbString();
         await db.insert('users', {
           'username': 'admin',
           'email': 'admin@example.com',
@@ -207,7 +206,7 @@ class SqliteDatabaseService {
           'updated_at': now,
         });
 
-        LogManager.i('SqliteDatabaseService', '成功创建默认管理员用户: admin/123456');
+        LogManager.i('SqliteDatabaseService', '成功创建默认管理员用户: admin');
       } catch (e) {
         LogManager.e('SqliteDatabaseService', '创建默认管理员用户时出错', error: e);
       }

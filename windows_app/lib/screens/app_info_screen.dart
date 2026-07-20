@@ -145,7 +145,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                   ),
                 ),
                 Text(
-                  '牙科诊所管理系统 - Windows Desktop Client',
+                  '${settingsProvider.appName} - Windows Desktop Client',
                   style: TextStyle(
                     fontSize: 14,
                     color: context.colors.onPrimary.withValues(alpha: 0.9),
@@ -192,8 +192,8 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: context.tokens.successContainer,
-              border:
-                  Border.all(color: context.tokens.success.withValues(alpha: 0.25)),
+              border: Border.all(
+                  color: context.tokens.success.withValues(alpha: 0.25)),
               borderRadius: BorderRadius.circular(8),
             ),
             child: StatusRow(
@@ -279,10 +279,9 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
           valueWidget: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color:
-                  allToolsAvailable
-                      ? context.tokens.successContainer
-                      : context.tokens.errorContainer,
+              color: allToolsAvailable
+                  ? context.tokens.successContainer
+                  : context.tokens.errorContainer,
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
                   color: allToolsAvailable
@@ -486,7 +485,10 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
   Future<void> _exportLogs() async {
     try {
       final exportPath = AppPaths.exportDirectory;
-      final exportedFile = await LogManager.exportLogs(exportPath);
+      final exportedFile = await LogManager.exportLogs(
+        exportPath,
+        appName: context.read<SettingsProvider>().appName,
+      );
       if (exportedFile != null) {
         _showMessage('日志已导出至: $exportedFile');
       } else {

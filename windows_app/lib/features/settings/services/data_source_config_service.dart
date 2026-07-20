@@ -1,5 +1,7 @@
 import '../../../providers/settings_provider.dart';
 import '../../../providers/database_provider.dart';
+import '../../../config/app_defaults.dart';
+import '../../../models/data_source.dart';
 
 /// 数据源配置服务
 /// 负责数据源配置的保存和加载逻辑
@@ -12,9 +14,17 @@ class DataSourceConfigService {
     required this.databaseProvider,
   });
 
+  DataSourceType _requireDataSourceType(String value) =>
+      DataSourceType.parseOrThrow(value);
+
+  DataSourceMode _requireDataSourceMode(String value) =>
+      DataSourceMode.parseOrThrow(value);
+
   /// 保存全局数据源类型
   Future<void> saveDataSourceType(String dataSourceType) async {
-    await settingsProvider.setDataSourceType(dataSourceType);
+    await settingsProvider.setDataSourceType(
+      _requireDataSourceType(dataSourceType).storageValue,
+    );
   }
 
   /// 保存SQLite数据库路径
@@ -39,7 +49,9 @@ class DataSourceConfigService {
 
   /// 保存数据源模式（global 或 modular）
   Future<void> saveDataSourceMode(String dataSourceMode) async {
-    await settingsProvider.setDataSourceMode(dataSourceMode);
+    await settingsProvider.setDataSourceMode(
+      _requireDataSourceMode(dataSourceMode).storageValue,
+    );
   }
 
   /// 保存所有模块数据源配置
@@ -50,7 +62,9 @@ class DataSourceConfigService {
 
   /// 保存备份数据源设置
   Future<void> saveBackupDataSource(String backupDataSource) async {
-    await settingsProvider.setBackupDataSource(backupDataSource);
+    await settingsProvider.setBackupDataSource(
+      _requireDataSourceType(backupDataSource).storageValue,
+    );
   }
 
   /// 应用SQLite数据源设置
@@ -58,8 +72,9 @@ class DataSourceConfigService {
     required String dataSourceType,
     String? customSqlitePath,
   }) async {
+    final type = _requireDataSourceType(dataSourceType);
     await databaseProvider.setDataSourceType(
-      dataSourceType,
+      type.storageValue,
       customSqlitePath:
           customSqlitePath?.isNotEmpty == true ? customSqlitePath : null,
     );
@@ -74,16 +89,17 @@ class DataSourceConfigService {
     required String username,
     required String password,
   }) async {
+    final type = _requireDataSourceType(dataSourceType);
     final mysqlSettings = {
       'host': host,
-      'port': int.tryParse(port) ?? 3306,
+      'port': int.tryParse(port) ?? MySqlConnectionPolicy.defaultPort,
       'database': database,
       'username': username,
       'password': password,
     };
 
     await databaseProvider.setDataSourceType(
-      dataSourceType,
+      type.storageValue,
       mysqlSettings: mysqlSettings,
     );
   }
@@ -93,13 +109,14 @@ class DataSourceConfigService {
     required String dataSourceType,
     required String sqliteDbPath,
   }) async {
+    final type = _requireDataSourceType(dataSourceType);
     // 保存SQLite数据库路径
     await saveSqliteDbPath(sqliteDbPath);
 
     // 如果当前选择的是SQLite，则应用设置
-    if (dataSourceType == 'sqlite') {
+    if (type == DataSourceType.sqlite) {
       await applySqliteDataSource(
-        dataSourceType: dataSourceType,
+        dataSourceType: type.storageValue,
         customSqlitePath: sqliteDbPath.isNotEmpty ? sqliteDbPath : null,
       );
     }
@@ -114,6 +131,7 @@ class DataSourceConfigService {
     required String username,
     required String password,
   }) async {
+    final type = _requireDataSourceType(dataSourceType);
     // 保存MySQL设置
     await saveMySQLSettings(
       host: host,
@@ -124,9 +142,9 @@ class DataSourceConfigService {
     );
 
     // 如果当前选择的是MySQL，则应用设置
-    if (dataSourceType == 'mysql') {
+    if (type == DataSourceType.mysql) {
       await applyMySQLDataSource(
-        dataSourceType: dataSourceType,
+        dataSourceType: type.storageValue,
         host: host,
         port: port,
         database: database,
@@ -148,19 +166,21 @@ class DataSourceConfigService {
     required String password,
     required Map<String, String> moduleDataSources,
   }) async {
+    final mode = _requireDataSourceMode(dataSourceMode);
+    final type = _requireDataSourceType(selectedDataSource);
     // 保存数据源模式
-    await saveDataSourceMode(dataSourceMode);
+    await saveDataSourceMode(mode.storageValue);
 
     // 保存全局数据源类型
-    await saveDataSourceType(selectedDataSource);
+    await saveDataSourceType(type.storageValue);
 
     // 保存SQLite数据库路径
-    if (selectedDataSource == 'sqlite') {
+    if (type == DataSourceType.sqlite) {
       await saveSqliteDbPath(sqliteDbPath);
     }
 
     // 保存MySQL设置
-    if (selectedDataSource == 'mysql') {
+    if (type == DataSourceType.mysql) {
       await saveMySQLSettings(
         host: host,
         port: port,
@@ -174,14 +194,14 @@ class DataSourceConfigService {
     await saveAllModuleDataSources(moduleDataSources);
 
     // 应用数据源设置
-    if (selectedDataSource == 'sqlite') {
+    if (type == DataSourceType.sqlite) {
       await applySqliteDataSource(
-        dataSourceType: selectedDataSource,
+        dataSourceType: type.storageValue,
         customSqlitePath: sqliteDbPath.isNotEmpty ? sqliteDbPath : null,
       );
-    } else if (selectedDataSource == 'mysql') {
+    } else if (type == DataSourceType.mysql) {
       await applyMySQLDataSource(
-        dataSourceType: selectedDataSource,
+        dataSourceType: type.storageValue,
         host: host,
         port: port,
         database: database,
@@ -202,16 +222,17 @@ class DataSourceConfigService {
     required String password,
     required String backupDataSource,
   }) async {
+    final type = _requireDataSourceType(selectedDataSource);
     // 保存全局数据源类型
-    await saveDataSourceType(selectedDataSource);
+    await saveDataSourceType(type.storageValue);
 
     // 保存SQLite数据库路径
-    if (selectedDataSource == 'sqlite') {
+    if (type == DataSourceType.sqlite) {
       await saveSqliteDbPath(sqliteDbPath);
     }
 
     // 保存MySQL设置
-    if (selectedDataSource == 'mysql') {
+    if (type == DataSourceType.mysql) {
       await saveMySQLSettings(
         host: host,
         port: port,
@@ -225,14 +246,14 @@ class DataSourceConfigService {
     await saveBackupDataSource(backupDataSource);
 
     // 应用数据源设置
-    if (selectedDataSource == 'sqlite') {
+    if (type == DataSourceType.sqlite) {
       await applySqliteDataSource(
-        dataSourceType: selectedDataSource,
+        dataSourceType: type.storageValue,
         customSqlitePath: sqliteDbPath.isNotEmpty ? sqliteDbPath : null,
       );
-    } else if (selectedDataSource == 'mysql') {
+    } else if (type == DataSourceType.mysql) {
       await applyMySQLDataSource(
-        dataSourceType: selectedDataSource,
+        dataSourceType: type.storageValue,
         host: host,
         port: port,
         database: database,

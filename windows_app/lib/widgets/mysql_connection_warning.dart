@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../providers/material_provider.dart';
 import '../providers/purchase_provider.dart';
 import '../providers/financial_provider.dart';
@@ -42,6 +43,7 @@ class MySQLConnectionWarning extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     // 获取模块标识
     final key = moduleKey ?? _moduleKeyMap[moduleName];
 
@@ -127,9 +129,9 @@ class MySQLConnectionWarning extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
+        color: tokens.warningContainer,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.shade200),
+        border: Border.all(color: tokens.warning.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,7 +140,7 @@ class MySQLConnectionWarning extends StatelessWidget {
             children: [
               Icon(
                 Icons.cloud_off_rounded,
-                color: Colors.orange.shade700,
+                color: tokens.warning,
                 size: 20,
               ),
               const SizedBox(width: 12),
@@ -146,7 +148,7 @@ class MySQLConnectionWarning extends StatelessWidget {
                 child: Text(
                   'MySQL连接失败已降级为SQLite数据源显示',
                   style: TextStyle(
-                    color: Colors.orange.shade700,
+                    color: tokens.warning,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -158,7 +160,7 @@ class MySQLConnectionWarning extends StatelessWidget {
           Text(
             '如需永久使用SQLite，请在系统设置中更改为SQLite数据源并重启应用。',
             style: TextStyle(
-              color: Colors.orange.shade600,
+              color: tokens.textMuted,
               fontSize: 12,
             ),
           ),

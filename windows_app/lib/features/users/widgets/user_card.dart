@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'dart:typed_data';
 import '../../../models/user.dart';
+import '../../../models/user_role.dart';
 
 class UserCard extends StatelessWidget {
   final User user;
@@ -22,31 +23,20 @@ class UserCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final doctorName = user.doctor?.trim();
-    final displayName =
-        doctorName != null && doctorName.isNotEmpty ? doctorName : user.username;
+    final displayName = doctorName != null && doctorName.isNotEmpty
+        ? doctorName
+        : user.username;
     final showUsername = doctorName != null &&
         doctorName.isNotEmpty &&
         user.username.trim().isNotEmpty &&
         user.username.trim() != displayName;
 
-    final roleColors = {
-      'admin': LinearGradient(colors: [
-        context.tokens.error,
-        context.tokens.error.withValues(alpha: 0.75),
-      ]),
-      'doctor': LinearGradient(colors: [
-        context.tokens.success,
-        context.tokens.success.withValues(alpha: 0.75),
-      ]),
-      'assistant': LinearGradient(colors: [
-        context.tokens.warning,
-        context.tokens.warning.withValues(alpha: 0.75),
-      ]),
-      'receptionist': LinearGradient(colors: [
-        context.tokens.info,
-        context.tokens.info.withValues(alpha: 0.75),
-      ]),
-    };
+    final role = UserRole.fromValue(user.role);
+    final roleColor = role?.color(context.tokens) ?? context.tokens.textMuted;
+    final roleGradient = LinearGradient(colors: [
+      roleColor,
+      roleColor.withValues(alpha: 0.75),
+    ]);
 
     return Container(
       decoration: BoxDecoration(
@@ -94,8 +84,7 @@ class UserCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                gradient: roleColors[user.role] ??
-                                    context.tokens.primaryHeaderGradient,
+                                gradient: roleGradient,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
@@ -147,7 +136,7 @@ class UserCard extends StatelessWidget {
                         }),
 
                         // 显示权限信息（仅对非管理员用户）
-                        if (user.role != 'admin') ...[
+                        if (!user.isAdmin) ...[
                           const SizedBox(height: 4),
                           _buildPermissionTags(context),
                         ],
@@ -180,7 +169,7 @@ class UserCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Container(
                   decoration: BoxDecoration(
-                      color: context.tokens.success.withValues(alpha: 0.1),
+                    color: context.tokens.success.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
@@ -193,7 +182,7 @@ class UserCard extends StatelessWidget {
                         const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                 ),
-                if (user.role != 'admin') ...[
+                if (!user.isAdmin) ...[
                   const SizedBox(width: 6),
                   Container(
                     decoration: BoxDecoration(
@@ -298,7 +287,10 @@ class UserCard extends StatelessWidget {
       'financial': {'name': '财务', 'color': context.tokens.warning},
       'materials': {'name': '材料', 'color': context.tokens.primaryAccent},
       'purchase': {'name': '采购', 'color': context.tokens.error},
-      'medical_records': {'name': '病历', 'color': context.tokens.secondaryAccent},
+      'medical_records': {
+        'name': '病历',
+        'color': context.tokens.secondaryAccent
+      },
     };
 
     final allowedModules = user.allowedModules

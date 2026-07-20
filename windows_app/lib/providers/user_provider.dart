@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mysql1/mysql1.dart';
 
 import '../models/user.dart';
+import '../models/user_role.dart';
 import '../data_sources/user_data_source.dart';
 import '../features/users/services/user_sync_service.dart';
 import '../features/users/helpers/user_cache_helper.dart';
@@ -406,23 +407,10 @@ class UserProvider extends ChangeNotifier {
     if (user == null) return false;
 
     // 管理员拥有所有权限
-    if (user.role == 'admin') return true;
-
-    // 根据角色检查具体权限
-    switch (permission) {
-      case 'manage_patients':
-        return ['admin', 'doctor', 'nurse'].contains(user.role);
-      case 'manage_appointments':
-        return ['admin', 'doctor', 'nurse', 'receptionist'].contains(user.role);
-      case 'manage_financials':
-        return ['admin', 'accountant'].contains(user.role);
-      case 'manage_materials':
-        return ['admin', 'nurse', 'inventory_manager'].contains(user.role);
-      case 'manage_users':
-        return ['admin'].contains(user.role);
-      default:
-        return false;
-    }
+    return UserRole.fromValue(user.role)
+            ?.operationPermissions
+            .contains(permission) ??
+        false;
   }
 
   // =================== 新增数据源架构方法 ===================

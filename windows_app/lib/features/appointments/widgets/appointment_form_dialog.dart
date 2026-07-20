@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../theme/theme_context_extensions.dart';
 import 'dart:convert';
 import '../../../models/appointment.dart';
+import '../../../models/appointment_status.dart';
 import '../../../models/patient.dart';
 import '../../../providers/appointment_provider.dart';
 import '../../../providers/patient_provider.dart';
@@ -38,7 +39,7 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late DateTime _date;
   late TimeOfDay _time;
-  String _status = '已预约';
+  String _status = AppointmentStatus.scheduled.storageValue;
   Patient? _selectedPatient;
   final TextEditingController _treatmentTypeController =
       TextEditingController();
@@ -70,7 +71,8 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
           appointmentDate.year, appointmentDate.month, appointmentDate.day);
       _time =
           TimeOfDay(hour: appointmentDate.hour, minute: appointmentDate.minute);
-      _status = existingAppointment.statusDisplay;
+      _status =
+          AppointmentStatus.normalizeStorageValue(existingAppointment.status);
 
       // 解析 treatment_type 字段
       final treatmentType = existingAppointment.treatmentType;

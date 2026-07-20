@@ -12,6 +12,12 @@ void main() {
       expect(PatientFormValidators.validateName('张三'), isNull);
     });
 
+    test('主治医生为空时返回提示', () {
+      expect(PatientFormValidators.validateDoctor(null), '请先填写主治医生');
+      expect(PatientFormValidators.validateDoctor('  '), '请先填写主治医生');
+      expect(PatientFormValidators.validateDoctor('医生甲'), isNull);
+    });
+
     test('年龄为空时校验通过', () {
       expect(PatientFormValidators.validateAge(null), isNull);
       expect(PatientFormValidators.validateAge(''), isNull);
@@ -60,7 +66,8 @@ void main() {
     });
 
     test('备用手机号合法时校验通过', () {
-      expect(PatientFormValidators.validateOptionalPhone('13800138000'), isNull);
+      expect(
+          PatientFormValidators.validateOptionalPhone('13800138000'), isNull);
     });
   });
 }

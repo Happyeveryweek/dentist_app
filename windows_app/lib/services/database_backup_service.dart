@@ -10,6 +10,8 @@ import 'package:mysql1/mysql1.dart';
 import '../utils/datetime_formatter.dart';
 import '../utils/app_paths.dart';
 import '../utils/log_manager.dart';
+import '../config/app_defaults.dart';
+import '../models/data_source.dart';
 
 /// 数据库备份恢复服务
 /// 职责：SQLite 和 MySQL 的备份恢复、SQL 语句处理
@@ -27,7 +29,7 @@ class DatabaseBackupService {
     required this.dataSourceType,
   });
 
-  bool get _isSqliteDataSource => dataSourceType == 'sqlite';
+  bool get _isSqliteDataSource => dataSourceType.isSqliteDataSource;
 
   /// 统一备份接口
   Future<String> backupDatabase({
@@ -71,9 +73,11 @@ class DatabaseBackupService {
       String finalBackupPath;
 
       // 根据备份数据源设置选择备份方法
-      final targetDataSource = backupDataSource ?? dataSourceType;
+      final targetDataSource = DataSourceType.parseOrThrow(
+        backupDataSource ?? dataSourceType,
+      );
 
-      if (targetDataSource == 'mysql') {
+      if (targetDataSource == DataSourceType.mysql) {
         if (mysqlHost == null ||
             mysqlDatabase == null ||
             mysqlUsername == null) {
@@ -82,7 +86,7 @@ class DatabaseBackupService {
         finalBackupPath = await backupMySQLDatabase(
           backupPath: userBackupPath,
           host: mysqlHost,
-          port: mysqlPort ?? 3306,
+          port: mysqlPort ?? MySqlConnectionPolicy.defaultPort,
           database: mysqlDatabase,
           username: mysqlUsername,
           password: mysqlPassword ?? '',
@@ -98,7 +102,7 @@ class DatabaseBackupService {
       }
 
       LogManager.i('DatabaseBackupService',
-          '数据库备份完成: $finalBackupPath (数据源: $targetDataSource)');
+          '数据库备份完成: $finalBackupPath (数据源: ${targetDataSource.storageValue})');
       return finalBackupPath;
     } catch (e) {
       LogManager.e('DatabaseBackupService', '执行数据库备份时出错', error: e);
@@ -464,7 +468,7 @@ class DatabaseBackupService {
         throw Exception('备份文件不存在');
       }
 
-      if (dataSourceType == 'mysql') {
+      if (dataSourceType.isMySqlDataSource) {
         await restoreFromMySQLDump(filePath);
       } else {
         // 检查文件扩展名
@@ -605,7 +609,7 @@ class DatabaseBackupService {
       final mysqlConnection = this.mysqlConnection;
       final sqliteDatabase = this.sqliteDatabase;
 
-      if (dataSourceType == 'mysql' && mysqlConnection != null) {
+      if (dataSourceType.isMySqlDataSource && mysqlConnection != null) {
         // 清空所有表
         final tables = await mysqlConnection.query('SHOW TABLES');
         for (var table in tables) {
@@ -687,7 +691,7 @@ class DatabaseBackupService {
     Function(String)? onLogOperation,
   }) async {
     final mysqlConnection = this.mysqlConnection;
-    if (dataSourceType != 'mysql' || mysqlConnection == null) {
+    if (!dataSourceType.isMySqlDataSource || mysqlConnection == null) {
       throw Exception('当前数据源不是 MySQL 或连接未建立');
     }
 

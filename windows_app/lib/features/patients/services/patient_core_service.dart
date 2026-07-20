@@ -8,6 +8,7 @@ import '../../../utils/datetime_formatter.dart';
 import '../../../utils/log_manager.dart';
 import '../../../utils/pinyin_util.dart';
 import '../../../data_sources/patient_data_source.dart';
+import '../../../models/data_source.dart';
 
 /// 患者核心业务服务
 /// 负责处理增删改业务逻辑、数据同步以及二进制格式转换
@@ -46,7 +47,7 @@ class PatientCoreService {
 
     final id = await dataSource.createPatient(Patient.fromMap(patientMap));
 
-    if (getEffectiveDataSourceType() == 'sqlite') {
+    if (getEffectiveDataSourceType().isSqliteDataSource) {
       _trySyncPatientToMySQL(patientMap, id);
     }
     return id;
@@ -72,7 +73,7 @@ class PatientCoreService {
 
     if (success &&
         patientId != null &&
-        getEffectiveDataSourceType() == 'sqlite') {
+        getEffectiveDataSourceType().isSqliteDataSource) {
       await _doSyncPatientToMySQL(patientMap, patientId);
     }
     return success;
@@ -89,14 +90,14 @@ class PatientCoreService {
 
     // 当患者管理与其他模块使用不同数据库时，同步清理另一数据库中的关联数据
     if (success) {
-      if (effectiveType == 'sqlite') {
+      if (effectiveType.isSqliteDataSource) {
         await _deleteRelatedDataFromMySQL(patientId);
-      } else if (effectiveType == 'mysql') {
+      } else if (effectiveType.isMySqlDataSource) {
         await _deleteRelatedDataFromSQLite(patientId);
       }
     }
 
-    if (success && effectiveType == 'sqlite') {
+    if (success && effectiveType.isSqliteDataSource) {
       _trySyncDeletePatientToMySQL(patientId,
           patientName: patientName, medicalRecordNumber: medicalRecordNumber);
     }
@@ -262,7 +263,7 @@ class PatientCoreService {
 
   /// 手动同步单个患者到 MySQL，等待完成并返回是否成功
   Future<bool> syncPatientToMySQL(int patientId) async {
-    if (getEffectiveDataSourceType() != 'sqlite') return false;
+    if (!getEffectiveDataSourceType().isSqliteDataSource) return false;
     final dataSource = getCurrentDataSource();
     if (dataSource == null) return false;
 
@@ -288,7 +289,7 @@ class PatientCoreService {
   /// 对比 SQLite 与 MySQL 中同一患者数据是否一致
   /// 返回 true=一致 / false=不一致 / null=无法比较（连接不可用或非 SQLite 主库）
   Future<bool?> comparePatientSyncStatus(int patientId) async {
-    if (getEffectiveDataSourceType() != 'sqlite') return null;
+    if (!getEffectiveDataSourceType().isSqliteDataSource) return null;
 
     try {
       final dataSource = getCurrentDataSource();

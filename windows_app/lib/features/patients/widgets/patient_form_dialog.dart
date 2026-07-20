@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import '../../../models/patient.dart';
 import '../../../models/dental_chart.dart';
 import '../../../models/appointment.dart';
+import '../../../models/appointment_status.dart';
 import '../../../providers/appointment_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/user_provider.dart';
@@ -15,6 +16,7 @@ import '../../../widgets/modern_date_picker.dart';
 import '../../appointments/widgets/appointment_time_picker.dart';
 import '../../appointments/widgets/appointment_treatment_utils.dart';
 import '../models/patient_form_state.dart';
+import '../services/patient_default_doctor_resolver.dart';
 import 'patient_form_components.dart';
 import '../../../utils/permission_utils.dart';
 import '../../../utils/log_manager.dart';
@@ -38,6 +40,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
   late final PatientFormState _formState = PatientFormState();
   List<String> _appointmentTreatmentSuggestions = [];
   int? _savedPatientId;
+  bool _isDefaultDoctorLoading = false;
 
   // Overlay 相关（保留在 State 中，与 Flutter Overlay 交互紧密）
   OverlayEntry? _overlayEntry;
@@ -52,6 +55,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
       _loadPatientData();
     } else {
       _initializeDefaultValues();
+      _isDefaultDoctorLoading = true;
       _setDefaultDoctor();
     }
 
@@ -88,17 +92,15 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
       final currentUser =
           userProvider.currentUser ?? await userProvider.getCurrentUser();
 
-      final doctorName = currentUser?.doctor;
-      if (doctorName != null && doctorName.isNotEmpty) {
-        _formState.doctorController.text = doctorName;
-      } else if (currentUser != null && currentUser.role == 'doctor') {
-        _formState.doctorController.text = currentUser.username;
-      } else {
-        _formState.doctorController.text = '';
-      }
+      _formState.doctorController.text =
+          PatientDefaultDoctorResolver.resolve(currentUser) ?? '';
     } catch (e) {
       LogManager.e('PatientFormDialog', '通过UserProvider设置默认医生时出错', error: e);
       _formState.doctorController.text = '';
+    } finally {
+      if (mounted) {
+        setState(() => _isDefaultDoctorLoading = false);
+      }
     }
   }
 
@@ -450,7 +452,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
           patient: patient,
           appointmentDate: appointmentDateTime,
           appointmentTime: DateFormat('HH:mm:ss').format(appointmentDateTime),
-          status: '已预约',
+          status: AppointmentStatus.scheduled.storageValue,
           treatmentType: buildAppointmentTreatmentData(
             [draft.treatmentController.text],
             teethData: selectedTeethData,
@@ -512,13 +514,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
       final userProvider = Provider.of<UserProvider>(context, listen: false);
       final currentUser = userProvider.currentUser;
 
-      if (currentUser != null) {
-        final doctorName = currentUser.doctor;
-        if (doctorName != null && doctorName.isNotEmpty) {
-          return doctorName;
-        }
-        return currentUser.username;
-      }
+      return PatientDefaultDoctorResolver.resolve(currentUser) ?? '';
     } catch (e) {
       LogManager.e('PatientFormDialog', '获取当前医生姓名失败', error: e);
     }
@@ -1010,6 +1006,12 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
   }
 
   Future<void> _handleSave() async {
+    if (_isDefaultDoctorLoading) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('正在加载当前用户的医生姓名，请稍后再保存')),
+      );
+      return;
+    }
     final formState = _formState.formKey.currentState;
     if (formState != null && formState.validate()) {
       setState(() {
@@ -1145,8 +1147,8 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
           identificationNumber: _formState.idNumberController.text.isNotEmpty
               ? _formState.idNumberController.text
               : null,
-          doctor: _formState.doctorController.text.isNotEmpty
-              ? _formState.doctorController.text
+          doctor: _formState.doctorController.text.trim().isNotEmpty
+              ? _formState.doctorController.text.trim()
               : null,
           dentalCondition: dentalCondition.isNotEmpty ? dentalCondition : null,
           treatmentItems: _formState.treatmentItemsController.text.isNotEmpty

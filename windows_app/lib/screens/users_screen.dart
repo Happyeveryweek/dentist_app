@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../models/user.dart';
+import '../models/user_role.dart';
 import '../providers/user_provider.dart';
 import '../widgets/success_toast.dart';
 import '../widgets/mysql_connection_warning.dart';
@@ -30,12 +31,8 @@ class _UsersScreenState extends State<UsersScreen>
   bool _hasError = false;
   String _errorMessage = '';
 
-  final List<String> _availableRoles = [
-    'admin',
-    'doctor',
-    'assistant',
-    'receptionist'
-  ];
+  final List<String> _availableRoles =
+      UserRole.values.map((role) => role.value).toList();
 
   @override
   void initState() {
@@ -219,7 +216,8 @@ class _UsersScreenState extends State<UsersScreen>
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: Icon(Icons.person_add_rounded, color: context.tokens.cardBackground),
+              icon: Icon(Icons.person_add_rounded,
+                  color: context.tokens.cardBackground),
               onPressed: () => _showAddEditUserDialog(),
               tooltip: '添加用户',
             ),
@@ -265,7 +263,7 @@ class _UsersScreenState extends State<UsersScreen>
           // 页面标题和统计信息
           UserListHeader(
             userCount: _users.length,
-            adminCount: _users.where((u) => u.role == 'admin').length,
+            adminCount: _users.where((u) => u.isAdmin).length,
           ),
           const SizedBox(height: 16),
 

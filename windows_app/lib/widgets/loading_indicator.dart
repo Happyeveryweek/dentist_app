@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 class LoadingIndicator extends StatelessWidget {
   final String? message;
@@ -20,9 +21,9 @@ class LoadingIndicator extends StatelessWidget {
             padding: const EdgeInsets.only(top: 16.0),
             child: Text(
               displayMessage,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16.0,
-                color: Colors.grey,
+                color: context.tokens.textMuted,
               ),
             ),
           ),

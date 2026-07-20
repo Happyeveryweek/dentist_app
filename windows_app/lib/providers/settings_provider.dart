@@ -10,6 +10,8 @@ import 'package:dentist_app_windows/features/settings/services/database_structur
 import 'package:dentist_app_windows/models/database_structure_log.dart';
 import 'package:dentist_app_windows/utils/datetime_formatter.dart';
 import 'package:dentist_app_windows/theme/app_theme.dart';
+import 'package:dentist_app_windows/config/app_defaults.dart';
+import 'package:dentist_app_windows/models/data_source.dart';
 import '../utils/log_manager.dart';
 
 class SettingsProvider extends ChangeNotifier {
@@ -29,7 +31,7 @@ class SettingsProvider extends ChangeNotifier {
   WindowsThemeVariant get windowsThemeVariant => _windowsThemeVariant;
 
   // 应用名称设置
-  String _appName = '牙科诊所管理系统';
+  String _appName = defaultAppName;
   String get appName => _appName;
 
   // 数据库连接实例 - 用于结构检测
@@ -98,7 +100,7 @@ class SettingsProvider extends ChangeNotifier {
     _windowsThemeVariant = WindowsThemeVariantParsing.fromStorageValue(
       settings['windowsThemeVariant']?.toString(),
     );
-    _appName = settings['appName']?.toString() ?? '牙科诊所管理系统';
+    _appName = settings['appName']?.toString() ?? defaultAppName;
 
     // 更新 Service 状态
     _backupManagementService.updateBackupPaths(
@@ -114,10 +116,12 @@ class SettingsProvider extends ChangeNotifier {
     );
 
     _dataSourceManagementService.updateDataSourceType(
-      settings['dataSourceType']?.toString() ?? 'sqlite',
+      settings['dataSourceType']?.toString() ??
+          DataSourceType.sqlite.storageValue,
     );
     _dataSourceManagementService.updateDataSourceMode(
-      settings['dataSourceMode']?.toString() ?? 'global',
+      settings['dataSourceMode']?.toString() ??
+          DataSourceMode.global.storageValue,
     );
     _dataSourceManagementService.updateSqlitePaths(
       sqliteDbPath: settings['sqliteDbPath']?.toString() ?? '',
@@ -125,14 +129,16 @@ class SettingsProvider extends ChangeNotifier {
     );
     _dataSourceManagementService.updateMySQLConnectionParams(
       host: settings['mysqlHost']?.toString() ?? '',
-      port: settings['mysqlPort']?.toString() ?? '3306',
+      port: settings['mysqlPort']?.toString() ??
+          '${MySqlConnectionPolicy.defaultPort}',
       database: settings['mysqlDatabase']?.toString() ?? '',
       username: settings['mysqlUsername']?.toString() ?? '',
       password: settings['mysqlPassword']?.toString() ?? '',
     );
     final backupDataSource = settings['backupDataSource']?.toString();
     _dataSourceManagementService.setBackupDataSource(
-      backupDataSource == 'mysql' ? 'mysql' : 'sqlite',
+      DataSourceType.tryParse(backupDataSource)?.storageValue ??
+          DataSourceType.sqlite.storageValue,
     );
 
     final moduleDataSources =

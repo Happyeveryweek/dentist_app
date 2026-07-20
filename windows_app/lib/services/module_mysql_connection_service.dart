@@ -5,6 +5,8 @@ import 'package:mysql1/mysql1.dart';
 import '../providers/database_provider.dart';
 import '../utils/log_manager.dart';
 import '../utils/mysql_sync_connection_helper.dart';
+import '../config/app_defaults.dart';
+import '../models/data_source.dart';
 
 typedef MySqlConnectionProbe = Future<void> Function(
   MySqlConnection connection,
@@ -36,7 +38,9 @@ class ModuleMysqlConnectionService {
 
   Future<MySqlConnection?> getCurrentConnection() async {
     final databaseProvider = _getDatabaseProvider();
-    if (_getEffectiveDataSourceType() != 'mysql' || databaseProvider == null) {
+    final dataSourceType =
+        DataSourceType.tryParse(_getEffectiveDataSourceType());
+    if (dataSourceType != DataSourceType.mysql || databaseProvider == null) {
       LogManager.d(logTag, '当前数据源不是MySQL，返回缓存连接');
       return _getCachedConnection();
     }
@@ -70,7 +74,7 @@ class ModuleMysqlConnectionService {
     try {
       await _probeConnection(
         connection,
-        const Duration(seconds: 3),
+        MySqlConnectionPolicy.validationTimeout,
         '连接验证超时',
       );
       return true;
@@ -97,7 +101,7 @@ class ModuleMysqlConnectionService {
     try {
       await _probeConnection(
         connection,
-        const Duration(seconds: 10),
+        MySqlConnectionPolicy.userTestTimeout,
         '连接测试超时',
       );
       return true;

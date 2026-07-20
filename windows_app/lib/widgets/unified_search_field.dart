@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import 'dental_icons.dart';
 
 class UnifiedSearchField extends StatelessWidget {
   final TextEditingController controller;
@@ -53,7 +52,8 @@ class UnifiedSearchField extends StatelessWidget {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
-                color: context.tokens.primaryAccent.withValues(alpha: 0.5), width: 1.2),
+                color: context.tokens.primaryAccent.withValues(alpha: 0.5),
+                width: 1.2),
           ),
           // 不使用浮动标签，保持占位提示样式一致
           floatingLabelBehavior: FloatingLabelBehavior.never,
@@ -78,8 +78,8 @@ class UnifiedSearchField extends StatelessWidget {
               ? Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: IconButton(
-                    icon: const Icon(Icons.clear_rounded,
-                        color: DentalColors.error, size: 20),
+                    icon: Icon(Icons.clear_rounded,
+                        color: context.tokens.error, size: 20),
                     onPressed: () {
                       controller.clear();
                       onClear?.call();

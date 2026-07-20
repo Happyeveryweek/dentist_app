@@ -4,6 +4,8 @@ import 'package:mysql1/mysql1.dart';
 import '../../../data_sources/user_data_source.dart';
 import '../../../utils/mysql_sync_connection_helper.dart';
 import '../../../utils/log_manager.dart';
+import '../../../config/app_defaults.dart';
+import '../../../models/data_source.dart';
 
 /// 用户数据源初始化服务
 /// 负责数据源初始化、连接管理和数据源切换
@@ -84,7 +86,7 @@ class UserDataSourceInitializer {
   // 获取当前数据源（必须可用，否则抛出异常）
   UserDataSource get currentDataSource {
     final effectiveType = effectiveDataSourceType;
-    if (effectiveType == 'mysql') {
+    if (effectiveType.isMySqlDataSource) {
       final mysqlSource = _mysqlDataSource;
       if (mysqlSource == null) {
         throw Exception('MySQL用户数据源未初始化 - 模块配置要求使用MySQL但数据源未设置');
@@ -101,7 +103,8 @@ class UserDataSourceInitializer {
 
   // 获取最新的MySQL连接（防止连接过期）
   MySqlConnection? get _currentMysqlConnection {
-    if (effectiveDataSourceType != 'mysql' || _databaseProvider == null) {
+    if (!effectiveDataSourceType.isMySqlDataSource ||
+        _databaseProvider == null) {
       return _mysqlConnection;
     }
 
@@ -148,9 +151,12 @@ class UserDataSourceInitializer {
 
     try {
       await conn.query('SELECT 1').timeout(
-        const Duration(seconds: 10),
+        MySqlConnectionPolicy.validationTimeout,
         onTimeout: () {
-          throw TimeoutException('连接测试超时', const Duration(seconds: 10));
+          throw TimeoutException(
+            '连接测试超时',
+            MySqlConnectionPolicy.validationTimeout,
+          );
         },
       );
       return true;
@@ -178,7 +184,7 @@ class UserDataSourceInitializer {
       String dbType = 'sqlite';
 
       // 如果是模块化模式且有用户模块配置，优先使用模块配置
-      if (dataSourceMode == 'modular' && moduleDataSources != null) {
+      if (dataSourceMode.isModularDataSourceMode && moduleDataSources != null) {
         final usersType = moduleDataSources['users'];
         if (usersType != null) {
           dbType = usersType;
@@ -192,7 +198,7 @@ class UserDataSourceInitializer {
       _dataSourceType = dbType;
 
       // 一次性初始化正确的数据源
-      if (dbType == 'sqlite') {
+      if (dbType.isSqliteDataSource) {
         final database = dbProvider?.database;
         if (database != null) {
           _database = database;
@@ -200,7 +206,7 @@ class UserDataSourceInitializer {
         } else {
           throw Exception('SQLite数据库连接不可用');
         }
-      } else if (dbType == 'mysql') {
+      } else if (dbType.isMySqlDataSource) {
         final mysqlConnection = dbProvider?.mysqlConnection;
         if (mysqlConnection != null) {
           _mysqlConnection = mysqlConnection;

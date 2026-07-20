@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../utils/datetime_formatter.dart';
 import '../utils/log_manager.dart';
+import 'user_role.dart';
 
 class User {
   final int? id;
@@ -141,37 +142,17 @@ class User {
 
   // 获取角色的显示名称
   String get roleDisplay {
-    switch (role) {
-      case 'admin':
-        return '管理员';
-      case 'doctor':
-        return '医生';
-      case 'assistant':
-        return '助理';
-      case 'receptionist':
-        return '前台';
-      default:
-        return role;
-    }
+    return UserRole.fromValue(role)?.displayName ?? role;
   }
 
   // 判断是否为管理员
-  bool get isAdmin => role == 'admin';
+  bool get isAdmin => role == UserRole.admin.value;
 
   // 获取允许访问的模块列表
   List<String> get allowedModules {
     if (isAdmin) {
       // 管理员拥有所有模块权限
-      return [
-        'dashboard',
-        'patients',
-        'appointments',
-        'financial',
-        'materials',
-        'purchase',
-        'users',
-        'settings'
-      ];
+      return UserRole.admin.modulePermissions.keys.toList();
     }
 
     final permissionsJson = modulePermissions;
@@ -230,45 +211,18 @@ class User {
   Map<String, bool> get permissionMap {
     if (isAdmin) {
       // 管理员拥有所有权限
-      return {
-        'dashboard': true,
-        'patients': true,
-        'appointments': true,
-        'financial': true,
-        'materials': true,
-        'purchase': true,
-        'users': true,
-        'settings': true,
-      };
+      return Map.of(UserRole.admin.modulePermissions);
     }
 
     final permissionsJson = modulePermissions;
     if (permissionsJson == null || permissionsJson.isEmpty) {
       // 默认权限配置
-      return {
-        'dashboard': true,
-        'patients': false,
-        'appointments': false,
-        'financial': false,
-        'materials': false,
-        'purchase': false,
-        'users': false,
-        'settings': false,
-      };
+      return Map.of(UserRole.defaultModulePermissions);
     }
 
     try {
       final Map<String, dynamic> permissions = jsonDecode(permissionsJson);
-      final Map<String, bool> result = {
-        'dashboard': true, // 仪表盘始终可见
-        'patients': false,
-        'appointments': false,
-        'financial': false,
-        'materials': false,
-        'purchase': false,
-        'users': false,
-        'settings': false,
-      };
+      final result = Map<String, bool>.of(UserRole.defaultModulePermissions);
 
       // 更新实际权限
       permissions.forEach((module, hasPermission) {
@@ -280,16 +234,7 @@ class User {
       return result;
     } catch (e) {
       // JSON解析失败时返回默认权限
-      return {
-        'dashboard': true,
-        'patients': false,
-        'appointments': false,
-        'financial': false,
-        'materials': false,
-        'purchase': false,
-        'users': false,
-        'settings': false,
-      };
+      return Map.of(UserRole.defaultModulePermissions);
     }
   }
 }

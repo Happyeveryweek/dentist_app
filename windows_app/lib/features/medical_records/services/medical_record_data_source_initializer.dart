@@ -4,6 +4,8 @@ import '../../../data_sources/medical_record_data_source.dart';
 import '../../../utils/mysql_sync_connection_helper.dart';
 import '../../../models/user.dart';
 import '../../../providers/user_provider.dart';
+import '../../../config/app_defaults.dart';
+import '../../../models/data_source.dart';
 
 /// 病历数据源初始化服务
 /// 负责处理病历数据源的初始化、连接管理和降级逻辑
@@ -65,7 +67,7 @@ class MedicalRecordDataSourceInitializer {
     String dbType = 'sqlite';
 
     // 病历管理始终跟随患者管理的数据源配置
-    if (dataSourceMode == 'modular' && moduleDataSources != null) {
+    if (dataSourceMode.isModularDataSourceMode && moduleDataSources != null) {
       final patientsType = moduleDataSources['patients'];
       if (patientsType != null) {
         dbType = patientsType;
@@ -115,7 +117,7 @@ class MedicalRecordDataSourceInitializer {
     );
 
     // 立即初始化数据源
-    if (effectiveDataSourceType == 'sqlite') {
+    if (effectiveDataSourceType.isSqliteDataSource) {
       final database = dbProvider?.database;
       printLog(
           'MedicalRecordDataSourceInitializer: 初始化SQLite数据源，database=${database != null ? "存在" : "null"}');
@@ -148,7 +150,7 @@ class MedicalRecordDataSourceInitializer {
           error: 'SQLite数据库连接不可用',
         );
       }
-    } else if (effectiveDataSourceType == 'mysql') {
+    } else if (effectiveDataSourceType.isMySqlDataSource) {
       // 检查MySQL连接是否可用
       final mysqlConn = dbProvider?.mysqlConnection;
       if (mysqlConn == null) {
@@ -262,7 +264,7 @@ class MedicalRecordDataSourceInitializer {
       );
 
       // 一次性初始化正确的数据源
-      if (effectiveDataSourceType == 'sqlite') {
+      if (effectiveDataSourceType.isSqliteDataSource) {
         final database = dbProvider?.database;
         printLog(
             'MedicalRecordDataSourceInitializer: 初始化SQLite数据源，database=${database != null ? "存在" : "null"}');
@@ -299,7 +301,7 @@ class MedicalRecordDataSourceInitializer {
             error: 'SQLite数据库连接不可用',
           );
         }
-      } else if (effectiveDataSourceType == 'mysql') {
+      } else if (effectiveDataSourceType.isMySqlDataSource) {
         // 检查MySQL连接是否可用
         final mysqlConn = dbProvider?.mysqlConnection;
         if (mysqlConn == null) {
@@ -440,7 +442,7 @@ class MedicalRecordDataSourceInitializer {
 
     try {
       await connection.query('SELECT 1').timeout(
-            const Duration(seconds: 10),
+            MySqlConnectionPolicy.validationTimeout,
           );
       return true;
     } catch (e) {
@@ -467,7 +469,7 @@ class MedicalRecordDataSourceInitializer {
     final dbProvider = getDatabaseProvider();
 
     final database = dbProvider?.database;
-    if (effectiveDataSourceType == 'sqlite' && database != null) {
+    if (effectiveDataSourceType.isSqliteDataSource && database != null) {
       final sqliteDataSource = SqliteMedicalRecordDataSource(
         database,
         doctorName: doctorName,
@@ -483,7 +485,7 @@ class MedicalRecordDataSourceInitializer {
         database: dbProvider.database,
         error: null,
       );
-    } else if (effectiveDataSourceType == 'mysql' &&
+    } else if (effectiveDataSourceType.isMySqlDataSource &&
         dbProvider?.mysqlConnection != null) {
       final mysqlDataSource = MySqlMedicalRecordDataSource.withConnectionGetter(
         () async {

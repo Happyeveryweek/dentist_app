@@ -1,7 +1,7 @@
 import 'package:mysql1/mysql1.dart';
-import 'package:intl/intl.dart';
 import '../models/appointment.dart';
 import '../providers/patient_provider.dart';
+import '../utils/datetime_formatter.dart';
 import 'base_mysql_data_source.dart';
 import 'appointment_data_source.dart';
 
@@ -46,7 +46,7 @@ class MySqlAppointmentDataSource extends BaseMySqlDataSource
       VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     ''', [
       appointment.patientId,
-      DateFormat('yyyy-MM-dd HH:mm:ss').format(appointment.appointmentDate),
+      DateTimeFormatter.toDbString(appointment.appointmentDate),
       _extractTimeFromDateTime(appointment.appointmentDate),
       appointment.status,
       appointment.treatmentType,
@@ -64,7 +64,7 @@ class MySqlAppointmentDataSource extends BaseMySqlDataSource
       WHERE id = ?
     ''', [
       appointment.patientId,
-      DateFormat('yyyy-MM-dd HH:mm:ss').format(appointment.appointmentDate),
+      DateTimeFormatter.toDbString(appointment.appointmentDate),
       _extractTimeFromDateTime(appointment.appointmentDate),
       appointment.status,
       appointment.treatmentType,
@@ -84,7 +84,7 @@ class MySqlAppointmentDataSource extends BaseMySqlDataSource
 
   @override
   Future<List<Appointment>> getAppointmentsByDate(DateTime date) async {
-    final dateString = DateFormat('yyyy-MM-dd').format(date);
+    final dateString = DateTimeFormatter.toDbString(date).split(' ').first;
     final result = await executeQuery(
         'SELECT * FROM appointments WHERE DATE(appointment_date) = ? ORDER BY appointment_date ASC',
         [dateString]);
@@ -125,7 +125,8 @@ class MySqlAppointmentDataSource extends BaseMySqlDataSource
 
   @override
   Future<List<Appointment>> getTodayAppointments({String? doctorName}) async {
-    final dateString = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final dateString =
+        DateTimeFormatter.toDbString(DateTime.now()).split(' ').first;
     List<String> conditions = ['DATE(appointment_date) = ?'];
     List<dynamic> args = [dateString];
 

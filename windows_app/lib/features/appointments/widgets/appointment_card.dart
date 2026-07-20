@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/appointment.dart';
+import '../../../models/appointment_status.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../widgets/success_toast.dart';
 
@@ -27,7 +28,6 @@ class AppointmentCard extends StatefulWidget {
 }
 
 class _AppointmentCardState extends State<AppointmentCard> {
-  static const List<String> _statusOptions = ['已预约', '已完成', '已取消', '未到诊'];
   bool _isHovered = false;
 
   String _formatAppointmentTime(DateTime dateTime) {
@@ -129,10 +129,10 @@ class _AppointmentCardState extends State<AppointmentCard> {
   }
 
   Widget _buildStatusSelector(Color statusColor) {
-    final currentStatus =
-        _statusOptions.contains(widget.appointment.statusDisplay)
-            ? widget.appointment.statusDisplay
-            : _statusOptions.first;
+    final currentStatus = AppointmentStatus.tryParse(widget.appointment.status);
+    if (currentStatus == null) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       height: 15,
@@ -153,7 +153,7 @@ class _AppointmentCardState extends State<AppointmentCard> {
         ],
       ),
       child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
+        child: DropdownButton<AppointmentStatus>(
           value: currentStatus,
           isDense: true,
           itemHeight: 48,
@@ -171,12 +171,12 @@ class _AppointmentCardState extends State<AppointmentCard> {
             fontWeight: FontWeight.w600,
           ),
           menuMaxHeight: 220,
-          items: _statusOptions
+          items: AppointmentStatus.values
               .map(
-                (status) => DropdownMenuItem<String>(
+                (status) => DropdownMenuItem<AppointmentStatus>(
                   value: status,
                   child: Text(
-                    status,
+                    status.displayName,
                     style: TextStyle(
                       color: statusColor.withValues(alpha: 0.92),
                       fontSize: 11,
@@ -192,8 +192,8 @@ class _AppointmentCardState extends State<AppointmentCard> {
                   final onStatusChanged = widget.onStatusChanged;
                   if (status != null &&
                       onStatusChanged != null &&
-                      status != widget.appointment.statusDisplay) {
-                    onStatusChanged(status);
+                      status != currentStatus) {
+                    onStatusChanged(status.storageValue);
                   }
                 },
         ),

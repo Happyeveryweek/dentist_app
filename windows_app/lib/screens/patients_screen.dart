@@ -531,18 +531,15 @@ class _PatientsScreenState extends State<PatientsScreen> {
               dateFilterType: _dateFilterType,
               advancedCriteria: _currentAdvancedCriteria,
             )
-          : (await PatientListQueryService.loadPage(
+          : await PatientListQueryService.loadAllPages(
               patientProvider: patientProvider,
-              page: 1,
-              pageSize: 999999, // 获取所有数据
               searchQuery: _searchQuery,
               sortField: _sortField,
               sortAscending: _sortAscending,
               startDate: _startDate,
               endDate: _endDate,
               dateFilterType: _dateFilterType,
-            ))
-              .patients;
+            );
 
       if (!mounted) return;
 
@@ -576,9 +573,8 @@ class _PatientsScreenState extends State<PatientsScreen> {
               : (_searchController.text.isNotEmpty
                   ? _searchController.text
                   : null),
-          advancedCriteria: _hasAdvancedSearch
-              ? _currentAdvancedCriteria
-              : null,
+          advancedCriteria:
+              _hasAdvancedSearch ? _currentAdvancedCriteria : null,
           sortField: _sortField,
           sortAscending: _sortAscending,
           startDate: _startDate,

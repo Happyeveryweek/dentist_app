@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
 import '../../../data_sources/financial_data_source.dart';
 import '../../../utils/log_manager.dart';
+import '../../../models/data_source.dart';
 
 /// 财务数据源初始化服务
 /// 负责SQLite和MySQL数据源的初始化和切换
@@ -83,7 +84,7 @@ class FinancialDataSourceInitializer {
     String dbType = 'sqlite';
 
     // 如果是模块化模式且有模块配置，优先使用模块配置
-    if (dataSourceMode == 'modular' && moduleDataSources != null) {
+    if (dataSourceMode.isModularDataSourceMode && moduleDataSources != null) {
       final financialType = moduleDataSources['financial'];
       if (financialType != null) {
         dbType = financialType;
@@ -105,7 +106,7 @@ class FinancialDataSourceInitializer {
     _dataSourceType = dbType;
 
     // 根据确定的数据源类型初始化对应的数据源
-    if (dbType == 'sqlite') {
+    if (dbType.isSqliteDataSource) {
       // 初始化SQLite数据源
       try {
         if (databaseProvider.database != null) {
@@ -115,7 +116,7 @@ class FinancialDataSourceInitializer {
         LogManager.e('FinancialDataSourceInitializer', '获取SQLite数据库失败',
             error: e);
       }
-    } else if (dbType == 'mysql') {
+    } else if (dbType.isMySqlDataSource) {
       // 初始化MySQL数据源
       try {
         final mysqlConnection = databaseProvider.mysqlConnection;
@@ -173,7 +174,7 @@ class FinancialDataSourceInitializer {
   FinancialDataSource getCurrentDataSource() {
     final effectiveType = effectiveDataSourceType;
 
-    if (effectiveType == 'mysql') {
+    if (effectiveType.isMySqlDataSource) {
       final mysqlSource = _mysqlDataSource;
       final sqliteSource = _sqliteDataSource;
       // 如果要求使用MySQL但未初始化，尝试降级到SQLite

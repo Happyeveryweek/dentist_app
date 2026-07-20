@@ -9,6 +9,7 @@ import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../models/patient.dart';
 import '../../../utils/log_manager.dart';
+import '../services/patient_list_query_service.dart';
 
 class PatientExportDialog extends StatefulWidget {
   final String? searchQuery;
@@ -120,7 +121,8 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
                   activeThumbColor: accentColor,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
-                Divider(height: 1, color: tokens.shadow.withValues(alpha: 0.06)),
+                Divider(
+                    height: 1, color: tokens.shadow.withValues(alpha: 0.06)),
                 SwitchListTile.adaptive(
                   title: const Text('包含牙齿状况图表'),
                   subtitle: Text('以文本格式附加牙齿状况信息',
@@ -220,7 +222,7 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
         if (advancedCriteria != null && advancedCriteria.isNotEmpty) {
           patients = await patientProvider.searchPatients(
             '',
-            sortField: widget.sortField,
+            sortField: widget.sortField ?? 'created_at',
             sortAscending: widget.sortAscending,
             startDate: widget.startDate,
             endDate: widget.endDate,
@@ -231,7 +233,7 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
           // 有搜索词时使用搜索功能
           patients = await patientProvider.searchPatients(
             searchQuery,
-            sortField: widget.sortField,
+            sortField: widget.sortField ?? 'created_at',
             sortAscending: widget.sortAscending,
             startDate: widget.startDate,
             endDate: widget.endDate,
@@ -239,16 +241,15 @@ class _PatientExportDialogState extends State<PatientExportDialog> {
           );
         } else {
           // 无搜索词但有日期或排序筛选
-          var result = await patientProvider.getPatientsPage(
-            page: 1,
-            pageSize: 5000, // 使用大数值以获取所有结果
-            sortField: widget.sortField,
+          patients = await PatientListQueryService.loadAllPages(
+            patientProvider: patientProvider,
+            searchQuery: '',
+            sortField: widget.sortField ?? 'created_at',
             sortAscending: widget.sortAscending,
             startDate: widget.startDate,
             endDate: widget.endDate,
             dateFilterType: widget.dateFilterType,
           );
-          patients = result['patients'] as List<Patient>;
         }
       }
 

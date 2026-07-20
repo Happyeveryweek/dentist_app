@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 
 import '../models/appointment.dart';
+import '../models/appointment_status.dart';
 import '../models/patient.dart';
 import '../providers/appointment_provider.dart';
 import '../providers/patient_provider.dart';
@@ -121,7 +122,8 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
       }
 
       // 提取治疗项目数据
-      if (data.containsKey('treatments') || data.containsKey('treatmentTypes')) {
+      if (data.containsKey('treatments') ||
+          data.containsKey('treatmentTypes')) {
         // 治疗项目数据已包含在 treatment_type 中，但当前界面未使用
       }
     } catch (e) {
@@ -167,10 +169,11 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
         _applyAppointmentLocally(updatedAppointment);
       });
 
-      final statusColor = DashboardStatusHelper.getStatusColor(context, newStatus);
+      final statusColor =
+          DashboardStatusHelper.getStatusColor(context, newStatus);
       AppToastManager.showSuccess(
         context,
-        message: '预约状态已更新为: $newStatus',
+        message: '预约状态已更新为: ${AppointmentStatus.displayNameOf(newStatus)}',
         backgroundColor: statusColor,
       );
     } catch (e) {
@@ -283,19 +286,19 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-                color: context.tokens.infoContainer,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: context.tokens.info.withValues(alpha: 0.3),
-                ),
+              color: context.tokens.infoContainer,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: context.tokens.info.withValues(alpha: 0.3),
               ),
-              child: IconButton(
-                icon: Icon(
-                  Icons.refresh_rounded,
-                  color: context.tokens.info,
-                ),
-                tooltip: '刷新',
-                onPressed: _loadAppointmentData,
+            ),
+            child: IconButton(
+              icon: Icon(
+                Icons.refresh_rounded,
+                color: context.tokens.info,
+              ),
+              tooltip: '刷新',
+              onPressed: _loadAppointmentData,
             ),
           ),
         ],
@@ -328,14 +331,12 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
           AppointmentDetailsTreatmentSection(appointment: appointment),
           const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: context.tokens.cardBackground,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                  color:
-                      context.tokens.divider.withValues(alpha: 0.5)),
+                  color: context.tokens.divider.withValues(alpha: 0.5)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,22 +360,16 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: [
-                    _buildStatusButton(appointment, '已预约', context.tokens.primaryAccent),
-                    _buildStatusButton(appointment, '已完成', context.tokens.success),
-                    _buildStatusButton(appointment, '已取消', context.tokens.error),
-                    _buildStatusButton(appointment, '未到诊', context.tokens.warning),
-                  ],
+                  children: AppointmentStatus.values
+                      .map((status) => _buildStatusButton(appointment, status))
+                      .toList(),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          if (notes != null && notes.isNotEmpty)
-            _buildInfoRow('备注', notes),
-          if (cost != null)
-            _buildInfoRow(
-                '费用', '¥${cost.toStringAsFixed(2)}'),
+          if (notes != null && notes.isNotEmpty) _buildInfoRow('备注', notes),
+          if (cost != null) _buildInfoRow('费用', '¥${cost.toStringAsFixed(2)}'),
           const SizedBox(height: 12),
           if (patient != null)
             AppointmentDetailsPatientCard(
@@ -382,8 +377,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
               onViewDetails: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) =>
-                        PatientDetailScreen(patient: patient),
+                    builder: (context) => PatientDetailScreen(patient: patient),
                   ),
                 );
               },
@@ -393,33 +387,21 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
     );
   }
 
-  Widget _buildStatusButton(Appointment appointment, String status, Color color) {
-    final isCurrentStatus = appointment.status == status;
+  Widget _buildStatusButton(Appointment appointment, AppointmentStatus status) {
+    final isCurrentStatus =
+        AppointmentStatus.tryParse(appointment.status) == status;
     final tokens = context.tokens;
-
-    // 获取状态对应的转换后状态文本
-    String statusText;
-    switch (status) {
-      case '已预约':
-        statusText = '已预约';
-        break;
-      case '已完成':
-        statusText = '已完成';
-        break;
-      case '已取消':
-        statusText = '已取消';
-        break;
-      case '未到诊':
-        statusText = '未到诊';
-        break;
-      default:
-        statusText = status;
-    }
+    final color = DashboardStatusHelper.getStatusColor(
+      context,
+      status.storageValue,
+    );
 
     return Container(
       margin: const EdgeInsets.only(right: 6, bottom: 6),
       child: InkWell(
-        onTap: isCurrentStatus ? null : () => _changeAppointmentStatus(status),
+        onTap: isCurrentStatus
+            ? null
+            : () => _changeAppointmentStatus(status.storageValue),
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -432,7 +414,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
             ),
           ),
           child: Text(
-            statusText,
+            status.displayName,
             style: TextStyle(
               color: isCurrentStatus ? tokens.cardBackground : color,
               fontWeight: FontWeight.w600,

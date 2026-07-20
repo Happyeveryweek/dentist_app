@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
 import '../theme/theme_context_extensions.dart';
 import '../models/purchase_record.dart';
@@ -11,6 +12,7 @@ import '../models/purchase_item.dart';
 import '../widgets/success_toast.dart';
 import '../features/purchases/widgets/purchase_export_dialog.dart';
 import '../utils/log_manager.dart';
+import '../providers/settings_provider.dart';
 
 /// 采购记录导出服务
 class PurchaseExportService {
@@ -50,6 +52,7 @@ class PurchaseExportService {
         exportOptions,
         tokens: context.tokens,
         colors: context.colors,
+        appName: context.read<SettingsProvider>().appName,
       );
 
       final result = await exportService.saveImageToDownloads(imageData);
@@ -75,6 +78,7 @@ class PurchaseExportService {
     Map<String, bool> exportOptions, {
     required AppThemeTokens tokens,
     required ColorScheme colors,
+    required String appName,
   }) async {
     final recorder = ui.PictureRecorder();
     final canvas = ui.Canvas(recorder);
@@ -386,7 +390,7 @@ class PurchaseExportService {
       text: TextSpan(
         text:
             '导出时间: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}\n'
-            '牙科诊所管理系统',
+            '$appName',
         style: footerStyle,
       ),
       textDirection: ui.TextDirection.ltr,

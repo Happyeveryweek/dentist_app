@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import '../../../models/appointment_status.dart';
 
 class AppointmentCostStatusSection extends StatelessWidget {
   final TextEditingController costController;
@@ -15,6 +16,22 @@ class AppointmentCostStatusSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final parsedStatus = AppointmentStatus.tryParse(status);
+    final statusItems = [
+      if (parsedStatus == null)
+        DropdownMenuItem(
+          value: status,
+          enabled: false,
+          child: Text(status),
+        ),
+      ...AppointmentStatus.values.map(
+        (status) => DropdownMenuItem(
+          value: status.storageValue,
+          child: Text(status.displayName),
+        ),
+      ),
+    ];
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -82,12 +99,7 @@ class AppointmentCostStatusSection extends StatelessWidget {
                   ),
                   key: ValueKey<String?>(status),
                   initialValue: status,
-                  items: const [
-                    DropdownMenuItem(value: '已预约', child: Text('已预约')),
-                    DropdownMenuItem(value: '已完成', child: Text('已完成')),
-                    DropdownMenuItem(value: '已取消', child: Text('已取消')),
-                    DropdownMenuItem(value: '未到诊', child: Text('未到诊')),
-                  ],
+                  items: statusItems,
                   onChanged: onStatusChanged,
                 ),
               ),

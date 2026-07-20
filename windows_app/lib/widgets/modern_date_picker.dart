@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'package:intl/intl.dart';
 
 class ModernDatePickerDialog extends StatefulWidget {
@@ -182,6 +183,8 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = Theme.of(context).colorScheme;
     final days = _getDaysInMonth();
     final monthNames = [
       '一月',
@@ -208,24 +211,19 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
           child: Container(
             width: 320,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: tokens.cardBackground,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8)),
-              ],
+              border: Border.all(color: tokens.border),
+              boxShadow: tokens.cardShadow,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // 标题栏
                 Container(
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: tokens.cardBackground,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
                     ),
@@ -242,8 +240,8 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
                             if (title != null) ...[
                               Text(
                                 title,
-                                style: const TextStyle(
-                                  color: Colors.black87,
+                                style: TextStyle(
+                                  color: colors.onSurface,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -252,8 +250,8 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
                             ],
                             Text(
                               '${monthNames[_currentMonth.month - 1]} ${_currentMonth.year}',
-                              style: const TextStyle(
-                                color: Colors.black87,
+                              style: TextStyle(
+                                color: colors.onSurface,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -265,8 +263,8 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
                         cursor: SystemMouseCursors.click,
                         child: IconButton(
                           onPressed: _previousMonth,
-                          icon: const Icon(Icons.chevron_left,
-                              color: Colors.black87),
+                          icon:
+                              Icon(Icons.chevron_left, color: colors.onSurface),
                           tooltip: '上个月',
                         ),
                       ),
@@ -274,8 +272,8 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
                         cursor: SystemMouseCursors.click,
                         child: IconButton(
                           onPressed: _nextMonth,
-                          icon: const Icon(Icons.chevron_right,
-                              color: Colors.black87),
+                          icon: Icon(Icons.chevron_right,
+                              color: colors.onSurface),
                           tooltip: '下个月',
                         ),
                       ),
@@ -333,7 +331,7 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
                                   day,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    color: Colors.grey.shade600,
+                                    color: tokens.textMuted,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -373,32 +371,30 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
                           child: InkWell(
                             onTap: () => _selectDate(date),
                             borderRadius: BorderRadius.circular(8),
-                            hoverColor: Colors.blue.withValues(alpha: 0.08),
+                            hoverColor: tokens.hoverBackground,
                             child: Container(
                               margin: const EdgeInsets.all(2),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? Colors.blue.shade500
+                                    ? tokens.primaryAccent
                                     : isToday
-                                        ? Colors.orange.shade100
+                                        ? tokens.warningContainer
                                         : Colors.transparent,
                                 borderRadius: BorderRadius.circular(8),
                                 border: isToday
                                     ? Border.all(
-                                        color: Colors.orange.shade300, width: 2)
-                                    : Border.all(
-                                        color: Colors.black
-                                            .withValues(alpha: 0.04)),
+                                        color: tokens.warning, width: 2)
+                                    : Border.all(color: tokens.border),
                               ),
                               child: Center(
                                 child: Text(
                                   '${date.day}',
                                   style: TextStyle(
                                     color: isSelected
-                                        ? Colors.white
+                                        ? colors.onPrimary
                                         : isCurrentMonth
-                                            ? Colors.black87
-                                            : Colors.grey.shade400,
+                                            ? colors.onSurface
+                                            : tokens.disabledText,
                                     fontWeight: isSelected || isToday
                                         ? FontWeight.bold
                                         : FontWeight.normal,
@@ -418,19 +414,20 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: tokens.infoContainer,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue.shade200),
+                    border:
+                        Border.all(color: tokens.info.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.calendar_today, color: Colors.blue.shade600),
+                      Icon(Icons.calendar_today, color: tokens.info),
                       const SizedBox(width: 8),
                       Text(
                         '已选择：${DateFormat('yyyy年MM月dd日').format(_selectedDate)}',
                         style: TextStyle(
-                          color: Colors.blue.shade700,
+                          color: tokens.info,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -469,8 +466,8 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
                             onPressed: () =>
                                 Navigator.of(context).pop(_selectedDate),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue.shade600,
-                              foregroundColor: Colors.white,
+                              backgroundColor: tokens.primaryAccent,
+                              foregroundColor: colors.onPrimary,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),

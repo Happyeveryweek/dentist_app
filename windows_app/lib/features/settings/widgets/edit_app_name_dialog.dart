@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../config/app_defaults.dart';
 import 'package:provider/provider.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
@@ -43,7 +44,7 @@ class EditAppNameDialog extends StatelessWidget {
           TextField(
             controller: controller,
             decoration: InputDecoration(
-              hintText: '例如：牙科诊所管理系统',
+              hintText: '例如：$defaultAppName',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

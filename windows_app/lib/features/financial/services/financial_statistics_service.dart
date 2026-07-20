@@ -6,6 +6,7 @@ import '../../../models/patient.dart';
 import '../../../providers/financial_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../models/data_source.dart';
 
 /// 财务统计服务
 ///
@@ -36,7 +37,7 @@ class FinancialStatisticsService {
 
     // 依据设置确定"患者管理"数据源（用于按姓名搜索患者ID）
     final String patientsDataSource =
-        settingsProvider.dataSourceMode == 'modular'
+        settingsProvider.dataSourceMode.isModularDataSourceMode
             ? (settingsProvider.moduleDataSources['patients'] ??
                 settingsProvider.dataSourceType)
             : settingsProvider.dataSourceType;

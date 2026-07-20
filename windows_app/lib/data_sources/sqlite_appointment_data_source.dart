@@ -1,8 +1,8 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:intl/intl.dart';
 import '../models/appointment.dart';
 import '../providers/patient_provider.dart';
 import '../utils/log_manager.dart';
+import '../utils/datetime_formatter.dart';
 import 'appointment_data_source.dart';
 
 /// SQLite 预约数据源实现
@@ -98,8 +98,8 @@ class SqliteAppointmentDataSource implements AppointmentDataSource {
       'appointments',
       where: 'appointment_date BETWEEN ? AND ?',
       whereArgs: [
-        DateFormat('yyyy-MM-dd HH:mm:ss').format(startOfDay),
-        DateFormat('yyyy-MM-dd HH:mm:ss').format(endOfDay),
+        DateTimeFormatter.toDbString(startOfDay),
+        DateTimeFormatter.toDbString(endOfDay),
       ],
       orderBy: 'appointment_date ASC',
     );
@@ -167,8 +167,8 @@ class SqliteAppointmentDataSource implements AppointmentDataSource {
     // 添加日期条件
     conditions.add('appointment_date BETWEEN ? AND ?');
     args.addAll([
-      DateFormat('yyyy-MM-dd HH:mm:ss').format(startOfDay),
-      DateFormat('yyyy-MM-dd HH:mm:ss').format(endOfDay),
+      DateTimeFormatter.toDbString(startOfDay),
+      DateTimeFormatter.toDbString(endOfDay),
     ]);
 
     // 如果指定了医生，通过PatientProvider获取该医生的患者ID

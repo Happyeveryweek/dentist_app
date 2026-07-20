@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 
 import '../../../models/user.dart';
+import '../../../models/user_role.dart';
 import '../../../theme/theme_context_extensions.dart';
 import '../../../providers/user_provider.dart';
 import '../../../widgets/dental_icons.dart';
@@ -66,20 +67,13 @@ class _UserFormDialogState extends State<UserFormDialog> {
     _doctorNameController = TextEditingController(
       text: user?.doctor ?? '',
     );
-    _selectedRole = user?.role ?? 'assistant';
+    _selectedRole =
+        UserRole.fromValue(user?.role ?? '')?.value ?? UserRole.assistant.value;
     _uploadedImageData = user?.imageData;
     _avatarFileName = user?.avatar;
     _modulePermissions = _isEditing && user != null
         ? user.permissionMap
-        : {
-            'dashboard': true,
-            'patients': false,
-            'appointments': false,
-            'financial': false,
-            'materials': false,
-            'purchase': false,
-            'medical_records': false,
-          };
+        : Map.of(UserRole.defaultModulePermissions);
   }
 
   @override
@@ -136,7 +130,8 @@ class _UserFormDialogState extends State<UserFormDialog> {
 
         // 准备权限配置JSON字符串
         String? permissionsJson;
-        if (_selectedRole != 'admin' && _modulePermissions.isNotEmpty) {
+        if (_selectedRole != UserRole.admin.value &&
+            _modulePermissions.isNotEmpty) {
           // 验证至少选择一个模块（除了仪表盘）
           bool hasAnyPermission = _modulePermissions.entries
               .where((entry) => entry.key != 'dashboard')
@@ -276,18 +271,12 @@ class _UserFormDialogState extends State<UserFormDialog> {
                   onRoleChanged: (value) {
                     setState(() {
                       _selectedRole = value ?? _selectedRole;
-                      if (value == 'admin') {
+                      if (value == UserRole.admin.value) {
                         _modulePermissions.clear();
-                      } else if (_selectedRole == 'admin' && value != 'admin') {
-                        _modulePermissions = {
-                          'dashboard': true,
-                          'patients': false,
-                          'appointments': false,
-                          'financial': false,
-                          'materials': false,
-                          'purchase': false,
-                          'medical_records': false,
-                        };
+                      } else if (_selectedRole == UserRole.admin.value &&
+                          value != UserRole.admin.value) {
+                        _modulePermissions =
+                            Map.of(UserRole.defaultModulePermissions);
                       }
                     });
                   },
@@ -331,7 +320,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
                   },
                 ),
                 const SizedBox(height: 20),
-                if (_selectedRole != 'admin') ...[
+                if (_selectedRole != UserRole.admin.value) ...[
                   PermissionPanel(
                     permissions: _modulePermissions,
                     isExpanded: _isPermissionExpanded,

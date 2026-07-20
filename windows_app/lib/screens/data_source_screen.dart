@@ -5,6 +5,7 @@ import 'package:path/path.dart' as path;
 
 import '../providers/settings_provider.dart';
 import '../providers/database_provider.dart';
+import '../config/app_defaults.dart';
 import '../widgets/success_toast.dart';
 import '../features/settings/widgets/data_source_page_header.dart';
 import '../features/settings/widgets/data_source_configuration_section.dart';
@@ -48,7 +49,9 @@ class _DataSourceScreenState extends State<DataSourceScreen> {
 
   // MySQL连接参数
   final _hostController = TextEditingController();
-  final _portController = TextEditingController(text: '3306');
+  final _portController = TextEditingController(
+    text: '${MySqlConnectionPolicy.defaultPort}',
+  );
   final _databaseController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();

@@ -5,6 +5,7 @@ import 'package:mysql1/mysql1.dart';
 
 import '../models/patient.dart';
 import '../models/user.dart';
+import '../models/data_source.dart';
 import '../models/patient_material.dart';
 import '../models/material_image.dart';
 import '../models/patient_material_with_images.dart';
@@ -16,6 +17,7 @@ import '../features/patients/services/patient_material_service.dart';
 import '../features/patients/services/patient_material_sync_service.dart';
 import '../features/patients/services/patient_search_service.dart';
 import '../features/patients/services/patient_core_service.dart';
+import '../features/patients/services/patient_default_doctor_resolver.dart';
 import '../features/patients/services/patient_list_service.dart';
 import '../features/patients/services/patient_initialization_service.dart';
 import '../utils/pinyin_util.dart';
@@ -108,9 +110,14 @@ class PatientProvider extends ChangeNotifier {
 
   // 获取当前数据源
   PatientDataSource? get _currentDataSource {
-    if (_effectiveDataSourceType == 'mysql') return _mysqlDataSource;
-    if (_effectiveDataSourceType == 'sqlite') return _sqliteDataSource;
-    return null;
+    switch (DataSourceType.tryParse(_effectiveDataSourceType)) {
+      case DataSourceType.mysql:
+        return _mysqlDataSource;
+      case DataSourceType.sqlite:
+        return _sqliteDataSource;
+      case null:
+        return null;
+    }
   }
 
   PatientDataSource? _dataSourceForType(String? effectiveDataSourceType) {
@@ -119,7 +126,8 @@ class PatientProvider extends ChangeNotifier {
       return _currentDataSource;
     }
 
-    if (requestedType == 'sqlite') {
+    final requestedDataSourceType = DataSourceType.tryParse(requestedType);
+    if (requestedDataSourceType == DataSourceType.sqlite) {
       final database = _database;
       if (_sqliteDataSource == null && database != null) {
         final user = _userProvider?.currentUser ?? _currentUser;
@@ -134,7 +142,7 @@ class PatientProvider extends ChangeNotifier {
       return _sqliteDataSource;
     }
 
-    if (requestedType == 'mysql') {
+    if (requestedDataSourceType == DataSourceType.mysql) {
       MySqlConnection? mysqlConnection = _currentMysqlConnection;
       if (mysqlConnection == null && _databaseProvider != null) {
         try {
@@ -168,7 +176,8 @@ class PatientProvider extends ChangeNotifier {
 
   // MySQL 动态连接获取
   MySqlConnection? get _currentMysqlConnection {
-    if (_effectiveDataSourceType != 'mysql' || _databaseProvider == null) {
+    if (!_effectiveDataSourceType.isMySqlDataSource ||
+        _databaseProvider == null) {
       return _mysqlConnection;
     }
     try {
@@ -297,10 +306,12 @@ class PatientProvider extends ChangeNotifier {
       _database = config['database'];
       _mysqlConnection = config['mysqlConnection'];
 
-      if (_effectiveDataSourceType == 'sqlite' && _sqliteDataSource == null) {
+      if (_effectiveDataSourceType.isSqliteDataSource &&
+          _sqliteDataSource == null) {
         throw Exception('SQLite数据库连接不可用');
       }
-      if (_effectiveDataSourceType == 'mysql' && _mysqlDataSource == null) {
+      if (_effectiveDataSourceType.isMySqlDataSource &&
+          _mysqlDataSource == null) {
         throw Exception('MySQL数据库连接不可用');
       }
 
@@ -492,7 +503,7 @@ class PatientProvider extends ChangeNotifier {
     Patient sourcePatient, {
     required String targetDataSourceType,
   }) async {
-    if (targetDataSourceType == 'mysql') {
+    if (targetDataSourceType.isMySqlDataSource) {
       return _upsertPatientToMySQL(sourcePatient);
     }
 
@@ -659,7 +670,18 @@ class PatientProvider extends ChangeNotifier {
   // =================== 患者核心业务 (委托至 CoreService) ===================
 
   Future<int> addPatient(Patient patient) async {
-    final id = await _coreService.addPatient(patient);
+    final doctor = patient.doctor?.trim();
+    final resolvedDoctor = doctor == null || doctor.isEmpty
+        ? PatientDefaultDoctorResolver.resolve(
+            _userProvider?.currentUser ?? _currentUser,
+          )
+        : doctor;
+    if (resolvedDoctor == null) {
+      throw StateError('新增患者失败：请先填写当前用户的医生姓名或患者主治医生');
+    }
+
+    final id =
+        await _coreService.addPatient(patient.copyWith(doctor: resolvedDoctor));
     clearCache();
     markPatientsNeedRefresh();
     return id;

@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
 
 import '../models/material.dart' as material_models;
+import '../models/data_source.dart';
 import '../data_sources/material_data_source.dart';
 import '../features/materials/services/material_sync_service.dart';
 import '../services/module_mysql_connection_service.dart';
@@ -81,14 +82,15 @@ class MaterialProvider extends ChangeNotifier {
 
   // 获取当前数据源
   MaterialDataSource? get _currentDataSource {
-    if (_effectiveDataSourceType == 'mysql') {
+    final type = DataSourceType.tryParse(_effectiveDataSourceType);
+    if (type == DataSourceType.mysql) {
       // 如果要求使用MySQL但未初始化，尝试降级到SQLite
       if (_mysqlDataSource == null && _sqliteDataSource != null) {
         LogManager.d('MaterialProvider', '⚠️ MySQL材料数据源未初始化，自动降级到SQLite');
         return _sqliteDataSource;
       }
       return _mysqlDataSource;
-    } else if (_effectiveDataSourceType == 'sqlite') {
+    } else if (type == DataSourceType.sqlite) {
       return _sqliteDataSource;
     }
     return null;
@@ -104,14 +106,16 @@ class MaterialProvider extends ChangeNotifier {
   }
 
   MaterialDataSource? _dataSourceForType(String? effectiveDataSourceType) {
-    final requestedType = effectiveDataSourceType ?? dataSourceType;
-    if (requestedType == dataSourceType) {
+    final requestedType = DataSourceType.tryParse(
+      effectiveDataSourceType ?? dataSourceType,
+    );
+    if (requestedType?.storageValue == dataSourceType) {
       return _currentDataSource;
     }
-    if (requestedType == 'mysql') {
+    if (requestedType == DataSourceType.mysql) {
       return _mysqlDataSource;
     }
-    if (requestedType == 'sqlite') {
+    if (requestedType == DataSourceType.sqlite) {
       return _sqliteDataSource;
     }
     return null;
@@ -144,7 +148,7 @@ class MaterialProvider extends ChangeNotifier {
 
       // 如果是模块化模式且有模块配置，优先使用模块配置
       final materialsType = moduleDataSources?['materials'];
-      if (dataSourceMode == 'modular' && materialsType != null) {
+      if (dataSourceMode.isModularDataSourceMode && materialsType != null) {
         dbType = materialsType;
         LogManager.d('MaterialProvider',
             'MaterialProvider使用模块化配置: materials -> $dbType');
@@ -157,7 +161,7 @@ class MaterialProvider extends ChangeNotifier {
       _effectiveDataSourceType = dbType;
 
       // 一次性初始化正确的数据源
-      if (dbType == 'sqlite') {
+      if (dbType.isSqliteDataSource) {
         final database = dbProvider.database;
         if (database != null) {
           _sqliteDataSource = SqliteMaterialDataSource(database);
@@ -168,7 +172,7 @@ class MaterialProvider extends ChangeNotifier {
         } else {
           _setError('SQLite数据库连接不可用');
         }
-      } else if (dbType == 'mysql') {
+      } else if (dbType.isMySqlDataSource) {
         // 检查MySQL连接是否可用
         final mysqlConn = dbProvider.mysqlConnection;
         if (mysqlConn == null) {

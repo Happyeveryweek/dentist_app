@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../theme/theme_context_extensions.dart';
+import '../../../config/app_defaults.dart';
 import 'data_source_form_widgets.dart';
 
 /// 数据源配置区域组件
@@ -574,7 +575,7 @@ class DataSourceConfigurationSection extends StatelessWidget {
                   child: DataSourceFormWidgets.buildCompactFormField(
                     controller: portController,
                     labelText: '端口',
-                    hintText: '3306',
+                    hintText: '${MySqlConnectionPolicy.defaultPort}',
                     icon: Icons.settings_ethernet_rounded,
                     iconColor: context.tokens.info,
                     keyboardType: TextInputType.number,

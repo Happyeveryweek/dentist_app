@@ -2,6 +2,7 @@ import 'package:mysql1/mysql1.dart';
 import '../../patients/services/patient_sync_log_helper.dart';
 import '../../../models/patient_sync_log.dart';
 import '../../../utils/log_manager.dart';
+import '../../../models/data_source.dart';
 
 /// 财务同步服务
 /// 负责处理 SQLite → MySQL 的数据同步逻辑（从 FinancialProvider 中提取）
@@ -15,7 +16,7 @@ class FinancialSyncService {
   });
 
   /// 判断是否需要同步（当前使用 SQLite 数据源时需要同步到 MySQL）
-  bool get needsSync => getEffectiveDataSourceType() == 'sqlite';
+  bool get needsSync => getEffectiveDataSourceType().isSqliteDataSource;
 
   /// 尝试将SQLite中的财务记录同步到MySQL（非阻塞操作）
   Future<void> syncFinancialRecordToMySQL(

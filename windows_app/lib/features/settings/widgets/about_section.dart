@@ -90,7 +90,8 @@ class AboutSection extends StatelessWidget {
                 SettingItem(
                   icon: Icons.copyright,
                   title: '版权信息',
-                  subtitle: '© ${DateTime.now().year} 牙科诊所管理系统 版权所有',
+                  subtitle:
+                      '© ${DateTime.now().year} ${settingsProvider.appName} 版权所有',
                 ),
                 const Divider(height: 20),
                 SettingItem(

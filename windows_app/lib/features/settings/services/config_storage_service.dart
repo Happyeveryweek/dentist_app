@@ -5,6 +5,7 @@ import 'package:path/path.dart' as path;
 import 'package:dentist_app_windows/utils/config_manager.dart';
 import 'package:dentist_app_windows/utils/app_paths.dart';
 import 'package:dentist_app_windows/utils/datetime_formatter.dart';
+import 'package:dentist_app_windows/config/app_defaults.dart';
 import '../../../utils/log_manager.dart';
 
 /// 配置存储服务
@@ -99,7 +100,8 @@ class ConfigStorageService {
       'dataSourceMode': prefs.getString('dataSourceMode') ?? 'global',
       'sqliteDbPath': prefs.getString('sqliteDbPath') ?? '',
       'mysqlHost': prefs.getString('mysqlHost') ?? '',
-      'mysqlPort': prefs.getString('mysqlPort') ?? '3306',
+      'mysqlPort': prefs.getString('mysqlPort') ??
+          '${MySqlConnectionPolicy.defaultPort}',
       'mysqlDatabase': prefs.getString('mysqlDatabase') ?? '',
       'mysqlUsername': prefs.getString('mysqlUsername') ?? '',
       'mysqlPassword': prefs.getString('mysqlPassword') ?? '',
@@ -108,7 +110,7 @@ class ConfigStorageService {
       'lastMySQLSettings': prefs.getString('lastMySQLSettings'),
       'backupDataSource': prefs.getString('backupDataSource') ?? 'sqlite',
       'moduleDataSources': prefs.getString('moduleDataSources'),
-      'appName': prefs.getString('appName') ?? '牙科诊所管理系统',
+      'appName': prefs.getString('appName') ?? defaultAppName,
       'windowWidth': prefs.getDouble('windowWidth'),
       'windowHeight': prefs.getDouble('windowHeight'),
     };

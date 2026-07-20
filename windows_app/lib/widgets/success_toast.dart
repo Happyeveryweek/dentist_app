@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// Toast 类型枚举
 enum AppToastType {
@@ -29,7 +30,7 @@ class AppToastManager {
     VoidCallback? onDismiss,
     Color? backgroundColor,
   }) {
-    final config = _getToastConfig(type);
+    final config = _getToastConfig(context, type);
     final toastColor = backgroundColor ?? config.color;
 
     // 移除之前的提示（如果存在）
@@ -42,15 +43,15 @@ class AppToastManager {
           children: [
             Icon(
               config.icon,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onPrimary,
               size: 20,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -62,9 +63,9 @@ class AppToastManager {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
                   onDismiss.call();
                 },
-                icon: const Icon(
+                icon: Icon(
                   Icons.close,
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.onPrimary,
                   size: 20,
                 ),
                 padding: EdgeInsets.zero,
@@ -156,26 +157,26 @@ class AppToastManager {
     );
   }
 
-  static _ToastConfig _getToastConfig(AppToastType type) {
+  static _ToastConfig _getToastConfig(BuildContext context, AppToastType type) {
     switch (type) {
       case AppToastType.success:
         return _ToastConfig(
-          color: Colors.green.shade600,
+          color: context.tokens.success,
           icon: Icons.check_circle_outline,
         );
       case AppToastType.error:
         return _ToastConfig(
-          color: Colors.red.shade500,
+          color: context.tokens.error,
           icon: Icons.error_outline,
         );
       case AppToastType.info:
         return _ToastConfig(
-          color: Colors.blue.shade600,
+          color: context.tokens.info,
           icon: Icons.info_outline,
         );
       case AppToastType.delete:
         return _ToastConfig(
-          color: Colors.orange.shade600,
+          color: context.tokens.warning,
           icon: Icons.delete_outline,
         );
     }
@@ -206,6 +207,8 @@ class DeleteConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = Theme.of(context).colorScheme;
     final itemNameValue = itemName;
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -214,22 +217,9 @@ class DeleteConfirmDialog extends StatelessWidget {
         width: 340,
         margin: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: tokens.cardBackground,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 30,
-              spreadRadius: 0,
-              offset: const Offset(0, 15),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              spreadRadius: 0,
-              offset: const Offset(0, 5),
-            ),
-          ],
+          boxShadow: tokens.elevatedShadow,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -248,22 +238,22 @@ class DeleteConfirmDialog extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Colors.red.shade400,
-                          Colors.red.shade500,
+                          tokens.dangerAccent.withValues(alpha: 0.85),
+                          tokens.dangerAccent,
                         ],
                       ),
                       borderRadius: BorderRadius.circular(32),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.shade300.withValues(alpha: 0.3),
+                          color: tokens.error.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
                       ],
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.delete_outline_rounded,
-                      color: Colors.white,
+                      color: colors.onPrimary,
                       size: 28,
                     ),
                   ),
@@ -276,7 +266,7 @@ class DeleteConfirmDialog extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: Colors.grey.shade800,
+                      color: colors.onSurface,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -291,7 +281,7 @@ class DeleteConfirmDialog extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 15,
-                      color: Colors.grey.shade600,
+                      color: tokens.textMuted,
                       height: 1.4,
                       fontWeight: FontWeight.w400,
                     ),
@@ -306,10 +296,10 @@ class DeleteConfirmDialog extends StatelessWidget {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
+                      color: tokens.errorContainer,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.red.shade100,
+                        color: tokens.error.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -318,7 +308,7 @@ class DeleteConfirmDialog extends StatelessWidget {
                       children: [
                         Icon(
                           Icons.warning_amber_rounded,
-                          color: Colors.red.shade500,
+                          color: tokens.error,
                           size: 16,
                         ),
                         const SizedBox(width: 8),
@@ -327,7 +317,7 @@ class DeleteConfirmDialog extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: Colors.red.shade600,
+                            color: tokens.error,
                           ),
                         ),
                       ],
@@ -345,7 +335,7 @@ class DeleteConfirmDialog extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     Colors.transparent,
-                    Colors.grey.shade200,
+                    tokens.divider,
                     Colors.transparent,
                   ],
                 ),
@@ -362,10 +352,10 @@ class DeleteConfirmDialog extends StatelessWidget {
                     child: Container(
                       height: 44,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
+                        color: tokens.mutedBackground,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.grey.shade200,
+                          color: tokens.border,
                           width: 1,
                         ),
                       ),
@@ -381,7 +371,7 @@ class DeleteConfirmDialog extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade700,
+                                color: colors.onSurface,
                               ),
                             ),
                           ),
@@ -401,14 +391,14 @@ class DeleteConfirmDialog extends StatelessWidget {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.red.shade400,
-                            Colors.red.shade500,
+                            tokens.dangerAccent.withValues(alpha: 0.85),
+                            tokens.dangerAccent,
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.red.shade300.withValues(alpha: 0.4),
+                            color: tokens.error.withValues(alpha: 0.4),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -423,10 +413,10 @@ class DeleteConfirmDialog extends StatelessWidget {
                           child: Center(
                             child: Text(
                               confirmText,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: colors.onPrimary,
                               ),
                             ),
                           ),
@@ -460,7 +450,7 @@ class DeleteConfirmDialogManager {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.6),
+      barrierColor: context.tokens.overlayScrim,
       builder: (context) => DeleteConfirmDialog(
         title: title,
         message: message,
@@ -548,10 +538,11 @@ class ErrorDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return AlertDialog(
       title: Row(
         children: [
-          Icon(Icons.error_outline, color: Colors.red.shade600, size: 24),
+          Icon(Icons.error_outline, color: tokens.error, size: 24),
           const SizedBox(width: 12),
           Text(
             title,
@@ -562,7 +553,7 @@ class ErrorDialog extends StatelessWidget {
       content: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.red.shade50,
+          color: tokens.errorContainer,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
@@ -584,7 +575,7 @@ class ErrorDialog extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Colors.grey.shade300),
+              side: BorderSide(color: tokens.border),
             ),
           ),
           child: Text(
@@ -630,6 +621,8 @@ class LogoutConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = Theme.of(context).colorScheme;
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -637,22 +630,9 @@ class LogoutConfirmDialog extends StatelessWidget {
         width: 320,
         margin: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: tokens.cardBackground,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 30,
-              spreadRadius: 0,
-              offset: const Offset(0, 15),
-            ),
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              spreadRadius: 0,
-              offset: const Offset(0, 5),
-            ),
-          ],
+          boxShadow: tokens.elevatedShadow,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -671,22 +651,22 @@ class LogoutConfirmDialog extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Colors.red.shade400,
-                          Colors.red.shade500,
+                          tokens.dangerAccent.withValues(alpha: 0.85),
+                          tokens.dangerAccent,
                         ],
                       ),
                       borderRadius: BorderRadius.circular(32),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.red.shade300.withValues(alpha: 0.3),
+                          color: tokens.error.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
                       ],
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.logout_rounded,
-                      color: Colors.white,
+                      color: colors.onPrimary,
                       size: 28,
                     ),
                   ),
@@ -699,7 +679,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: Colors.grey.shade800,
+                      color: colors.onSurface,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -712,7 +692,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 15,
-                      color: Colors.grey.shade600,
+                      color: tokens.textMuted,
                       height: 1.4,
                       fontWeight: FontWeight.w400,
                     ),
@@ -727,10 +707,10 @@ class LogoutConfirmDialog extends StatelessWidget {
                         vertical: 10,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
+                        color: tokens.infoContainer,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.blue.shade100,
+                          color: tokens.info.withValues(alpha: 0.3),
                           width: 1,
                         ),
                       ),
@@ -741,12 +721,12 @@ class LogoutConfirmDialog extends StatelessWidget {
                             width: 20,
                             height: 20,
                             decoration: BoxDecoration(
-                              color: Colors.blue.shade500,
+                              color: tokens.info,
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.person,
-                              color: Colors.white,
+                              color: colors.onPrimary,
                               size: 12,
                             ),
                           ),
@@ -756,7 +736,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.blue.shade700,
+                              color: tokens.info,
                             ),
                           ),
                         ],
@@ -775,7 +755,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     Colors.transparent,
-                    Colors.grey.shade200,
+                    tokens.divider,
                     Colors.transparent,
                   ],
                 ),
@@ -792,10 +772,10 @@ class LogoutConfirmDialog extends StatelessWidget {
                     child: Container(
                       height: 44,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
+                        color: tokens.mutedBackground,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.grey.shade200,
+                          color: tokens.border,
                           width: 1,
                         ),
                       ),
@@ -811,7 +791,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.grey.shade700,
+                                color: colors.onSurface,
                               ),
                             ),
                           ),
@@ -831,14 +811,14 @@ class LogoutConfirmDialog extends StatelessWidget {
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.red.shade400,
-                            Colors.red.shade500,
+                            tokens.dangerAccent.withValues(alpha: 0.85),
+                            tokens.dangerAccent,
                           ],
                         ),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.red.shade300.withValues(alpha: 0.4),
+                            color: tokens.error.withValues(alpha: 0.4),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -853,10 +833,10 @@ class LogoutConfirmDialog extends StatelessWidget {
                           child: Center(
                             child: Text(
                               confirmText,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: colors.onPrimary,
                               ),
                             ),
                           ),
@@ -888,7 +868,7 @@ class LogoutConfirmDialogManager {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      barrierColor: Colors.black.withValues(alpha: 0.6),
+      barrierColor: context.tokens.overlayScrim,
       builder: (context) => LogoutConfirmDialog(
         username: username,
         confirmText: confirmText,
@@ -934,11 +914,13 @@ class _InlineSuccessMessageState extends State<InlineSuccessMessage> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final colors = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: widget.isDelete ? Colors.orange.shade600 : Colors.green.shade600,
+        color: widget.isDelete ? tokens.warning : tokens.success,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -946,15 +928,15 @@ class _InlineSuccessMessageState extends State<InlineSuccessMessage> {
         children: [
           Icon(
             widget.isDelete ? Icons.delete_outline : Icons.check_circle,
-            color: Colors.white,
+            color: colors.onPrimary,
             size: 20,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               widget.message,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: colors.onPrimary,
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),

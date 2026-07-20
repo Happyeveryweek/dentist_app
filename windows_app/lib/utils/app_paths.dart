@@ -184,19 +184,10 @@ class AppPaths {
     // 生产环境：应用安装目录下的tools文件夹
     final appToolsDir = path.join(appDirectory, 'tools');
 
-    // 开发环境：当前工程目录下的tools文件夹
-    const projectToolsDir =
-        r'D:\Data\android_project\dentist_app\windows_app\tools';
-
-    // 兼容旧工程路径，避免历史环境直接失效
-    const legacyProjectToolsDir =
-        r'D:\Data\android\dentist_app\windows_app\tools';
-
-    final candidates = <String>[
-      appToolsDir,
-      projectToolsDir,
-      legacyProjectToolsDir,
-    ];
+    final candidates = mysqlToolsDirectoryCandidates(
+      appToolsDirectory: appToolsDir,
+      workingDirectory: Directory.current.path,
+    );
 
     String resultPath = appToolsDir;
     for (final candidate in candidates) {
@@ -221,6 +212,18 @@ class AppPaths {
     _cachedMysqlToolsDirectory = resultPath;
     _mysqlToolsDirectoryChecked = true;
     return resultPath;
+  }
+
+  /// 构建 MySQL 工具目录候选项，开发环境只从当前工作目录推导。
+  static List<String> mysqlToolsDirectoryCandidates({
+    required String appToolsDirectory,
+    required String workingDirectory,
+  }) {
+    return {
+      appToolsDirectory,
+      path.join(workingDirectory, 'tools'),
+      path.join(workingDirectory, 'windows_app', 'tools'),
+    }.toList();
   }
 
   /// 获取mysql.exe路径
