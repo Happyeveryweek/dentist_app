@@ -8,6 +8,7 @@ import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../providers/database_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/settings_provider.dart';
+import '../providers/app_state.dart';
 import '../screens/home_screen.dart';
 import '../features/users/helpers/credential_storage_helper.dart';
 import '../utils/log_manager.dart';
@@ -101,6 +102,12 @@ class _LoginScreenState extends State<LoginScreen>
   // 登录方法
   Future<void> _login() async {
     if (_formKey.currentState?.validate() != true) {
+      return;
+    }
+
+    // 系统仍在初始化时禁止登录
+    final appState = Provider.of<AppState>(context, listen: false);
+    if (appState.isInitializing) {
       return;
     }
 
@@ -438,55 +445,22 @@ class _LoginScreenState extends State<LoginScreen>
                     _buildErrorMessage(context),
                   ],
                   SizedBox(height: 28 * layoutScale),
-                  _buildLoginButton(context, layoutScale),
-                  SizedBox(height: 28 * layoutScale),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 9,
-                        height: 9,
-                        decoration: BoxDecoration(
-                          color: tokens.success,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: tokens.success.withValues(alpha: 0.28),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        '系统运行正常',
-                        style: TextStyle(
-                          color: tokens.textMuted,
-                          fontSize: 14,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 18),
-                        child: Text(
-                          '|',
-                          style: TextStyle(
-                            color: tokens.border,
-                            fontSize: 14,
+                  Consumer<AppState>(
+                    builder: (context, appState, child) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildLoginButton(
+                            context,
+                            layoutScale,
+                            appState.isInitializing,
+                            appState.initializationStatus,
                           ),
-                        ),
-                      ),
-                      Flexible(
-                        child: Text(
-                          '上次更新：$updateText',
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: tokens.textMuted,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
+                          SizedBox(height: 28 * layoutScale),
+                          _buildFooterStatus(context, appState, updateText),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -658,7 +632,82 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildLoginButton(BuildContext context, double layoutScale) {
+  Widget _buildFooterStatus(
+    BuildContext context,
+    AppState appState,
+    String updateText,
+  ) {
+    final tokens = context.tokens;
+
+    final Color statusColor;
+    final String statusText;
+    if (appState.isInitializing) {
+      statusColor = tokens.warning;
+      statusText = '系统初始化中';
+    } else if (!appState.isMySQLConnected && appState.isMySQLConnectionFailed) {
+      statusColor = tokens.warning;
+      statusText = 'MySQL已降级';
+    } else {
+      statusColor = tokens.success;
+      statusText = '系统运行正常';
+    }
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 9,
+          height: 9,
+          decoration: BoxDecoration(
+            color: statusColor,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: statusColor.withValues(alpha: 0.28),
+                blurRadius: 8,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          statusText,
+          style: TextStyle(
+            color: tokens.textMuted,
+            fontSize: 14,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          child: Text(
+            '|',
+            style: TextStyle(
+              color: tokens.border,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        Flexible(
+          child: Text(
+            '上次更新：$updateText',
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: tokens.textMuted,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginButton(
+    BuildContext context,
+    double layoutScale,
+    bool isSystemInitializing,
+    String initializationStatus,
+  ) {
     final tokens = context.tokens;
     final colors = context.colors;
 
@@ -676,7 +725,7 @@ class _LoginScreenState extends State<LoginScreen>
         ],
       ),
       child: ElevatedButton(
-        onPressed: _isLoading ? null : _login,
+        onPressed: (_isLoading || isSystemInitializing) ? null : _login,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: colors.onPrimary,
@@ -696,14 +745,37 @@ class _LoginScreenState extends State<LoginScreen>
                   strokeWidth: 2.6,
                 ),
               )
-            : Text(
-                '登录',
-                style: TextStyle(
-                  fontSize: (16 * layoutScale).clamp(15.0, 17.0),
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1,
-                ),
-              ),
+            : isSystemInitializing
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          color: colors.onPrimary,
+                          strokeWidth: 2.4,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        initializationStatus,
+                        style: TextStyle(
+                          fontSize: (16 * layoutScale).clamp(15.0, 17.0),
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(
+                    '登录',
+                    style: TextStyle(
+                      fontSize: (16 * layoutScale).clamp(15.0, 17.0),
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1,
+                    ),
+                  ),
       ),
     );
   }

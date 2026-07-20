@@ -84,8 +84,20 @@ class PatientInitializationService {
           }
         } else {}
       } else {
-        LogManager.e('PatientInitializationService',
-            'PatientInitializationService: MySQL连接不可用');
+        LogManager.w('PatientInitializationService',
+            'PatientInitializationService: MySQL连接不可用，自动降级到SQLite');
+        effectiveType = DataSourceType.sqlite;
+        database = dbProvider.database;
+        if (database != null) {
+          sqliteDS = SqlitePatientDataSource(
+            database,
+            doctorName: currentUser?.doctor,
+            isAdmin: currentUser?.isAdmin ?? false,
+          );
+        } else {
+          LogManager.e('PatientInitializationService',
+              'PatientInitializationService: 降级失败，SQLite数据库连接也不可用');
+        }
       }
     }
 

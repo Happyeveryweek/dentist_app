@@ -228,6 +228,12 @@ class AppointmentProvider extends ChangeNotifier {
     if (effectiveType == DataSourceType.mysql) {
       final dataSource = _mysqlDataSource;
       if (dataSource == null) {
+        // MySQL数据源未初始化，尝试降级到SQLite
+        final sqliteDataSource = _sqliteDataSource;
+        if (sqliteDataSource != null) {
+          LogManager.w('AppointmentProvider', 'MySQL预约数据源未初始化，自动降级到SQLite');
+          return sqliteDataSource;
+        }
         throw Exception('MySQL预约数据源未初始化 - 模块配置要求使用MySQL但数据源未设置');
       }
       return dataSource;

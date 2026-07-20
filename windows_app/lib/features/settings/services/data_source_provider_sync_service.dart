@@ -1,6 +1,10 @@
 import '../../../providers/purchase_provider.dart';
 import '../../../providers/financial_provider.dart';
 import '../../../providers/material_provider.dart';
+import '../../../providers/patient_provider.dart';
+import '../../../providers/user_provider.dart';
+import '../../../providers/appointment_provider.dart';
+import '../../../providers/medical_record_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../utils/log_manager.dart';
@@ -39,8 +43,31 @@ class DataSourceProviderSyncService {
       LogManager.w(
           'DataSourceProviderSyncService', '已更新MaterialProvider的模块数据源配置');
 
-      // 可以在这里添加其他Provider的更新
-      // 例如：PatientProvider, AppointmentProvider等
+      // 更新PatientProvider的模块数据源配置
+      final patientProvider =
+          Provider.of<PatientProvider>(context, listen: false);
+      patientProvider.updateModuleDataSources(moduleDataSources);
+      LogManager.w(
+          'DataSourceProviderSyncService', '已更新PatientProvider的模块数据源配置');
+
+      // 更新UserProvider的模块数据源配置
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      userProvider.updateModuleDataSources(moduleDataSources);
+      LogManager.w('DataSourceProviderSyncService', '已更新UserProvider的模块数据源配置');
+
+      // 更新AppointmentProvider的模块数据源配置
+      final appointmentProvider =
+          Provider.of<AppointmentProvider>(context, listen: false);
+      appointmentProvider.updateModuleDataSources(moduleDataSources);
+      LogManager.w(
+          'DataSourceProviderSyncService', '已更新AppointmentProvider的模块数据源配置');
+
+      // 更新MedicalRecordProvider的模块数据源配置
+      final medicalRecordProvider =
+          Provider.of<MedicalRecordProvider>(context, listen: false);
+      medicalRecordProvider.updateModuleDataSources(moduleDataSources);
+      LogManager.w(
+          'DataSourceProviderSyncService', '已更新MedicalRecordProvider的模块数据源配置');
     } catch (e) {
       LogManager.e('DataSourceProviderSyncService', '更新Provider模块数据源配置失败',
           error: e);

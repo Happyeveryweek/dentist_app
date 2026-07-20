@@ -801,6 +801,30 @@ class PatientProvider extends ChangeNotifier {
   // 向后兼容方法
   User? get currentUser => _currentUser;
 
+  // 模块数据源配置更新
+  void updateModuleDataSources(Map<String, String>? moduleDataSources) {
+    LogManager.i('PatientProvider',
+        'PatientProvider.updateModuleDataSources - 模块数据源配置已更新: $moduleDataSources');
+
+    final databaseProvider = _databaseProvider;
+    if (databaseProvider == null) {
+      return;
+    }
+
+    final newDataSourceType = moduleDataSources?['patients'];
+    if (newDataSourceType != null &&
+        newDataSourceType != (_effectiveDataSourceType ?? _dataSourceType)) {
+      LogManager.w('PatientProvider',
+          '患者模块数据源类型变更: ${_effectiveDataSourceType ?? _dataSourceType} -> $newDataSourceType');
+      initializeFromDatabase(
+        databaseProvider,
+        moduleDataSources: moduleDataSources,
+        dataSourceMode: 'modular',
+        userProvider: _userProvider,
+      );
+    }
+  }
+
   // 设置数据库连接（向后兼容，不建议新代码使用）
   void setDatabaseConnection({
     Database? database,

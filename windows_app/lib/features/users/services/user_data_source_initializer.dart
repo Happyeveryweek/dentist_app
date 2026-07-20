@@ -217,7 +217,16 @@ class UserDataSourceInitializer {
           if (isConnected) {
           } else {}
         } else {
-          throw Exception('MySQL数据库连接不可用');
+          LogManager.w('UserDataSourceInitializer',
+              'UserDataSourceInitializer: MySQL连接不可用，自动降级到SQLite');
+          _dataSourceType = 'sqlite';
+          final database = dbProvider?.database;
+          if (database != null) {
+            _database = database;
+            setSqliteDataSource(database);
+          } else {
+            throw Exception('MySQL连接不可用且SQLite数据库连接也不可用');
+          }
         }
       }
     } catch (e) {

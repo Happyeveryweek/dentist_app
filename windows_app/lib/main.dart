@@ -552,13 +552,18 @@ class _AppWithProvidersState extends State<AppWithProviders> {
   void initState() {
     super.initState();
     LogManager.i('Main', 'AppWithProviders initState: 开始初始化Provider');
-    _initializeProviders();
+    // 首帧渲染完成后再执行初始化，避免 build 阶段 notifyListeners
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeProviders();
+    });
   }
 
   Future<void> _initializeProviders() async {
     final settings = Provider.of<SettingsProvider>(context, listen: false);
     final dbProvider = Provider.of<DatabaseProvider>(context, listen: false);
     final appState = Provider.of<AppState>(context, listen: false);
+
+    appState.setInitializing(true, status: '系统初始化中...');
 
     try {
       // 初始化设置
@@ -575,6 +580,7 @@ class _AppWithProvidersState extends State<AppWithProviders> {
 
       // 检查数据源模式
       final dataSourceMode = settings.dataSourceMode;
+      var runtimeModuleDataSources = settings.moduleDataSources;
       LogManager.i('Main', '数据源模式: $dataSourceMode');
 
       if (dataSourceType == DataSourceType.sqlite.storageValue) {
@@ -680,6 +686,7 @@ class _AppWithProvidersState extends State<AppWithProviders> {
                   DataSourceType.sqlite.storageValue;
               LogManager.w('Main', '临时切换 $module 模块到SQLite（不保存设置）');
             }
+            runtimeModuleDataSources = temporaryModuleDataSources;
 
             // 更新各个Provider的模块数据源配置（仅运行时）
             if (!mounted) return;
@@ -697,44 +704,54 @@ class _AppWithProvidersState extends State<AppWithProviders> {
               financialProvider
                   .updateModuleDataSources(temporaryModuleDataSources);
             }
+            if (affectedModules
+                .contains(AppModule.patients.dataSourceConfigKey)) {
+              final patientProvider =
+                  Provider.of<PatientProvider>(context, listen: false);
+              patientProvider
+                  .updateModuleDataSources(temporaryModuleDataSources);
+            }
+            if (affectedModules.contains(AppModule.users.dataSourceConfigKey)) {
+              final userProvider =
+                  Provider.of<UserProvider>(context, listen: false);
+              userProvider.updateModuleDataSources(temporaryModuleDataSources);
+            }
+            if (affectedModules
+                .contains(AppModule.appointments.dataSourceConfigKey)) {
+              final appointmentProvider =
+                  Provider.of<AppointmentProvider>(context, listen: false);
+              appointmentProvider
+                  .updateModuleDataSources(temporaryModuleDataSources);
+            }
+            if (affectedModules
+                .contains(AppModule.materials.dataSourceConfigKey)) {
+              final materialProvider =
+                  Provider.of<MaterialProvider>(context, listen: false);
+              materialProvider
+                  .updateModuleDataSources(temporaryModuleDataSources);
+            }
+            if (affectedModules
+                .contains(AppModule.medicalRecords.dataSourceConfigKey)) {
+              final medicalRecordProvider =
+                  Provider.of<MedicalRecordProvider>(context, listen: false);
+              medicalRecordProvider
+                  .updateModuleDataSources(temporaryModuleDataSources);
+            }
           }
         }
       }
 
       if (!mounted) return;
-      // 在数据库初始化后检查是否需要执行自动备份
-      _checkAutoBackup(settings, dbProvider);
-
-      final moduleDataSources = settings.moduleDataSources;
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final patientProvider =
-          Provider.of<PatientProvider>(context, listen: false);
-      await patientProvider.initializeFromDatabase(
-        dbProvider,
-        moduleDataSources: moduleDataSources,
+      appState.setInitializing(true, status: '系统初始化中...');
+      await _initializeDataProviders(
+        dbProvider: dbProvider,
+        moduleDataSources: runtimeModuleDataSources,
         dataSourceMode: dataSourceMode,
-        userProvider: userProvider,
       );
 
       if (!mounted) return;
-      // 设置其他提供者的数据库连接
-      Provider.of<MaterialProvider>(context, listen: false);
-      Provider.of<PurchaseProvider>(context, listen: false);
-      Provider.of<FinancialProvider>(context, listen: false);
-
-      // 在模块化模式下，需要同时传递SQLite和MySQL连接
-      if (dataSourceMode == DataSourceMode.modular.storageValue) {
-        // MaterialProvider已在ChangeNotifierProxyProvider中使用initializeFromDatabase初始化，无需重复初始化
-        // PurchaseProvider和FinancialProvider已在ChangeNotifierProxyProvider中初始化，无需重复初始化
-        // AppointmentProvider已在ChangeNotifierProxyProvider中使用initializeFromDatabase初始化，无需重复初始化
-        // PatientProvider已在ChangeNotifierProxyProvider中使用initializeFromDatabase初始化，无需重复初始化
-        // UserProvider已在ChangeNotifierProxyProvider中使用initializeFromDatabase初始化，无需重复初始化
-      } else {
-        // 全局模式：MaterialProvider已在ChangeNotifierProxyProvider中初始化，无需重复初始化
-        // PurchaseProvider和FinancialProvider已在ChangeNotifierProxyProvider中初始化，无需重复初始化
-      }
-
-      // 注意：现在Provider在初始化时就已经根据模块配置设置了正确的数据源，无需额外更新
+      // 在数据库初始化后检查是否需要执行自动备份
+      _checkAutoBackup(settings, dbProvider);
     } catch (e, stackTrace) {
       LogManager.e('Main', '初始化时发生错误', error: e, stackTrace: stackTrace);
       try {
@@ -757,7 +774,76 @@ class _AppWithProvidersState extends State<AppWithProviders> {
               error: emergencyError, stackTrace: emergencyStackTrace);
         }
       }
+    } finally {
+      if (mounted) {
+        appState.setInitializing(false, status: '系统就绪');
+      }
     }
+  }
+
+  Future<void> _initializeDataProviders({
+    required DatabaseProvider dbProvider,
+    required Map<String, String> moduleDataSources,
+    required String dataSourceMode,
+  }) async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final patientProvider =
+        Provider.of<PatientProvider>(context, listen: false);
+    final financialProvider =
+        Provider.of<FinancialProvider>(context, listen: false);
+    final materialProvider =
+        Provider.of<MaterialProvider>(context, listen: false);
+    final purchaseProvider =
+        Provider.of<PurchaseProvider>(context, listen: false);
+    final appointmentProvider =
+        Provider.of<AppointmentProvider>(context, listen: false);
+    final medicalRecordProvider =
+        Provider.of<MedicalRecordProvider>(context, listen: false);
+
+    await userProvider.initializeFromDatabase(
+      dbProvider,
+      moduleDataSources: moduleDataSources,
+      dataSourceMode: dataSourceMode,
+    );
+    await patientProvider.initializeFromDatabase(
+      dbProvider,
+      moduleDataSources: moduleDataSources,
+      dataSourceMode: dataSourceMode,
+      userProvider: userProvider,
+    );
+    await Future.wait([
+      financialProvider.initializeFromDatabase(
+        dbProvider,
+        moduleDataSources: moduleDataSources,
+        dataSourceMode: dataSourceMode,
+        patientProvider: patientProvider,
+        userProvider: userProvider,
+      ),
+      materialProvider.initializeFromDatabase(
+        dbProvider,
+        moduleDataSources: moduleDataSources,
+        dataSourceMode: dataSourceMode,
+      ),
+      purchaseProvider.initializeFromDatabase(
+        dbProvider,
+        moduleDataSources: moduleDataSources,
+        dataSourceMode: dataSourceMode,
+        userProvider: userProvider,
+      ),
+      appointmentProvider.initializeFromDatabase(
+        dbProvider,
+        moduleDataSources: moduleDataSources,
+        dataSourceMode: dataSourceMode,
+        patientProvider: patientProvider,
+        userProvider: userProvider,
+      ),
+    ]);
+    medicalRecordProvider.initializeFromDatabaseSync(
+      dbProvider,
+      moduleDataSources: moduleDataSources,
+      dataSourceMode: dataSourceMode,
+      userProvider: userProvider,
+    );
   }
 
   // 检查是否需要执行自动备份
@@ -893,7 +979,7 @@ class _AppWithProvidersState extends State<AppWithProviders> {
         routes: {
           '/login': (context) => const LoginScreen(),
         },
-        home: const LoginScreen(), // 始终显示登录屏幕，后台异步初始化
+        home: const LoginScreen(),
       );
     } catch (e) {
       LogManager.e('Main', 'AppWithProviders build错误', error: e);

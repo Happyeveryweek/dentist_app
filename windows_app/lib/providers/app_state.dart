@@ -148,4 +148,25 @@ class AppState extends ChangeNotifier {
     LogManager.e('AppState',
         'AppState: MySQL连接状态已更新 - 已连接: $_isMySQLConnected, 连接失败: $_isMySQLConnectionFailed, 受影响模块: $_affectedMySQLModules');
   }
+
+  // 应用初始化状态
+  bool _isInitializing = true;
+  bool get isInitializing => _isInitializing;
+
+  String _initializationStatus = '系统初始化中...';
+  String get initializationStatus => _initializationStatus;
+
+  // 设置初始化状态与提示文案
+  void setInitializing(
+    bool value, {
+    String? status,
+  }) {
+    _isInitializing = value;
+    if (status != null && status.isNotEmpty) {
+      _initializationStatus = status;
+    }
+    notifyListeners();
+    LogManager.i('AppState',
+        '初始化状态更新 - isInitializing: $_isInitializing, status: $_initializationStatus');
+  }
 }

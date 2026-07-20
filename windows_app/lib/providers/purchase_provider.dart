@@ -539,6 +539,10 @@ class PurchaseProvider extends ChangeNotifier {
           } else {
             LogManager.w('PurchaseProvider', '⚠️ MySQL连接为null，自动降级到SQLite');
             _dataSourceType = 'sqlite';
+            final moduleDataSources = _moduleDataSources;
+            if (moduleDataSources != null) {
+              moduleDataSources['purchase'] = 'sqlite';
+            }
 
             // 降级到SQLite
             if (dbProvider.database != null) {
@@ -555,6 +559,10 @@ class PurchaseProvider extends ChangeNotifier {
           LogManager.e('PurchaseProvider', '获取MySQL连接失败', error: e);
           // 尝试降级到SQLite
           _dataSourceType = 'sqlite';
+          final moduleDataSources = _moduleDataSources;
+          if (moduleDataSources != null) {
+            moduleDataSources['purchase'] = 'sqlite';
+          }
           if (dbProvider.database != null) {
             _database = dbProvider.database;
             try {
@@ -574,7 +582,8 @@ class PurchaseProvider extends ChangeNotifier {
       _isInitialized = true;
       _lastInitializedDataSource = _dataSourceType;
 
-      LogManager.i('PurchaseProvider', 'PurchaseProvider初始化完成，数据源类型: $dbType');
+      LogManager.i(
+          'PurchaseProvider', 'PurchaseProvider初始化完成，数据源类型: $_dataSourceType');
     } catch (e) {
       LogManager.e('PurchaseProvider', 'PurchaseProvider初始化失败', error: e);
       _dataSourceType = 'sqlite';
