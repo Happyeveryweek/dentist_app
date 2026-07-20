@@ -44,6 +44,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool _mysqlTestSuccess = false;
   String _loadingText = '';
   bool _isEditingMysql = false;
+  // 独立的测试中状态：仅作用于按钮内部，避免替换整个 TabBarView
+  bool _isTestingNetwork = false;
+  bool _isTestingMysql = false;
 
   // 数据库提供者
   DatabaseProvider? dbProvider;
@@ -146,7 +149,9 @@ class _SettingsScreenState extends State<SettingsScreen>
       if (provider == null) return;
       final providerDbType = provider.dbType;
       final providerDbPath = provider.dbPath;
-      AppLogger.info('从Provider获取数据库信息: 类型=$providerDbType, 路径=$providerDbPath');
+      AppLogger.info(
+        '从Provider获取数据库信息: 类型=$providerDbType, 路径=$providerDbPath',
+      );
 
       setState(() {
         _selectedDbType = providerDbType;
@@ -307,12 +312,12 @@ class _SettingsScreenState extends State<SettingsScreen>
   // 移除加载测试数据库方法
 
   Future<void> _testMySqlConnection() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _mysqlTestSuccess = false;
-      });
+    setState(() {
+      _isTestingMysql = true;
+      _mysqlTestSuccess = false;
+    });
 
+    try {
       final host = _hostController.text.trim();
       final port = int.tryParse(_portController.text.trim()) ?? 3306;
       final database = _databaseController.text.trim();
@@ -325,8 +330,12 @@ class _SettingsScreenState extends State<SettingsScreen>
         return;
       }
 
-      // 先检查网络连通性
-      final networkOk = await _testNetworkConnection(host, port.toString());
+      // 先检查网络连通性（standalone=false 避免触发"测网络"按钮的加载态）
+      final networkOk = await _testNetworkConnection(
+        host,
+        port.toString(),
+        standalone: false,
+      );
       if (!networkOk) {
         // 网络测试已显示错误消息
         return;
@@ -347,13 +356,11 @@ class _SettingsScreenState extends State<SettingsScreen>
         _showSnackBar('MySQL连接测试成功', isSuccess: true);
         setState(() {
           _mysqlTestSuccess = true;
-          _isLoading = false;
         });
       } else {
         _showSnackBar('MySQL连接测试失败', isSuccess: false);
         setState(() {
           _mysqlTestSuccess = false;
-          _isLoading = false;
         });
       }
     } catch (e) {
@@ -383,8 +390,13 @@ class _SettingsScreenState extends State<SettingsScreen>
 
       setState(() {
         _mysqlTestSuccess = false;
-        _isLoading = false;
       });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isTestingMysql = false;
+        });
+      }
     }
   }
 
@@ -439,6 +451,8 @@ class _SettingsScreenState extends State<SettingsScreen>
                           showMysqlConfig: _showMysqlConfig,
                           isEditingMysql: _isEditingMysql,
                           mysqlTestSuccess: _mysqlTestSuccess,
+                          isTestingNetwork: _isTestingNetwork,
+                          isTestingMysql: _isTestingMysql,
                           dbConfig: _dbConfig,
                           hostController: _hostController,
                           portController: _portController,
@@ -531,11 +545,21 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   // 测试网络连接
-  Future<bool> _testNetworkConnection(String host, String port) async {
+  //
+  // [standalone] 为 true 表示由"测网络"按钮直接触发，会同步切换 _isTestingNetwork
+  // 状态用于按钮加载态；为 false 表示由 _testMySqlConnection 内部调用，
+  // 不再切换"测网络"按钮状态，避免与"测连接"按钮加载态冲突。
+  Future<bool> _testNetworkConnection(
+    String host,
+    String port, {
+    bool standalone = true,
+  }) async {
     try {
-      setState(() {
-        _isLoading = true;
-      });
+      if (standalone) {
+        setState(() {
+          _isTestingNetwork = true;
+        });
+      }
 
       final success = await MysqlConfigService.testNetworkConnection(
         host,
@@ -543,10 +567,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       );
 
       if (!mounted) return false;
-
-      setState(() {
-        _isLoading = false;
-      });
 
       final effectiveHost = MysqlConfigService.getEffectiveHost(host);
       final isConverted = MysqlConfigService.isHostConverted(
@@ -584,12 +604,13 @@ class _SettingsScreenState extends State<SettingsScreen>
       }
     } catch (e) {
       AppLogger.info('网络测试错误: $e');
-      if (mounted) {
+      return false;
+    } finally {
+      if (mounted && standalone) {
         setState(() {
-          _isLoading = false;
+          _isTestingNetwork = false;
         });
       }
-      return false;
     }
   }
 

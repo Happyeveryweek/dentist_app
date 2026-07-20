@@ -40,6 +40,10 @@ class AppTheme {
   static const Color dashboardWelcomeAccent = Color(0xFF376FC7);
   static const Color dashboardWelcomeAccentPurple = Color(0xFF766FE6);
 
+  // 编辑模式语义色（用于 MySQL 配置等可编辑卡片的浅蓝高亮）
+  static const Color editModeSurface = Color(0xFFE3F2FD); // 浅蓝表面色
+  static const Color editModeBanner = Color(0xFFBBDEFB); // 顶部提示横幅色
+
   // 兼容性别名 - 用于支持旧代码
   static const Color textColor = primaryText;
   static const Color secondaryTextColor = secondaryText;

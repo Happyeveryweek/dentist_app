@@ -9,6 +9,8 @@ class DatabaseSourceSection extends StatelessWidget {
   final bool showMysqlConfig;
   final bool isEditingMysql;
   final bool mysqlTestSuccess;
+  final bool isTestingNetwork;
+  final bool isTestingMysql;
   final DatabaseConfig dbConfig;
   final TextEditingController hostController;
   final TextEditingController portController;
@@ -29,6 +31,8 @@ class DatabaseSourceSection extends StatelessWidget {
     required this.showMysqlConfig,
     required this.isEditingMysql,
     required this.mysqlTestSuccess,
+    required this.isTestingNetwork,
+    required this.isTestingMysql,
     required this.dbConfig,
     required this.hostController,
     required this.portController,
@@ -99,52 +103,132 @@ class DatabaseSourceSection extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 16),
               child: Card(
-                elevation: 2,
+                elevation: isEditingMysql ? 3 : 2,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
+                  side:
+                      isEditingMysql
+                          ? const BorderSide(
+                            color: AppTheme.primaryColor,
+                            width: 1.5,
+                          )
+                          : BorderSide.none,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
+                color: isEditingMysql ? AppTheme.editModeSurface : null,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'MySQL配置',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                      // 编辑模式顶部提示横幅
+                      if (isEditingMysql)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                            horizontal: 16,
                           ),
-                          Row(
+                          color: AppTheme.editModeBanner,
+                          child: const Row(
                             children: [
-                              // 编辑按钮
-                              ElevatedButton.icon(
-                                onPressed: onToggleMysqlEdit,
-                                icon: Icon(
-                                  isEditingMysql ? Icons.lock_open : Icons.edit,
-                                  size: 16,
-                                ),
-                                label: Text(isEditingMysql ? '完成编辑' : '编辑配置'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      isEditingMysql
-                                          ? Colors.green
-                                          : AppTheme.primaryColor,
-                                  foregroundColor: Colors.white,
+                              Icon(
+                                Icons.edit,
+                                color: AppTheme.primaryColor,
+                                size: 16,
+                              ),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '编辑模式：修改配置后请点击"保存"按钮生效',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppTheme.primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ],
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'MySQL配置',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    if (isEditingMysql) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.primaryColor,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          '编辑中',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    // 编辑按钮
+                                    ElevatedButton.icon(
+                                      onPressed:
+                                          (isTestingNetwork || isTestingMysql)
+                                              ? null
+                                              : onToggleMysqlEdit,
+                                      icon: Icon(
+                                        isEditingMysql
+                                            ? Icons.lock_open
+                                            : Icons.edit,
+                                        size: 16,
+                                      ),
+                                      label: Text(
+                                        isEditingMysql ? '完成编辑' : '编辑配置',
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            isEditingMysql
+                                                ? Colors.green
+                                                : AppTheme.primaryColor,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            // 根据编辑状态显示不同的UI
+                            isEditingMysql
+                                ? _buildMySQLEditForm()
+                                : _buildMySQLConfigDetails(),
+                          ],
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      // 根据编辑状态显示不同的UI
-                      isEditingMysql
-                          ? _buildMySQLEditForm()
-                          : _buildMySQLConfigDetails(),
                     ],
                   ),
                 ),
@@ -481,32 +565,65 @@ class DatabaseSourceSection extends StatelessWidget {
           children: [
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: onTestNetwork,
-                icon: const Icon(Icons.network_check, size: 14),
-                label: const Text('测网络'),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: onTestConnection,
-                icon: const Icon(Icons.link, size: 14),
-                label: const Text('测连接'),
+                onPressed: isTestingNetwork ? null : onTestNetwork,
+                icon:
+                    isTestingNetwork
+                        ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Icon(Icons.network_check, size: 14),
+                label: Text(isTestingNetwork ? '测试中' : '测网络'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.secondaryColor,
+                  backgroundColor: Colors.blue,
+                  disabledBackgroundColor: Colors.blue.withValues(alpha: 0.6),
+                  disabledForegroundColor: Colors.white,
                 ),
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               child: ElevatedButton.icon(
-                onPressed: onSaveMysql,
+                onPressed: isTestingMysql ? null : onTestConnection,
+                icon:
+                    isTestingMysql
+                        ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                        : const Icon(Icons.link, size: 14),
+                label: Text(isTestingMysql ? '测试中' : '测连接'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.secondaryColor,
+                  disabledBackgroundColor: AppTheme.secondaryColor.withValues(
+                    alpha: 0.6,
+                  ),
+                  disabledForegroundColor: Colors.white,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed:
+                    (onSaveMysql == null || isTestingNetwork || isTestingMysql)
+                        ? null
+                        : onSaveMysql,
                 icon: const Icon(Icons.save, size: 14),
                 label: const Text('保存'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
                   disabledBackgroundColor: Colors.grey.shade400,
+                  disabledForegroundColor: Colors.white,
                 ),
               ),
             ),
