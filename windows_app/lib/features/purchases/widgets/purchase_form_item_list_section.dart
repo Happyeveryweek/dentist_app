@@ -43,11 +43,13 @@ class PurchaseFormItemListSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: context.tokens.successContainer,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: context.tokens.success.withValues(alpha: 0.3)),
+            border: Border.all(
+                color: context.tokens.success.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
-              Icon(Icons.shopping_cart, color: context.tokens.success, size: 20),
+              Icon(Icons.shopping_cart,
+                  color: context.tokens.success, size: 20),
               const SizedBox(width: 8),
               Text(
                 '采购项目',
@@ -62,11 +64,14 @@ class PurchaseFormItemListSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: context.tokens.primaryAccent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: context.tokens.primaryAccent.withValues(alpha: 0.3)),
+                  border: Border.all(
+                      color:
+                          context.tokens.primaryAccent.withValues(alpha: 0.3)),
                 ),
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
+                    mouseCursor: SystemMouseCursors.click,
                     borderRadius: BorderRadius.circular(8),
                     onTap: () => onAddItem(0),
                     child: Container(
@@ -286,16 +291,19 @@ class PurchaseFormItemListSection extends StatelessWidget {
                             width: 40,
                             child: Center(
                               child: InkWell(
+                                mouseCursor: SystemMouseCursors.click,
                                 onTap: () => onMaterialSelect(index),
                                 child: Container(
                                   width: 32,
                                   height: 32,
                                   decoration: BoxDecoration(
-                                    color: context.tokens.primaryAccent.withValues(alpha: 0.1),
+                                    color: context.tokens.primaryAccent
+                                        .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Icon(Icons.search,
-                                      size: 16, color: context.tokens.primaryAccent),
+                                      size: 16,
+                                      color: context.tokens.primaryAccent),
                                 ),
                               ),
                             ),
@@ -414,6 +422,7 @@ class PurchaseFormItemListSection extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           InkWell(
+                            mouseCursor: SystemMouseCursors.click,
                             onTap: () => onRemoveItem(index),
                             child: Container(
                               width: 32,

@@ -81,6 +81,7 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
             Material(
               color: Colors.transparent,
               child: InkWell(
+                mouseCursor: SystemMouseCursors.click,
                 onTap: onSelectPatient,
                 borderRadius: BorderRadius.circular(8),
                 child: Ink(
@@ -92,8 +93,7 @@ class AppointmentPatientSelectionSection extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.person,
-                          color: tokens.primaryAccent, size: 18),
+                      Icon(Icons.person, color: tokens.primaryAccent, size: 18),
                       const SizedBox(width: 8),
                       Expanded(
                         child: patient == null

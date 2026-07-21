@@ -36,6 +36,8 @@ class RoleSelector extends StatelessWidget {
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
+            mouseCursor: SystemMouseCursors.click,
+            dropdownMenuItemMouseCursor: SystemMouseCursors.click,
             value: selectedRole,
             isExpanded: true,
             icon: Icon(Icons.keyboard_arrow_down,

@@ -293,6 +293,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(tokens.borderRadius),
         ),
       ),
+      popupMenuTheme: const PopupMenuThemeData(
+        // Flutter 3.44+ 桌面端默认 adaptiveClickable 解析为箭头，这里强制菜单项显示小手
+        mouseCursor: WidgetStateMouseCursor.clickable,
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: tokens.primaryAccent,
@@ -302,6 +306,9 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(tokens.borderRadius),
           ),
+        ).copyWith(
+          // Flutter 3.44+ 桌面端默认 adaptiveClickable 解析为箭头，这里强制启用时显示小手
+          mouseCursor: WidgetStateMouseCursor.clickable,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -310,6 +317,8 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(tokens.borderRadius),
           ),
+        ).copyWith(
+          mouseCursor: WidgetStateMouseCursor.clickable,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -319,7 +328,22 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(tokens.borderRadius),
           ),
+        ).copyWith(
+          mouseCursor: WidgetStateMouseCursor.clickable,
         ),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom().copyWith(
+          mouseCursor: WidgetStateMouseCursor.clickable,
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom().copyWith(
+          mouseCursor: WidgetStateMouseCursor.clickable,
+        ),
+      ),
+      checkboxTheme: const CheckboxThemeData(
+        mouseCursor: WidgetStateMouseCursor.clickable,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

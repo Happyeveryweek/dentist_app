@@ -84,6 +84,8 @@ class AppointmentCostStatusSection extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: DropdownButtonFormField<String>(
+                  mouseCursor: SystemMouseCursors.click,
+                  dropdownMenuItemMouseCursor: SystemMouseCursors.click,
                   borderRadius: BorderRadius.circular(12),
                   dropdownColor: context.tokens.cardBackground,
                   focusColor: Colors.transparent,

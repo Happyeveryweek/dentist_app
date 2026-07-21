@@ -150,6 +150,7 @@ class _DateRangeSelector extends StatelessWidget {
           ),
         ),
         child: InkWell(
+          mouseCursor: SystemMouseCursors.click,
           borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Padding(
@@ -176,6 +177,7 @@ class _DateRangeSelector extends StatelessWidget {
                 if (startDate != null && endDate != null) ...[
                   const SizedBox(width: 6),
                   InkWell(
+                    mouseCursor: SystemMouseCursors.click,
                     onTap: onClear,
                     borderRadius: BorderRadius.circular(12),
                     child: Icon(

@@ -124,6 +124,8 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
               Expanded(
                 flex: 4,
                 child: DropdownButtonFormField<String>(
+                  mouseCursor: SystemMouseCursors.click,
+                  dropdownMenuItemMouseCursor: SystemMouseCursors.click,
                   initialValue: _selectedSuggestion,
                   borderRadius: BorderRadius.circular(12),
                   dropdownColor: tokens.cardBackground,
@@ -214,8 +216,7 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
                           size: 14,
                           color: tokens.warning,
                         ),
-                        backgroundColor:
-                            tokens.warning.withValues(alpha: 0.08),
+                        backgroundColor: tokens.warning.withValues(alpha: 0.08),
                         side: BorderSide(
                           color: tokens.warning.withValues(alpha: 0.25),
                         ),

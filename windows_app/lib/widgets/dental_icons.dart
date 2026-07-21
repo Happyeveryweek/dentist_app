@@ -136,6 +136,7 @@ class DentalCard extends StatelessWidget {
         color: color ?? Colors.transparent,
         borderRadius: BorderRadius.circular(20.0),
         child: InkWell(
+          mouseCursor: SystemMouseCursors.click,
           onTap: onTap,
           borderRadius: BorderRadius.circular(20.0),
           child: Padding(
@@ -185,6 +186,7 @@ class DentalGradientButton extends StatelessWidget {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
+            mouseCursor: SystemMouseCursors.click,
             onTap: isLoading ? null : onPressed,
             borderRadius: BorderRadius.circular(12.0),
             child: Padding(
@@ -241,6 +243,7 @@ class DentalGradientButton extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          mouseCursor: SystemMouseCursors.click,
           onTap: isLoading ? null : onPressed,
           borderRadius: BorderRadius.circular(12.0),
           child: Padding(

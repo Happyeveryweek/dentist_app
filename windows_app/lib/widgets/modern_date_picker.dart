@@ -369,6 +369,7 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
                         return MouseRegion(
                           cursor: SystemMouseCursors.click,
                           child: InkWell(
+                            mouseCursor: SystemMouseCursors.click,
                             onTap: () => _selectDate(date),
                             borderRadius: BorderRadius.circular(8),
                             hoverColor: tokens.hoverBackground,

@@ -200,8 +200,7 @@ class DatabaseCheckWidgets {
               ),
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -463,6 +462,7 @@ class DatabaseCheckWidgets {
         side: BorderSide(color: state.color.withValues(alpha: 0.3), width: 1),
       ),
       child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Padding(
@@ -537,8 +537,7 @@ class DatabaseCheckWidgets {
                       ],
                     ),
                   ),
-                  Icon(Icons.chevron_right,
-                      color: context.tokens.iconMuted),
+                  Icon(Icons.chevron_right, color: context.tokens.iconMuted),
                 ],
               ),
 
@@ -567,8 +566,7 @@ class DatabaseCheckWidgets {
                       size: 14, color: context.colors.onSurfaceVariant),
                   const SizedBox(width: 4),
                   Text(
-                    DateFormat('yyyy-MM-dd HH:mm:ss')
-                        .format(log.detectionTime),
+                    DateFormat('yyyy-MM-dd HH:mm:ss').format(log.detectionTime),
                     style: TextStyle(
                       fontSize: 12,
                       color: context.colors.onSurfaceVariant,
@@ -864,9 +862,8 @@ class DatabaseCheckWidgets {
                     decoration: BoxDecoration(
                       color: context.tokens.errorContainer,
                       borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color:
-                                context.tokens.error.withValues(alpha: 0.3)),
+                      border: Border.all(
+                          color: context.tokens.error.withValues(alpha: 0.3)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1002,8 +999,8 @@ class DatabaseCheckWidgets {
     );
   }
 
-  static _LogDisplayState _evaluateLogStateWithCount(
-      BuildContext context, DatabaseStructureLog log, int actionableChangeCount) {
+  static _LogDisplayState _evaluateLogStateWithCount(BuildContext context,
+      DatabaseStructureLog log, int actionableChangeCount) {
     final hasStructuralIssues =
         log.missingTables > 0 || actionableChangeCount > 0;
     final hasWarnings = !hasStructuralIssues && log.errors.isNotEmpty;
@@ -1025,7 +1022,8 @@ class DatabaseCheckWidgets {
     }
 
     return _LogDisplayState(
-      color: log.errors.isNotEmpty ? context.tokens.error : context.tokens.warning,
+      color:
+          log.errors.isNotEmpty ? context.tokens.error : context.tokens.warning,
       icon: log.errors.isNotEmpty ? Icons.error : Icons.info,
       statusText: log.errors.isNotEmpty ? '发现问题' : '结构变更',
     );

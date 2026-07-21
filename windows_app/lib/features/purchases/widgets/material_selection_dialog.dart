@@ -101,7 +101,8 @@ class MaterialSelectionDialog {
                           ),
                           IconButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            icon: Icon(Icons.close, color: tokens.cardBackground),
+                            icon:
+                                Icon(Icons.close, color: tokens.cardBackground),
                           ),
                         ],
                       ),
@@ -152,6 +153,7 @@ class MaterialSelectionDialog {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: InkWell(
+                              mouseCursor: SystemMouseCursors.click,
                               borderRadius: BorderRadius.circular(12),
                               onTap: () {
                                 Navigator.of(context).pop(material);
@@ -164,7 +166,8 @@ class MaterialSelectionDialog {
                                     CircleAvatar(
                                       backgroundColor: tokens.primaryAccent,
                                       foregroundColor: tokens.cardBackground,
-                                      child: const Icon(DentalIcons.pills, size: 20),
+                                      child: const Icon(DentalIcons.pills,
+                                          size: 20),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(

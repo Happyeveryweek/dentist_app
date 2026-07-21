@@ -362,6 +362,7 @@ class DeleteConfirmDialog extends StatelessWidget {
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
+                          mouseCursor: SystemMouseCursors.click,
                           borderRadius: BorderRadius.circular(12),
                           onTap: onCancel ??
                               () => Navigator.of(context).pop(false),
@@ -407,6 +408,7 @@ class DeleteConfirmDialog extends StatelessWidget {
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
+                          mouseCursor: SystemMouseCursors.click,
                           borderRadius: BorderRadius.circular(12),
                           onTap: onConfirm ??
                               () => Navigator.of(context).pop(true),
@@ -782,6 +784,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
+                          mouseCursor: SystemMouseCursors.click,
                           borderRadius: BorderRadius.circular(12),
                           onTap: onCancel ??
                               () => Navigator.of(context).pop(false),
@@ -827,6 +830,7 @@ class LogoutConfirmDialog extends StatelessWidget {
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
+                          mouseCursor: SystemMouseCursors.click,
                           borderRadius: BorderRadius.circular(12),
                           onTap: onConfirm ??
                               () => Navigator.of(context).pop(true),

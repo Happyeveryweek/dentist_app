@@ -64,8 +64,8 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
       for (final record in widget.purchaseRecords) {
         final recordId = record.id;
         if (recordId == null) continue;
-        final items = await widget.purchaseProvider
-            .getPurchaseItemsByRecordId(recordId);
+        final items =
+            await widget.purchaseProvider.getPurchaseItemsByRecordId(recordId);
         allItems.addAll(items);
       }
       if (mounted) {
@@ -186,15 +186,13 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
         foregroundColor: active ? tokens.cardBackground : colors.onSurface,
         elevation: active ? 2 : 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        side: BorderSide(
-            color: active
-                ? Colors.transparent
-                : tokens.border),
+        side: BorderSide(color: active ? Colors.transparent : tokens.border),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
       child: Text(label,
           style: TextStyle(
-              fontSize: 13, color: active ? tokens.cardBackground : colors.onSurface)),
+              fontSize: 13,
+              color: active ? tokens.cardBackground : colors.onSurface)),
     );
   }
 
@@ -335,10 +333,10 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                   color: tokens.cardBackground,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
-                    side:
-                        BorderSide(color: tokens.border),
+                    side: BorderSide(color: tokens.border),
                   ),
                   child: InkWell(
+                    mouseCursor: SystemMouseCursors.click,
                     borderRadius: BorderRadius.circular(8),
                     onTap: _showCustomDateRangePicker,
                     child: Padding(
@@ -474,8 +472,11 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                 Icons.inventory_2, tokens.chartPalette[3])),
         const SizedBox(width: 16),
         Expanded(
-            child: _buildSummaryCard('材料种类', uniqueMaterials.toString(),
-                Icons.category, tokens.chartPalette[4 % tokens.chartPalette.length])),
+            child: _buildSummaryCard(
+                '材料种类',
+                uniqueMaterials.toString(),
+                Icons.category,
+                tokens.chartPalette[4 % tokens.chartPalette.length])),
       ],
     );
   }
@@ -524,8 +525,10 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title,
-              style:
-                  TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colors.onSurface)),
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: colors.onSurface)),
           const SizedBox(height: 16),
           Expanded(child: chart),
         ],
@@ -571,8 +574,7 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                       style: TextStyle(fontSize: 10, color: tokens.textMuted));
                 }
                 return Text('¥${value.toInt()}',
-                    style:
-                        TextStyle(fontSize: 10, color: tokens.textMuted));
+                    style: TextStyle(fontSize: 10, color: tokens.textMuted));
               },
             );
 
@@ -757,7 +759,8 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
 
     // 根据标题判断是金额排行还是数量排行，使用不同的颜色
     final bool isAmountRanking = title.contains('金额');
-    final Color primaryColor = isAmountRanking ? tokens.chartPalette[1] : tokens.chartPalette[3];
+    final Color primaryColor =
+        isAmountRanking ? tokens.chartPalette[1] : tokens.chartPalette[3];
 
     return Container(
       decoration: BoxDecoration(
@@ -785,7 +788,8 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
             Expanded(
               child: topMaterials.isEmpty
                   ? Center(
-                      child: Text('暂无数据', style: TextStyle(color: tokens.textMuted)))
+                      child: Text('暂无数据',
+                          style: TextStyle(color: tokens.textMuted)))
                   : ListView(
                       children: topMaterials.map((material) {
                         final percentage = totalValue == 0

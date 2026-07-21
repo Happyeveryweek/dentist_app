@@ -198,6 +198,7 @@ class PatientMedicalRecordCard extends StatelessWidget {
       ),
       elevation: 2,
       child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
         onTap: onView,
         borderRadius: BorderRadius.circular(12),
         child: Padding(

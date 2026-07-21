@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/theme_context_extensions.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../widgets/clickable.dart';
 
 /// 主题卡片组件
 ///
@@ -33,7 +34,7 @@ class ThemeCard extends StatelessWidget {
         Provider.of<SettingsProvider>(context, listen: false);
     final tokens = context.tokens;
 
-    return GestureDetector(
+    return Clickable(
       onTap: () {
         settingsProvider.setWindowsThemeVariant(variant);
       },

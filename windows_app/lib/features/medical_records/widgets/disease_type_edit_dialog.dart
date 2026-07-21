@@ -76,8 +76,8 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
     try {
       final provider =
           Provider.of<MedicalRecordProvider>(context, listen: false);
-      final templates = await provider
-          .getTemplatesByCategory(selectedCategory, forceRefresh: true);
+      final templates = await provider.getTemplatesByCategory(selectedCategory,
+          forceRefresh: true);
 
       setState(() {
         _availableParentTypes =
@@ -308,6 +308,8 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
+              mouseCursor: SystemMouseCursors.click,
+              dropdownMenuItemMouseCursor: SystemMouseCursors.click,
               value: _selectedCategory,
               isExpanded: true,
               hint: const Text('请选择类别'),
@@ -478,6 +480,8 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
+              mouseCursor: SystemMouseCursors.click,
+              dropdownMenuItemMouseCursor: SystemMouseCursors.click,
               value: _selectedParentName,
               isExpanded: true,
               hint: const Text('请选择父类型'),
@@ -683,7 +687,8 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
                   backgroundColor: context.tokens.primaryAccent,
                   foregroundColor: context.colors.onPrimary,
                   elevation: 2,
-                  shadowColor: context.tokens.primaryAccent.withValues(alpha: 0.3),
+                  shadowColor:
+                      context.tokens.primaryAccent.withValues(alpha: 0.3),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -694,8 +699,8 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
                         height: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(context.colors.onPrimary),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              context.colors.onPrimary),
                         ),
                       )
                     : Text(

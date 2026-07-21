@@ -49,8 +49,8 @@ class FinancialSearchBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: context.tokens.cardBackground,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: context.tokens.shadow.withValues(alpha: 0.06)),
+          border:
+              Border.all(color: context.tokens.shadow.withValues(alpha: 0.06)),
           boxShadow: [
             BoxShadow(
                 color: context.tokens.shadow.withValues(alpha: 0.04),
@@ -95,6 +95,7 @@ class FinancialSearchBar extends StatelessWidget {
                         color: context.tokens.border.withValues(alpha: 0.12)),
                   ),
                   child: InkWell(
+                    mouseCursor: SystemMouseCursors.click,
                     borderRadius: BorderRadius.circular(16),
                     onTap: onDateRangeTap,
                     child: Padding(

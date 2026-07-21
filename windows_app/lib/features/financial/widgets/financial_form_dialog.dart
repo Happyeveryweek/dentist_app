@@ -316,6 +316,7 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                     border: Border.all(color: tokens.info, width: 1),
                   ),
                   child: InkWell(
+                    mouseCursor: SystemMouseCursors.click,
                     onTap: disablePatientSelection
                         ? null
                         : () => _showPatientSelectionDialog(),
@@ -873,6 +874,8 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                     border: Border.all(color: tokens.border, width: 1),
                   ),
                   child: DropdownButtonFormField<String>(
+                    mouseCursor: SystemMouseCursors.click,
+                    dropdownMenuItemMouseCursor: SystemMouseCursors.click,
                     key: ValueKey<String?>(
                         FinancialPaymentMethodHelper.uiValue(_paymentMethod)),
                     initialValue:

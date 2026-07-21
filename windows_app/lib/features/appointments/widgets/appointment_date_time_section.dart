@@ -50,6 +50,7 @@ class AppointmentDateTimeSection extends StatelessWidget {
             children: [
               Expanded(
                 child: InkWell(
+                  mouseCursor: SystemMouseCursors.click,
                   onTap: onSelectDate,
                   child: Container(
                     padding: const EdgeInsets.all(16),
@@ -80,6 +81,7 @@ class AppointmentDateTimeSection extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: InkWell(
+                  mouseCursor: SystemMouseCursors.click,
                   onTap: onSelectTime,
                   child: Container(
                     padding: const EdgeInsets.all(16),

@@ -9,6 +9,7 @@ import '../../../models/patient_material.dart';
 import '../../../models/material_image.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../utils/image_compressor.dart';
+import '../../../widgets/clickable.dart';
 import '../../../widgets/success_toast.dart';
 import '../../../utils/log_manager.dart';
 
@@ -84,10 +85,8 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
             final materialImage = MaterialImage(
               materialId: 0, // 临时ID
               imageData: Uint8List(0), // 临时数据
-              imageType: path
-                  .extension(filePath)
-                  .toLowerCase()
-                  .replaceFirst('.', ''),
+              imageType:
+                  path.extension(filePath).toLowerCase().replaceFirst('.', ''),
               fileSize: file.size,
               originalName: filePath, // 存储文件路径用于后续处理
               hasThumbnail: false,
@@ -499,8 +498,8 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
         decoration: BoxDecoration(
           color: context.tokens.mutedBackground,
           borderRadius: BorderRadius.circular(12),
-          border:
-              Border.all(color: context.tokens.divider, style: BorderStyle.solid),
+          border: Border.all(
+              color: context.tokens.divider, style: BorderStyle.solid),
         ),
         child: Center(
           child: Column(
@@ -571,7 +570,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
               top: 2,
               right: 2,
               bottom: 2,
-              child: GestureDetector(
+              child: Clickable(
                 onTap: () => _showImageDetail(image, index),
                 child: _buildImageWidget(image),
               ),
@@ -581,7 +580,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
             Positioned(
               top: 1,
               right: 1,
-              child: GestureDetector(
+              child: Clickable(
                 onTap: () => _removeImage(index),
                 child: Container(
                   width: 16, // 从24减少到16

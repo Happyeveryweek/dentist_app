@@ -52,6 +52,7 @@ class PurchaseFormActionsSection extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
+              mouseCursor: SystemMouseCursors.click,
               borderRadius: BorderRadius.circular(16),
               onTap: onCancel,
               child: Container(
@@ -111,6 +112,7 @@ class PurchaseFormActionsSection extends StatelessWidget {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
+              mouseCursor: SystemMouseCursors.click,
               borderRadius: BorderRadius.circular(16),
               onTap: isLoading ? null : onSave,
               child: Container(

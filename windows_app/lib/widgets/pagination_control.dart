@@ -80,8 +80,7 @@ class PaginationControl extends StatelessWidget {
           const SizedBox(width: 16),
           _PaginationIconButton(
             icon: Icons.home,
-            onPressed:
-                effectivePage != 1 ? () => _goToPage(1) : null,
+            onPressed: effectivePage != 1 ? () => _goToPage(1) : null,
           ),
           const SizedBox(width: 16),
           _PageInfo(
@@ -147,6 +146,7 @@ class _PaginationNumberButton extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          mouseCursor: SystemMouseCursors.click,
           onTap: isActive ? null : onPressed,
           borderRadius: BorderRadius.circular(16),
           child: Container(
@@ -316,6 +316,7 @@ class _PageJumperState extends State<_PageJumper> {
           Material(
             color: Colors.transparent,
             child: InkWell(
+              mouseCursor: SystemMouseCursors.click,
               borderRadius: const BorderRadius.only(
                 topRight: Radius.circular(10),
                 bottomRight: Radius.circular(10),

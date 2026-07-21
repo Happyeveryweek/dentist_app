@@ -774,6 +774,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          mouseCursor: SystemMouseCursors.click,
           borderRadius: BorderRadius.circular(12),
           onTap: PermissionUtils.hasModulePermission(context, 'appointments')
               ? () {

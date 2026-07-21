@@ -152,31 +152,34 @@ class MaterialDropdownContainer extends StatelessWidget {
                   );
                 }).toList(),
               ],
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        displayText,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: displayColor,
-                          fontWeight: FontWeight.w500,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          displayText,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: displayColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 20,
-                      color: value.trim().isEmpty
-                          ? tokens.textMuted
-                          : tokens.primaryAccent,
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 20,
+                        color: value.trim().isEmpty
+                            ? tokens.textMuted
+                            : tokens.primaryAccent,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

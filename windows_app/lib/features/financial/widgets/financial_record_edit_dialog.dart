@@ -1015,6 +1015,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
     return FinancialDetailTableLayout.buildRow(
       children: [
         InkWell(
+          mouseCursor: SystemMouseCursors.click,
           onTap: () async {
             final date = await showDialog<DateTime>(
               context: context,
@@ -1096,6 +1097,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             border: Border.all(color: tokens.border),
           ),
           child: DropdownButtonFormField<String>(
+            mouseCursor: SystemMouseCursors.click,
+            dropdownMenuItemMouseCursor: SystemMouseCursors.click,
             key: ValueKey<String?>(
                 FinancialPaymentMethodHelper.uiValue(_editPaymentMethod)),
             initialValue:

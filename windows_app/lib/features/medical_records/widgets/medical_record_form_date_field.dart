@@ -43,6 +43,7 @@ class MedicalRecordFormDateField extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         InkWell(
+          mouseCursor: SystemMouseCursors.click,
           onTap: enabled
               ? () async {
                   final date = await showDialog<DateTime>(

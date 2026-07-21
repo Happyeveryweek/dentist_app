@@ -130,10 +130,10 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-        child: Material(
-          elevation: 1,
-          borderRadius: BorderRadius.circular(12),
-          color: tokens.cardBackground,
+      child: Material(
+        elevation: 1,
+        borderRadius: BorderRadius.circular(12),
+        color: tokens.cardBackground,
         child: InkWell(
           onTap: () {
             Navigator.of(context).push(
@@ -277,8 +277,7 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                       // 第三行：地址（如果有）
                       Builder(builder: (context) {
                         final patientAddress = patient.address;
-                        if (patientAddress == null ||
-                            patientAddress.isEmpty) {
+                        if (patientAddress == null || patientAddress.isEmpty) {
                           return const SizedBox.shrink();
                         }
                         return Column(
@@ -386,6 +385,7 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
                   borderRadius: BorderRadius.circular(12),
                   elevation: 0,
                   child: InkWell(
+                    mouseCursor: SystemMouseCursors.click,
                     onTap: isCurrentPage
                         ? null
                         : () {
@@ -493,6 +493,7 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
               color: Colors.transparent,
               borderRadius: BorderRadius.circular(12),
               child: InkWell(
+                mouseCursor: SystemMouseCursors.click,
                 onTap: () {
                   setState(() {
                     _currentPage = 1;
@@ -576,6 +577,7 @@ class _FilteredPatientsScreenState extends State<FilteredPatientsScreen> {
       borderRadius: BorderRadius.circular(12),
       elevation: 0,
       child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
         onTap: onPressed,
         borderRadius: BorderRadius.circular(12),
         child: Container(

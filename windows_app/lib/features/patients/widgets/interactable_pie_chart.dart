@@ -112,6 +112,7 @@ class InteractablePieChartState extends State<InteractablePieChart> {
                 final isTouched = index == touchedIndex;
 
                 return InkWell(
+                  mouseCursor: SystemMouseCursors.click,
                   onTap: () {
                     widget.onSectionTap(dataEntry.key);
                   },
@@ -121,7 +122,8 @@ class InteractablePieChartState extends State<InteractablePieChart> {
                         const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
                     decoration: BoxDecoration(
                       color: isTouched
-                          ? chartColors[index % chartColors.length].withValues(alpha: 0.1)
+                          ? chartColors[index % chartColors.length]
+                              .withValues(alpha: 0.1)
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
                     ),

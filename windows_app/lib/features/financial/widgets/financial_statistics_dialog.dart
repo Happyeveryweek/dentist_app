@@ -446,7 +446,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
       ),
       child: Text(label,
           style: TextStyle(
-              fontSize: 13, color: active ? tokens.cardBackground : colors.onSurface)),
+              fontSize: 13,
+              color: active ? tokens.cardBackground : colors.onSurface)),
     );
   }
 
@@ -534,9 +535,11 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 color: tokens.cardBackground,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: tokens.textMuted.withValues(alpha: 0.12)),
+                  side: BorderSide(
+                      color: tokens.textMuted.withValues(alpha: 0.12)),
                 ),
                 child: InkWell(
+                  mouseCursor: SystemMouseCursors.click,
                   borderRadius: BorderRadius.circular(8),
                   onTap: () async {
                     await _showCustomDateRangePicker();
@@ -612,8 +615,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline,
-                        color: tokens.info, size: 20),
+                    Icon(Icons.info_outline, color: tokens.info, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -743,8 +745,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                       style: TextStyle(fontSize: 10, color: tokens.textMuted));
                 }
                 return Text('¥${value.toInt()}',
-                    style:
-                        TextStyle(fontSize: 10, color: tokens.textMuted));
+                    style: TextStyle(fontSize: 10, color: tokens.textMuted));
               },
             );
 
@@ -956,8 +957,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                       style: TextStyle(fontSize: 10, color: tokens.textMuted));
                 }
                 return Text('¥${value.toInt()}',
-                    style:
-                        TextStyle(fontSize: 10, color: tokens.textMuted));
+                    style: TextStyle(fontSize: 10, color: tokens.textMuted));
               },
             );
 
@@ -1282,7 +1282,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.payment_rounded, color: tokens.cardBackground, size: 18),
+                    Icon(Icons.payment_rounded,
+                        color: tokens.cardBackground, size: 18),
                     const SizedBox(width: 5),
                     Text(
                       '收费方式',
@@ -1414,7 +1415,10 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
           children: [
             Text(
               title,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: colors.onSurface),
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: colors.onSurface),
             ),
             const SizedBox(height: 16),
             Expanded(child: chart),
@@ -1458,7 +1462,9 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                     child: Text(
                       entry.key,
                       style: TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w500, color: colors.onSurface),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: colors.onSurface),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1482,8 +1488,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
               LinearProgressIndicator(
                 value: percentage / 100,
                 backgroundColor: tokens.divider,
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(tokens.primaryAccent),
+                valueColor: AlwaysStoppedAnimation<Color>(tokens.primaryAccent),
               ),
             ],
           ),
@@ -1506,15 +1511,16 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
               CircleAvatar(
                 radius: 12,
                 backgroundColor: tokens.error.withValues(alpha: 0.1),
-                child: Icon(Icons.person,
-                    color: tokens.error, size: 14),
+                child: Icon(Icons.person, color: tokens.error, size: 14),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   entry.key,
                   style: TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w500, color: colors.onSurface),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: colors.onSurface),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1567,7 +1573,9 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w600, color: colors.onSurface),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: colors.onSurface),
                   ),
                 ),
               ],
@@ -1576,7 +1584,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
             if (children.isEmpty)
               Expanded(
                 child: Center(
-                  child: Text('暂无数据', style: TextStyle(color: tokens.textMuted)),
+                  child:
+                      Text('暂无数据', style: TextStyle(color: tokens.textMuted)),
                 ),
               )
             else

@@ -235,6 +235,7 @@ class PatientFormDentalChartRow extends StatelessWidget {
                 width: 110,
                 margin: const EdgeInsets.only(right: 6),
                 child: InkWell(
+                  mouseCursor: SystemMouseCursors.click,
                   onTap: canEdit ? onSelectDate : null,
                   child: Container(
                     padding:
@@ -383,6 +384,7 @@ class PatientFormDentalChartRow extends StatelessWidget {
                 const SizedBox(width: 116),
                 Expanded(
                   child: InkWell(
+                    mouseCursor: SystemMouseCursors.click,
                     onTap: onSelectAppointmentDate,
                     child: InputDecorator(
                       decoration: const InputDecoration(
@@ -402,6 +404,7 @@ class PatientFormDentalChartRow extends StatelessWidget {
                 SizedBox(
                   width: 150,
                   child: InkWell(
+                    mouseCursor: SystemMouseCursors.click,
                     onTap: onSelectAppointmentTime,
                     child: InputDecorator(
                       decoration: const InputDecoration(

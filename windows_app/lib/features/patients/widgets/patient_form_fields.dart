@@ -59,13 +59,11 @@ class PatientFormTextField extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
+          borderSide: BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
+          borderSide: BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -130,6 +128,8 @@ class PatientFormDropdown extends StatelessWidget {
     final tokens = context.tokens;
     final colors = context.colors;
     return DropdownButtonFormField<String>(
+      mouseCursor: SystemMouseCursors.click,
+      dropdownMenuItemMouseCursor: SystemMouseCursors.click,
       initialValue: value,
       decoration: InputDecoration(
         labelText: labelText,
@@ -139,13 +139,11 @@ class PatientFormDropdown extends StatelessWidget {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
+          borderSide: BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
+          borderSide: BorderSide(color: tokens.divider.withValues(alpha: 0.5)),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -198,6 +196,7 @@ class PatientFormDateField extends StatelessWidget {
     final tokens = context.tokens;
     final colors = context.colors;
     return InkWell(
+      mouseCursor: SystemMouseCursors.click,
       onTap: enabled ? onTap : null,
       borderRadius: BorderRadius.circular(12),
       child: InputDecorator(

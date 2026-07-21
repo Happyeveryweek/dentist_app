@@ -52,6 +52,7 @@ class AutoBackupSettings extends StatelessWidget {
               ),
             ),
             Switch(
+              mouseCursor: SystemMouseCursors.click,
               value: settingsProvider.autoBackup,
               activeThumbColor: context.tokens.primaryAccent,
               onChanged: (value) async {
@@ -67,8 +68,7 @@ class AutoBackupSettings extends StatelessWidget {
             padding: const EdgeInsets.only(left: 36, top: 4, bottom: 8),
             child: Row(
               children: [
-                Icon(Icons.history,
-                    size: 16, color: context.tokens.textMuted),
+                Icon(Icons.history, size: 16, color: context.tokens.textMuted),
                 const SizedBox(width: 8),
                 Text(
                   '上次备份: ${DateFormat('yyyy-MM-dd HH:mm').format(lastBackupDate)}',
@@ -90,6 +90,8 @@ class AutoBackupSettings extends StatelessWidget {
                 const Text('备份间隔: '),
                 const SizedBox(width: 8),
                 DropdownButton<int>(
+                  mouseCursor: SystemMouseCursors.click,
+                  dropdownMenuItemMouseCursor: SystemMouseCursors.click,
                   value: settingsProvider.backupInterval,
                   items: [1, 3, 5, 7, 14, 30].map((days) {
                     return DropdownMenuItem<int>(

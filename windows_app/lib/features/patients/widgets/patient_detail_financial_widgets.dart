@@ -207,6 +207,7 @@ class PatientFinancialRecordCard extends StatelessWidget {
         ],
       ),
       child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
         borderRadius: BorderRadius.circular(8),
         onTap: onView,
         child: Padding(

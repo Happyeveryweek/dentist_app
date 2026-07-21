@@ -4,6 +4,7 @@ import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../../../models/patient.dart';
+import '../../../widgets/clickable.dart';
 
 /// 可悬浮的财务列表卡片组件（患者模式）
 class HoverableFinancialListCard extends StatefulWidget {
@@ -130,13 +131,9 @@ class _HoverableFinancialCardState extends State<HoverableFinancialCard> {
                   ),
                 ],
         ),
-        child: GestureDetector(
+        child: Clickable(
           onTap: widget.onTap,
-          behavior: HitTestBehavior.opaque,
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: widget.child,
-          ),
+          child: widget.child,
         ),
       ),
     );

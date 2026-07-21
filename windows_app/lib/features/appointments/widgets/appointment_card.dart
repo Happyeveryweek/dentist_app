@@ -154,6 +154,8 @@ class _AppointmentCardState extends State<AppointmentCard> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<AppointmentStatus>(
+          mouseCursor: SystemMouseCursors.click,
+          dropdownMenuItemMouseCursor: SystemMouseCursors.click,
           value: currentStatus,
           isDense: true,
           itemHeight: 48,

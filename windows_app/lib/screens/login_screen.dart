@@ -12,6 +12,7 @@ import '../providers/app_state.dart';
 import '../screens/home_screen.dart';
 import '../features/users/helpers/credential_storage_helper.dart';
 import '../utils/log_manager.dart';
+import '../widgets/clickable.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -423,7 +424,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                       ),
                       const SizedBox(width: 10),
-                      GestureDetector(
+                      Clickable(
                         onTap: () {
                           setState(() {
                             _rememberPassword = !_rememberPassword;
@@ -508,7 +509,7 @@ class _LoginScreenState extends State<LoginScreen>
             ),
             SizedBox(height: 18 * layoutScale),
             Container(
-              width: 46,
+              width: (160 * layoutScale).clamp(128.0, 192.0),
               height: 4,
               decoration: BoxDecoration(
                 gradient: tokens.primaryHeaderGradient,

@@ -84,6 +84,7 @@ class AppointmentFilterBar extends StatelessWidget {
                   side: BorderSide(color: context.tokens.border),
                 ),
                 child: InkWell(
+                  mouseCursor: SystemMouseCursors.click,
                   borderRadius: BorderRadius.circular(16),
                   onTap: onSelectDateRange,
                   child: Padding(

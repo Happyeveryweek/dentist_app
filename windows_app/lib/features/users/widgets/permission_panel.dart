@@ -48,6 +48,7 @@ class PermissionPanel extends StatelessWidget {
         children: [
           // 头部 - 可点击展开/折叠
           InkWell(
+            mouseCursor: SystemMouseCursors.click,
             onTap: onToggleExpanded,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             child: Container(
@@ -169,6 +170,7 @@ class PermissionPanel extends StatelessWidget {
               ),
             ),
             child: InkWell(
+              mouseCursor: SystemMouseCursors.click,
               onTap: () => onPermissionChanged(module, !hasPermission),
               borderRadius: BorderRadius.circular(8),
               child: Padding(

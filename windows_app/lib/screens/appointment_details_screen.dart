@@ -399,6 +399,7 @@ class _AppointmentDetailsScreenState extends State<AppointmentDetailsScreen> {
     return Container(
       margin: const EdgeInsets.only(right: 6, bottom: 6),
       child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
         onTap: isCurrentStatus
             ? null
             : () => _changeAppointmentStatus(status.storageValue),

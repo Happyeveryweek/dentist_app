@@ -410,6 +410,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
+                            mouseCursor: SystemMouseCursors.click,
                             onTap: () {
                               appState.activePageIndex = index;
                               _refreshModuleDataOnNavigation(index);

@@ -146,6 +146,7 @@ class _SortButton extends StatelessWidget {
     final bool isActive = sortField == field;
 
     return InkWell(
+      mouseCursor: SystemMouseCursors.click,
       onTap: () => onSortChanged(field),
       borderRadius: BorderRadius.circular(12),
       child: Container(

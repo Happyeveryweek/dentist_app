@@ -372,15 +372,13 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
         foregroundColor: active ? tokens.cardBackground : colors.onSurface,
         elevation: active ? 3 : 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        side: BorderSide(
-            color: active
-                ? Colors.transparent
-                : tokens.border),
+        side: BorderSide(color: active ? Colors.transparent : tokens.border),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
       child: Text(label,
           style: TextStyle(
-              fontSize: 13, color: active ? tokens.cardBackground : colors.onSurface)),
+              fontSize: 13,
+              color: active ? tokens.cardBackground : colors.onSurface)),
     );
   }
 
@@ -469,6 +467,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                   side: BorderSide(color: tokens.border),
                 ),
                 child: InkWell(
+                  mouseCursor: SystemMouseCursors.click,
                   borderRadius: BorderRadius.circular(8),
                   onTap: () async {
                     await _showCustomDateRangePicker();
@@ -521,8 +520,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline,
-                        color: tokens.info, size: 20),
+                    Icon(Icons.info_outline, color: tokens.info, size: 20),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -609,16 +607,16 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
     return Row(
       children: [
         Expanded(
-            child: _buildStatCard(
-                '总患者数', totalPatients.toString(), Icons.people, tokens.chartPalette[0])),
+            child: _buildStatCard('总患者数', totalPatients.toString(),
+                Icons.people, tokens.chartPalette[0])),
         const SizedBox(width: 16),
         Expanded(
-            child: _buildStatCard(
-                '男性患者', malePatients.toString(), Icons.male, tokens.chartPalette[1])),
+            child: _buildStatCard('男性患者', malePatients.toString(), Icons.male,
+                tokens.chartPalette[1])),
         const SizedBox(width: 16),
         Expanded(
-            child: _buildStatCard(
-                '女性患者', femalePatients.toString(), Icons.female, tokens.chartPalette[2])),
+            child: _buildStatCard('女性患者', femalePatients.toString(),
+                Icons.female, tokens.chartPalette[2])),
         const SizedBox(width: 16),
         Expanded(
             child: _buildStatCard('平均年龄', '${averageAge.toStringAsFixed(1)}岁',
@@ -691,7 +689,10 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
           children: [
             Text(
               title,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: colors.onSurface),
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: colors.onSurface),
             ),
             const SizedBox(height: 16),
             Expanded(child: chart),
@@ -734,8 +735,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                       style: TextStyle(fontSize: 10, color: tokens.textMuted));
                 }
                 return Text('${value.toInt()}',
-                    style:
-                        TextStyle(fontSize: 10, color: tokens.textMuted));
+                    style: TextStyle(fontSize: 10, color: tokens.textMuted));
               },
             );
 
@@ -934,8 +934,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
                       style: TextStyle(fontSize: 10, color: tokens.textMuted));
                 }
                 return Text('${value.toInt()}',
-                    style:
-                        TextStyle(fontSize: 10, color: tokens.textMuted));
+                    style: TextStyle(fontSize: 10, color: tokens.textMuted));
               },
             );
 
@@ -1117,7 +1116,10 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
           children: [
             Text(
               title,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: colors.onSurface),
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: colors.onSurface),
             ),
             const SizedBox(height: 16),
             Expanded(

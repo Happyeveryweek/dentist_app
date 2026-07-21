@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/patient_material_with_images.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import '../../../widgets/clickable.dart';
 import '../../../widgets/success_toast.dart';
 
 /// 材料详情卡片组件
@@ -210,7 +211,7 @@ class MaterialDetailCard extends StatelessWidget {
       itemCount: material.images.length,
       itemBuilder: (context, index) {
         final image = material.images[index];
-        return GestureDetector(
+        return Clickable(
           onTap: () => onImageTap(image),
           child: Container(
             decoration: BoxDecoration(

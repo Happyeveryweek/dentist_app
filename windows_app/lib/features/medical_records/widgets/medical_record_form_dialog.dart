@@ -144,7 +144,8 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
     if (medicalRecord == null) return true;
 
     // 编辑现有病历时，检查是否是自己创建的
-    final createdByDoctor = medicalRecord.createdByDoctor ?? medicalRecord.doctorName;
+    final createdByDoctor =
+        medicalRecord.createdByDoctor ?? medicalRecord.doctorName;
     return createdByDoctor == currentUser.doctor;
   }
 
@@ -153,7 +154,8 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
     final medicalRecord = widget.medicalRecord;
     if (medicalRecord == null) return '';
 
-    final createdByDoctor = medicalRecord.createdByDoctor ?? medicalRecord.doctorName;
+    final createdByDoctor =
+        medicalRecord.createdByDoctor ?? medicalRecord.doctorName;
 
     if (createdByDoctor.isNotEmpty) {
       return '创建医生：$createdByDoctor';
@@ -283,8 +285,8 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
     try {
       final dentalCondition = widget.patient.dentalCondition;
       if (dentalCondition != null && dentalCondition.isNotEmpty) {
-        final dentalData = DentalConditionIntegration.parseDentalCondition(
-            dentalCondition);
+        final dentalData =
+            DentalConditionIntegration.parseDentalCondition(dentalCondition);
         _availableDentalConditionDates =
             DentalConditionIntegration.getAvailableDates(dentalData);
       }
@@ -523,7 +525,8 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
         final templateTitle = template['title'];
         if (templateContent == null || templateTitle == null) continue;
         // 检查是否包含该模板内容
-        if (noteSections.any((section) => section.trim() == templateContent.trim())) {
+        if (noteSections
+            .any((section) => section.trim() == templateContent.trim())) {
           setState(() {
             _selectedNotesTemplates.add(templateTitle);
           });
@@ -892,8 +895,8 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: context.tokens.warningContainer,
-        border: Border.all(
-            color: context.tokens.warning.withValues(alpha: 0.3)),
+        border:
+            Border.all(color: context.tokens.warning.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -949,7 +952,8 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
                       style: TextStyle(color: context.tokens.primaryAccent)),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
-                        color: context.tokens.primaryAccent.withValues(alpha: 0.5)),
+                        color: context.tokens.primaryAccent
+                            .withValues(alpha: 0.5)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -977,8 +981,8 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(context.colors.onPrimary),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              context.colors.onPrimary),
                         ),
                       )
                     : Icon(
@@ -1000,7 +1004,8 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
                           : context.tokens.primaryAccent,
                   foregroundColor: context.colors.onPrimary,
                   elevation: 2,
-                  shadowColor: context.tokens.primaryAccent.withValues(alpha: 0.3),
+                  shadowColor:
+                      context.tokens.primaryAccent.withValues(alpha: 0.3),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -1133,6 +1138,7 @@ class _MedicalRecordFormDialogState extends State<MedicalRecordFormDialog>
     final isEnabled = onChanged != null;
 
     return InkWell(
+      mouseCursor: SystemMouseCursors.click,
       onTap: isEnabled ? () => onChanged(!value) : null,
       borderRadius: BorderRadius.circular(8),
       child: Padding(

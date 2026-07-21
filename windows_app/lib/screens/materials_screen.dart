@@ -1044,38 +1044,41 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
               );
             }).toList(),
           ],
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.filter_list_rounded,
-                  size: 18,
-                  color: (_selectedType != '全部' || _isTypeHover)
-                      ? context.tokens.primaryAccent
-                      : context.tokens.textMuted,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _selectedType,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.filter_list_rounded,
+                    size: 18,
                     color: (_selectedType != '全部' || _isTypeHover)
                         ? context.tokens.primaryAccent
                         : context.tokens.textMuted,
                   ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  size: 18,
-                  color: (_selectedType != '全部' || _isTypeHover)
-                      ? context.tokens.primaryAccent
-                      : context.tokens.textMuted,
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Text(
+                    _selectedType,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: (_selectedType != '全部' || _isTypeHover)
+                          ? context.tokens.primaryAccent
+                          : context.tokens.textMuted,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 18,
+                    color: (_selectedType != '全部' || _isTypeHover)
+                        ? context.tokens.primaryAccent
+                        : context.tokens.textMuted,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

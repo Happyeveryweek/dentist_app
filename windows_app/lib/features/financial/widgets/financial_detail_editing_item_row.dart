@@ -43,7 +43,8 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
         decoration: BoxDecoration(
           color: tokens.primaryAccent.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: tokens.primaryAccent.withValues(alpha: 0.2), width: 1),
+          border: Border.all(
+              color: tokens.primaryAccent.withValues(alpha: 0.2), width: 1),
           boxShadow: [
             BoxShadow(
               color: tokens.primaryAccent.withValues(alpha: 0.2),
@@ -57,6 +58,7 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
         child: FinancialDetailTableLayout.buildRow(
           children: [
             InkWell(
+              mouseCursor: SystemMouseCursors.click,
               onTap: () async {
                 final date = await onDateSelect();
                 if (date != null) {
@@ -126,6 +128,8 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
                 border: Border.all(color: tokens.divider),
               ),
               child: DropdownButtonFormField<String>(
+                mouseCursor: SystemMouseCursors.click,
+                dropdownMenuItemMouseCursor: SystemMouseCursors.click,
                 key: ValueKey<String?>(
                     FinancialPaymentMethodHelper.uiValue(paymentMethod)),
                 initialValue:

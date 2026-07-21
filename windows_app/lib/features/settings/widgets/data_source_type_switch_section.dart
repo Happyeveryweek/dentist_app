@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../theme/theme_context_extensions.dart';
+import '../../../widgets/clickable.dart';
 import 'data_source_form_widgets.dart';
 
 /// 数据源类型切换区域组件
@@ -284,7 +285,7 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
     bool isSelected,
     VoidCallback? onTap,
   ) {
-    return GestureDetector(
+    return Clickable(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -853,7 +854,7 @@ class DataSourceTypeSwitchSection extends StatelessWidget {
         ? (selectedDataSource == dataSource)
         : isSelected;
 
-    return GestureDetector(
+    return Clickable(
       onTap: isEnabled
           ? () {
               onSetModuleDataSource(moduleKey, dataSource);
