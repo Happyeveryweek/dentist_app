@@ -13,6 +13,7 @@ import '../features/dashboard/services/dashboard_treatment_formatter.dart';
 import '../features/dashboard/services/dashboard_data_service.dart';
 import '../features/dashboard/helpers/dashboard_status_helper.dart';
 import '../widgets/dental_icons.dart';
+import '../widgets/hoverable_list_card.dart';
 import '../providers/database_provider.dart';
 import '../providers/appointment_provider.dart';
 import '../providers/patient_provider.dart';
@@ -765,129 +766,118 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
         DashboardStatusHelper.getStatusColor(context, appointment.status);
     final gender = appointment.patient?.gender ?? '';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: context.tokens.pageBackground,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.tokens.divider),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          mouseCursor: SystemMouseCursors.click,
-          borderRadius: BorderRadius.circular(12),
-          onTap: PermissionUtils.hasModulePermission(context, 'appointments')
-              ? () {
-                  final appointmentId = appointment.id;
-                  if (appointmentId == null) {
-                    AppToastManager.showError(context, message: '预约 ID 为空');
-                    return;
-                  }
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AppointmentDetailsScreen(
-                        appointmentId: appointmentId,
-                      ),
-                    ),
-                  );
-                }
-              : () {
-                  PermissionUtils.showPermissionDeniedDialog(
-                    context,
-                    message: '您没有查看预约详情的权限。',
-                  );
-                },
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+    return HoverableListCard(
+      onTap: PermissionUtils.hasModulePermission(context, 'appointments')
+          ? () {
+              final appointmentId = appointment.id;
+              if (appointmentId == null) {
+                AppToastManager.showError(context, message: '预约 ID 为空');
+                return;
+              }
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AppointmentDetailsScreen(
+                    appointmentId: appointmentId,
+                  ),
+                ),
+              );
+            }
+          : () {
+              PermissionUtils.showPermissionDeniedDialog(
+                context,
+                message: '您没有查看预约详情的权限。',
+              );
+            },
+      background: context.tokens.pageBackground,
+      padding: const EdgeInsets.all(16),
+      borderRadius: 12,
+      showShadow: false,
+      margin: EdgeInsets.zero,
+      child: Row(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        time.split(':')[0],
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: statusColor,
-                        ),
-                      ),
-                      Text(
-                        time.split(':')[1],
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: statusColor.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
+                Text(
+                  time.split(':')[0],
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: statusColor,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            DentalIcons.getGenderIcon(gender),
-                            size: 16,
-                            color: gender == '女'
-                                ? MedicalSemanticColors.femaleGender
-                                : MedicalSemanticColors.maleGender,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            appointment.patient?.name ?? '未知患者',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        DashboardTreatmentFormatter.formatTreatmentType(
-                            appointment.treatmentType),
-                        style: TextStyle(
-                          color: context.tokens.textMuted,
-                          fontSize: 13,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    appointment.statusDisplay,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+                Text(
+                  time.split(':')[1],
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: statusColor.withValues(alpha: 0.7),
                   ),
                 ),
               ],
             ),
           ),
-        ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      DentalIcons.getGenderIcon(gender),
+                      size: 16,
+                      color: gender == '女'
+                          ? MedicalSemanticColors.femaleGender
+                          : MedicalSemanticColors.maleGender,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      appointment.patient?.name ?? '未知患者',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  DashboardTreatmentFormatter.formatTreatmentType(
+                      appointment.treatmentType),
+                  style: TextStyle(
+                    color: context.tokens.textMuted,
+                    fontSize: 13,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              appointment.statusDisplay,
+              style: TextStyle(
+                color: statusColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1053,7 +1043,7 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
       }
     }
 
-    return InkWell(
+    return HoverableListCard(
       onTap: PermissionUtils.hasModulePermission(context, 'patients')
           ? () {
               Navigator.push(
@@ -1069,139 +1059,138 @@ class _ModernDashboardScreenState extends State<ModernDashboardScreen>
                 message: '您没有查看患者详情的权限。',
               );
             },
-      mouseCursor: SystemMouseCursors.click,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: genderColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                DentalIcons.getGenderIcon(patient.gender),
-                color: genderColor,
-                size: 24,
-              ),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      borderRadius: 8,
+      showShadow: false,
+      margin: EdgeInsets.zero,
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: genderColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    patient.name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: context.colors.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      // 病历号
-                      if (patient.medicalRecordNumber != null) ...[
-                        Icon(
-                          Icons.badge,
-                          size: 12,
-                          color: context.tokens.primaryAccent,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${patient.medicalRecordNumber}',
-                          style: TextStyle(
-                            color: context.tokens.primaryAccent,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-
-                      // 电话
-                      Icon(
-                        Icons.phone,
-                        size: 12,
-                        color: context.tokens.success,
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          displayPhone,
-                          style: TextStyle(
-                            color: context.tokens.success,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // 地址（如果有）
-                  Builder(builder: (context) {
-                    final address = patient.address;
-                    if (address == null || address.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-                    return Column(
-                      children: [
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on,
-                              size: 12,
-                              color: context.tokens.warning,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                address,
-                                style: TextStyle(
-                                  color: context.tokens.warning,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    );
-                  }),
-                ],
-              ),
+            child: Icon(
+              DentalIcons.getGenderIcon(patient.gender),
+              color: genderColor,
+              size: 24,
             ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  DateFormat('MM/dd').format(patient.updatedAt),
+                  patient.name,
                   style: TextStyle(
-                    color: context.tokens.textMuted,
-                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: context.colors.onSurface,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: context.tokens.textMuted,
-                  size: 20,
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    // 病历号
+                    if (patient.medicalRecordNumber != null) ...[
+                      Icon(
+                        Icons.badge,
+                        size: 12,
+                        color: context.tokens.primaryAccent,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${patient.medicalRecordNumber}',
+                        style: TextStyle(
+                          color: context.tokens.primaryAccent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+
+                    // 电话
+                    Icon(
+                      Icons.phone,
+                      size: 12,
+                      color: context.tokens.success,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        displayPhone,
+                        style: TextStyle(
+                          color: context.tokens.success,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
+
+                // 地址（如果有）
+                Builder(builder: (context) {
+                  final address = patient.address;
+                  if (address == null || address.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+                  return Column(
+                    children: [
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            size: 12,
+                            color: context.tokens.warning,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              address,
+                              style: TextStyle(
+                                color: context.tokens.warning,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }),
               ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                DateFormat('MM/dd').format(patient.updatedAt),
+                style: TextStyle(
+                  color: context.tokens.textMuted,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: context.tokens.textMuted,
+                size: 20,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

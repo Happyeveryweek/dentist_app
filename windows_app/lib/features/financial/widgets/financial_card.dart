@@ -4,9 +4,9 @@ import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/patient.dart';
 import '../../../models/financial_record.dart';
 import '../../../widgets/dental_icons.dart';
+import '../../../widgets/hoverable_list_card.dart';
 import 'financial_compact_tag.dart';
 import 'financial_compact_action_button.dart';
-import 'financial_hoverable_cards.dart';
 
 /// 财务卡片组件
 /// 用于显示患者财务信息卡片
@@ -44,7 +44,7 @@ class FinancialCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final updateDate = lastFinancialUpdateDate;
-    return HoverableFinancialListCard(
+    return HoverableListCard(
       onTap: onTap,
       child: Row(
         children: [
@@ -129,8 +129,7 @@ class FinancialCard extends StatelessWidget {
                         flex: 2,
                         child: FinancialCompactTag(
                           icon: Icons.update,
-                          label: DateFormat('yy-MM-dd')
-                              .format(updateDate),
+                          label: DateFormat('yy-MM-dd').format(updateDate),
                           color: tokens.warning,
                         ),
                       ),

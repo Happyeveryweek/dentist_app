@@ -9,6 +9,7 @@ import '../models/purchase_item.dart';
 import '../providers/purchase_provider.dart';
 import '../widgets/mysql_connection_warning.dart';
 import '../widgets/dental_icons.dart';
+import '../widgets/hoverable_list_card.dart';
 import '../widgets/unified_search_field.dart';
 import '../widgets/success_toast.dart';
 import '../features/purchases/widgets/purchase_statistics_dialog.dart';
@@ -280,7 +281,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
   }
 
   Widget _buildPurchaseRecordCard(PurchaseRecord record) {
-    return _HoverablePurchaseRecordCard(
+    return HoverableListCard(
       onTap: () => _showPurchaseDetail(record),
       child: Row(
         children: [
@@ -895,54 +896,5 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
         },
       );
     }
-  }
-}
-
-// 可悬浮的采购记录卡片组件
-class _HoverablePurchaseRecordCard extends StatefulWidget {
-  final VoidCallback onTap;
-  final Widget child;
-
-  const _HoverablePurchaseRecordCard({
-    Key? key,
-    required this.onTap,
-    required this.child,
-  }) : super(key: key);
-
-  @override
-  State<_HoverablePurchaseRecordCard> createState() =>
-      _HoverablePurchaseRecordCardState();
-}
-
-class _HoverablePurchaseRecordCardState
-    extends State<_HoverablePurchaseRecordCard> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: InkWell(
-        onTap: widget.onTap,
-        mouseCursor: SystemMouseCursors.click,
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: _isHovered
-                ? tokens.listItemHoverBackground
-                : tokens.cardBackground,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: tokens.cardShadow,
-          ),
-          child: widget.child,
-        ),
-      ),
-    );
   }
 }

@@ -1,4 +1,3 @@
-export 'hoverable_patient_card.dart';
 export 'patient_action_button.dart';
 export 'patient_action_buttons.dart';
 export 'patient_advanced_search_fields.dart';

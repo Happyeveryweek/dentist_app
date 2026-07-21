@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 import '../../../models/patient.dart';
+import '../../../widgets/hoverable_list_card.dart';
 import 'patient_action_buttons.dart';
 import '../../../utils/log_manager.dart';
 import '../../../theme/medical_semantic_colors.dart';
@@ -33,7 +34,6 @@ class PatientListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
     final patientName = patient.name;
     final patientGender = patient.gender;
     final avatarBgColor = patientGender == '女'
@@ -43,72 +43,47 @@ class PatientListItem extends StatelessWidget {
         ? MedicalSemanticColors.femaleGender
         : MedicalSemanticColors.maleGender;
 
-    return Container(
+    return HoverableListCard(
+      onTap: onView,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Material(
-        elevation: 1,
-        borderRadius: BorderRadius.circular(12),
-        color: tokens.cardBackground,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            gradient: LinearGradient(
-              colors: [
-                tokens.cardBackground.withValues(alpha: 0.0),
-                tokens.mutedBackground.withValues(alpha: 0.3),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      borderRadius: 12,
+      child: Row(
+        children: [
+          _PatientAvatar(
+            patientName: patientName,
+            avatarBgColor: avatarBgColor,
+            avatarTextColor: avatarTextColor,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _PatientNameRow(
+                  patientName: patientName,
+                  patientGender: patientGender,
+                  age: patient.age,
+                  avatarBgColor: avatarBgColor,
+                  avatarTextColor: avatarTextColor,
+                ),
+                const SizedBox(height: 4),
+                _PatientDetailRow(patient: patient),
               ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
             ),
           ),
-          child: InkWell(
-            onTap: onView,
-            borderRadius: BorderRadius.circular(12),
-            mouseCursor: SystemMouseCursors.click,
-            hoverColor: tokens.primaryAccent.withValues(alpha: 0.1),
-            splashColor: tokens.primaryAccent.withValues(alpha: 0.2),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(
-                children: [
-                  _PatientAvatar(
-                    patientName: patientName,
-                    avatarBgColor: avatarBgColor,
-                    avatarTextColor: avatarTextColor,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _PatientNameRow(
-                          patientName: patientName,
-                          patientGender: patientGender,
-                          age: patient.age,
-                          avatarBgColor: avatarBgColor,
-                          avatarTextColor: avatarTextColor,
-                        ),
-                        const SizedBox(height: 4),
-                        _PatientDetailRow(patient: patient),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  PatientActionButtons(
-                    canEdit: canEdit,
-                    canDelete: canDelete,
-                    onView: onView,
-                    onEdit: onEdit,
-                    onDelete: onDelete,
-                    onEditPermissionDenied: onEditPermissionDenied,
-                    onDeletePermissionDenied: onDeletePermissionDenied,
-                  ),
-                ],
-              ),
-            ),
+          const SizedBox(width: 8),
+          PatientActionButtons(
+            canEdit: canEdit,
+            canDelete: canDelete,
+            onView: onView,
+            onEdit: onEdit,
+            onDelete: onDelete,
+            onEditPermissionDenied: onEditPermissionDenied,
+            onDeletePermissionDenied: onDeletePermissionDenied,
           ),
-        ),
+        ],
       ),
     );
   }

@@ -2,12 +2,13 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:dentist_app_windows/theme/app_theme.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import 'package:dentist_app_windows/theme/medical_semantic_colors.dart';
 
 import '../../../models/patient.dart';
 import '../../../widgets/dental_icons.dart';
-import 'hoverable_patient_card.dart';
+import '../../../widgets/hoverable_list_card.dart';
 import 'patient_info_row.dart';
 import '../../../utils/log_manager.dart';
 
@@ -39,8 +40,11 @@ class PatientCard extends StatelessWidget {
     final colors = context.colors;
     final displayPhone = _getDisplayPhone(patient.phone);
 
-    return HoverablePatientCard(
+    return HoverableListCard(
       onTap: onView,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      borderRadius: AppTheme.smallBorderRadius,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -244,7 +248,8 @@ class PatientCard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.lock, size: 16, color: tokens.cardBackground),
+                            Icon(Icons.lock,
+                                size: 16, color: tokens.cardBackground),
                             const SizedBox(width: 8),
                             Text(
                               '权限不足',

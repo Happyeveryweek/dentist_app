@@ -5,6 +5,7 @@ import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/appointment.dart';
 import '../../../models/appointment_status.dart';
 import '../../../widgets/dental_icons.dart';
+import '../../../widgets/hoverable_list_card.dart';
 import '../../../widgets/success_toast.dart';
 
 class AppointmentCard extends StatefulWidget {
@@ -28,8 +29,6 @@ class AppointmentCard extends StatefulWidget {
 }
 
 class _AppointmentCardState extends State<AppointmentCard> {
-  bool _isHovered = false;
-
   String _formatAppointmentTime(DateTime dateTime) {
     final h = dateTime.hour.toString().padLeft(2, '0');
     final m = dateTime.minute.toString().padLeft(2, '0');
@@ -219,207 +218,182 @@ class _AppointmentCardState extends State<AppointmentCard> {
     final appointmentCost = widget.appointment.cost;
     final onEdit = widget.onEdit;
     final onDelete = widget.onDelete;
-    final tokens = context.tokens;
     final colors = context.colors;
 
-    return DentalCard(
+    return HoverableListCard(
+      onTap: widget.onView,
       margin: EdgeInsets.zero,
-      padding: EdgeInsets.zero,
-      color: _isHovered ? tokens.hoverBackground : tokens.cardBackground,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        onEnter: (_) {
-          if (mounted) {
-            setState(() => _isHovered = true);
-          }
-        },
-        onExit: (_) {
-          if (mounted) {
-            setState(() => _isHovered = false);
-          }
-        },
-        child: InkWell(
-          onTap: widget.onView,
-          borderRadius: BorderRadius.circular(12),
-          hoverColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          splashColor: Colors.transparent,
-          focusColor: Colors.transparent,
-          mouseCursor: SystemMouseCursors.click,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            child: Row(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      borderRadius: 12,
+      child: Row(
+        children: [
+          DentalAvatar(
+            gender: gender,
+            name: widget.appointment.patient?.name ?? "未知",
+            size: 40,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                DentalAvatar(
-                  gender: gender,
-                  name: widget.appointment.patient?.name ?? "未知",
-                  size: 40,
+                Row(
+                  children: [
+                    Text(
+                      widget.appointment.patient?.name ?? "未知患者",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: colors.onSurface,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    _buildStatusSelector(statusColor),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.tokens.infoContainer,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 10,
+                            color: context.tokens.info,
+                          ),
+                          const SizedBox(width: 2),
                           Text(
-                            widget.appointment.patient?.name ?? "未知患者",
+                            '$appointmentDateStr $appointmentTimeStr',
                             style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: colors.onSurface,
+                              color: context.tokens.info,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          _buildStatusSelector(statusColor),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Row(
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 5,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: context.tokens.infoContainer,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.access_time_rounded,
-                                  size: 10,
-                                  color: context.tokens.info,
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  '$appointmentDateStr $appointmentTimeStr',
-                                  style: TextStyle(
-                                    color: context.tokens.info,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
+                          Icon(
+                            DentalIcons.tooth,
+                            size: 11,
+                            color: context.tokens.primaryAccent
+                                .withValues(alpha: 0.7),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 3),
                           Expanded(
-                            child: Row(
-                              children: [
-                                Icon(
-                                  DentalIcons.tooth,
-                                  size: 11,
-                                  color: context.tokens.primaryAccent
-                                      .withValues(alpha: 0.7),
-                                ),
-                                const SizedBox(width: 3),
-                                Expanded(
-                                  child: Text(
-                                    treatmentDisplay,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: colors.onSurfaceVariant,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              treatmentDisplay,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: colors.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (appointmentCost != null) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 5,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: context.tokens.successContainer,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.payments_rounded,
-                                    size: 10,
-                                    color: context.tokens.success,
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    '¥${appointmentCost.toStringAsFixed(0)}',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: context.tokens.success,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
+                        ],
+                      ),
+                    ),
+                    if (appointmentCost != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: context.tokens.successContainer,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.payments_rounded,
+                              size: 10,
+                              color: context.tokens.success,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              '¥${appointmentCost.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: context.tokens.success,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
-                        ],
+                        ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildCompactActionButton(
-                      icon: Icons.visibility_rounded,
-                      color: context.tokens.info,
-                      tooltip: '查看',
-                      onPressed: widget.onView ?? () {},
-                    ),
-                    const SizedBox(width: 6),
-                    onEdit != null
-                        ? _buildCompactActionButton(
-                            icon: Icons.edit_rounded,
-                            color: context.tokens.warning,
-                            tooltip: '编辑',
-                            onPressed: onEdit,
-                          )
-                        : _buildCompactActionButton(
-                            icon: Icons.lock,
-                            color: context.tokens.iconMuted,
-                            tooltip: '权限不足',
-                            onPressed: () => AppToastManager.showError(
-                              context,
-                              message: '您只能编辑自己医生患者的预约',
-                            ),
-                          ),
-                    const SizedBox(width: 6),
-                    onDelete != null
-                        ? _buildCompactActionButton(
-                            icon: Icons.delete_rounded,
-                            color: context.tokens.error,
-                            tooltip: '删除',
-                            onPressed: onDelete,
-                          )
-                        : _buildCompactActionButton(
-                            icon: Icons.lock,
-                            color: context.tokens.iconMuted,
-                            tooltip: '权限不足',
-                            onPressed: () => AppToastManager.showError(
-                              context,
-                              message: '您只能删除自己医生患者的预约',
-                            ),
-                          ),
                   ],
                 ),
               ],
             ),
           ),
-        ),
+          const SizedBox(width: 6),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildCompactActionButton(
+                icon: Icons.visibility_rounded,
+                color: context.tokens.info,
+                tooltip: '查看',
+                onPressed: widget.onView ?? () {},
+              ),
+              const SizedBox(width: 6),
+              onEdit != null
+                  ? _buildCompactActionButton(
+                      icon: Icons.edit_rounded,
+                      color: context.tokens.warning,
+                      tooltip: '编辑',
+                      onPressed: onEdit,
+                    )
+                  : _buildCompactActionButton(
+                      icon: Icons.lock,
+                      color: context.tokens.iconMuted,
+                      tooltip: '权限不足',
+                      onPressed: () => AppToastManager.showError(
+                        context,
+                        message: '您只能编辑自己医生患者的预约',
+                      ),
+                    ),
+              const SizedBox(width: 6),
+              onDelete != null
+                  ? _buildCompactActionButton(
+                      icon: Icons.delete_rounded,
+                      color: context.tokens.error,
+                      tooltip: '删除',
+                      onPressed: onDelete,
+                    )
+                  : _buildCompactActionButton(
+                      icon: Icons.lock,
+                      color: context.tokens.iconMuted,
+                      tooltip: '权限不足',
+                      onPressed: () => AppToastManager.showError(
+                        context,
+                        message: '您只能删除自己医生患者的预约',
+                      ),
+                    ),
+            ],
+          ),
+        ],
       ),
     );
   }

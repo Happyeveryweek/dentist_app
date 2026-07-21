@@ -6,7 +6,7 @@ import '../providers/material_provider.dart';
 import '../widgets/dental_icons.dart';
 import '../widgets/unified_search_field.dart';
 import '../widgets/success_toast.dart';
-import '../features/materials/widgets/material_hoverable_cards.dart';
+import '../widgets/hoverable_list_card.dart';
 import '../widgets/mysql_connection_warning.dart';
 import '../features/materials/widgets/material_stat_card.dart';
 import '../widgets/pagination_control.dart';
@@ -690,7 +690,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   }
 
   Widget _buildMaterialCard(material_models.MaterialInfo material) {
-    return HoverableMaterialCard(
+    return HoverableListCard(
       onTap: () => _showMaterialDetail(material),
       child: Row(
         children: [
