@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import 'package:dentist_app_windows/widgets/compact_dropdown_form_field.dart';
 
 class TreatmentSectionWidget extends StatefulWidget {
   final List<String> selectedTreatments;
@@ -121,15 +122,11 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                flex: 4,
-                child: DropdownButtonFormField<String>(
-                  mouseCursor: SystemMouseCursors.click,
-                  dropdownMenuItemMouseCursor: SystemMouseCursors.click,
-                  initialValue: _selectedSuggestion,
-                  borderRadius: BorderRadius.circular(12),
-                  dropdownColor: tokens.cardBackground,
-                  focusColor: Colors.transparent,
+              SizedBox(
+                width: 220,
+                child: CompactDropdownFormField<String>(
+                  value: _selectedSuggestion,
+                  menuMaxHeight: 188,
                   decoration: InputDecoration(
                     labelText: '选择已有项目',
                     filled: true,
@@ -147,10 +144,9 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
                       borderSide: BorderSide(color: tokens.warning),
                     ),
                   ),
-                  hint: const Text('暂无'),
                   items: widget.suggestions
                       .map(
-                        (item) => DropdownMenuItem<String>(
+                        (item) => CompactDropdownItem<String>(
                           value: item,
                           child: Text(
                             item,
@@ -159,17 +155,16 @@ class _TreatmentSectionWidgetState extends State<TreatmentSectionWidget> {
                         ),
                       )
                       .toList(),
-                  onChanged: widget.suggestions.isEmpty
-                      ? null
-                      : (value) {
-                          if (value == null) {
-                            return;
-                          }
-                          setState(() {
-                            _selectedSuggestion = null;
-                            _addCustomTreatment(value);
-                          });
-                        },
+                  enabled: widget.suggestions.isNotEmpty,
+                  onChanged: (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setState(() {
+                      _selectedSuggestion = null;
+                      _addCustomTreatment(value);
+                    });
+                  },
                 ),
               ),
             ],

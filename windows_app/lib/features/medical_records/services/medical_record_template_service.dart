@@ -412,7 +412,7 @@ class MedicalRecordTemplateService {
   Future<Map<String, List<MedicalRecordTemplate>>> getAllTemplates({
     bool forceRefresh = false,
     Map<String, List<MedicalRecordTemplate>>? cachedTemplates,
-    DateTime? lastTemplateCacheTime,
+    DateTime? Function(String category)? getLastTemplateCacheTime,
     Duration cacheValidDuration = const Duration(minutes: 20),
     Function(String, List<MedicalRecordTemplate>)? updateTemplateCache,
   }) async {
@@ -427,7 +427,7 @@ class MedicalRecordTemplateService {
           category,
           forceRefresh: forceRefresh,
           cachedTemplates: cachedTemplates,
-          lastTemplateCacheTime: lastTemplateCacheTime,
+          lastTemplateCacheTime: getLastTemplateCacheTime?.call(category),
           cacheValidDuration: cacheValidDuration,
           updateTemplateCache: updateTemplateCache,
         );

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/appointment.dart';
 import '../../../models/appointment_status.dart';
+import '../../../widgets/compact_dropdown_form_field.dart';
 import '../../../widgets/dental_icons.dart';
 import '../../../widgets/hoverable_list_card.dart';
 import '../../../widgets/success_toast.dart';
@@ -151,52 +152,55 @@ class _AppointmentCardState extends State<AppointmentCard> {
           ),
         ],
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<AppointmentStatus>(
-          mouseCursor: SystemMouseCursors.click,
-          dropdownMenuItemMouseCursor: SystemMouseCursors.click,
-          value: currentStatus,
-          isDense: true,
-          itemHeight: 48,
-          borderRadius: BorderRadius.circular(14),
-          dropdownColor: context.tokens.cardBackground.withValues(alpha: 0.72),
-          focusColor: Colors.transparent,
-          icon: Icon(
-            Icons.keyboard_arrow_down_rounded,
-            size: 12,
-            color: statusColor,
-          ),
-          style: TextStyle(
-            color: statusColor,
-            fontSize: 9,
-            fontWeight: FontWeight.w600,
-          ),
-          menuMaxHeight: 220,
-          items: AppointmentStatus.values
-              .map(
-                (status) => DropdownMenuItem<AppointmentStatus>(
-                  value: status,
-                  child: Text(
-                    status.displayName,
-                    style: TextStyle(
-                      color: statusColor.withValues(alpha: 0.92),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
+      child: CompactPopupMenuButton<AppointmentStatus>(
+        value: currentStatus,
+        enabled: widget.onStatusChanged != null,
+        itemHeight: 36,
+        menuMaxHeight: 160,
+        menuWidth: 120,
+        borderRadius: 8,
+        items: AppointmentStatus.values
+            .map(
+              (status) => CompactDropdownItem<AppointmentStatus>(
+                value: status,
+                child: Text(
+                  status.displayName,
+                  style: TextStyle(
+                    color: statusColor.withValues(alpha: 0.92),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              )
-              .toList(),
-          onChanged: widget.onStatusChanged == null
-              ? null
-              : (status) {
-                  final onStatusChanged = widget.onStatusChanged;
-                  if (status != null &&
-                      onStatusChanged != null &&
-                      status != currentStatus) {
-                    onStatusChanged(status.storageValue);
-                  }
-                },
+              ),
+            )
+            .toList(),
+        onSelected: (status) {
+          final onStatusChanged = widget.onStatusChanged;
+          if (status != null &&
+              onStatusChanged != null &&
+              status != currentStatus) {
+            onStatusChanged(status.storageValue);
+          }
+        },
+        childBuilder: (context, isOpen) => Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              currentStatus.displayName,
+              style: TextStyle(
+                color: statusColor,
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            Icon(
+              isOpen
+                  ? Icons.keyboard_arrow_up_rounded
+                  : Icons.keyboard_arrow_down_rounded,
+              size: 12,
+              color: statusColor,
+            ),
+          ],
         ),
       ),
     );

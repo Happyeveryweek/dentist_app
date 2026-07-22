@@ -18,6 +18,7 @@ import '../utils/purchase_migration.dart';
 import '../features/purchases/services/purchase_sync_service.dart';
 import '../services/module_mysql_connection_service.dart';
 import '../utils/log_manager.dart';
+import '../utils/timed_cache.dart';
 
 /// 采购管理提供者
 /// 负责处理所有与采购相关的数据库操作
@@ -47,6 +48,14 @@ class PurchaseProvider extends ChangeNotifier {
   DateTime? _lastCacheTime;
   static const Duration _cacheValidDuration =
       Duration(minutes: 20); // 采购数据缓存20分钟
+  final TimedCache<String, int> _countCache =
+      TimedCache(validDuration: _cacheValidDuration);
+  final TimedCache<String, List<PurchaseRecord>> _pageCache =
+      TimedCache(validDuration: _cacheValidDuration);
+  final TimedCache<String, List<PurchaseRecord>> _searchCache =
+      TimedCache(validDuration: _cacheValidDuration);
+  final TimedCache<String, List<PurchaseItem>> _statisticsItemsCache =
+      TimedCache(validDuration: _cacheValidDuration);
 
   // 数据库提供者引用（用于获取最新连接）
   dynamic _databaseProvider;
@@ -207,6 +216,10 @@ class PurchaseProvider extends ChangeNotifier {
   void clearCache() {
     _cachedRecords = null;
     _lastCacheTime = null;
+    _countCache.clear();
+    _pageCache.clear();
+    _searchCache.clear();
+    _statisticsItemsCache.clear();
     _purchasesNeedRefresh = true; // 标记需要刷新
     // 延迟通知以避免在build阶段调用setState
     Future.microtask(() => notifyListeners());
@@ -224,12 +237,20 @@ class PurchaseProvider extends ChangeNotifier {
     try {
       // 获取权限过滤条件
       final doctorFilter = _getDoctorFilter();
+      final key = buildCacheKey([
+        _effectiveDataSourceType,
+        doctorFilter,
+        searchQuery,
+      ]);
+      final cached = _countCache.get(key);
+      if (cached != null) return cached;
 
       // 使用数据源模式（统一接口）
       final count = await _currentDataSource.getPurchasesCount(
         searchQuery: searchQuery,
         doctorFilter: doctorFilter,
       );
+      _countCache.put(key, count);
       return count;
     } catch (e) {
       LogManager.e('PurchaseProvider', 'getPurchaseRecordsCount 出错', error: e);
@@ -253,6 +274,17 @@ class PurchaseProvider extends ChangeNotifier {
     try {
       // 获取权限过滤条件
       final doctorFilter = _getDoctorFilter();
+      final key = buildCacheKey([
+        _effectiveDataSourceType,
+        doctorFilter,
+        page,
+        pageSize,
+        sortBy,
+        sortOrder,
+        searchQuery,
+      ]);
+      final cached = _pageCache.get(key);
+      if (cached != null) return List<PurchaseRecord>.from(cached);
 
       // 使用数据源模式（统一接口）
       List<PurchaseRecord> records =
@@ -264,6 +296,7 @@ class PurchaseProvider extends ChangeNotifier {
         searchQuery: searchQuery,
         doctorFilter: doctorFilter,
       );
+      _pageCache.put(key, List<PurchaseRecord>.from(records));
       return records;
     } catch (e) {
       LogManager.e('PurchaseProvider', 'getPurchaseRecords 出错', error: e);
@@ -271,17 +304,32 @@ class PurchaseProvider extends ChangeNotifier {
     }
   }
 
-  Future<List<PurchaseRecord>> searchPurchaseRecords(String keyword) async {
+  Future<List<PurchaseRecord>> searchPurchaseRecords(
+    String keyword, {
+    bool forceRefresh = false,
+  }) async {
     if (!initialized) {
       return [];
     }
 
     try {
       final doctorFilter = _getDoctorFilter();
-      return await _currentDataSource.searchPurchases(
+      final key = buildCacheKey([
+        _effectiveDataSourceType,
+        doctorFilter,
+        keyword,
+      ]);
+      if (!forceRefresh) {
+        final cached = _searchCache.get(key);
+        if (cached != null) return List<PurchaseRecord>.from(cached);
+      }
+
+      final records = await _currentDataSource.searchPurchases(
         keyword,
         doctorFilter: doctorFilter,
       );
+      _searchCache.put(key, List<PurchaseRecord>.from(records));
+      return records;
     } catch (e) {
       LogManager.e('PurchaseProvider', 'searchPurchaseRecords 出错', error: e);
       return [];
@@ -368,6 +416,12 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 标记刷新
   void markPurchasesNeedRefresh() {
+    _cachedRecords = null;
+    _lastCacheTime = null;
+    _countCache.clear();
+    _pageCache.clear();
+    _searchCache.clear();
+    _statisticsItemsCache.clear();
     _purchasesNeedRefresh = true;
     notifyListeners();
   }
@@ -692,7 +746,9 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 获取所有采购记录（纯数据源模式，支持权限过滤）
 
-  Future<List<PurchaseRecord>> getAllPurchaseRecords() async {
+  Future<List<PurchaseRecord>> getAllPurchaseRecords({
+    bool forceRefresh = false,
+  }) async {
     if (!initialized) {
       return _cachedRecords ?? []; // 优雅降级而不是抛出异常
     }
@@ -700,7 +756,10 @@ class PurchaseProvider extends ChangeNotifier {
     try {
       // 优先检查缓存
       final cachedRecords = _cachedRecords;
-      if (cachedRecords != null && _isCacheValid() && !_purchasesNeedRefresh) {
+      if (!forceRefresh &&
+          cachedRecords != null &&
+          _isCacheValid() &&
+          !_purchasesNeedRefresh) {
         LogManager.w(
             'PurchaseProvider', '使用缓存的采购记录数据: ${cachedRecords.length} 条');
         return cachedRecords;
@@ -747,6 +806,10 @@ class PurchaseProvider extends ChangeNotifier {
         // 更新不触发整页刷新，避免界面闪烁
         _cachedRecords = null;
         _lastCacheTime = null;
+        _countCache.clear();
+        _pageCache.clear();
+        _searchCache.clear();
+        _statisticsItemsCache.clear();
         _purchasesNeedRefresh = false;
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
@@ -861,6 +924,31 @@ class PurchaseProvider extends ChangeNotifier {
     }
   }
 
+  Future<List<PurchaseItem>> getPurchaseStatisticsItems(
+    Iterable<int> recordIds, {
+    bool forceRefresh = false,
+  }) async {
+    final ids = recordIds.toSet().toList()..sort();
+    if (ids.isEmpty) return [];
+
+    final key = buildCacheKey([
+      _effectiveDataSourceType,
+      _getDoctorFilter(),
+      ids,
+    ]);
+    if (!forceRefresh) {
+      final cached = _statisticsItemsCache.get(key);
+      if (cached != null) return List<PurchaseItem>.from(cached);
+    }
+
+    final items = <PurchaseItem>[];
+    for (final recordId in ids) {
+      items.addAll(await getPurchaseItemsByRecordId(recordId));
+    }
+    _statisticsItemsCache.put(key, List<PurchaseItem>.from(items));
+    return items;
+  }
+
   // 确保采购项目表存在
   Future<void> ensurePurchaseItemsTableExists() async {
     try {
@@ -877,6 +965,12 @@ class PurchaseProvider extends ChangeNotifier {
       final success = await _currentDataSource.updatePurchaseItem(item);
       if (success) {
         // 更新不触发整页刷新，避免界面闪烁
+        _cachedRecords = null;
+        _lastCacheTime = null;
+        _countCache.clear();
+        _pageCache.clear();
+        _searchCache.clear();
+        _statisticsItemsCache.clear();
         _purchasesNeedRefresh = false;
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL

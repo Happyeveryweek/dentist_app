@@ -133,7 +133,6 @@ class MedicalRecordProvider extends ChangeNotifier {
   MySqlConnection? get mysqlConnection => _mysqlConnection;
   bool get templatesNeedRefresh => _templatesNeedRefresh;
   bool get hasValidTemplateCache => _cacheHelper.isTemplateCacheValid();
-  DateTime? get lastTemplateCacheTime => _cacheHelper.lastTemplateCacheTime;
   int get cachedTemplatesCount => _cacheHelper.cachedTemplatesCount;
 
   // 检查数据源是否真正可用
@@ -552,7 +551,7 @@ class MedicalRecordProvider extends ChangeNotifier {
       category,
       forceRefresh: forceRefresh,
       cachedTemplates: _cacheHelper.cachedTemplates,
-      lastTemplateCacheTime: _cacheHelper.lastTemplateCacheTime,
+      lastTemplateCacheTime: _cacheHelper.lastTemplateCacheTimeFor(category),
       cacheValidDuration: MedicalRecordCacheHelper.templateCacheValidDuration,
       updateTemplateCache: _cacheHelper.updateTemplateCache,
     );
@@ -619,7 +618,7 @@ class MedicalRecordProvider extends ChangeNotifier {
     return _templateService.getAllTemplates(
       forceRefresh: forceRefresh,
       cachedTemplates: _cacheHelper.cachedTemplates,
-      lastTemplateCacheTime: _cacheHelper.lastTemplateCacheTime,
+      getLastTemplateCacheTime: _cacheHelper.lastTemplateCacheTimeFor,
       cacheValidDuration: MedicalRecordCacheHelper.templateCacheValidDuration,
       updateTemplateCache: _cacheHelper.updateTemplateCache,
     );

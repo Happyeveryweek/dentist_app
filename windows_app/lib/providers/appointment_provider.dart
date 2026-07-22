@@ -16,6 +16,7 @@ import '../data_sources/appointment_data_source.dart';
 import '../features/appointments/services/appointment_sync_service.dart';
 import '../services/module_mysql_connection_service.dart';
 import '../utils/log_manager.dart';
+import '../utils/timed_cache.dart';
 
 /// 预约管理提供者
 /// 负责处理所有与预约相关的数据库操作
@@ -42,6 +43,8 @@ class AppointmentProvider extends ChangeNotifier {
   DateTime? _lastCacheTime;
   static const Duration _cacheValidDuration =
       Duration(minutes: 20); // 预约数据缓存20分钟
+  final TimedCache<String, List<Appointment>> _doctorAppointmentsCache =
+      TimedCache(validDuration: _cacheValidDuration);
 
   // 数据库提供者引用（用于获取最新连接）
   dynamic _databaseProvider;
@@ -277,12 +280,14 @@ class AppointmentProvider extends ChangeNotifier {
   void _updateCache(List<Appointment> appointments) {
     _cachedAppointments = List.from(appointments);
     _lastCacheTime = DateTime.now();
+    _doctorAppointmentsCache.clear();
   }
 
   // 清除缓存
   void clearCache() {
     _cachedAppointments = null;
     _lastCacheTime = null;
+    _doctorAppointmentsCache.clear();
     _appointmentsNeedRefresh = true; // 标记需要刷新
     // 延迟通知以避免在build阶段调用setState
     Future.microtask(() => notifyListeners());
@@ -607,12 +612,17 @@ class AppointmentProvider extends ChangeNotifier {
   // 获取特定医生的所有预约（使用数据源架构）
   Future<List<Appointment>> getAppointmentsByDoctor(String doctorName) async {
     try {
+      final key = buildCacheKey([_effectiveDataSourceType, doctorName]);
+      final cached = _doctorAppointmentsCache.get(key);
+      if (cached != null) return List<Appointment>.from(cached);
+
       List<Appointment> appointments =
           await _currentDataSource.getAppointmentsByDoctor(doctorName);
 
       // 应用权限过滤
       appointments = await _applyPermissionFilter(appointments);
 
+      _doctorAppointmentsCache.put(key, List<Appointment>.from(appointments));
       return appointments;
     } catch (e) {
       LogManager.e('AppointmentProvider', '获取医生预约失败', error: e);

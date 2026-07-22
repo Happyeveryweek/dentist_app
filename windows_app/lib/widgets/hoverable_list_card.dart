@@ -7,8 +7,7 @@ import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 /// 提供统一的鼠标悬浮背景色变化效果，适用于各业务列表
 /// （财务、患者、预约、采购、材料、仪表盘、模板等）。
 ///
-/// 悬浮时背景色使用 `tokens.selectedBackground`，相比 `hoverBackground`
-/// 更深一些，与页面背景（`pageBackground`）形成明显反差，便于识别当前行。
+/// 悬浮时使用列表专用悬浮 token，与选中状态保持清晰层级。
 class HoverableListCard extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
@@ -48,7 +47,7 @@ class _HoverableListCardState extends State<HoverableListCard> {
       padding: widget.padding,
       decoration: BoxDecoration(
         color: _isHovered
-            ? tokens.selectedBackground
+            ? tokens.listItemHoverBackground
             : (widget.background ?? tokens.cardBackground),
         borderRadius: BorderRadius.circular(widget.borderRadius),
         boxShadow: widget.showShadow ? tokens.cardShadow : null,

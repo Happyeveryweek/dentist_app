@@ -37,7 +37,7 @@ class _UsersScreenState extends State<UsersScreen>
   @override
   void initState() {
     super.initState();
-    _loadUsers(forceRefresh: true);
+    _loadUsers(forceRefresh: false);
   }
 
   @override

@@ -62,7 +62,7 @@ class MedicalRecordService {
       setLoading(true);
 
       // 检查缓存
-      if (!forceRefresh && cacheHelper.isCacheValid()) {
+      if (!forceRefresh && cacheHelper.isCacheValid(patientId)) {
         final cached = cacheHelper.cachedMedicalRecords[patientId];
         if (cached != null) {
           return cached;
@@ -155,7 +155,7 @@ class MedicalRecordService {
 
       if (id > 0) {
         // 清除相关缓存
-        cacheHelper.cachedMedicalRecords.remove(recordWithCreator.patientId);
+        cacheHelper.invalidateMedicalRecords(recordWithCreator.patientId);
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (syncService.needsSync) {
@@ -227,7 +227,7 @@ class MedicalRecordService {
 
       if (success) {
         // 清除相关缓存
-        cacheHelper.cachedMedicalRecords.remove(record.patientId);
+        cacheHelper.invalidateMedicalRecords(record.patientId);
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (syncService.needsSync) {
@@ -291,7 +291,7 @@ class MedicalRecordService {
       if (success) {
         // 清除相关缓存
         if (recordToDelete != null) {
-          cacheHelper.cachedMedicalRecords.remove(recordToDelete.patientId);
+          cacheHelper.invalidateMedicalRecords(recordToDelete.patientId);
         }
 
         if (syncService.needsSync) {

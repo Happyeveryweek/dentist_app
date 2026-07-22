@@ -6,6 +6,7 @@ import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../../../models/patient.dart';
 import '../../../providers/financial_provider.dart';
+import '../../../widgets/compact_dropdown_form_field.dart';
 import '../../../widgets/modern_date_picker.dart';
 import '../../../widgets/success_toast.dart'
     show DeleteConfirmDialogManager, InlineSuccessMessage, AppToastManager;
@@ -1096,13 +1097,11 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             borderRadius: BorderRadius.circular(6),
             border: Border.all(color: tokens.border),
           ),
-          child: DropdownButtonFormField<String>(
-            mouseCursor: SystemMouseCursors.click,
-            dropdownMenuItemMouseCursor: SystemMouseCursors.click,
-            key: ValueKey<String?>(
-                FinancialPaymentMethodHelper.uiValue(_editPaymentMethod)),
-            initialValue:
-                FinancialPaymentMethodHelper.uiValue(_editPaymentMethod),
+          child: CompactDropdownFormField<String>(
+            value: FinancialPaymentMethodHelper.uiValue(_editPaymentMethod),
+            menuWidth: 140,
+            menuMaxHeight: 160,
+            borderRadius: 6,
             hint: Text(
               '未选',
               style: TextStyle(color: tokens.textMuted, fontSize: 11),
@@ -1112,17 +1111,28 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
               focusedBorder: InputBorder.none,
               enabledBorder: InputBorder.none,
               isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 2),
+              contentPadding: EdgeInsets.fromLTRB(2, 0, 2, 4),
             ),
-            icon:
-                Icon(Icons.arrow_drop_down, color: tokens.iconMuted, size: 16),
-            isExpanded: true,
-            menuMaxHeight: 220,
-            borderRadius: BorderRadius.circular(6),
-            dropdownColor: tokens.cardBackground,
+            selectedItemBuilder: (context, method) => Center(
+              child: method == FinancialPaymentMethodHelper.nonePaymentMethod
+                  ? Icon(
+                      Icons.do_not_disturb_alt,
+                      size: 16,
+                      color: tokens.textMuted,
+                    )
+                  : SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: Image.asset(
+                        FinancialPaymentMethodHelper.iconAssetPath(method),
+                        fit: BoxFit.contain,
+                        alignment: Alignment.center,
+                      ),
+                    ),
+            ),
             items: FinancialPaymentMethodHelper.dropdownMethods
                 .map(
-                  (method) => DropdownMenuItem<String>(
+                  (method) => CompactDropdownItem<String>(
                     value: method,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),

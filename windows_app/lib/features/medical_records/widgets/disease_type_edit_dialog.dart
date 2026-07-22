@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/medical_record_template.dart';
 import '../../../providers/medical_record_provider.dart';
+import '../../../widgets/compact_dropdown_form_field.dart';
 import '../../../widgets/success_toast.dart';
 import '../../../utils/log_manager.dart';
 import '../../../theme/medical_semantic_colors.dart';
@@ -306,75 +307,72 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
               width: 1,
             ),
           ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              mouseCursor: SystemMouseCursors.click,
-              dropdownMenuItemMouseCursor: SystemMouseCursors.click,
-              value: _selectedCategory,
-              isExpanded: true,
-              hint: const Text('请选择类别'),
-              items: const [
-                DropdownMenuItem(
-                  value: MedicalRecordTemplateCategory.dentalDisease,
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.medical_services,
-                        size: 16,
-                        color: MedicalSemanticColors.dentalDisease,
-                      ),
-                      SizedBox(width: 8),
-                      Text('牙科疾病'),
-                    ],
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: MedicalRecordTemplateCategory.systemicDisease,
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.health_and_safety,
-                        size: 16,
-                        color: MedicalSemanticColors.systemicDisease,
-                      ),
-                      SizedBox(width: 8),
-                      Text('全身疾病'),
-                    ],
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: MedicalRecordTemplateCategory.allergy,
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.warning_amber,
-                        size: 16,
-                        color: MedicalSemanticColors.allergy,
-                      ),
-                      SizedBox(width: 8),
-                      Text('过敏类型'),
-                    ],
-                  ),
-                ),
-              ],
-              onChanged: widget.template == null
-                  ? (value) {
-                      setState(() {
-                        _selectedCategory = value;
-                        _selectedParentName = null;
-                        _availableParentTypes.clear();
-                      });
-                      if (value != null) {
-                        _loadAvailableParentTypes();
-                      }
-                    }
-                  : null,
-              style: TextStyle(
-                fontSize: 16,
-                color: context.colors.onSurface,
-              ),
-              dropdownColor: context.tokens.cardBackground,
+          child: CompactDropdownFormField<String>(
+            value: _selectedCategory,
+            enabled: widget.template == null,
+            hint: const Text('请选择类别'),
+            menuMaxHeight: 124,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(vertical: 10),
             ),
+            items: const [
+              CompactDropdownItem(
+                value: MedicalRecordTemplateCategory.dentalDisease,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.medical_services,
+                      size: 16,
+                      color: MedicalSemanticColors.dentalDisease,
+                    ),
+                    SizedBox(width: 8),
+                    Text('牙科疾病'),
+                  ],
+                ),
+              ),
+              CompactDropdownItem(
+                value: MedicalRecordTemplateCategory.systemicDisease,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.health_and_safety,
+                      size: 16,
+                      color: MedicalSemanticColors.systemicDisease,
+                    ),
+                    SizedBox(width: 8),
+                    Text('全身疾病'),
+                  ],
+                ),
+              ),
+              CompactDropdownItem(
+                value: MedicalRecordTemplateCategory.allergy,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber,
+                      size: 16,
+                      color: MedicalSemanticColors.allergy,
+                    ),
+                    SizedBox(width: 8),
+                    Text('过敏类型'),
+                  ],
+                ),
+              ),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedCategory = value;
+                _selectedParentName = null;
+                _availableParentTypes.clear();
+              });
+              if (value != null) {
+                _loadAvailableParentTypes();
+              }
+            },
           ),
         ),
       ],
@@ -478,41 +476,31 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
               width: 1,
             ),
           ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              mouseCursor: SystemMouseCursors.click,
-              dropdownMenuItemMouseCursor: SystemMouseCursors.click,
-              value: _selectedParentName,
-              isExpanded: true,
-              hint: const Text('请选择父类型'),
-              icon: Icon(Icons.arrow_drop_down_rounded,
-                  color: context.tokens.secondaryAccent),
-              elevation: 4,
-              borderRadius: BorderRadius.circular(12),
-              menuMaxHeight: 300, // Limit dropdown height
-              items: _availableParentTypes.map((parentType) {
-                return DropdownMenuItem(
-                  value: parentType,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      parentType,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedParentName = value;
-                });
-              },
-              style: TextStyle(
-                fontSize: 16,
-                color: context.colors.onSurface,
-              ),
-              dropdownColor: context.tokens.cardBackground,
+          child: CompactDropdownFormField<String>(
+            value: _selectedParentName,
+            hint: const Text('请选择父类型'),
+            menuMaxHeight: 220,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(vertical: 10),
             ),
+            items: _availableParentTypes.map((parentType) {
+              return CompactDropdownItem<String>(
+                value: parentType,
+                child: Text(
+                  parentType,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedParentName = value;
+              });
+            },
           ),
         ),
         if (_availableParentTypes.isEmpty && _selectedCategory != null) ...[

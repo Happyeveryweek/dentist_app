@@ -918,6 +918,9 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
+          // 默认 Clip.none 不会裁剪子项，标题栏渐变会溢出到顶部圆角区域，
+          // 导致上方两角视觉呈直角；这里开启抗锯齿裁剪使子项贴合弹出窗圆角。
+          clipBehavior: Clip.antiAlias,
           elevation: 12,
           itemBuilder: (context) => [
             // 标题栏

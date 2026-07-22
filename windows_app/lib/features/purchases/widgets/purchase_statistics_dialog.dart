@@ -5,23 +5,34 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/purchase_record.dart';
 import '../../../models/purchase_item.dart';
-import '../../../providers/purchase_provider.dart';
 import '../../../widgets/reusable_date_range_picker.dart';
+
+class PurchaseStatisticsData {
+  const PurchaseStatisticsData({
+    required this.purchaseRecords,
+    required this.purchaseItems,
+  });
+
+  final List<PurchaseRecord> purchaseRecords;
+  final List<PurchaseItem> purchaseItems;
+}
 
 class PurchaseStatsDialog extends StatefulWidget {
   final List<PurchaseRecord> purchaseRecords;
-  final PurchaseProvider purchaseProvider;
+  final List<PurchaseItem> purchaseItems;
   final String? searchQuery;
   final DateTime? initialStartDate;
   final DateTime? initialEndDate;
+  final Future<PurchaseStatisticsData> Function()? onRefresh;
 
   const PurchaseStatsDialog({
     Key? key,
     required this.purchaseRecords,
-    required this.purchaseProvider,
+    required this.purchaseItems,
     this.searchQuery,
     this.initialStartDate,
     this.initialEndDate,
+    this.onRefresh,
   }) : super(key: key);
 
   @override
@@ -32,17 +43,18 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 365));
   DateTime _endDate = DateTime.now();
   String _activePreset = '6m'; // 记录当前激活的预设按钮
-  List<PurchaseItem> _allItems = [];
-  bool _isLoading = true;
+  late List<PurchaseRecord> _purchaseRecords;
+  late List<PurchaseItem> _allItems;
+  bool _isRefreshing = false;
 
   // 获取最早的采购日期（用于"全部"时间范围）
   DateTime _getEarliestPurchaseDate() {
-    if (widget.purchaseRecords.isEmpty) {
+    if (_purchaseRecords.isEmpty) {
       final now = DateTime.now();
       return DateTime(now.year, now.month - 11, 1);
     }
     DateTime earliest = DateTime(9999);
-    for (final r in widget.purchaseRecords) {
+    for (final r in _purchaseRecords) {
       final d = DateTime(
           r.purchaseDate.year, r.purchaseDate.month, r.purchaseDate.day);
       if (d.isBefore(earliest)) earliest = d;
@@ -53,32 +65,9 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
   @override
   void initState() {
     super.initState();
+    _purchaseRecords = List<PurchaseRecord>.from(widget.purchaseRecords);
+    _allItems = List<PurchaseItem>.from(widget.purchaseItems);
     _setDefaultDateRange();
-    _loadAllPurchaseItems();
-  }
-
-  Future<void> _loadAllPurchaseItems() async {
-    setState(() => _isLoading = true);
-    try {
-      final List<PurchaseItem> allItems = [];
-      for (final record in widget.purchaseRecords) {
-        final recordId = record.id;
-        if (recordId == null) continue;
-        final items =
-            await widget.purchaseProvider.getPurchaseItemsByRecordId(recordId);
-        allItems.addAll(items);
-      }
-      if (mounted) {
-        setState(() {
-          _allItems = allItems;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
 
   void _setDefaultDateRange() {
@@ -118,7 +107,7 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
   }
 
   List<PurchaseRecord> _getFilteredRecords() {
-    return widget.purchaseRecords
+    return _purchaseRecords
         .where((r) => _isWithinRange(r.purchaseDate))
         .toList();
   }
@@ -365,81 +354,82 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
               ),
             ),
             IconButton(
+              tooltip: '刷新',
+              onPressed: _isRefreshing ? null : _refreshData,
+              icon: _isRefreshing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.refresh),
+            ),
+            IconButton(
               icon: const Icon(Icons.close),
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
         ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 显示搜索条件提示
-                    if (searchQuery != null && searchQuery.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: tokens.infoContainer,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: tokens.info),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.info_outline,
-                                color: tokens.info, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '当前显示搜索结果的统计数据：${widget.searchQuery}',
-                                style: TextStyle(
-                                    color: tokens.info,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ],
+        body: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 显示搜索条件提示
+              if (searchQuery != null && searchQuery.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: tokens.infoContainer,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: tokens.info),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: tokens.info, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '当前显示搜索结果的统计数据：${widget.searchQuery}',
+                          style: TextStyle(
+                              color: tokens.info,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500),
                         ),
                       ),
-                    _buildSummaryCards(totalRecords, totalAmount, totalQuantity,
-                        uniqueMaterials),
-                    const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              _buildSummaryCards(
+                  totalRecords, totalAmount, totalQuantity, uniqueMaterials),
+              const SizedBox(height: 20),
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Expanded(
+                      flex: 1,
+                      child: _buildChartCard(
+                        '月度采购金额趋势',
+                        _buildMonthlyAmountChart(
+                            sortedMonths, monthlyAmountData),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 2,
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            flex: 1,
-                            child: _buildChartCard(
-                              '月度采购金额趋势',
-                              _buildMonthlyAmountChart(
-                                  sortedMonths, monthlyAmountData),
-                            ),
+                            child: _buildTopMaterialsCard(
+                                topMaterialsByAmount, '采购材料排行 (按金额)', '¥'),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            flex: 2,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: _buildTopMaterialsCard(
-                                      topMaterialsByAmount,
-                                      '采购材料排行 (按金额)',
-                                      '¥'),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: _buildTopMaterialsCard(
-                                      topMaterialsByQuantity,
-                                      '采购材料排行 (按数量)',
-                                      ''),
-                                ),
-                              ],
-                            ),
+                            child: _buildTopMaterialsCard(
+                                topMaterialsByQuantity, '采购材料排行 (按数量)', ''),
                           ),
                         ],
                       ),
@@ -447,8 +437,31 @@ class PurchaseStatsDialogState extends State<PurchaseStatsDialog> {
                   ],
                 ),
               ),
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  Future<void> _refreshData() async {
+    final onRefresh = widget.onRefresh;
+    if (onRefresh == null || _isRefreshing) return;
+
+    setState(() => _isRefreshing = true);
+    try {
+      final data = await onRefresh();
+      if (!mounted) return;
+      setState(() {
+        _purchaseRecords = List<PurchaseRecord>.from(data.purchaseRecords);
+        _allItems = List<PurchaseItem>.from(data.purchaseItems);
+        _setDefaultDateRange();
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isRefreshing = false);
+      }
+    }
   }
 
   Widget _buildSummaryCards(int totalRecords, double totalAmount,

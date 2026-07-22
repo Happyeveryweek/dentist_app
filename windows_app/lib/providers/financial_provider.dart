@@ -246,6 +246,7 @@ class FinancialProvider extends ChangeNotifier {
 
   // 标记刷新
   void markFinancialsNeedRefresh() {
+    _cacheHelper.clearCache();
     _financialsNeedRefresh = true;
     notifyListeners();
   }
@@ -680,16 +681,33 @@ class FinancialProvider extends ChangeNotifier {
     List<int>? patientIds,
     DateTime? startDate,
     DateTime? endDate,
-  }) =>
-      _queryService.getPatientAggregatesPage(
-        page: page,
-        pageSize: pageSize,
-        sortBy: sortBy,
-        sortOrder: sortOrder,
-        patientIds: patientIds,
-        startDate: startDate,
-        endDate: endDate,
-      );
+  }) async {
+    final key = FinancialCacheHelper.buildQueryKey([
+      _effectiveDataSourceType,
+      _permissionService.getDoctorFilter(),
+      page,
+      pageSize,
+      sortBy,
+      sortOrder,
+      patientIds ?? const <int>[],
+      startDate,
+      endDate,
+    ]);
+    final cached = _cacheHelper.getPatientPage(key);
+    if (cached != null) return cached;
+
+    final result = await _queryService.getPatientAggregatesPage(
+      page: page,
+      pageSize: pageSize,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+      patientIds: patientIds,
+      startDate: startDate,
+      endDate: endDate,
+    );
+    _cacheHelper.putPatientPage(key, result);
+    return result;
+  }
 
   // 获取某患者"最近更新"的代表财务记录
   Future<FinancialRecord?> getLatestRecordForPatient(int patientId) =>
@@ -699,6 +717,7 @@ class FinancialProvider extends ChangeNotifier {
   Future<void> updatePatientFinancialSummary(int patientId) async {
     // 该方法保留给旧调用点使用，但现在改为触发一次静默刷新，
     // 让列表页在不显示整页 loading 的情况下重新拉取最新数据。
+    _cacheHelper.clearCache();
     _financialsNeedRefresh = true;
     notifyListeners();
   }
@@ -722,20 +741,41 @@ class FinancialProvider extends ChangeNotifier {
     double? receivedMax,
     double? processingMin,
     double? processingMax,
-  }) =>
-      _queryService.getFinancialItemsCount(
-        searchQuery: searchQuery,
-        startDate: startDate,
-        endDate: endDate,
-        patientIds: patientIds,
-        chargeItemQuery: chargeItemQuery,
-        receivableMin: receivableMin,
-        receivableMax: receivableMax,
-        receivedMin: receivedMin,
-        receivedMax: receivedMax,
-        processingMin: processingMin,
-        processingMax: processingMax,
-      );
+  }) async {
+    final key = FinancialCacheHelper.buildQueryKey([
+      _effectiveDataSourceType,
+      _permissionService.getDoctorFilter(),
+      searchQuery,
+      startDate,
+      endDate,
+      patientIds ?? const <int>[],
+      chargeItemQuery,
+      receivableMin,
+      receivableMax,
+      receivedMin,
+      receivedMax,
+      processingMin,
+      processingMax,
+    ]);
+    final cached = _cacheHelper.getItemCount(key);
+    if (cached != null) return cached;
+
+    final count = await _queryService.getFinancialItemsCount(
+      searchQuery: searchQuery,
+      startDate: startDate,
+      endDate: endDate,
+      patientIds: patientIds,
+      chargeItemQuery: chargeItemQuery,
+      receivableMin: receivableMin,
+      receivableMax: receivableMax,
+      receivedMin: receivedMin,
+      receivedMax: receivedMax,
+      processingMin: processingMin,
+      processingMax: processingMax,
+    );
+    _cacheHelper.putItemCount(key, count);
+    return count;
+  }
 
   Future<List<Map<String, dynamic>>> getFinancialItemsWithDetails({
     int page = 1,
@@ -753,24 +793,49 @@ class FinancialProvider extends ChangeNotifier {
     double? receivedMax,
     double? processingMin,
     double? processingMax,
-  }) =>
-      _queryService.getFinancialItemsWithDetails(
-        page: page,
-        pageSize: pageSize,
-        sortBy: sortBy,
-        sortOrder: sortOrder,
-        searchQuery: searchQuery,
-        startDate: startDate,
-        endDate: endDate,
-        patientIds: patientIds,
-        chargeItemQuery: chargeItemQuery,
-        receivableMin: receivableMin,
-        receivableMax: receivableMax,
-        receivedMin: receivedMin,
-        receivedMax: receivedMax,
-        processingMin: processingMin,
-        processingMax: processingMax,
-      );
+  }) async {
+    final key = FinancialCacheHelper.buildQueryKey([
+      _effectiveDataSourceType,
+      _permissionService.getDoctorFilter(),
+      page,
+      pageSize,
+      sortBy,
+      sortOrder,
+      searchQuery,
+      startDate,
+      endDate,
+      patientIds ?? const <int>[],
+      chargeItemQuery,
+      receivableMin,
+      receivableMax,
+      receivedMin,
+      receivedMax,
+      processingMin,
+      processingMax,
+    ]);
+    final cached = _cacheHelper.getItemPage(key);
+    if (cached != null) return cached;
+
+    final items = await _queryService.getFinancialItemsWithDetails(
+      page: page,
+      pageSize: pageSize,
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+      searchQuery: searchQuery,
+      startDate: startDate,
+      endDate: endDate,
+      patientIds: patientIds,
+      chargeItemQuery: chargeItemQuery,
+      receivableMin: receivableMin,
+      receivableMax: receivableMax,
+      receivedMin: receivedMin,
+      receivedMax: receivedMax,
+      processingMin: processingMin,
+      processingMax: processingMax,
+    );
+    _cacheHelper.putItemPage(key, items);
+    return items;
+  }
 
   Future<List<Map<String, dynamic>>> getAllFinancialItemsWithDetailsFiltered({
     String sortBy = 'charge_date',
@@ -786,22 +851,49 @@ class FinancialProvider extends ChangeNotifier {
     double? receivedMax,
     double? processingMin,
     double? processingMax,
-  }) =>
-      _queryService.getAllFinancialItemsWithDetailsFiltered(
-        sortBy: sortBy,
-        sortOrder: sortOrder,
-        searchQuery: searchQuery,
-        startDate: startDate,
-        endDate: endDate,
-        patientIds: patientIds,
-        chargeItemQuery: chargeItemQuery,
-        receivableMin: receivableMin,
-        receivableMax: receivableMax,
-        receivedMin: receivedMin,
-        receivedMax: receivedMax,
-        processingMin: processingMin,
-        processingMax: processingMax,
-      );
+    bool forceRefresh = false,
+  }) async {
+    final key = FinancialCacheHelper.buildQueryKey([
+      'statistics',
+      _effectiveDataSourceType,
+      _permissionService.getDoctorFilter(),
+      sortBy,
+      sortOrder,
+      searchQuery,
+      startDate,
+      endDate,
+      patientIds ?? const <int>[],
+      chargeItemQuery,
+      receivableMin,
+      receivableMax,
+      receivedMin,
+      receivedMax,
+      processingMin,
+      processingMax,
+    ]);
+    if (!forceRefresh) {
+      final cached = _cacheHelper.getItemPage(key);
+      if (cached != null) return cached;
+    }
+
+    final items = await _queryService.getAllFinancialItemsWithDetailsFiltered(
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+      searchQuery: searchQuery,
+      startDate: startDate,
+      endDate: endDate,
+      patientIds: patientIds,
+      chargeItemQuery: chargeItemQuery,
+      receivableMin: receivableMin,
+      receivableMax: receivableMax,
+      receivedMin: receivedMin,
+      receivedMax: receivedMax,
+      processingMin: processingMin,
+      processingMax: processingMax,
+    );
+    _cacheHelper.putItemPage(key, items);
+    return items;
+  }
 
   // =================== SQLite→MySQL 同步方法 ===================
 }

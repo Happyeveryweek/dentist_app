@@ -56,7 +56,7 @@ class _ThemeCardState extends State<ThemeCard> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: _isHovered && !isSelected
-                ? tokens.selectedBackground
+                ? tokens.hoverBackground
                 : tokens.cardBackground,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(

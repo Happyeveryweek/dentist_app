@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../theme/theme_context_extensions.dart';
 import '../../../providers/settings_provider.dart';
+import '../../../widgets/compact_dropdown_form_field.dart';
 
 class AutoBackupSettings extends StatelessWidget {
   const AutoBackupSettings({Key? key}) : super(key: key);
@@ -89,21 +90,43 @@ class AutoBackupSettings extends StatelessWidget {
               children: [
                 const Text('备份间隔: '),
                 const SizedBox(width: 8),
-                DropdownButton<int>(
-                  mouseCursor: SystemMouseCursors.click,
-                  dropdownMenuItemMouseCursor: SystemMouseCursors.click,
-                  value: settingsProvider.backupInterval,
-                  items: [1, 3, 5, 7, 14, 30].map((days) {
-                    return DropdownMenuItem<int>(
-                      value: days,
-                      child: Text('$days 天'),
-                    );
-                  }).toList(),
-                  onChanged: (value) async {
-                    if (value != null) {
-                      await settingsProvider.setBackupInterval(value);
-                    }
-                  },
+                SizedBox(
+                  width: 100,
+                  child: CompactDropdownFormField<int>(
+                    value: settingsProvider.backupInterval,
+                    menuMaxHeight: 220,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: context.tokens.border),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: context.tokens.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide:
+                            BorderSide(color: context.tokens.primaryAccent),
+                      ),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                    ),
+                    items: [1, 3, 5, 7, 14, 30].map((days) {
+                      return CompactDropdownItem<int>(
+                        value: days,
+                        child: Text('$days 天'),
+                      );
+                    }).toList(),
+                    onChanged: (value) async {
+                      if (value != null) {
+                        await settingsProvider.setBackupInterval(value);
+                      }
+                    },
+                  ),
                 ),
               ],
             ),

@@ -30,6 +30,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     required this.errorContainer,
     required this.infoContainer,
     required this.hoverBackground,
+    required this.menuItemHoverBackground,
+    required this.menuItemSelectedHoverBackground,
     required this.selectedBackground,
     required this.disabledBackground,
     required this.disabledText,
@@ -72,6 +74,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
   final Color errorContainer;
   final Color infoContainer;
   final Color hoverBackground;
+  final Color menuItemHoverBackground;
+  final Color menuItemSelectedHoverBackground;
   final Color selectedBackground;
   final Color disabledBackground;
   final Color disabledText;
@@ -123,12 +127,14 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       warningContainer: const Color(0xFFFFF4E0),
       errorContainer: const Color(0xFFFDECEF),
       infoContainer: const Color(0xFFEAF2FF),
-      hoverBackground: const Color(0xFFEAF4FB),
-      selectedBackground: const Color(0xFFDCECF8),
+      hoverBackground: primary.withValues(alpha: 0.08),
+      menuItemHoverBackground: primary.withValues(alpha: 0.10),
+      menuItemSelectedHoverBackground: primary.withValues(alpha: 0.18),
+      selectedBackground: primary.withValues(alpha: 0.14),
       disabledBackground: const Color(0xFFE8ECF1),
       disabledText: const Color(0xFF98A2B3),
       tableHeaderBackground: const Color(0xFFF0F5FA),
-      listItemHoverBackground: const Color(0xFFF7FBFF),
+      listItemHoverBackground: primary.withValues(alpha: 0.08),
       overlayScrim: const Color(0x59000000),
       primaryHeaderGradient: const LinearGradient(
         begin: Alignment.topLeft,
@@ -204,12 +210,14 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       warningContainer: const Color(0xFFFFF4E0),
       errorContainer: const Color(0xFFFDECEF),
       infoContainer: const Color(0xFFEAF2FF),
-      hoverBackground: const Color(0xFFEEF5FB),
-      selectedBackground: const Color(0xFFE1EEF8),
+      hoverBackground: primary.withValues(alpha: 0.08),
+      menuItemHoverBackground: primary.withValues(alpha: 0.10),
+      menuItemSelectedHoverBackground: primary.withValues(alpha: 0.18),
+      selectedBackground: primary.withValues(alpha: 0.14),
       disabledBackground: const Color(0xFFE6EAEE),
       disabledText: const Color(0xFF9AA6B2),
       tableHeaderBackground: const Color(0xFFEEF2F6),
-      listItemHoverBackground: const Color(0xFFF7FAFC),
+      listItemHoverBackground: primary.withValues(alpha: 0.08),
       overlayScrim: const Color(0x59000000),
       primaryHeaderGradient: const LinearGradient(
         begin: Alignment.topLeft,
@@ -285,12 +293,14 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       warningContainer: const Color(0xFFFFF4E0),
       errorContainer: const Color(0xFFFDECEF),
       infoContainer: const Color(0xFFEAF2FF),
-      hoverBackground: const Color(0xFFF5EEF7),
-      selectedBackground: const Color(0xFFEFE3F3),
+      hoverBackground: primary.withValues(alpha: 0.08),
+      menuItemHoverBackground: primary.withValues(alpha: 0.10),
+      menuItemSelectedHoverBackground: primary.withValues(alpha: 0.18),
+      selectedBackground: primary.withValues(alpha: 0.14),
       disabledBackground: const Color(0xFFEDE7EE),
       disabledText: const Color(0xFFA69BAA),
       tableHeaderBackground: const Color(0xFFF3EDF4),
-      listItemHoverBackground: const Color(0xFFFCF8FC),
+      listItemHoverBackground: primary.withValues(alpha: 0.08),
       overlayScrim: const Color(0x59000000),
       primaryHeaderGradient: const LinearGradient(
         begin: Alignment.topLeft,
@@ -366,12 +376,14 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       warningContainer: const Color(0xFFFFF4E0),
       errorContainer: const Color(0xFFFDECEF),
       infoContainer: const Color(0xFFEAF2FF),
-      hoverBackground: const Color(0xFFE7F4EF),
-      selectedBackground: const Color(0xFFD9EEE6),
+      hoverBackground: primary.withValues(alpha: 0.08),
+      menuItemHoverBackground: primary.withValues(alpha: 0.10),
+      menuItemSelectedHoverBackground: primary.withValues(alpha: 0.18),
+      selectedBackground: primary.withValues(alpha: 0.14),
       disabledBackground: const Color(0xFFE5ECE8),
       disabledText: const Color(0xFF9EABA3),
       tableHeaderBackground: const Color(0xFFEFF6F2),
-      listItemHoverBackground: const Color(0xFFF7FBF8),
+      listItemHoverBackground: primary.withValues(alpha: 0.08),
       overlayScrim: const Color(0x59000000),
       primaryHeaderGradient: const LinearGradient(
         begin: Alignment.topLeft,
@@ -447,12 +459,14 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       warningContainer: const Color(0xFFFFF4E0),
       errorContainer: const Color(0xFFFDECEF),
       infoContainer: const Color(0xFFEAF2FF),
-      hoverBackground: const Color(0xFFFBECEF),
-      selectedBackground: const Color(0xFFF7DDE3),
+      hoverBackground: primary.withValues(alpha: 0.08),
+      menuItemHoverBackground: primary.withValues(alpha: 0.10),
+      menuItemSelectedHoverBackground: primary.withValues(alpha: 0.18),
+      selectedBackground: primary.withValues(alpha: 0.14),
       disabledBackground: const Color(0xFFEEE7E5),
       disabledText: const Color(0xFFA99EA1),
       tableHeaderBackground: const Color(0xFFF6EEF0),
-      listItemHoverBackground: const Color(0xFFFFF8F9),
+      listItemHoverBackground: primary.withValues(alpha: 0.08),
       overlayScrim: const Color(0x59000000),
       primaryHeaderGradient: const LinearGradient(
         begin: Alignment.topLeft,
@@ -522,6 +536,8 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
     Color? errorContainer,
     Color? infoContainer,
     Color? hoverBackground,
+    Color? menuItemHoverBackground,
+    Color? menuItemSelectedHoverBackground,
     Color? selectedBackground,
     Color? disabledBackground,
     Color? disabledText,
@@ -565,6 +581,10 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       errorContainer: errorContainer ?? this.errorContainer,
       infoContainer: infoContainer ?? this.infoContainer,
       hoverBackground: hoverBackground ?? this.hoverBackground,
+      menuItemHoverBackground:
+          menuItemHoverBackground ?? this.menuItemHoverBackground,
+      menuItemSelectedHoverBackground: menuItemSelectedHoverBackground ??
+          this.menuItemSelectedHoverBackground,
       selectedBackground: selectedBackground ?? this.selectedBackground,
       disabledBackground: disabledBackground ?? this.disabledBackground,
       disabledText: disabledText ?? this.disabledText,
@@ -608,8 +628,7 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
       shadow: Color.lerp(shadow, other.shadow, t)!,
       focusRing: Color.lerp(focusRing, other.focusRing, t)!,
       primaryAccent: Color.lerp(primaryAccent, other.primaryAccent, t)!,
-      secondaryAccent:
-          Color.lerp(secondaryAccent, other.secondaryAccent, t)!,
+      secondaryAccent: Color.lerp(secondaryAccent, other.secondaryAccent, t)!,
       dangerAccent: Color.lerp(dangerAccent, other.dangerAccent, t)!,
       warningAccent: Color.lerp(warningAccent, other.warningAccent, t)!,
       iconMuted: Color.lerp(iconMuted, other.iconMuted, t)!,
@@ -624,8 +643,17 @@ class AppThemeTokens extends ThemeExtension<AppThemeTokens> {
           Color.lerp(warningContainer, other.warningContainer, t)!,
       errorContainer: Color.lerp(errorContainer, other.errorContainer, t)!,
       infoContainer: Color.lerp(infoContainer, other.infoContainer, t)!,
-      hoverBackground:
-          Color.lerp(hoverBackground, other.hoverBackground, t)!,
+      hoverBackground: Color.lerp(hoverBackground, other.hoverBackground, t)!,
+      menuItemHoverBackground: Color.lerp(
+        menuItemHoverBackground,
+        other.menuItemHoverBackground,
+        t,
+      )!,
+      menuItemSelectedHoverBackground: Color.lerp(
+        menuItemSelectedHoverBackground,
+        other.menuItemSelectedHoverBackground,
+        t,
+      )!,
       selectedBackground:
           Color.lerp(selectedBackground, other.selectedBackground, t)!,
       disabledBackground:

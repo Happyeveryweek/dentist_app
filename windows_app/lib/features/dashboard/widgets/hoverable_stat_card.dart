@@ -38,7 +38,7 @@ class HoverableStatCardState extends State<HoverableStatCard> {
           duration: const Duration(milliseconds: 200),
           decoration: BoxDecoration(
             color: _isHovered && widget.onTap != null
-                ? tokens.primaryAccent.withValues(alpha: 0.1)
+                ? tokens.hoverBackground
                 : tokens.cardBackground,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [

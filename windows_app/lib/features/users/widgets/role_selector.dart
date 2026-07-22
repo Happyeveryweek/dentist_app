@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import 'package:dentist_app_windows/widgets/compact_dropdown_form_field.dart';
 import '../../../models/user_role.dart';
 
 class RoleSelector extends StatelessWidget {
@@ -35,63 +36,60 @@ class RoleSelector extends StatelessWidget {
           border: Border.all(color: context.tokens.border),
         ),
         child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            mouseCursor: SystemMouseCursors.click,
-            dropdownMenuItemMouseCursor: SystemMouseCursors.click,
+          child: CompactDropdownFormField<String>(
             value: selectedRole,
-            isExpanded: true,
-            icon: Icon(Icons.keyboard_arrow_down,
-                color: context.tokens.primaryAccent),
-            style: TextStyle(fontSize: 16, color: context.colors.onSurface),
-            dropdownColor: context.tokens.cardBackground,
-            borderRadius: BorderRadius.circular(12),
-            elevation: 8,
+            itemHeight: 44,
+            menuMaxHeight: 220,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
             onChanged: onRoleChanged,
-            selectedItemBuilder: (context) {
-              return availableRoles.map<Widget>((role) {
-                final info = UserRole.fromValue(role);
-                return Row(
-                  children: [
-                    Icon(Icons.work,
-                        color: context.tokens.primaryAccent, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '角色',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: context.tokens.iconMuted,
-                              fontWeight: FontWeight.w400,
-                            ),
+            selectedItemBuilder: (context, role) {
+              final info = UserRole.fromValue(role);
+              return Row(
+                children: [
+                  Icon(Icons.work,
+                      color: context.tokens.primaryAccent, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '角色',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.tokens.iconMuted,
+                            fontWeight: FontWeight.w400,
                           ),
-                          Text(
-                            info?.displayName ?? role,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: context.colors.onSurface,
-                              fontWeight: FontWeight.w600,
-                            ),
+                        ),
+                        Text(
+                          info?.displayName ?? role,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: context.colors.onSurface,
+                            fontWeight: FontWeight.w600,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                );
-              }).toList();
+                  ),
+                ],
+              );
             },
             items: availableRoles.map((role) {
               final info = UserRole.fromValue(role);
               final color =
                   info?.color(context.tokens) ?? context.tokens.textMuted;
-              return DropdownMenuItem<String>(
+              return CompactDropdownItem<String>(
                 value: role,
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
                     color: selectedRole == role
                         ? color.withValues(alpha: 0.1)
@@ -101,7 +99,7 @@ class RoleSelector extends StatelessWidget {
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           color: color.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -109,7 +107,7 @@ class RoleSelector extends StatelessWidget {
                         child: Icon(
                           info?.icon ?? Icons.person,
                           color: color,
-                          size: 20,
+                          size: 18,
                         ),
                       ),
                       const SizedBox(width: 12),

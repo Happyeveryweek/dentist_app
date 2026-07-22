@@ -7,7 +7,6 @@ import '../models/financial_item.dart';
 import '../models/patient.dart';
 import '../providers/financial_provider.dart';
 import '../providers/patient_provider.dart';
-import '../providers/app_state.dart';
 import '../widgets/mysql_connection_warning.dart';
 import '../widgets/success_toast.dart';
 import '../features/financial/widgets/financial_search_bar.dart';
@@ -85,9 +84,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   int _totalRecords = 0;
   int _totalPages = 0;
 
-  // 页面数据缓存
-  final Map<int, List<Map<String, dynamic>>> _pageCache = {};
-
   // 患者缓存服务
   late PatientCacheService _patientCacheService;
 
@@ -97,9 +93,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   void initState() {
     super.initState();
     // 初始化患者缓存服务
-    final patientProvider =
-        Provider.of<PatientProvider>(context, listen: false);
-    _patientCacheService = PatientCacheService(patientProvider);
+    _patientCacheService = PatientCacheService();
 
     // 延迟加载数据，给Provider足够的时间进行初始化
     Future.delayed(const Duration(milliseconds: 100), () {
@@ -429,7 +423,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           _patientReceivableSumMap.clear();
           _patientReceivedSumMap.clear();
           _patientProcessingSumMap.clear();
-          _pageCache.clear();
         });
         return;
       }
@@ -495,11 +488,8 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           _totalPages = FinancialPaginationHelper.calculateTotalPages(
               _totalRecords, _recordsPerPage);
           _isLoading = false;
-          _patientCacheService.clearCache();
+          _patientCacheService.replaceAll(patients);
           _patientServerPaged = true;
-
-          // 缓存当前页数据
-          _pageCache[_currentPage] = rows;
         });
       } else {
         // 按收费记录显示模式：按 financial_items 分页
@@ -579,7 +569,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           _isLoading = false;
 
           // 清空缓存，因为患者列表已更新
-          _patientCacheService.clearCache();
+          _patientCacheService.replaceAll(patients);
 
           // 首次加载时不设置日期范围，显示所有数据
           // 用户可以手动选择日期范围进行过滤
@@ -594,22 +584,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
         _isLoading = false;
       });
     }
-  }
-
-  // 获取患者信息（带缓存）
-  Future<Patient?> _getPatientByIdAsync(int patientId) async {
-    final patientsDataSource = _resolveFinancialPatientsDataSource();
-
-    return _patientCacheService.getPatientById(
-      patientId,
-      preloadedPatients: _patients,
-      effectiveDataSourceType: patientsDataSource,
-      onPatientAdded: (patient) {
-        if (!_patients.any((p) => p.id == patientId)) {
-          _patients.add(patient);
-        }
-      },
-    );
   }
 
   // 同步获取患者信息（仅用于已缓存的情况）
@@ -679,7 +653,6 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
   void _filterFinancialData() {
     setState(() {
       _currentPage = 1; // 重置到第一页
-      _pageCache.clear(); // 清除缓存
     });
     _loadData(showLoading: false); // 重新从后端加载数据
   }
@@ -852,106 +825,102 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           ),
         ],
       ),
-      body: Consumer<AppState>(
-        builder: (context, appState, _) {
-          return Consumer<FinancialProvider>(
-            builder: (context, financialProvider, child) {
-              if (financialProvider.financialsNeedRefresh) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    _loadData(showLoading: false);
-                    financialProvider.resetFinancialsRefreshFlag();
-                  }
-                });
+      body: Consumer<FinancialProvider>(
+        builder: (context, financialProvider, child) {
+          if (financialProvider.financialsNeedRefresh) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _loadData(showLoading: false);
+                financialProvider.resetFinancialsRefreshFlag();
               }
+            });
+          }
 
-              return Column(
-                children: [
-                  // MySQL连接失败警告（如果有）
-                  const MySQLConnectionWarning(moduleName: '财务管理'),
+          return Column(
+            children: [
+              // MySQL连接失败警告（如果有）
+              const MySQLConnectionWarning(moduleName: '财务管理'),
 
-                  // 搜索栏 + 工具条（紧凑白底圆角容器）
-                  FinancialSearchBar(
-                    displayMode: _displayMode,
-                    searchController: _searchController,
-                    searchQuery: _hasAdvancedFilter
-                        ? _buildAdvancedFilterSummary()
-                        : _searchQuery,
-                    sortBy: _sortBy,
-                    sortAscending: _sortAscending,
-                    startDate: _startDate,
-                    endDate: _endDate,
-                    hasAdvancedFilter: _hasAdvancedFilter,
-                    searchReadOnly: _hasAdvancedFilter,
-                    onSearchChanged: (value) {
-                      if (_hasAdvancedFilter) {
-                        return;
-                      }
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                      _currentPage = 1;
-                      _loadData(showLoading: false);
-                    },
-                    onSearchCleared: () {
-                      if (_hasAdvancedFilter) {
-                        _clearAdvancedFilters();
-                        return;
-                      }
-                      setState(() {
-                        _searchQuery = '';
-                      });
-                      _syncSearchControllerText();
-                      _currentPage = 1;
-                      _loadData(showLoading: false);
-                    },
-                    onSortChanged: (String value) {
-                      setState(() {
-                        if (_sortBy == value) {
-                          _sortAscending = !_sortAscending;
-                        } else {
-                          _sortBy = value;
-                          _sortAscending = false;
-                        }
-                      });
-                      _filterFinancialData();
-                    },
-                    onDateRangeTap: () async {
-                      await _showCustomDateRangePicker();
-                    },
-                    onDateRangeCleared: () {
-                      setState(() {
-                        _startDate = null;
-                        _endDate = null;
-                      });
-                      _filterFinancialData();
-                    },
-                    onAdvancedFilterTap: _showAdvancedFilterDialog,
-                  ),
-                  // 内容区域
-                  Expanded(
-                    child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : _totalRecords == 0
-                            ? FinancialEmptyState(
-                                searchQuery: _searchQuery,
-                                onAddRecord: () async {
-                                  final changed =
-                                      await _showFinancialRecordDialog();
-                                  if (changed && mounted) {
-                                    await _loadData(showLoading: false);
-                                  }
-                                },
-                              )
-                            : Column(
-                                children: [
-                                  Expanded(child: _buildRecordsList()),
-                                ],
-                              ),
-                  ),
-                ],
-              );
-            },
+              // 搜索栏 + 工具条（紧凑白底圆角容器）
+              FinancialSearchBar(
+                displayMode: _displayMode,
+                searchController: _searchController,
+                searchQuery: _hasAdvancedFilter
+                    ? _buildAdvancedFilterSummary()
+                    : _searchQuery,
+                sortBy: _sortBy,
+                sortAscending: _sortAscending,
+                startDate: _startDate,
+                endDate: _endDate,
+                hasAdvancedFilter: _hasAdvancedFilter,
+                searchReadOnly: _hasAdvancedFilter,
+                onSearchChanged: (value) {
+                  if (_hasAdvancedFilter) {
+                    return;
+                  }
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                  _currentPage = 1;
+                  _loadData(showLoading: false);
+                },
+                onSearchCleared: () {
+                  if (_hasAdvancedFilter) {
+                    _clearAdvancedFilters();
+                    return;
+                  }
+                  setState(() {
+                    _searchQuery = '';
+                  });
+                  _syncSearchControllerText();
+                  _currentPage = 1;
+                  _loadData(showLoading: false);
+                },
+                onSortChanged: (String value) {
+                  setState(() {
+                    if (_sortBy == value) {
+                      _sortAscending = !_sortAscending;
+                    } else {
+                      _sortBy = value;
+                      _sortAscending = false;
+                    }
+                  });
+                  _filterFinancialData();
+                },
+                onDateRangeTap: () async {
+                  await _showCustomDateRangePicker();
+                },
+                onDateRangeCleared: () {
+                  setState(() {
+                    _startDate = null;
+                    _endDate = null;
+                  });
+                  _filterFinancialData();
+                },
+                onAdvancedFilterTap: _showAdvancedFilterDialog,
+              ),
+              // 内容区域
+              Expanded(
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _totalRecords == 0
+                        ? FinancialEmptyState(
+                            searchQuery: _searchQuery,
+                            onAddRecord: () async {
+                              final changed =
+                                  await _showFinancialRecordDialog();
+                              if (changed && mounted) {
+                                await _loadData(showLoading: false);
+                              }
+                            },
+                          )
+                        : Column(
+                            children: [
+                              Expanded(child: _buildRecordsList()),
+                            ],
+                          ),
+              ),
+            ],
           );
         },
       ),
@@ -1109,6 +1078,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
                     receivedMax: _receivedMax,
                     processingMin: _processingMin,
                     processingMax: _processingMax,
+                    forceRefresh: true,
                   ),
                 ),
               ),
@@ -1251,7 +1221,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       pageSize: _recordsPerPage,
       onPageChanged: _goToPage,
       getPagedData: _getPagedData,
-      getPatientByIdAsync: _getPatientByIdAsync,
+      getPatientById: _getPatientById,
       getPatientTotalReceivable: _getPatientTotalReceivable,
       getPatientLastFinancialUpdateDate: _getPatientLastFinancialUpdateDate,
       buildFinancialCard: _buildFinancialCard,

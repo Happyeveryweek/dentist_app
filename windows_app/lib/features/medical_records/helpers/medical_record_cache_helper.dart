@@ -4,42 +4,53 @@ import '../../../models/medical_record_template.dart';
 /// 病历缓存管理助手
 /// 负责处理病历记录和模板数据的缓存管理
 class MedicalRecordCacheHelper {
+  MedicalRecordCacheHelper({DateTime Function()? now})
+      : _now = now ?? DateTime.now;
+
+  final DateTime Function() _now;
+
   // 病历记录缓存
   Map<int, List<PatientMedicalRecord>> cachedMedicalRecords = {};
-  DateTime? lastCacheTime;
+  final Map<int, DateTime> _medicalRecordCacheTimes = {};
   static const Duration cacheValidDuration = Duration(minutes: 15);
 
   // 模板数据缓存
   Map<String, List<MedicalRecordTemplate>> cachedTemplates = {};
-  DateTime? lastTemplateCacheTime;
+  final Map<String, DateTime> _templateCacheTimes = {};
   static const Duration templateCacheValidDuration = Duration(minutes: 20);
 
   /// 检查病历记录缓存是否有效
-  bool isCacheValid() {
-    final cacheTime = lastCacheTime;
+  bool isCacheValid(int patientId) {
+    final cacheTime = _medicalRecordCacheTimes[patientId];
     return cacheTime != null &&
-        DateTime.now().difference(cacheTime) < cacheValidDuration;
+        _now().difference(cacheTime) < cacheValidDuration;
   }
 
   /// 检查模板缓存是否有效
-  bool isTemplateCacheValid() {
-    final cacheTime = lastTemplateCacheTime;
-    return cacheTime != null &&
-        DateTime.now().difference(cacheTime) <
-            templateCacheValidDuration;
+  bool isTemplateCacheValid([String? category]) {
+    if (category != null) {
+      final cacheTime = _templateCacheTimes[category];
+      return cacheTime != null &&
+          _now().difference(cacheTime) < templateCacheValidDuration;
+    }
+    return cachedTemplates.isNotEmpty &&
+        cachedTemplates.keys.every((key) => isTemplateCacheValid(key));
   }
+
+  DateTime? lastTemplateCacheTimeFor(String category) =>
+      _templateCacheTimes[category];
 
   /// 更新病历记录缓存
   void updateCache(int patientId, List<PatientMedicalRecord> records) {
     cachedMedicalRecords[patientId] = records;
-    lastCacheTime = DateTime.now();
+    _medicalRecordCacheTimes[patientId] = _now();
   }
 
   /// 更新模板缓存
   void updateTemplateCache(
       String category, List<MedicalRecordTemplate> templates) {
     cachedTemplates[category] = templates;
-    lastTemplateCacheTime = DateTime.now();
+    _templateCacheTimes[category] = _now();
   }
 
   /// 插入或替换单个模板缓存
@@ -55,7 +66,7 @@ class MedicalRecordCacheHelper {
       categoryTemplates.add(template);
     }
     cachedTemplates[template.category] = categoryTemplates;
-    lastTemplateCacheTime = DateTime.now();
+    _templateCacheTimes[template.category] = _now();
   }
 
   /// 从模板缓存中移除指定ID
@@ -69,20 +80,28 @@ class MedicalRecordCacheHelper {
       }
     }
     if (keysToUpdate.isNotEmpty) {
-      lastTemplateCacheTime = DateTime.now();
+      final now = _now();
+      for (final key in keysToUpdate) {
+        _templateCacheTimes[key] = now;
+      }
     }
+  }
+
+  void invalidateMedicalRecords(int patientId) {
+    cachedMedicalRecords.remove(patientId);
+    _medicalRecordCacheTimes.remove(patientId);
   }
 
   /// 清除病历记录缓存
   void clearCache() {
     cachedMedicalRecords.clear();
-    lastCacheTime = null;
+    _medicalRecordCacheTimes.clear();
   }
 
   /// 清除模板缓存
   void clearTemplateCache() {
     cachedTemplates.clear();
-    lastTemplateCacheTime = null;
+    _templateCacheTimes.clear();
   }
 
   /// 清除所有缓存

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import 'package:dentist_app_windows/widgets/compact_dropdown_form_field.dart';
 import '../../../models/appointment_status.dart';
 
 class AppointmentCostStatusSection extends StatelessWidget {
@@ -19,13 +20,13 @@ class AppointmentCostStatusSection extends StatelessWidget {
     final parsedStatus = AppointmentStatus.tryParse(status);
     final statusItems = [
       if (parsedStatus == null)
-        DropdownMenuItem(
+        CompactDropdownItem<String>(
           value: status,
           enabled: false,
           child: Text(status),
         ),
       ...AppointmentStatus.values.map(
-        (status) => DropdownMenuItem(
+        (status) => CompactDropdownItem<String>(
           value: status.storageValue,
           child: Text(status.displayName),
         ),
@@ -82,13 +83,11 @@ class AppointmentCostStatusSection extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 16),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  mouseCursor: SystemMouseCursors.click,
-                  dropdownMenuItemMouseCursor: SystemMouseCursors.click,
-                  borderRadius: BorderRadius.circular(12),
-                  dropdownColor: context.tokens.cardBackground,
-                  focusColor: Colors.transparent,
+              SizedBox(
+                width: 180,
+                child: CompactDropdownFormField<String>(
+                  value: status,
+                  menuMaxHeight: 160,
                   decoration: InputDecoration(
                     labelText: '预约状态',
                     border: OutlineInputBorder(
@@ -99,8 +98,6 @@ class AppointmentCostStatusSection extends StatelessWidget {
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 16),
                   ),
-                  key: ValueKey<String?>(status),
-                  initialValue: status,
                   items: statusItems,
                   onChanged: onStatusChanged,
                 ),

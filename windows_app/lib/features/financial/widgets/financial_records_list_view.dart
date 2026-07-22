@@ -17,7 +17,7 @@ class FinancialRecordsListView extends StatelessWidget {
   final int pageSize;
   final ValueChanged<int> onPageChanged;
   final List<Map<String, dynamic>> Function() getPagedData;
-  final Future<Patient?> Function(int) getPatientByIdAsync;
+  final Patient? Function(int) getPatientById;
   final double Function(int) getPatientTotalReceivable;
   final DateTime? Function(int) getPatientLastFinancialUpdateDate;
   final Widget Function(Patient, FinancialRecord, double, DateTime?,
@@ -35,7 +35,7 @@ class FinancialRecordsListView extends StatelessWidget {
     required this.pageSize,
     required this.onPageChanged,
     required this.getPagedData,
-    required this.getPatientByIdAsync,
+    required this.getPatientById,
     required this.getPatientTotalReceivable,
     required this.getPatientLastFinancialUpdateDate,
     required this.buildFinancialCard,
@@ -132,43 +132,24 @@ class FinancialRecordsListView extends StatelessWidget {
                                     final item = data['item'] as FinancialItem;
                                     final patientId = data['patient_id'] as int;
 
-                                    return FutureBuilder<Patient?>(
-                                      future: getPatientByIdAsync(patientId),
-                                      builder: (context, snapshot) {
-                                        if (snapshot.connectionState ==
-                                            ConnectionState.waiting) {
-                                          return const Center(
-                                            child: Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child:
-                                                  CircularProgressIndicator(),
-                                            ),
-                                          );
-                                        }
-
-                                        // 创建一个临时的 FinancialRecord 对象用于显示
-                                        final record = FinancialRecord(
-                                          id: item.financialRecordId,
+                                    final record = FinancialRecord(
+                                      id: item.financialRecordId,
+                                      patientId: patientId,
+                                      totalQuantity: 0,
+                                      notes: data['record_notes'] as String?,
+                                      createdAt: item.createdAt,
+                                      updatedAt: item.updatedAt,
+                                    );
+                                    final patient = getPatientById(patientId);
+                                    final displayPatient = patient ??
+                                        Patient.placeholderForFinancialRecord(
                                           patientId: patientId,
-                                          totalQuantity: 0,
-                                          notes:
-                                              data['record_notes'] as String?,
-                                          createdAt: item.createdAt,
-                                          updatedAt: item.updatedAt,
+                                          recordId: record.id,
+                                          createdAt: record.createdAt,
                                         );
 
-                                        final patient = snapshot.data;
-                                        final displayPatient = patient ??
-                                            Patient.placeholderForFinancialRecord(
-                                              patientId: patientId,
-                                              recordId: record.id,
-                                              createdAt: record.createdAt,
-                                            );
-
-                                        return buildFinancialItemCard(
-                                            displayPatient, record, item);
-                                      },
-                                    );
+                                    return buildFinancialItemCard(
+                                        displayPatient, record, item);
                                   },
                                 );
                               },
@@ -203,41 +184,24 @@ class FinancialRecordsListView extends StatelessWidget {
                             final item = data['item'] as FinancialItem;
                             final patientId = data['patient_id'] as int;
 
-                            return FutureBuilder<Patient?>(
-                              future: getPatientByIdAsync(patientId),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const Center(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: CircularProgressIndicator(),
-                                    ),
-                                  );
-                                }
-
-                                // 创建一个临时的 FinancialRecord 对象用于显示
-                                final record = FinancialRecord(
-                                  id: item.financialRecordId,
+                            final record = FinancialRecord(
+                              id: item.financialRecordId,
+                              patientId: patientId,
+                              totalQuantity: 0,
+                              notes: data['record_notes'] as String?,
+                              createdAt: item.createdAt,
+                              updatedAt: item.updatedAt,
+                            );
+                            final patient = getPatientById(patientId);
+                            final displayPatient = patient ??
+                                Patient.placeholderForFinancialRecord(
                                   patientId: patientId,
-                                  totalQuantity: 0,
-                                  notes: data['record_notes'] as String?,
-                                  createdAt: item.createdAt,
-                                  updatedAt: item.updatedAt,
+                                  recordId: record.id,
+                                  createdAt: record.createdAt,
                                 );
 
-                                final patient = snapshot.data;
-                                final displayPatient = patient ??
-                                    Patient.placeholderForFinancialRecord(
-                                      patientId: patientId,
-                                      recordId: record.id,
-                                      createdAt: record.createdAt,
-                                    );
-
-                                return buildFinancialItemCard(
-                                    displayPatient, record, item);
-                              },
-                            );
+                            return buildFinancialItemCard(
+                                displayPatient, record, item);
                           },
                         );
                       },

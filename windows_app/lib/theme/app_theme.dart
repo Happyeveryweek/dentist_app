@@ -265,6 +265,8 @@ class AppTheme {
     return ThemeData(
       primaryColor: tokens.primaryAccent,
       scaffoldBackgroundColor: tokens.pageBackground,
+      hoverColor: tokens.hoverBackground,
+      focusColor: tokens.focusRing,
       colorScheme: _buildColorScheme(tokens),
       extensions: [tokens],
       useMaterial3: true,

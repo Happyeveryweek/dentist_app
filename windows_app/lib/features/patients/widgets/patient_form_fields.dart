@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../theme/theme_context_extensions.dart';
+import '../../../../widgets/compact_dropdown_form_field.dart';
 
 class PatientFormTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -109,7 +110,7 @@ class PatientFormDropdown extends StatelessWidget {
   final String value;
   final String labelText;
   final IconData icon;
-  final List<DropdownMenuItem<String>> items;
+  final List<CompactDropdownItem<String>> items;
   final ValueChanged<String?> onChanged;
   final bool enabled;
 
@@ -127,10 +128,10 @@ class PatientFormDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final colors = context.colors;
-    return DropdownButtonFormField<String>(
-      mouseCursor: SystemMouseCursors.click,
-      dropdownMenuItemMouseCursor: SystemMouseCursors.click,
-      initialValue: value,
+    return CompactDropdownFormField<String>(
+      value: value,
+      itemHeight: 36,
+      menuMaxHeight: 88,
       decoration: InputDecoration(
         labelText: labelText,
         prefixIcon: Icon(
@@ -164,15 +165,17 @@ class PatientFormDropdown extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
       ),
-      items: enabled ? items : null,
-      onChanged: enabled ? onChanged : null,
-      style: TextStyle(
-        color: colors.onSurface,
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
+      items: items,
+      enabled: enabled,
+      selectedItemBuilder: (context, selectedValue) => Text(
+        selectedValue,
+        style: TextStyle(
+          color: colors.onSurface,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
       ),
-      dropdownColor: tokens.cardBackground,
-      icon: Icon(Icons.arrow_drop_down, color: tokens.primaryAccent),
+      onChanged: onChanged,
     );
   }
 }

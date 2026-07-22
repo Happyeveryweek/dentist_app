@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../theme/theme_context_extensions.dart';
 import '../../../theme/medical_semantic_colors.dart';
+import '../../../widgets/compact_dropdown_form_field.dart';
 import '../services/patient_form_validators.dart';
 import 'patient_form_fields.dart';
 
@@ -99,8 +100,8 @@ class PatientFormBasicSection extends StatelessWidget {
               icon: gender == '男' ? Icons.male : Icons.female,
               enabled: canEditBasicInfo,
               items: const [
-                DropdownMenuItem(value: '男', child: Text('男')),
-                DropdownMenuItem(value: '女', child: Text('女')),
+                CompactDropdownItem(value: '男', child: Text('男')),
+                CompactDropdownItem(value: '女', child: Text('女')),
               ],
               onChanged: onGenderChanged,
             ),

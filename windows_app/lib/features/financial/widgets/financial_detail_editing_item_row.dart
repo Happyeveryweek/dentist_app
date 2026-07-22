@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import 'package:dentist_app_windows/widgets/compact_dropdown_form_field.dart';
 import '../helpers/amount_input_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import 'financial_detail_table_layout.dart';
@@ -127,13 +128,11 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(color: tokens.divider),
               ),
-              child: DropdownButtonFormField<String>(
-                mouseCursor: SystemMouseCursors.click,
-                dropdownMenuItemMouseCursor: SystemMouseCursors.click,
-                key: ValueKey<String?>(
-                    FinancialPaymentMethodHelper.uiValue(paymentMethod)),
-                initialValue:
-                    FinancialPaymentMethodHelper.uiValue(paymentMethod),
+              child: CompactDropdownFormField<String>(
+                value: FinancialPaymentMethodHelper.uiValue(paymentMethod),
+                menuWidth: 140,
+                menuMaxHeight: 160,
+                borderRadius: 6,
                 hint: Text(
                   '未选择',
                   style: TextStyle(color: tokens.textMuted, fontSize: 11),
@@ -143,57 +142,65 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
                   focusedBorder: InputBorder.none,
                   enabledBorder: InputBorder.none,
                   isDense: true,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 2),
+                  contentPadding: EdgeInsets.fromLTRB(2, 0, 2, 4),
                 ),
-                icon: Icon(Icons.arrow_drop_down,
-                    color: tokens.textMuted, size: 16),
-                isExpanded: true,
-                menuMaxHeight: 220,
-                borderRadius: BorderRadius.circular(6),
-                dropdownColor: tokens.cardBackground,
+                selectedItemBuilder: (context, method) => Center(
+                  child: method ==
+                          FinancialPaymentMethodHelper.nonePaymentMethod
+                      ? Icon(
+                          Icons.do_not_disturb_alt,
+                          size: 16,
+                          color: tokens.textMuted,
+                        )
+                      : SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: Image.asset(
+                            FinancialPaymentMethodHelper.iconAssetPath(method),
+                            fit: BoxFit.contain,
+                            alignment: Alignment.center,
+                          ),
+                        ),
+                ),
                 items: FinancialPaymentMethodHelper.dropdownMethods
                     .map(
-                      (method) => DropdownMenuItem<String>(
+                      (method) => CompactDropdownItem<String>(
                         value: method,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Row(
-                            children: [
-                              if (method ==
-                                  FinancialPaymentMethodHelper
-                                      .nonePaymentMethod)
-                                Icon(
-                                  Icons.do_not_disturb_alt,
-                                  size: 14,
-                                  color: tokens.textMuted,
-                                )
-                              else
-                                SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child: Image.asset(
-                                    FinancialPaymentMethodHelper.iconAssetPath(
-                                        method),
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  method ==
-                                          FinancialPaymentMethodHelper
-                                              .nonePaymentMethod
-                                      ? '无'
-                                      : FinancialPaymentMethodHelper
-                                          .displayNameOrDefault(method),
-                                  style: const TextStyle(fontSize: 12),
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  overflow: TextOverflow.ellipsis,
+                        child: Row(
+                          children: [
+                            if (method ==
+                                FinancialPaymentMethodHelper.nonePaymentMethod)
+                              Icon(
+                                Icons.do_not_disturb_alt,
+                                size: 14,
+                                color: tokens.textMuted,
+                              )
+                            else
+                              SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: Image.asset(
+                                  FinancialPaymentMethodHelper.iconAssetPath(
+                                      method),
+                                  fit: BoxFit.contain,
                                 ),
                               ),
-                            ],
-                          ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                method ==
+                                        FinancialPaymentMethodHelper
+                                            .nonePaymentMethod
+                                    ? '无'
+                                    : FinancialPaymentMethodHelper
+                                        .displayNameOrDefault(method),
+                                style: const TextStyle(fontSize: 12),
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     )

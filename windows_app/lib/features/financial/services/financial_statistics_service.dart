@@ -27,6 +27,7 @@ class FinancialStatisticsService {
     required double? receivedMax,
     required double? processingMin,
     required double? processingMax,
+    bool forceRefresh = false,
   }) async {
     final financialProvider =
         Provider.of<FinancialProvider>(context, listen: false);
@@ -70,6 +71,7 @@ class FinancialStatisticsService {
       receivedMax: receivedMax,
       processingMin: processingMin,
       processingMax: processingMax,
+      forceRefresh: forceRefresh,
     );
 
     // 构建 FinancialItem 列表 + FinancialRecord（最小字段）列表 + 患者列表
@@ -97,6 +99,7 @@ class FinancialStatisticsService {
     final patients = await patientProvider.getPatientsByIds(
       patientIdSet.toList(),
       effectiveDataSourceType: patientsDataSource,
+      forceRefresh: forceRefresh,
     );
 
     return FinancialStatisticsData(

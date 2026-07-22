@@ -864,14 +864,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
   Future<void> _showPurchaseChart() async {
     final purchaseProvider =
         Provider.of<PurchaseProvider>(context, listen: false);
-
-    // 根据搜索条件获取记录
-    List<PurchaseRecord> records;
-    if (_searchQuery.isNotEmpty) {
-      records = await purchaseProvider.searchPurchaseRecords(_searchQuery);
-    } else {
-      records = await purchaseProvider.getAllPurchaseRecords();
-    }
+    final data = await _loadPurchaseStatistics(purchaseProvider);
 
     // 移除数据为空时的弹窗提示，直接显示统计页面
     if (mounted) {
@@ -886,9 +879,13 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: PurchaseStatsDialog(
-                  purchaseRecords: records,
-                  purchaseProvider: purchaseProvider,
+                  purchaseRecords: data.purchaseRecords,
+                  purchaseItems: data.purchaseItems,
                   searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
+                  onRefresh: () => _loadPurchaseStatistics(
+                    purchaseProvider,
+                    forceRefresh: true,
+                  ),
                 ),
               ),
             ),
@@ -896,5 +893,27 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
         },
       );
     }
+  }
+
+  Future<PurchaseStatisticsData> _loadPurchaseStatistics(
+    PurchaseProvider purchaseProvider, {
+    bool forceRefresh = false,
+  }) async {
+    final records = _searchQuery.isNotEmpty
+        ? await purchaseProvider.searchPurchaseRecords(
+            _searchQuery,
+            forceRefresh: forceRefresh,
+          )
+        : await purchaseProvider.getAllPurchaseRecords(
+            forceRefresh: forceRefresh,
+          );
+    final items = await purchaseProvider.getPurchaseStatisticsItems(
+      records.map((record) => record.id).whereType<int>(),
+      forceRefresh: forceRefresh,
+    );
+    return PurchaseStatisticsData(
+      purchaseRecords: records,
+      purchaseItems: items,
+    );
   }
 }

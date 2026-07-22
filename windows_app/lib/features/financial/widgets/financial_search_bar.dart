@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import '../../../widgets/compact_dropdown_form_field.dart';
 import '../../../widgets/unified_search_field.dart';
 
 /// 财务管理搜索栏组件（搜索框 + 排序 + 日期范围 + 高级筛选）
@@ -75,11 +76,24 @@ class FinancialSearchBar extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             // 排序切换
-            PopupMenuButton<String>(
-              icon: Icon(Icons.sort_rounded, color: context.colors.onSurface),
-              onSelected: onSortChanged,
-              itemBuilder: (BuildContext context) =>
-                  _buildSortMenuItems(context),
+            CompactPopupMenuButton<String>(
+              value: sortBy,
+              menuWidth: 190,
+              menuMaxHeight: 196,
+              items: _buildSortMenuItems(context),
+              onSelected: (value) {
+                if (value != null) {
+                  onSortChanged(value);
+                }
+              },
+              childBuilder: (context, isOpen) => SizedBox(
+                width: 44,
+                height: 44,
+                child: Icon(
+                  Icons.sort_rounded,
+                  color: context.colors.onSurface,
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             // 时间范围选择
@@ -166,7 +180,7 @@ class FinancialSearchBar extends StatelessWidget {
     );
   }
 
-  List<PopupMenuEntry<String>> _buildSortMenuItems(BuildContext context) {
+  List<CompactDropdownItem<String>> _buildSortMenuItems(BuildContext context) {
     if (displayMode == 'patient') {
       return _patientSortItems(context);
     } else {
@@ -174,36 +188,34 @@ class FinancialSearchBar extends StatelessWidget {
     }
   }
 
-  List<PopupMenuEntry<String>> _patientSortItems(BuildContext context) {
-    return <PopupMenuEntry<String>>[
+  List<CompactDropdownItem<String>> _patientSortItems(BuildContext context) {
+    return <CompactDropdownItem<String>>[
       _sortMenuItem(context, 'updated_at', Icons.update, '按最近更新'),
       _sortMenuItem(context, 'charge_date', Icons.calendar_today, '按收费日期'),
-      const PopupMenuDivider(),
       _sortMenuItem(context, 'receivable', Icons.request_quote, '按应收费'),
       _sortMenuItem(context, 'received', Icons.payments, '按已收费'),
       _sortMenuItem(context, 'debt', Icons.pending, '按欠费'),
     ];
   }
 
-  List<PopupMenuEntry<String>> _recordSortItems(BuildContext context) {
-    return <PopupMenuEntry<String>>[
+  List<CompactDropdownItem<String>> _recordSortItems(BuildContext context) {
+    return <CompactDropdownItem<String>>[
       _sortMenuItem(context, 'updated_at', Icons.update, '按最近更新'),
       _sortMenuItem(context, 'charge_date', Icons.calendar_today, '按收费日期'),
-      const PopupMenuDivider(),
       _sortMenuItem(context, 'receivable', Icons.request_quote, '按应收费'),
       _sortMenuItem(context, 'received', Icons.payments, '按已收费'),
       _sortMenuItem(context, 'processing_fee', Icons.build, '按加工费'),
     ];
   }
 
-  PopupMenuItem<String> _sortMenuItem(
+  CompactDropdownItem<String> _sortMenuItem(
     BuildContext context,
     String value,
     IconData icon,
     String label,
   ) {
     final isActive = sortBy == value;
-    return PopupMenuItem<String>(
+    return CompactDropdownItem<String>(
       value: value,
       child: Row(
         children: [

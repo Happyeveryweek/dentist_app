@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../models/dental_chart.dart';
+import '../../../widgets/compact_dropdown_form_field.dart';
 import '../models/patient_form_state.dart';
 
 class PatientFormDentalSection extends StatelessWidget {
@@ -428,19 +429,16 @@ class PatientFormDentalChartRow extends StatelessWidget {
                       labelText: '预约内容',
                       hintText: '可手动填写或选择已有内容',
                       isDense: true,
-                      suffixIcon: PopupMenuButton<String>(
-                        tooltip: '选择已有预约内容',
-                        icon: const Icon(Icons.arrow_drop_down),
-                        color: context.tokens.cardBackground,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        itemBuilder: (context) => <String>{
+                      suffixIcon: CompactPopupMenuButton<String>(
+                        value: null,
+                        menuWidth: 220,
+                        menuMaxHeight: 220,
+                        items: <String>{
                           '综合治疗',
                           ...treatmentSuggestions,
                         }
                             .map(
-                              (item) => PopupMenuItem<String>(
+                              (item) => CompactDropdownItem<String>(
                                 value: item,
                                 child: Text(
                                   item,
@@ -449,7 +447,14 @@ class PatientFormDentalChartRow extends StatelessWidget {
                               ),
                             )
                             .toList(),
-                        onSelected: onTreatmentChanged,
+                        onSelected: (value) {
+                          if (value != null) {
+                            onTreatmentChanged(value);
+                          }
+                        },
+                        childBuilder: (context, isOpen) => Icon(
+                          isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                        ),
                       ),
                     ),
                   ),

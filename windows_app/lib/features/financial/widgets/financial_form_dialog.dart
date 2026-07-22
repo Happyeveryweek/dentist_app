@@ -9,6 +9,7 @@ import '../../../models/patient.dart';
 import '../../../providers/financial_provider.dart';
 import '../../../providers/patient_provider.dart';
 import '../../../widgets/modern_date_picker.dart';
+import '../../../widgets/compact_dropdown_form_field.dart';
 import '../../../widgets/success_toast.dart'
     show AppToastManager, ErrorDialogManager;
 import '../../../theme/theme_context_extensions.dart';
@@ -873,13 +874,8 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                     borderRadius: BorderRadius.circular(tokens.borderRadius),
                     border: Border.all(color: tokens.border, width: 1),
                   ),
-                  child: DropdownButtonFormField<String>(
-                    mouseCursor: SystemMouseCursors.click,
-                    dropdownMenuItemMouseCursor: SystemMouseCursors.click,
-                    key: ValueKey<String?>(
-                        FinancialPaymentMethodHelper.uiValue(_paymentMethod)),
-                    initialValue:
-                        FinancialPaymentMethodHelper.uiValue(_paymentMethod),
+                  child: CompactDropdownFormField<String>(
+                    value: FinancialPaymentMethodHelper.uiValue(_paymentMethod),
                     hint: Text(
                       '未选择',
                       style: TextStyle(color: tokens.textMuted),
@@ -913,56 +909,15 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                           horizontal: 16, vertical: 2),
                       labelStyle: TextStyle(color: tokens.info),
                     ),
-                    icon: Icon(Icons.arrow_drop_down,
-                        color: tokens.iconMuted, size: 18),
-                    isExpanded: true,
-                    menuMaxHeight: 220,
-                    borderRadius: BorderRadius.circular(tokens.borderRadius),
-                    dropdownColor: tokens.cardBackground,
+                    menuMaxHeight: 160,
+                    borderRadius: tokens.borderRadius,
+                    selectedItemBuilder: (context, method) =>
+                        _buildPaymentMethodItem(method, tokens),
                     items: FinancialPaymentMethodHelper.dropdownMethods
                         .map(
-                          (method) => DropdownMenuItem<String>(
+                          (method) => CompactDropdownItem<String>(
                             value: method,
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Row(
-                                children: [
-                                  if (method ==
-                                      FinancialPaymentMethodHelper
-                                          .nonePaymentMethod)
-                                    Icon(
-                                      Icons.do_not_disturb_alt,
-                                      size: 16,
-                                      color: tokens.textMuted,
-                                    )
-                                  else
-                                    SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: Image.asset(
-                                        FinancialPaymentMethodHelper
-                                            .iconAssetPath(method),
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      method ==
-                                              FinancialPaymentMethodHelper
-                                                  .nonePaymentMethod
-                                          ? '无'
-                                          : FinancialPaymentMethodHelper
-                                              .displayNameOrDefault(method),
-                                      maxLines: 1,
-                                      softWrap: false,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                            child: _buildPaymentMethodItem(method, tokens),
                           ),
                         )
                         .toList(),
@@ -979,6 +934,39 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPaymentMethodItem(String method, AppThemeTokens tokens) {
+    return Row(
+      children: [
+        if (method == FinancialPaymentMethodHelper.nonePaymentMethod)
+          Icon(
+            Icons.do_not_disturb_alt,
+            size: 16,
+            color: tokens.textMuted,
+          )
+        else
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: Image.asset(
+              FinancialPaymentMethodHelper.iconAssetPath(method),
+              fit: BoxFit.contain,
+            ),
+          ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            method == FinancialPaymentMethodHelper.nonePaymentMethod
+                ? '无'
+                : FinancialPaymentMethodHelper.displayNameOrDefault(method),
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 

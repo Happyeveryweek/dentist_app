@@ -22,6 +22,7 @@ import '../features/patients/services/patient_list_service.dart';
 import '../features/patients/services/patient_initialization_service.dart';
 import '../utils/pinyin_util.dart';
 import '../utils/log_manager.dart';
+import '../utils/timed_cache.dart';
 
 export '../models/patient_material_with_images.dart'
     show PatientMaterialWithImages;
@@ -72,6 +73,12 @@ class PatientProvider extends ChangeNotifier {
   List<Patient>? _cachedPatients;
   DateTime? _lastCacheTime;
   static const Duration _cacheValidDuration = Duration(minutes: 20);
+  final TimedCache<String, Map<String, dynamic>> _pageCache =
+      TimedCache(validDuration: _cacheValidDuration);
+  final TimedCache<String, List<Patient>> _searchCache =
+      TimedCache(validDuration: _cacheValidDuration);
+  final TimedCache<String, List<Patient>> _patientsByIdsCache =
+      TimedCache(validDuration: _cacheValidDuration);
 
   // 连接状态
   bool _isConnected = true;
@@ -366,6 +373,9 @@ class PatientProvider extends ChangeNotifier {
   void clearCache() {
     _cachedPatients = null;
     _lastCacheTime = null;
+    _pageCache.clear();
+    _searchCache.clear();
+    _patientsByIdsCache.clear();
   }
 
   // =================== 患者列表与查询 (委托至 ListService/SearchService) ===================
@@ -399,10 +409,24 @@ class PatientProvider extends ChangeNotifier {
     List<int> ids, {
     bool enforceDoctorFilter = true,
     String? effectiveDataSourceType,
+    bool forceRefresh = false,
   }) async {
+    final key = buildCacheKey([
+      effectiveDataSourceType ?? dataSourceType,
+      _userProvider?.currentUser?.id ?? _currentUser?.id,
+      enforceDoctorFilter,
+      ids,
+    ]);
+    if (!forceRefresh) {
+      final cached = _patientsByIdsCache.get(key);
+      if (cached != null) return List<Patient>.from(cached);
+    }
+
     final ds = _dataSourceForType(effectiveDataSourceType);
     if (ds == null) return [];
-    return ds.getPatientsByIds(ids);
+    final patients = await ds.getPatientsByIds(ids);
+    _patientsByIdsCache.put(key, List<Patient>.from(patients));
+    return patients;
   }
 
   Future<Patient?> getPatient(int id, {String? effectiveDataSourceType}) async {
@@ -625,7 +649,27 @@ class PatientProvider extends ChangeNotifier {
     DateTime? endDate,
     String dateFilterType = 'first_visit_date',
   }) async {
-    return _listService.getPatientsPage(
+    final key = buildCacheKey([
+      dataSourceType,
+      _userProvider?.currentUser?.id ?? _currentUser?.id,
+      page,
+      pageSize,
+      searchQuery,
+      sortField,
+      sortAscending,
+      startDate,
+      endDate,
+      dateFilterType,
+    ]);
+    final cached = _pageCache.get(key);
+    if (cached != null) {
+      return {
+        'patients': List<Patient>.from(cached['patients'] as List),
+        'totalCount': cached['totalCount'],
+      };
+    }
+
+    final result = await _listService.getPatientsPage(
       page: page,
       pageSize: pageSize,
       searchQuery: searchQuery,
@@ -635,6 +679,11 @@ class PatientProvider extends ChangeNotifier {
       endDate: endDate,
       dateFilterType: dateFilterType,
     );
+    _pageCache.put(key, {
+      'patients': List<Patient>.from(result['patients'] as List),
+      'totalCount': result['totalCount'],
+    });
+    return result;
   }
 
   Future<List<int>> searchPatientIds(
@@ -656,7 +705,21 @@ class PatientProvider extends ChangeNotifier {
     String dateFilterType = 'first_visit_date',
     Map<String, String>? advancedCriteria,
   }) async {
-    return _searchService.searchPatients(
+    final key = buildCacheKey([
+      dataSourceType,
+      _userProvider?.currentUser?.id ?? _currentUser?.id,
+      query,
+      sortField,
+      sortAscending,
+      startDate,
+      endDate,
+      dateFilterType,
+      advancedCriteria ?? const <String, String>{},
+    ]);
+    final cached = _searchCache.get(key);
+    if (cached != null) return List<Patient>.from(cached);
+
+    final patients = await _searchService.searchPatients(
       query,
       sortField: sortField,
       sortAscending: sortAscending,
@@ -665,6 +728,8 @@ class PatientProvider extends ChangeNotifier {
       dateFilterType: dateFilterType,
       advancedCriteria: advancedCriteria,
     );
+    _searchCache.put(key, List<Patient>.from(patients));
+    return patients;
   }
 
   // =================== 患者核心业务 (委托至 CoreService) ===================
