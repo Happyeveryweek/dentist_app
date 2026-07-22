@@ -86,14 +86,7 @@ class FinancialSearchBar extends StatelessWidget {
                   onSortChanged(value);
                 }
               },
-              childBuilder: (context, isOpen) => SizedBox(
-                width: 44,
-                height: 44,
-                child: Icon(
-                  Icons.sort_rounded,
-                  color: context.colors.onSurface,
-                ),
-              ),
+              childBuilder: (context, isOpen) => const _SortMenuAnchor(),
             ),
             const SizedBox(width: 12),
             // 时间范围选择
@@ -225,6 +218,39 @@ class FinancialSearchBar extends StatelessWidget {
           if (isActive)
             Icon(sortAscending ? Icons.arrow_upward : Icons.arrow_downward),
         ],
+      ),
+    );
+  }
+}
+
+class _SortMenuAnchor extends StatefulWidget {
+  const _SortMenuAnchor();
+
+  @override
+  State<_SortMenuAnchor> createState() => _SortMenuAnchorState();
+}
+
+class _SortMenuAnchorState extends State<_SortMenuAnchor> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: _isHovered ? context.tokens.hoverBackground : null,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          Icons.sort_rounded,
+          color: context.colors.onSurface,
+        ),
       ),
     );
   }
