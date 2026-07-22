@@ -9,6 +9,8 @@ class FinancialCacheHelper {
   Map<int, List<FinancialItem>>? _cachedItemsMap;
   final Map<int, _CachedFinancialItems> _cachedDetailItemsByRecordId = {};
   final Map<int, _CachedFinancialRecords> _cachedRecordsByPatientId = {};
+  final Map<String, _CachedFinancialRecords> _cachedRecordQueries = {};
+  final Map<String, _CachedFinancialCount> _cachedRecordCounts = {};
   DateTime? _lastCacheTime;
   static const Duration _cacheValidDuration = Duration(minutes: 30); // 缓存30分钟有效
 
@@ -74,11 +76,6 @@ class FinancialCacheHelper {
     );
   }
 
-  /// 使单条财务记录的收费明细缓存失效。
-  void invalidateDetailItems(int recordId) {
-    _cachedDetailItemsByRecordId.remove(recordId);
-  }
-
   List<FinancialRecord>? getCachedRecordsByPatientId(int patientId) {
     final cachedRecords = _cachedRecordsByPatientId[patientId];
     if (cachedRecords == null ||
@@ -97,6 +94,35 @@ class FinancialCacheHelper {
     );
   }
 
+  List<FinancialRecord>? getCachedRecordQuery(String key) {
+    final cachedRecords = _cachedRecordQueries[key];
+    if (cachedRecords == null || !_isCacheTimeValid(cachedRecords.cachedAt)) {
+      _cachedRecordQueries.remove(key);
+      return null;
+    }
+    return List.from(cachedRecords.records);
+  }
+
+  void cacheRecordQuery(String key, List<FinancialRecord> records) {
+    _cachedRecordQueries[key] = _CachedFinancialRecords(
+      List.from(records),
+      DateTime.now(),
+    );
+  }
+
+  int? getCachedRecordCount(String key) {
+    final cachedCount = _cachedRecordCounts[key];
+    if (cachedCount == null || !_isCacheTimeValid(cachedCount.cachedAt)) {
+      _cachedRecordCounts.remove(key);
+      return null;
+    }
+    return cachedCount.count;
+  }
+
+  void cacheRecordCount(String key, int count) {
+    _cachedRecordCounts[key] = _CachedFinancialCount(count, DateTime.now());
+  }
+
   /// 获取最后缓存时间
   DateTime? get lastCacheTime => _lastCacheTime;
 
@@ -109,6 +135,8 @@ class FinancialCacheHelper {
     _cachedItemsMap = null;
     _cachedDetailItemsByRecordId.clear();
     _cachedRecordsByPatientId.clear();
+    _cachedRecordQueries.clear();
+    _cachedRecordCounts.clear();
     _lastCacheTime = null;
     AppLogger.info('财务数据缓存已清除');
   }
@@ -151,6 +179,9 @@ class FinancialCacheHelper {
     _lastStatsCacheTime = null;
     _isBackgroundLoadingFull = false;
   }
+
+  bool _isCacheTimeValid(DateTime cachedAt) =>
+      DateTime.now().difference(cachedAt) < _cacheValidDuration;
 
   /// 是否正在后台加载
   bool get isBackgroundLoadingFull => _isBackgroundLoadingFull;
@@ -278,6 +309,13 @@ class _CachedFinancialItems {
   final DateTime cachedAt;
 
   const _CachedFinancialItems(this.items, this.cachedAt);
+}
+
+class _CachedFinancialCount {
+  final int count;
+  final DateTime cachedAt;
+
+  const _CachedFinancialCount(this.count, this.cachedAt);
 }
 
 class _CachedFinancialRecords {

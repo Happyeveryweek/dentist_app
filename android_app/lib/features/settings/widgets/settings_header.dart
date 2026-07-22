@@ -6,14 +6,8 @@ import 'package:dentist_app/theme/app_theme.dart';
 class SettingsHeader extends StatelessWidget {
   final TabController? tabController;
   final VoidCallback onLogout;
-  final VoidCallback onHelp;
 
-  const SettingsHeader({
-    super.key,
-    this.tabController,
-    required this.onLogout,
-    required this.onHelp,
-  });
+  const SettingsHeader({super.key, this.tabController, required this.onLogout});
 
   @override
   Widget build(BuildContext context) {
@@ -55,11 +49,6 @@ class SettingsHeader extends StatelessWidget {
                     onPressed: onLogout,
                     tooltip: '退出登录',
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.help_outline),
-                    onPressed: onHelp,
-                    tooltip: '帮助',
-                  ),
                 ],
               ),
             ],
@@ -74,7 +63,6 @@ class SettingsHeader extends StatelessWidget {
             unselectedLabelColor: AppTheme.secondaryText,
             tabs: const [
               Tab(icon: Icon(Icons.storage), text: '数据源'),
-              Tab(icon: Icon(Icons.backup), text: '备份恢复'),
               Tab(icon: Icon(Icons.sync), text: '同步配置'),
               Tab(icon: Icon(Icons.settings), text: '系统设置'),
             ],

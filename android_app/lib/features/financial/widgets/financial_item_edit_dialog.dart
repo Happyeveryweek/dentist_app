@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../models/financial_item.dart';
 import '../helpers/amount_input_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
+import 'payment_method_dropdown_field.dart';
 import '../../../widgets/modern_date_picker.dart';
 
 /// 财务项目编辑对话框
@@ -258,67 +259,8 @@ class FinancialItemEditDialogState extends State<FinancialItemEditDialog> {
 
                       const SizedBox(height: 16),
 
-                      DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        initialValue: FinancialPaymentMethodHelper.uiValue(
-                          _paymentMethod,
-                        ),
-                        decoration: InputDecoration(
-                          labelText: '收费方式',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 14,
-                          ),
-                          prefixIcon: const Icon(Icons.payment),
-                        ),
-                        items:
-                            FinancialPaymentMethodHelper.dropdownMethods.map((
-                              method,
-                            ) {
-                              final iconPath =
-                                  FinancialPaymentMethodHelper.iconAssetPathOrNull(
-                                    method,
-                                  );
-                              final label =
-                                  method ==
-                                          FinancialPaymentMethodHelper
-                                              .nonePaymentMethod
-                                      ? '未选择'
-                                      : FinancialPaymentMethodHelper.displayName(
-                                        method,
-                                      );
-                              return DropdownMenuItem<String>(
-                                value: method,
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (iconPath != null) ...[
-                                      Image.asset(
-                                        iconPath,
-                                        width: 16,
-                                        height: 16,
-                                        errorBuilder:
-                                            (_, __, ___) => const Icon(
-                                              Icons.payment,
-                                              size: 16,
-                                            ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                    ],
-                                    Text(label),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
+                      PaymentMethodDropdownField(
+                        value: _paymentMethod,
                         onChanged: (value) {
                           setState(() {
                             _paymentMethod = value;

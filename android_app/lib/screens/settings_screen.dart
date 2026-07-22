@@ -18,7 +18,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:dentist_app/widgets/confirm_dialogs.dart';
 import '../utils/snackbar_util.dart';
 import '../features/settings/widgets/database_source_section.dart';
-import '../features/settings/widgets/backup_restore_section.dart';
 import '../features/settings/widgets/sync_config_section.dart';
 import '../features/settings/widgets/system_settings_section.dart';
 import '../features/settings/widgets/settings_dialogs.dart';
@@ -42,7 +41,6 @@ class _SettingsScreenState extends State<SettingsScreen>
   String _dbPath = '';
   bool _isLoading = false;
   bool _mysqlTestSuccess = false;
-  String _loadingText = '';
   bool _isEditingMysql = false;
   // 独立的测试中状态：仅作用于按钮内部，避免替换整个 TabBarView
   bool _isTestingNetwork = false;
@@ -82,7 +80,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // 获取数据库提供者
@@ -109,7 +107,6 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     setState(() {
       _isLoading = true;
-      _loadingText = '加载配置...';
     });
 
     try {
@@ -476,13 +473,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                               _mysqlTestSuccess ? _saveMySQLConfig : null,
                           onSelectCustomDbPath: _selectCustomDbPath,
                         ),
-                        BackupRestoreSection(
-                          isLoading: _isLoading,
-                          loadingText: _loadingText,
-                          onBackup: _showBackupDialog,
-                          onRestore: _restoreDatabaseFromBackup,
-                          onExportExcel: _showExcelExportDialog,
-                        ),
                         const SyncConfigSection(),
                         SystemSettingsSection(onLogout: _showLogoutDialog),
                       ],
@@ -497,50 +487,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     return SettingsHeader(
       tabController: _tabController,
       onLogout: _showLogoutDialog,
-      onHelp: () {
-        showDialog(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: const Text('关于设置'),
-                content: const SingleChildScrollView(
-                  child: Text(
-                    '在此页面，您可以配置系统的数据源和其他系统设置。\n\n'
-                    '数据源：您可以选择使用SQLite本地数据库或MySQL远程数据库。\n\n'
-                    '备份与恢复：提供数据备份和恢复功能，保护您的重要数据。\n\n'
-                    '系统设置：配置其它系统参数和用户偏好设置。',
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('了解'),
-                  ),
-                ],
-              ),
-        );
-      },
-    );
-  }
-
-  // 新增：显示备份对话框方法
-  void _showBackupDialog() async {
-    await SettingsDialogs.showBackupDialog(
-      context,
-      dbConfig: _dbConfig,
-      dbPath: _dbPath,
-      dbType: _selectedDbType,
-      setState: (callback) {
-        callback();
-      },
-      showSnackBar: (message, {bool isSuccess = true}) {
-        setState(() {
-          _isLoading = false;
-          _loadingText = '';
-        });
-        _showSnackBar(message, isSuccess: isSuccess);
-      },
-      mounted: () => mounted,
     );
   }
 
@@ -695,50 +641,6 @@ class _SettingsScreenState extends State<SettingsScreen>
         _isLoading = false;
       });
     }
-  }
-
-  // 从备份恢复数据库
-  void _restoreDatabaseFromBackup() async {
-    await SettingsDialogs.showRestoreDialog(
-      context,
-      dbProvider: dbProvider,
-      dbConfig: _dbConfig,
-      dbPath: _dbPath,
-      dbType: _selectedDbType,
-      requestStoragePermission: _requestStoragePermission,
-      setState: (callback) {
-        callback();
-      },
-      showSnackBar: (message, {bool isSuccess = true}) {
-        setState(() {
-          _isLoading = false;
-          _loadingText = '';
-        });
-        _showSnackBar(message, isSuccess: isSuccess);
-      },
-      mounted: () => mounted,
-    );
-  }
-
-  // 新增：显示Excel导出对话框方法
-  void _showExcelExportDialog() async {
-    await SettingsDialogs.showExportDialog(
-      context,
-      dbConfig: _dbConfig,
-      dbPath: _dbPath,
-      dbType: _selectedDbType,
-      setState: (callback) {
-        callback();
-      },
-      showSnackBar: (message, {bool isSuccess = true}) {
-        setState(() {
-          _isLoading = false;
-          _loadingText = '';
-        });
-        _showSnackBar(message, isSuccess: isSuccess);
-      },
-      mounted: () => mounted,
-    );
   }
 
   // 显示退出登录对话框

@@ -289,6 +289,7 @@ class UserProvider extends ChangeNotifier {
       }
 
       _refreshUserServices();
+      await fixInvalidRoles();
 
       AppLogger.info('UserProvider初始化完成');
     } catch (e) {

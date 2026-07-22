@@ -127,6 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
           final verticalSpacing = isSmallScreen ? 16.0 : 28.0;
           final logoSize = isSmallScreen ? 80.0 : 100.0;
           final fontSize = isSmallScreen ? 24.0 : 28.0;
+          final bottomArtworkClearance = screenHeight * 0.14;
 
           return Stack(
             children: [
@@ -162,8 +163,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           MediaQuery.of(context).padding.top -
                           MediaQuery.of(context).padding.bottom,
                     ),
-                    child: Container(
-                      padding: EdgeInsets.all(isSmallScreen ? 16 : 24),
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        isSmallScreen ? 16 : 24,
+                        isSmallScreen ? 16 : 24,
+                        isSmallScreen ? 16 : 24,
+                        bottomArtworkClearance,
+                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -172,35 +178,31 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           SizedBox(height: verticalSpacing),
 
-                          Transform.translate(
-                            offset: Offset(0, isSmallScreen ? -8 : -12),
-                            child: Column(
-                              children: [
-                                // 登录表单 - 根据屏幕大小调整
-                                LoginForm(
-                                  formKey: _formKey,
-                                  usernameController: _usernameController,
-                                  passwordController: _passwordController,
-                                  obscurePassword: _obscurePassword,
-                                  rememberPassword: _rememberPassword,
-                                  isInitializing: _isInitializing,
-                                  isSmallScreen: isSmallScreen,
-                                  onObscurePasswordChanged: (value) {
-                                    setState(() {
-                                      _obscurePassword = value;
-                                    });
-                                  },
-                                  onRememberPasswordChanged:
-                                      _handleRememberPasswordChanged,
-                                  onLogin: _handleLogin,
-                                ),
-                                SizedBox(height: verticalSpacing * 0.6),
-                                // 底部装饰元素 - 根据屏幕大小调整
-                                LoginBottomDecorations(
-                                  isSmallScreen: isSmallScreen,
-                                ),
-                              ],
-                            ),
+                          Column(
+                            children: [
+                              // 始终为背景底部的牙齿标识预留空间
+                              LoginForm(
+                                formKey: _formKey,
+                                usernameController: _usernameController,
+                                passwordController: _passwordController,
+                                obscurePassword: _obscurePassword,
+                                rememberPassword: _rememberPassword,
+                                isInitializing: _isInitializing,
+                                isSmallScreen: isSmallScreen,
+                                onObscurePasswordChanged: (value) {
+                                  setState(() {
+                                    _obscurePassword = value;
+                                  });
+                                },
+                                onRememberPasswordChanged:
+                                    _handleRememberPasswordChanged,
+                                onLogin: _handleLogin,
+                              ),
+                              SizedBox(height: verticalSpacing * 0.6),
+                              LoginBottomDecorations(
+                                isSmallScreen: isSmallScreen,
+                              ),
+                            ],
                           ),
                         ],
                       ),

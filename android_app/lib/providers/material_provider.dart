@@ -9,6 +9,11 @@ import 'dart:async';
 import '../utils/app_logger.dart';
 
 class MaterialProvider extends ChangeNotifier {
+  List<DentalMaterial>? _cachedMaterials;
+  Map<String, dynamic>? _cachedStatistics;
+  DateTime? _materialsCachedAt;
+  DateTime? _statisticsCachedAt;
+  static const Duration _cacheValidDuration = Duration(minutes: 20);
   // 数据库连接
   Database? _database;
   MySqlConnection? _mysqlConnection;
@@ -200,7 +205,12 @@ class MaterialProvider extends ChangeNotifier {
   }) {
     if (database != null) _database = database;
     if (mysqlConnection != null) _mysqlConnection = mysqlConnection;
-    if (dataSourceType != null) _dataSourceType = dataSourceType;
+    if (dataSourceType != null) {
+      if (_dataSourceType != dataSourceType) {
+        _clearCache();
+      }
+      _dataSourceType = dataSourceType;
+    }
     // 更新数据源实现
     try {
       if (database != null) {
@@ -229,12 +239,17 @@ class MaterialProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
+    if (_isCacheValid(_materialsCachedAt) && _cachedMaterials != null) {
+      return List.from(_cachedMaterials!);
+    }
+
     return await _wrapMaterialOperation('getAllMaterials', () async {
       try {
         // 使用数据源模式（统一接口）
         final materials = await _currentDataSource.getAllMaterials();
-
-        return materials;
+        _cachedMaterials = List.from(materials);
+        _materialsCachedAt = DateTime.now();
+        return List.from(materials);
       } catch (e) {
         AppLogger.info('获取材料列表失败: $e');
         rethrow;
@@ -293,6 +308,7 @@ class MaterialProvider extends ChangeNotifier {
         final id = await _currentDataSource.createMaterial(material);
 
         if (id > 0) {
+          _clearCache();
           markMaterialsNeedRefresh();
         }
 
@@ -320,6 +336,7 @@ class MaterialProvider extends ChangeNotifier {
         final count = success ? 1 : 0;
 
         if (count > 0) {
+          _clearCache();
           markMaterialsNeedRefresh();
         }
 
@@ -347,6 +364,7 @@ class MaterialProvider extends ChangeNotifier {
         final count = success ? 1 : 0;
 
         if (count > 0) {
+          _clearCache();
           markMaterialsNeedRefresh();
         }
 
@@ -364,10 +382,17 @@ class MaterialProvider extends ChangeNotifier {
       return {'totalMaterials': 0, 'totalValue': 0.0, 'supplierCount': 0};
     }
 
+    if (_isCacheValid(_statisticsCachedAt) && _cachedStatistics != null) {
+      return Map.from(_cachedStatistics!);
+    }
+
     return await _wrapMaterialOperation('getMaterialStatistics', () async {
       try {
         // 使用数据源模式（统一接口）
-        return await _currentDataSource.getMaterialStatistics();
+        final statistics = await _currentDataSource.getMaterialStatistics();
+        _cachedStatistics = Map.from(statistics);
+        _statisticsCachedAt = DateTime.now();
+        return Map.from(statistics);
       } catch (e) {
         AppLogger.info('获取材料统计信息失败: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
@@ -385,5 +410,17 @@ class MaterialProvider extends ChangeNotifier {
       return await operation();
     }
     return await wrapper.wrapOperation(operationName, operation);
+  }
+
+  bool _isCacheValid(DateTime? cachedAt) {
+    return cachedAt != null &&
+        DateTime.now().difference(cachedAt) < _cacheValidDuration;
+  }
+
+  void _clearCache() {
+    _cachedMaterials = null;
+    _cachedStatistics = null;
+    _materialsCachedAt = null;
+    _statisticsCachedAt = null;
   }
 }

@@ -10,6 +10,7 @@ import 'settings_screen.dart';
 import 'login_screen.dart';
 import '../theme/app_theme.dart';
 import '../providers/user_provider.dart';
+import '../widgets/lazy_indexed_stack.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialIndex;
@@ -22,35 +23,19 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-  final ValueNotifier<int> _appointmentsRefreshNotifier = ValueNotifier<int>(0);
-
-  // 缓存页面实例，避免重复创建
-  List<Widget> get _pages => [
-    const _KeepAlivePage(child: DashboardScreen()),
-    const _KeepAlivePage(child: PatientsScreen()),
-    _KeepAlivePage(
-      child: AppointmentsScreen(
-        refreshListenable: _appointmentsRefreshNotifier,
-      ),
-    ),
-    const _KeepAlivePage(child: _BusinessManagementScreen()),
-    const _KeepAlivePage(child: SettingsScreen()),
-  ];
+  late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
-  }
-
-  @override
-  void dispose() {
-    _appointmentsRefreshNotifier.dispose();
-    super.dispose();
-  }
-
-  Widget _getPage(int index) {
-    return _pages[index];
+    _pages = const [
+      DashboardScreen(),
+      PatientsScreen(),
+      AppointmentsScreen(),
+      _BusinessManagementScreen(),
+      SettingsScreen(),
+    ];
   }
 
   @override
@@ -63,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         return Scaffold(
-          body: _getPage(_selectedIndex),
+          body: LazyIndexedStack(index: _selectedIndex, children: _pages),
           bottomNavigationBar: Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -175,35 +160,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _selectPage(int index) {
-    if (index == 2) {
-      _appointmentsRefreshNotifier.value++;
-    }
-
+    if (_selectedIndex == index) return;
     setState(() {
       _selectedIndex = index;
     });
-  }
-}
-
-/// 保持页面状态的包装器
-class _KeepAlivePage extends StatefulWidget {
-  final Widget child;
-
-  const _KeepAlivePage({required this.child});
-
-  @override
-  State<_KeepAlivePage> createState() => _KeepAlivePageState();
-}
-
-class _KeepAlivePageState extends State<_KeepAlivePage>
-    with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context); // 必须调用
-    return widget.child;
   }
 }
 
@@ -226,9 +186,9 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
 
   // 缓存子页面实例
   final List<Widget> _businessPages = [
-    const _KeepAlivePage(child: FinancialManagementScreen()),
-    const _KeepAlivePage(child: PurchaseRecordsScreen()),
-    const _KeepAlivePage(child: UsersScreen()),
+    const FinancialManagementScreen(),
+    const PurchaseRecordsScreen(),
+    const UsersScreen(),
   ];
 
   @override
@@ -306,7 +266,7 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
           ),
           // 页面内容 - 占据剩余所有空间
           Expanded(
-            child: IndexedStack(
+            child: LazyIndexedStack(
               index: _selectedTabIndex,
               children: _businessPages,
             ),

@@ -3,9 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/models/sync_config.dart';
 import 'package:dentist_app/providers/database_provider.dart';
-import 'package:dentist_app/utils/toast_util.dart';
 import 'package:dentist_app/utils/message_toast_helper.dart';
-import 'package:dentist_app/utils/database_utils.dart';
 import 'package:dentist_app/utils/datetime_formatter.dart';
 import 'package:dentist_app/screens/sync_logs_screen.dart';
 
@@ -135,53 +133,6 @@ class _SyncConfigSectionState extends State<SyncConfigSection> {
                       minimumSize: const Size(double.infinity, 48),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  TextButton.icon(
-                    onPressed: () async {
-                      final shouldReset = await showDialog<bool>(
-                        context: context,
-                        builder:
-                            (dialogContext) => AlertDialog(
-                              title: const Text('重置数据库'),
-                              content: const Text(
-                                '确定要重置数据库吗？这将删除所有本地数据并从服务器重新同步。',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed:
-                                      () => Navigator.pop(dialogContext, false),
-                                  child: const Text('取消'),
-                                ),
-                                TextButton(
-                                  onPressed:
-                                      () => Navigator.pop(dialogContext, true),
-                                  child: const Text('确定'),
-                                ),
-                              ],
-                            ),
-                      );
-
-                      if (shouldReset == true && mounted) {
-                        try {
-                          await DatabaseUtils.resetDefaultDatabase();
-                          if (context.mounted) {
-                            ToastUtil.showSuccess(context, '数据库已重置，请重新同步数据');
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ToastUtil.showError(context, '重置数据库失败: $e');
-                          }
-                        }
-                      }
-                    },
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('重置数据库'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      minimumSize: const Size(double.infinity, 40),
-                    ),
-                  ),
-
                   const SizedBox(height: 16),
 
                   // 查看日志按钮

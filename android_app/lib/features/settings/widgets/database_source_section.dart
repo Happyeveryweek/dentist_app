@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/models/database_config.dart';
+import 'package:dentist_app/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
-/// 数据源设置区域组件
-/// 负责显示数据库类型选择、MySQL配置、SQLite路径选择等功能
+/// 移动端数据源配置页。
 class DatabaseSourceSection extends StatelessWidget {
   final String selectedDbType;
   final bool showMysqlConfig;
@@ -48,406 +47,238 @@ class DatabaseSourceSection extends StatelessWidget {
     required this.onSelectCustomDbPath,
   });
 
+  bool get _isMysql => selectedDbType == 'mysql' && showMysqlConfig;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '选择数据源类型',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildDatabaseTypeOption(
-                          title: 'SQLite',
-                          subtitle: '本地数据库',
-                          icon: Icons.storage,
-                          isSelected: selectedDbType == 'sqlite',
-                          onTap: onSwitchToSqlite,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildDatabaseTypeOption(
-                          title: 'MySQL',
-                          subtitle: '远程数据库',
-                          icon: Icons.cloud,
-                          isSelected: selectedDbType == 'mysql',
-                          onTap: onSwitchToMysql,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+          _buildCurrentSourceCard(),
+          const SizedBox(height: 20),
+          const Text('选择数据源', style: AppTheme.subtitleStyle),
+          const SizedBox(height: 6),
+          Text(
+            '选择应用读取和写入业务数据的位置',
+            style: AppTheme.bodyStyle.copyWith(color: AppTheme.secondaryText),
           ),
+          const SizedBox(height: 12),
+          _buildSourceSelector(),
+          const SizedBox(height: 20),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            child:
+                _isMysql
+                    ? _buildMysqlSection(key: const ValueKey('mysql'))
+                    : _buildSqliteSection(key: const ValueKey('sqlite')),
+          ),
+        ],
+      ),
+    );
+  }
 
-          // MySQL配置区域
-          if (showMysqlConfig)
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Card(
-                elevation: isEditingMysql ? 3 : 2,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side:
-                      isEditingMysql
-                          ? const BorderSide(
-                            color: AppTheme.primaryColor,
-                            width: 1.5,
-                          )
-                          : BorderSide.none,
-                ),
-                color: isEditingMysql ? AppTheme.editModeSurface : null,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 编辑模式顶部提示横幅
-                      if (isEditingMysql)
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                            horizontal: 16,
-                          ),
-                          color: AppTheme.editModeBanner,
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.edit,
-                                color: AppTheme.primaryColor,
-                                size: 16,
-                              ),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  '编辑模式：修改配置后请点击"保存"按钮生效',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: AppTheme.primaryColor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Text(
-                                      'MySQL配置',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    if (isEditingMysql) ...[
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.primaryColor,
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          '编辑中',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    // 编辑按钮
-                                    ElevatedButton.icon(
-                                      onPressed:
-                                          (isTestingNetwork || isTestingMysql)
-                                              ? null
-                                              : onToggleMysqlEdit,
-                                      icon: Icon(
-                                        isEditingMysql
-                                            ? Icons.lock_open
-                                            : Icons.edit,
-                                        size: 16,
-                                      ),
-                                      label: Text(
-                                        isEditingMysql ? '完成编辑' : '编辑配置',
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            isEditingMysql
-                                                ? Colors.green
-                                                : AppTheme.primaryColor,
-                                        foregroundColor: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            // 根据编辑状态显示不同的UI
-                            isEditingMysql
-                                ? _buildMySQLEditForm()
-                                : _buildMySQLConfigDetails(),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+  Widget _buildCurrentSourceCard() {
+    final currentIsMysql = dbConfig.dbType == 'mysql';
+    final icon = currentIsMysql ? Icons.cloud_outlined : Icons.storage_rounded;
+    final type = currentIsMysql ? 'MySQL' : 'SQLite';
+    final description =
+        currentIsMysql
+            ? '${dbConfig.mysql.host}:${dbConfig.mysql.port}/${dbConfig.mysql.database}'
+            : _sqlitePath;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+        border: Border.all(
+          color: AppTheme.primaryColor.withValues(alpha: 0.16),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
-
-          // 当前数据库信息
-          Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            child: Icon(icon, color: AppTheme.primaryColor, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    const Text(
-                      '当前数据库信息',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    Text(type, style: AppTheme.subtitleStyle),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.successColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        '当前使用',
+                        style: TextStyle(
+                          color: AppTheme.successColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    if (selectedDbType == 'sqlite')
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'SQLite数据库配置',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // 显示当前数据库文件路径
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: Colors.grey.shade200),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Row(
-                                  children: [
-                                    Icon(
-                                      Icons.folder_open,
-                                      color: AppTheme.primaryColor,
-                                      size: 18,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      '当前数据库路径:',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        color: Color(0xFF555555),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                    horizontal: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                      color: Colors.grey.shade300,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    dbConfig.sqlite.path.isNotEmpty
-                                        ? dbConfig.sqlite.path
-                                        : '未设置数据库路径',
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontFamily: 'monospace',
-                                      color: Color(0xFF333333),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 6,
-                                    horizontal: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade50,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text(
-                                    '数据库类型: SQLite 3 (本地文件数据库)',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF666666),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            height: 50,
-                            child: ElevatedButton.icon(
-                              onPressed: onSelectCustomDbPath,
-                              icon: const Icon(Icons.folder_open, size: 20),
-                              label: const Text(
-                                '选择自定义数据库路径',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppTheme.primaryColor,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    else
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'MySQL数据库配置',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: Colors.grey.shade200),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _buildConfigItem(
-                                  '主机名/IP地址',
-                                  dbConfig.mysql.host,
-                                  Icons.computer,
-                                  Colors.blue,
-                                ),
-                                const Divider(),
-                                _buildConfigItem(
-                                  '端口',
-                                  dbConfig.mysql.port,
-                                  Icons.settings_ethernet,
-                                  Colors.orange,
-                                ),
-                                const Divider(),
-                                _buildConfigItem(
-                                  '数据库名称',
-                                  dbConfig.mysql.database,
-                                  Icons.storage,
-                                  Colors.green,
-                                ),
-                                const Divider(),
-                                _buildConfigItem(
-                                  '用户名',
-                                  dbConfig.mysql.username,
-                                  Icons.person,
-                                  Colors.purple,
-                                ),
-                                const Divider(),
-                                _buildConfigItem(
-                                  '密码',
-                                  '••••••••',
-                                  Icons.lock,
-                                  Colors.red,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 6,
-                              horizontal: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              '数据库类型: MySQL (远程数据库)',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF666666),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                   ],
                 ),
+                const SizedBox(height: 5),
+                Text(
+                  description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTheme.bodyStyle.copyWith(height: 1.35),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSourceSelector() {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppTheme.lightText.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildSourceOption(
+              label: 'SQLite',
+              icon: Icons.storage_rounded,
+              selected: !_isMysql,
+              onTap: onSwitchToSqlite,
+            ),
+          ),
+          Expanded(
+            child: _buildSourceOption(
+              label: 'MySQL',
+              icon: Icons.cloud_outlined,
+              selected: _isMysql,
+              onTap: onSwitchToMysql,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSourceOption({
+    required String label,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: selected ? AppTheme.cardBackground : Colors.transparent,
+      borderRadius: BorderRadius.circular(9),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(9),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 19,
+                color:
+                    selected ? AppTheme.primaryColor : AppTheme.secondaryText,
+              ),
+              const SizedBox(width: 7),
+              Text(
+                label,
+                style: TextStyle(
+                  color:
+                      selected ? AppTheme.primaryColor : AppTheme.secondaryText,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String get _sqlitePath {
+    final value = dbConfig.sqlite.path.trim();
+    return value.isEmpty ? '应用默认数据库' : value;
+  }
+
+  Widget _buildSqliteSection({required Key key}) {
+    return _buildSectionCard(
+      key: key,
+      title: 'SQLite 配置',
+      subtitle: '数据保存在当前设备的数据库文件中',
+      icon: Icons.phone_android_rounded,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildInfoRow(
+            icon: Icons.insert_drive_file_outlined,
+            label: '数据库文件',
+            value: _sqlitePath,
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: AppTheme.secondaryText,
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '选择其他数据库文件后，应用将切换到该文件中的数据。',
+                    style: AppTheme.bodyStyle,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onSelectCustomDbPath,
+              icon: const Icon(Icons.folder_open_outlined),
+              label: const Text('更换数据库文件'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.primaryColor,
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                side: const BorderSide(color: AppTheme.primaryColor),
               ),
             ),
           ),
@@ -456,287 +287,292 @@ class DatabaseSourceSection extends StatelessWidget {
     );
   }
 
-  Widget _buildDatabaseTypeOption({
+  Widget _buildMysqlSection({required Key key}) {
+    return _buildSectionCard(
+      key: key,
+      title: 'MySQL 配置',
+      subtitle: isEditingMysql ? '填写连接信息，测试成功后保存' : '远程数据库连接信息',
+      icon: Icons.dns_outlined,
+      trailing:
+          isEditingMysql
+              ? null
+              : TextButton.icon(
+                onPressed:
+                    isTestingNetwork || isTestingMysql
+                        ? null
+                        : onToggleMysqlEdit,
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('编辑'),
+              ),
+      child: isEditingMysql ? _buildMysqlForm() : _buildMysqlDetails(),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required Key key,
     required String title,
     required String subtitle,
     required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
+    required Widget child,
+    Widget? trailing,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color:
-              isSelected
-                  ? AppTheme.primaryColor.withValues(alpha: 0.1)
-                  : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? AppTheme.primaryColor : Colors.grey.shade300,
+    return Container(
+      key: key,
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.cardBackground,
+        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+        border: Border.all(color: AppTheme.lightText.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.09),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: AppTheme.primaryColor, size: 21),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: AppTheme.subtitleStyle),
+                    const SizedBox(height: 2),
+                    Text(subtitle, style: AppTheme.captionStyle),
+                  ],
+                ),
+              ),
+              if (trailing != null) trailing,
+            ],
           ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? AppTheme.primaryColor : Colors.grey,
-              size: 36,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isSelected ? AppTheme.primaryColor : Colors.black,
-              ),
-            ),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: isSelected ? AppTheme.primaryColor : Colors.grey,
-              ),
-            ),
-          ],
-        ),
+          const SizedBox(height: 18),
+          child,
+        ],
       ),
     );
   }
 
-  Widget _buildMySQLEditForm() {
+  Widget _buildMysqlDetails() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
-          controller: hostController,
-          decoration: const InputDecoration(
-            labelText: '主机名/IP地址',
-            hintText: '例如: localhost或10.0.2.2',
-            prefixIcon: Icon(Icons.computer),
-          ),
-          enabled: true,
+        _buildInfoRow(
+          icon: Icons.computer_outlined,
+          label: '主机地址',
+          value: hostController.text,
         ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: portController,
-          decoration: const InputDecoration(
-            labelText: '端口',
-            hintText: '默认: 3306',
-            prefixIcon: Icon(Icons.settings_ethernet),
-          ),
-          keyboardType: TextInputType.number,
-          enabled: true,
+        _buildDivider(),
+        _buildInfoRow(
+          icon: Icons.settings_ethernet_rounded,
+          label: '端口',
+          value: portController.text,
         ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: databaseController,
-          decoration: const InputDecoration(
-            labelText: '数据库名称',
-            hintText: '例如: dental_clinic',
-            prefixIcon: Icon(Icons.storage),
-          ),
-          enabled: true,
+        _buildDivider(),
+        _buildInfoRow(
+          icon: Icons.storage_outlined,
+          label: '数据库',
+          value: databaseController.text,
         ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: usernameController,
-          decoration: const InputDecoration(
-            labelText: '用户名',
-            hintText: '例如: root',
-            prefixIcon: Icon(Icons.person),
-          ),
-          enabled: true,
+        _buildDivider(),
+        _buildInfoRow(
+          icon: Icons.person_outline_rounded,
+          label: '用户名',
+          value: usernameController.text,
         ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: passwordController,
-          decoration: const InputDecoration(
-            labelText: '密码',
-            hintText: '******',
-            prefixIcon: Icon(Icons.lock),
-          ),
-          obscureText: true,
-          enabled: true,
-        ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: isTestingNetwork ? null : onTestNetwork,
-                icon:
-                    isTestingNetwork
-                        ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                        : const Icon(Icons.network_check, size: 14),
-                label: Text(isTestingNetwork ? '测试中' : '测网络'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  disabledBackgroundColor: Colors.blue.withValues(alpha: 0.6),
-                  disabledForegroundColor: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: isTestingMysql ? null : onTestConnection,
-                icon:
-                    isTestingMysql
-                        ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                        : const Icon(Icons.link, size: 14),
-                label: Text(isTestingMysql ? '测试中' : '测连接'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.secondaryColor,
-                  disabledBackgroundColor: AppTheme.secondaryColor.withValues(
-                    alpha: 0.6,
-                  ),
-                  disabledForegroundColor: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed:
-                    (onSaveMysql == null || isTestingNetwork || isTestingMysql)
-                        ? null
-                        : onSaveMysql,
-                icon: const Icon(Icons.save, size: 14),
-                label: const Text('保存'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: Colors.grey.shade400,
-                  disabledForegroundColor: Colors.white,
-                ),
-              ),
-            ),
-          ],
+        _buildDivider(),
+        _buildInfoRow(
+          icon: Icons.lock_outline_rounded,
+          label: '密码',
+          value: '••••••••',
         ),
       ],
     );
   }
 
-  Widget _buildMySQLConfigDetails() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildConfigItem(
-                '主机名/IP地址',
-                hostController.text,
-                Icons.computer,
-                Colors.blue,
-              ),
-              const Divider(),
-              _buildConfigItem(
-                '端口',
-                portController.text,
-                Icons.settings_ethernet,
-                Colors.orange,
-              ),
-              const Divider(),
-              _buildConfigItem(
-                '数据库名称',
-                databaseController.text,
-                Icons.storage,
-                Colors.green,
-              ),
-              const Divider(),
-              _buildConfigItem(
-                '用户名',
-                usernameController.text,
-                Icons.person,
-                Colors.purple,
-              ),
-              const Divider(),
-              _buildConfigItem('密码', '••••••••', Icons.lock, Colors.red),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        const Text(
-          '提示: 点击"编辑配置"按钮可以修改MySQL连接设置',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey,
-            fontStyle: FontStyle.italic,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: onToggleMysqlEdit,
-                icon: const Icon(Icons.edit, size: 14),
-                label: const Text('编辑配置'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildConfigItem(
-    String label,
-    String value,
-    IconData icon,
-    Color iconColor,
-  ) {
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: iconColor, size: 20),
+          Icon(icon, color: AppTheme.secondaryText, size: 20),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppTheme.captionStyle),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  style: AppTheme.bodyStyle.copyWith(
+                    color: AppTheme.primaryText,
+                    fontWeight: FontWeight.w500,
+                    height: 1.35,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Divider(
+      height: 25,
+      indent: 32,
+      color: AppTheme.lightText.withValues(alpha: 0.22),
+    );
+  }
+
+  Widget _buildMysqlForm() {
+    return Column(
+      children: [
+        _buildTextField(
+          controller: hostController,
+          label: '主机名或 IP 地址',
+          hint: '例如：192.168.1.10',
+          icon: Icons.computer_outlined,
+        ),
+        const SizedBox(height: 12),
+        _buildTextField(
+          controller: portController,
+          label: '端口',
+          hint: '默认：3306',
+          icon: Icons.settings_ethernet_rounded,
+          keyboardType: TextInputType.number,
+        ),
+        const SizedBox(height: 12),
+        _buildTextField(
+          controller: databaseController,
+          label: '数据库名称',
+          hint: '例如：dental_clinic',
+          icon: Icons.storage_outlined,
+        ),
+        const SizedBox(height: 12),
+        _buildTextField(
+          controller: usernameController,
+          label: '用户名',
+          hint: '请输入用户名',
+          icon: Icons.person_outline_rounded,
+        ),
+        const SizedBox(height: 12),
+        _buildTextField(
+          controller: passwordController,
+          label: '密码',
+          hint: '请输入密码',
+          icon: Icons.lock_outline_rounded,
+          obscureText: true,
+        ),
+        const SizedBox(height: 18),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: isTestingNetwork ? null : onTestNetwork,
+                child: _buildButtonContent(
+                  loading: isTestingNetwork,
+                  icon: Icons.network_check_rounded,
+                  label: isTestingNetwork ? '测试中' : '测试网络',
+                  loadingColor: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: isTestingMysql ? null : onTestConnection,
+                child: _buildButtonContent(
+                  loading: isTestingMysql,
+                  icon: Icons.link_rounded,
+                  label: isTestingMysql ? '测试中' : '测试连接',
+                  loadingColor: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed:
+                onSaveMysql == null || isTestingNetwork || isTestingMysql
+                    ? null
+                    : onSaveMysql,
+            icon: const Icon(Icons.save_outlined),
+            label: Text(mysqlTestSuccess ? '保存并应用配置' : '测试连接后保存'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 13),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        TextButton(
+          onPressed:
+              isTestingNetwork || isTestingMysql ? null : onToggleMysqlEdit,
+          child: const Text('取消编辑'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    TextInputType? keyboardType,
+    bool obscureText = false,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon),
+      ),
+    );
+  }
+
+  Widget _buildButtonContent({
+    required bool loading,
+    required IconData icon,
+    required String label,
+    required Color loadingColor,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (loading)
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: loadingColor,
+            ),
+          )
+        else
+          Icon(icon, size: 18),
+        const SizedBox(width: 7),
+        Text(label),
+      ],
     );
   }
 }

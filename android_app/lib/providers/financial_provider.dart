@@ -260,6 +260,10 @@ class FinancialProvider extends ChangeNotifier {
   }) {
     if (database != null) _database = database;
     if (dataSourceType != null) {
+      if (_dataSourceType != dataSourceType) {
+        _cacheHelper.clearCache();
+        _cacheHelper.clearStatsCache();
+      }
       _dataSourceType = dataSourceType;
       _dataSourceService.setDataSourceType(dataSourceType);
     }
@@ -506,7 +510,20 @@ class FinancialProvider extends ChangeNotifier {
       throw Exception('数据库未初始化');
     }
 
-    return await _wrapFinancialOperation(
+    final cacheKey = [
+      'page',
+      _dataSourceType,
+      page,
+      pageSize,
+      startDate?.toIso8601String() ?? '',
+      endDate?.toIso8601String() ?? '',
+    ].join('|');
+    final cachedRecords = _cacheHelper.getCachedRecordQuery(cacheKey);
+    if (cachedRecords != null) {
+      return cachedRecords;
+    }
+
+    final records = await _wrapFinancialOperation(
       'getPaginatedFinancialRecordsWithDateFilter',
       () => _queryService.getPaginatedFinancialRecordsWithDateFilter(
         page: page,
@@ -515,6 +532,8 @@ class FinancialProvider extends ChangeNotifier {
         endDate: endDate,
       ),
     );
+    _cacheHelper.cacheRecordQuery(cacheKey, records);
+    return records;
   }
 
   // 带日期筛选的记录总数
@@ -526,13 +545,26 @@ class FinancialProvider extends ChangeNotifier {
       return 0;
     }
 
-    return await _wrapFinancialOperation(
+    final cacheKey = [
+      'count',
+      _dataSourceType,
+      startDate?.toIso8601String() ?? '',
+      endDate?.toIso8601String() ?? '',
+    ].join('|');
+    final cachedCount = _cacheHelper.getCachedRecordCount(cacheKey);
+    if (cachedCount != null) {
+      return cachedCount;
+    }
+
+    final count = await _wrapFinancialOperation(
       'getFinancialRecordCountWithDateFilter',
       () => _queryService.getFinancialRecordCount(
         startDate: startDate,
         endDate: endDate,
       ),
     );
+    _cacheHelper.cacheRecordCount(cacheKey, count);
+    return count;
   }
 
   // 添加财务记录
@@ -545,6 +577,7 @@ class FinancialProvider extends ChangeNotifier {
       record,
       clearCache: () async {
         clearCache();
+        clearStatsCache();
       },
       markFinancialsNeedRefresh: markFinancialsNeedRefresh,
     );
@@ -560,6 +593,7 @@ class FinancialProvider extends ChangeNotifier {
       record,
       clearCache: () async {
         clearCache();
+        clearStatsCache();
       },
       markFinancialsNeedRefresh: markFinancialsNeedRefresh,
     );
@@ -575,6 +609,7 @@ class FinancialProvider extends ChangeNotifier {
       recordId,
       clearCache: () async {
         clearCache();
+        clearStatsCache();
       },
       markFinancialsNeedRefresh: markFinancialsNeedRefresh,
     );
@@ -633,7 +668,8 @@ class FinancialProvider extends ChangeNotifier {
       markFinancialsNeedRefresh: markFinancialsNeedRefresh,
     );
     if (itemId > 0) {
-      _cacheHelper.invalidateDetailItems(item.financialRecordId);
+      clearCache();
+      clearStatsCache();
     }
     return itemId;
   }
@@ -649,7 +685,8 @@ class FinancialProvider extends ChangeNotifier {
       markFinancialsNeedRefresh: markFinancialsNeedRefresh,
     );
     if (count > 0) {
-      _cacheHelper.invalidateDetailItems(item.financialRecordId);
+      clearCache();
+      clearStatsCache();
     }
     return count;
   }
@@ -666,6 +703,7 @@ class FinancialProvider extends ChangeNotifier {
     );
     if (count > 0) {
       clearCache();
+      clearStatsCache();
     }
     return count;
   }

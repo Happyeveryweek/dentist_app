@@ -26,6 +26,7 @@ class PatientProvider extends ChangeNotifier {
   // 缓存助手
   final PatientCacheHelper _cacheHelper = PatientCacheHelper();
   UserProvider? _userProvider;
+  int? _sessionRevision;
 
   // 数据库操作包装器
   DatabaseOperationWrapper? _dbWrapper;
@@ -35,6 +36,9 @@ class PatientProvider extends ChangeNotifier {
 
   // 设置数据源类型
   void setDataSourceType(String dataSourceType) {
+    if (_initService.dataSourceType != dataSourceType) {
+      _cacheHelper.clearCache();
+    }
     _initService.setDataSourceType(dataSourceType);
     _safeNotifyListeners();
   }
@@ -62,6 +66,10 @@ class PatientProvider extends ChangeNotifier {
   }) async {
     if (initialized) return;
 
+    if (userProvider != null) {
+      setUserProvider(userProvider);
+    }
+
     try {
       AppLogger.info('PatientProvider 开始初始化...');
 
@@ -88,7 +96,11 @@ class PatientProvider extends ChangeNotifier {
   // 设置UserProvider引用
   void setUserProvider(UserProvider userProvider) {
     _userProvider = userProvider;
-    _cacheHelper.clearCache();
+    final nextRevision = userProvider.sessionRevision;
+    if (_sessionRevision != null && _sessionRevision != nextRevision) {
+      _cacheHelper.clearCache();
+    }
+    _sessionRevision = nextRevision;
   }
 
   bool get _hasPatientAccess {
@@ -237,6 +249,19 @@ class PatientProvider extends ChangeNotifier {
 
     return await wrapper.wrapOperation('getPatientsPage', () async {
       try {
+        final cacheKey = [
+          'page',
+          dataSourceType,
+          page,
+          pageSize,
+          sortField ?? '',
+          ascending ?? false,
+        ].join('|');
+        final cachedPatients = _cacheHelper.getCachedQuery(cacheKey);
+        if (cachedPatients != null) {
+          return cachedPatients;
+        }
+
         // 使用数据源模式（统一接口），传递排序参数
         final patients = await _currentDataSource.getPaginatedPatients(
           page,
@@ -246,7 +271,9 @@ class PatientProvider extends ChangeNotifier {
         );
 
         // Android端：不过滤查看权限，返回所有数据
-        return _filterPatients(patients);
+        final filteredPatients = _filterPatients(patients);
+        _cacheHelper.cacheQuery(cacheKey, filteredPatients);
+        return filteredPatients;
       } catch (e) {
         AppLogger.info('分页获取患者错误: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;
@@ -266,12 +293,20 @@ class PatientProvider extends ChangeNotifier {
 
     return await wrapper.wrapOperation('searchPatients', () async {
       try {
+        final cacheKey = 'search|$dataSourceType|$trimmedQuery';
+        final cachedPatients = _cacheHelper.getCachedQuery(cacheKey);
+        if (cachedPatients != null) {
+          return cachedPatients;
+        }
+
         // 使用数据源模式（统一接口）
         final patients = await _currentDataSource.searchPatients(trimmedQuery);
 
         // Android端：不过滤查看权限，返回所有数据
 
-        return _filterPatients(patients);
+        final filteredPatients = _filterPatients(patients);
+        _cacheHelper.cacheQuery(cacheKey, filteredPatients);
+        return filteredPatients;
       } catch (e) {
         AppLogger.info('搜索患者错误: $e');
         if (DatabaseOperationWrapper.isConnectionError(e)) rethrow;

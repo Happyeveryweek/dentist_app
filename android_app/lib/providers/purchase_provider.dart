@@ -265,6 +265,7 @@ class PurchaseProvider extends ChangeNotifier {
 
         // 更新缓存
         _cacheService?.updateCache(records, {});
+        _purchasesNeedRefresh = false;
         AppLogger.info('✅ 采购记录缓存已更新');
         return records;
       } catch (e) {

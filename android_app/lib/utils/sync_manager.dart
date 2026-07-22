@@ -8,6 +8,7 @@ import 'package:dentist_app/utils/sync_logger.dart';
 import 'package:dentist_app/utils/schema_validator.dart';
 import 'package:dentist_app/utils/sync_table_config.dart';
 import 'package:dentist_app/utils/datetime_formatter.dart';
+import 'package:dentist_app/utils/database_utils.dart';
 import 'dart:async';
 import 'dart:typed_data';
 import 'dart:convert';
@@ -18,11 +19,20 @@ class SyncManager {
   /// 执行数据同步
   /// [forceSync] 如果为true，跳过同步间隔检测（用于手动同步）
   static Future<bool> performSync({bool forceSync = false}) async {
+    final stopwatch = Stopwatch()..start();
     try {
       AppLogger.info('SyncManager: 开始执行MySQL到SQLite数据同步...');
 
       final dbConfig = await DatabaseConfig.loadConfig();
       final syncConfig = await SyncConfig.loadSyncConfig();
+      final sourceDatabase = 'MySQL（${dbConfig.mysql.database}）';
+      final targetDatabasePath = await DatabaseUtils.getSqliteSyncTargetPath(
+        dbConfig.sqlite.path,
+      );
+      final targetDatabase = DatabaseUtils.getSqliteSyncTargetLabel(
+        configuredPath: dbConfig.sqlite.path,
+        resolvedPath: targetDatabasePath,
+      );
 
       AppLogger.info(
         'SyncManager: 同步配置 - 启用: ${syncConfig.syncEnabled}, 间隔: ${syncConfig.syncIntervalDays}天, 上次同步: ${syncConfig.lastSyncTime}',
@@ -42,6 +52,9 @@ class SyncManager {
           tableCounts: {},
           tableDetails: {},
           error: '无法连接到MySQL数据库',
+          sourceDatabase: sourceDatabase,
+          targetDatabase: targetDatabase,
+          durationMs: stopwatch.elapsedMilliseconds,
         );
         return false;
       }
@@ -65,12 +78,16 @@ class SyncManager {
           tableCounts: {},
           tableDetails: {},
           error: '无法建立MySQL连接',
+          sourceDatabase: sourceDatabase,
+          targetDatabase: targetDatabase,
+          durationMs: stopwatch.elapsedMilliseconds,
         );
         return false;
       }
 
       try {
-        DatabaseHelper.setCustomDbPath(dbConfig.sqlite.path);
+        AppLogger.info('SyncManager: SQLite同步目标已解析为 $targetDatabase');
+        DatabaseHelper.setCustomDbPath(targetDatabasePath);
         final sqliteDb = await DatabaseHelper().database;
         final insertionOrder = SyncTableConfig.insertionOrder(
           syncConfig.syncTables,
@@ -100,6 +117,9 @@ class SyncManager {
             tableDetails: {},
             error: schemaResult.error ?? '未知错误',
             schemaChanges: schemaResult.getSummary(),
+            sourceDatabase: sourceDatabase,
+            targetDatabase: targetDatabase,
+            durationMs: stopwatch.elapsedMilliseconds,
           );
           return false;
         }
@@ -140,6 +160,9 @@ class SyncManager {
             tableDetails: tableDetails,
             error: e.toString(),
             schemaChanges: schemaResult.getSummary(),
+            sourceDatabase: sourceDatabase,
+            targetDatabase: targetDatabase,
+            durationMs: stopwatch.elapsedMilliseconds,
           );
           rethrow;
         }
@@ -151,6 +174,9 @@ class SyncManager {
           tableCounts: tableCounts,
           tableDetails: tableDetails,
           schemaChanges: schemaResult.getSummary(),
+          sourceDatabase: sourceDatabase,
+          targetDatabase: targetDatabase,
+          durationMs: stopwatch.elapsedMilliseconds,
         );
         AppLogger.info('SyncManager: 数据同步完成，返回成功');
         return true;
@@ -492,21 +518,6 @@ class SyncManager {
   /// 强制同步（忽略间隔检查）
   static Future<bool> forceSync() async {
     try {
-      final dbConfig = await DatabaseConfig.loadConfig();
-
-      // 测试MySQL连接
-      final canConnect = await MySqlUtils.testConnection(dbConfig);
-      if (!canConnect) {
-        await SyncLogger.logSync(
-          success: false,
-          message: '强制同步失败：MySQL连接失败',
-          tableCounts: {},
-          tableDetails: {},
-          error: '无法连接到MySQL数据库',
-        );
-        return false;
-      }
-
       // 强制同步，跳过间隔检查
       return await performSync(forceSync: true);
     } catch (e) {

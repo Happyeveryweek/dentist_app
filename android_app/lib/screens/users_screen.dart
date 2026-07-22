@@ -436,9 +436,6 @@ class _UsersScreenState extends State<UsersScreen> {
         provider.forceRefreshUsers();
       }
 
-      // 先修复数据库中的无效角色值
-      await provider.fixInvalidRoles();
-
       // 加载用户列表
       final users = await provider.getAllUsers();
 

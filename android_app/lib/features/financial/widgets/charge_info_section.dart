@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:dentist_app/utils/datetime_formatter.dart';
 import 'package:dentist_app/widgets/modern_date_picker.dart';
 import '../helpers/amount_input_formatter.dart';
-import '../helpers/financial_payment_method_helper.dart';
+import 'payment_method_dropdown_field.dart';
 import 'section_title.dart';
 
 class ChargeInfoSection extends StatelessWidget {
@@ -45,7 +45,11 @@ class ChargeInfoSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionTitle(title: '收费信息', icon: Icons.receipt, color: Colors.green),
+        const SectionTitle(
+          title: '收费信息',
+          icon: Icons.receipt,
+          color: Colors.green,
+        ),
         const SizedBox(height: 8),
 
         // 收费日期和项目名称 - 紧凑布局
@@ -191,70 +195,8 @@ class ChargeInfoSection extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: DropdownButtonFormField<String>(
-                isExpanded: true,
-                initialValue: FinancialPaymentMethodHelper.uiValue(paymentMethod),
-                decoration: InputDecoration(
-                  labelText: '收费方式',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 14,
-                  ),
-                  prefixIcon: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Icon(
-                      Icons.payment,
-                      size: 18,
-                      color: Colors.green[600],
-                    ),
-                  ),
-                ),
-                items:
-                    FinancialPaymentMethodHelper.dropdownMethods.map((method) {
-                      final displayName =
-                          method ==
-                                  FinancialPaymentMethodHelper.nonePaymentMethod
-                              ? '未选择'
-                              : FinancialPaymentMethodHelper.displayName(
-                                method,
-                              );
-                      final iconPath =
-                          FinancialPaymentMethodHelper.iconAssetPathOrNull(
-                            method,
-                          );
-                      return DropdownMenuItem<String>(
-                        value: method,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (iconPath != null) ...[
-                              Image.asset(
-                                iconPath,
-                                width: 16,
-                                height: 16,
-                                errorBuilder:
-                                    (_, __, ___) => Icon(
-                                      Icons.payment,
-                                      size: 16,
-                                      color: Colors.green[600],
-                                    ),
-                              ),
-                              const SizedBox(width: 8),
-                            ],
-                            Text(displayName),
-                          ],
-                        ),
-                      );
-                    }).toList(),
+              child: PaymentMethodDropdownField(
+                value: paymentMethod,
                 onChanged: onPaymentMethodChanged,
               ),
             ),

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import './app_logger.dart';
+import 'map_parser.dart';
 
 /// 同步日志模型
 class SyncLog {
@@ -15,6 +16,9 @@ class SyncLog {
   final Map<String, String> tableDetails;
   final String? error;
   final String? schemaChanges;
+  final String? sourceDatabase;
+  final String? targetDatabase;
+  final int? durationMs;
 
   SyncLog({
     String? id,
@@ -25,20 +29,32 @@ class SyncLog {
     required this.tableDetails,
     this.error,
     this.schemaChanges,
+    this.sourceDatabase,
+    this.targetDatabase,
+    this.durationMs,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
        timestamp = timestamp ?? DateTime.now();
 
   // 从JSON创建日志
   factory SyncLog.fromJson(Map<String, dynamic> json) {
+    final parser = MapParser(json, context: 'SyncLog');
     return SyncLog(
-      id: json['id'],
-      timestamp: DateTimeFormatter.fromDbString(json['timestamp']),
-      success: json['success'],
-      message: json['message'],
-      tableCounts: Map<String, int>.from(json['table_counts']),
-      tableDetails: Map<String, String>.from(json['table_details']),
-      error: json['error'],
-      schemaChanges: json['schema_changes'],
+      id: parser.stringOptional('id'),
+      timestamp: parser.optional(
+        'timestamp',
+        (value) => DateTimeFormatter.fromDbString(value.toString()),
+      ),
+      success: parser.boolean('success'),
+      message: parser.string('message'),
+      tableCounts: _parseTableCounts(json['table_counts']),
+      tableDetails: _parseTableDetails(json['table_details']),
+      error: parser.stringOptional('error'),
+      schemaChanges: parser.stringOptional('schema_changes'),
+      sourceDatabase: parser.stringOptional('source_database'),
+      targetDatabase:
+          parser.stringOptional('target_database') ??
+          parser.stringOptional('target_database_path'),
+      durationMs: parser.integerOptional('duration_ms'),
     );
   }
 
@@ -53,7 +69,26 @@ class SyncLog {
       'table_details': tableDetails,
       'error': error,
       'schema_changes': schemaChanges,
+      'source_database': sourceDatabase,
+      'target_database': targetDatabase,
+      'duration_ms': durationMs,
     };
+  }
+
+  int get totalRecords =>
+      tableCounts.values.fold(0, (sum, count) => sum + count);
+
+  static Map<String, int> _parseTableCounts(dynamic value) {
+    if (value is! Map) return {};
+    return value.map((key, count) {
+      final parsedCount = count is int ? count : int.tryParse('$count') ?? 0;
+      return MapEntry('$key', parsedCount);
+    });
+  }
+
+  static Map<String, String> _parseTableDetails(dynamic value) {
+    if (value is! Map) return {};
+    return value.map((key, detail) => MapEntry('$key', '$detail'));
   }
 }
 
@@ -76,6 +111,9 @@ class SyncLogger {
     required Map<String, String> tableDetails,
     String? error,
     String? schemaChanges,
+    String? sourceDatabase,
+    String? targetDatabase,
+    int? durationMs,
   }) async {
     try {
       final log = SyncLog(
@@ -85,6 +123,9 @@ class SyncLogger {
         tableDetails: tableDetails,
         error: error,
         schemaChanges: schemaChanges,
+        sourceDatabase: sourceDatabase,
+        targetDatabase: targetDatabase,
+        durationMs: durationMs,
       );
 
       final logs = await getAllLogs();

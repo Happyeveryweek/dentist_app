@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -22,13 +21,8 @@ import 'package:dentist_app/utils/permission_utils.dart'; // 添加权限工具�
 
 class AppointmentsScreen extends StatefulWidget {
   final String? initialFilterStatus;
-  final ValueListenable<int>? refreshListenable;
 
-  const AppointmentsScreen({
-    super.key,
-    this.initialFilterStatus,
-    this.refreshListenable,
-  });
+  const AppointmentsScreen({super.key, this.initialFilterStatus});
 
   @override
   State<AppointmentsScreen> createState() => _AppointmentsScreenState();
@@ -62,17 +56,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     super.initState();
     _filterStatus = widget.initialFilterStatus ?? '全部';
     _tabController = TabController(length: 2, vsync: this);
-    widget.refreshListenable?.addListener(_handleExternalRefresh);
     _loadAppointments();
-  }
-
-  @override
-  void didUpdateWidget(covariant AppointmentsScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.refreshListenable != widget.refreshListenable) {
-      oldWidget.refreshListenable?.removeListener(_handleExternalRefresh);
-      widget.refreshListenable?.addListener(_handleExternalRefresh);
-    }
   }
 
   @override
@@ -86,7 +70,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
 
   @override
   void dispose() {
-    widget.refreshListenable?.removeListener(_handleExternalRefresh);
     _searchDebounce?.cancel();
     _tabController?.dispose();
     _searchController.dispose();
@@ -110,17 +93,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     });
   }
 
-  void _handleExternalRefresh() {
-    _loadAppointments(forceReload: true);
-  }
-
-  Future<void> _loadAppointments({
-    bool isRefresh = false,
-    bool forceReload = false,
-  }) async {
-    AppLogger.info(
-      '_loadAppointments 被调用，isRefresh: $isRefresh, forceReload: $forceReload',
-    ); // 调试输出
+  Future<void> _loadAppointments({bool isRefresh = false}) async {
+    AppLogger.info('_loadAppointments 被调用，isRefresh: $isRefresh'); // 调试输出
 
     // 只有在手动刷新时才显示提示并重置筛选
     if (isRefresh) {
@@ -171,7 +145,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
       }
 
       // 如果是刷新操作，强制清除缓存并显示加载动画
-      if (isRefresh || forceReload) {
+      if (isRefresh) {
         setState(() {
           _isLoading = true;
         });
@@ -467,7 +441,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
           _showDeleteConfirmation(appointment);
         },
         onDetailUpdated: () {
-          _loadAppointments(forceReload: true);
+          _loadAppointments();
         },
       ),
       floatingActionButton: PermissionWrapper(
@@ -645,9 +619,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                               (() {
                                 final date = tempStartDate;
                                 return date != null
-                                    ? DateFormat(
-                                      'yyyy-MM-dd',
-                                    ).format(date)
+                                    ? DateFormat('yyyy-MM-dd').format(date)
                                     : '开始日期';
                               })(),
                               style: const TextStyle(
@@ -693,9 +665,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
                               (() {
                                 final date = tempEndDate;
                                 return date != null
-                                    ? DateFormat(
-                                      'yyyy-MM-dd',
-                                    ).format(date)
+                                    ? DateFormat('yyyy-MM-dd').format(date)
                                     : '结束日期';
                               })(),
                               style: const TextStyle(
