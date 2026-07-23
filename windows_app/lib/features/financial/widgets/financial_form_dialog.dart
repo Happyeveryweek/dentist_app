@@ -281,9 +281,9 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: tokens.infoContainer,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(tokens.borderRadius),
-        border: Border.all(color: tokens.info, width: 1),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,14 +292,14 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
             children: [
               Icon(
                 Icons.person_search,
-                color: tokens.info,
+                color: tokens.primaryAccent,
                 size: 16,
               ),
               const SizedBox(width: 6),
               Text(
                 '患者信息',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: tokens.info,
+                      color: tokens.primaryAccent,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -314,7 +314,7 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                   decoration: BoxDecoration(
                     color: tokens.cardBackground,
                     borderRadius: BorderRadius.circular(tokens.borderRadius),
-                    border: Border.all(color: tokens.info, width: 1),
+                    border: Border.all(color: tokens.border),
                   ),
                   child: InkWell(
                     mouseCursor: SystemMouseCursors.click,
@@ -338,12 +338,13 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                             margin: const EdgeInsets.only(right: 12),
                             padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: tokens.infoContainer,
+                              color:
+                                  tokens.primaryAccent.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(
                                   tokens.smallBorderRadius),
                             ),
                             child: Icon(Icons.person,
-                                color: tokens.info, size: 18),
+                                color: tokens.primaryAccent, size: 18),
                           ),
                           Expanded(
                             child: Column(
@@ -352,7 +353,7 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                                 Text(
                                   '患者姓名',
                                   style: TextStyle(
-                                    color: tokens.info,
+                                    color: colors.onSurfaceVariant,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -380,7 +381,7 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                           if (!disablePatientSelection)
                             Icon(
                               Icons.arrow_drop_down,
-                              color: tokens.info,
+                              color: tokens.primaryAccent,
                               size: 24,
                             ),
                         ],
@@ -404,15 +405,15 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: tokens.successContainer,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: tokens.success, width: 1),
+        border: Border.all(color: tokens.border),
       ),
       child: Row(
         children: [
           Icon(
             Icons.verified_user,
-            color: tokens.success,
+            color: tokens.primaryAccent,
             size: 16,
           ),
           const SizedBox(width: 6),
@@ -423,7 +424,7 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                 Text(
                   '已选择患者: ${selectedPatient.name}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: tokens.success,
+                        color: colors.onSurface,
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                       ),
@@ -438,7 +439,6 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                         value:
                             selectedPatient.medicalRecordNumber?.toString() ??
                                 '未设置',
-                        color: tokens.primaryAccent,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -448,7 +448,6 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                         label: '首诊日期',
                         value: DateFormat('yyyy-MM-dd')
                             .format(selectedPatient.firstVisitDate),
-                        color: tokens.warning,
                       ),
                     ),
                   ],
@@ -466,26 +465,27 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
     required IconData icon,
     required String label,
     required String value,
-    required Color color,
   }) {
+    final tokens = context.tokens;
+    final colors = context.colors;
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: tokens.mutedBackground,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 14),
+              Icon(icon, color: tokens.iconMuted, size: 14),
               const SizedBox(width: 4),
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: color,
+                      color: colors.onSurfaceVariant,
                       fontWeight: FontWeight.w600,
                       fontSize: 11,
                     ),
@@ -496,7 +496,7 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: color,
+                  color: colors.onSurface,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -511,9 +511,9 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: tokens.warningContainer,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(tokens.borderRadius),
-        border: Border.all(color: tokens.warning, width: 1),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,14 +522,14 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
             children: [
               Icon(
                 Icons.receipt_long,
-                color: tokens.warning,
+                color: tokens.primaryAccent,
                 size: 16,
               ),
               const SizedBox(width: 6),
               Text(
                 '收费信息',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: tokens.warning,
+                      color: tokens.primaryAccent,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -545,7 +545,7 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
               decoration: BoxDecoration(
                 color: tokens.cardBackground,
                 borderRadius: BorderRadius.circular(tokens.borderRadius),
-                border: Border.all(color: tokens.warning, width: 1),
+                border: Border.all(color: tokens.border),
               ),
               child: TextField(
                 controller: _chargeDateController,
@@ -555,26 +555,28 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                     margin: const EdgeInsets.all(6),
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: tokens.warningContainer,
+                      color: tokens.primaryAccent.withValues(alpha: 0.1),
                       borderRadius:
                           BorderRadius.circular(tokens.smallBorderRadius),
                     ),
                     child: Icon(Icons.calendar_month,
-                        color: tokens.warning, size: 18),
+                        color: tokens.primaryAccent, size: 18),
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(tokens.borderRadius),
-                    borderSide: BorderSide(color: tokens.warning, width: 1),
+                    borderSide:
+                        BorderSide(color: tokens.primaryAccent, width: 1),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(tokens.borderRadius),
-                    borderSide: BorderSide(color: tokens.warning, width: 1),
+                    borderSide:
+                        BorderSide(color: tokens.primaryAccent, width: 1),
                   ),
                   filled: true,
                   fillColor: tokens.cardBackground,
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                  labelStyle: TextStyle(color: tokens.warning),
+                  labelStyle: TextStyle(color: colors.onSurfaceVariant),
                 ),
                 readOnly: true,
                 onTap: () => _selectChargeDate(),
@@ -589,7 +591,7 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
             decoration: BoxDecoration(
               color: tokens.cardBackground,
               borderRadius: BorderRadius.circular(tokens.borderRadius),
-              border: Border.all(color: tokens.warning, width: 1),
+              border: Border.all(color: tokens.border),
             ),
             child: TextField(
               controller: _treatmentItemsController,
@@ -608,26 +610,26 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                   margin: const EdgeInsets.all(6),
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: tokens.warningContainer,
+                    color: tokens.primaryAccent.withValues(alpha: 0.1),
                     borderRadius:
                         BorderRadius.circular(tokens.smallBorderRadius),
                   ),
                   child: Icon(Icons.medical_services,
-                      color: tokens.warning, size: 18),
+                      color: tokens.primaryAccent, size: 18),
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(tokens.borderRadius),
-                  borderSide: BorderSide(color: tokens.warning, width: 1),
+                  borderSide: BorderSide(color: tokens.primaryAccent, width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(tokens.borderRadius),
-                  borderSide: BorderSide(color: tokens.warning, width: 1),
+                  borderSide: BorderSide(color: tokens.primaryAccent, width: 1),
                 ),
                 filled: true,
                 fillColor: tokens.cardBackground,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                labelStyle: TextStyle(color: tokens.warning),
+                labelStyle: TextStyle(color: colors.onSurfaceVariant),
                 alignLabelWithHint: true,
                 isDense: true,
                 floatingLabelBehavior: FloatingLabelBehavior.auto,
@@ -650,9 +652,9 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: tokens.infoContainer,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(tokens.borderRadius),
-        border: Border.all(color: tokens.info, width: 1),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -661,14 +663,14 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
             children: [
               Icon(
                 Icons.account_balance_wallet,
-                color: tokens.info,
+                color: tokens.primaryAccent,
                 size: 16,
               ),
               const SizedBox(width: 6),
               Text(
                 '金额信息',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: tokens.info,
+                      color: tokens.primaryAccent,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -697,12 +699,12 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                         margin: const EdgeInsets.all(6),
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: tokens.infoContainer,
+                          color: tokens.primaryAccent.withValues(alpha: 0.1),
                           borderRadius:
                               BorderRadius.circular(tokens.smallBorderRadius),
                         ),
                         child: Icon(Icons.description,
-                            color: tokens.info, size: 18),
+                            color: tokens.primaryAccent, size: 18),
                       ),
                       border: OutlineInputBorder(
                         borderRadius:
@@ -712,13 +714,14 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius:
                             BorderRadius.circular(tokens.borderRadius),
-                        borderSide: BorderSide(color: tokens.info, width: 1),
+                        borderSide:
+                            BorderSide(color: tokens.primaryAccent, width: 1),
                       ),
                       filled: true,
                       fillColor: tokens.cardBackground,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 2),
-                      labelStyle: TextStyle(color: tokens.info),
+                      labelStyle: TextStyle(color: colors.onSurfaceVariant),
                     ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [amountInputFormatter],
@@ -758,7 +761,7 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                         margin: const EdgeInsets.all(6),
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: tokens.infoContainer,
+                          color: tokens.primaryAccent.withValues(alpha: 0.1),
                           borderRadius:
                               BorderRadius.circular(tokens.smallBorderRadius),
                         ),
@@ -773,13 +776,14 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius:
                             BorderRadius.circular(tokens.borderRadius),
-                        borderSide: BorderSide(color: tokens.info, width: 1),
+                        borderSide:
+                            BorderSide(color: tokens.primaryAccent, width: 1),
                       ),
                       filled: true,
                       fillColor: tokens.cardBackground,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 2),
-                      labelStyle: TextStyle(color: tokens.info),
+                      labelStyle: TextStyle(color: colors.onSurfaceVariant),
                     ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [amountInputFormatter],
@@ -824,11 +828,12 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                         margin: const EdgeInsets.all(6),
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: tokens.infoContainer,
+                          color: tokens.primaryAccent.withValues(alpha: 0.1),
                           borderRadius:
                               BorderRadius.circular(tokens.smallBorderRadius),
                         ),
-                        child: Icon(Icons.build, color: tokens.info, size: 18),
+                        child: Icon(Icons.build,
+                            color: tokens.primaryAccent, size: 18),
                       ),
                       border: OutlineInputBorder(
                         borderRadius:
@@ -838,13 +843,14 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius:
                             BorderRadius.circular(tokens.borderRadius),
-                        borderSide: BorderSide(color: tokens.info, width: 1),
+                        borderSide:
+                            BorderSide(color: tokens.primaryAccent, width: 1),
                       ),
                       filled: true,
                       fillColor: tokens.cardBackground,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 2),
-                      labelStyle: TextStyle(color: tokens.info),
+                      labelStyle: TextStyle(color: colors.onSurfaceVariant),
                     ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [amountInputFormatter],
@@ -886,12 +892,12 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                         margin: const EdgeInsets.all(6),
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: tokens.infoContainer,
+                          color: tokens.primaryAccent.withValues(alpha: 0.1),
                           borderRadius:
                               BorderRadius.circular(tokens.smallBorderRadius),
                         ),
-                        child:
-                            Icon(Icons.payment, color: tokens.info, size: 18),
+                        child: Icon(Icons.payment,
+                            color: tokens.primaryAccent, size: 18),
                       ),
                       border: OutlineInputBorder(
                         borderRadius:
@@ -901,13 +907,14 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius:
                             BorderRadius.circular(tokens.borderRadius),
-                        borderSide: BorderSide(color: tokens.info, width: 1),
+                        borderSide:
+                            BorderSide(color: tokens.primaryAccent, width: 1),
                       ),
                       filled: true,
                       fillColor: tokens.cardBackground,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 2),
-                      labelStyle: TextStyle(color: tokens.info),
+                      labelStyle: TextStyle(color: colors.onSurfaceVariant),
                     ),
                     menuMaxHeight: 160,
                     borderRadius: tokens.borderRadius,
@@ -976,9 +983,9 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: tokens.successContainer,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(tokens.borderRadius),
-        border: Border.all(color: tokens.success, width: 1),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -987,14 +994,14 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
             children: [
               Icon(
                 Icons.note_add,
-                color: tokens.success,
+                color: tokens.primaryAccent,
                 size: 16,
               ),
               const SizedBox(width: 6),
               Text(
                 '备注信息',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: tokens.success,
+                      color: tokens.primaryAccent,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
@@ -1006,7 +1013,7 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
             decoration: BoxDecoration(
               color: tokens.cardBackground,
               borderRadius: BorderRadius.circular(tokens.borderRadius),
-              border: Border.all(color: tokens.success, width: 1),
+              border: Border.all(color: tokens.border),
             ),
             child: TextField(
               controller: _notesController,
@@ -1017,25 +1024,26 @@ class _FinancialFormDialogState extends State<FinancialFormDialog> {
                   margin: const EdgeInsets.all(6),
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: tokens.successContainer,
+                    color: tokens.primaryAccent.withValues(alpha: 0.1),
                     borderRadius:
                         BorderRadius.circular(tokens.smallBorderRadius),
                   ),
-                  child: Icon(Icons.note, color: tokens.success, size: 18),
+                  child:
+                      Icon(Icons.note, color: tokens.primaryAccent, size: 18),
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(tokens.borderRadius),
-                  borderSide: BorderSide(color: tokens.success, width: 1),
+                  borderSide: BorderSide(color: tokens.border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(tokens.borderRadius),
-                  borderSide: BorderSide(color: tokens.success, width: 1),
+                  borderSide: BorderSide(color: tokens.primaryAccent, width: 1),
                 ),
                 filled: true,
                 fillColor: tokens.cardBackground,
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                labelStyle: TextStyle(color: tokens.success),
+                labelStyle: TextStyle(color: colors.onSurfaceVariant),
               ),
               maxLines: 3,
             ),

@@ -627,34 +627,25 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
 
   Widget _buildStatCard(
       String title, String value, IconData icon, Color cardColor) {
-    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: cardColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: cardColor.withValues(alpha: 0.3),
-            spreadRadius: 2,
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: tokens.cardBackground, size: 24),
+              Icon(icon, color: cardColor, size: 24),
               const SizedBox(width: 8),
               Text(
                 title,
                 style: TextStyle(
                   fontSize: 14,
-                  color: tokens.cardBackground,
-                  fontWeight: FontWeight.bold,
+                  color: cardColor,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -665,7 +656,7 @@ class PatientStatisticsDialogState extends State<PatientStatisticsDialog> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: tokens.cardBackground,
+              color: cardColor,
             ),
           ),
         ],

@@ -44,6 +44,9 @@ void main() {
 
     final dropdownCenter =
         tester.getCenter(find.byType(CompactDropdownFormField<String>));
+    final editorCenter = tester.getCenter(
+      find.byKey(const Key('financial-payment-method-editor')),
+    );
     final iconCenter = tester.getCenter(find.byType(Image));
     final rowCenter =
         tester.getCenter(find.byType(FinancialDetailEditingItemRow));
@@ -52,6 +55,12 @@ void main() {
       (rowCenter.dy - iconCenter.dy).abs(),
       lessThanOrEqualTo(1),
       reason: 'row=$rowCenter, dropdown=$dropdownCenter, icon=$iconCenter',
+    );
+    expect(
+      (editorCenter.dx - iconCenter.dx).abs(),
+      lessThanOrEqualTo(1),
+      reason:
+          'editor=$editorCenter, dropdown=$dropdownCenter, icon=$iconCenter',
     );
   });
 }

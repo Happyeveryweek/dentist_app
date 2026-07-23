@@ -1268,18 +1268,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
       return;
     }
 
-    // 跳转到收费记录详情页面，并等待返回结果
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FinancialDetailScreen(
-          patient: financialContextPatient,
-          initialRecordId: record.id,
-        ),
-      ),
+    final result = await showFinancialDetailDialog(
+      context: context,
+      patient: financialContextPatient,
+      initialRecordId: record.id,
     );
 
-    // 如果财务详情页有数据变动，重新加载患者数据
+    // 如果财务详情弹窗有数据变动，重新加载患者数据
     if (result == true) {
       await _reloadPatientData();
     }

@@ -6,7 +6,7 @@ import '../../../theme/theme_context_extensions.dart';
 import '../../../widgets/dental_icons.dart';
 
 /// 采购记录详情对话框
-class PurchaseDetailDialog extends StatelessWidget {
+class PurchaseDetailDialog extends StatefulWidget {
   final PurchaseRecord record;
   final List<PurchaseItem> purchaseItems;
   final VoidCallback? onEdit;
@@ -22,8 +22,43 @@ class PurchaseDetailDialog extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<PurchaseDetailDialog> createState() => _PurchaseDetailDialogState();
+
+  /// 显示采购记录详情对话框
+  static Future<void> show({
+    required BuildContext context,
+    required PurchaseRecord record,
+    required List<PurchaseItem> purchaseItems,
+    VoidCallback? onEdit,
+    void Function(PurchaseRecord record, List<PurchaseItem> items)? onExport,
+  }) {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PurchaseDetailDialog(
+        record: record,
+        purchaseItems: purchaseItems,
+        onEdit: onEdit,
+        onExport: onExport,
+      ),
+    );
+  }
+}
+
+class _PurchaseDetailDialogState extends State<PurchaseDetailDialog> {
+  final ScrollController _itemsScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _itemsScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final exportCallback = onExport;
+    final exportCallback = widget.onExport;
+    final record = widget.record;
+    final purchaseItems = widget.purchaseItems;
     return AlertDialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       shape: RoundedRectangleBorder(
@@ -69,8 +104,9 @@ class PurchaseDetailDialog extends StatelessWidget {
       ),
       content: SizedBox(
         width: 688,
-        height: 720,
+        height: MediaQuery.of(context).size.height * 0.72,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 采购记录基本信息
@@ -175,19 +211,6 @@ class PurchaseDetailDialog extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                 ),
-                const Spacer(),
-                if (onEdit != null)
-                  ElevatedButton.icon(
-                    onPressed: onEdit,
-                    icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('编辑记录'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.colors.primary,
-                      foregroundColor: context.colors.onPrimary,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                    ),
-                  ),
               ],
             ),
 
@@ -228,105 +251,128 @@ class PurchaseDetailDialog extends StatelessWidget {
                         ],
                       ),
                     )
-                  : Column(
-                      children: [
-                        // 表头
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: context.tokens.mutedBackground,
-                            borderRadius: BorderRadius.circular(8),
+                  : Container(
+                      decoration: BoxDecoration(
+                        color: context.tokens.cardBackground,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: context.tokens.border),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Column(
+                        children: [
+                          // 表头
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: context.tokens.mutedBackground,
+                              border: Border(
+                                bottom:
+                                    BorderSide(color: context.tokens.border),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 7,
+                                  child: Text(
+                                    '材料名称',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: context.colors.onSurfaceVariant,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    '数量',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: context.colors.onSurfaceVariant,
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 4,
+                                  child: Text(
+                                    '单价',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: context.colors.onSurfaceVariant,
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    '单位',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: context.colors.onSurfaceVariant,
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 4,
+                                  child: Text(
+                                    '总价',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: context.colors.onSurfaceVariant,
+                                      fontSize: 14,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 7,
-                                child: Text(
-                                  '材料名称',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: context.colors.onSurfaceVariant,
-                                    fontSize: 14,
-                                  ),
-                                ),
+                          const SizedBox(height: 8),
+                          // 项目列表
+                          Expanded(
+                            child: Scrollbar(
+                              controller: _itemsScrollController,
+                              thumbVisibility: purchaseItems.length > 5,
+                              child: ListView.builder(
+                                controller: _itemsScrollController,
+                                itemCount: purchaseItems.length,
+                                itemBuilder: (context, index) {
+                                  final item = purchaseItems[index];
+                                  return _buildDetailItemCard(context, item);
+                                },
                               ),
-                              Expanded(
-                                flex: 3,
-                                child: Text(
-                                  '数量',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: context.colors.onSurfaceVariant,
-                                    fontSize: 14,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              Expanded(
-                                flex: 4,
-                                child: Text(
-                                  '单价',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: context.colors.onSurfaceVariant,
-                                    fontSize: 14,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              Expanded(
-                                flex: 3,
-                                child: Text(
-                                  '单位',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: context.colors.onSurfaceVariant,
-                                    fontSize: 14,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              Expanded(
-                                flex: 4,
-                                child: Text(
-                                  '总价',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: context.colors.onSurfaceVariant,
-                                    fontSize: 14,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        // 项目列表
-                        Expanded(
-                          child: ListView.builder(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            itemCount: purchaseItems.length,
-                            itemBuilder: (context, index) {
-                              final item = purchaseItems[index];
-                              return _buildDetailItemCard(context, item);
-                            },
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
             ),
           ],
         ),
       ),
       actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        if (widget.onEdit != null)
+          ElevatedButton.icon(
+            onPressed: widget.onEdit,
+            icon: const Icon(Icons.edit, size: 18),
+            label: const Text('编辑'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: context.colors.primary,
+              foregroundColor: context.colors.onPrimary,
+            ),
           ),
-          child: const Text('关闭'),
+        OutlinedButton.icon(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close, size: 18),
+          label: const Text('取消'),
         ),
       ],
     );
@@ -369,12 +415,12 @@ class PurchaseDetailDialog extends StatelessWidget {
 
   Widget _buildDetailItemCard(BuildContext context, PurchaseItem item) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
         color: context.tokens.cardBackground,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: context.tokens.border),
+        border: Border(
+          bottom: BorderSide(color: context.tokens.divider, width: 0.5),
+        ),
       ),
       child: Row(
         children: [
@@ -425,26 +471,6 @@ class PurchaseDetailDialog extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  /// 显示采购记录详情对话框
-  static Future<void> show({
-    required BuildContext context,
-    required PurchaseRecord record,
-    required List<PurchaseItem> purchaseItems,
-    VoidCallback? onEdit,
-    void Function(PurchaseRecord record, List<PurchaseItem> items)? onExport,
-  }) {
-    return showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => PurchaseDetailDialog(
-        record: record,
-        purchaseItems: purchaseItems,
-        onEdit: onEdit,
-        onExport: onExport,
       ),
     );
   }

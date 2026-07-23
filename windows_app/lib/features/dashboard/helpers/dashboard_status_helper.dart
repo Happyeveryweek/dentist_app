@@ -23,7 +23,7 @@ class DashboardStatusHelper {
       case AppointmentStatus.completed:
         return context.tokens.success;
       case AppointmentStatus.scheduled:
-        return context.tokens.info;
+        return context.tokens.primaryAccent;
       case AppointmentStatus.cancelled:
         return context.tokens.error;
       case AppointmentStatus.missed:

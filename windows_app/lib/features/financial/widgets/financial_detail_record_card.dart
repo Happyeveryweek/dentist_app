@@ -39,21 +39,15 @@ class FinancialDetailRecordCard extends StatelessWidget {
       height: FinancialDetailTableLayout.rowHeight,
       child: Container(
         decoration: BoxDecoration(
-          color: tokens.cardBackground,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: isHighlighted
-                ? tokens.primaryAccent.withValues(alpha: 0.5)
-                : tokens.divider,
-            width: isHighlighted ? 1.5 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: tokens.shadow.withValues(alpha: 0.1),
-              blurRadius: 2,
-              offset: const Offset(0, 1),
+          color: isHighlighted
+              ? tokens.primaryAccent.withValues(alpha: 0.08)
+              : tokens.cardBackground,
+          border: Border(
+            bottom: BorderSide(
+              color: tokens.divider,
+              width: 0.5,
             ),
-          ],
+          ),
         ),
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(vertical: 6),

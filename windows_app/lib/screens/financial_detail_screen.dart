@@ -19,6 +19,7 @@ import '../features/financial/widgets/financial_detail_table_header.dart';
 import '../features/financial/widgets/financial_records_list_header.dart';
 import '../features/financial/widgets/financial_detail_record_card.dart';
 import '../features/financial/widgets/financial_detail_editing_item_row.dart';
+import '../features/financial/widgets/financial_record_edit_dialog.dart';
 import '../features/financial/services/financial_detail_service.dart';
 import 'patient_detail_screen.dart';
 import '../utils/log_manager.dart';
@@ -35,6 +36,36 @@ class FinancialDetailScreen extends StatefulWidget {
 
   @override
   State<FinancialDetailScreen> createState() => _FinancialDetailScreenState();
+}
+
+Future<bool?> showFinancialDetailDialog({
+  required BuildContext context,
+  required Patient patient,
+  int? initialRecordId,
+}) {
+  return showDialog<bool>(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) {
+      final availableHeight = MediaQuery.of(context).size.height * 0.9;
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: SizedBox(
+          width: 800,
+          height: availableHeight > 720 ? 720 : availableHeight,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: FinancialDetailScreen(
+              patient: patient,
+              initialRecordId: initialRecordId,
+            ),
+          ),
+        ),
+      );
+    },
+  );
 }
 
 class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
@@ -377,35 +408,48 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
           ),
         ),
 
-        // 财务记录列表标题和表头
+        // 财务记录列表标题
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16), // 添加顶部间距
-              FinancialRecordsListHeader(
-                recordCount: _detailedRecords.length,
-                showProcessingFee: _showProcessingFee,
-                onToggleProcessingFee: () {
-                  setState(() {
-                    _showProcessingFee = !_showProcessingFee;
-                  });
-                },
-                onAddRecord: _addFinancialRecord,
-              ),
-              const SizedBox(height: 8),
-              const FinancialDetailTableHeader(),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.only(top: 16, bottom: 8),
+            child: FinancialRecordsListHeader(
+              recordCount: _detailedRecords.length,
+              showProcessingFee: _showProcessingFee,
+              onToggleProcessingFee: () {
+                setState(() {
+                  _showProcessingFee = !_showProcessingFee;
+                });
+              },
+              onAddRecord: _addFinancialRecord,
+            ),
           ),
         ),
-        const SizedBox(height: 8),
 
-        // 财务记录列表 - 使用Expanded而不是SingleChildScrollView
+        // 收费记录面板占满中间剩余区域，超出后在面板内滚动
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: _buildRecordsList(),
+            child: Container(
+              decoration: BoxDecoration(
+                color: tokens.cardBackground,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: tokens.border),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  const FinancialDetailTableHeader(),
+                  Expanded(
+                    child: Scrollbar(
+                      controller: _scrollController,
+                      thumbVisibility: _detailedRecords.length > 2,
+                      child: _buildRecordsList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
 
@@ -424,8 +468,60 @@ class _FinancialDetailScreenState extends State<FinancialDetailScreen> {
               },
             ),
           ),
+
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _editCurrentFinancialRecord,
+                icon: const Icon(Icons.edit, size: 18),
+                label: const Text('编辑'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: tokens.primaryAccent,
+                  foregroundColor: colors.onPrimary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.of(context).pop(_hasDataChanged),
+                icon: const Icon(Icons.close, size: 18),
+                label: const Text('取消'),
+              ),
+            ],
+          ),
+        ),
       ],
     );
+  }
+
+  Future<void> _editCurrentFinancialRecord() async {
+    if (_patientRecords.isEmpty) return;
+
+    var targetRecord = _patientRecords.first;
+    final initialRecordId = widget.initialRecordId;
+    if (initialRecordId != null) {
+      for (final record in _patientRecords) {
+        if (record.id == initialRecordId) {
+          targetRecord = record;
+          break;
+        }
+      }
+    }
+
+    final changed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => FinancialRecordEditDialog(
+        patient: widget.patient,
+        record: targetRecord,
+      ),
+    );
+    if (changed == true && mounted) {
+      _hasDataChanged = true;
+      await _loadPatientRecords();
+    }
   }
 
   // 获取患者备注信息

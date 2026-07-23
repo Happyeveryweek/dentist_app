@@ -7,11 +7,11 @@ import '../../../models/financial_item.dart';
 import '../../../models/patient.dart';
 import '../../../providers/financial_provider.dart';
 import '../../../widgets/compact_dropdown_form_field.dart';
+import '../../../widgets/dental_icons.dart';
 import '../../../widgets/modern_date_picker.dart';
 import '../../../widgets/success_toast.dart'
     show DeleteConfirmDialogManager, InlineSuccessMessage, AppToastManager;
 import '../../../theme/theme_context_extensions.dart';
-import '../../../theme/medical_semantic_colors.dart';
 import '../helpers/amount_input_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import 'financial_detail_table_layout.dart';
@@ -36,6 +36,7 @@ class FinancialRecordEditDialog extends StatefulWidget {
 
 class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
   final TextEditingController _notesController = TextEditingController();
+  final ScrollController _itemsScrollController = ScrollController();
   bool _isLoading = false;
   List<FinancialItem> _financialItems = [];
 
@@ -74,6 +75,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
     _editItemPriceController.dispose();
     _editProcessingFeeController.dispose();
     _editTotalPriceController.dispose();
+    _itemsScrollController.dispose();
     super.dispose();
   }
 
@@ -166,7 +168,6 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
         width: 800,
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.9,
-          minHeight: 500,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -174,7 +175,8 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           children: [
             _buildPatientInfoSection(tokens, colors),
             const SizedBox(height: 16),
-            Expanded(
+            Flexible(
+              fit: FlexFit.loose,
               child: SingleChildScrollView(
                 child: Column(
                   children: [
@@ -194,42 +196,19 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
 
   // 构建患者信息区域
   Widget _buildPatientInfoSection(AppThemeTokens tokens, ColorScheme colors) {
-    final bool isFemale = (widget.patient.gender == '女') ||
-        (widget.patient.gender.toLowerCase() == 'female');
-    final Color baseColor = isFemale
-        ? MedicalSemanticColors.femaleGender
-        : MedicalSemanticColors.maleGender;
-    final Color infoBgColor = baseColor.withValues(alpha: 0.14);
-    final Color infoBorderColor = baseColor;
-    final Color avatarBgColor = baseColor;
-
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: infoBgColor,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: infoBorderColor, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: infoBorderColor.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: tokens.border),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: avatarBgColor,
-            child: Text(
-              widget.patient.name.substring(0, 1),
-              style: TextStyle(
-                color: colors.onPrimary,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          DentalAvatar(
+            gender: widget.patient.gender,
+            name: widget.patient.name,
+            size: 56,
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -240,14 +219,14 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                   children: [
                     Icon(
                       Icons.person,
-                      color: infoBorderColor,
+                      color: tokens.primaryAccent,
                       size: 18,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       '已选择患者',
                       style: TextStyle(
-                        color: infoBorderColor,
+                        color: tokens.primaryAccent,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -272,7 +251,6 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                         label: '病历号',
                         value: widget.patient.medicalRecordNumber?.toString() ??
                             '未设置',
-                        color: tokens.warning,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -282,7 +260,6 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
                         label: '首诊日期',
                         value: DateFormat('MM-dd')
                             .format(widget.patient.firstVisitDate),
-                        color: tokens.primaryAccent,
                       ),
                     ),
                   ],
@@ -300,7 +277,6 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
     required IconData icon,
     required String label,
     required String value,
-    required Color color,
   }) {
     final tokens = context.tokens;
     final colors = context.colors;
@@ -309,21 +285,21 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+        color: tokens.mutedBackground,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.24), width: 1),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 12),
+              Icon(icon, color: tokens.iconMuted, size: 12),
               const SizedBox(width: 4),
               Text(
                 label,
                 style: TextStyle(
-                  color: color,
+                  color: colors.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
                   fontSize: 10,
                 ),
@@ -350,9 +326,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: tokens.warningContainer,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: tokens.warning, width: 1.5),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,12 +338,12 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: tokens.warningContainer,
+                  color: tokens.primaryAccent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   Icons.receipt_long,
-                  color: tokens.warning,
+                  color: tokens.primaryAccent,
                   size: 18,
                 ),
               ),
@@ -375,22 +351,27 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
               Text(
                 '收费信息 (${_financialItems.length}条)',
                 style: TextStyle(
-                  color: tokens.warning,
+                  color: colors.onSurface,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
               ),
               const Spacer(),
-              ElevatedButton.icon(
+              OutlinedButton.icon(
                 onPressed: () => _addNewItemRow(),
                 icon: const Icon(Icons.add, size: 16),
                 label: const Text('添加收费项'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: tokens.warning,
-                  foregroundColor: colors.onPrimary,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: tokens.primaryAccent,
+                  side: BorderSide(
+                    color: tokens.primaryAccent,
+                  ),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  textStyle: const TextStyle(fontSize: 12),
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -421,68 +402,62 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
               ),
             )
           else
-            Container(
-              decoration: BoxDecoration(
-                color: tokens.cardBackground,
-                borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
-                border: Border.all(color: tokens.border),
-              ),
-              child: Column(
-                children: [
-                  // 表头
-                  SizedBox(
-                    height: FinancialDetailTableLayout.rowHeight,
-                    child: FinancialDetailTableLayout.buildHeader(
-                      context,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(8),
-                        topRight: Radius.circular(8),
-                      ),
-                    ),
-                  ),
-                  // 新增行（放在最上面）
-                  if (_editingItemId == -1)
+            SizedBox(
+              height: 300,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: tokens.cardBackground,
+                  borderRadius: BorderRadius.circular(tokens.smallBorderRadius),
+                  border: Border.all(color: tokens.border),
+                ),
+                child: Column(
+                  children: [
+                    // 表头
                     SizedBox(
                       height: FinancialDetailTableLayout.rowHeight,
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(0, 6, 0, 6),
-                        decoration: BoxDecoration(
-                          color: tokens.successContainer,
-                          border: Border(
-                            bottom:
-                                BorderSide(color: tokens.divider, width: 0.5),
-                          ),
+                      child: FinancialDetailTableLayout.buildHeader(
+                        context,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          topRight: Radius.circular(8),
                         ),
-                        child: _buildEditingItemRow(null, tokens, colors),
                       ),
                     ),
-                  // 数据行
-                  ...List.generate(_financialItems.length, (index) {
-                    final item = _financialItems[index];
-                    final isEditing = _editingItemId == item.id;
-
-                    return SizedBox(
-                      height: FinancialDetailTableLayout.rowHeight,
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(0, 6, 0, 6),
-                        decoration: BoxDecoration(
-                          color: isEditing
-                              ? tokens.infoContainer
-                              : (index % 2 == 0
-                                  ? tokens.cardBackground
-                                  : tokens.mutedBackground),
-                          border: Border(
-                            bottom:
-                                BorderSide(color: tokens.divider, width: 0.5),
-                          ),
+                    Expanded(
+                      child: Scrollbar(
+                        controller: _itemsScrollController,
+                        thumbVisibility: _financialItems.length +
+                                (_editingItemId == -1 ? 1 : 0) >
+                            2,
+                        child: ListView(
+                          controller: _itemsScrollController,
+                          children: [
+                            if (_editingItemId == -1)
+                              _buildFinancialItemRow(
+                                tokens: tokens,
+                                child:
+                                    _buildEditingItemRow(null, tokens, colors),
+                                isEditing: true,
+                              ),
+                            ...List.generate(_financialItems.length, (index) {
+                              final item = _financialItems[index];
+                              final isEditing = _editingItemId == item.id;
+                              return _buildFinancialItemRow(
+                                tokens: tokens,
+                                isEditing: isEditing,
+                                alternate: index.isOdd,
+                                child: isEditing
+                                    ? _buildEditingItemRow(item, tokens, colors)
+                                    : _buildDisplayItemRow(
+                                        item, tokens, colors),
+                              );
+                            }),
+                          ],
                         ),
-                        child: isEditing
-                            ? _buildEditingItemRow(item, tokens, colors)
-                            : _buildDisplayItemRow(item, tokens, colors),
                       ),
-                    );
-                  }),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -490,96 +465,79 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
     );
   }
 
+  Widget _buildFinancialItemRow({
+    required AppThemeTokens tokens,
+    required Widget child,
+    bool isEditing = false,
+    bool alternate = false,
+  }) {
+    return SizedBox(
+      height: FinancialDetailTableLayout.rowHeight,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(0, 6, 0, 6),
+        decoration: BoxDecoration(
+          color: isEditing
+              ? tokens.primaryAccent.withValues(alpha: 0.08)
+              : alternate
+                  ? tokens.mutedBackground
+                  : tokens.cardBackground,
+          border: Border(
+            bottom: BorderSide(color: tokens.divider, width: 0.5),
+          ),
+        ),
+        child: child,
+      ),
+    );
+  }
+
   // 构建备注编辑区域
   Widget _buildNotesSection(AppThemeTokens tokens, ColorScheme colors) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: tokens.successContainer,
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: tokens.success, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: tokens.success.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: tokens.border),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: tokens.successContainer,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.edit_note,
-                  color: tokens.success,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '备注信息',
-                style: TextStyle(
-                  color: tokens.success,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // 备注输入框
           Container(
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: tokens.cardBackground,
-              borderRadius: BorderRadius.circular(tokens.borderRadius),
-              border: Border.all(color: tokens.success, width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: tokens.success.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+              color: tokens.primaryAccent.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: Icon(
+              Icons.edit_note,
+              color: tokens.primaryAccent,
+              size: 18,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
             child: TextField(
               controller: _notesController,
-              maxLines: 4,
+              maxLines: 1,
               decoration: InputDecoration(
                 labelText: '备注信息',
-                hintText: '请输入备注信息...',
-                prefixIcon: Container(
-                  margin: const EdgeInsets.all(8),
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: tokens.successContainer,
-                    borderRadius:
-                        BorderRadius.circular(tokens.smallBorderRadius),
-                  ),
-                  child: Icon(Icons.note_add, color: tokens.success, size: 18),
-                ),
+                hintText: '请输入备注信息',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(tokens.borderRadius),
-                  borderSide: BorderSide.none,
+                  borderSide: BorderSide(color: tokens.border),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(tokens.borderRadius),
-                  borderSide: BorderSide(color: tokens.success, width: 2),
+                  borderSide:
+                      BorderSide(color: tokens.primaryAccent, width: 1.5),
                 ),
                 filled: true,
                 fillColor: tokens.cardBackground,
                 contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 labelStyle: TextStyle(
-                    color: tokens.success, fontWeight: FontWeight.w500),
+                  color: colors.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
@@ -958,7 +916,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           '¥${(item.itemPrice * item.quantity).toStringAsFixed(0)}',
           style: TextStyle(
             fontSize: 13,
-            color: tokens.primaryAccent,
+            color: colors.onSurface,
             fontWeight: FontWeight.w500,
           ),
           maxLines: 1,
@@ -980,7 +938,7 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
           '¥${item.processingFee.toStringAsFixed(0)}',
           style: TextStyle(
             fontSize: 13,
-            color: tokens.warning,
+            color: colors.onSurface,
             fontWeight: FontWeight.w500,
           ),
           maxLines: 1,
@@ -1041,11 +999,12 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             decoration: BoxDecoration(
               color: tokens.cardBackground,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: tokens.info),
+              border: Border.all(color: tokens.primaryAccent),
             ),
             child: Row(
               children: [
-                Icon(Icons.calendar_today, size: 12, color: tokens.info),
+                Icon(Icons.calendar_today,
+                    size: 12, color: tokens.primaryAccent),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -1098,7 +1057,9 @@ class _FinancialRecordEditDialogState extends State<FinancialRecordEditDialog> {
             border: Border.all(color: tokens.border),
           ),
           child: CompactDropdownFormField<String>(
+            key: const Key('financial-payment-method-editor'),
             value: FinancialPaymentMethodHelper.uiValue(_editPaymentMethod),
+            centerSelectedItem: true,
             menuWidth: 140,
             menuMaxHeight: 160,
             borderRadius: 6,

@@ -38,6 +38,16 @@ void main() {
       ),
     );
 
+    final arrow = find.byIcon(Icons.arrow_drop_down);
+    final arrowMouseRegion = find.ancestor(
+      of: arrow,
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is MouseRegion && widget.cursor == SystemMouseCursors.click,
+      ),
+    );
+    expect(arrowMouseRegion, findsWidgets);
+
     await tester.tap(find.byType(PatientFormDropdown));
     await tester.pumpAndSettle();
 

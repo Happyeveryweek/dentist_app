@@ -1225,23 +1225,22 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: cardColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(tokens.borderRadius),
-        boxShadow: tokens.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: tokens.cardBackground, size: 24),
+              Icon(icon, color: cardColor, size: 24),
               const SizedBox(width: 8),
               Text(
                 title,
                 style: TextStyle(
                   fontSize: 14,
-                  color: tokens.cardBackground,
-                  fontWeight: FontWeight.bold,
+                  color: cardColor,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -1252,7 +1251,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: tokens.cardBackground,
+              color: cardColor,
             ),
           ),
         ],
@@ -1270,9 +1269,8 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
         decoration: BoxDecoration(
-          color: paymentCardColor,
+          color: paymentCardColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(tokens.borderRadius),
-          boxShadow: tokens.cardShadow,
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -1283,14 +1281,14 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 Row(
                   children: [
                     Icon(Icons.payment_rounded,
-                        color: tokens.cardBackground, size: 18),
+                        color: paymentCardColor, size: 18),
                     const SizedBox(width: 5),
                     Text(
                       '收费方式',
                       style: TextStyle(
                         fontSize: 11,
-                        color: tokens.cardBackground,
-                        fontWeight: FontWeight.bold,
+                        color: paymentCardColor,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -1344,7 +1342,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
       constraints: const BoxConstraints(minHeight: 26),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: tokens.cardBackground.withValues(alpha: 0.12),
+        color: tokens.cardBackground.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -1365,7 +1363,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
-              color: tokens.cardBackground,
+              color: context.colors.onSurface,
               height: 1.0,
             ),
           ),

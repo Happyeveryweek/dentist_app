@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
-import 'package:dentist_app_windows/theme/medical_semantic_colors.dart';
+import 'package:dentist_app_windows/widgets/dental_icons.dart';
 import '../../../models/patient.dart';
 
 /// 财务详情页患者基本信息区域组件
@@ -18,36 +18,21 @@ class FinancialPatientInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isFemale =
-        (patient.gender == '女') || (patient.gender.toLowerCase() == 'female');
-    final Color baseColor =
-        isFemale ? MedicalSemanticColors.femaleGender : MedicalSemanticColors.maleGender;
-    final Color infoBgColor = baseColor.withValues(alpha: 0.14);
-    final Color infoBorderColor = baseColor.withValues(alpha: 0.5);
-    final Color avatarBgColor = baseColor;
-
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: infoBgColor,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: infoBorderColor),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: avatarBgColor,
-            child: Text(
-              patient.name.substring(0, 1),
-              style: TextStyle(
-                color: context.tokens.cardBackground,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          DentalAvatar(
+            gender: patient.gender,
+            name: patient.name,
+            size: 48,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,10 +41,10 @@ class FinancialPatientInfoSection extends StatelessWidget {
                   patient.name,
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        fontSize: 24,
+                        fontSize: 20,
                       ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   '病历号: ${patient.medicalRecordNumber ?? '未设置'}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -69,7 +54,7 @@ class FinancialPatientInfoSection extends StatelessWidget {
                 ),
                 Text(
                     '首诊日期: ${DateFormat('yyyy-MM-dd').format(patient.firstVisitDate)}'),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   '备注信息: $notes',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(

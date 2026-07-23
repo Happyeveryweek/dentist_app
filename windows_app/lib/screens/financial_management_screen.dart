@@ -943,27 +943,9 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
 
   // 显示财务详情（弹窗形式）
   void _showFinancialDetail(Patient patient) {
-    showDialog(
+    showFinancialDetailDialog(
       context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Container(
-          width: 800,
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.9,
-            minHeight: 500,
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: FinancialDetailScreen(
-              patient: patient,
-            ),
-          ),
-        ),
-      ),
+      patient: patient,
     ).then((result) {
       // 只有在有数据变动时才刷新（result为true表示有变动）
       if (result == true && mounted) {

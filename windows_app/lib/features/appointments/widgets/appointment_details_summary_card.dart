@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
+import '../../dashboard/helpers/dashboard_status_helper.dart';
 import '../../../models/appointment.dart';
 
 class AppointmentDetailsSummaryCard extends StatelessWidget {
@@ -13,37 +14,22 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final statusColor =
-        Color(int.parse(appointment.statusColor.replaceAll('#', '0xff')));
+        DashboardStatusHelper.getStatusColor(context, appointment.status);
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            context.tokens.cardBackground,
-            context.tokens.primaryAccent.withValues(alpha: 0.025),
-            context.tokens.secondaryAccent.withValues(alpha: 0.015),
-          ],
-          stops: const [0.0, 0.58, 1.0],
-        ),
+        color: tokens.cardBackground,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: context.tokens.primaryAccent.withValues(alpha: 0.035),
-            blurRadius: 12,
-            spreadRadius: 0,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: context.tokens.shadow.withValues(alpha: 0.16),
-            blurRadius: 4,
-            spreadRadius: 0,
-            offset: const Offset(0, 1),
+            color: tokens.shadow.withValues(alpha: 0.12),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
         border: Border.all(
-          color: context.tokens.primaryAccent.withValues(alpha: 0.05),
+          color: tokens.border,
           width: 1,
         ),
       ),
@@ -58,28 +44,12 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        context.tokens.primaryAccent,
-                        context.tokens.secondaryAccent,
-                      ],
-                    ),
+                    color: tokens.primaryAccent,
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color:
-                            context.tokens.primaryAccent.withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        spreadRadius: 2,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
                   ),
                   child: Icon(
                     Icons.event_note_rounded,
-                    color: context.tokens.cardBackground,
+                    color: context.colors.onPrimary,
                     size: 28,
                   ),
                 ),
@@ -109,24 +79,11 @@ class AppointmentDetailsSummaryCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        statusColor.withValues(alpha: 0.1),
-                        statusColor.withValues(alpha: 0.2),
-                      ],
-                    ),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: statusColor, width: 1.5),
-                    boxShadow: [
-                      BoxShadow(
-                        color: statusColor.withValues(alpha: 0.2),
-                        blurRadius: 8,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.45),
+                    ),
                   ),
                   child: Text(
                     appointment.statusDisplay,

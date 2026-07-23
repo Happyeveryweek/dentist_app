@@ -21,8 +21,8 @@ class FinancialStatItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 32),
-        const SizedBox(height: 8),
+        Icon(icon, color: color, size: 20),
+        const SizedBox(height: 2),
         Text(
           label,
           style: Theme.of(context)
@@ -30,7 +30,7 @@ class FinancialStatItem extends StatelessWidget {
               .bodySmall
               ?.copyWith(color: context.colors.onSurfaceVariant),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           value,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(

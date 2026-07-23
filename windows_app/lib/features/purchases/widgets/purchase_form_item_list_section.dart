@@ -106,7 +106,10 @@ class PurchaseFormItemListSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: context.tokens.mutedBackground,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
+              ),
               border: Border.all(color: context.tokens.border),
             ),
             child: Row(
@@ -203,211 +206,226 @@ class PurchaseFormItemListSection extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 8),
         ],
         Expanded(
-          child: purchaseItems.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: context.tokens.inputBackground,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Icon(
-                            Icons.inventory_2_outlined,
-                            size: 48,
-                            color: context.tokens.iconMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          '暂无采购项目',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: context.colors.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '点击"添加项目"开始添加采购项目',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: context.tokens.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              : ListView.builder(
-                  padding: EdgeInsets.zero,
-                  itemCount: purchaseItems.length,
-                  itemBuilder: (context, index) {
-                    final item = purchaseItems[index];
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: context.tokens.cardBackground,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: context.tokens.border),
-                      ),
-                      child: Row(
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.tokens.cardBackground,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(8),
+                bottomRight: Radius.circular(8),
+              ),
+              border: Border(
+                left: BorderSide(color: context.tokens.border),
+                right: BorderSide(color: context.tokens.border),
+                bottom: BorderSide(color: context.tokens.border),
+              ),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: purchaseItems.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Expanded(
-                            flex: 7,
-                            child: Container(
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: context.tokens.inputBackground,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: TextField(
-                                controller: materialNameControllers[index],
-                                decoration: const InputDecoration(
-                                  hintText: '材料名称',
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 12),
-                                ),
-                                style: const TextStyle(fontSize: 14),
-                                onChanged: (value) =>
-                                    onMaterialNameChanged(index, value),
-                              ),
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: context.tokens.inputBackground,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Icon(
+                              Icons.inventory_2_outlined,
+                              size: 48,
+                              color: context.tokens.iconMuted,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          SizedBox(
-                            width: 40,
-                            child: Center(
-                              child: InkWell(
-                                mouseCursor: SystemMouseCursors.click,
-                                onTap: () => onMaterialSelect(index),
-                                child: Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: context.tokens.primaryAccent
-                                        .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(4),
+                          const SizedBox(height: 16),
+                          Text(
+                            '暂无采购项目',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: context.colors.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '点击"添加项目"开始添加采购项目',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: context.tokens.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: purchaseItems.length,
+                    itemBuilder: (context, index) {
+                      final item = purchaseItems[index];
+                      return Container(
+                        height: 48,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: context.tokens.cardBackground,
+                          border: Border(
+                            bottom: BorderSide(
+                              color: context.tokens.divider,
+                              width: 0.5,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 7,
+                              child: Container(
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: context.tokens.inputBackground,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: TextField(
+                                  controller: materialNameControllers[index],
+                                  decoration: const InputDecoration(
+                                    hintText: '材料名称',
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 10),
                                   ),
-                                  child: Icon(Icons.search,
-                                      size: 16,
-                                      color: context.tokens.primaryAccent),
+                                  style: const TextStyle(fontSize: 14),
+                                  onChanged: (value) =>
+                                      onMaterialNameChanged(index, value),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 3,
-                            child: Container(
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: context.tokens.inputBackground,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: TextField(
-                                controller: quantityControllers[index],
-                                decoration: const InputDecoration(
-                                  hintText: '数量',
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 12),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 40,
+                              child: Center(
+                                child: InkWell(
+                                  mouseCursor: SystemMouseCursors.click,
+                                  onTap: () => onMaterialSelect(index),
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: context.tokens.primaryAccent
+                                          .withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Icon(Icons.search,
+                                        size: 16,
+                                        color: context.tokens.primaryAccent),
+                                  ),
                                 ),
-                                style: const TextStyle(fontSize: 14),
-                                textAlign: TextAlign.center,
-                                keyboardType: TextInputType.number,
-                                onChanged: (value) {
-                                  final quantity = int.tryParse(value) ?? 1;
-                                  onQuantityChanged(index, quantity);
-                                },
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 3,
-                            child: Container(
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: context.tokens.inputBackground,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: TextField(
-                                controller: unitControllers[index],
-                                decoration: const InputDecoration(
-                                  hintText: '单位',
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 12),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: context.tokens.inputBackground,
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
-                                style: const TextStyle(fontSize: 14),
-                                textAlign: TextAlign.center,
-                                onChanged: (value) =>
-                                    onUnitChanged(index, value),
+                                child: TextField(
+                                  controller: quantityControllers[index],
+                                  decoration: const InputDecoration(
+                                    hintText: '数量',
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 10),
+                                  ),
+                                  style: const TextStyle(fontSize: 14),
+                                  textAlign: TextAlign.center,
+                                  keyboardType: TextInputType.number,
+                                  onChanged: (value) {
+                                    final quantity = int.tryParse(value) ?? 1;
+                                    onQuantityChanged(index, quantity);
+                                  },
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 4,
-                            child: Container(
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: context.tokens.inputBackground,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: TextField(
-                                controller: unitPriceControllers[index],
-                                decoration: const InputDecoration(
-                                  hintText: '单价',
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 12),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: context.tokens.inputBackground,
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
-                                style: const TextStyle(fontSize: 14),
-                                textAlign: TextAlign.center,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                        decimal: true),
-                                onChanged: (value) {
-                                  final unitPrice =
-                                      double.tryParse(value) ?? 0.0;
-                                  onUnitPriceChanged(index, unitPrice);
-                                },
+                                child: TextField(
+                                  controller: unitControllers[index],
+                                  decoration: const InputDecoration(
+                                    hintText: '单位',
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 10),
+                                  ),
+                                  style: const TextStyle(fontSize: 14),
+                                  textAlign: TextAlign.center,
+                                  onChanged: (value) =>
+                                      onUnitChanged(index, value),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 4,
-                            child: Container(
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: context.tokens.successContainer,
-                                borderRadius: BorderRadius.circular(4),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 4,
+                              child: Container(
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: context.tokens.inputBackground,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: TextField(
+                                  controller: unitPriceControllers[index],
+                                  decoration: const InputDecoration(
+                                    hintText: '单价',
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 10),
+                                  ),
+                                  style: const TextStyle(fontSize: 14),
+                                  textAlign: TextAlign.center,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                          decimal: true),
+                                  onChanged: (value) {
+                                    final unitPrice =
+                                        double.tryParse(value) ?? 0.0;
+                                    onUnitPriceChanged(index, unitPrice);
+                                  },
+                                ),
                               ),
-                              child: Align(
-                                alignment: Alignment.bottomCenter,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              flex: 4,
+                              child: Container(
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: context.tokens.successContainer,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Align(
+                                  alignment: Alignment.center,
                                   child: Text(
                                     '¥${item['totalPrice'].toStringAsFixed(2)}',
                                     style: TextStyle(
@@ -419,27 +437,27 @@ class PurchaseFormItemListSection extends StatelessWidget {
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          InkWell(
-                            mouseCursor: SystemMouseCursors.click,
-                            onTap: () => onRemoveItem(index),
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: context.tokens.errorContainer,
-                                borderRadius: BorderRadius.circular(4),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              mouseCursor: SystemMouseCursors.click,
+                              onTap: () => onRemoveItem(index),
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: context.tokens.errorContainer,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Icon(Icons.delete_outline,
+                                    size: 16, color: context.tokens.error),
                               ),
-                              child: Icon(Icons.delete_outline,
-                                  size: 16, color: context.tokens.error),
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+          ),
         ),
       ],
     );

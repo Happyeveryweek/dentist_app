@@ -19,11 +19,11 @@ class FinancialDetailStatsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
       decoration: BoxDecoration(
-        color: context.tokens.successContainer,
+        color: context.tokens.cardBackground,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: context.tokens.success),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Row(
         children: [

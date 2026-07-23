@@ -92,8 +92,8 @@ class PatientFormDentalSection extends StatelessWidget {
             height: rows.length > 1
                 ? 420
                 : rows.any((row) => appointmentDraftFor(row).enabled)
-                    ? 360
-                    : 280,
+                    ? 330
+                    : 260,
             child: SingleChildScrollView(
               child: Column(
                 children: rows
@@ -296,7 +296,7 @@ class PatientFormDentalChartRow extends StatelessWidget {
                             onChartSelectionChanged(1, selected),
                       ),
                     ),
-                    const SizedBox(width: 3),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: PatientFormSimpleCrossChart(
                         chart: row.chart2,
@@ -309,7 +309,7 @@ class PatientFormDentalChartRow extends StatelessWidget {
                             onChartSelectionChanged(2, selected),
                       ),
                     ),
-                    const SizedBox(width: 3),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: PatientFormSimpleCrossChart(
                         chart: row.chart3,
@@ -323,29 +323,6 @@ class PatientFormDentalChartRow extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(width: 6),
-              SizedBox(
-                width: 116,
-                child: OutlinedButton.icon(
-                  onPressed: canEdit ? onToggleAppointment : null,
-                  icon: Icon(
-                    appointmentDraft.enabled
-                        ? Icons.event_available
-                        : Icons.event_outlined,
-                    size: 16,
-                  ),
-                  label: Text(
-                    appointmentDraft.enabled ? '预约：是' : '预约：否',
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 8,
-                    ),
-                  ),
                 ),
               ),
               if (rowCount > 1 && canDelete)
@@ -378,90 +355,157 @@ class PatientFormDentalChartRow extends StatelessWidget {
                 ),
             ],
           ),
-          if (appointmentDraft.enabled) ...[
-            const SizedBox(height: 20),
-            Row(
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: appointmentDraft.enabled
+                  ? context.tokens.primaryAccent.withValues(alpha: 0.06)
+                  : context.tokens.mutedBackground,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: appointmentDraft.enabled
+                    ? context.tokens.primaryAccent.withValues(alpha: 0.28)
+                    : context.tokens.border,
+              ),
+            ),
+            child: Row(
               children: [
-                const SizedBox(width: 116),
-                Expanded(
-                  child: InkWell(
-                    mouseCursor: SystemMouseCursors.click,
-                    onTap: onSelectAppointmentDate,
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: '下次预约日期',
-                        isDense: true,
-                        prefixIcon: Icon(Icons.calendar_today, size: 17),
-                      ),
-                      child: Text(
-                        DateFormat('yyyy-MM-dd').format(
-                          appointmentDraft.appointmentDateTime,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
                 SizedBox(
-                  width: 150,
-                  child: InkWell(
-                    mouseCursor: SystemMouseCursors.click,
-                    onTap: onSelectAppointmentTime,
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: '时间',
+                  width: 154,
+                  child: OutlinedButton.icon(
+                    onPressed: canEdit ? onToggleAppointment : null,
+                    icon: Icon(
+                      appointmentDraft.enabled
+                          ? Icons.event_available
+                          : Icons.event_outlined,
+                      size: 17,
+                    ),
+                    label: Text(
+                      appointmentDraft.enabled ? '已安排预约' : '安排下次预约',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: appointmentDraft.enabled
+                          ? context.tokens.primaryAccent
+                          : context.colors.onSurfaceVariant,
+                      backgroundColor: appointmentDraft.enabled
+                          ? context.tokens.primaryAccent.withValues(alpha: 0.08)
+                          : context.tokens.cardBackground,
+                      side: BorderSide(
+                        color: appointmentDraft.enabled
+                            ? context.tokens.primaryAccent
+                            : context.tokens.border,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 12,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                if (!appointmentDraft.enabled)
+                  Expanded(
+                    child: Text(
+                      '开启后可选择需要关联的牙位，并设置预约时间与内容',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                else ...[
+                  Expanded(
+                    flex: 3,
+                    child: InkWell(
+                      mouseCursor: SystemMouseCursors.click,
+                      onTap: onSelectAppointmentDate,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: '下次预约日期',
+                          isDense: true,
+                          prefixIcon: Icon(Icons.calendar_today, size: 17),
+                        ),
+                        child: Text(
+                          DateFormat('yyyy-MM-dd').format(
+                            appointmentDraft.appointmentDateTime,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 2,
+                    child: InkWell(
+                      mouseCursor: SystemMouseCursors.click,
+                      onTap: onSelectAppointmentTime,
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: '时间',
+                          isDense: true,
+                          prefixIcon: Icon(Icons.schedule, size: 17),
+                        ),
+                        child: Text(
+                          DateFormat('HH:mm').format(
+                            appointmentDraft.appointmentDateTime,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 4,
+                    child: TextFormField(
+                      controller: appointmentDraft.treatmentController,
+                      decoration: InputDecoration(
+                        labelText: '预约内容',
+                        hintText: '可手动填写或选择已有内容',
                         isDense: true,
-                        prefixIcon: Icon(Icons.schedule, size: 17),
-                      ),
-                      child: Text(
-                        DateFormat('HH:mm').format(
-                          appointmentDraft.appointmentDateTime,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextFormField(
-                    controller: appointmentDraft.treatmentController,
-                    decoration: InputDecoration(
-                      labelText: '预约内容',
-                      hintText: '可手动填写或选择已有内容',
-                      isDense: true,
-                      suffixIcon: CompactPopupMenuButton<String>(
-                        value: null,
-                        menuWidth: 220,
-                        menuMaxHeight: 220,
-                        items: <String>{
-                          '综合治疗',
-                          ...treatmentSuggestions,
-                        }
-                            .map(
-                              (item) => CompactDropdownItem<String>(
-                                value: item,
-                                child: Text(
-                                  item,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onSelected: (value) {
-                          if (value != null) {
-                            onTreatmentChanged(value);
+                        suffixIcon: CompactPopupMenuButton<String>(
+                          value: null,
+                          menuWidth: 220,
+                          menuMaxHeight: 220,
+                          items: <String>{
+                            '综合治疗',
+                            ...treatmentSuggestions,
                           }
-                        },
-                        childBuilder: (context, isOpen) => Icon(
-                          isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                              .map(
+                                (item) => CompactDropdownItem<String>(
+                                  value: item,
+                                  child: Text(
+                                    item,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onSelected: (value) {
+                            if (value != null) {
+                              onTreatmentChanged(value);
+                            }
+                          },
+                          childBuilder: (context, isOpen) => MouseRegion(
+                            cursor: SystemMouseCursors.click,
+                            child: Icon(
+                              isOpen
+                                  ? Icons.arrow_drop_up
+                                  : Icons.arrow_drop_down,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ],
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -499,13 +543,13 @@ class PatientFormSimpleCrossChart extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          height: 68,
+          height: 64,
           padding: const EdgeInsets.symmetric(horizontal: 5.0),
           child: Stack(
             children: [
               Center(
                 child: Container(
-                  constraints: const BoxConstraints(maxWidth: 250),
+                  constraints: const BoxConstraints(maxWidth: 210),
                   height: 2.2,
                   decoration: BoxDecoration(
                     color: crossLineColor,
@@ -516,7 +560,7 @@ class PatientFormSimpleCrossChart extends StatelessWidget {
               Center(
                 child: Container(
                   width: 2.2,
-                  height: 50,
+                  height: 44,
                   decoration: BoxDecoration(
                     color: crossLineColor,
                     borderRadius: BorderRadius.circular(999),
@@ -528,7 +572,7 @@ class PatientFormSimpleCrossChart extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: Container(
-                        constraints: const BoxConstraints(maxWidth: 250),
+                        constraints: const BoxConstraints(maxWidth: 210),
                         child: Row(
                           children: [
                             Expanded(
@@ -567,7 +611,7 @@ class PatientFormSimpleCrossChart extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: Container(
-                        constraints: const BoxConstraints(maxWidth: 250),
+                        constraints: const BoxConstraints(maxWidth: 210),
                         child: Row(
                           children: [
                             Expanded(
@@ -616,6 +660,16 @@ class PatientFormSimpleCrossChart extends StatelessWidget {
                       height: 24,
                       child: Checkbox(
                         value: appointmentSelected,
+                        activeColor: context.tokens.primaryAccent,
+                        checkColor: context.colors.onPrimary,
+                        side: BorderSide(
+                          color: context.tokens.primaryAccent
+                              .withValues(alpha: 0.55),
+                          width: 1.5,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                         visualDensity: VisualDensity.compact,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         onChanged: enabled
@@ -634,7 +688,7 @@ class PatientFormSimpleCrossChart extends StatelessWidget {
           child: Container(
             margin: const EdgeInsets.only(top: 0),
             height: 30,
-            constraints: const BoxConstraints(maxWidth: 250),
+            constraints: const BoxConstraints(maxWidth: 210),
             child: TextField(
               controller: chart.noteController,
               enabled: enabled,

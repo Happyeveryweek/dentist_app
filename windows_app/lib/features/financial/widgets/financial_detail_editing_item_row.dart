@@ -129,7 +129,9 @@ class FinancialDetailEditingItemRow extends StatelessWidget {
                 border: Border.all(color: tokens.divider),
               ),
               child: CompactDropdownFormField<String>(
+                key: const Key('financial-payment-method-editor'),
                 value: FinancialPaymentMethodHelper.uiValue(paymentMethod),
+                centerSelectedItem: true,
                 menuWidth: 140,
                 menuMaxHeight: 160,
                 borderRadius: 6,

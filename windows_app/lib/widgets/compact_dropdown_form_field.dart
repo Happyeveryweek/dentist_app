@@ -28,6 +28,7 @@ class CompactDropdownFormField<T> extends StatelessWidget {
     this.menuMaxHeight = 188,
     this.menuWidth,
     this.borderRadius = 12,
+    this.centerSelectedItem = false,
   });
 
   final T? value;
@@ -41,6 +42,7 @@ class CompactDropdownFormField<T> extends StatelessWidget {
   final double menuMaxHeight;
   final double? menuWidth;
   final double borderRadius;
+  final bool centerSelectedItem;
 
   @override
   Widget build(BuildContext context) {
@@ -61,22 +63,44 @@ class CompactDropdownFormField<T> extends StatelessWidget {
         isFocused: isOpen,
         textAlignVertical: TextAlignVertical.center,
         decoration: decoration.copyWith(enabled: resolvedEnabled),
-        child: Row(
-          children: [
-            Expanded(
-              child: value == null
-                  ? hint ?? const SizedBox.shrink()
-                  : selectedItemBuilder?.call(context, value as T) ??
-                      _selectedItem(value as T),
-            ),
-            const SizedBox(width: 8),
-            Icon(
-              isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-              size: 18,
-              color: resolvedEnabled ? tokens.iconMuted : tokens.disabledText,
-            ),
-          ],
-        ),
+        child: centerSelectedItem && value != null
+            ? Stack(
+                alignment: Alignment.center,
+                children: [
+                  Center(
+                    child: selectedItemBuilder?.call(context, value as T) ??
+                        _selectedItem(value as T),
+                  ),
+                  Positioned(
+                    right: 0,
+                    child: Icon(
+                      isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                      size: 18,
+                      color: resolvedEnabled
+                          ? tokens.iconMuted
+                          : tokens.disabledText,
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(
+                    child: value == null
+                        ? hint ?? const SizedBox.shrink()
+                        : selectedItemBuilder?.call(context, value as T) ??
+                            _selectedItem(value as T),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                    size: 18,
+                    color: resolvedEnabled
+                        ? tokens.iconMuted
+                        : tokens.disabledText,
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -182,7 +206,12 @@ class _CompactPopupMenuButtonState<T> extends State<CompactPopupMenuButton<T>> {
                   ),
                 )
                 .toList(),
-            child: widget.childBuilder(context, _isOpen),
+            child: MouseRegion(
+              cursor: enabled
+                  ? SystemMouseCursors.click
+                  : SystemMouseCursors.forbidden,
+              child: widget.childBuilder(context, _isOpen),
+            ),
           ),
         );
       },

@@ -236,6 +236,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
+            padding: const EdgeInsets.only(top: 8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -325,6 +326,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
                     permissions: _modulePermissions,
                     isExpanded: _isPermissionExpanded,
                     onToggleExpanded: () {
+                      FocusScope.of(context).unfocus();
                       setState(() {
                         _isPermissionExpanded = !_isPermissionExpanded;
                       });

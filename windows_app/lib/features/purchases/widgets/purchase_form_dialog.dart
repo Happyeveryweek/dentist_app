@@ -102,8 +102,7 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
         LogManager.w('PurchaseFormDialog', '加载采购明细时记录或ID为空');
         return;
       }
-      final items =
-          await purchaseProvider.getPurchaseItemsByRecordId(recordId);
+      final items = await purchaseProvider.getPurchaseItemsByRecordId(recordId);
 
       for (final item in items) {
         _purchaseItems.add({
@@ -459,71 +458,75 @@ class _PurchaseFormDialogState extends State<PurchaseFormDialog> {
           maxWidth: 736,
           maxHeight: screenSize.height * 0.9,
         ),
-        child: Material(
-          color: tokens.cardBackground,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Icon(DentalIcons.shoppingCart,
-                        color: tokens.primaryAccent, size: 20),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        isEditing ? '编辑采购记录' : '新增采购记录',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+        child: SizedBox(
+          height: screenSize.height * 0.9,
+          child: Material(
+            color: tokens.cardBackground,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Icon(DentalIcons.shoppingCart,
+                          color: tokens.primaryAccent, size: 20),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          isEditing ? '编辑采购记录' : '新增采购记录',
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close, size: 20),
-                      tooltip: '关闭',
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                PurchaseFormBasicInfoSection(
-                  dateController: _dateController,
-                  supplierController: _supplierController,
-                  doctorController: _doctorController,
-                  notesController: _notesController,
-                  isEditing: isEditing,
-                  initialDate: widget.record?.purchaseDate,
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: PurchaseFormItemListSection(
-                    purchaseItems: _purchaseItems,
-                    materialNameControllers: _materialNameControllers,
-                    quantityControllers: _quantityControllers,
-                    unitPriceControllers: _unitPriceControllers,
-                    unitControllers: _unitControllers,
-                    onAddItem: _addItem,
-                    onRemoveItem: _removeItem,
-                    onMaterialNameChanged: _onMaterialNameChanged,
-                    onQuantityChanged: _onQuantityChanged,
-                    onUnitChanged: _onUnitChanged,
-                    onUnitPriceChanged: _onUnitPriceChanged,
-                    onMaterialSelect: _onMaterialSelect,
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close, size: 20),
+                        tooltip: '关闭',
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: PurchaseFormActionsSection(
+                  const SizedBox(height: 16),
+                  PurchaseFormBasicInfoSection(
+                    dateController: _dateController,
+                    supplierController: _supplierController,
+                    doctorController: _doctorController,
+                    notesController: _notesController,
                     isEditing: isEditing,
-                    isLoading: _isLoading,
-                    onCancel: () => Navigator.of(context).pop(),
-                    onSave: _onSave,
+                    initialDate: widget.record?.purchaseDate,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: PurchaseFormItemListSection(
+                      purchaseItems: _purchaseItems,
+                      materialNameControllers: _materialNameControllers,
+                      quantityControllers: _quantityControllers,
+                      unitPriceControllers: _unitPriceControllers,
+                      unitControllers: _unitControllers,
+                      onAddItem: _addItem,
+                      onRemoveItem: _removeItem,
+                      onMaterialNameChanged: _onMaterialNameChanged,
+                      onQuantityChanged: _onQuantityChanged,
+                      onUnitChanged: _onUnitChanged,
+                      onUnitPriceChanged: _onUnitPriceChanged,
+                      onMaterialSelect: _onMaterialSelect,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: PurchaseFormActionsSection(
+                      isEditing: isEditing,
+                      isLoading: _isLoading,
+                      onCancel: () => Navigator.of(context).pop(),
+                      onSave: _onSave,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

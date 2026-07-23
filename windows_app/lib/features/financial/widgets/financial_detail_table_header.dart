@@ -13,8 +13,9 @@ class FinancialDetailTableHeader extends StatelessWidget {
       height: FinancialDetailTableLayout.rowHeight,
       child: FinancialDetailTableLayout.buildHeader(
         context,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: context.tokens.border),
+        border: Border(
+          bottom: BorderSide(color: context.tokens.border),
+        ),
       ),
     );
   }

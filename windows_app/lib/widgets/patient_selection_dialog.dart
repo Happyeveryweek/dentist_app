@@ -18,6 +18,7 @@ class PatientSelectionDialog extends StatefulWidget {
 }
 
 class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
+  final ScrollController _listScrollController = ScrollController();
   String _searchQuery = '';
   List<Patient> _filteredPatients = [];
 
@@ -69,31 +70,37 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
   }
 
   @override
+  void dispose() {
+    _listScrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final colors = context.colors;
 
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
       ),
       backgroundColor: Colors.transparent,
       elevation: 0,
       child: Container(
-        width: 560,
+        width: 480,
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.52,
-          minHeight: 300,
+          maxHeight: MediaQuery.of(context).size.height * 0.44,
+          minHeight: 260,
         ),
         decoration: BoxDecoration(
           gradient: tokens.primaryHeaderGradient,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: tokens.elevatedShadow,
         ),
         child: Container(
           decoration: BoxDecoration(
             color: tokens.cardBackground.withValues(alpha: 0.98),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: tokens.primaryAccent.withValues(alpha: 0.1),
               width: 1,
@@ -108,12 +115,12 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                 decoration: BoxDecoration(
                   gradient: tokens.primaryHeaderGradient,
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
                   ),
                 ),
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -131,11 +138,11 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                             size: 18,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         Text(
                           '选择患者',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: colors.onPrimary,
                             shadows: [
@@ -172,37 +179,42 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
               // 内容区域
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // 搜索框
-                      TextField(
-                        autofocus: true,
-                        decoration: InputDecoration(
-                          hintText: '搜索患者 (姓名/拼音/首字母/病历号/电话)',
-                          prefixIcon:
-                              Icon(Icons.search, color: tokens.iconMuted),
-                          border: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(tokens.borderRadius),
-                            borderSide: BorderSide(color: tokens.border),
+                      SizedBox(
+                        height: 44,
+                        child: TextField(
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            hintText: '搜索姓名、拼音、病历号或电话',
+                            prefixIcon:
+                                Icon(Icons.search, color: tokens.iconMuted),
+                            border: OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(tokens.borderRadius),
+                              borderSide: BorderSide(color: tokens.border),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(tokens.borderRadius),
+                              borderSide: BorderSide(
+                                  color: tokens.primaryAccent, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: tokens.inputBackground,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 10,
+                            ),
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius:
-                                BorderRadius.circular(tokens.borderRadius),
-                            borderSide: BorderSide(
-                                color: tokens.primaryAccent, width: 2),
-                          ),
-                          filled: true,
-                          fillColor: tokens.inputBackground,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 2),
+                          onChanged: _filterPatients,
                         ),
-                        onChanged: _filterPatients,
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 12),
 
                       // 患者列表标题
                       Row(
@@ -214,9 +226,9 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            '患者列表 (${_filteredPatients.length})',
+                            '患者 (${_filteredPatients.length})',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: tokens.primaryAccent,
                             ),
@@ -224,7 +236,7 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                         ],
                       ),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
 
                       // 患者列表
                       Expanded(
@@ -267,94 +279,59 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                             : Container(
                                 decoration: BoxDecoration(
                                   color: tokens.cardBackground,
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(10),
                                   border: Border.all(color: tokens.border),
-                                  boxShadow: tokens.cardShadow,
                                 ),
                                 child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(10),
                                   child: Column(
                                     children: [
                                       // 表头
                                       Container(
                                         decoration: BoxDecoration(
-                                          gradient: tokens.subtleHeaderGradient,
+                                          color: tokens.mutedBackground,
                                           borderRadius: const BorderRadius.only(
                                             topLeft: Radius.circular(12),
                                             topRight: Radius.circular(12),
                                           ),
                                         ),
                                         padding: const EdgeInsets.symmetric(
-                                            vertical: 4, horizontal: 16),
+                                          vertical: 8,
+                                          horizontal: 12,
+                                        ),
                                         child: Row(
                                           children: [
                                             Expanded(
                                               flex: 2,
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.badge_outlined,
-                                                    size: 16,
-                                                    color: tokens.primaryAccent,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    '病历号',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color:
-                                                          tokens.primaryAccent,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ],
+                                              child: Text(
+                                                '病历号',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: tokens.primaryAccent,
+                                                  fontSize: 13,
+                                                ),
                                               ),
                                             ),
                                             Expanded(
-                                              flex: 4,
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.person,
-                                                    size: 16,
-                                                    color: tokens.primaryAccent,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    '姓名 / 电话',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color:
-                                                          tokens.primaryAccent,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ],
+                                              flex: 3,
+                                              child: Text(
+                                                '姓名',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: tokens.primaryAccent,
+                                                  fontSize: 13,
+                                                ),
                                               ),
                                             ),
                                             Expanded(
                                               flex: 2,
-                                              child: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.calendar_today,
-                                                    size: 16,
-                                                    color: tokens.primaryAccent,
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    '最近就诊',
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color:
-                                                          tokens.primaryAccent,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ],
+                                              child: Text(
+                                                '最近就诊',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  color: tokens.primaryAccent,
+                                                  fontSize: 13,
+                                                ),
                                               ),
                                             ),
                                           ],
@@ -362,153 +339,103 @@ class _PatientSelectionDialogState extends State<PatientSelectionDialog> {
                                       ),
                                       // 表格内容
                                       Expanded(
-                                        child: ListView.builder(
-                                          shrinkWrap: true,
-                                          itemCount: _filteredPatients.length,
-                                          itemBuilder: (context, index) {
-                                            final patient =
-                                                _filteredPatients[index];
-                                            final lastVisitDate =
-                                                DateFormat('yyyy-MM-dd')
-                                                    .format(patient.updatedAt);
-                                            final phone =
-                                                patient.mainPhone.isEmpty
-                                                    ? '暂无电话'
-                                                    : patient.mainPhone;
-                                            final medicalRecordNumber = patient
-                                                    .medicalRecordNumber
-                                                    ?.toString() ??
-                                                '未设置';
+                                        child: Scrollbar(
+                                          controller: _listScrollController,
+                                          thumbVisibility:
+                                              _filteredPatients.length > 6,
+                                          child: ListView.builder(
+                                            controller: _listScrollController,
+                                            itemCount: _filteredPatients.length,
+                                            itemBuilder: (context, index) {
+                                              final patient =
+                                                  _filteredPatients[index];
+                                              final lastVisitDate = DateFormat(
+                                                      'yyyy-MM-dd')
+                                                  .format(patient.updatedAt);
+                                              final medicalRecordNumber =
+                                                  patient.medicalRecordNumber
+                                                          ?.toString() ??
+                                                      '未设置';
 
-                                            return Container(
-                                              margin:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 2,
-                                                      vertical: 1),
-                                              decoration: BoxDecoration(
-                                                color: index % 2 == 0
-                                                    ? tokens.cardBackground
-                                                    : tokens.mutedBackground,
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                border: Border.all(
-                                                  color: Colors.transparent,
-                                                  width: 1,
-                                                ),
-                                              ),
-                                              child: Material(
-                                                color: Colors.transparent,
-                                                child: InkWell(
-                                                  mouseCursor:
-                                                      SystemMouseCursors.click,
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  onTap: () {
-                                                    // 选择患者并关闭对话框
-                                                    Navigator.of(context)
-                                                        .pop(patient);
-                                                  },
-                                                  child: Padding(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                        vertical: 4,
-                                                        horizontal: 16),
-                                                    child: Row(
-                                                      children: [
-                                                        Expanded(
-                                                          flex: 2,
-                                                          child: Text(
-                                                            medicalRecordNumber,
-                                                            style: TextStyle(
-                                                              fontSize: 14,
-                                                              color: tokens
-                                                                  .textMuted,
-                                                            ),
-                                                            maxLines: 1,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                          ),
-                                                        ),
-                                                        Expanded(
-                                                          flex: 4,
-                                                          child: Row(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            children: [
-                                                              Icon(
-                                                                Icons.person,
-                                                                size: 16,
-                                                                color: tokens
-                                                                    .primaryAccent,
-                                                              ),
-                                                              const SizedBox(
-                                                                  width: 8),
-                                                              Expanded(
-                                                                child: Column(
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .start,
-                                                                  children: [
-                                                                    Text(
-                                                                      patient
-                                                                          .name,
-                                                                      style:
-                                                                          const TextStyle(
-                                                                        fontSize:
-                                                                            14,
-                                                                        fontWeight:
-                                                                            FontWeight.w500,
-                                                                      ),
-                                                                      maxLines:
-                                                                          1,
-                                                                      overflow:
-                                                                          TextOverflow
-                                                                              .ellipsis,
-                                                                    ),
-                                                                    const SizedBox(
-                                                                        height:
-                                                                            2),
-                                                                    Text(
-                                                                      phone,
-                                                                      style:
-                                                                          TextStyle(
-                                                                        fontSize:
-                                                                            12,
-                                                                        color: tokens
-                                                                            .textMuted,
-                                                                      ),
-                                                                      maxLines:
-                                                                          1,
-                                                                      overflow:
-                                                                          TextOverflow
-                                                                              .ellipsis,
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                        Expanded(
-                                                          flex: 2,
-                                                          child: Text(
-                                                            lastVisitDate,
-                                                            style: TextStyle(
-                                                              fontSize: 14,
-                                                              color: tokens
-                                                                  .textMuted,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
+                                              return Container(
+                                                decoration: BoxDecoration(
+                                                  color: tokens.cardBackground,
+                                                  border: Border(
+                                                    bottom: BorderSide(
+                                                      color: tokens.divider,
+                                                      width: 0.5,
                                                     ),
                                                   ),
                                                 ),
-                                              ),
-                                            );
-                                          },
+                                                child: Material(
+                                                  color: Colors.transparent,
+                                                  child: InkWell(
+                                                    mouseCursor:
+                                                        SystemMouseCursors
+                                                            .click,
+                                                    onTap: () {
+                                                      // 选择患者并关闭对话框
+                                                      Navigator.of(context)
+                                                          .pop(patient);
+                                                    },
+                                                    child: Padding(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          vertical: 10,
+                                                          horizontal: 12),
+                                                      child: Row(
+                                                        children: [
+                                                          Expanded(
+                                                            flex: 2,
+                                                            child: Text(
+                                                              medicalRecordNumber,
+                                                              style: TextStyle(
+                                                                fontSize: 14,
+                                                                color: tokens
+                                                                    .textMuted,
+                                                              ),
+                                                              maxLines: 1,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 3,
+                                                            child: Text(
+                                                              patient.name,
+                                                              style:
+                                                                  const TextStyle(
+                                                                fontSize: 14,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                              ),
+                                                              maxLines: 1,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 2,
+                                                            child: Text(
+                                                              lastVisitDate,
+                                                              style: TextStyle(
+                                                                fontSize: 14,
+                                                                color: tokens
+                                                                    .textMuted,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
                                         ),
                                       ),
                                     ],
