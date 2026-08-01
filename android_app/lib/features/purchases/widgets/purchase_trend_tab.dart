@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../../../models/purchase_record.dart';
 import '../services/purchase_statistics_calculator.dart';
+import '../services/purchase_amount_formatter.dart';
 
 /// 采购统计趋势 Tab 页面组件
 class PurchaseTrendTab extends StatelessWidget {
@@ -170,7 +171,7 @@ class PurchaseTrendTab extends StatelessWidget {
                           SizedBox(
                             width: 80,
                             child: Text(
-                              '¥${NumberFormat('#,##0').format(amount)}',
+                              PurchaseAmountFormatter.formatCurrency(amount),
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
@@ -283,10 +284,14 @@ class PurchaseTrendTab extends StatelessWidget {
                         DataCell(Text(month)),
                         DataCell(Text(records.toString())),
                         DataCell(
-                          Text('¥${NumberFormat('#,##0').format(amount)}'),
+                          Text(PurchaseAmountFormatter.formatCurrency(amount)),
                         ),
                         DataCell(Text(NumberFormat('#,##0').format(quantity))),
-                        DataCell(Text('¥${avgPrice.toStringAsFixed(2)}')),
+                        DataCell(
+                          Text(
+                            PurchaseAmountFormatter.formatCurrency(avgPrice),
+                          ),
+                        ),
                       ],
                     );
                   }).toList(),

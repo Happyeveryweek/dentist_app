@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app/widgets/app_card.dart';
 import '../../../models/purchase_record.dart';
+import '../services/purchase_amount_formatter.dart';
 
 /// 采购记录卡片组件
 /// 职责：显示单个采购记录的详细信息
@@ -87,7 +88,7 @@ class PurchaseRecordCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
-            '¥${NumberFormat('#,##0.00').format(record.totalAmount)}',
+            PurchaseAmountFormatter.formatCurrency(record.totalAmount),
             style: TextStyle(
               color: Colors.green[800],
               fontSize: 11,

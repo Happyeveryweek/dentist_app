@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../models/purchase_item.dart';
 import '../../../models/material.dart';
@@ -7,6 +6,7 @@ import '../../../providers/material_provider.dart';
 import '../../../widgets/toast_manager.dart';
 import '../../../utils/datetime_formatter.dart';
 import '../../../utils/app_logger.dart';
+import '../services/purchase_amount_formatter.dart';
 
 class PurchaseItemDialog extends StatefulWidget {
   final PurchaseItem? item;
@@ -57,7 +57,7 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
     _setupFocusNodeAndController(
       _unitPriceFocusNode,
       _unitPriceController,
-      '0.00',
+      '0',
     );
   }
 
@@ -72,7 +72,7 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
       _selectedMaterialId = item.materialId; // 设置材料ID
     } else {
       _quantityController.text = '1';
-      _unitPriceController.text = '0.00';
+      _unitPriceController.text = '0';
       _unitController.text = '个';
     }
   }
@@ -144,7 +144,9 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
       setState(() {
         _materialNameController.text = result.materialName;
         _unitController.text = result.unit;
-        _unitPriceController.text = result.defaultPrice.toStringAsFixed(2);
+        _unitPriceController.text = PurchaseAmountFormatter.formatInput(
+          result.defaultPrice,
+        );
         _selectedMaterialId = result.id; // 更新选中的材料ID
       });
     }
@@ -292,8 +294,7 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                                     ? null
                                     : _showMaterialSearchDialog,
                             icon: const Icon(Icons.search, color: Colors.blue),
-                            tooltip:
-                                _isLoadingMaterials ? '材料库加载中' : '从材料库搜索',
+                            tooltip: _isLoadingMaterials ? '材料库加载中' : '从材料库搜索',
                             style: IconButton.styleFrom(
                               backgroundColor: Colors.blue[50],
                               padding: const EdgeInsets.all(8), // 进一步减少padding
@@ -349,7 +350,7 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
                                   color: Colors.orange,
                                 ),
                                 border: OutlineInputBorder(),
-                                hintText: '0.00',
+                                hintText: '0',
                                 contentPadding: EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 10,
@@ -595,9 +596,9 @@ class _PurchaseItemDialogState extends State<PurchaseItemDialog> {
       final quantity = int.tryParse(_quantityController.text) ?? 0;
       final unitPrice = double.tryParse(_unitPriceController.text) ?? 0.0;
       final totalPrice = quantity * unitPrice;
-      return NumberFormat('#,##0.00').format(totalPrice);
+      return PurchaseAmountFormatter.format(totalPrice);
     } catch (e) {
-      return '0.00';
+      return '0';
     }
   }
 
@@ -993,7 +994,7 @@ class _MaterialSearchDialogState extends State<_MaterialSearchDialog> {
                                               width: 12,
                                             ), // 从16减少到12
                                             Text(
-                                              '价格: ¥${material.defaultPrice.toStringAsFixed(2)}',
+                                              '价格: ${PurchaseAmountFormatter.formatCurrency(material.defaultPrice)}',
                                               style: TextStyle(
                                                 color: Colors.grey[600],
                                                 fontSize: 12,

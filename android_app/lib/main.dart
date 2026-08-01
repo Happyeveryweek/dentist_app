@@ -246,9 +246,7 @@ void main() async {
   await settingsProvider.init();
 
   // 在后台异步初始化数据库和自动同步
-  unawaited(
-    initializeDatabaseInBackground(databaseProvider, settingsProvider),
-  );
+  unawaited(initializeDatabaseInBackground(databaseProvider, settingsProvider));
 
   // 创建应用状态
   final appState = AppState();
@@ -339,12 +337,10 @@ void main() async {
           create: (_) => PurchaseProvider(),
           update: (_, dbProvider, userProvider, purchaseProvider) {
             purchaseProvider ??= PurchaseProvider();
+            // 先绑定用户提供者，避免采购Provider初始化时权限服务捕获空引用。
+            purchaseProvider.setUserProvider(userProvider);
             if (dbProvider.isInitialized && !purchaseProvider.initialized) {
               purchaseProvider.initializeFromDatabase(dbProvider);
-            }
-            // 设置用户提供者用于权限控制
-            if (userProvider.initialized) {
-              purchaseProvider.setUserProvider(userProvider);
             }
             return purchaseProvider;
           },

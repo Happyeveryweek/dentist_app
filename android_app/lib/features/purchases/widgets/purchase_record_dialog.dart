@@ -7,6 +7,7 @@ import '../../../providers/purchase_provider.dart';
 import '../../../providers/material_provider.dart';
 import '../../../providers/user_provider.dart';
 import 'purchase_item_dialog.dart';
+import '../services/purchase_amount_formatter.dart';
 import '../../../widgets/toast_manager.dart';
 import '../../../widgets/modern_date_picker.dart';
 import '../../../utils/datetime_formatter.dart';
@@ -539,7 +540,9 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                                 borderRadius: BorderRadius.circular(
                                   10,
                                 ), // 从8增加到10
-                                border: Border.all(color: Colors.green.shade200),
+                                border: Border.all(
+                                  color: Colors.green.shade200,
+                                ),
                               ),
                               child: Row(
                                 children: [
@@ -651,7 +654,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
           SizedBox(
             width: 55,
             child: Text(
-              '¥${item.unitPrice.toStringAsFixed(2)}',
+              PurchaseAmountFormatter.formatCurrency(item.unitPrice),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.grey[700],
@@ -665,7 +668,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
           SizedBox(
             width: 55,
             child: Text(
-              '¥${item.totalPrice.toStringAsFixed(2)}',
+              PurchaseAmountFormatter.formatCurrency(item.totalPrice),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.grey[700],
@@ -729,7 +732,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
       0.0,
       (sum, item) => sum + item.totalPrice,
     );
-    return NumberFormat('#,##0.00').format(totalAmount);
+    return PurchaseAmountFormatter.format(totalAmount);
   }
 
   Future<void> _savePurchaseRecord() async {
@@ -776,9 +779,7 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                 ? null
                 : _doctorController.text.trim(),
         createdAt:
-            _isEditing
-                ? _record.createdAt
-                : DateTimeFormatter.nowLocal(),
+            _isEditing ? _record.createdAt : DateTimeFormatter.nowLocal(),
         updatedAt: DateTimeFormatter.nowLocal(),
       );
 
@@ -789,7 +790,9 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
         success = await purchaseProvider.updatePurchaseRecord(purchaseRecord);
         recordId = _recordId;
       } else {
-        final newRecordId = await purchaseProvider.addPurchaseRecord(purchaseRecord);
+        final newRecordId = await purchaseProvider.addPurchaseRecord(
+          purchaseRecord,
+        );
         recordId = newRecordId;
         success = newRecordId;
       }
@@ -868,7 +871,8 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
                   .toSet();
           for (final existingItem in existingItems) {
             final existingItemId = existingItem.id;
-            if (existingItemId != null && !currentItemIds.contains(existingItemId)) {
+            if (existingItemId != null &&
+                !currentItemIds.contains(existingItemId)) {
               AppLogger.info('🗑️ 删除已移除的项目: ${existingItem.materialName}');
               await purchaseProvider.deletePurchaseItem(
                 existingItemId,

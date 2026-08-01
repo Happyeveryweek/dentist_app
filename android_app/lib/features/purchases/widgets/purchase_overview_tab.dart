@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../models/purchase_record.dart';
 import '../../../models/purchase_item.dart';
 import 'purchase_stat_card.dart';
+import '../services/purchase_amount_formatter.dart';
 
 /// 采购统计概览 Tab 页面组件
 class PurchaseOverviewTab extends StatelessWidget {
@@ -77,13 +78,13 @@ class PurchaseOverviewTab extends StatelessWidget {
               ),
               PurchaseStatCard(
                 title: '总采购额',
-                value: '¥${NumberFormat('#,##0').format(totalAmount)}',
+                value: PurchaseAmountFormatter.formatCurrency(totalAmount),
                 icon: Icons.monetization_on,
                 color: Colors.teal,
               ),
               PurchaseStatCard(
                 title: '平均金额',
-                value: '¥${NumberFormat('#,##0').format(averageAmount)}',
+                value: PurchaseAmountFormatter.formatCurrency(averageAmount),
                 icon: Icons.trending_up,
                 color: Colors.indigo,
               ),
@@ -185,7 +186,7 @@ class PurchaseOverviewTab extends StatelessWidget {
                       style: TextStyle(fontSize: 14, color: Colors.green[700]),
                     ),
                     Text(
-                      '¥${NumberFormat('#,##0').format(totalAmount)}',
+                      PurchaseAmountFormatter.formatCurrency(totalAmount),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -221,7 +222,9 @@ class PurchaseOverviewTab extends StatelessWidget {
                       style: TextStyle(fontSize: 14, color: Colors.green[700]),
                     ),
                     Text(
-                      '¥${totalQuantity > 0 ? (totalAmount / totalQuantity).toStringAsFixed(2) : '0.00'}',
+                      PurchaseAmountFormatter.formatCurrency(
+                        totalQuantity > 0 ? totalAmount / totalQuantity : 0,
+                      ),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

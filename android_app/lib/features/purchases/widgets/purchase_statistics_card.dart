@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../services/purchase_amount_formatter.dart';
 
 /// 采购统计信息卡片组件
 /// 职责：显示采购记录的统计信息（总记录、总金额、总采购量、材料种类）
@@ -40,7 +40,11 @@ class PurchaseStatisticsCard extends StatelessWidget {
                 Expanded(
                   child: _buildStatItem(
                     '总金额',
-                    '¥${NumberFormat('#,##0.00').format(statistics['totalAmount'] ?? 0.0)}',
+                    PurchaseAmountFormatter.formatCurrency(
+                      statistics['totalAmount'] is num
+                          ? statistics['totalAmount'] as num
+                          : 0,
+                    ),
                     Icons.attach_money,
                     Colors.green,
                   ),

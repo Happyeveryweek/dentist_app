@@ -3,10 +3,15 @@ import 'package:dentist_app/providers/user_provider.dart';
 /// 采购数据权限服务
 /// 职责：医生过滤条件获取、权限判断
 class PurchasePermissionService {
-  final UserProvider? _userProvider;
+  UserProvider? _userProvider;
 
   PurchasePermissionService({UserProvider? userProvider})
     : _userProvider = userProvider;
+
+  /// 初始化时用户提供者可能尚未完成绑定，允许后续补绑定同一个实例。
+  void setUserProvider(UserProvider userProvider) {
+    _userProvider = userProvider;
+  }
 
   /// 获取医生过滤条件（用于数据访问权限控制）
   String? getDoctorFilter() {

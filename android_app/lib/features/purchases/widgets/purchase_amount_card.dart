@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../models/purchase_record.dart';
 import '../../../widgets/app_card.dart';
 import 'purchase_amount_item.dart';
+import '../services/purchase_amount_formatter.dart';
 
 /// 采购金额统计卡片
 class PurchaseAmountCard extends StatelessWidget {
@@ -31,7 +31,7 @@ class PurchaseAmountCard extends StatelessWidget {
               Expanded(
                 child: PurchaseAmountItem(
                   '总金额',
-                  '¥${NumberFormat('#,##0.00').format(record.totalAmount)}',
+                  PurchaseAmountFormatter.formatCurrency(record.totalAmount),
                   icon: Icons.account_balance_wallet,
                   color: Colors.green,
                 ),

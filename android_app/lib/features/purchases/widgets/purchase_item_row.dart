@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../models/purchase_item.dart';
+import '../services/purchase_amount_formatter.dart';
 
 /// 单个采购项目行组件
 class PurchaseItemRow extends StatelessWidget {
@@ -40,7 +40,7 @@ class PurchaseItemRow extends StatelessWidget {
           Expanded(
             flex: 1,
             child: Text(
-              '¥${NumberFormat('#,##0.00').format(item.unitPrice)}',
+              PurchaseAmountFormatter.formatCurrency(item.unitPrice),
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.orange[700]),
             ),
@@ -56,7 +56,7 @@ class PurchaseItemRow extends StatelessWidget {
           Expanded(
             flex: 1,
             child: Text(
-              '¥${NumberFormat('#,##0.00').format(item.totalPrice)}',
+              PurchaseAmountFormatter.formatCurrency(item.totalPrice),
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.green[700],

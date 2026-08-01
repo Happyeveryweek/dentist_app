@@ -46,12 +46,13 @@ class PurchaseProvider extends ChangeNotifier {
   PurchaseDatabaseStatisticsService? _statisticsService;
   final PurchaseInitializationService _initializationService =
       PurchaseInitializationService();
+  Future<void>? _initializationFuture;
 
   // 刷新标志
   bool _purchasesNeedRefresh = false;
 
   // Getters
-  bool get initialized => _database != null || _currentMysqlConnection != null;
+  bool get initialized => _isInitializedFlag && _hasActiveDataSource;
   bool get purchasesNeedRefresh => _purchasesNeedRefresh;
   bool get isConnected => _connectionService?.isConnected ?? true;
   bool get isReconnecting => _connectionService?.isReconnecting ?? false;
@@ -64,11 +65,19 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 检查数据库是否已初始化
   bool get isInitialized {
+    if (!_isInitializedFlag) return false;
     if (_dataSourceType == 'mysql') {
       return _currentMysqlConnection != null;
     } else {
       return _database != null;
     }
+  }
+
+  bool get _hasActiveDataSource {
+    if (_dataSourceType == 'mysql') {
+      return _currentMysqlConnection != null;
+    }
+    return _database != null;
   }
 
   // 设置SQLite数据源
@@ -86,6 +95,7 @@ class PurchaseProvider extends ChangeNotifier {
   // 设置用户提供者（用于权限控制）
   void setUserProvider(UserProvider userProvider) {
     _userProvider = userProvider;
+    _permissionService?.setUserProvider(userProvider);
     final nextRevision = userProvider.sessionRevision;
     if (_sessionRevision != null && _sessionRevision != nextRevision) {
       _cacheService?.clearCache();
@@ -135,8 +145,26 @@ class PurchaseProvider extends ChangeNotifier {
 
   // 从DatabaseProvider获取数据库连接（保持向后兼容）
   Future<void> initializeFromDatabase(dynamic dbProvider) async {
-    if (_isInitializedFlag) return;
+    if (_isInitializedFlag && _hasActiveDataSource) return;
 
+    final existingFuture = _initializationFuture;
+    if (existingFuture != null) {
+      await existingFuture;
+      return;
+    }
+
+    final future = _initializeFromDatabaseInternal(dbProvider);
+    _initializationFuture = future;
+    try {
+      await future;
+    } finally {
+      if (identical(_initializationFuture, future)) {
+        _initializationFuture = null;
+      }
+    }
+  }
+
+  Future<void> _initializeFromDatabaseInternal(dynamic dbProvider) async {
     try {
       // 保存DatabaseProvider引用
       _databaseProvider = dbProvider;
@@ -162,16 +190,15 @@ class PurchaseProvider extends ChangeNotifier {
       _mysqlDataSource = result.mysqlDataSource;
 
       if (!_isInitializedFlag) {
-        AppLogger.info('警告：采购Provider未完成初始化，延迟重试...');
+        AppLogger.info('警告：采购Provider未完成初始化');
         Future.delayed(const Duration(milliseconds: 500), () {
           if (!_isInitializedFlag) {
             initializeFromDatabase(dbProvider);
           }
         });
-        return;
+      } else {
+        AppLogger.info('PurchaseProvider初始化完成');
       }
-
-      AppLogger.info('PurchaseProvider初始化完成');
     } catch (e) {
       AppLogger.info('PurchaseProvider初始化失败: $e');
       // 设置默认值，但不标记为已初始化
@@ -181,6 +208,22 @@ class PurchaseProvider extends ChangeNotifier {
 
     // 延迟通知以避免在build阶段调用setState
     Future.microtask(() => notifyListeners());
+  }
+
+  /// 等待采购数据源真正就绪，避免页面把初始化期间的空缓存当成空列表。
+  Future<bool> ensureReady(dynamic dbProvider) async {
+    const maxAttempts = 20;
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      if (isInitialized) return true;
+
+      await initializeFromDatabase(dbProvider);
+      if (isInitialized) return true;
+
+      if (attempt < maxAttempts - 1) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+    }
+    return isInitialized;
   }
 
   // 构造函数

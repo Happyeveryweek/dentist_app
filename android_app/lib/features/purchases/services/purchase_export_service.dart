@@ -8,6 +8,7 @@ import '../../../models/purchase_record.dart';
 import '../../../models/purchase_item.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/app_paths.dart';
+import 'purchase_amount_formatter.dart';
 
 /// 采购记录导出服务
 /// 负责将采购记录导出为图片
@@ -358,7 +359,9 @@ class PurchaseExportService {
           currentX += columnWidths[2];
 
           // 单价 - 居中对齐
-          final unitPriceText = '¥${item.unitPrice.toStringAsFixed(2)}';
+          final unitPriceText = PurchaseAmountFormatter.formatCurrency(
+            item.unitPrice,
+          );
           final unitPricePainter = TextPainter(
             text: TextSpan(text: unitPriceText, style: contentStyle),
             textDirection: ui.TextDirection.ltr,
@@ -374,7 +377,9 @@ class PurchaseExportService {
           currentX += columnWidths[3];
 
           // 总价 - 居中对齐，加粗显示
-          final totalPriceText = '¥${item.totalPrice.toStringAsFixed(2)}';
+          final totalPriceText = PurchaseAmountFormatter.formatCurrency(
+            item.totalPrice,
+          );
           const totalPriceStyle = TextStyle(
             fontSize: 28 * scale,
             fontWeight: FontWeight.bold,
@@ -441,7 +446,7 @@ class PurchaseExportService {
           final statText =
               '总采购数量: ${record.totalQuantity} 件    '
               '采购项目数: ${purchaseItems.length} 项    '
-              '采购金额: ¥${NumberFormat('#,##0.00').format(record.totalAmount)}';
+              '采购金额: ${PurchaseAmountFormatter.formatCurrency(record.totalAmount)}';
           final statPainter = TextPainter(
             text: TextSpan(text: statText, style: statStyle),
             textDirection: ui.TextDirection.ltr,

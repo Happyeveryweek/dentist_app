@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../models/purchase_item.dart';
 import '../../../models/purchase_record.dart';
+import '../services/purchase_amount_formatter.dart';
 import '../services/purchase_statistics_calculator.dart';
 
 /// 采购统计排行 Tab 页面组件
@@ -155,7 +155,11 @@ class PurchaseRankingTab extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        '$prefix${prefix == '¥' ? NumberFormat('#,##0').format(material.value) : material.value}',
+                        prefix == '¥'
+                            ? PurchaseAmountFormatter.formatCurrency(
+                              material.value,
+                            )
+                            : '${material.value}',
                         style: TextStyle(
                           color: color,
                           fontWeight: FontWeight.bold,
@@ -260,7 +264,7 @@ class PurchaseRankingTab extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                   trailing: Text(
-                    '¥${NumberFormat('#,##0').format(supplier.value)}',
+                    PurchaseAmountFormatter.formatCurrency(supplier.value),
                     style: TextStyle(
                       color: Colors.blue[600],
                       fontWeight: FontWeight.bold,

@@ -174,8 +174,9 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
 
       // 确保PurchaseProvider已初始化
       final provider = Provider.of<PurchaseProvider>(context, listen: false);
-      if (!provider.isInitialized) {
-        await provider.initializeFromDatabase(dbProvider);
+      final ready = await provider.ensureReady(dbProvider);
+      if (!ready) {
+        throw Exception('采购数据源尚未初始化，请稍后重试');
       }
 
       // 检查MySQL连接状态
