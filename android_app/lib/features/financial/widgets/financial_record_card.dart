@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../../../widgets/app_card.dart';
+import '../../../widgets/single_line_amount_text.dart';
 
 /// 财务记录卡片组件
 /// 职责：显示单个财务记录的卡片
@@ -89,33 +90,51 @@ class FinancialRecordCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(
-                      Icons.attach_money,
-                      size: 16,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '应收费: ¥${NumberFormat('#,##0').format(totalReceivable)}',
-                      style: TextStyle(
-                        color: Theme.of(context).primaryColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.attach_money,
+                            size: 16,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: SingleLineAmountText(
+                              text:
+                                  '应收费: ¥${NumberFormat('#,##0').format(totalReceivable)}',
+                              style: TextStyle(
+                                color: Theme.of(context).primaryColor,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Icon(
-                      Icons.check_circle,
-                      size: 16,
-                      color: Colors.green[600],
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '已收费: ¥${NumberFormat('#,##0').format(totalCollected)}',
-                      style: TextStyle(
-                        color: Colors.green[600],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.check_circle,
+                            size: 16,
+                            color: Colors.green[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: SingleLineAmountText(
+                              text:
+                                  '已收费: ¥${NumberFormat('#,##0').format(totalCollected)}',
+                              style: TextStyle(
+                                color: Colors.green[600],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -123,28 +142,49 @@ class FinancialRecordCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.pending, size: 16, color: Colors.orange[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      '欠费: ¥${NumberFormat('#,##0').format(totalOutstanding)}',
-                      style: TextStyle(
-                        color:
-                            totalOutstanding > 0
-                                ? Colors.red[600]
-                                : Colors.grey[600],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.pending,
+                            size: 16,
+                            color: Colors.orange[600],
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: SingleLineAmountText(
+                              text:
+                                  '欠费: ¥${NumberFormat('#,##0').format(totalOutstanding)}',
+                              style: TextStyle(
+                                color:
+                                    totalOutstanding > 0
+                                        ? Colors.red[600]
+                                        : Colors.grey[600],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Icon(Icons.list, size: 16, color: Colors.purple[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      '项目数: ${items.length}',
-                      style: TextStyle(
-                        color: Colors.purple[600],
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Icon(Icons.list, size: 16, color: Colors.purple[600]),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: SingleLineAmountText(
+                              text: '项目数: ${items.length}',
+                              style: TextStyle(
+                                color: Colors.purple[600],
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

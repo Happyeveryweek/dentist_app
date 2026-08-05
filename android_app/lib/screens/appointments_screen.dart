@@ -48,6 +48,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
   Timer? _searchDebounce;
 
   Map<DateTime, List<Appointment>> _appointmentsByDay = {};
+  Map<int, String> _patientGenderById = {};
 
   final CalendarFormat _calendarFormat = CalendarFormat.month;
 
@@ -189,6 +190,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         setState(() {
           _appointments = appointmentsWithPatients;
           _appointmentsByDay = appointmentMap;
+          _patientGenderById = {
+            for (final patient in allPatients)
+              if (patient.id != null) patient.id!: patient.gender,
+          };
           _isLoading = false;
         });
         if (isRefresh && mounted) {
@@ -368,23 +373,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
     return treatmentType.toString();
   }
 
-  Color _getPatientAvatarColor(String patientName) {
-    if (patientName.isEmpty) {
-      return AppTheme.primaryColor;
-    }
-
-    final int colorSeed = patientName.hashCode;
-    final colors = [
-      AppTheme.primaryColor,
-      AppTheme.secondaryColor,
-      AppTheme.accentColor,
-      AppTheme.infoColor,
-      AppTheme.successColor,
-      AppTheme.warningColor,
-    ];
-    return colors[colorSeed % colors.length];
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -402,6 +390,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         selectedDay: _selectedDay,
         focusedDay: _focusedDay,
         appointmentsByDay: _appointmentsByDay,
+        patientGenderById: _patientGenderById,
         selectedDayAppointments: _selectedDayAppointments,
         filteredAppointments: _filteredAppointments,
         todayAppointments: _filteredTodayAppointments,
@@ -432,7 +421,6 @@ class _AppointmentsScreenState extends State<AppointmentsScreen>
         },
         onRefreshAll: () => _loadAppointments(isRefresh: true),
         formatTreatmentType: _formatTreatmentType,
-        getPatientAvatarColor: _getPatientAvatarColor,
         getAppointmentPatientDoctor: _getAppointmentPatientDoctor,
         onEditAppointment: (appointment) {
           _showAppointmentDialog(context, appointment: appointment);

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../widgets/single_line_amount_text.dart';
+
 /// 紧凑型统计卡片组件
 /// 职责：显示紧凑型统计卡片（标题、数值、图标）
 class CompactStatCard extends StatelessWidget {
@@ -61,19 +63,25 @@ class CompactStatCard extends StatelessWidget {
 
           // 数值显示 - 统一布局
           Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child:
-                  prefix == '¥'
-                      ? Text(
-                        '$prefix$value',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: color,
-                        ),
-                      )
-                      : RichText(
+            child:
+                prefix == '¥'
+                    ? SingleLineAmountText(
+                      text: '$prefix$value',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                      textAlign: TextAlign.center,
+                      alignment: Alignment.center,
+                    )
+                    : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.center,
+                      child: RichText(
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.visible,
                         text: TextSpan(
                           children: [
                             TextSpan(
@@ -95,7 +103,7 @@ class CompactStatCard extends StatelessWidget {
                           ],
                         ),
                       ),
-            ),
+                    ),
           ),
         ],
       ),

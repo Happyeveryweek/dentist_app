@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../widgets/single_line_amount_text.dart';
+
 /// 月度趋势图表组件
 /// 职责：显示月度收费趋势图表
 class MonthlyTrendChart extends StatelessWidget {
@@ -126,7 +128,6 @@ class MonthlyTrendChart extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
                                   '收费',
@@ -136,12 +137,19 @@ class MonthlyTrendChart extends StatelessWidget {
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                Text(
-                                  '¥${NumberFormat('#,##0').format(collected)}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue[700],
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: SingleLineAmountText(
+                                      text:
+                                          '¥${NumberFormat('#,##0').format(collected)}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue[700],
+                                      ),
+                                      alignment: Alignment.centerRight,
+                                    ),
                                   ),
                                 ),
                               ],

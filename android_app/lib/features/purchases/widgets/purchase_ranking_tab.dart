@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../models/purchase_item.dart';
 import '../../../models/purchase_record.dart';
+import '../../../widgets/single_line_amount_text.dart';
 import '../services/purchase_amount_formatter.dart';
 import '../services/purchase_statistics_calculator.dart';
 
@@ -154,16 +155,18 @@ class PurchaseRankingTab extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        prefix == '¥'
-                            ? PurchaseAmountFormatter.formatCurrency(
-                              material.value,
-                            )
-                            : '${material.value}',
+                      SingleLineAmountText(
+                        text:
+                            prefix == '¥'
+                                ? PurchaseAmountFormatter.formatCurrency(
+                                  material.value,
+                                )
+                                : '${material.value}',
                         style: TextStyle(
                           color: color,
                           fontWeight: FontWeight.bold,
                         ),
+                        alignment: Alignment.centerRight,
                       ),
                       Text(
                         '${percentage.toStringAsFixed(1)}%',
@@ -263,12 +266,15 @@ class PurchaseRankingTab extends StatelessWidget {
                     supplier.key,
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  trailing: Text(
-                    PurchaseAmountFormatter.formatCurrency(supplier.value),
+                  trailing: SingleLineAmountText(
+                    text: PurchaseAmountFormatter.formatCurrency(
+                      supplier.value,
+                    ),
                     style: TextStyle(
                       color: Colors.blue[600],
                       fontWeight: FontWeight.bold,
                     ),
+                    alignment: Alignment.centerRight,
                   ),
                 );
               },

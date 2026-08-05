@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/purchase_item.dart';
+import '../../../widgets/single_line_amount_text.dart';
 import '../services/purchase_amount_formatter.dart';
 
 /// 单个采购项目行组件
@@ -39,9 +40,10 @@ class PurchaseItemRow extends StatelessWidget {
           ),
           Expanded(
             flex: 1,
-            child: Text(
-              PurchaseAmountFormatter.formatCurrency(item.unitPrice),
+            child: SingleLineAmountText(
+              text: PurchaseAmountFormatter.formatCurrency(item.unitPrice),
               textAlign: TextAlign.center,
+              alignment: Alignment.center,
               style: TextStyle(color: Colors.orange[700]),
             ),
           ),
@@ -55,9 +57,10 @@ class PurchaseItemRow extends StatelessWidget {
           ),
           Expanded(
             flex: 1,
-            child: Text(
-              PurchaseAmountFormatter.formatCurrency(item.totalPrice),
+            child: SingleLineAmountText(
+              text: PurchaseAmountFormatter.formatCurrency(item.totalPrice),
               textAlign: TextAlign.center,
+              alignment: Alignment.center,
               style: TextStyle(
                 color: Colors.green[700],
                 fontWeight: FontWeight.bold,

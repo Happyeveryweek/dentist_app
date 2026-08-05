@@ -10,16 +10,17 @@ import 'package:dentist_app/features/appointments/widgets/appointment_status_inf
 class AppointmentCard extends StatelessWidget {
   final Appointment appointment;
   final Function(String) formatTreatmentType;
-  final Color Function(String) getPatientAvatarColor;
+  final String? patientGender;
   final Future<String?> Function(Appointment) getAppointmentPatientDoctor;
   final Function(Appointment) onEdit;
   final Function(Appointment) onDelete;
   final VoidCallback onDetailUpdated;
 
-  const AppointmentCard({super.key, 
+  const AppointmentCard({
+    super.key,
     required this.appointment,
     required this.formatTreatmentType,
-    required this.getPatientAvatarColor,
+    required this.patientGender,
     required this.getAppointmentPatientDoctor,
     required this.onEdit,
     required this.onDelete,
@@ -30,7 +31,7 @@ class AppointmentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusInfo = getStatusInfo(appointment.status);
     final patientName = appointment.patientName ?? '未知患者';
-    final avatarColor = getPatientAvatarColor(patientName);
+    final avatarColor = _getGenderColor(patientGender);
     final notes = appointment.notes;
 
     return Card(
@@ -230,5 +231,11 @@ class AppointmentCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _getGenderColor(String? gender) {
+    if (gender == '男') return AppTheme.infoColor;
+    if (gender == '女') return AppTheme.accentColor;
+    return AppTheme.secondaryText;
   }
 }

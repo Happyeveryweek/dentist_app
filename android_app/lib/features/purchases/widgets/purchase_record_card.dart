@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:dentist_app/widgets/app_card.dart';
 import '../../../models/purchase_record.dart';
+import '../../../widgets/single_line_amount_text.dart';
 import '../services/purchase_amount_formatter.dart';
 
 /// 采购记录卡片组件
@@ -87,13 +88,15 @@ class PurchaseRecordCard extends StatelessWidget {
             color: Colors.green[100],
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Text(
-            PurchaseAmountFormatter.formatCurrency(record.totalAmount),
+          child: SingleLineAmountText(
+            text: PurchaseAmountFormatter.formatCurrency(record.totalAmount),
             style: TextStyle(
               color: Colors.green[800],
               fontSize: 11,
               fontWeight: FontWeight.bold,
             ),
+            textAlign: TextAlign.center,
+            alignment: Alignment.center,
           ),
         ),
       ],

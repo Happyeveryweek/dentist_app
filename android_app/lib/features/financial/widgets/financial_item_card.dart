@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../models/financial_item.dart';
+import '../../../widgets/single_line_amount_text.dart';
 import '../helpers/financial_payment_method_helper.dart';
 
 /// 收费项目卡片组件
@@ -96,9 +97,10 @@ class FinancialItemCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Builder(
                   builder: (context) {
-                    final iconPath = FinancialPaymentMethodHelper.iconAssetPathOrNull(
-                      item.paymentMethod,
-                    );
+                    final iconPath =
+                        FinancialPaymentMethodHelper.iconAssetPathOrNull(
+                          item.paymentMethod,
+                        );
                     if (iconPath == null) return const SizedBox.shrink();
                     return Row(
                       mainAxisSize: MainAxisSize.min,
@@ -169,8 +171,8 @@ class FinancialItemCard extends StatelessWidget {
       children: [
         Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         const SizedBox(height: 4),
-        Text(
-          value,
+        SingleLineAmountText(
+          text: value,
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,

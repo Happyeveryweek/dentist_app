@@ -7,6 +7,7 @@ import '../../../providers/financial_provider.dart';
 import '../../../utils/datetime_formatter.dart';
 import '../helpers/financial_payment_method_helper.dart';
 import '../../../widgets/modern_date_range_picker.dart';
+import '../../../widgets/single_line_amount_text.dart';
 import 'compact_stat_card.dart';
 import 'payment_status_chart.dart';
 import 'monthly_trend_chart.dart';
@@ -741,13 +742,15 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            '¥${NumberFormat('#,##0').format(amount)}',
+          SingleLineAmountText(
+            text: '¥${NumberFormat('#,##0').format(amount)}',
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
               color: Color(0xFF7B1FA2),
             ),
+            textAlign: TextAlign.center,
+            alignment: Alignment.center,
           ),
         ],
       ),
@@ -994,12 +997,13 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
                     patient.key,
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  trailing: Text(
-                    '¥${NumberFormat('#,##0').format(patient.value)}',
+                  trailing: SingleLineAmountText(
+                    text: '¥${NumberFormat('#,##0').format(patient.value)}',
                     style: TextStyle(
                       color: Colors.red[600],
                       fontWeight: FontWeight.bold,
                     ),
+                    alignment: Alignment.centerRight,
                   ),
                 );
               },
@@ -1086,12 +1090,13 @@ class _FinancialStatisticsDialogState extends State<FinancialStatisticsDialog>
                     patient.key,
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  trailing: Text(
-                    '¥${NumberFormat('#,##0').format(patient.value)}',
+                  trailing: SingleLineAmountText(
+                    text: '¥${NumberFormat('#,##0').format(patient.value)}',
                     style: TextStyle(
                       color: Colors.blue[600],
                       fontWeight: FontWeight.bold,
                     ),
+                    alignment: Alignment.centerRight,
                   ),
                 );
               },

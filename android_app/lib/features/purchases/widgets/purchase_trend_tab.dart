@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../models/purchase_record.dart';
+import '../../../widgets/single_line_amount_text.dart';
 import '../services/purchase_statistics_calculator.dart';
 import '../services/purchase_amount_formatter.dart';
 
@@ -169,15 +170,18 @@ class PurchaseTrendTab extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           SizedBox(
-                            width: 80,
-                            child: Text(
-                              PurchaseAmountFormatter.formatCurrency(amount),
+                            width: 96,
+                            child: SingleLineAmountText(
+                              text: PurchaseAmountFormatter.formatCurrency(
+                                amount,
+                              ),
+                              textAlign: TextAlign.right,
+                              alignment: Alignment.centerRight,
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green[700],
                               ),
-                              textAlign: TextAlign.right,
                             ),
                           ),
                         ],
@@ -284,12 +288,20 @@ class PurchaseTrendTab extends StatelessWidget {
                         DataCell(Text(month)),
                         DataCell(Text(records.toString())),
                         DataCell(
-                          Text(PurchaseAmountFormatter.formatCurrency(amount)),
+                          SingleLineAmountText(
+                            text: PurchaseAmountFormatter.formatCurrency(
+                              amount,
+                            ),
+                            alignment: Alignment.centerRight,
+                          ),
                         ),
                         DataCell(Text(NumberFormat('#,##0').format(quantity))),
                         DataCell(
-                          Text(
-                            PurchaseAmountFormatter.formatCurrency(avgPrice),
+                          SingleLineAmountText(
+                            text: PurchaseAmountFormatter.formatCurrency(
+                              avgPrice,
+                            ),
+                            alignment: Alignment.centerRight,
                           ),
                         ),
                       ],

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../models/purchase_record.dart';
 import '../../../models/purchase_item.dart';
 import 'purchase_stat_card.dart';
+import '../../../widgets/single_line_amount_text.dart';
 import '../services/purchase_amount_formatter.dart';
 
 /// 采购统计概览 Tab 页面组件
@@ -179,18 +180,25 @@ class PurchaseOverviewTab extends StatelessWidget {
             child: Column(
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       '总采购金额',
                       style: TextStyle(fontSize: 14, color: Colors.green[700]),
                     ),
-                    Text(
-                      PurchaseAmountFormatter.formatCurrency(totalAmount),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green[700],
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: SingleLineAmountText(
+                          text: PurchaseAmountFormatter.formatCurrency(
+                            totalAmount,
+                          ),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[700],
+                          ),
+                          alignment: Alignment.centerRight,
+                        ),
                       ),
                     ),
                   ],
@@ -215,20 +223,25 @@ class PurchaseOverviewTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       '平均单价',
                       style: TextStyle(fontSize: 14, color: Colors.green[700]),
                     ),
-                    Text(
-                      PurchaseAmountFormatter.formatCurrency(
-                        totalQuantity > 0 ? totalAmount / totalQuantity : 0,
-                      ),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green[700],
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: SingleLineAmountText(
+                          text: PurchaseAmountFormatter.formatCurrency(
+                            totalQuantity > 0 ? totalAmount / totalQuantity : 0,
+                          ),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green[700],
+                          ),
+                          alignment: Alignment.centerRight,
+                        ),
                       ),
                     ),
                   ],

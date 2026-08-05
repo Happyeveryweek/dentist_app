@@ -6,6 +6,7 @@ import '../../../models/purchase_item.dart';
 import '../../../providers/purchase_provider.dart';
 import '../../../providers/material_provider.dart';
 import '../../../providers/user_provider.dart';
+import '../../../widgets/single_line_amount_text.dart';
 import 'purchase_item_dialog.dart';
 import '../services/purchase_amount_formatter.dart';
 import '../../../widgets/toast_manager.dart';
@@ -653,9 +654,10 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
           // 单价列
           SizedBox(
             width: 55,
-            child: Text(
-              PurchaseAmountFormatter.formatCurrency(item.unitPrice),
+            child: SingleLineAmountText(
+              text: PurchaseAmountFormatter.formatCurrency(item.unitPrice),
               textAlign: TextAlign.center,
+              alignment: Alignment.center,
               style: TextStyle(
                 color: Colors.grey[700],
                 fontSize: 11,
@@ -667,9 +669,10 @@ class _PurchaseRecordDialogState extends State<PurchaseRecordDialog> {
           // 总价列
           SizedBox(
             width: 55,
-            child: Text(
-              PurchaseAmountFormatter.formatCurrency(item.totalPrice),
+            child: SingleLineAmountText(
+              text: PurchaseAmountFormatter.formatCurrency(item.totalPrice),
               textAlign: TextAlign.center,
+              alignment: Alignment.center,
               style: TextStyle(
                 color: Colors.grey[700],
                 fontSize: 11,

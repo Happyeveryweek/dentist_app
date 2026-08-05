@@ -27,6 +27,7 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
   AnimationController? _scaleController;
   Animation<double> _fadeAnimation = const AlwaysStoppedAnimation<double>(1.0);
   Animation<double> _scaleAnimation = const AlwaysStoppedAnimation<double>(1.0);
+  double _monthSwipeDistance = 0;
 
   // 手动输入相关变量
   TextEditingController? _dateTextController;
@@ -58,9 +59,10 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
     _fadeController = fadeController;
     _scaleController = scaleController;
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: fadeController, curve: Curves.easeInOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: fadeController, curve: Curves.easeInOut));
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: scaleController, curve: Curves.elasticOut),
     );
@@ -87,6 +89,34 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
     setState(() {
       _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 1);
     });
+  }
+
+  void _startMonthSwipe(DragStartDetails details) {
+    _monthSwipeDistance = 0;
+  }
+
+  void _updateMonthSwipe(DragUpdateDetails details) {
+    _monthSwipeDistance += details.delta.dx;
+  }
+
+  void _handleMonthSwipe(DragEndDetails details) {
+    final distance = _monthSwipeDistance;
+    final velocity = details.primaryVelocity ?? 0;
+    _monthSwipeDistance = 0;
+
+    if (distance.abs() < 40 && velocity.abs() < 100) return;
+
+    final direction = distance.abs() >= 40 ? distance : velocity;
+
+    if (direction < 0) {
+      _nextMonth();
+    } else {
+      _previousMonth();
+    }
+  }
+
+  void _cancelMonthSwipe() {
+    _monthSwipeDistance = 0;
   }
 
   void _selectDate(DateTime date) {
@@ -353,97 +383,110 @@ class _ModernDatePickerDialogState extends State<ModernDatePickerDialog>
                   ),
                 ),
 
-                // 星期标题
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children:
-                        ['日', '一', '二', '三', '四', '五', '六']
-                            .map(
-                              (day) => Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
+                // 星期标题和日历网格支持左右滑动切换月份
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onHorizontalDragStart: _startMonthSwipe,
+                  onHorizontalDragUpdate: _updateMonthSwipe,
+                  onHorizontalDragEnd: _handleMonthSwipe,
+                  onHorizontalDragCancel: _cancelMonthSwipe,
+                  child: Column(
+                    children: [
+                      // 星期标题
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children:
+                              ['日', '一', '二', '三', '四', '五', '六']
+                                  .map(
+                                    (day) => Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 8,
+                                        ),
+                                        child: Text(
+                                          day,
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: Colors.grey.shade600,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                        ),
+                      ),
+
+                      // 日历网格
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 7,
+                                childAspectRatio: 1.2,
+                              ),
+                          itemCount: days.length,
+                          itemBuilder: (context, index) {
+                            final date = days[index];
+                            final isCurrentMonth =
+                                date.month == _currentMonth.month;
+                            final isSelected =
+                                date.year == _selectedDate.year &&
+                                date.month == _selectedDate.month &&
+                                date.day == _selectedDate.day;
+                            final isToday =
+                                date.year == DateTime.now().year &&
+                                date.month == DateTime.now().month &&
+                                date.day == DateTime.now().day;
+
+                            return GestureDetector(
+                              onTap: () => _selectDate(date),
+                              child: Container(
+                                margin: const EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isSelected
+                                          ? Colors.blue.shade400
+                                          : isToday
+                                          ? Colors.orange.shade100
+                                          : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border:
+                                      isToday
+                                          ? Border.all(
+                                            color: Colors.orange.shade300,
+                                            width: 2,
+                                          )
+                                          : null,
+                                ),
+                                child: Center(
                                   child: Text(
-                                    day,
-                                    textAlign: TextAlign.center,
+                                    '${date.day}',
                                     style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontWeight: FontWeight.w500,
+                                      color:
+                                          isSelected
+                                              ? Colors.white
+                                              : isCurrentMonth
+                                              ? Colors.black87
+                                              : Colors.grey.shade400,
+                                      fontWeight:
+                                          isSelected || isToday
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
                                     ),
                                   ),
                                 ),
                               ),
-                            )
-                            .toList(),
-                  ),
-                ),
-
-                // 日历网格
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 7,
-                          childAspectRatio: 1.2,
+                            );
+                          },
                         ),
-                    itemCount: days.length,
-                    itemBuilder: (context, index) {
-                      final date = days[index];
-                      final isCurrentMonth = date.month == _currentMonth.month;
-                      final isSelected =
-                          date.year == _selectedDate.year &&
-                          date.month == _selectedDate.month &&
-                          date.day == _selectedDate.day;
-                      final isToday =
-                          date.year == DateTime.now().year &&
-                          date.month == DateTime.now().month &&
-                          date.day == DateTime.now().day;
-
-                      return GestureDetector(
-                        onTap: () => _selectDate(date),
-                        child: Container(
-                          margin: const EdgeInsets.all(2),
-                          decoration: BoxDecoration(
-                            color:
-                                isSelected
-                                    ? Colors.blue.shade400
-                                    : isToday
-                                    ? Colors.orange.shade100
-                                    : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                            border:
-                                isToday
-                                    ? Border.all(
-                                      color: Colors.orange.shade300,
-                                      width: 2,
-                                    )
-                                    : null,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${date.day}',
-                              style: TextStyle(
-                                color:
-                                    isSelected
-                                        ? Colors.white
-                                        : isCurrentMonth
-                                        ? Colors.black87
-                                        : Colors.grey.shade400,
-                                fontWeight:
-                                    isSelected || isToday
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
+                      ),
+                    ],
                   ),
                 ),
 

@@ -14,6 +14,7 @@ class AppointmentsScreenBody extends StatelessWidget {
   final DateTime selectedDay;
   final DateTime focusedDay;
   final Map<DateTime, List<Appointment>> appointmentsByDay;
+  final Map<int, String> patientGenderById;
   final List<Appointment> selectedDayAppointments;
   final List<Appointment> filteredAppointments;
   final List<Appointment> todayAppointments;
@@ -27,7 +28,6 @@ class AppointmentsScreenBody extends StatelessWidget {
   final Function(DateTime) onAddAppointment;
   final Future<void> Function() onRefreshAll;
   final String Function(dynamic) formatTreatmentType;
-  final Color Function(String) getPatientAvatarColor;
   final Future<String?> Function(Appointment) getAppointmentPatientDoctor;
   final Function(Appointment) onEditAppointment;
   final Function(Appointment) onDeleteAppointment;
@@ -42,6 +42,7 @@ class AppointmentsScreenBody extends StatelessWidget {
     required this.selectedDay,
     required this.focusedDay,
     required this.appointmentsByDay,
+    required this.patientGenderById,
     required this.selectedDayAppointments,
     required this.filteredAppointments,
     required this.todayAppointments,
@@ -55,7 +56,6 @@ class AppointmentsScreenBody extends StatelessWidget {
     required this.onAddAppointment,
     required this.onRefreshAll,
     required this.formatTreatmentType,
-    required this.getPatientAvatarColor,
     required this.getAppointmentPatientDoctor,
     required this.onEditAppointment,
     required this.onDeleteAppointment,
@@ -241,7 +241,7 @@ class AppointmentsScreenBody extends StatelessWidget {
     return AppointmentCard(
       appointment: appointment,
       formatTreatmentType: formatTreatmentType,
-      getPatientAvatarColor: getPatientAvatarColor,
+      patientGender: patientGenderById[appointment.patientId],
       getAppointmentPatientDoctor: getAppointmentPatientDoctor,
       onEdit: onEditAppointment,
       onDelete: onDeleteAppointment,

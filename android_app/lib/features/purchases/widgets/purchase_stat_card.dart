@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../widgets/single_line_amount_text.dart';
+
 /// 采购统计卡片组件
 class PurchaseStatCard extends StatelessWidget {
   final String title;
@@ -48,13 +50,14 @@ class PurchaseStatCard extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          Text(
-            value,
+          SingleLineAmountText(
+            text: value,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: color,
             ),
+            alignment: Alignment.centerLeft,
           ),
           const SizedBox(height: 4),
           Text(title, style: TextStyle(fontSize: 12, color: Colors.grey[600])),

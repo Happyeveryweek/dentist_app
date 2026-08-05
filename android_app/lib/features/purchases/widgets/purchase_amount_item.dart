@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../widgets/single_line_amount_text.dart';
+
 /// 单个金额统计项组件
 class PurchaseAmountItem extends StatelessWidget {
   final String label;
@@ -23,13 +25,15 @@ class PurchaseAmountItem extends StatelessWidget {
         const SizedBox(height: 8),
         Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
         const SizedBox(height: 4),
-        Text(
-          value,
+        SingleLineAmountText(
+          text: value,
           style: TextStyle(
             color: color,
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
+          textAlign: TextAlign.center,
+          alignment: Alignment.center,
         ),
       ],
     );

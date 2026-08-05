@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../widgets/single_line_amount_text.dart';
+
 /// 财务统计信息卡片组件
 /// 职责：显示财务统计信息卡片（患者数、记录数、已收费、总欠费、加工费）
 class FinancialStatisticsCard extends StatelessWidget {
@@ -157,16 +159,15 @@ class FinancialStatisticsCard extends StatelessWidget {
         const SizedBox(height: 4),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 1),
-          child: Text(
-            value,
+          child: SingleLineAmountText(
+            text: value,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
               color: color,
             ),
             textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            alignment: Alignment.center,
           ),
         ),
         const SizedBox(height: 2),

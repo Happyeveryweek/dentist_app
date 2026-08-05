@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/purchase_amount_formatter.dart';
+import '../../../widgets/single_line_amount_text.dart';
 
 /// 采购统计信息卡片组件
 /// 职责：显示采购记录的统计信息（总记录、总金额、总采购量、材料种类）
@@ -84,13 +85,15 @@ class PurchaseStatisticsCard extends StatelessWidget {
       children: [
         Icon(icon, color: color, size: 22),
         const SizedBox(height: 6),
-        Text(
-          value,
+        SingleLineAmountText(
+          text: value,
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.bold,
             color: color,
           ),
+          textAlign: TextAlign.center,
+          alignment: Alignment.center,
         ),
         Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
       ],

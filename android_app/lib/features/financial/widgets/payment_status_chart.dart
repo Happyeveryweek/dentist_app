@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../widgets/single_line_amount_text.dart';
+
 /// 收费状态图表组件
 /// 职责：显示收费状态分布图表
 class PaymentStatusChart extends StatelessWidget {
@@ -67,7 +69,6 @@ class PaymentStatusChart extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     '已收费',
@@ -77,12 +78,19 @@ class PaymentStatusChart extends StatelessWidget {
                       color: Colors.green[700],
                     ),
                   ),
-                  Text(
-                    '¥${NumberFormat('#,##0').format(totalCollected)} (${(collectedRate * 100).toStringAsFixed(1)}%)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green[700],
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: SingleLineAmountText(
+                        text:
+                            '¥${NumberFormat('#,##0').format(totalCollected)} (${(collectedRate * 100).toStringAsFixed(1)}%)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green[700],
+                        ),
+                        alignment: Alignment.centerRight,
+                      ),
                     ),
                   ),
                 ],
@@ -91,7 +99,9 @@ class PaymentStatusChart extends StatelessWidget {
               LinearProgressIndicator(
                 value: collectedRate,
                 backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade600),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Colors.green.shade600,
+                ),
                 minHeight: 8,
               ),
             ],
@@ -104,7 +114,6 @@ class PaymentStatusChart extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     '欠费',
@@ -114,12 +123,19 @@ class PaymentStatusChart extends StatelessWidget {
                       color: Colors.red[700],
                     ),
                   ),
-                  Text(
-                    '¥${NumberFormat('#,##0').format(totalOutstanding)} (${(outstandingRate * 100).toStringAsFixed(1)}%)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red[700],
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: SingleLineAmountText(
+                        text:
+                            '¥${NumberFormat('#,##0').format(totalOutstanding)} (${(outstandingRate * 100).toStringAsFixed(1)}%)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red[700],
+                        ),
+                        alignment: Alignment.centerRight,
+                      ),
                     ),
                   ),
                 ],
@@ -154,12 +170,18 @@ class PaymentStatusChart extends StatelessWidget {
                     color: Colors.blue[700],
                   ),
                 ),
-                Text(
-                  '¥${NumberFormat('#,##0').format(totalAmount)}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[700],
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: SingleLineAmountText(
+                      text: '¥${NumberFormat('#,##0').format(totalAmount)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[700],
+                      ),
+                      alignment: Alignment.centerRight,
+                    ),
                   ),
                 ),
               ],

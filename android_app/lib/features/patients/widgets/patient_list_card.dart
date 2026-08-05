@@ -28,17 +28,7 @@ class PatientListCard extends StatelessWidget {
     final doctor = patient.doctor;
     final address = patient.address;
 
-    // 为每个患者生成一个稳定的随机颜色，基于姓名
-    final int colorSeed = patient.name.hashCode;
-    final colors = [
-      AppTheme.primaryColor,
-      AppTheme.secondaryColor,
-      AppTheme.accentColor,
-      AppTheme.infoColor,
-      AppTheme.successColor,
-      AppTheme.warningColor,
-    ];
-    final patientColor = colors[colorSeed % colors.length];
+    final genderColor = _getGenderColor(patient.gender);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -63,7 +53,7 @@ class PatientListCard extends StatelessWidget {
                     // 头像
                     CircleAvatar(
                       radius: 28,
-                      backgroundColor: patientColor.withValues(alpha: 0.15),
+                      backgroundColor: genderColor.withValues(alpha: 0.15),
                       child: Text(
                         patient.name.isNotEmpty
                             ? patient.name.characters.first
@@ -71,7 +61,7 @@ class PatientListCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: patientColor,
+                          color: genderColor,
                         ),
                       ),
                     ),
@@ -97,23 +87,13 @@ class PatientListCard extends StatelessWidget {
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color:
-                                      patient.gender == '男'
-                                          ? AppTheme.infoColor.withValues(
-                                            alpha: 0.1,
-                                          )
-                                          : AppTheme.accentColor.withValues(
-                                            alpha: 0.1,
-                                          ),
+                                  color: genderColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
                                   patient.gender,
                                   style: TextStyle(
-                                    color:
-                                        patient.gender == '男'
-                                            ? AppTheme.infoColor
-                                            : AppTheme.accentColor,
+                                    color: genderColor,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -280,6 +260,12 @@ class PatientListCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _getGenderColor(String gender) {
+    if (gender == '男') return AppTheme.infoColor;
+    if (gender == '女') return AppTheme.accentColor;
+    return AppTheme.secondaryText;
   }
 
   Widget _buildInfoItem({

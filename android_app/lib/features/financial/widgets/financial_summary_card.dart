@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../widgets/app_card.dart';
+import '../../../widgets/single_line_amount_text.dart';
 import '../../../models/financial_item.dart';
 
 /// 财务统计卡片组件
@@ -57,7 +58,9 @@ class FinancialSummaryCard extends StatelessWidget {
                     '总欠费',
                     '¥${NumberFormat('#,##0').format(totalOutstanding)}',
                     Icons.money_off,
-                    totalOutstanding > 0 ? Colors.red.shade600 : Colors.grey.shade600,
+                    totalOutstanding > 0
+                        ? Colors.red.shade600
+                        : Colors.grey.shade600,
                   ),
                 ),
               ],
@@ -84,14 +87,15 @@ class FinancialSummaryCard extends StatelessWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 2),
-        Text(
-          value,
+        SingleLineAmountText(
+          text: value,
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
             color: color,
           ),
           textAlign: TextAlign.center,
+          alignment: Alignment.center,
         ),
       ],
     );
