@@ -974,6 +974,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
                                     });
                                   },
                                 ),
+                                const SizedBox(height: 16),
                                 PatientFormDentalConditionSection(
                                   child: _buildDentalConditionSection(),
                                 ),
@@ -983,6 +984,7 @@ class _PatientFormDialogState extends State<PatientFormDialog> {
                                       _formState.treatmentItemsController,
                                   canEditBasicInfo: _formState.canEditBasicInfo,
                                 ),
+                                const SizedBox(height: 16),
                               ],
                             ),
                           ),

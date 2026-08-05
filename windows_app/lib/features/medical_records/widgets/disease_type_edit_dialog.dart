@@ -417,23 +417,29 @@ class _DiseaseTypeEditDialogState extends State<DiseaseTypeEditDialog> {
           child: Row(
             children: [
               Expanded(
-                child: RadioListTile<bool>(
-                  title: const Text('主类型'),
-                  subtitle: const Text('顶级分类'),
-                  value: true,
-                  enabled: widget.template == null,
-                  activeColor: context.tokens.primaryAccent,
-                  contentPadding: EdgeInsets.zero,
+                child: Material(
+                  color: Colors.transparent,
+                  child: RadioListTile<bool>(
+                    title: const Text('主类型'),
+                    subtitle: const Text('顶级分类'),
+                    value: true,
+                    enabled: widget.template == null,
+                    activeColor: context.tokens.primaryAccent,
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
               ),
               Expanded(
-                child: RadioListTile<bool>(
-                  title: const Text('子类型'),
-                  subtitle: const Text('从属分类'),
-                  value: false,
-                  enabled: widget.template == null,
-                  activeColor: context.tokens.primaryAccent,
-                  contentPadding: EdgeInsets.zero,
+                child: Material(
+                  color: Colors.transparent,
+                  child: RadioListTile<bool>(
+                    title: const Text('子类型'),
+                    subtitle: const Text('从属分类'),
+                    value: false,
+                    enabled: widget.template == null,
+                    activeColor: context.tokens.primaryAccent,
+                    contentPadding: EdgeInsets.zero,
+                  ),
                 ),
               ),
             ],

@@ -637,7 +637,12 @@ class DatabaseCheckWidgets {
           children: [
             Icon(state.icon, color: state.color),
             const SizedBox(width: 8),
-            const Text('检测日志详情'),
+            const Expanded(child: Text('检测日志详情')),
+            IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close),
+              tooltip: '关闭',
+            ),
           ],
         ),
         content: SizedBox(
@@ -914,9 +919,10 @@ class DatabaseCheckWidgets {
           ),
         ),
         actions: [
-          TextButton(
+          TextButton.icon(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('关闭'),
+            icon: const Icon(Icons.arrow_back),
+            label: const Text('返回日志列表'),
           ),
         ],
       ),

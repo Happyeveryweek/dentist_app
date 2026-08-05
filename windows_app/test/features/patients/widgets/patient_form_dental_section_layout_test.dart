@@ -17,4 +17,19 @@ void main() {
     expect(source, isNot(contains("'预约：是'")));
     expect(source, isNot(contains("'预约：否'")));
   });
+
+  test('患者表单治疗项目与底部操作栏保留间距', () {
+    final source = File(
+      'lib/features/patients/widgets/patient_form_dialog.dart',
+    ).readAsStringSync();
+    final treatmentIndex = source.indexOf('PatientFormTreatmentSection(');
+    final actionsIndex = source.indexOf('PatientFormActions(');
+
+    expect(treatmentIndex, isNonNegative);
+    expect(actionsIndex, greaterThan(treatmentIndex));
+    expect(
+      source.substring(treatmentIndex, actionsIndex),
+      contains('const SizedBox(height: 16)'),
+    );
+  });
 }

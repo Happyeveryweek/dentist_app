@@ -12,8 +12,9 @@ class PatientSyncLogDialog extends StatefulWidget {
     if (!context.mounted) return;
 
     if (logs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('暂无患者同步日志记录')),
+      AppToastManager.showInfo(
+        context,
+        message: '暂无患者同步日志记录',
       );
       return;
     }
@@ -126,7 +127,16 @@ class _PatientSyncLogDialogState extends State<PatientSyncLogDialog> {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     return AlertDialog(
-      title: const Text('SQLite 患者同步 MySQL 日志'),
+      title: Row(
+        children: [
+          const Expanded(child: Text('SQLite 患者同步 MySQL 日志')),
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close),
+            tooltip: '关闭',
+          ),
+        ],
+      ),
       content: SizedBox(
         width: 720,
         height: 480,
@@ -322,9 +332,10 @@ class _PatientSyncLogDialogState extends State<PatientSyncLogDialog> {
           child: const Text('清空日志'),
         ),
         const SizedBox(width: 8),
-        TextButton(
+        TextButton.icon(
           onPressed: () => Navigator.pop(context),
-          child: const Text('关闭'),
+          icon: const Icon(Icons.arrow_back),
+          label: const Text('返回'),
         ),
       ],
     );

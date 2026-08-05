@@ -52,8 +52,9 @@ class StructureLogDialog extends StatefulWidget {
     if (!context.mounted) return;
 
     if (logs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('暂无数据库结构检查日志记录')),
+      AppToastManager.showInfo(
+        context,
+        message: '暂无数据库结构检查日志记录',
       );
       return;
     }
@@ -134,7 +135,6 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
 
       if (confirmed == true) {
         if (!mounted) return;
-        final tokens = context.tokens;
         final settingsProvider =
             Provider.of<SettingsProvider>(context, listen: false);
         final dbProvider =
@@ -157,17 +157,17 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
           _refreshLogs();
         } else {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: const Text('清空日志失败'), backgroundColor: tokens.error),
+          AppToastManager.showError(
+            context,
+            message: '清空日志失败',
           );
         }
       }
     } catch (e) {
       if (!mounted) return;
-      final tokens = context.tokens;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('清空失败: $e'), backgroundColor: tokens.error),
+      AppToastManager.showError(
+        context,
+        message: '清空失败: $e',
       );
     }
   }
@@ -176,7 +176,16 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     return AlertDialog(
-      title: const Text('数据库结构检测日志'),
+      title: Row(
+        children: [
+          const Expanded(child: Text('数据库结构检测日志')),
+          IconButton(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close),
+            tooltip: '关闭',
+          ),
+        ],
+      ),
       content: SizedBox(
         width: 600,
         height: 500,
@@ -227,7 +236,6 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
                         final log = widget.logs[index];
                         return DatabaseCheckWidgets.buildLogItem(context, log,
                             () {
-                          Navigator.of(context).pop();
                           DatabaseCheckWidgets.showLogDetails(
                               context, log, () => _refreshLogs());
                         });
@@ -238,9 +246,10 @@ class _StructureLogDialogState extends State<StructureLogDialog> {
         ),
       ),
       actions: [
-        TextButton(
+        TextButton.icon(
           onPressed: () => Navigator.pop(context),
-          child: const Text('关闭'),
+          icon: const Icon(Icons.arrow_back),
+          label: const Text('返回'),
         ),
       ],
     );
