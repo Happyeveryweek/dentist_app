@@ -181,8 +181,7 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
   @override
   bool get wantKeepAlive => true;
 
-  int _selectedTabIndex = 0;
-  TabController? _tabController;
+  late final TabController _tabController;
 
   // 缓存子页面实例
   final List<Widget> _businessPages = [
@@ -194,20 +193,12 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
   @override
   void initState() {
     super.initState();
-    final controller = TabController(length: 3, vsync: this);
-    controller.addListener(() {
-      if (controller.indexIsChanging) {
-        setState(() {
-          _selectedTabIndex = controller.index;
-        });
-      }
-    });
-    _tabController = controller;
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
   void dispose() {
-    _tabController?.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -237,42 +228,77 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
                   horizontal: 16,
                   vertical: 12,
                 ),
-                child: Row(
-                  children: [
-                    _buildCompactTab(
-                      icon: Icons.account_balance_wallet_rounded,
-                      label: '财务',
-                      index: 0,
-                      color: AppTheme.successColor,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildCompactTab(
-                      icon: Icons.shopping_cart_rounded,
-                      label: '采购',
-                      index: 1,
-                      color: AppTheme.infoColor,
-                    ),
-                    const SizedBox(width: 8),
-                    _buildCompactTab(
-                      icon: Icons.people_rounded,
-                      label: '用户',
-                      index: 2,
-                      color: AppTheme.navigationBusiness,
-                    ),
-                  ],
-                ),
+                child: BusinessManagementTabs(controller: _tabController),
               ),
             ),
           ),
           // 页面内容 - 占据剩余所有空间
           Expanded(
-            child: LazyIndexedStack(
-              index: _selectedTabIndex,
-              children: _businessPages,
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                for (final page in _businessPages)
+                  _KeepAliveBusinessPage(child: page),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class BusinessManagementTabs extends StatelessWidget {
+  final TabController controller;
+
+  const BusinessManagementTabs({super.key, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final tabAnimation = controller.animation;
+    if (tabAnimation == null) {
+      return _buildTabs(selectedIndex: controller.index);
+    }
+
+    return AnimatedBuilder(
+      animation: tabAnimation,
+      builder:
+          (context, _) => _buildTabs(
+            selectedIndex:
+                controller.indexIsChanging
+                    ? controller.index
+                    : tabAnimation.value.round(),
+          ),
+    );
+  }
+
+  Widget _buildTabs({required int selectedIndex}) {
+    return Row(
+      children: [
+        _buildCompactTab(
+          icon: Icons.account_balance_wallet_rounded,
+          label: '财务',
+          index: 0,
+          selected: selectedIndex == 0,
+          color: AppTheme.successColor,
+        ),
+        const SizedBox(width: 8),
+        _buildCompactTab(
+          icon: Icons.shopping_cart_rounded,
+          label: '采购',
+          index: 1,
+          selected: selectedIndex == 1,
+          color: AppTheme.infoColor,
+        ),
+        const SizedBox(width: 8),
+        _buildCompactTab(
+          icon: Icons.people_rounded,
+          label: '用户',
+          index: 2,
+          selected: selectedIndex == 2,
+          color: AppTheme.navigationBusiness,
+        ),
+      ],
     );
   }
 
@@ -280,20 +306,16 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
     required IconData icon,
     required String label,
     required int index,
+    required bool selected,
     required Color color,
   }) {
-    final isSelected = _selectedTabIndex == index;
+    final isSelected = selected;
 
     return Expanded(
       child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _selectedTabIndex = index;
-          });
-          _tabController?.animateTo(index);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+        behavior: HitTestBehavior.opaque,
+        onTap: () => controller.animateTo(index),
+        child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
           decoration: BoxDecoration(
             gradient:
@@ -339,5 +361,26 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
         ),
       ),
     );
+  }
+}
+
+class _KeepAliveBusinessPage extends StatefulWidget {
+  final Widget child;
+
+  const _KeepAliveBusinessPage({required this.child});
+
+  @override
+  State<_KeepAliveBusinessPage> createState() => _KeepAliveBusinessPageState();
+}
+
+class _KeepAliveBusinessPageState extends State<_KeepAliveBusinessPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return widget.child;
   }
 }

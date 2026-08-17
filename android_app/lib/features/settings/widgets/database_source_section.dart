@@ -7,8 +7,6 @@ class DatabaseSourceSection extends StatelessWidget {
   final String selectedDbType;
   final bool showMysqlConfig;
   final bool isEditingMysql;
-  final bool mysqlTestSuccess;
-  final bool isTestingNetwork;
   final bool isTestingMysql;
   final DatabaseConfig dbConfig;
   final TextEditingController hostController;
@@ -19,7 +17,6 @@ class DatabaseSourceSection extends StatelessWidget {
   final VoidCallback onSwitchToSqlite;
   final VoidCallback onSwitchToMysql;
   final VoidCallback onToggleMysqlEdit;
-  final VoidCallback onTestNetwork;
   final VoidCallback onTestConnection;
   final VoidCallback? onSaveMysql;
   final VoidCallback onSelectCustomDbPath;
@@ -29,8 +26,6 @@ class DatabaseSourceSection extends StatelessWidget {
     required this.selectedDbType,
     required this.showMysqlConfig,
     required this.isEditingMysql,
-    required this.mysqlTestSuccess,
-    required this.isTestingNetwork,
     required this.isTestingMysql,
     required this.dbConfig,
     required this.hostController,
@@ -41,7 +36,6 @@ class DatabaseSourceSection extends StatelessWidget {
     required this.onSwitchToSqlite,
     required this.onSwitchToMysql,
     required this.onToggleMysqlEdit,
-    required this.onTestNetwork,
     required this.onTestConnection,
     required this.onSaveMysql,
     required this.onSelectCustomDbPath,
@@ -295,12 +289,13 @@ class DatabaseSourceSection extends StatelessWidget {
       icon: Icons.dns_outlined,
       trailing:
           isEditingMysql
-              ? null
+              ? TextButton.icon(
+                onPressed: isTestingMysql ? null : onToggleMysqlEdit,
+                icon: const Icon(Icons.close_rounded, size: 18),
+                label: const Text('取消'),
+              )
               : TextButton.icon(
-                onPressed:
-                    isTestingNetwork || isTestingMysql
-                        ? null
-                        : onToggleMysqlEdit,
+                onPressed: isTestingMysql ? null : onToggleMysqlEdit,
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('编辑'),
               ),
@@ -482,18 +477,6 @@ class DatabaseSourceSection extends StatelessWidget {
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: isTestingNetwork ? null : onTestNetwork,
-                child: _buildButtonContent(
-                  loading: isTestingNetwork,
-                  icon: Icons.network_check_rounded,
-                  label: isTestingNetwork ? '测试中' : '测试网络',
-                  loadingColor: AppTheme.primaryColor,
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: OutlinedButton(
                 onPressed: isTestingMysql ? null : onTestConnection,
                 child: _buildButtonContent(
                   loading: isTestingMysql,
@@ -503,28 +486,19 @@ class DatabaseSourceSection extends StatelessWidget {
                 ),
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed:
-                onSaveMysql == null || isTestingNetwork || isTestingMysql
-                    ? null
-                    : onSaveMysql,
-            icon: const Icon(Icons.save_outlined),
-            label: Text(mysqlTestSuccess ? '保存并应用配置' : '测试连接后保存'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 13),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed:
+                    onSaveMysql == null || isTestingMysql ? null : onSaveMysql,
+                icon: const Icon(Icons.save_outlined),
+                label: const Text('保存'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                ),
+              ),
             ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        TextButton(
-          onPressed:
-              isTestingNetwork || isTestingMysql ? null : onToggleMysqlEdit,
-          child: const Text('取消编辑'),
+          ],
         ),
       ],
     );

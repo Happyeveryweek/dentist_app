@@ -27,6 +27,8 @@
 
 ### Android 端
 
+- 业务页财务／采购／用户顶部标签的选中态已修复：点击后第一帧直接绘制目标标签的图标、文字与背景最终色，不再先闪回旧状态或等待背景过渡；内容区拖动过半时标签与页面同步切换。新增点击与慢速拖动回归测试，专项测试与 `flutter analyze` 通过，待真机确认实际手感。
+- 业务页财务／采购／用户三个子页已接入顶部内容区左右滑动，并保留点击切换及子页状态；MySQL 配置编辑态的“取消”移至卡片右上角，测试网络与测试连接合并为一个“测试连接”按钮，保存按钮与其并排，取消时恢复已保存配置。Android 全量 `flutter test --no-pub` 36 项与 `flutter analyze` 均已通过，待真机确认滑动、按钮位置和窄屏布局。
 - 预约管理列表及日历视图中的预约卡片已改为按患者 ID关联的性别显示头像颜色：男为蓝色、女为强调色、未知性别为中性灰色，移除按姓名哈希随机取色；不修改预约数据库结构。男／女／未知专项测试、Android 全量测试与 `flutter analyze --no-pub` 均已通过，待真机确认实际视觉。
 - 患者列表首字头像已改为按性别使用稳定语义色：男为蓝色、女为强调色、未知性别为中性灰色，头像底色、首字和性别标签保持同色，不再按姓名随机出现绿色、蓝色等颜色。男／女／未知专项测试、Android 全量测试与 `flutter analyze --no-pub` 均已通过，待真机确认实际视觉。
 - Android 日期选择入口已统一支持月份横向切换：自定义 `ModernDatePickerDialog` 的星期／日历区域支持左右拖动，财务／采购等范围选择器继续复用 Flutter `CalendarDatePicker` 的原生月份分页能力；现有箭头、日期点击和手动输入保持不变。双向慢速拖动回归测试、Android 全量测试与 `flutter analyze --no-pub` 均已通过，待真机确认不同尺寸下的手势体验。
@@ -48,6 +50,8 @@
 
 ## 最近验证
 
+- 2026-08-17：Android 业务页顶部标签改为从 `TabController` 动画统一派生选中态：点击动画进行中直接取目标 index，拖动时跟随动画进度取最近页面，移除了手动 `_selectedTabIndex` 二次状态更新；标签背景由 `AnimatedContainer` 改为直接绘制最终装饰，避免 200ms 过渡产生视觉闪烁。新增点击第一帧与慢速拖动过半两项回归测试。专项 `flutter test --no-pub` 2 项通过，`flutter analyze` 无问题。未运行应用，待真机确认点击与左右滑动手感。
+- 2026-08-11：Android 业务页将顶部财务／采购／用户子页由 `LazyIndexedStack` 接入 `TabBarView`，使用保活包装保持子页状态；MySQL 配置编辑区将取消放到卡片头部、合并网络与连接测试并与保存按钮并排，取消时恢复已保存字段。`flutter analyze` 无问题，Android 全量 `flutter test --no-pub` 36 项通过；未运行应用，待真机确认实际滑动和设置页布局。
 - 2026-08-05：Android 预约管理列表移除按患者姓名哈希生成的头像颜色，页面加载患者资料时按患者 ID建立性别映射并传入预约卡片；预约卡片男使用 `AppTheme.infoColor`，女使用 `AppTheme.accentColor`，其他值使用 `AppTheme.secondaryText`。新增男／女／未知预约头像颜色回归测试，专项测试通过，Android 全量 `flutter test --no-pub` 36 项与 `flutter analyze --no-pub` 均通过。未运行应用，待真机确认列表和日历视图中的实际颜色。
 - 2026-08-05：Android 患者列表卡片移除按姓名哈希生成的随机头像颜色，改为复用性别标签语义色：男使用 `AppTheme.infoColor`，女使用 `AppTheme.accentColor`，其他值使用 `AppTheme.secondaryText`；头像底色和首字文字色同步调整。新增男／女／未知三种性别颜色回归测试，专项测试通过，Android 全量 `flutter test --no-pub` 35 项与 `flutter analyze --no-pub` 均通过。未运行应用，待真机确认实际颜色和对比度。
 - 2026-08-05：Android 自定义 `ModernDatePickerDialog` 的星期／日历区域新增横向月份手势，按水平位移或滑动速度切换前后月份；核对 Flutter SDK 后确认 `ModernDateRangePicker` 使用的 `CalendarDatePicker` 已通过内部 `PageView` 支持月份左右滑动。新增单日期选择器双向慢速拖动测试，专项测试通过，Android 全量 `flutter test --no-pub` 34 项与 `flutter analyze --no-pub` 均通过。未运行应用，待真机确认日期范围、收费日期、预约日期和患者日期入口的实际手势体验。

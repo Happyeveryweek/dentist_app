@@ -42,8 +42,6 @@ class _SettingsScreenState extends State<SettingsScreen>
   bool _isLoading = false;
   bool _mysqlTestSuccess = false;
   bool _isEditingMysql = false;
-  // 独立的测试中状态：仅作用于按钮内部，避免替换整个 TabBarView
-  bool _isTestingNetwork = false;
   bool _isTestingMysql = false;
 
   // 数据库提供者
@@ -327,12 +325,8 @@ class _SettingsScreenState extends State<SettingsScreen>
         return;
       }
 
-      // 先检查网络连通性（standalone=false 避免触发"测网络"按钮的加载态）
-      final networkOk = await _testNetworkConnection(
-        host,
-        port.toString(),
-        standalone: false,
-      );
+      // 测试按钮统一检查网络连通性和 MySQL 连接
+      final networkOk = await _testNetworkConnection(host, port.toString());
       if (!networkOk) {
         // 网络测试已显示错误消息
         return;
@@ -447,8 +441,6 @@ class _SettingsScreenState extends State<SettingsScreen>
                           selectedDbType: _selectedDbType,
                           showMysqlConfig: _showMysqlConfig,
                           isEditingMysql: _isEditingMysql,
-                          mysqlTestSuccess: _mysqlTestSuccess,
-                          isTestingNetwork: _isTestingNetwork,
                           isTestingMysql: _isTestingMysql,
                           dbConfig: _dbConfig,
                           hostController: _hostController,
@@ -458,16 +450,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                           passwordController: _passwordController,
                           onSwitchToSqlite: () => _switchDatabaseType('sqlite'),
                           onSwitchToMysql: () => _switchDatabaseType('mysql'),
-                          onToggleMysqlEdit: () {
-                            setState(() {
-                              _isEditingMysql = !_isEditingMysql;
-                            });
-                          },
-                          onTestNetwork:
-                              () => _testNetworkConnection(
-                                _hostController.text,
-                                _portController.text,
-                              ),
+                          onToggleMysqlEdit: _toggleMysqlEdit,
                           onTestConnection: _testMySqlConnection,
                           onSaveMysql:
                               _mysqlTestSuccess ? _saveMySQLConfig : null,
@@ -490,23 +473,26 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  // 测试网络连接
-  //
-  // [standalone] 为 true 表示由"测网络"按钮直接触发，会同步切换 _isTestingNetwork
-  // 状态用于按钮加载态；为 false 表示由 _testMySqlConnection 内部调用，
-  // 不再切换"测网络"按钮状态，避免与"测连接"按钮加载态冲突。
-  Future<bool> _testNetworkConnection(
-    String host,
-    String port, {
-    bool standalone = true,
-  }) async {
-    try {
-      if (standalone) {
-        setState(() {
-          _isTestingNetwork = true;
-        });
-      }
+  void _toggleMysqlEdit() {
+    if (_isEditingMysql) {
+      _hostController.text = _dbConfig.mysql.host;
+      _portController.text = _dbConfig.mysql.port;
+      _databaseController.text = _dbConfig.mysql.database;
+      _usernameController.text = _dbConfig.mysql.username;
+      _passwordController.text = _dbConfig.mysql.password;
+      _mysqlTestSuccess = false;
+    } else {
+      _mysqlTestSuccess = false;
+    }
 
+    setState(() {
+      _isEditingMysql = !_isEditingMysql;
+    });
+  }
+
+  // 测试网络连接，作为 MySQL 连接测试的前置检查。
+  Future<bool> _testNetworkConnection(String host, String port) async {
+    try {
       final success = await MysqlConfigService.testNetworkConnection(
         host,
         port,
@@ -521,15 +507,6 @@ class _SettingsScreenState extends State<SettingsScreen>
       );
 
       if (success) {
-        if (isConverted) {
-          _showSnackBar(
-            '网络连接正常，已将 $host 转换为 $effectiveHost 连接成功',
-            isSuccess: true,
-          );
-        } else {
-          _showSnackBar('网络连接正常，可以连接到 $host:$port', isSuccess: true);
-        }
-
         // 如果使用了转换，更新输入框内容
         if (isConverted) {
           _hostController.text = effectiveHost;
@@ -551,12 +528,6 @@ class _SettingsScreenState extends State<SettingsScreen>
     } catch (e) {
       AppLogger.info('网络测试错误: $e');
       return false;
-    } finally {
-      if (mounted && standalone) {
-        setState(() {
-          _isTestingNetwork = false;
-        });
-      }
     }
   }
 
