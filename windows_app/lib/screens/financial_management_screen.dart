@@ -717,7 +717,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
                   _currentPage = 1;
                   _sortBy = 'charge_date';
                   _sortAscending = false;
-                  // 患者模式允许的排序字段：最近更新/收费日期/应收费/已收费/欠费
+                  // 患者模式允许的排序字段：最近就诊/收费日期/应收费/已收费/欠费
                   const allowed = [
                     'updated_at',
                     'charge_date',
@@ -1028,7 +1028,7 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
       );
 
       if (!mounted) return;
-      showDialog(
+      final changed = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
         builder: (context) {
@@ -1068,6 +1068,9 @@ class _FinancialManagementScreenState extends State<FinancialManagementScreen> {
           );
         },
       );
+      if (changed == true && mounted) {
+        await _loadData(showLoading: false);
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

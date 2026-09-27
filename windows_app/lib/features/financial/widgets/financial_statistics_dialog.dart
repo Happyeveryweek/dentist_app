@@ -6,8 +6,10 @@ import 'dart:ui' as ui; // 导入 dart:ui
 import '../../../models/financial_record.dart';
 import '../../../models/financial_item.dart';
 import '../../../models/patient.dart';
+import '../../../screens/financial_detail_screen.dart';
 import '../../../widgets/reusable_date_range_picker.dart';
 import '../helpers/financial_payment_method_helper.dart';
+import '../helpers/patient_charge_rank.dart';
 import '../services/financial_statistics_service.dart';
 
 class FinancialStatsDialog extends StatefulWidget {
@@ -45,6 +47,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
   String _activePreset = '6m';
   bool _isRefreshing = false;
   bool _showFinancialAmounts = false;
+  bool _financialDetailChanged = false;
 
   // 获取最早的收费日期（用于“全部”时间范围）
   DateTime _getEarliestFinancialDate() {
@@ -329,38 +332,12 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
     return totalDebt;
   }
 
-  List<MapEntry<String, double>> _calculateTopPatients() {
-    final Map<String, double> patientTotals = {};
-    final filteredItems = _getFilteredItems();
-
-    for (final item in filteredItems) {
-      final record = _financialRecords.firstWhere(
-        (r) => r.id == item.financialRecordId,
-        orElse: () => FinancialRecord(
-            id: 0,
-            patientId: 0,
-            totalQuantity: 0,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now()),
-      );
-      final patient = _patients.firstWhere(
-        (p) => p.id == record.patientId,
-        orElse: () => Patient(
-            id: 0,
-            name: '未知患者',
-            age: 0,
-            gender: '未知',
-            phone: '',
-            firstVisitDate: DateTime.now()),
-      );
-      patientTotals[patient.name] =
-          (patientTotals[patient.name] ?? 0) + item.totalPrice;
-    }
-
-    final sortedPatients = patientTotals.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    return sortedPatients.take(20).toList();
+  List<PatientChargeRank> _calculateTopPatients() {
+    return rankPatientsByReceived(
+      items: _getFilteredItems(),
+      records: _financialRecords,
+      patients: _patients,
+    );
   }
 
   double _calculatePatientPercentage(double patientTotal, double grandTotal) {
@@ -368,58 +345,49 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
     return (patientTotal / grandTotal) * 100;
   }
 
-  List<MapEntry<String, double>> _calculateTopDebtors() {
-    final Map<int, double> receivableByPatient = {};
-    final Map<int, double> receivedByPatient = {};
-
-    // 按截止日期过滤：只计算结束日期之前的所有财务项目
+  List<PatientChargeRank> _calculateTopDebtors() {
+    // 欠费按截止日期累计，不受起始日期限制。
     final endDate = DateTime(_endDate.year, _endDate.month, _endDate.day);
     final itemsBeforeEndDate = _financialItems.where((item) {
       final itemDate = DateTime(
           item.chargeDate.year, item.chargeDate.month, item.chargeDate.day);
       return itemDate.isBefore(endDate) || itemDate.isAtSameMomentAs(endDate);
     }).toList();
+    return rankPatientsByDebt(
+      items: itemsBeforeEndDate,
+      records: _financialRecords,
+      patients: _patients,
+    );
+  }
 
-    for (final item in itemsBeforeEndDate) {
-      final record = _financialRecords.firstWhere(
-        (r) => r.id == item.financialRecordId,
-        orElse: () => FinancialRecord(
-            id: 0,
-            patientId: 0,
-            totalQuantity: 0,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now()),
-      );
-      final pid = record.patientId;
-      // 患者维度应收= item_price 累加
-      receivableByPatient[pid] =
-          (receivableByPatient[pid] ?? 0) + item.itemPrice;
-      receivedByPatient[pid] = (receivedByPatient[pid] ?? 0) + item.totalPrice;
-    }
+  Future<void> _openPatientFinancialDetail(Patient patient) async {
+    final patientId = patient.id;
+    if (patientId == null || patientId <= 0) return;
+    final changed = await showFinancialDetailDialog(
+      context: context,
+      patient: patient,
+    );
+    if (!mounted || changed != true) return;
+    _financialDetailChanged = true;
+    await _refreshData();
+  }
 
-    final Map<String, double> patientDebts = {};
-    receivableByPatient.forEach((pid, receivable) {
-      final received = receivedByPatient[pid] ?? 0.0;
-      final debt = receivable - received;
-      if (debt > 0) {
-        final patient = _patients.firstWhere(
-          (p) => p.id == pid,
-          orElse: () => Patient(
-              id: 0,
-              name: '未知患者',
-              age: 0,
-              gender: '未知',
-              phone: '',
-              firstVisitDate: DateTime.now()),
-        );
-        patientDebts[patient.name] = debt;
-      }
-    });
+  Widget _patientRankTile({
+    required String rankKind,
+    required PatientChargeRank rank,
+    required Widget child,
+  }) {
+    return _PatientRankTile(
+      rankKind: rankKind,
+      rank: rank,
+      onTap: () => _openPatientFinancialDetail(rank.patient),
+      child: child,
+    );
+  }
 
-    final sortedDebtors = patientDebts.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    return sortedDebtors.take(30).toList();
+  String _nameInitial(String name) {
+    if (name.isEmpty) return '?';
+    return name.substring(0, 1);
   }
 
   bool _isPresetActive(String preset) {
@@ -593,7 +561,7 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
           ),
           IconButton(
             icon: const Icon(Icons.close),
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.of(context).pop(_financialDetailChanged),
           ),
         ],
       ),
@@ -1426,121 +1394,136 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
     );
   }
 
-  Widget _buildTopPatientsCard(List<MapEntry<String, double>> topPatients) {
+  Widget _buildTopPatientsCard(List<PatientChargeRank> topPatients) {
     final tokens = context.tokens;
     final colors = context.colors;
     final grandTotal =
-        topPatients.fold(0.0, (double sum, item) => sum + item.value);
+        topPatients.fold(0.0, (double sum, item) => sum + item.amount);
     return _buildListCard(
       '患者收费统计 (前20名)',
       Icons.person_search,
-      topPatients.map((entry) {
-        final percentage = _calculatePatientPercentage(entry.value, grandTotal);
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 12,
-                    backgroundColor:
-                        tokens.primaryAccent.withValues(alpha: 0.1),
-                    child: Text(
-                      entry.key.substring(0, 1),
+      topPatients.map((rank) {
+        final percentage = _calculatePatientPercentage(rank.amount, grandTotal);
+        final name = rank.patient.name;
+        return _patientRankTile(
+          rankKind: 'charge',
+          rank: rank,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 12,
+                      backgroundColor:
+                          tokens.primaryAccent.withValues(alpha: 0.1),
+                      child: Text(
+                        _nameInitial(name),
+                        style: TextStyle(
+                            color: tokens.primaryAccent,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        name,
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: colors.onSurface),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '¥${rank.amount.toStringAsFixed(0)}',
                       style: TextStyle(
-                          color: tokens.primaryAccent,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11),
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: tokens.primaryAccent,
+                        fontFeatures: const [ui.FontFeature.tabularFigures()],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      entry.key,
-                      style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: colors.onSurface),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '¥${entry.value.toStringAsFixed(0)}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: tokens.primaryAccent,
-                      fontFeatures: const [ui.FontFeature.tabularFigures()],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('${percentage.toStringAsFixed(1)}%',
-                      style: TextStyle(fontSize: 11, color: tokens.textMuted)),
-                ],
-              ),
-              const SizedBox(height: 4),
-              LinearProgressIndicator(
-                value: percentage / 100,
-                backgroundColor: tokens.divider,
-                valueColor: AlwaysStoppedAnimation<Color>(tokens.primaryAccent),
-              ),
-            ],
+                    const SizedBox(width: 8),
+                    Text('${percentage.toStringAsFixed(1)}%',
+                        style:
+                            TextStyle(fontSize: 11, color: tokens.textMuted)),
+                    Icon(Icons.chevron_right,
+                        size: 16, color: tokens.textMuted),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                LinearProgressIndicator(
+                  value: percentage / 100,
+                  backgroundColor: tokens.divider,
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(tokens.primaryAccent),
+                ),
+              ],
+            ),
           ),
         );
       }).toList(),
     );
   }
 
-  Widget _buildTopDebtorsCard(List<MapEntry<String, double>> topDebtors) {
+  Widget _buildTopDebtorsCard(List<PatientChargeRank> topDebtors) {
     final tokens = context.tokens;
     final colors = context.colors;
     return _buildListCard(
       '患者欠费排行 (前30名)',
       Icons.money_off_csred_outlined,
-      topDebtors.map((entry) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 12,
-                backgroundColor: tokens.error.withValues(alpha: 0.1),
-                child: Icon(Icons.person, color: tokens.error, size: 14),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  entry.key,
-                  style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: colors.onSurface),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+      topDebtors.map((rank) {
+        final name = rank.patient.name;
+        return _patientRankTile(
+          rankKind: 'debt',
+          rank: rank,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 12,
+                  backgroundColor: tokens.error.withValues(alpha: 0.1),
+                  child: Icon(Icons.person, color: tokens.error, size: 14),
                 ),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 96,
-                child: Align(
-                  alignment: Alignment.centerRight,
+                const SizedBox(width: 8),
+                Expanded(
                   child: Text(
-                    '¥${entry.value.toStringAsFixed(0)}',
-                    textAlign: TextAlign.right,
+                    name,
                     style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: tokens.error,
-                      fontFeatures: const [ui.FontFeature.tabularFigures()],
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: colors.onSurface),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 96,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '¥${rank.amount.toStringAsFixed(0)}',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: tokens.error,
+                        fontFeatures: const [ui.FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+                Icon(Icons.chevron_right, size: 16, color: tokens.textMuted),
+              ],
+            ),
           ),
         );
       }).toList(),
@@ -1593,6 +1576,56 @@ class FinancialStatsDialogState extends State<FinancialStatsDialog> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PatientRankTile extends StatefulWidget {
+  const _PatientRankTile({
+    required this.rankKind,
+    required this.rank,
+    required this.onTap,
+    required this.child,
+  });
+
+  final String rankKind;
+  final PatientChargeRank rank;
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  State<_PatientRankTile> createState() => _PatientRankTileState();
+}
+
+class _PatientRankTileState extends State<_PatientRankTile> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final patientId = widget.rank.patient.id;
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: InkWell(
+        key: ValueKey('patient-${widget.rankKind}-rank-$patientId'),
+        mouseCursor: SystemMouseCursors.click,
+        hoverColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          key: ValueKey('patient-${widget.rankKind}-rank-bg-$patientId'),
+          duration: const Duration(milliseconds: 150),
+          decoration: BoxDecoration(
+            color: _hovered
+                ? context.tokens.listItemHoverBackground
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: widget.child,
         ),
       ),
     );

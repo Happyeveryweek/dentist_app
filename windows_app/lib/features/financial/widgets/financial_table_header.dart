@@ -69,7 +69,7 @@ class FinancialTableHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          // 最近更新列
+          // 最近就诊列
           Expanded(
             flex: 2,
             child: Container(
@@ -81,7 +81,7 @@ class FinancialTableHeader extends StatelessWidget {
               ),
               child: FinancialHeaderCell(
                 icon: Icons.update,
-                label: '最近更新',
+                label: '最近就诊',
                 color: tokens.primaryAccent,
                 alignment: MainAxisAlignment.center,
               ),

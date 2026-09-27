@@ -9,6 +9,7 @@ import '../widgets/success_toast.dart';
 import '../widgets/hoverable_list_card.dart';
 import '../widgets/mysql_connection_warning.dart';
 import '../features/materials/widgets/material_stat_card.dart';
+import '../features/materials/widgets/material_type_filter_dropdown.dart';
 import '../widgets/pagination_control.dart';
 import '../features/materials/widgets/compact_material_action_button.dart';
 import '../features/materials/widgets/dental_material_initialize_dialog.dart';
@@ -35,7 +36,6 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
   String _errorMessage = '';
   String _searchQuery = '';
   String _selectedType = '全部'; // 新增：选中的材料类型
-  bool _isTypeHover = false; // 类型筛选悬停态
   late TextEditingController _searchController;
 
   // 分页相关变量
@@ -506,7 +506,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                                 fontWeight: FontWeight.w600,
                                 color: context.colors.onSurface)),
                         const SizedBox(width: 12),
-                        _buildModernTypeDropdown(
+                        MaterialTypeFilterDropdown(
                           value: _selectedType,
                           items: _materialTypes,
                           onChanged: (value) {
@@ -531,7 +531,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                 Expanded(
                   child: _buildStatCard(
                     icon: Icons.inventory_rounded,
-                    label: '材料总数',
+                    label: '材料数量-$_selectedType',
                     value: _filteredMaterials.length.toString(),
                     color: context.tokens.primaryAccent,
                   ),
@@ -878,214 +878,6 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
       pageSize: _materialsPerPage,
       totalRecords: _totalMaterials,
       onPageChanged: _goToPage,
-    );
-  }
-
-  // 构建类型筛选下拉框
-  Widget _buildModernTypeDropdown({
-    required String value,
-    required List<String> items,
-    required Function(String) onChanged,
-  }) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _isTypeHover = true),
-      onExit: (_) => setState(() => _isTypeHover = false),
-      child: Container(
-        decoration: BoxDecoration(
-          color: context.tokens.cardBackground,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: (_selectedType != '全部' || _isTypeHover)
-                ? context.tokens.primaryAccent.withValues(alpha: 0.6)
-                : context.tokens.border,
-            width: 1.5,
-          ),
-          boxShadow: [
-            if (_isTypeHover)
-              BoxShadow(
-                color: context.tokens.primaryAccent.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-          ],
-        ),
-        child: PopupMenuButton<String>(
-          initialValue: value,
-          onSelected: onChanged,
-          constraints: const BoxConstraints(maxHeight: 320, minWidth: 240),
-          offset: const Offset(0, 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          // 默认 Clip.none 不会裁剪子项，标题栏渐变会溢出到顶部圆角区域，
-          // 导致上方两角视觉呈直角；这里开启抗锯齿裁剪使子项贴合弹出窗圆角。
-          clipBehavior: Clip.antiAlias,
-          elevation: 12,
-          itemBuilder: (context) => [
-            // 标题栏
-            PopupMenuItem<String>(
-              enabled: false,
-              height: 44,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  gradient: context.tokens.primaryHeaderGradient,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.category_rounded,
-                        size: 18, color: context.tokens.cardBackground),
-                    const SizedBox(width: 10),
-                    Text(
-                      '材料类型',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: context.tokens.cardBackground,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: context.tokens.cardBackground
-                            .withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${items.length}项',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: context.tokens.cardBackground,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // 分割线
-            const PopupMenuDivider(height: 1),
-            // 选项列表
-            ...items.map((type) {
-              final isSelected = type == value;
-              return PopupMenuItem<String>(
-                value: type,
-                height: 38,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? context.tokens.primaryAccent.withValues(alpha: 0.1)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 18,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: isSelected
-                              ? context.tokens.primaryHeaderGradient
-                              : null,
-                          border: Border.all(
-                            color: isSelected
-                                ? Colors.transparent
-                                : context.tokens.border,
-                            width: 2,
-                          ),
-                        ),
-                        child: isSelected
-                            ? Icon(Icons.check,
-                                size: 12, color: context.tokens.cardBackground)
-                            : null,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          type,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.normal,
-                            color: isSelected
-                                ? context.tokens.primaryAccent
-                                : context.colors.onSurface,
-                          ),
-                        ),
-                      ),
-                      if (isSelected)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: context.tokens.primaryAccent
-                                .withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '已选',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: context.tokens.primaryAccent,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ],
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.filter_list_rounded,
-                    size: 18,
-                    color: (_selectedType != '全部' || _isTypeHover)
-                        ? context.tokens.primaryAccent
-                        : context.tokens.textMuted,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _selectedType,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: (_selectedType != '全部' || _isTypeHover)
-                          ? context.tokens.primaryAccent
-                          : context.tokens.textMuted,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    size: 18,
-                    color: (_selectedType != '全部' || _isTypeHover)
-                        ? context.tokens.primaryAccent
-                        : context.tokens.textMuted,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 

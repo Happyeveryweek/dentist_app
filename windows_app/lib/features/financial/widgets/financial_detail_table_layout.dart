@@ -29,7 +29,7 @@ class FinancialDetailTableLayout {
     FinancialDetailTableColumn(label: '加工费', flex: 12),
     FinancialDetailTableColumn(
       label: '操作',
-      width: 85,
+      width: 96,
       cellPadding: EdgeInsets.zero,
     ),
   ];

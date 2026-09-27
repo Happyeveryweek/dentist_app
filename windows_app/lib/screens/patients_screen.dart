@@ -36,7 +36,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
   int _totalPatients = 0;
 
   // 排序相关变量
-  String _sortField = 'updated_at'; // 默认按更新时间排序
+  String _sortField = 'updated_at'; // 默认按就诊时间排序
   bool _sortAscending = false; // 默认倒序排序（最新的在前面）
 
   // 日期过滤相关变量

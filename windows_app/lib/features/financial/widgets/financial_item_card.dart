@@ -76,7 +76,7 @@ class FinancialItemCard extends StatelessWidget {
           ),
           const SizedBox(width: 12),
 
-          // 最近更新列
+          // 最近就诊列
           Expanded(
             flex: 2,
             child: FinancialDateCell(

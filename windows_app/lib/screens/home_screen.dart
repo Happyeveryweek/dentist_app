@@ -693,10 +693,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   String _getCurrentDate() {
-    final now = DateTime.now();
-    final weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-    return '${now.month}月${now.day}日 ${weekdays[now.weekday - 1]}';
+    return formatClinicHeaderDate(DateTime.now());
   }
+}
+
+/// 首页右上角日期，包含年月日和星期。
+String formatClinicHeaderDate(DateTime date) {
+  const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  return '${date.year}年${date.month}月${date.day}日 ${weekdays[date.weekday - 1]}';
 }
 
 // 导航项目模型

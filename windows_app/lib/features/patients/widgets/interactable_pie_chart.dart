@@ -113,6 +113,15 @@ class InteractablePieChartState extends State<InteractablePieChart> {
 
                 return InkWell(
                   mouseCursor: SystemMouseCursors.click,
+                  onHover: (hovering) {
+                    setState(() {
+                      if (hovering) {
+                        touchedIndex = index;
+                      } else if (touchedIndex == index) {
+                        touchedIndex = -1;
+                      }
+                    });
+                  },
                   onTap: () {
                     widget.onSectionTap(dataEntry.key);
                   },

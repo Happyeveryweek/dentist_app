@@ -55,7 +55,7 @@ class _SortOptions extends StatelessWidget {
         Text('排序方式：', style: TextStyle(color: context.tokens.textMuted)),
         const SizedBox(width: 8),
         _SortButton(
-          label: '更新时间',
+          label: '就诊时间',
           field: 'updated_at',
           sortField: sortField,
           sortAscending: sortAscending,

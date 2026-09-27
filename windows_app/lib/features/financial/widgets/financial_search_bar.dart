@@ -183,7 +183,7 @@ class FinancialSearchBar extends StatelessWidget {
 
   List<CompactDropdownItem<String>> _patientSortItems(BuildContext context) {
     return <CompactDropdownItem<String>>[
-      _sortMenuItem(context, 'updated_at', Icons.update, '按最近更新'),
+      _sortMenuItem(context, 'updated_at', Icons.update, '按最近就诊'),
       _sortMenuItem(context, 'charge_date', Icons.calendar_today, '按收费日期'),
       _sortMenuItem(context, 'receivable', Icons.request_quote, '按应收费'),
       _sortMenuItem(context, 'received', Icons.payments, '按已收费'),
@@ -193,7 +193,7 @@ class FinancialSearchBar extends StatelessWidget {
 
   List<CompactDropdownItem<String>> _recordSortItems(BuildContext context) {
     return <CompactDropdownItem<String>>[
-      _sortMenuItem(context, 'updated_at', Icons.update, '按最近更新'),
+      _sortMenuItem(context, 'updated_at', Icons.update, '按最近就诊'),
       _sortMenuItem(context, 'charge_date', Icons.calendar_today, '按收费日期'),
       _sortMenuItem(context, 'receivable', Icons.request_quote, '按应收费'),
       _sortMenuItem(context, 'received', Icons.payments, '按已收费'),

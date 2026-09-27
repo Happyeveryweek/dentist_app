@@ -123,7 +123,7 @@ class FinancialCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
 
-                    // 最近更新
+                    // 最近就诊
                     if (updateDate != null)
                       Flexible(
                         flex: 2,
