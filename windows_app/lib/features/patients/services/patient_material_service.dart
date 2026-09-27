@@ -23,7 +23,7 @@ class PatientMaterialService {
     final savedMaterial = await ds.addPatientMaterial(material);
     final savedId = savedMaterial.id;
     if (savedId != null && syncService.needsSync) {
-      syncService.syncPatientMaterialToMySQL(savedMaterial, savedId);
+      await syncService.upsertPatientMaterial(savedMaterial, savedId);
     }
     return savedMaterial;
   }
@@ -42,7 +42,7 @@ class PatientMaterialService {
     final materialId = material.id;
     final success = await ds.updatePatientMaterial(material);
     if (success && materialId != null && syncService.needsSync) {
-      syncService.syncPatientMaterialToMySQL(material, materialId);
+      await syncService.upsertPatientMaterial(material, materialId);
     }
     return success;
   }
@@ -53,7 +53,7 @@ class PatientMaterialService {
     if (ds == null) return false;
     final success = await ds.deletePatientMaterial(id);
     if (success && syncService.needsSync) {
-      syncService.syncDeletePatientMaterialToMySQL(id);
+      await syncService.deletePatientMaterialFromMySQL(id);
     }
     return success;
   }
@@ -65,7 +65,7 @@ class PatientMaterialService {
     final savedImage = await ds.addMaterialImage(image);
     final savedId = savedImage.id;
     if (savedId != null && syncService.needsSync) {
-      syncService.syncMaterialImageToMySQL(savedImage, savedId);
+      await syncService.upsertMaterialImage(savedImage, savedId);
     }
     return savedImage;
   }
@@ -83,7 +83,7 @@ class PatientMaterialService {
     if (ds == null) return false;
     final success = await ds.deleteMaterialImage(imageId);
     if (success && syncService.needsSync) {
-      syncService.syncDeleteMaterialImageToMySQL(imageId);
+      await syncService.deleteMaterialImageFromMySQL(imageId);
     }
     return success;
   }
@@ -110,6 +110,69 @@ class PatientMaterialService {
       return await ds.getMaterialImage(imageId);
     } catch (e) {
       LogManager.e('PatientMaterialService', '获取单个材料图片失败', error: e);
+      return null;
+    }
+  }
+
+  /// 按 SQLite 当前内容补写材料和图片，并删除 MySQL 中已经不存在的记录。
+  Future<bool> syncAllPatientMaterialsToMySQL(int patientId) async {
+    if (!syncService.needsSync) return true;
+    try {
+      final materials = await getPatientMaterials(patientId);
+      final localMaterialIds = <int>{};
+      final localImageIdsByMaterial = <int, Set<int>>{};
+      for (final material in materials) {
+        final materialId = material.id;
+        if (materialId == null) continue;
+        localMaterialIds.add(materialId);
+        final materialSynced =
+            await syncService.upsertPatientMaterial(material, materialId);
+        if (!materialSynced) return false;
+
+        final images = await getMaterialImages(materialId);
+        final localImageIds = <int>{};
+        for (final image in images) {
+          final imageId = image.id;
+          if (imageId == null) continue;
+          localImageIds.add(imageId);
+          final imageSynced =
+              await syncService.upsertMaterialImage(image, imageId);
+          if (!imageSynced) return false;
+        }
+        localImageIdsByMaterial[materialId] = localImageIds;
+      }
+      return syncService.deleteMaterialsMissingLocally(
+        patientId: patientId,
+        localMaterialIds: localMaterialIds,
+        localImageIdsByMaterial: localImageIdsByMaterial,
+      );
+    } catch (e) {
+      LogManager.e('PatientMaterialService', '手动同步患者材料失败', error: e);
+      return false;
+    }
+  }
+
+  /// 对比该患者的材料和图片是否已经同步到 MySQL。
+  Future<bool?> comparePatientMaterialsSyncStatus(int patientId) async {
+    if (!syncService.needsSync) return null;
+    try {
+      final dataSource = getCurrentDataSource();
+      if (dataSource == null) return null;
+      final materials = await dataSource.getPatientMaterials(patientId);
+      final imagesByMaterialId = <int, List<MaterialImage>>{};
+      for (final material in materials) {
+        final materialId = material.id;
+        if (materialId == null) continue;
+        imagesByMaterialId[materialId] =
+            await dataSource.getMaterialImageMetadata(materialId);
+      }
+      return syncService.compareStoredMaterials(
+        patientId: patientId,
+        materials: materials,
+        imagesByMaterialId: imagesByMaterialId,
+      );
+    } catch (e) {
+      LogManager.e('PatientMaterialService', '对比患者材料同步状态失败', error: e);
       return null;
     }
   }

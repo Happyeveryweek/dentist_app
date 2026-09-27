@@ -40,6 +40,11 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
   List<MaterialImage> _images = [];
   bool _isLoading = false;
   bool _isSaving = false;
+  int _saveProgressCurrent = 0;
+  int _saveProgressTotal = 0;
+  String _saveProgressName = '';
+  String _saveProgressPhase = '';
+  double _saveProgressValue = 0;
 
   // 记录要删除的图片ID（仅编辑模式）
   final Set<int> _imagesToDelete = {};
@@ -116,6 +121,36 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
     }
   }
 
+  bool _isExistingImage(MaterialImage image) {
+    final imageId = image.id;
+    return imageId != null && imageId > 0;
+  }
+
+  bool _isPendingLocalImage(MaterialImage image) {
+    if (_isExistingImage(image)) return false;
+    final originalName = image.originalName;
+    return originalName != null &&
+        originalName.isNotEmpty &&
+        !originalName.startsWith('http');
+  }
+
+  void _showSaveProgress({
+    required int current,
+    required int total,
+    required String fileName,
+    required String phase,
+    required double value,
+  }) {
+    if (!mounted) return;
+    setState(() {
+      _saveProgressCurrent = current;
+      _saveProgressTotal = total;
+      _saveProgressName = fileName;
+      _saveProgressPhase = phase;
+      _saveProgressValue = value;
+    });
+  }
+
   void _removeImage(int index) {
     final image = _images[index];
     final imageId = image.id;
@@ -148,6 +183,11 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
 
     setState(() {
       _isSaving = true;
+      _saveProgressCurrent = 0;
+      _saveProgressTotal = 0;
+      _saveProgressName = '';
+      _saveProgressPhase = '';
+      _saveProgressValue = 0;
     });
 
     try {
@@ -196,45 +236,133 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
         throw Exception('保存材料后ID为空');
       }
 
-      for (MaterialImage image in _images) {
-        final imageId = image.id;
-        final originalName = image.originalName;
-        if (imageId != null && imageId > 0) {
-          // 现有图片，直接添加到最终列表
+      final pendingImages = <MaterialImage>[];
+      for (final image in _images) {
+        if (_isExistingImage(image)) {
           finalImages.add(image);
-        } else if (originalName != null &&
-            originalName.isNotEmpty &&
-            !originalName.startsWith('http')) {
-          // 新图片，需要处理和保存
-          try {
-            final file = File(originalName);
-            if (await file.exists()) {
-              // 压缩图片并生成缩略图
-              final compressedResult =
-                  await ImageCompressor.compressImageFile(file);
-              final thumbnailBytes = await ImageCompressor.generateThumbnail(
-                  compressedResult.compressedBytes);
-
-              final materialImage = MaterialImage(
-                materialId: savedMaterialId,
-                imageData: compressedResult.compressedBytes,
-                imageType: compressedResult.imageType,
-                fileSize: compressedResult.compressedSize,
-                thumbnailData: thumbnailBytes,
-                thumbnailSize: thumbnailBytes.length,
-                originalName: path.basename(originalName),
-                hasThumbnail: true,
-              );
-
-              final savedImage =
-                  await patientProvider.addMaterialImage(materialImage);
-              finalImages.add(savedImage);
-            }
-          } catch (e) {
-            LogManager.e(
-                'SingleMaterialEditor', '保存图片失败: ${image.originalName}, 错误=$e');
-          }
+        } else if (_isPendingLocalImage(image)) {
+          pendingImages.add(image);
         }
+      }
+
+      var failedCount = 0;
+      final total = pendingImages.length;
+      for (var index = 0; index < pendingImages.length; index++) {
+        final image = pendingImages[index];
+        final originalName = image.originalName;
+        if (originalName == null || originalName.isEmpty) {
+          failedCount++;
+          continue;
+        }
+        final displayName = path.basename(originalName);
+        try {
+          _showSaveProgress(
+            current: index + 1,
+            total: total,
+            fileName: displayName,
+            phase: MaterialImageSaveProgress.compressingLabel,
+            value: MaterialImageSaveProgress.value(
+              finishedImages: index,
+              totalImages: total,
+              phaseFraction: MaterialImageSaveProgress.compressFraction,
+            ),
+          );
+          final file = File(originalName);
+          if (!await file.exists()) {
+            failedCount++;
+            LogManager.e(
+              'SingleMaterialEditor',
+              '保存图片失败: $originalName, 错误=文件不存在',
+            );
+            _showSaveProgress(
+              current: index + 1,
+              total: total,
+              fileName: displayName,
+              phase: MaterialImageSaveProgress.compressingLabel,
+              value: MaterialImageSaveProgress.value(
+                finishedImages: index + 1,
+                totalImages: total,
+                phaseFraction: MaterialImageSaveProgress.compressFraction,
+              ),
+            );
+            continue;
+          }
+
+          final compressedResult =
+              await ImageCompressor.compressImageFile(file);
+          _showSaveProgress(
+            current: index + 1,
+            total: total,
+            fileName: displayName,
+            phase: MaterialImageSaveProgress.thumbnailLabel,
+            value: MaterialImageSaveProgress.value(
+              finishedImages: index,
+              totalImages: total,
+              phaseFraction: MaterialImageSaveProgress.thumbnailFraction,
+            ),
+          );
+          final thumbnailBytes = await ImageCompressor.generateThumbnail(
+            compressedResult.compressedBytes,
+          );
+
+          _showSaveProgress(
+            current: index + 1,
+            total: total,
+            fileName: displayName,
+            phase: MaterialImageSaveProgress.writingLabel,
+            value: MaterialImageSaveProgress.value(
+              finishedImages: index,
+              totalImages: total,
+              phaseFraction: MaterialImageSaveProgress.writeFraction,
+            ),
+          );
+          final materialImage = MaterialImage(
+            materialId: savedMaterialId,
+            imageData: compressedResult.compressedBytes,
+            imageType: compressedResult.imageType,
+            fileSize: compressedResult.compressedSize,
+            thumbnailData: thumbnailBytes,
+            thumbnailSize: thumbnailBytes.length,
+            originalName: displayName,
+            hasThumbnail: true,
+          );
+
+          final savedImage =
+              await patientProvider.addMaterialImage(materialImage);
+          finalImages.add(savedImage);
+          _showSaveProgress(
+            current: index + 1,
+            total: total,
+            fileName: displayName,
+            phase: MaterialImageSaveProgress.writingLabel,
+            value: MaterialImageSaveProgress.value(
+              finishedImages: index + 1,
+              totalImages: total,
+              phaseFraction: MaterialImageSaveProgress.compressFraction,
+            ),
+          );
+        } catch (e) {
+          failedCount++;
+          LogManager.e(
+            'SingleMaterialEditor',
+            '保存图片失败: $originalName, 错误=$e',
+          );
+          _showSaveProgress(
+            current: index + 1,
+            total: total,
+            fileName: displayName,
+            phase: MaterialImageSaveProgress.writingLabel,
+            value: MaterialImageSaveProgress.value(
+              finishedImages: index + 1,
+              totalImages: total,
+              phaseFraction: MaterialImageSaveProgress.compressFraction,
+            ),
+          );
+        }
+      }
+
+      if (total > 0 && mounted) {
+        await WidgetsBinding.instance.endOfFrame;
       }
 
       // 创建最终的材料对象
@@ -247,10 +375,17 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
       widget.onSave(finalMaterial);
 
       if (mounted) {
-        AppToastManager.showSuccess(
-          context,
-          message: widget.material != null ? '材料更新成功' : '材料添加成功',
-        );
+        if (failedCount > 0) {
+          AppToastManager.showError(
+            context,
+            message: '材料已保存，有 $failedCount 张图片未写入',
+          );
+        } else {
+          AppToastManager.showSuccess(
+            context,
+            message: widget.material != null ? '材料更新成功' : '材料添加成功',
+          );
+        }
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -276,217 +411,238 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
     final tokens = context.tokens;
     final colors = context.colors;
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.8,
-        height: MediaQuery.of(context).size.height * 0.8,
-        decoration: BoxDecoration(
-          color: tokens.cardBackground,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: tokens.shadow.withValues(alpha: 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // 标题栏
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: tokens.primaryHeaderGradient,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
+    return PopScope(
+      canPop: !_isSaving,
+      child: Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.8,
+          height: MediaQuery.of(context).size.height * 0.8,
+          decoration: BoxDecoration(
+            color: tokens.cardBackground,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: tokens.shadow.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: colors.onPrimary.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      widget.material != null
-                          ? Icons.edit
-                          : Icons.add_photo_alternate,
-                      color: colors.onPrimary,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      widget.material != null ? '编辑患者材料' : '添加患者材料',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: colors.onPrimary,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(Icons.close, color: colors.onPrimary),
-                  ),
-                ],
-              ),
-            ),
-
-            // 内容区域
-            Expanded(
-              child: Padding(
+            ],
+          ),
+          child: Column(
+            children: [
+              // 标题栏
+              Container(
                 padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 材料描述输入
-                      Text(
-                        '材料描述',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: colors.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _descriptionController,
-                        decoration: InputDecoration(
-                          hintText: '请输入材料描述，如：口腔检查照片、治疗前后对比等',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                                color: tokens.primaryAccent, width: 2),
-                          ),
-                          filled: true,
-                          fillColor: tokens.mutedBackground,
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return '请输入材料描述';
-                          }
-                          return null;
-                        },
-                        maxLines: 2,
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // 图片管理区域
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '图片管理',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: colors.onSurface,
-                            ),
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: _isLoading ? null : _pickImages,
-                            icon: _isLoading
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.add_photo_alternate,
-                                    size: 18),
-                            label: Text(_isLoading ? '处理中...' : '添加图片'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: tokens.primaryAccent,
-                              foregroundColor: colors.onPrimary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // 图片网格
-                      Expanded(
-                        child: _buildImageGrid(),
-                      ),
-                    ],
+                decoration: BoxDecoration(
+                  gradient: tokens.primaryHeaderGradient,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
                 ),
-              ),
-            ),
-
-            // 底部按钮
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: tokens.mutedBackground,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: _isSaving
-                        ? null
-                        : () {
-                            widget.onCancel?.call();
-                            Navigator.of(context).pop();
-                          },
-                    child: const Text('取消'),
-                  ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: _isSaving ? null : _saveMaterial,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: tokens.primaryAccent,
-                      foregroundColor: colors.onPrimary,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: colors.onPrimary.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
+                      child: Icon(
+                        widget.material != null
+                            ? Icons.edit
+                            : Icons.add_photo_alternate,
+                        color: colors.onPrimary,
+                        size: 20,
+                      ),
                     ),
-                    child: _isSaving
-                        ? Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: colors.onPrimary,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.material != null ? '编辑患者材料' : '添加患者材料',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: colors.onPrimary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed:
+                          _isSaving ? null : () => Navigator.of(context).pop(),
+                      icon: Icon(Icons.close, color: colors.onPrimary),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 内容区域
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 材料描述输入
+                        Text(
+                          '材料描述',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: colors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _descriptionController,
+                          decoration: InputDecoration(
+                            hintText: '请输入材料描述，如：口腔检查照片、治疗前后对比等',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                  color: tokens.primaryAccent, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: tokens.mutedBackground,
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return '请输入材料描述';
+                            }
+                            return null;
+                          },
+                          maxLines: 2,
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // 图片管理区域
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '图片管理',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: colors.onSurface,
+                              ),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: (_isLoading || _isSaving)
+                                  ? null
+                                  : _pickImages,
+                              icon: _isLoading
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  : const Icon(Icons.add_photo_alternate,
+                                      size: 18),
+                              label: Text(_isLoading ? '处理中...' : '添加图片'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: tokens.primaryAccent,
+                                foregroundColor: colors.onPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              const Text('保存中...'),
-                            ],
-                          )
-                        : Text(widget.material != null ? '更新' : '保存'),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // 图片网格
+                        Expanded(
+                          child: _buildImageGrid(),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+
+              // 底部按钮
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: tokens.mutedBackground,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_isSaving && _saveProgressTotal > 0) ...[
+                      MaterialImageSaveProgressBanner(
+                        current: _saveProgressCurrent,
+                        total: _saveProgressTotal,
+                        fileName: _saveProgressName,
+                        phase: _saveProgressPhase,
+                        value: _saveProgressValue,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: _isSaving
+                              ? null
+                              : () {
+                                  widget.onCancel?.call();
+                                  Navigator.of(context).pop();
+                                },
+                          child: const Text('取消'),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: _isSaving ? null : _saveMaterial,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: tokens.primaryAccent,
+                            foregroundColor: colors.onPrimary,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: _isSaving
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: colors.onPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text('保存中...'),
+                                  ],
+                                )
+                              : Text(widget.material != null ? '更新' : '保存'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -581,7 +737,7 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
               top: 1,
               right: 1,
               child: Clickable(
-                onTap: () => _removeImage(index),
+                onTap: _isSaving ? null : () => _removeImage(index),
                 child: Container(
                   width: 16, // 从24减少到16
                   height: 16, // 从24减少到16
@@ -948,6 +1104,85 @@ class _SingleMaterialEditorState extends State<SingleMaterialEditor> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 新图片保存进度。单张内压缩、缩略图、写入分别占 60%、20%、20%。
+class MaterialImageSaveProgress {
+  static const compressFraction = 0.0;
+  static const thumbnailFraction = 0.6;
+  static const writeFraction = 0.8;
+
+  static const compressingLabel = '压缩中';
+  static const thumbnailLabel = '生成缩略图';
+  static const writingLabel = '写入中';
+
+  static double value({
+    required int finishedImages,
+    required int totalImages,
+    required double phaseFraction,
+  }) {
+    if (totalImages <= 0) return 0;
+    final raw = (finishedImages + phaseFraction) / totalImages;
+    if (raw < 0) return 0;
+    if (raw > 1) return 1;
+    return raw;
+  }
+}
+
+class MaterialImageSaveProgressBanner extends StatelessWidget {
+  final int current;
+  final int total;
+  final String fileName;
+  final String phase;
+  final double value;
+
+  const MaterialImageSaveProgressBanner({
+    super.key,
+    required this.current,
+    required this.total,
+    required this.fileName,
+    required this.phase,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final tokens = context.tokens;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '正在处理 $current/$total',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: colors.onSurface,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '$fileName · $phase',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 12,
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(2),
+          child: LinearProgressIndicator(
+            value: value,
+            minHeight: 6,
+            backgroundColor: tokens.divider,
+            color: tokens.primaryAccent,
+          ),
+        ),
+      ],
     );
   }
 }

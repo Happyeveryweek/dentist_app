@@ -442,6 +442,28 @@ class SqlitePatientDataSource implements PatientDataSource {
   }
 
   @override
+  Future<List<MaterialImage>> getMaterialImageMetadata(int materialId) async {
+    final result = await _database.query(
+      'material_images',
+      columns: const [
+        'id',
+        'material_id',
+        'image_type',
+        'file_size',
+        'thumbnail_size',
+        'original_name',
+        'image_path',
+        'created_at',
+        'has_thumbnail',
+      ],
+      where: 'material_id = ?',
+      whereArgs: [materialId],
+      orderBy: 'created_at DESC',
+    );
+    return result.map((e) => MaterialImage.fromMap(e)).toList();
+  }
+
+  @override
   Future<MaterialImage?> getMaterialImage(int imageId) async {
     final result = await _database.query(
       'material_images',

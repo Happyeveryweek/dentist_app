@@ -435,15 +435,20 @@ class PatientProvider extends ChangeNotifier {
     return ds?.getPatientById(id);
   }
 
-  /// 对比 SQLite 与 MySQL 中同一患者数据是否一致
+  /// 对比 SQLite 与 MySQL 中同一患者的基本信息、材料和图片是否一致。
   /// 返回 true=一致 / false=不一致 / null=无法比较
-  Future<bool?> comparePatientSyncStatus(int patientId) {
-    return _coreService.comparePatientSyncStatus(patientId);
+  Future<bool?> comparePatientSyncStatus(int patientId) async {
+    final patientStatus =
+        await _coreService.comparePatientSyncStatus(patientId);
+    if (patientStatus != true) return patientStatus;
+    return _materialService.comparePatientMaterialsSyncStatus(patientId);
   }
 
-  /// 手动同步单个患者到 MySQL，等待完成并返回是否成功
-  Future<bool> syncSinglePatientToMySQL(int patientId) {
-    return _coreService.syncPatientToMySQL(patientId);
+  /// 手动同步单个患者的基本信息、材料和图片到 MySQL。
+  Future<bool> syncSinglePatientToMySQL(int patientId) async {
+    final patientSynced = await _coreService.syncPatientToMySQL(patientId);
+    if (!patientSynced) return false;
+    return _materialService.syncAllPatientMaterialsToMySQL(patientId);
   }
 
   Future<List<Patient>> searchPatientsInDataSource(

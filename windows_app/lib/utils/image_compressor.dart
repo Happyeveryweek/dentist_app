@@ -1,3 +1,4 @@
+import 'dart:isolate';
 import 'dart:typed_data';
 import 'dart:io';
 import 'package:image/image.dart' as img;
@@ -100,50 +101,21 @@ class ImageCompressor {
     int quality = compressionQuality,
   }) async {
     try {
-      // 读取文件
       final bytes = await file.readAsBytes();
       final originalSize = bytes.length;
-
-      // 解码图片
-      img.Image? image = img.decodeImage(bytes);
-      if (image == null) {
-        throw Exception('无法解码图片文件');
-      }
-
-      // 确定图片类型
-      String imageType = 'jpg';
       final extension = file.path.split('.').last.toLowerCase();
-      if (extension == 'png') {
-        imageType = 'png';
-      }
+      final imageType = extension == 'png' ? 'png' : 'jpg';
+      final compressedBytes = await Isolate.run(
+        () => _encodeResizedJpeg(bytes, maxSize, quality, '无法解码图片文件'),
+      );
 
       LogManager.w(
-          'ImageCompressor', '原始图片: ${image.width}x${image.height}, ${1} 字节');
-
-      // 计算缩放比例
-      int targetWidth = image.width;
-      int targetHeight = image.height;
-
-      if (image.width > maxSize || image.height > maxSize) {
-        double scale =
-            maxSize / (image.width > image.height ? image.width : image.height);
-        targetWidth = (image.width * scale).round();
-        targetHeight = (image.height * scale).round();
-
-        // 调整图片大小
-        image = img.copyResize(
-          image,
-          width: targetWidth,
-          height: targetHeight,
-          interpolation: img.Interpolation.linear,
-        );
-      }
-
-      // 编码为JPEG格式
-      List<int> compressedBytes = img.encodeJpg(image, quality: quality);
+        'ImageCompressor',
+        '原始图片: $originalSize 字节, 压缩后: ${compressedBytes.length} 字节',
+      );
 
       return ImageCompressionResult(
-        compressedBytes: Uint8List.fromList(compressedBytes),
+        compressedBytes: compressedBytes,
         imageType: imageType,
         compressedSize: compressedBytes.length,
         originalSize: originalSize,
@@ -167,35 +139,9 @@ class ImageCompressor {
     int quality = thumbnailQuality,
   }) async {
     try {
-      // 解码图片
-      img.Image? image = img.decodeImage(imageBytes);
-      if (image == null) {
-        throw Exception('无法解码图片');
-      }
-
-      // 计算缩放比例
-      int targetWidth = image.width;
-      int targetHeight = image.height;
-
-      if (image.width > maxSize || image.height > maxSize) {
-        double scale =
-            maxSize / (image.width > image.height ? image.width : image.height);
-        targetWidth = (image.width * scale).round();
-        targetHeight = (image.height * scale).round();
-
-        // 调整图片大小
-        image = img.copyResize(
-          image,
-          width: targetWidth,
-          height: targetHeight,
-          interpolation: img.Interpolation.linear,
-        );
-      }
-
-      // 编码为JPEG格式
-      List<int> thumbnailBytes = img.encodeJpg(image, quality: quality);
-
-      return Uint8List.fromList(thumbnailBytes);
+      return await Isolate.run(
+        () => _encodeResizedJpeg(imageBytes, maxSize, quality, '无法解码图片'),
+      );
     } catch (e) {
       LogManager.e('ImageCompressor', '生成缩略图失败', error: e);
       rethrow;
@@ -231,4 +177,30 @@ class ImageCompressor {
       return null;
     }
   }
+}
+
+Uint8List _encodeResizedJpeg(
+  Uint8List bytes,
+  int maxSize,
+  int quality,
+  String decodeError,
+) {
+  final image = img.decodeImage(bytes);
+  if (image == null) {
+    throw Exception(decodeError);
+  }
+
+  var output = image;
+  if (image.width > maxSize || image.height > maxSize) {
+    final scale =
+        maxSize / (image.width > image.height ? image.width : image.height);
+    output = img.copyResize(
+      image,
+      width: (image.width * scale).round(),
+      height: (image.height * scale).round(),
+      interpolation: img.Interpolation.linear,
+    );
+  }
+
+  return Uint8List.fromList(img.encodeJpg(output, quality: quality));
 }

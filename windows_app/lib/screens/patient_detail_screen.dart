@@ -183,10 +183,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
                 PatientMaterialsTab(
                   patient: _patient,
                   onMaterialsChanged: () {
-                    // 材料变化时标记数据已更改
                     _dataChanged = true;
-                    // 可以选择性地重新加载患者数据
-                    // _loadPatientData();
+                    _checkSyncStatus();
                   },
                 ),
                 _buildAppointmentsTab(),
@@ -862,7 +860,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     try {
       final patientProvider =
           Provider.of<PatientProvider>(context, listen: false);
-      final result = await patientProvider.comparePatientSyncStatus(patientId);
+      final medicalRecordProvider =
+          Provider.of<MedicalRecordProvider>(context, listen: false);
+      final patientStatus =
+          await patientProvider.comparePatientSyncStatus(patientId);
+      final result = patientStatus != true
+          ? patientStatus
+          : await medicalRecordProvider
+              .comparePatientRecordsSyncStatus(patientId);
 
       if (!mounted) return;
       setState(() {
@@ -904,12 +909,20 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     try {
       final patientProvider =
           Provider.of<PatientProvider>(context, listen: false);
-      final success = await patientProvider.syncSinglePatientToMySQL(patientId);
+      final medicalRecordProvider =
+          Provider.of<MedicalRecordProvider>(context, listen: false);
+      final patientSynced =
+          await patientProvider.syncSinglePatientToMySQL(patientId);
+      final success = patientSynced &&
+          await medicalRecordProvider.syncPatientRecordsToMySQL(patientId);
 
       if (!mounted) return;
 
       if (success) {
-        AppToastManager.showSuccess(context, message: '患者数据已同步到 MySQL');
+        AppToastManager.showSuccess(
+          context,
+          message: '患者基本信息、材料和病历已同步到 MySQL',
+        );
       } else {
         AppToastManager.showError(context, message: '同步失败，请检查 MySQL 连接');
       }
@@ -1447,6 +1460,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         if (mounted) {
           AppToastManager.showSuccess(context, message: '病历记录已创建');
         }
+        await _checkSyncStatus();
       }
     } catch (e) {
       if (mounted) {
@@ -1541,6 +1555,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
         if (mounted) {
           AppToastManager.showSuccess(context, message: '病历记录已更新');
         }
+        await _checkSyncStatus();
       }
     } catch (e) {
       if (mounted) {
@@ -1592,6 +1607,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
 
         if (!mounted) return;
         AppToastManager.showDelete(context, message: '病历记录已删除');
+        await _checkSyncStatus();
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(

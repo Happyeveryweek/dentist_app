@@ -496,6 +496,18 @@ class MySqlPatientDataSource extends BaseMySqlDataSource
   }
 
   @override
+  Future<List<MaterialImage>> getMaterialImageMetadata(int materialId) async {
+    final results = await executeQuery(
+      'SELECT id, material_id, image_type, file_size, thumbnail_size, original_name, image_path, created_at, has_thumbnail '
+      'FROM material_images WHERE material_id = ? ORDER BY created_at DESC',
+      [materialId],
+    );
+    return results
+        .map((row) => MaterialImage.fromMap(convertRowToMap(row)))
+        .toList();
+  }
+
+  @override
   Future<MaterialImage?> getMaterialImage(int imageId) async {
     final results = await executeQuery(
       'SELECT * FROM material_images WHERE id = ? LIMIT 1',

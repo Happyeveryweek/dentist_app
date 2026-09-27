@@ -50,6 +50,51 @@ class MedicalRecordService {
     return null; // 验证通过
   }
 
+  /// 按 SQLite 当前病历补写到 MySQL，并删除 MySQL 中已经不存在的记录。
+  Future<bool> syncPatientRecordsToMySQL(int patientId) async {
+    if (!syncService.needsSync) return true;
+    final dataSource = getCurrentDataSource();
+    if (dataSource == null) return false;
+    try {
+      final records = await dataSource.getPatientMedicalRecords(patientId);
+      final localIds = <int>{};
+      for (final record in records) {
+        final recordId = record.id;
+        if (recordId == null) continue;
+        localIds.add(recordId);
+        final synced =
+            await syncService.upsertMedicalRecord(record.toMap(), recordId);
+        if (!synced) return false;
+      }
+      return syncService.deleteMedicalRecordsMissingLocally(
+        patientId: patientId,
+        localIds: localIds,
+      );
+    } catch (e) {
+      LogManager.e('MedicalRecordService', '手动同步患者病历失败', error: e);
+      return false;
+    }
+  }
+
+  /// 对比该患者病历是否已经和 MySQL 一致。病历数据源不是 SQLite 时视为无需同步。
+  Future<bool?> comparePatientRecordsSyncStatus(int patientId) async {
+    if (!syncService.needsSync) return true;
+    final dataSource = getCurrentDataSource();
+    if (dataSource == null) return null;
+    try {
+      final records = await dataSource.getPatientMedicalRecords(patientId);
+      return syncService.compareStoredRecords(
+        patientId: patientId,
+        localRecords: [
+          for (final record in records) record.toMap(),
+        ],
+      );
+    } catch (e) {
+      LogManager.e('MedicalRecordService', '对比患者病历同步状态失败', error: e);
+      return null;
+    }
+  }
+
   /// 获取患者的所有病历记录
   Future<List<PatientMedicalRecord>> getPatientMedicalRecords(int patientId,
       {bool forceRefresh = false}) async {
@@ -159,7 +204,7 @@ class MedicalRecordService {
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (syncService.needsSync) {
-          syncService.syncMedicalRecordToMySQL(
+          await syncService.upsertMedicalRecord(
               recordWithCreator.copyWith(id: id).toMap(), id);
         }
 
@@ -231,7 +276,7 @@ class MedicalRecordService {
 
         // 如果当前使用的是SQLite数据源，需要同步到MySQL
         if (syncService.needsSync) {
-          syncService.syncMedicalRecordToMySQL(record.toMap(), recordId);
+          await syncService.upsertMedicalRecord(record.toMap(), recordId);
         }
 
         clearError();
@@ -295,7 +340,7 @@ class MedicalRecordService {
         }
 
         if (syncService.needsSync) {
-          syncService.syncDeleteMedicalRecordToMySQL(id);
+          await syncService.deleteMedicalRecordFromMySQL(id);
         }
 
         clearError();

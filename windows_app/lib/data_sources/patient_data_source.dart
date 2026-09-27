@@ -45,6 +45,9 @@ abstract class PatientDataSource {
 
   // 患者材料图片相关方法
   Future<List<MaterialImage>> getMaterialImages(int materialId);
+
+  /// 只读取同步比对需要的图片字段，不加载原图和缩略图。
+  Future<List<MaterialImage>> getMaterialImageMetadata(int materialId);
   Future<MaterialImage?> getMaterialImage(int imageId);
   Future<MaterialImage> addMaterialImage(MaterialImage image);
   Future<bool> updateMaterialImage(MaterialImage image);

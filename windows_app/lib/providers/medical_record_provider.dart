@@ -468,6 +468,16 @@ class MedicalRecordProvider extends ChangeNotifier {
 
   // ================ 病历CRUD操作方法 ===================
 
+  /// 把该患者 SQLite 病历补齐到 MySQL，并删除远端多余病历。
+  Future<bool> syncPatientRecordsToMySQL(int patientId) {
+    return _medicalRecordService.syncPatientRecordsToMySQL(patientId);
+  }
+
+  /// 对比该患者病历是否已经同步。
+  Future<bool?> comparePatientRecordsSyncStatus(int patientId) {
+    return _medicalRecordService.comparePatientRecordsSyncStatus(patientId);
+  }
+
   /// 获取患者的所有病历记录
   Future<List<PatientMedicalRecord>> getPatientMedicalRecords(int patientId,
       {bool forceRefresh = false}) async {
