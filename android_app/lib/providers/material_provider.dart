@@ -4,6 +4,7 @@ import '../utils/database_operation_wrapper.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:mysql1/mysql1.dart';
 import '../data_sources/material_data_source.dart';
+import '../features/materials/services/material_catalog.dart';
 import '../features/materials/services/material_initialization_service.dart';
 import 'dart:async';
 import '../utils/app_logger.dart';
@@ -234,12 +235,16 @@ class MaterialProvider extends ChangeNotifier {
   // =================== 材料相关方法 ===================
 
   // 获取所有材料
-  Future<List<DentalMaterial>> getAllMaterials() async {
+  Future<List<DentalMaterial>> getAllMaterials({
+    bool forceRefresh = false,
+  }) async {
     if (!initialized) {
       throw Exception('数据库未初始化');
     }
 
-    if (_isCacheValid(_materialsCachedAt) && _cachedMaterials != null) {
+    if (!forceRefresh &&
+        _isCacheValid(_materialsCachedAt) &&
+        _cachedMaterials != null) {
       return List.from(_cachedMaterials!);
     }
 
@@ -255,6 +260,32 @@ class MaterialProvider extends ChangeNotifier {
         rethrow;
       }
     });
+  }
+
+  /// 生成下一个材料编码。失败或未初始化时返回 M301，与 Windows 相同。
+  Future<String> getNextMaterialCode() async {
+    if (!initialized) {
+      return 'M301';
+    }
+
+    try {
+      final materials = await _currentDataSource.getAllMaterials();
+      int? maxId;
+      for (final material in materials) {
+        final id = material.id;
+        if (id == null) continue;
+        if (maxId == null || id > maxId) {
+          maxId = id;
+        }
+      }
+      return nextMaterialCode(
+        materialCodes: materials.map((material) => material.materialCode),
+        maxId: maxId,
+      );
+    } catch (e) {
+      AppLogger.info('获取下一个材料编码失败: $e');
+      return 'M301';
+    }
   }
 
   // 根据ID获取材料

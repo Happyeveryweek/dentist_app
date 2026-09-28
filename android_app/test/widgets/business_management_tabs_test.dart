@@ -13,10 +13,18 @@ void main() {
 
     expect(_isSelected(tester, Icons.account_balance_wallet_rounded), false);
     expect(_isSelected(tester, Icons.shopping_cart_rounded), true);
-    expect(_isSelected(tester, Icons.people_rounded), false);
+    expect(_isSelected(tester, Icons.inventory_2_rounded), false);
     expect(
       _tabBackground(tester, '采购').colors.first.withValues(alpha: 1),
       AppTheme.infoColor,
+    );
+
+    await tester.tap(find.text('材料'));
+    await tester.pump();
+    expect(_isSelected(tester, Icons.inventory_2_rounded), true);
+    expect(
+      _tabBackground(tester, '材料').colors.first.withValues(alpha: 1),
+      AppTheme.warningColor,
     );
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -37,7 +45,7 @@ void main() {
 
     expect(_isSelected(tester, Icons.account_balance_wallet_rounded), false);
     expect(_isSelected(tester, Icons.shopping_cart_rounded), true);
-    expect(_isSelected(tester, Icons.people_rounded), false);
+    expect(_isSelected(tester, Icons.inventory_2_rounded), false);
 
     await gesture.up();
     await tester.pumpAndSettle();
@@ -63,7 +71,7 @@ Future<void> _pumpTabs(WidgetTester tester, TabController controller) async {
                 children: const [
                   Center(child: Text('财务页面')),
                   Center(child: Text('采购页面')),
-                  Center(child: Text('用户页面')),
+                  Center(child: Text('材料页面')),
                 ],
               ),
             ),
@@ -79,7 +87,7 @@ bool _isSelected(WidgetTester tester, IconData icon) {
   final expectedColor = switch (icon) {
     Icons.account_balance_wallet_rounded => AppTheme.successColor,
     Icons.shopping_cart_rounded => AppTheme.infoColor,
-    Icons.people_rounded => AppTheme.navigationBusiness,
+    Icons.inventory_2_rounded => AppTheme.warningColor,
     _ => throw ArgumentError('未知的业务标签图标: $icon'),
   };
   return iconWidget.color == expectedColor;

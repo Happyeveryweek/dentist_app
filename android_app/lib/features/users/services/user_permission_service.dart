@@ -24,7 +24,8 @@ class UserPermissionService {
 
   static bool canAccessModule(User? user, String module) {
     if (user == null) return false;
-    if (module == ModulePermission.dashboard || module == ModulePermission.settings) {
+    if (module == ModulePermission.dashboard ||
+        module == ModulePermission.settings) {
       return user.role != UserRole.user;
     }
     if (user.role == UserRole.admin) return true;
@@ -32,15 +33,6 @@ class UserPermissionService {
   }
 
   static bool canManageUsers(User? user) => user?.role == UserRole.admin;
-
-  static bool canAccessDoctorData(User? user, String? recordDoctor) {
-    if (user?.role == UserRole.admin) return true;
-    final doctor = user?.doctor;
-    return user?.role == UserRole.doctor &&
-        doctor != null &&
-        doctor.isNotEmpty &&
-        doctor == recordDoctor;
-  }
 
   /// 获取用户权限配置
   Future<Map<String, bool>?> getUserPermissions(int userId) async {

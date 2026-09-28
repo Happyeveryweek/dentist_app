@@ -178,14 +178,6 @@ class MedicalRecordProvider extends ChangeNotifier {
     return DateTime.now().difference(lastCacheTime) < _cacheValidDuration;
   }
 
-  // 强制刷新缓存
-  void forceRefresh() {
-    _cachedTemplates = null;
-    _cachedRecordsByPatientId.clear();
-    _lastCacheTime = null;
-    _safeNotifyListeners();
-  }
-
   // 获取患者的所有病历记录（带包装器，用于复杂操作）
   Future<List<PatientMedicalRecord>> getPatientMedicalRecords(
     int patientId,

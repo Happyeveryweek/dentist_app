@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:dentist_app/theme/app_theme.dart';
 import 'package:dentist_app/providers/settings_provider.dart';
 import 'package:dentist_app/providers/user_provider.dart';
+import 'package:dentist_app/screens/users_screen.dart';
+import 'package:dentist_app/features/users/services/user_permission_service.dart';
 import 'package:dentist_app/widgets/user_avatar.dart';
 
 /// 系统设置区域组件
@@ -81,52 +83,79 @@ class SystemSettingsSection extends StatelessWidget {
                       Consumer<UserProvider>(
                         builder: (context, userProvider, _) {
                           final currentUser = userProvider.currentUser;
-                          if (currentUser != null) {
-                            return Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(
-                                  AppTheme.smallBorderRadius,
-                                ),
-                                border: Border.all(color: Colors.grey.shade300),
-                              ),
-                              child: Row(
-                                children: [
-                                  UserAvatar(
-                                    imageData: currentUser.imageData,
-                                    username: currentUser.username,
-                                    role: currentUser.role,
-                                    radius: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          currentUser.username,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          '角色: ${currentUser.role}',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey.shade600,
-                                          ),
-                                        ),
-                                      ],
+                          return Column(
+                            children: [
+                              if (currentUser != null)
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(
+                                      AppTheme.smallBorderRadius,
+                                    ),
+                                    border: Border.all(
+                                      color: Colors.grey.shade300,
                                     ),
                                   ),
-                                ],
-                              ),
-                            );
-                          }
-                          return const SizedBox.shrink();
+                                  child: Row(
+                                    children: [
+                                      UserAvatar(
+                                        imageData: currentUser.imageData,
+                                        username: currentUser.username,
+                                        role: currentUser.role,
+                                        radius: 20,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              currentUser.username,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Text(
+                                              '角色: ${currentUser.role}',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (UserPermissionService.canManageUsers(
+                                currentUser,
+                              ))
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: const Icon(
+                                    Icons.people_rounded,
+                                    color: AppTheme.navigationBusiness,
+                                  ),
+                                  title: const Text('用户管理'),
+                                  trailing: Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute<void>(
+                                        builder:
+                                            (context) => const UsersScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                            ],
+                          );
                         },
                       ),
 

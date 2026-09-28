@@ -113,11 +113,6 @@ class FinancialItem {
     );
   }
 
-  // 计算总价
-  double calculateTotalPrice() {
-    return (itemPrice + processingFee) * quantity;
-  }
-
   @override
   String toString() {
     return 'FinancialItem(id: $id, itemName: $itemName, paymentMethod: $paymentMethod, quantity: $quantity, totalPrice: $totalPrice, processingFee: $processingFee, chargeDate: $chargeDate)';

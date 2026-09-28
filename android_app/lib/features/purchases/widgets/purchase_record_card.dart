@@ -4,6 +4,7 @@ import 'package:dentist_app/widgets/app_card.dart';
 import '../../../models/purchase_record.dart';
 import '../../../widgets/single_line_amount_text.dart';
 import '../services/purchase_amount_formatter.dart';
+import '../services/purchase_list_title.dart';
 
 /// 采购记录卡片组件
 /// 职责：显示单个采购记录的详细信息
@@ -58,7 +59,7 @@ class PurchaseRecordCard extends StatelessWidget {
     );
   }
 
-  /// 构建卡片头部（记录ID、日期、金额）
+  /// 构建卡片头部（采购单标题、日期、金额）
   Widget _buildHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -68,7 +69,7 @@ class PurchaseRecordCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '采购记录 #${record.id}',
+                purchaseListTitle(record.purchaseDate),
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,

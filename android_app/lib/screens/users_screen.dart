@@ -9,6 +9,7 @@ import 'package:dentist_app/features/users/widgets/user_dialog.dart';
 import 'package:dentist_app/widgets/toast_manager.dart';
 import 'package:dentist_app/widgets/confirm_dialogs.dart';
 import 'package:dentist_app/features/users/services/user_permission_service.dart';
+import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 
 /// 用户管理主页面
@@ -36,9 +37,13 @@ class _UsersScreenState extends State<UsersScreen> {
   Widget build(BuildContext context) {
     final currentUser = context.watch<UserProvider>().currentUser;
     if (!UserPermissionService.canManageUsers(currentUser)) {
-      return const Center(child: Text('您没有用户管理权限'));
+      return Scaffold(
+        appBar: _usersAppBar(),
+        body: const Center(child: Text('您没有用户管理权限')),
+      );
     }
     return Scaffold(
+      appBar: _usersAppBar(),
       body: Column(
         children: [
           // 统计信息卡片
@@ -70,6 +75,15 @@ class _UsersScreenState extends State<UsersScreen> {
         heroTag: 'users_add_button',
         child: const Icon(Icons.add, color: Colors.white),
       ),
+    );
+  }
+
+  PreferredSizeWidget _usersAppBar() {
+    return AppBar(
+      title: const Text('用户管理'),
+      backgroundColor: Colors.white,
+      foregroundColor: AppTheme.primaryText,
+      elevation: 0,
     );
   }
 

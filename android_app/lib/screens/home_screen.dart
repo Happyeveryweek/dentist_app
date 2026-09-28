@@ -5,7 +5,7 @@ import 'patients_screen.dart';
 import 'appointments_screen.dart';
 import 'financial_management_screen.dart';
 import '../features/purchases/screens/purchase_records_screen.dart';
-import 'users_screen.dart';
+import '../features/materials/screens/materials_screen.dart';
 import 'settings_screen.dart';
 import 'login_screen.dart';
 import '../theme/app_theme.dart';
@@ -167,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// 业务管理页面 - 包含财务管理、采购管理、用户管理
+/// 业务管理页面 - 包含财务管理、采购管理、材料管理
 class _BusinessManagementScreen extends StatefulWidget {
   const _BusinessManagementScreen();
 
@@ -187,7 +187,7 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
   final List<Widget> _businessPages = [
     const FinancialManagementScreen(),
     const PurchaseRecordsScreen(),
-    const UsersScreen(),
+    const MaterialsScreen(),
   ];
 
   @override
@@ -292,11 +292,11 @@ class BusinessManagementTabs extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         _buildCompactTab(
-          icon: Icons.people_rounded,
-          label: '用户',
+          icon: Icons.inventory_2_rounded,
+          label: '材料',
           index: 2,
           selected: selectedIndex == 2,
-          color: AppTheme.navigationBusiness,
+          color: AppTheme.warningColor,
         ),
       ],
     );

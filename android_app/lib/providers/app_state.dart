@@ -6,26 +6,6 @@ import '../utils/app_logger.dart';
 class AppState extends ChangeNotifier {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-  // 强制重建整个应用
-  void forceRefresh() {
-    AppLogger.info('强制刷新整个应用');
-    notifyListeners();
-  }
-
-  // 重置当前页面并导航到首页
-  void resetToHome() {
-    AppLogger.info('重置到首页');
-    // 回到根页面
-    navigatorKey.currentState?.popUntil((route) => route.isFirst);
-  }
-
-  // 重置应用状态 - 用于数据库恢复后
-  void resetState() {
-    AppLogger.info('重置应用状态');
-    notifyListeners();
-    resetToHome();
-  }
-
   // 退出应用方法 - 用于重启应用
   void exitApp() {
     AppLogger.info('退出应用以便重启');

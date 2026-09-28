@@ -69,7 +69,9 @@ class PurchaseItem {
         return DateTimeFormatter.fromDbString(s);
       } catch (_) {
         // 最后回退到当前时间
-        AppLogger.info('PurchaseItem._parseDateTimeFlexible: 无法解析时间字符串: $s, 使用当前时间');
+        AppLogger.info(
+          'PurchaseItem._parseDateTimeFlexible: 无法解析时间字符串: $s, 使用当前时间',
+        );
         return DateTimeFormatter.nowLocal();
       }
     } catch (e) {
@@ -135,11 +137,6 @@ class PurchaseItem {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? DateTimeFormatter.nowLocal(),
     );
-  }
-
-  // 计算总价
-  double calculateTotalPrice() {
-    return unitPrice * quantity;
   }
 
   @override

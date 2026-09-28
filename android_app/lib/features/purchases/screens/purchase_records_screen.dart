@@ -15,6 +15,7 @@ import '../widgets/purchase_statistics_card.dart';
 import '../widgets/purchase_search_bar.dart';
 import '../widgets/purchase_record_card.dart';
 import '../widgets/purchase_records_empty_state.dart';
+import '../services/purchase_list_title.dart';
 import '../services/purchase_statistics_service.dart';
 import '../../../utils/app_logger.dart';
 
@@ -424,7 +425,7 @@ class _PurchaseRecordsScreenState extends State<PurchaseRecordsScreen> {
     // 使用公共的删除确认框组件
     final confirmed = await ModernDeleteDialogManager.showPurchaseDelete(
       context,
-      purchaseInfo: '采购记录 #${record.id}',
+      purchaseInfo: purchaseListTitle(record.purchaseDate),
     );
 
     if (confirmed) {

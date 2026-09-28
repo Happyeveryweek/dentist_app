@@ -109,25 +109,6 @@ class PatientImageConnectionService {
     }
   }
 
-  /// 应用恢复时检查连接状态
-  Future<void> checkConnectionOnResume() async {
-    if (_mysqlConnection != null) {
-      try {
-        AppLogger.info('PatientImageConnectionService: 检查MySQL连接状态...');
-        final isHealthy = await ensureConnection();
-
-        if (!isHealthy) {
-          AppLogger.info('PatientImageConnectionService: 连接异常，尝试重连...');
-          await autoReconnect();
-        } else {
-          AppLogger.info('PatientImageConnectionService: 连接状态正常');
-        }
-      } catch (e) {
-        AppLogger.info('PatientImageConnectionService: 检查连接状态失败: $e');
-      }
-    }
-  }
-
   /// 重置连接状态
   void resetConnectionState() {
     _isConnected = true;
