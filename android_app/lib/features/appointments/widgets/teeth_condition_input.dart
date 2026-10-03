@@ -5,7 +5,11 @@ class TeethConditionInput extends StatefulWidget {
   final List<Map<String, String>> teethData;
   final Function(List<Map<String, String>>) onChanged;
 
-  const TeethConditionInput({super.key, required this.teethData, required this.onChanged});
+  const TeethConditionInput({
+    super.key,
+    required this.teethData,
+    required this.onChanged,
+  });
 
   @override
   State<TeethConditionInput> createState() => TeethConditionInputState();
@@ -36,10 +40,12 @@ class TeethConditionInputState extends State<TeethConditionInput> {
         ),
         const SizedBox(height: 12),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _buildTeethCrossInput(0)),
-            const SizedBox(width: 12),
-            Expanded(child: _buildTeethCrossInput(1)),
+            for (var index = 0; index < widget.teethData.length; index++) ...[
+              if (index > 0) const SizedBox(width: 8),
+              Expanded(child: _buildTeethCrossInput(index)),
+            ],
           ],
         ),
       ],

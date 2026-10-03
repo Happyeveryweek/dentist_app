@@ -3,9 +3,18 @@ import 'package:flutter/material.dart';
 import '../../../models/dental_chart.dart';
 import '../../../models/patient.dart';
 
+/// 添加、编辑患者安排下次预约时的默认时间：一周后当天早上 9 点。
+DateTime defaultPatientAppointmentDateTime([DateTime? now]) {
+  final base = now ?? DateTime.now();
+  final nextWeek = DateTime(base.year, base.month, base.day).add(
+    const Duration(days: 7),
+  );
+  return DateTime(nextWeek.year, nextWeek.month, nextWeek.day, 9);
+}
+
 class DentalAppointmentDraft {
   bool enabled = false;
-  DateTime appointmentDateTime = DateTime.now().add(const Duration(days: 1));
+  DateTime appointmentDateTime = defaultPatientAppointmentDateTime();
   final TextEditingController treatmentController =
       TextEditingController(text: '综合治疗');
   final Set<int> selectedChartIndexes = {};

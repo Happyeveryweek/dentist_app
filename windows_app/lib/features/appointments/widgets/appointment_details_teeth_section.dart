@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 import '../../../widgets/dental_icons.dart';
+import '../services/latest_patient_teeth.dart';
 import 'teeth_cross_widget.dart';
 
 class AppointmentDetailsTeethSection extends StatelessWidget {
@@ -49,28 +50,20 @@ class AppointmentDetailsTeethSection extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12.0),
-            if (teethData.isNotEmpty)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: teethData.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final toothData = entry.value;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: TeethCrossWidget(
-                      teethData: {
-                        'topLeft': toothData['topLeft'] ?? '',
-                        'topRight': toothData['topRight'] ?? '',
-                        'bottomLeft': toothData['bottomLeft'] ?? '',
-                        'bottomRight': toothData['bottomRight'] ?? '',
-                      },
-                      index: index,
-                    ),
-                  );
-                }).toList(),
-              )
-            else
-              const Text('暂无牙位信息'),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final entry in normalizeAppointmentTeethData(teethData)
+                    .asMap()
+                    .entries) ...[
+                  if (entry.key > 0) const SizedBox(width: 16),
+                  TeethCrossWidget(
+                    teethData: entry.value,
+                    index: entry.key,
+                  ),
+                ],
+              ],
+            ),
           ],
         ),
       ),

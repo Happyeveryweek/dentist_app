@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:dentist_app_windows/theme/theme_context_extensions.dart';
 
 /// 通用分页控件
@@ -43,6 +44,7 @@ class PaginationControl extends StatelessWidget {
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           _PaginationIconButton(
             icon: Icons.keyboard_arrow_left,
@@ -267,84 +269,99 @@ class _PageJumperState extends State<_PageJumper> {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final colors = context.colors;
+    const controlHeight = 32.0;
+    final labelStyle = TextStyle(
+      color: colors.onSurfaceVariant,
+      fontSize: 13,
+      height: 1,
+      fontWeight: FontWeight.w600,
+    );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: tokens.selectedBackground,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: tokens.focusRing),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            height: 36,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text('转到', style: labelStyle),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 64,
+          height: controlHeight,
+          child: DecoratedBox(
             decoration: BoxDecoration(
-              color: tokens.cardBackground,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(10),
-                bottomLeft: Radius.circular(10),
-              ),
+              color: tokens.mutedBackground,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: tokens.border),
             ),
-            child: Text(
-              '转到',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ),
-          Container(
-            height: 36,
-            width: 72,
-            color: tokens.cardBackground,
-            child: TextField(
-              controller: _controller,
-              textAlign: TextAlign.center,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                hintText: '页码',
-                isDense: true,
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 8),
-              ),
-              onSubmitted: (_) => _jump(),
-            ),
-          ),
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              mouseCursor: SystemMouseCursors.click,
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(10),
-                bottomRight: Radius.circular(10),
-              ),
-              onTap: _jump,
-              child: Container(
-                height: 36,
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.only(
-                    topRight: Radius.circular(10),
-                    bottomRight: Radius.circular(10),
-                  ),
-                  gradient: tokens.primaryHeaderGradient,
-                ),
-                child: Text(
-                  '确定',
-                  style: TextStyle(
-                    color: colors.onPrimary,
-                    fontWeight: FontWeight.w600,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Center(
+                child: SizedBox(
+                  height: 16,
+                  child: TextField(
+                    controller: _controller,
+                    textAlign: TextAlign.center,
+                    textAlignVertical: TextAlignVertical.center,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    cursorColor: tokens.primaryAccent,
+                    cursorHeight: 14,
+                    style: TextStyle(
+                      color: colors.onSurface,
+                      fontSize: 13,
+                      height: 1,
+                    ),
+                    decoration: InputDecoration(
+                      isCollapsed: true,
+                      filled: false,
+                      hintText: '页码',
+                      hintStyle: TextStyle(
+                        color: tokens.textMuted,
+                        fontSize: 13,
+                        height: 1,
+                      ),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      errorBorder: InputBorder.none,
+                      focusedErrorBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    onSubmitted: (_) => _jump(),
                   ),
                 ),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: 8),
+        Material(
+          color: tokens.primaryAccent,
+          borderRadius: BorderRadius.circular(8),
+          child: InkWell(
+            mouseCursor: SystemMouseCursors.click,
+            borderRadius: BorderRadius.circular(8),
+            onTap: _jump,
+            child: SizedBox(
+              height: controlHeight,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Center(
+                  child: Text(
+                    '确定',
+                    style: TextStyle(
+                      color: colors.onPrimary,
+                      fontSize: 13,
+                      height: 1,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

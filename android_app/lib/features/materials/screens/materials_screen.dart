@@ -283,7 +283,10 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                       const SizedBox(width: 8),
                       const Text(
                         '类型',
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -291,6 +294,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
                           _selectedType,
                           textAlign: TextAlign.right,
                           overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 14),
                         ),
                       ),
                       const Icon(Icons.arrow_drop_down),
@@ -400,7 +404,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             const Text(
               '加载失败',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.errorColor,
               ),
@@ -432,7 +436,7 @@ class _MaterialsScreenState extends State<MaterialsScreen> {
             Text(
               searching ? '未找到匹配的材料' : '暂无材料数据',
               style: const TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.secondaryText,
               ),
@@ -536,7 +540,7 @@ class _StatCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: AppTheme.secondaryText,
                   ),
                 ),
@@ -545,8 +549,8 @@ class _StatCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
                     color: color,
                   ),
                 ),
@@ -597,9 +601,11 @@ class _MaterialCard extends StatelessWidget {
                   children: [
                     Text(
                       material.materialName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 8),

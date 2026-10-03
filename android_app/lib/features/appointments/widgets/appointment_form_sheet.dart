@@ -11,6 +11,7 @@ import 'package:dentist_app/widgets/modern_date_picker.dart';
 import 'package:dentist_app/features/patients/widgets/patient_selection_dialog.dart';
 import 'package:dentist_app/features/appointments/widgets/time_picker_dialog.dart'
     as custom;
+import 'package:dentist_app/features/appointments/services/latest_patient_teeth.dart';
 import 'package:dentist_app/features/appointments/widgets/teeth_condition_input.dart';
 import 'package:dentist_app/features/appointments/widgets/treatment_items_input.dart';
 import 'package:dentist_app/utils/toast_util.dart';
@@ -39,16 +40,16 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
   // 表单数据
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = const TimeOfDay(hour: 9, minute: 0);
+  late DateTime _defaultDate;
+  late TimeOfDay _defaultTime;
   int? _selectedPatientId;
   String _status = 'scheduled';
   String _notes = '';
   double _cost = 0.0;
 
-  // 牙齿情况数据
-  List<Map<String, String>> _teethData = [
-    {'topLeft': '', 'topRight': '', 'bottomLeft': '', 'bottomRight': ''},
-    {'topLeft': '', 'topRight': '', 'bottomLeft': '', 'bottomRight': ''},
-  ];
+  // 牙齿情况数据。版本号只在按患者重新加载时递增，避免输入框保留旧牙位。
+  List<Map<String, String>> _teethData = blankAppointmentTeethData();
+  int _teethDataVersion = 0;
 
   // 治疗项目
   List<String> _selectedTreatments = [];
@@ -132,6 +133,9 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
         );
       }
     }
+
+    _defaultDate = _selectedDate;
+    _defaultTime = _selectedTime;
   }
 
   Future<void> _loadTreatmentSuggestions() async {
@@ -303,11 +307,11 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
 
       final selectedPatientId = _selectedPatientId;
       if (selectedPatientId == null) {
-          if (mounted) {
-            ToastUtil.showError(context, '请选择患者');
-          }
-          return;
+        if (mounted) {
+          ToastUtil.showError(context, '请选择患者');
         }
+        return;
+      }
 
       final appointment = Appointment(
         id: widget.appointment?.id,
@@ -441,6 +445,7 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
                 title: '牙位情况',
                 icon: Icons.medical_services_outlined,
                 child: TeethConditionInput(
+                  key: ValueKey('appointment-teeth-$_teethDataVersion'),
                   teethData: _teethData,
                   onChanged: (newData) {
                     setState(() {
@@ -653,7 +658,10 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+            borderSide: const BorderSide(
+              color: AppTheme.primaryColor,
+              width: 2,
+            ),
           ),
           filled: true,
           fillColor: AppTheme.backgroundColor,
@@ -842,13 +850,41 @@ class _AppointmentFormSheetState extends State<AppointmentFormSheet> {
           ),
     );
 
-    if (selectedPatient != null) {
+    if (selectedPatient != null && mounted) {
       setState(() {
         _selectedPatientId = selectedPatient.id;
         _selectedPatientName = selectedPatient.name;
         _patientNameController.text = _selectedPatientName;
+        if (widget.appointment == null) {
+          _applyLatestPatientDentalRecord(selectedPatient);
+        }
       });
     }
+  }
+
+  void _applyLatestPatientDentalRecord(Patient patient) {
+    final dentalCondition = patient.dentalCondition;
+    final loaded = latestPatientTeethForAppointment(dentalCondition);
+    _teethData = loaded ?? blankAppointmentTeethData();
+    _teethDataVersion++;
+
+    final appointmentDateTime = appointmentDateTimeFromLatestDentalRecord(
+      dentalCondition,
+    );
+    if (appointmentDateTime == null) {
+      _selectedDate = _defaultDate;
+      _selectedTime = _defaultTime;
+      return;
+    }
+    _selectedDate = DateTime(
+      appointmentDateTime.year,
+      appointmentDateTime.month,
+      appointmentDateTime.day,
+    );
+    _selectedTime = TimeOfDay(
+      hour: appointmentDateTime.hour,
+      minute: appointmentDateTime.minute,
+    );
   }
 
   @override

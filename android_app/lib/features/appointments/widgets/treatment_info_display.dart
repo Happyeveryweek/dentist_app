@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:convert';
+import 'package:dentist_app/features/appointments/services/latest_patient_teeth.dart';
 import 'package:dentist_app/theme/app_theme.dart';
 
 class TreatmentInfoDisplay extends StatelessWidget {
@@ -10,139 +11,124 @@ class TreatmentInfoDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    try {
-      final treatmentData = json.decode(treatmentTypeJson);
+    final treatmentData = _decodeTreatmentData(treatmentTypeJson);
+    final treatments = treatmentData?['treatments'];
+    final teeth = appointmentTeethForDisplay(treatmentTypeJson);
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(
-                CupertinoIcons.bandage,
-                size: 18,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(
+              CupertinoIcons.bandage,
+              size: 18,
+              color: AppTheme.secondaryTextColor,
+            ),
+            SizedBox(width: 8),
+            Text(
+              '治疗信息:',
+              style: TextStyle(
                 color: AppTheme.secondaryTextColor,
+                fontSize: 14,
               ),
-              SizedBox(width: 8),
-              Text(
-                '治疗信息:',
-                style: TextStyle(
-                  color: AppTheme.secondaryTextColor,
-                  fontSize: 14,
-                ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          margin: const EdgeInsets.only(left: 26),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.blue.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Text(
+                    '牙位情况:',
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                  ),
+                  const SizedBox(width: 4),
+                  Tooltip(
+                    message: '从医生视角看患者：显示的是患者的实际牙位（右上、左上、右下、左下）',
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 14,
+                      color: Colors.blue[700],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var index = 0; index < teeth.length; index++) ...[
+                    if (index > 0) const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildTeethDataRow(teeth[index], index + 1),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
-          if (treatmentData.containsKey('teethData') &&
-              treatmentData['teethData'] is List &&
-              (treatmentData['teethData'] as List).isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              margin: const EdgeInsets.only(left: 26),
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        '牙位情况:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Tooltip(
-                        message: '从医生视角看患者：显示的是患者的实际牙位（右上、左上、右下、左下）',
-                        child: Icon(
-                          Icons.info_outline,
-                          size: 14,
-                          color: Colors.blue[700],
-                        ),
-                      ),
-                    ],
+        ),
+        if (treatments is List && treatments.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 26),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '治疗项目: ',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: AppTheme.secondaryTextColor,
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      if ((treatmentData['teethData'] as List).isNotEmpty &&
-                          _hasTeethData(treatmentData['teethData'][0]))
-                        Expanded(
-                          child: _buildTeethDataRow(
-                            treatmentData['teethData'][0],
-                            1,
-                          ),
-                        ),
-                      if ((treatmentData['teethData'] as List).length > 1 &&
-                          _hasTeethData(treatmentData['teethData'][1])) ...[
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildTeethDataRow(
-                            treatmentData['teethData'][1],
-                            2,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-          if (treatmentData.containsKey('treatments') &&
-              treatmentData['treatments'] is List &&
-              (treatmentData['treatments'] as List).isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.only(left: 26),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '治疗项目: ',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
+                ),
+                Expanded(
+                  child: Text(
+                    treatments.join('、'),
+                    style: const TextStyle(
                       fontSize: 14,
-                      color: AppTheme.secondaryTextColor,
+                      color: AppTheme.textColor,
                     ),
                   ),
-                  Expanded(
-                    child: Text(
-                      (treatmentData['treatments'] as List).join('、'),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppTheme.textColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ],
-      );
-    } catch (e) {
-      return Text(treatmentTypeJson);
-    }
-  }
-
-  bool _hasTeethData(Map<String, dynamic> teethData) {
-    return teethData.entries.any(
-      (entry) => entry.value != null && entry.value.toString().isNotEmpty,
+          ),
+        ] else if (treatmentData == null && treatmentTypeJson.trim().isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 26, top: 8),
+            child: Text(
+              treatmentTypeJson,
+              style: const TextStyle(fontSize: 14, color: AppTheme.textColor),
+            ),
+          ),
+      ],
     );
   }
 
-  Widget _buildTeethDataRow(Map<String, dynamic> teethData, int groupNumber) {
-    if (!_hasTeethData(teethData)) {
-      return const SizedBox.shrink();
-    }
+  Map<String, dynamic>? _decodeTreatmentData(String source) {
+    if (source.trim().isEmpty) return null;
+    try {
+      final decoded = json.decode(source);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    } catch (_) {}
+    return null;
+  }
 
+  Widget _buildTeethDataRow(Map<String, dynamic> teethData, int groupNumber) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -278,7 +264,15 @@ class _TeethCrossPainter extends CustomPainter {
 
     canvas.drawLine(Offset(0, centerY), Offset(size.width, centerY), paint);
 
-    canvas.drawLine(Offset(centerX, 0), Offset(centerX, size.height), paint);
+    // 与添加预约的十字一致：竖线长度为宽度的一半，不拉满格子高度。
+    final verticalLineLength = size.width / 2;
+    final verticalStartY = centerY - verticalLineLength / 2;
+    final verticalEndY = centerY + verticalLineLength / 2;
+    canvas.drawLine(
+      Offset(centerX, verticalStartY),
+      Offset(centerX, verticalEndY),
+      paint,
+    );
   }
 
   @override

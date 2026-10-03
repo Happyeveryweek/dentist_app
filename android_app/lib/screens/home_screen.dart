@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dashboard_screen.dart';
 import 'patients_screen.dart';
@@ -205,44 +206,53 @@ class _BusinessManagementScreenState extends State<_BusinessManagementScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context); // AutomaticKeepAliveClientMixin 必须调用
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      body: Column(
-        children: [
-          // 紧凑的顶部导航栏
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+    // 财务、采购、材料详情使用蓝色 AppBar，会把状态栏图标改成白色。
+    // 本页没有 AppBar，返回后必须自己把图标恢复为深色，否则浅色背景上看不到时间、信号和电量。
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: AppTheme.backgroundColor,
+        body: Column(
+          children: [
+            // 紧凑的顶部导航栏
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: BusinessManagementTabs(controller: _tabController),
                 ),
-              ],
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                child: BusinessManagementTabs(controller: _tabController),
               ),
             ),
-          ),
-          // 页面内容 - 占据剩余所有空间
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                for (final page in _businessPages)
-                  _KeepAliveBusinessPage(child: page),
-              ],
+            // 页面内容 - 占据剩余所有空间
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  for (final page in _businessPages)
+                    _KeepAliveBusinessPage(child: page),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

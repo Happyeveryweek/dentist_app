@@ -47,10 +47,8 @@ class AppointmentInfoCard extends StatelessWidget {
             '预约时间',
             DateFormat('HH:mm').format(appointment.appointmentDate),
           ),
-          if (treatmentType != null && treatmentType.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            TreatmentInfoDisplay(treatmentTypeJson: treatmentType),
-          ],
+          const SizedBox(height: 12),
+          TreatmentInfoDisplay(treatmentTypeJson: treatmentType ?? ''),
           if (appointment.cost > 0) ...[
             const SizedBox(height: 12),
             _buildInfoRow(

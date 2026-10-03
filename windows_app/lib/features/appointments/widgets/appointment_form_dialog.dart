@@ -17,6 +17,7 @@ import './appointment_cost_status_section.dart';
 import './appointment_notes_section.dart';
 import '../../../widgets/patient_selection_dialog.dart';
 import '../../../utils/log_manager.dart';
+import '../services/latest_patient_teeth.dart';
 import 'appointment_treatment_utils.dart';
 
 class AppointmentFormDialog extends StatefulWidget {
@@ -39,6 +40,8 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late DateTime _date;
   late TimeOfDay _time;
+  late DateTime _defaultDate;
+  late TimeOfDay _defaultTime;
   String _status = AppointmentStatus.scheduled.storageValue;
   Patient? _selectedPatient;
   final TextEditingController _treatmentTypeController =
@@ -50,11 +53,9 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
   List<Patient> _patients = [];
   bool _isLoadingPatients = true;
 
-  // 牙齿情况数据
-  List<Map<String, String>> _teethData = [
-    {'topLeft': '', 'topRight': '', 'bottomLeft': '', 'bottomRight': ''},
-    {'topLeft': '', 'topRight': '', 'bottomLeft': '', 'bottomRight': ''},
-  ];
+  // 牙齿情况数据。版本号只在按患者重新加载时递增，避免输入时重建输入框。
+  List<Map<String, String>> _teethData = blankAppointmentTeethData();
+  int _teethDataVersion = 0;
 
   // 治疗项目
   List<String> _selectedTreatments = [];
@@ -92,6 +93,9 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
       }
     }
 
+    _defaultDate = _date;
+    _defaultTime = _time;
+
     // 如果有预选患者，直接设置
     if (widget.preselectedPatient != null) {
       _selectedPatient = widget.preselectedPatient;
@@ -116,8 +120,11 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
       // 提取牙齿情况数据
       if (data.containsKey('teethData')) {
         var teethJsonData = data['teethData'];
-        _teethData = List<Map<String, String>>.from(
-            teethJsonData.map((item) => Map<String, String>.from(item)));
+        _teethData = normalizeAppointmentTeethData(
+          List<Map<String, String>>.from(
+            teethJsonData.map((item) => Map<String, String>.from(item)),
+          ),
+        );
       }
 
       // 提取治疗项目数据
@@ -252,6 +259,11 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
           } catch (e) {
             _selectedPatient = null;
           }
+        }
+
+        final patientForTeeth = _selectedPatient;
+        if (widget.appointment == null && patientForTeeth != null) {
+          _applyLatestPatientTeeth(patientForTeeth);
         }
       });
     } catch (e) {
@@ -451,6 +463,7 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
 
                         // 牙齿情况区域 - 使用新的独立组件
                         TeethConditionWidget(
+                          key: ValueKey('appointment-teeth-$_teethDataVersion'),
                           teethData: _teethData,
                           onChanged: (newTeethData) {
                             setState(() {
@@ -623,7 +636,34 @@ class _AppointmentFormDialogState extends State<AppointmentFormDialog> {
       setState(() {
         _selectedPatient = selected;
         _patientSearchController.text = selected.name;
+        if (widget.appointment == null) {
+          _applyLatestPatientTeeth(selected);
+        }
       });
     }
+  }
+
+  void _applyLatestPatientTeeth(Patient patient) {
+    final dentalCondition = patient.dentalCondition;
+    final loaded = latestPatientTeethForAppointment(dentalCondition);
+    _teethData = loaded ?? blankAppointmentTeethData();
+    _teethDataVersion++;
+
+    final appointmentDateTime =
+        appointmentDateTimeFromLatestDentalRecord(dentalCondition);
+    if (appointmentDateTime == null) {
+      _date = _defaultDate;
+      _time = _defaultTime;
+      return;
+    }
+    _date = DateTime(
+      appointmentDateTime.year,
+      appointmentDateTime.month,
+      appointmentDateTime.day,
+    );
+    _time = TimeOfDay(
+      hour: appointmentDateTime.hour,
+      minute: appointmentDateTime.minute,
+    );
   }
 }
